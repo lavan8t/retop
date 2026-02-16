@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "VTOP Extension",
+  "description": "Custom enhancements for VTOP.",
+  "version": "1.0.0",
+
+  "permissions": [],
+
+  "host_permissions": ["https://vtop.vit.ac.in/*"],
+
+  "content_scripts": [
+    {
+      "matches": ["https://vtop.vit.ac.in/*"],
+      "js": ["dist/content.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["dist/injected.js", "dist/style.css"],
+      "matches": ["https://vtop.vit.ac.in/*"]
+    }
+  ]
+}

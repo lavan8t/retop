@@ -1,0 +1,284 @@
+@import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,GRAD,ROND@6..144,100,100&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Anek+Tamil:wdth,wght@125,100..800&display=swap");
+
+@theme {
+  --font-sans: "Google Sans Flex", ui-sans-serif, system-ui, sans-serif;
+  --font-expanded: "Anek Tamil", sans-serif;
+}
+
+/* --- 1. GLOBAL RESET & VARIABLES --- */
+@layer base {
+  /* CRITICAL FIX: 
+     In Shadow DOM, :root doesn't exist. We must attach variables 
+     to the app's root container (#vtop-remastered-root).
+  */
+  #vtop-remastered-root {
+    /* --- THEME VARIABLES (Restored from your code) --- */
+    /* DARK MODE (Default) */
+    --bg-main: #18181b; /* Zinc-900 */
+    --bg-surface: #27272a; /* Zinc-800 */
+    --bg-highlight: #3f3f46; /* Zinc-700 */
+
+    --border-main: #3f3f46; /* Zinc-700 */
+    --border-dim: #525252; /* Zinc-600 */
+
+    --text-main: #e4e4e7; /* Zinc-200 */
+    --text-muted: #a1a1aa; /* Zinc-400 */
+    --text-dim: #71717a; /* Zinc-500 */
+
+    --accent-base: #3b82f6;
+    --accent-hover: #60a5fa;
+    --accent-active: #2563eb;
+    --accent-tint: #1e3a8a;
+
+    --text-inverse: #ffffff;
+
+    /* Card Colors (Desaturated for Dark Mode) */
+    --card-cyan: #8bcbd8;
+    --card-lime: #bed690;
+    --card-yellow: #d6ca90;
+    --card-blue: #8ba6d6;
+    --card-red: #d69090;
+
+    /* --- BASE LAYOUT --- */
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    font-family: "Google Sans Flex", "Roboto", sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    box-sizing: border-box;
+
+    /* Ensure this container fills the shadow host */
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+  }
+
+  /* Reset all children to use border-box */
+  #vtop-remastered-root *,
+  #vtop-remastered-root *::before,
+  #vtop-remastered-root *::after {
+    box-sizing: border-box;
+    border-width: 0;
+    border-style: solid;
+    border-color: currentColor;
+  }
+
+  /* Image Reset */
+  #vtop-remastered-root img,
+  #vtop-remastered-root svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* --- 2. THEMES (Targeting Root Container) --- */
+#vtop-remastered-root[data-theme="amoled"] {
+  --bg-main: #000000;
+  --bg-surface: #000000;
+  --bg-highlight: #121212;
+
+  --border-main: #333333;
+  --border-dim: #262626;
+
+  --text-main: #ffffff;
+  --text-muted: #a3a3a3;
+  --text-dim: #737373;
+
+  --text-inverse: #000000;
+
+  /* Card Colors (Vibrant Pastels pop against black) */
+  --card-cyan: #9fd5e0;
+  --card-lime: #cbe09f;
+  --card-yellow: #e0d59f;
+  --card-blue: #9fb6e0;
+  --card-red: #e09f9f;
+}
+
+#vtop-remastered-root[data-theme="light"] {
+  --bg-main: #f8fafc; /* Slate-50 */
+  --bg-surface: #ffffff; /* White */
+  --bg-highlight: #f1f5f9; /* Slate-100 */
+
+  --border-main: #000000;
+  --border-dim: #525252;
+
+  --text-main: #0d0d0d;
+  --text-muted: #404040;
+  --text-dim: #525252;
+
+  --text-inverse: #ffffff;
+
+  /* Card Colors (Vibrant) */
+  --card-cyan: #22d3ee;
+  --card-lime: #a3e635;
+  --card-yellow: #facc15;
+  --card-blue: #60a5fa;
+  --card-red: #f87171;
+}
+
+/* --- 3. FONTS --- */
+#vtop-remastered-root *:not(i):not(.font-expanded) {
+  font-family: "Google Sans Flex", "Roboto", sans-serif !important;
+}
+
+#vtop-remastered-root .font-expanded {
+  font-family: "Anek Tamil", sans-serif !important;
+  font-variation-settings: "wdth" 125;
+  margin-bottom: 0 !important;
+  line-height: 1 !important;
+}
+
+/* --- 4. UTILITY OVERRIDES (Restored Fully) --- */
+@layer utilities {
+  /* Backgrounds */
+  .bg-zinc-950 {
+    background-color: var(--bg-main) !important;
+  }
+  .bg-zinc-900 {
+    background-color: var(--bg-surface) !important;
+  }
+  .bg-zinc-800 {
+    background-color: var(--bg-highlight) !important;
+  }
+
+  .hover\:bg-zinc-900:hover {
+    background-color: var(--bg-surface) !important;
+  }
+  .hover\:bg-zinc-800:hover {
+    background-color: var(--bg-highlight) !important;
+  }
+  .group:hover .group-hover\:bg-zinc-800 {
+    background-color: var(--bg-highlight) !important;
+  }
+
+  /* Borders (Restored) */
+  .border-zinc-800 {
+    border-color: var(--border-main) !important;
+  }
+  .border-zinc-700 {
+    border-color: var(--border-dim) !important;
+  }
+  .hover\:border-zinc-600:hover {
+    border-color: var(--border-dim) !important;
+  }
+
+  /* Text Colors */
+  .text-white {
+    color: var(--text-main) !important;
+  }
+  .text-slate-200 {
+    color: var(--text-main) !important;
+  }
+  .text-zinc-100 {
+    color: var(--text-main) !important;
+  }
+  .text-zinc-200 {
+    color: var(--text-main) !important;
+  }
+  .text-zinc-300 {
+    color: var(--text-main) !important;
+  }
+
+  .text-zinc-400 {
+    color: var(--text-muted) !important;
+  }
+  .text-zinc-500 {
+    color: var(--text-dim) !important;
+  }
+  .text-zinc-600 {
+    color: var(--text-dim) !important;
+  }
+
+  /* --- CARD COLOR MAPPINGS --- */
+  .bg-cyan-400 {
+    background-color: var(--card-cyan) !important;
+  }
+  .bg-lime-400 {
+    background-color: var(--card-lime) !important;
+  }
+  .bg-yellow-400 {
+    background-color: var(--card-yellow) !important;
+  }
+  .bg-blue-400 {
+    background-color: var(--card-blue) !important;
+  }
+  .bg-purple-400 {
+    background-color: #d8b4fe !important;
+  }
+
+  /* Borders (Card Colors) */
+  .border-cyan-500 {
+    border-color: var(--card-cyan) !important;
+  }
+  .border-lime-500 {
+    border-color: var(--card-lime) !important;
+  }
+  .border-yellow-500 {
+    border-color: var(--card-yellow) !important;
+  }
+  .border-blue-500 {
+    border-color: var(--card-blue) !important;
+  }
+
+  /* Accent Color Mapping */
+  .bg-blue-500 {
+    background-color: var(--accent-base) !important;
+  }
+  .bg-blue-600 {
+    background-color: var(--accent-active) !important;
+  }
+  .text-blue-500 {
+    color: var(--accent-base) !important;
+  }
+
+  /* Hover overrides */
+  .hover\:bg-blue-500:hover {
+    background-color: var(--accent-base) !important;
+  }
+  .hover\:text-blue-500:hover {
+    color: var(--accent-base) !important;
+  }
+
+  /* Exceptions (Inverse Text) */
+  .bg-blue-500.text-white,
+  .bg-blue-600.text-white,
+  .bg-red-500.text-white,
+  .bg-emerald-500.text-white,
+  button.bg-blue-500,
+  div[class*="bg-blue-500"] > .text-white {
+    color: var(--text-inverse) !important;
+  }
+}
+
+/* --- 5. SCROLLBARS (FIXED) --- */
+/* Target the Container specifically (for Shadow DOM) */
+#vtop-remastered-root::-webkit-scrollbar {
+  width: 14px;
+}
+#vtop-remastered-root::-webkit-scrollbar-track {
+  background: var(--bg-surface);
+}
+#vtop-remastered-root::-webkit-scrollbar-thumb {
+  background-color: var(--accent-base);
+  border: 4px solid var(--bg-surface);
+  border-radius: 99px;
+}
+#vtop-remastered-root::-webkit-scrollbar-thumb:hover {
+  background-color: var(--accent-hover);
+}
+
+/* Fallback for other elements inside the container */
+::-webkit-scrollbar {
+  width: 14px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-surface);
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--accent-base);
+  border: 4px solid var(--bg-surface);
+  border-radius: 99px;
+}

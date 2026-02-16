@@ -4,6 +4,7 @@ import {
   createHiddenForm,
   initializeContainer,
   setUIVisibility,
+  getAppRoot, // Add this import
 } from "../utils/bridge";
 import {
   User,
@@ -19,11 +20,13 @@ export function renderLandingPage() {
   const csrfInput = document.querySelector<HTMLInputElement>(
     'input[name="_csrf"]',
   );
-  const csrfToken = csrfInput?.value;
-  if (!csrfToken) return;
+  // On some landing pages, CSRF might be optional or handled differently
+  const csrfToken = csrfInput?.value || "NO_TOKEN";
 
   initializeContainer();
-  const rootEl = document.getElementById("vtop-remastered-root");
+  // FIX: Query the Shadow Root
+  const rootEl = getAppRoot();
+
   if (rootEl) {
     const root = createRoot(rootEl);
     root.render(<LandingPage csrf={csrfToken} />);

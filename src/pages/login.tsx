@@ -5,6 +5,7 @@ import {
   injectScriptFile,
   initializeContainer,
   setUIVisibility,
+  getAppRoot, // Import getAppRoot
 } from "../utils/bridge";
 import {
   User,
@@ -28,21 +29,23 @@ export function renderLoginPage() {
   if (!csrfToken) return;
 
   initializeContainer();
-  const rootEl = document.getElementById("vtop-remastered-root");
+
+  // FIX: Use getAppRoot to find the root element within the shadow DOM
+  const rootEl = getAppRoot();
 
   if (rootEl) {
     const root = createRoot(rootEl);
     root.render(<LoginPage />);
 
     setTimeout(() => {
-      const container = document.getElementById(
-        "vtop-remastered-captcha-container",
-      );
+      const container = rootEl.querySelector<HTMLDivElement>(
+        "#vtop-remastered-captcha-container",
+      ); // Query inside rootEl
       if (container && captchaKey)
         container.setAttribute("data-sitekey", captchaKey);
 
       injectScriptFile("dist/injected.js");
-      setupLoginListeners(csrfToken);
+      setupLoginListeners(csrfToken, rootEl); // Pass rootEl to setupLoginListeners
     }, 500);
   }
 }
@@ -190,18 +193,20 @@ const LoginPage = () => {
   );
 };
 
-function setupLoginListeners(csrfToken: string) {
+// Modified setupLoginListeners to query the shadow DOM
+
+function setupLoginListeners(csrfToken: string, rootEl: HTMLElement) {
   const checkBtn = setInterval(() => {
-    const btn = document.getElementById("vtop-login-btn");
+    // Query the button inside the shadow root
+    const btn = rootEl.querySelector<HTMLButtonElement>("#vtop-login-btn");
     if (btn) {
       clearInterval(checkBtn);
       btn.addEventListener("click", () => {
-        const userInput = document.getElementById(
-          "vtop-user-input",
-        ) as HTMLInputElement;
-        const passInput = document.getElementById(
-          "vtop-pass-input",
-        ) as HTMLInputElement;
+        // Query the input elements inside the shadow root
+        const userInput =
+          rootEl.querySelector<HTMLInputElement>("#vtop-user-input");
+        const passInput =
+          rootEl.querySelector<HTMLInputElement>("#vtop-pass-input");
 
         const user = userInput?.value || "";
         const pass = passInput?.value || "";
@@ -218,12 +223,11 @@ function setupLoginListeners(csrfToken: string) {
   }, 100);
 
   window.addEventListener("vtop-captcha-solved", ((e: CustomEvent) => {
-    const userInput = document.getElementById(
-      "vtop-user-input",
-    ) as HTMLInputElement;
-    const passInput = document.getElementById(
-      "vtop-pass-input",
-    ) as HTMLInputElement;
+    // Query the input elements inside the shadow root AGAIN inside the event listener
+    const userInput =
+      rootEl.querySelector<HTMLInputElement>("#vtop-user-input");
+    const passInput =
+      rootEl.querySelector<HTMLInputElement>("#vtop-pass-input");
 
     const user = userInput?.value || "";
     const pass = passInput?.value || "";

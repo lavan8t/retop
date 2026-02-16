@@ -22,6 +22,8 @@ interface SettingsPageProps {
   ) => void;
 }
 
+// --- NEO BRUTALIST COMPONENTS ---
+
 const NeoSection = ({ title, icon: Icon, children }: any) => (
   <motion.section
     variants={{
@@ -31,10 +33,11 @@ const NeoSection = ({ title, icon: Icon, children }: any) => (
     className="space-y-6"
   >
     <div className="flex items-center gap-4">
+      {/* Icon Container */}
       <div className="p-3 bg-blue-500 border-4 border-zinc-800 shadow-[4px_4px_0px_0px_var(--border-main)] rounded-xl">
         <Icon className="w-6 h-6 text-white" />
       </div>
-
+      {/* Title */}
       <h2 className="text-3xl font-black font-expanded text-zinc-200 uppercase tracking-tighter drop-shadow-sm">
         {title}
       </h2>
@@ -56,6 +59,7 @@ const NeoCard = ({ children, className = "" }: any) => (
   </div>
 );
 
+// --- CUSTOM RHOMBUS TOGGLE ---
 const DiamondToggle = ({
   active,
   onToggle,
@@ -70,14 +74,16 @@ const DiamondToggle = ({
       ${active ? "bg-blue-500" : "bg-zinc-950"}
     `}
   >
+    {/* Track Line */}
     <div className="absolute inset-x-2 top-1/2 h-1 bg-black/20 -translate-y-1/2 rounded-full"></div>
 
+    {/* Rhombus Knob */}
     <div
       className={`
         absolute top-1/2 -translate-y-1/2 w-6 h-6 bg-white border-4 border-zinc-800 
         transform rotate-45 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)]
         transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-        ${active ? "left-[calc(100%-12px)] rotate-[225deg]" : "left-[-12px] rotate-45"}
+        ${active ? "left-[calc(100%-28px)] rotate-[225deg]" : "left-1 rotate-45"}
       `}
     />
   </button>
@@ -109,10 +115,13 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
       className="h-full overflow-y-auto custom-scrollbar p-6 md:p-8 bg-zinc-950 text-zinc-200"
     >
       <div className="max-w-5xl mx-auto space-y-12">
+        {/* APPEARANCE */}
         <NeoSection title="Aesthetics" icon={Palette}>
+          {/* Theme Mode */}
           <NeoCard>
             <div className="flex justify-between items-start mb-6">
               <div>
+                {/* FIX: Changed text-white to text-zinc-200 */}
                 <h3 className="text-xl font-black font-expanded uppercase text-zinc-200">
                   Interface Mode
                 </h3>
@@ -153,6 +162,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             </div>
           </NeoCard>
 
+          {/* Accent Color */}
           <NeoCard>
             <div className="flex justify-between items-start mb-6">
               <div>
@@ -186,9 +196,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           </NeoCard>
         </NeoSection>
 
+        {/* INTERFACE */}
         <NeoSection title="Workspace" icon={Layout}>
           <NeoCard className="md:col-span-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Modern UI Toggle */}
               <div className="flex items-center justify-between group">
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 bg-zinc-950 border-4 border-zinc-800 rounded-xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-300">
@@ -214,8 +226,10 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 />
               </div>
 
+              {/* Vertical Divider for Desktop */}
               <div className="hidden md:block absolute left-1/2 top-4 bottom-4 w-1 bg-zinc-800 rounded-full"></div>
 
+              {/* Progress Toggle */}
               <div className="flex items-center justify-between group">
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 bg-zinc-950 border-4 border-zinc-800 rounded-xl flex items-center justify-center group-hover:-rotate-6 transition-transform duration-300">
@@ -244,6 +258,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           </NeoCard>
         </NeoSection>
 
+        {/* CONNECTIVITY */}
         <NeoSection title="Connectivity" icon={Zap}>
           <NeoCard className="md:col-span-2 bg-gradient-to-br from-zinc-900 to-zinc-950">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-8 border-b-4 border-zinc-800 pb-6">
@@ -256,6 +271,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   />
                 </div>
                 <div>
+                  {/* FIX: Changed text-white to text-zinc-200 */}
                   <h3 className="text-2xl font-black font-expanded text-zinc-200 uppercase">
                     Google Account
                   </h3>
@@ -287,6 +303,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             <div
               className={`grid grid-cols-1 md:grid-cols-2 gap-4 transition-opacity duration-300 ${settings.googleLinked ? "opacity-100" : "opacity-40 pointer-events-none grayscale"}`}
             >
+              {/* Calendar Sync */}
               <div className="flex items-center justify-between p-4 bg-zinc-950 rounded-xl border-4 border-zinc-800">
                 <div className="flex items-center gap-3">
                   <Calendar className="w-5 h-5 text-blue-500" />
@@ -302,6 +319,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 />
               </div>
 
+              {/* Drive Sync */}
               <div className="flex items-center justify-between p-4 bg-zinc-950 rounded-xl border-4 border-zinc-800">
                 <div className="flex items-center gap-3">
                   <HardDrive className="w-5 h-5 text-green-500" />
@@ -320,6 +338,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           </NeoCard>
         </NeoSection>
 
+        {/* Footer */}
         <div className="text-center pt-8 pb-4">
           <p className="text-zinc-600 font-mono text-[10px] uppercase tracking-[0.3em]">
             VTOP Remastered System v2.1.0

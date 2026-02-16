@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { getAppRoot } from "./bridge";
 
 export interface AppSettings {
   defaultView: "modern" | "legacy";
@@ -23,7 +24,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 export const applyTheme = (settings: AppSettings) => {
   if (typeof document === "undefined") return;
 
-  const root = document.documentElement;
+  const root = getAppRoot() || document.documentElement;
 
   root.setAttribute("data-theme", settings.themeMode);
 
@@ -70,6 +71,7 @@ export const applyTheme = (settings: AppSettings) => {
   root.style.setProperty("--accent-active", color.active);
   root.style.setProperty("--accent-tint", color.tint);
 };
+
 export const useSettings = () => {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [mounted, setMounted] = useState(false);

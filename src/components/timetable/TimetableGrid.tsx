@@ -48,7 +48,7 @@ export const TimetableGrid = ({ courses }: { courses: TimetableCourse[] }) => {
     gridCells.push(
       <div
         key={`h-${i}`}
-        className="sticky top-0 z-20 flex flex-col items-center justify-center bg-zinc-900 border-b-4 border-r-2 border-zinc-800 min-w-[50px] h-16 shadow-md"
+        className="sticky top-0 z-20 flex flex-col items-center justify-center bg-zinc-900 border-b-4 border-r-2 border-zinc-800 min-w-12.5 h-16 shadow-md"
       >
         <span className="text-xs font-black text-zinc-300">{col.label}</span>
       </div>,
@@ -127,8 +127,8 @@ export const TimetableGrid = ({ courses }: { courses: TimetableCourse[] }) => {
   return (
     <>
       <div className="h-full w-full rounded-[2.5rem] border-4 border-zinc-800 bg-zinc-950 shadow-2xl overflow-hidden p-2 relative">
-        <div className="h-full w-full overflow-auto custom-scrollbar rounded-[2rem]">
-          <div className="grid min-w-[900px] h-full grid-cols-[48px_repeat(14,1fr)] grid-rows-[64px_repeat(5,minmax(140px,1fr))]">
+        <div className="h-full w-full overflow-auto custom-scrollbar rounded-4xl">
+          <div className="grid min-w-225 h-full grid-cols-[48px_repeat(14,1fr)] grid-rows-[64px_repeat(5,minmax(140px,1fr))]">
             {gridCells}
           </div>
         </div>

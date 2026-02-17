@@ -14,6 +14,31 @@ export class VTOPNetwork {
     if (authorizedID) this.authorizedID = authorizedID;
   }
 
+  /**
+   * Fetches the latest VTOP native captcha image source.
+   */
+  async getNativeCaptcha(): Promise<{ captchaImage: string }> {
+    try {
+      const response = await fetch("/vtop/get/new/captcha", {
+        method: "GET",
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+        },
+      });
+
+      if (!response.ok) throw new Error("Failed to fetch captcha");
+
+      const text = await response.text();
+      const match = text.match(/src="([^"]+)"/);
+      const captchaImage = match ? match[1] : "";
+
+      return { captchaImage };
+    } catch (err) {
+      console.error("[VTOP Network] Captcha Fetch Failed", err);
+      throw err;
+    }
+  }
+
   public async fetchWithCache(
     key: string,
     fetcher: () => Promise<string>,

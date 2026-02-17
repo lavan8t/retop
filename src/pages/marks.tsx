@@ -125,7 +125,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({ network }) => {
             </span>
           </div>
         ) : filteredMarks.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-zinc-600 border-4 border-dashed border-zinc-900 rounded-[2rem] bg-zinc-900/30">
+          <div className="flex flex-col items-center justify-center h-full text-zinc-600 border-4 border-dashed border-zinc-900 rounded-4xl bg-zinc-900/30">
             <AlertCircle className="w-16 h-16 mb-4 opacity-20" />
             <span className="text-base font-bold uppercase tracking-widest mb-0">
               No Marks Found
@@ -151,7 +151,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({ network }) => {
                   hidden: { opacity: 0, y: 20 },
                   show: { opacity: 1, y: 0 },
                 }}
-                className="bg-white dark:bg-zinc-900 border-4 border-zinc-200 dark:border-zinc-800 rounded-[2rem] overflow-hidden shadow-lg hover:border-blue-400 dark:hover:border-blue-500/30 transition-colors group flex flex-col"
+                className="bg-white dark:bg-zinc-900 border-4 border-zinc-200 dark:border-zinc-800 rounded-4xl overflow-hidden shadow-lg hover:border-blue-400 dark:hover:border-blue-500/30 transition-colors group flex flex-col"
               >
                 <div className="px-6 py-4 border-b-2 border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-950/50 flex flex-col gap-1 shrink-0 transition-colors">
                   <div className="flex justify-between items-start gap-4">
@@ -188,7 +188,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({ network }) => {
                 </div>
 
                 <div className="flex-1 overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs min-w-[400px]">
+                  <table className="w-full text-left border-collapse text-xs min-w-100">
                     <thead className="bg-zinc-200 dark:bg-zinc-950/80 text-[10px] font-bold text-black dark:text-zinc-500 uppercase font-expanded tracking-wider border-b border-zinc-200 dark:border-zinc-800">
                       <tr>
                         <th className="p-3 pl-6 w-5/12">Assessment</th>
@@ -226,7 +226,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({ network }) => {
                             className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors group/row"
                           >
                             <td
-                              className="p-3 pl-6 font-bold text-zinc-700 dark:text-zinc-400 group-hover/row:text-black dark:group-hover/row:text-zinc-200 transition-colors truncate max-w-[150px]"
+                              className="p-3 pl-6 font-bold text-zinc-700 dark:text-zinc-400 group-hover/row:text-black dark:group-hover/row:text-zinc-200 transition-colors truncate max-w-37.5"
                               title={asm.title}
                             >
                               {asm.title}

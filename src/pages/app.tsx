@@ -42,6 +42,7 @@ import { TimetableContentView } from "./timetable";
 import { SettingsPage } from "./settings";
 import { CurriculumPage } from "./curriculum";
 import { MarksPage } from "./marks";
+import { ProfilePage } from "./profile";
 import { SemesterDropdown } from "../components/timetable/SemesterDropdown";
 import {
   getUpcomingClasses,
@@ -56,6 +57,7 @@ type ViewType =
   | "timetable"
   | "curriculum"
   | "marks"
+  | "profile"
   | "settings";
 
 const getPageTitle = (view: ViewType, dynamicTitle?: string) => {
@@ -68,6 +70,8 @@ const getPageTitle = (view: ViewType, dynamicTitle?: string) => {
       return "CURRICULUM";
     case "marks":
       return "MARKS";
+    case "profile":
+      return "STUDENT PROFILE";
     case "settings":
       return "PREFERENCES";
     case "content":
@@ -80,6 +84,7 @@ const getPageTitle = (view: ViewType, dynamicTitle?: string) => {
 const getDestinationView = (link: QuickLink): ViewType | "content" => {
   const lowerTitle = link.title.toLowerCase();
   const lowerUrl = link.url.toLowerCase();
+
   if (
     lowerTitle.includes("time table") ||
     lowerUrl.includes("studenttimetable")
@@ -88,6 +93,13 @@ const getDestinationView = (link: QuickLink): ViewType | "content" => {
   if (lowerTitle.includes("curriculum")) return "curriculum";
   if (lowerTitle.includes("mark") || lowerTitle.includes("grade"))
     return "marks";
+
+  if (
+    lowerTitle.includes("profile view") ||
+    lowerUrl.includes("studentprofileallview")
+  )
+    return "profile";
+
   return "content";
 };
 
@@ -455,6 +467,8 @@ const DashboardApp = () => {
             network={networkRef.current}
           />
         );
+      case "profile":
+        return <ProfilePage network={networkRef.current} />;
       case "settings":
         return (
           <SettingsPage settings={settings} updateSetting={updateSetting} />

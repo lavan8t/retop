@@ -22,8 +22,6 @@ interface SettingsPageProps {
   ) => void;
 }
 
-// --- NEO BRUTALIST COMPONENTS ---
-
 const NeoSection = ({ title, icon: Icon, children }: any) => (
   <motion.section
     variants={{
@@ -49,7 +47,7 @@ const NeoSection = ({ title, icon: Icon, children }: any) => (
 const NeoCard = ({ children, className = "" }: any) => (
   <div
     className={`
-    bg-zinc-900 border-4 border-zinc-800 rounded-[2rem] p-6 
+    bg-zinc-900 border-4 border-zinc-800 rounded-4xl p-6 
     shadow-[8px_8px_0px_0px_rgba(0,0,0,0.3)] hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,0.4)]
     hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group
     ${className}
@@ -59,7 +57,6 @@ const NeoCard = ({ children, className = "" }: any) => (
   </div>
 );
 
-// --- CUSTOM RHOMBUS TOGGLE ---
 const DiamondToggle = ({
   active,
   onToggle,
@@ -83,7 +80,7 @@ const DiamondToggle = ({
         absolute top-1/2 -translate-y-1/2 w-6 h-6 bg-white border-4 border-zinc-800 
         transform rotate-45 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)]
         transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-        ${active ? "left-[calc(100%-28px)] rotate-[225deg]" : "left-1 rotate-45"}
+        ${active ? "left-[calc(100%-28px)] rotate-225" : "left-1 rotate-45"}
       `}
     />
   </button>
@@ -260,7 +257,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
         {/* CONNECTIVITY */}
         <NeoSection title="Connectivity" icon={Zap}>
-          <NeoCard className="md:col-span-2 bg-gradient-to-br from-zinc-900 to-zinc-950">
+          <NeoCard className="md:col-span-2 bg-linear-to-br from-zinc-900 to-zinc-950">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-8 border-b-4 border-zinc-800 pb-6">
               <div className="flex items-center gap-5">
                 <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center shadow-[6px_6px_0px_0px_#000] border-4 border-zinc-200 shrink-0">

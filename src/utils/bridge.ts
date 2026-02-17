@@ -23,17 +23,13 @@ export function getAppRoot(): HTMLElement | null {
 }
 
 export function injectGlobalStyles() {
-  if (document.getElementById("vtop-remastered-global")) return;
-  const style = document.createElement("style");
-  style.id = "vtop-remastered-global";
-  style.textContent = `
-    html { font-size: 16px !important; }
-    html, body { background-color: #09090b !important; overflow: hidden !important; }
-    #page-wrapper, .container-fluid, .wrapper, body > table, body > form { 
-      opacity: 0 !important; pointer-events: none !important; display: none !important; 
-    }
-  `;
-  safeAppend(style);
+  if (document.getElementById("vtop-remastered-global-css")) return;
+
+  const link = document.createElement("link");
+  link.id = "vtop-remastered-global-css";
+  link.rel = "stylesheet";
+  link.href = chrome.runtime.getURL("dist/style.css");
+  safeAppend(link);
 
   if (!document.getElementById("vtop-remastered-fonts")) {
     const fontLink = document.createElement("link");
@@ -50,8 +46,7 @@ export function initializeContainer() {
 
   const host = document.createElement("div");
   host.id = "vtop-remastered-host";
-  host.style.cssText =
-    "position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 2147483647; display: block;";
+
   document.body.appendChild(host);
 
   shadowRoot = host.attachShadow({ mode: "open" });
@@ -63,6 +58,7 @@ export function initializeContainer() {
 
   const appRoot = document.createElement("div");
   appRoot.id = "vtop-remastered-root";
+
   appRoot.style.cssText = "width: 100%; height: 100%; overflow-y: auto;";
   shadowRoot.appendChild(appRoot);
 
@@ -74,11 +70,7 @@ export function injectSplashScreen() {
   if (document.getElementById("vtop-remastered-splash")) return;
   const splash = document.createElement("div");
   splash.id = "vtop-remastered-splash";
-  splash.style.cssText = `
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    background-color: #09090b; z-index: 2147483647; 
-    display: flex; align-items: center; justify-content: center;
-  `;
+
   splash.innerHTML = `<div style="color:white; font-family:sans-serif;">Loading VTOP Remastered...</div>`;
   safeAppend(splash);
 }
@@ -93,38 +85,29 @@ export function removeSplashScreen() {
 
 function createToggleButton() {
   if (document.getElementById("vtop-ui-toggle-container")) return;
-  const toggleContainer = document.createElement("div");
-  toggleContainer.id = "vtop-ui-toggle-container";
-  toggleContainer.style.cssText =
-    "position: fixed; bottom: 24px; right: 24px; z-index: 2147483647; display: none;";
 
-  const returnBtn = document.createElement("button");
-  returnBtn.innerHTML = "RETURN TO MODERN UI";
-  returnBtn.style.cssText =
-    "background-color: #facc15; padding: 12px 24px; border-radius: 99px; font-weight: bold; cursor: pointer; border: 3px solid black;";
-  returnBtn.onclick = () => window.dispatchEvent(new Event("vtop-restore-ui"));
+  const container = document.createElement("div");
+  container.id = "vtop-ui-toggle-container";
 
-  toggleContainer.appendChild(returnBtn);
-  document.body.appendChild(toggleContainer);
+  const btn = document.createElement("button");
+  btn.innerHTML = "RETURN TO MODERN UI";
+  btn.className = "vtop-toggle-btn";
+
+  btn.onclick = () => {
+    window.dispatchEvent(new Event("vtop-restore-ui"));
+  };
+
+  container.appendChild(btn);
+  document.body.appendChild(container);
 }
 
 export function setUIVisibility(visible: boolean) {
-  const toggle = document.getElementById("vtop-ui-toggle-container");
-  const host = document.getElementById("vtop-remastered-host");
-  const globalStyle = document.getElementById(
-    "vtop-remastered-global",
-  ) as HTMLStyleElement;
-
   if (visible) {
-    if (globalStyle) globalStyle.disabled = false;
+    document.body.classList.remove("show-legacy-ui");
     document.body.style.overflow = "hidden";
-    if (toggle) toggle.style.display = "none";
-    if (host) host.style.display = "block";
   } else {
-    if (globalStyle) globalStyle.disabled = true;
+    document.body.classList.add("show-legacy-ui");
     document.body.style.overflow = "auto";
-    if (toggle) toggle.style.display = "block";
-    if (host) host.style.display = "none";
   }
 }
 

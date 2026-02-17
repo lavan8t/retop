@@ -1,5 +1,4 @@
-import { renderDashboard } from "./pages/dashboard";
-import { renderLandingPage } from "./pages/landing";
+import { renderDashboard } from "./pages/app";
 import { renderLoginPage } from "./pages/login";
 import {
   injectGlobalStyles,
@@ -22,23 +21,17 @@ const init = async () => {
   await waitForTokens();
   initializeContainer();
 
-  const hasCaptcha = !!document.querySelector(".g-recaptcha");
-
   if (vtopContext.authId && vtopContext.csrf) {
     console.log("[VTOP Remastered] Session Active.");
     renderDashboard();
-  } else if (hasCaptcha && vtopContext.csrf) {
-    console.log("[VTOP Remastered] Login Page Detected.");
+  } else if (vtopContext.csrf) {
+    console.log("[VTOP Remastered] Directing to Login.");
     removeSplashScreen();
     renderLoginPage();
-  } else if (vtopContext.csrf) {
-    console.log("[VTOP Remastered] Landing Page Detected.");
-    removeSplashScreen();
-    renderLandingPage();
   } else {
-    console.warn("[VTOP Remastered] Unknown State. Rendering Landing.");
+    console.warn("[VTOP Remastered] Unknown State. Forcing Login Attempt.");
     removeSplashScreen();
-    renderLandingPage();
+    renderLoginPage();
   }
 };
 

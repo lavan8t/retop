@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "VTOP Extension",
-  "description": "Custom enhancements for VTOP.",
-  "version": "1.0.0",
+  "name": "re.top",
+  "description": "college portal made better.",
+  "version": "0.2.0",
 
   "permissions": [],
 

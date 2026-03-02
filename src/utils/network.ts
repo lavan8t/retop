@@ -44,23 +44,26 @@ export class VTOPNetwork {
     fetcher: () => Promise<string>,
     forceRefresh = false,
   ): Promise<string> {
+    // Automatically scope all cache keys to the current user to prevent data leaks on new logins
+    const userScopedKey = `${this.authorizedID}_${key}`;
+
     if (!forceRefresh) {
-      const cached = getCachedData<string>(key);
+      const cached = getCachedData<string>(userScopedKey);
       if (cached) {
         return cached;
       }
     }
 
-    console.log(`[VTOP Network] Fetching: ${key}`);
+    console.log(`[VTOP Network] Fetching: ${userScopedKey}`);
     try {
       const data = await fetcher();
 
       if (data && data.length > 50 && !data.includes("Invalid")) {
-        setCachedData(key, data);
+        setCachedData(userScopedKey, data);
       }
       return data;
     } catch (err) {
-      console.error(`[VTOP Network] Failed: ${key}`, err);
+      console.error(`[VTOP Network] Failed: ${userScopedKey}`, err);
       throw err;
     }
   }

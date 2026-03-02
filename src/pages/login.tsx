@@ -17,7 +17,7 @@ import {
   getAppRoot,
   injectScriptFile,
 } from "../utils/bridge";
-import { applyTheme } from "../utils/settings-store";
+import { applyTheme, useSettings } from "../utils/settings-store";
 
 const triggerStudentSetup = async (csrf: string) => {
   try {
@@ -88,6 +88,8 @@ const LoginPage = ({
     captcha: "",
   });
 
+  const { settings } = useSettings();
+
   useEffect(() => {
     const initSession = async () => {
       await triggerStudentSetup(csrfToken);
@@ -119,11 +121,6 @@ const LoginPage = ({
     const restoreHandler = () => setIsModernUI(true);
     window.addEventListener("vtop-restore-ui", restoreHandler);
     return () => window.removeEventListener("vtop-restore-ui", restoreHandler);
-  }, []);
-
-  useEffect(() => {
-    const saved = localStorage.getItem("vtop-remastered-settings");
-    if (saved) applyTheme(JSON.parse(saved));
   }, []);
 
   useEffect(() => {
@@ -181,19 +178,19 @@ const LoginPage = ({
   };
 
   return (
-    <div className="min-h-screen flex bg-white dark:bg-zinc-950 text-black dark:text-white overflow-hidden selection:bg-yellow-400 selection:text-black">
+    <div className="min-h-screen flex overflow-hidden selection:bg-yellow-400 selection:text-black">
       {/* LEFT SIDE */}
-      <div className="hidden lg:flex w-[45%] bg-blue-500 border-r-[6px] border-black flex-col justify-center p-12 relative">
+      <div className="hidden lg:flex w-[45%] bg-(--accent-base) border-r-[6px] border-(--border-main) flex-col justify-center p-12 relative">
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: "spring", stiffness: 120 }}
           className="relative z-10"
         >
-          <div className="text-[10rem] font-expanded font-black leading-none text-white drop-shadow-[10px_10px_0px_#000]">
+          <div className="text-[10rem] font-expanded font-black leading-none text-white drop-shadow-[10px_10px_0px_var(--border-main)]">
             re.
           </div>
-          <div className="bg-yellow-400 text-black inline-block px-8 py-3 border-4 border-black rounded-4xl -rotate-2 shadow-[8px_8px_0px_0px_#000] mt-4">
+          <div className="bg-yellow-400 text-black inline-block px-8 py-3 border-4 border-(--border-main) rounded-4xl -rotate-2 shadow-[8px_8px_0px_0px_var(--border-main)] mt-4">
             <span className="text-4xl font-expanded font-black uppercase italic tracking-tighter">
               retop
             </span>
@@ -213,22 +210,22 @@ const LoginPage = ({
       </div>
 
       {/* RIGHT SIDE */}
-      <div className="flex-1 flex items-center justify-center p-6 bg-zinc-50 dark:bg-zinc-950">
+      <div className="flex-1 flex items-center justify-center p-6 bg-(--bg-main)">
         <motion.div
           initial={{ y: 30, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="w-full max-w-md bg-white dark:bg-zinc-950 border-[5px] border-black rounded-[3rem] p-8 shadow-[16px_16px_0px_0px_#000]"
+          className="w-full max-w-md bg-(--bg-surface) border-[5px] border-(--border-main) rounded-[3rem] p-8 shadow-[16px_16px_0px_0px_var(--border-main)]"
         >
           <div className="mb-10">
             <h2 className="text-5xl font-expanded font-black uppercase tracking-tighter mb-2 italic">
               Terminal
             </h2>
-            <div className="h-3 w-32 bg-pink-500 border-2 border-black rounded-full shadow-[4px_4px_0px_0px_#000]"></div>
+            <div className="h-3 w-32 bg-pink-500 border-2 border-(--border-main) rounded-full shadow-[4px_4px_0px_0px_var(--border-main)]"></div>
           </div>
 
           <div className="space-y-8">
             <div className="relative">
-              <label className="absolute -top-4 left-6 bg-yellow-400 border-2 border-black px-3 py-0.5 text-xs font-expanded font-black uppercase z-10 rounded-lg shadow-[3px_3px_0px_0px_#000]">
+              <label className="absolute -top-4 left-6 bg-yellow-400 border-2 border-(--border-main) px-3 py-0.5 text-xs font-expanded font-black uppercase z-10 rounded-lg shadow-[3px_3px_0px_0px_var(--border-main)] text-black">
                 Identity
               </label>
               <div className="relative group">
@@ -239,14 +236,14 @@ const LoginPage = ({
                   onChange={(e) =>
                     handleInputChange("username", e.target.value)
                   }
-                  className="w-full bg-zinc-100 dark:bg-zinc-800 border-[3px] border-black rounded-3xl p-4 pl-6 font-expanded font-black text-xl outline-none focus:bg-white dark:focus:bg-black transition-all uppercase placeholder-zinc-400"
+                  className="w-full bg-(--bg-highlight) border-[3px] border-(--border-main) rounded-3xl p-4 pl-6 font-expanded font-black text-xl outline-none focus:bg-(--bg-surface) transition-all uppercase placeholder-(--text-muted) text-(--text-main)"
                 />
-                <User className="absolute right-6 top-1/2 -translate-y-1/2 w-6 h-6 text-black dark:text-white" />
+                <User className="absolute right-6 top-1/2 -translate-y-1/2 w-6 h-6 text-(--text-main)" />
               </div>
             </div>
 
             <div className="relative">
-              <label className="absolute -top-4 left-6 bg-pink-500 border-2 border-black px-3 py-0.5 text-xs font-expanded font-black uppercase z-10 text-white rounded-lg shadow-[3px_3px_0px_0px_#000]">
+              <label className="absolute -top-4 left-6 bg-pink-500 border-2 border-(--border-main) px-3 py-0.5 text-xs font-expanded font-black uppercase z-10 text-white rounded-lg shadow-[3px_3px_0px_0px_var(--border-main)]">
                 Access
               </label>
               <div className="relative group">
@@ -257,11 +254,11 @@ const LoginPage = ({
                   onChange={(e) =>
                     handleInputChange("password", e.target.value)
                   }
-                  className="w-full bg-zinc-100 dark:bg-zinc-800 border-[3px] border-black rounded-3xl p-4 pl-6 font-expanded font-black text-xl outline-none focus:bg-white dark:focus:bg-black transition-all placeholder-zinc-400"
+                  className="w-full bg-(--bg-highlight) border-[3px] border-(--border-main) rounded-3xl p-4 pl-6 font-expanded font-black text-xl outline-none focus:bg-(--bg-surface) transition-all placeholder-(--text-muted) text-(--text-main)"
                 />
                 <button
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-6 top-1/2 -translate-y-1/2 text-black dark:text-white hover:scale-110 transition-transform"
+                  className="absolute right-6 top-1/2 -translate-y-1/2 text-(--text-main) hover:scale-110 transition-transform"
                 >
                   {showPassword ? (
                     <EyeOff className="w-6 h-6" />
@@ -276,7 +273,7 @@ const LoginPage = ({
             {mode === "IMAGE" && (
               <div className="flex gap-4">
                 <div className="flex-1 relative">
-                  <label className="absolute -top-4 left-6 bg-lime-400 border-2 border-black px-3 py-0.5 text-xs font-expanded font-black uppercase z-10 rounded-lg shadow-[3px_3px_0px_0px_#000]">
+                  <label className="absolute -top-4 left-6 bg-lime-400 border-2 border-(--border-main) px-3 py-0.5 text-xs font-expanded font-black uppercase z-10 rounded-lg shadow-[3px_3px_0px_0px_var(--border-main)] text-black">
                     Captcha
                   </label>
                   <input
@@ -286,10 +283,10 @@ const LoginPage = ({
                     onChange={(e) =>
                       handleInputChange("captcha", e.target.value)
                     }
-                    className="w-full bg-zinc-100 dark:bg-zinc-800 border-[3px] border-black rounded-3xl p-4 pl-6 font-expanded font-black text-xl outline-none focus:bg-white uppercase"
+                    className="w-full bg-(--bg-highlight) border-[3px] border-(--border-main) rounded-3xl p-4 pl-6 font-expanded font-black text-xl outline-none focus:bg-(--bg-surface) uppercase text-(--text-main) placeholder-(--text-muted)"
                   />
                 </div>
-                <div className="w-36 h-20 border-[3px] border-black rounded-3xl overflow-hidden relative bg-white group shadow-[6px_6px_0px_0px_#000]">
+                <div className="w-36 h-20 border-[3px] border-(--border-main) rounded-3xl overflow-hidden relative bg-white group shadow-[6px_6px_0px_0px_var(--border-main)]">
                   {captchaSrc && (
                     <img
                       src={captchaSrc}
@@ -311,12 +308,12 @@ const LoginPage = ({
               onClick={handleAuthorize}
               disabled={isLoading}
               className={`
-                w-full border-[5px] border-black rounded-4xl py-5 text-3xl font-expanded font-black uppercase tracking-tighter
+                w-full border-[5px] border-(--border-main) rounded-4xl py-5 text-3xl font-expanded font-black uppercase tracking-tighter
                 flex items-center justify-center gap-4 transition-all relative
                 ${
                   isLoading
-                    ? "bg-zinc-400 cursor-not-allowed text-zinc-700 shadow-none"
-                    : "bg-blue-500 hover:bg-blue-400 text-white shadow-[8px_8px_0px_0px_#000] active:translate-x-1 active:translate-y-1 active:shadow-none"
+                    ? "bg-(--bg-highlight) cursor-not-allowed text-(--text-muted) shadow-none"
+                    : "bg-(--accent-base) hover:bg-(--accent-hover) text-white shadow-[8px_8px_0px_0px_var(--border-main)] active:translate-x-1 active:translate-y-1 active:shadow-none"
                 }
               `}
             >
@@ -344,14 +341,14 @@ const LoginPage = ({
             </button>
           </div>
 
-          <div className="mt-10 flex items-center justify-between border-t-[3px] border-black pt-6">
+          <div className="mt-10 flex items-center justify-between border-t-[3px] border-(--border-main) pt-6">
             <button
               onClick={() => setIsModernUI(false)}
-              className="bg-black text-white px-6 py-2 font-expanded font-black uppercase text-xs rounded-xl shadow-[4px_4px_0px_0px_#666] hover:bg-zinc-800 transition-all active:translate-y-1 active:shadow-none"
+              className="bg-(--text-main) text-(--bg-main) px-6 py-2 font-expanded font-black uppercase text-xs rounded-xl shadow-[4px_4px_0px_0px_var(--border-dim)] hover:opacity-80 transition-all active:translate-y-1 active:shadow-none"
             >
               Legacy View
             </button>
-            <div className="flex items-center gap-2 text-zinc-500 font-expanded font-black uppercase text-[10px] tracking-widest">
+            <div className="flex items-center gap-2 text-(--text-muted) font-expanded font-black uppercase text-[10px] tracking-widest">
               <ShieldCheck className="w-4 h-4 text-emerald-500" />
               <span>Secure retop Session</span>
             </div>

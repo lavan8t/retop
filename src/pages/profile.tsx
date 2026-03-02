@@ -21,9 +21,6 @@ interface ProfilePageProps {
   network: VTOPNetwork;
 }
 
-const CACHE_KEY = "vtop-profile-cache";
-const CACHE_DURATION = 24 * 60 * 60 * 1000;
-
 const InfoRow = ({ label, value }: { label: string; value: string }) => (
   <div className="flex flex-col border-b border-zinc-800 py-1.5 last:border-0 hover:bg-zinc-800/50 px-3 -mx-3 rounded transition-colors overflow-hidden">
     <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 mb-0.5 truncate">
@@ -83,7 +80,6 @@ const BentoCard = ({
     className={`bg-zinc-900 border-4 border-zinc-800 rounded-[2rem] p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,0.25)] hover:shadow-[10px_10px_0px_0px_rgba(0,0,0,0.25)] hover:-translate-y-0.5 transition-all flex flex-col min-w-0 ${colSpan} ${className}`}
   >
     {title && (
-      /* REDUCED PADDING: Changed mb-4 pb-3 to mb-1.5 pb-1 */
       <div className="flex items-center gap-3 mb-1.5 pb-1 border-b-4 border-zinc-800 shrink-0">
         <div className="p-1.5 bg-zinc-800 text-zinc-200 rounded-lg shadow-sm">
           <Icon className="w-3.5 h-3.5" />
@@ -103,34 +99,24 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
 
   useEffect(() => {
     const loadProfile = async () => {
-      const cached = localStorage.getItem(CACHE_KEY);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Date.now() - parsed.timestamp < CACHE_DURATION) {
-          setData(parsed.data);
-          setLoading(false);
-          return;
-        }
-      }
-
       try {
-        const html = await network.fetchFragment(
-          "studentsRecord/StudentProfileAllView",
+        // Automatically uses the authorizedID scoped cache from network.ts
+        const html = await network.fetchWithCache(
+          "student_profile_data",
+          async () =>
+            await network.fetchFragment("studentsRecord/StudentProfileAllView"),
         );
         const parsedData = parseStudentProfile(html);
         setData(parsedData);
-        localStorage.setItem(
-          CACHE_KEY,
-          JSON.stringify({ timestamp: Date.now(), data: parsedData }),
-        );
       } catch (e) {
-        console.error(e);
+        console.error("Failed to load profile data:", e);
       } finally {
         setLoading(false);
       }
     };
+
     loadProfile();
-  }, []);
+  }, [network]);
 
   if (loading) {
     return (

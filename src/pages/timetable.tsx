@@ -3,12 +3,13 @@ import { TimetableCourse } from "../types/vtop";
 import { Layers, Loader2 } from "lucide-react";
 import { TimetableGrid } from "../components/timetable/TimetableGrid";
 import { TimetableList } from "../components/timetable/TimetableList";
+import { TimetableWeek } from "../components/timetable/TimetableWeek";
 import { motion } from "framer-motion";
 
 interface TimetableContentViewProps {
   courses: TimetableCourse[];
   loading: boolean;
-  viewMode: "grid" | "list";
+  viewMode: "grid" | "list" | "week";
 }
 
 export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
@@ -46,8 +47,10 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
         >
           {viewMode === "grid" ? (
             <TimetableGrid courses={courses} />
-          ) : (
+          ) : viewMode === "list" ? (
             <TimetableList courses={courses} />
+          ) : (
+            <TimetableWeek courses={courses} />
           )}
         </motion.div>
       )}

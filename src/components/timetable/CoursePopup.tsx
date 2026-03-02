@@ -1,24 +1,66 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { TimetableCourse } from "../../types/vtop";
-import { X, MapPin, User, Clock, Layers, GraduationCap } from "lucide-react";
+import { X, MapPin, User, Clock, GraduationCap } from "lucide-react";
 
 interface CoursePopupProps {
   course: TimetableCourse | null;
+  position: { x: number; y: number } | null;
   onClose: () => void;
 }
 
 export const CoursePopup: React.FC<CoursePopupProps> = ({
   course,
+  position,
   onClose,
 }) => {
   const [active, setActive] = useState(false);
+  const popupRef = useRef<HTMLDivElement>(null);
+  const [adjustedPosition, setAdjustedPosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
-    if (course) requestAnimationFrame(() => setActive(true));
-    else setActive(false);
-  }, [course]);
+    if (course && position && popupRef.current) {
+      // Calculate position to keep within bounds
+      // We assume standard viewport
+      // Measure actual height if potential, or fallback
+      const popupWidth = 320;
+      const popupHeight = popupRef.current.offsetHeight || 300;
+      const padding = 16;
 
-  if (!course) return null;
+      let x = position.x;
+      let y = position.y;
+
+      // Horizontal bounds
+      if (x + popupWidth > window.innerWidth - padding) {
+        x = window.innerWidth - popupWidth - padding;
+      }
+      if (x < padding) {
+        x = padding;
+      }
+
+      // Vertical bounds
+      // Only constrain if it TRULY overflows.
+      // If y is large, it means we clicked near bottom.
+      if (y + popupHeight > window.innerHeight - padding) {
+        // Only flip if there is space above? Or just clamp?
+        // Let's clamp to bottom edge
+        y = window.innerHeight - popupHeight - padding;
+      }
+
+      // If clamping makes it go too high (negative top), verify
+      if (y < padding) {
+        // If it's too tall, maybe we should just scroll it or let it be?
+        // For now, prioritize top visibility
+        y = padding;
+      }
+
+      setAdjustedPosition({ x, y });
+      requestAnimationFrame(() => setActive(true));
+    } else {
+      setActive(false);
+    }
+  }, [course, position]);
+
+  if (!course || !position) return null;
 
   const isLab = course.type.includes("Lab");
   const colors = isLab
@@ -36,90 +78,95 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
       };
 
   return (
-    <div
-      className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-[2px] transition-opacity duration-300"
-      onClick={onClose}
-    >
+    <>
       <div
+        ref={popupRef}
         onClick={(e) => e.stopPropagation()}
+        style={{
+          top: adjustedPosition.y,
+          left: adjustedPosition.x,
+        }}
         className={`
-            relative w-full max-w-md bg-zinc-900 border-4 ${colors.border} 
-            rounded-[2rem] shadow-[0px_20px_60px_rgba(0,0,0,0.8)] overflow-hidden
-            transform transition-all duration-[400ms] ease-[cubic-bezier(0.34,1.56,0.64,1)]
-            ${active ? "scale-100 opacity-100 translate-y-0" : "scale-90 opacity-0 translate-y-8"}
+            fixed z-50 w-72 bg-zinc-900 border-2 ${colors.border} 
+            rounded-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] overflow-hidden
+            transform transition-all duration-[300ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] origin-top-left
+            ${active ? "scale-100 opacity-100" : "scale-90 opacity-0"}
         `}
       >
         <div
-          className={`${colors.bg} p-6 border-b-4 border-zinc-800 relative overflow-hidden`}
+          className={`${colors.bg} p-3 border-b-2 border-zinc-800 relative overflow-hidden`}
         >
           <div className="relative z-10 flex justify-between items-start gap-4">
             <div>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-1">
                 <span
-                  className={`px-2 py-0.5 rounded-lg border-2 ${colors.border} bg-black/30 text-[10px] font-black uppercase tracking-widest text-white`}
+                  className={`px-1.5 py-0.5 rounded border ${colors.border} bg-black/30 text-[9px] font-black uppercase tracking-widest text-white`}
                 >
                   {course.code}
                 </span>
                 <span
-                  className={`text-[10px] font-bold uppercase tracking-wide opacity-80 ${colors.text}`}
+                  className={`text-[9px] font-bold uppercase tracking-wide opacity-80 ${colors.text}`}
                 >
                   {course.type}
                 </span>
               </div>
-              <h2 className="text-xl font-black font-expanded text-white leading-tight">
+              <h2 className="text-sm font-black font-expanded text-white leading-tight break-words">
                 {course.title}
               </h2>
             </div>
             <button
               onClick={onClose}
-              className="p-2 bg-black/20 hover:bg-black/40 rounded-full text-white transition-colors border-2 border-transparent hover:border-white/20"
+              className="p-1.5 bg-black/20 hover:bg-black/40 rounded-full text-white transition-colors border border-transparent hover:border-white/20 shrink-0"
             >
-              <X className="w-5 h-5" />
+              <X className="w-3 h-3" />
             </button>
           </div>
         </div>
 
-        <div className="p-6 space-y-4 bg-zinc-900">
-          <div className="flex items-center gap-4 p-4 bg-zinc-950 rounded-2xl border-2 border-zinc-800">
+        <div className="p-3 space-y-2 bg-zinc-900">
+          <div className="flex items-center gap-3 p-2 bg-zinc-950 rounded-xl border border-zinc-800">
             <div
-              className={`w-12 h-12 rounded-xl bg-zinc-900 flex items-center justify-center border-2 border-zinc-800 ${colors.icon}`}
+              className={`w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center border border-zinc-800 ${colors.icon}`}
             >
-              <User className="w-6 h-6" />
+              <User className="w-4 h-4" />
             </div>
-            <div className="min-w-0">
-              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-0.5">
+            <div className="min-w-0 flex-1">
+              <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-0.5">
                 Faculty
               </p>
-              <p className="text-white font-bold text-sm truncate">
+              <p
+                className="text-white font-bold text-xs truncate"
+                title={course.faculty}
+              >
                 {course.faculty}
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-4 bg-zinc-950 rounded-2xl border-2 border-zinc-800">
-              <div className="flex items-center gap-2 text-zinc-500 text-[10px] font-bold uppercase mb-1">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="p-2 bg-zinc-950 rounded-xl border border-zinc-800">
+              <div className="flex items-center gap-1.5 text-zinc-500 text-[9px] font-bold uppercase mb-1">
                 <MapPin className="w-3 h-3" /> Venue
               </div>
-              <p className="text-white font-black text-lg">{course.venue}</p>
+              <p className="text-white font-black text-xs">{course.venue}</p>
             </div>
-            <div className="p-4 bg-zinc-950 rounded-2xl border-2 border-zinc-800">
-              <div className="flex items-center gap-2 text-zinc-500 text-[10px] font-bold uppercase mb-1">
+            <div className="p-2 bg-zinc-950 rounded-xl border border-zinc-800">
+              <div className="flex items-center gap-1.5 text-zinc-500 text-[9px] font-bold uppercase mb-1">
                 <GraduationCap className="w-3 h-3" /> Credits
               </div>
-              <p className="text-white font-black text-lg">{course.credits}</p>
+              <p className="text-white font-black text-xs">{course.credits}</p>
             </div>
           </div>
 
-          <div className="p-4 bg-zinc-950 rounded-2xl border-2 border-zinc-800">
-            <div className="flex items-center gap-2 text-zinc-500 text-[10px] font-bold uppercase mb-3">
-              <Clock className="w-3 h-3" /> Registered Slots
+          <div className="p-2 bg-zinc-950 rounded-xl border border-zinc-800">
+            <div className="flex items-center gap-1.5 text-zinc-500 text-[9px] font-bold uppercase mb-2">
+              <Clock className="w-3 h-3" /> Slots
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1">
               {course.slot.split("+").map((s, i) => (
                 <span
                   key={i}
-                  className={`text-xs font-bold px-3 py-1.5 rounded-lg border-2 ${colors.border} bg-black/20 ${colors.text}`}
+                  className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${colors.border} bg-black/20 ${colors.text}`}
                 >
                   {s}
                 </span>
@@ -128,6 +175,6 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };

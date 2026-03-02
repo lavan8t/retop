@@ -25,91 +25,112 @@ export function parseSemesters(html: string): Semester[] {
 export function parseTimetable(html: string): TimetableCourse[] {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, "text/html");
-  const rows = doc.querySelectorAll("table tr");
+
   const courses: TimetableCourse[] = [];
+
+  // 1. Safely find the registered courses table by locating its unique column header.
+  // This absolutely guarantees we never accidentally parse the visual timetable grid.
+  const headers = Array.from(doc.querySelectorAll("th"));
+  const classGroupHeader = headers.find((th) =>
+    th.textContent?.includes("Class Group"),
+  );
+
+  if (!classGroupHeader) return courses;
+
+  const courseTable = classGroupHeader.closest("table");
+  if (!courseTable) return courses;
+
+  const rows = courseTable.querySelectorAll("tr");
 
   rows.forEach((row) => {
     const cells = Array.from(row.querySelectorAll("td"));
-    if (cells.length < 5) return;
 
-    let mainCellIdx = -1;
-    let mainText = "";
+    // 2. Standard VTOP registered course rows always have exactly 12 columns.
+    if (cells.length !== 12) return;
 
-    for (let i = 0; i < cells.length; i++) {
-      const txt = cells[i].innerText.trim();
-      if (/^[A-Z]{3,4}\d{3}[A-Z0-9]*\s*-\s*.+/.test(txt)) {
-        mainCellIdx = i;
-        mainText = txt;
-        break;
-      }
-    }
+    // Helper to safely extract and heavily clean text content (fixes random newlines)
+    const getText = (index: number) => {
+      const raw = cells[index]?.textContent || "";
+      return raw
+        .replace(/[\r\n]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    };
 
-    if (mainCellIdx === -1) return;
-
+    // Col 2: Course Details
+    const rawCourse = getText(2);
     let code = "",
       title = "",
       type = "Theory";
-    const typeMatch = mainText.match(
-      /^([A-Z0-9]+)\s*-\s*(.+?)\s*\(\s*(.+?)\s*\)$/,
+
+    // Matches structures like "BCSE103E - Computer Programming: Java ( Embedded Theory )"
+    const courseMatch = rawCourse.match(
+      /^([a-zA-Z0-9]+)\s*-\s*(.+?)\s*\(\s*(.+?)\s*\)$/i,
     );
-    if (typeMatch) {
-      code = typeMatch[1];
-      title = typeMatch[2];
-      type = typeMatch[3];
+    if (courseMatch) {
+      code = courseMatch[1].trim();
+      title = courseMatch[2].trim();
+      type = courseMatch[3].trim();
     } else {
-      const simpleMatch = mainText.match(/^([A-Z0-9]+)\s*-\s*(.+)$/);
-      if (simpleMatch) {
-        code = simpleMatch[1];
-        title = simpleMatch[2];
+      // Fallback for courses without the parenthetical type
+      const fallbackMatch = rawCourse.match(/^([a-zA-Z0-9]+)\s*-\s*(.+)$/i);
+      if (fallbackMatch) {
+        code = fallbackMatch[1].trim();
+        title = fallbackMatch[2].trim();
       } else {
-        return;
+        return; // Not a valid course string
       }
     }
 
-    const credits = cells[mainCellIdx + 1]?.innerText.trim() || "0";
-    const category = cells[mainCellIdx + 2]?.innerText.trim() || "N/A";
+    // Col 3: Credits (e.g., "3 0 0 0 3.0" -> We want "3.0")
+    const rawCredits = getText(3);
+    const credits = rawCredits.split(" ").pop() || "0";
 
-    let slot = "N/A";
-    let venue = "N/A";
-    let faculty = "N/A";
-    let status = "Registered";
+    // Col 4: Category
+    const category = getText(4);
 
-    for (let i = mainCellIdx + 3; i < cells.length; i++) {
-      const txt = cells[i].innerText.trim();
-      if (txt.includes("-") && !txt.includes(code)) {
-        const parts = txt.split("-");
-        const firstPart = parts[0].trim();
+    // Col 6: Class ID
+    const classId = getText(6);
 
-        if (/^[A-Z]+\d+(\+[A-Z]+\d+)*$/.test(firstPart)) {
-          slot = firstPart;
-          venue = parts[1]?.trim() || "N/A";
-          if (cells[i + 1]) {
-            faculty = cells[i + 1].innerText.split("-")[0].trim();
-          }
-          break;
-        }
-      }
+    // Col 7: Slot / Venue (e.g. "TG1 - PRP332" or "NIL - NIL")
+    const rawSlotVenue = getText(7);
+    let slot = "N/A",
+      venue = "N/A";
+    const svParts = rawSlotVenue.split("-");
+
+    if (svParts.length >= 2) {
+      slot = svParts[0].trim();
+      const rawVenue = svParts.slice(1).join("-").trim();
+      venue = rawVenue.replace(/NIL/gi, "").trim() || "N/A"; // Clean out 'NIL' venues
+    } else {
+      slot = rawSlotVenue;
     }
 
-    const lastTxt = cells[cells.length - 1]?.innerText.trim();
-    if (lastTxt) status = lastTxt;
+    // Col 8: Faculty Details
+    const rawFaculty = getText(8);
+    const faculty = rawFaculty.split("-")[0].trim();
 
+    // Col 11: Status
+    const status = getText(11);
+
+    // Filter out dropped/withdrawn courses
     if (
       status.toUpperCase().includes("DROP") ||
       status.toUpperCase().includes("WITHDRAWN")
-    )
+    ) {
       return;
+    }
 
     courses.push({
       code,
       title,
       type,
-      credits: credits.split(" ").pop() || "0",
+      credits,
       category,
       slot,
       venue,
       faculty,
-      classId: "N/A",
+      classId,
       status,
     });
   });

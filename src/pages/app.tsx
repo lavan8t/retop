@@ -19,6 +19,7 @@ import {
   parseCourseDetails,
 } from "../parsers/dashboard";
 import { parseSemesters, parseTimetable } from "../parsers/timetable";
+import { parseStudentProfile } from "../parsers/profile";
 import {
   QuickLink,
   MenuCategory,
@@ -33,7 +34,12 @@ import {
   Loader2,
   LayoutGrid,
   List,
+  Calendar,
   RefreshCw,
+  BookOpen,
+  GraduationCap,
+  User,
+  Settings,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -63,7 +69,7 @@ type ViewType =
 const getPageTitle = (view: ViewType, dynamicTitle?: string) => {
   switch (view) {
     case "dashboard":
-      return "HOME";
+      return "re.";
     case "timetable":
       return "TIMETABLE";
     case "curriculum":
@@ -148,7 +154,9 @@ const DashboardApp = () => {
   const [ttSelectedSem, setTtSelectedSem] = useState("");
   const [ttCourses, setTtCourses] = useState<TimetableCourse[]>([]);
   const [ttLoading, setTtLoading] = useState(true);
-  const [ttViewMode, setTtViewMode] = useState<"grid" | "list">("grid");
+  const [ttViewMode, setTtViewMode] = useState<"grid" | "list" | "week">(
+    "grid",
+  );
 
   const [pageContent, setPageContent] = useState("");
 
@@ -180,6 +188,7 @@ const DashboardApp = () => {
     setUser(userProfile);
 
     fetchData().then(() => setTimeout(() => removeSplashScreen(), 500));
+    fetchUserProfile();
 
     let attempts = 0;
     const menuPoller = setInterval(() => {
@@ -197,7 +206,8 @@ const DashboardApp = () => {
     const handleKeys = (e: KeyboardEvent) => {
       if (
         e.key === "/" &&
-        !["INPUT", "TEXTAREA"].includes((e.target as HTMLElement).tagName)
+        !["INPUT", "TEXTAREA"].includes((e.target as HTMLElement).tagName) &&
+        currentView !== "dashboard"
       ) {
         e.preventDefault();
         setIsOmniboxOpen(true);
@@ -213,7 +223,7 @@ const DashboardApp = () => {
       window.removeEventListener("keydown", handleKeys);
       window.removeEventListener("vtop-restore-ui", restoreHandler);
     };
-  }, []);
+  }, [currentView]);
 
   useEffect(() => {
     setUIVisibility(isModernUI);
@@ -230,6 +240,31 @@ const DashboardApp = () => {
       setAvgAttendance("N/A");
     }
   }, [attendance]);
+
+  const fetchUserProfile = async () => {
+    if (!networkRef.current) return;
+    try {
+      const html = await networkRef.current.fetchWithCache(
+        "student_profile_data",
+        async () => {
+          return await networkRef.current!.fetchFragment(
+            "studentsRecord/StudentProfileAllView",
+          );
+        },
+      );
+
+      const profile = parseStudentProfile(html);
+      if (profile?.basic?.name) {
+        setUser((prev) => ({
+          ...prev,
+          name: profile.basic.name,
+          regNo: profile.basic.regNo || prev.regNo,
+        }));
+      }
+    } catch (err) {
+      console.warn("Failed to silently fetch user profile for name", err);
+    }
+  };
 
   const fetchData = async () => {
     if (!networkRef.current) return;
@@ -352,9 +387,64 @@ const DashboardApp = () => {
     }
   };
 
+  const favoriteLinks = [
+    {
+      title: "Time Table",
+      url: "studenttimetable",
+      category: "Core",
+      icon: Calendar,
+      color: "bg-purple-400",
+    },
+    {
+      title: "Curriculum",
+      url: "curriculum",
+      category: "Core",
+      icon: BookOpen,
+      color: "bg-blue-400",
+    },
+    {
+      title: "Marks",
+      url: "mark",
+      category: "Core",
+      icon: GraduationCap,
+      color: "bg-lime-400",
+    },
+    {
+      title: "Profile",
+      url: "studentprofileallview",
+      category: "Core",
+      icon: User,
+      color: "bg-yellow-400",
+    },
+    {
+      title: "Settings",
+      url: "#settings",
+      category: "System",
+      icon: Settings,
+      color: "bg-pink-400",
+    },
+  ];
+
   const renderNavbarRight = () => {
     return (
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
+        {/* Favorites inside Navbar on Dashboard */}
+        {currentView === "dashboard" && (
+          <div className="hidden xl:flex items-center gap-2.5 mr-4">
+            {favoriteLinks.map((link, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleLinkClick(link as QuickLink)}
+                className={`flex items-center gap-2 px-3.5 py-1.5 border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_#000] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_#000] active:translate-y-0 active:shadow-none transition-all font-black font-expanded text-xs tracking-wide uppercase text-black ${link.color}`}
+              >
+                <link.icon className="w-4 h-4" />
+                <span>{link.title}</span>
+              </button>
+            ))}
+            <div className="w-1 h-8 bg-zinc-800 rounded-full mx-2"></div>
+          </div>
+        )}
+
         {currentView === "timetable" && (
           <motion.div
             initial={{ opacity: 0, x: 20 }}
@@ -369,36 +459,44 @@ const DashboardApp = () => {
               selectedId={ttSelectedSem}
               onChange={loadTimetable}
             />
-            <div className="flex bg-zinc-900 border-2 border-zinc-700 rounded-xl p-1 gap-1">
+            <div className="flex bg-(--bg-surface) border-2 border-[var(--border-dim)] rounded-xl p-1 gap-1">
               <button
                 onClick={() => setTtViewMode("grid")}
-                className={`p-1.5 rounded-lg transition-all ${ttViewMode === "grid" ? "bg-blue-500 text-white shadow-sm" : "text-zinc-500 hover:text-white hover:bg-zinc-800"}`}
+                className={`p-1.5 rounded-lg transition-all ${ttViewMode === "grid" ? "bg-[var(--accent-base)] text-white shadow-sm" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-highlight)]"}`}
               >
                 <LayoutGrid className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setTtViewMode("list")}
-                className={`p-1.5 rounded-lg transition-all ${ttViewMode === "list" ? "bg-blue-500 text-white shadow-sm" : "text-zinc-500 hover:text-white hover:bg-zinc-800"}`}
+                className={`p-1.5 rounded-lg transition-all ${ttViewMode === "list" ? "bg-[var(--accent-base)] text-white shadow-sm" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-highlight)]"}`}
               >
                 <List className="w-4 h-4" />
               </button>
+              <button
+                onClick={() => setTtViewMode("week")}
+                className={`p-1.5 rounded-lg transition-all ${ttViewMode === "week" ? "bg-[var(--accent-base)] text-white shadow-sm" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-highlight)]"}`}
+              >
+                <Calendar className="w-4 h-4" />
+              </button>
             </div>
-            <div className="w-0.5 h-8 bg-zinc-800 mx-1"></div>
+            <div className="w-0.5 h-8 bg-[var(--border-dim)] mx-1"></div>
           </motion.div>
         )}
 
-        <button
-          onClick={() => setIsOmniboxOpen(true)}
-          className="hidden lg:flex items-center gap-3 px-3 py-2 bg-zinc-900 border-2 border-zinc-800 rounded-full text-zinc-400 hover:border-blue-500 hover:text-white transition-all group shadow-lg active:scale-95"
-        >
-          <Menu className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-          <span className="font-bold text-xs tracking-widest uppercase">
-            Menu
-          </span>
-          <kbd className="ml-2 font-mono bg-zinc-800 text-zinc-400 px-2 py-0.5 text-[10px] rounded-lg border border-zinc-700 group-hover:text-white group-hover:border-zinc-600">
-            /
-          </kbd>
-        </button>
+        {currentView !== "dashboard" && (
+          <button
+            onClick={() => setIsOmniboxOpen(true)}
+            className="hidden lg:flex items-center gap-3 px-3 py-2 bg-(--bg-surface) border-2 border-(--border-main) rounded-full text-[var(--text-muted)] hover:border-[var(--accent-base)] hover:text-[var(--text-main)] transition-all group shadow-lg active:scale-95"
+          >
+            <Menu className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+            <span className="font-bold text-xs tracking-widest uppercase">
+              Menu
+            </span>
+            <kbd className="ml-2 font-mono bg-[var(--bg-highlight)] text-[var(--text-muted)] px-2 py-0.5 text-[10px] rounded-lg border border-[var(--border-dim)] group-hover:text-[var(--text-main)] group-hover:border-(--border-main)">
+              /
+            </kbd>
+          </button>
+        )}
 
         <div className="relative">
           <button
@@ -406,11 +504,16 @@ const DashboardApp = () => {
             className="flex items-center gap-3 focus:outline-none group"
           >
             <div className="text-right hidden sm:block">
-              <div className="text-sm font-bold text-zinc-200 uppercase tracking-wider group-hover:text-blue-400 transition-colors">
-                {user.regNo}
+              <div className="text-sm font-bold text-[var(--text-main)] uppercase tracking-wider group-hover:text-[var(--accent-hover)] transition-colors">
+                {user.name !== "Student" ? user.name : user.regNo}
               </div>
+              {user.name !== "Student" && (
+                <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest font-bold -mt-0.5">
+                  {user.regNo}
+                </div>
+              )}
             </div>
-            <div className="w-10 h-10 border-2 border-blue-500 rounded-full overflow-hidden bg-zinc-800 shadow-[0px_0px_10px_rgba(59,130,246,0.5)] group-hover:shadow-[0px_0px_15px_rgba(59,130,246,0.8)] group-hover:scale-105 transition-all duration-300">
+            <div className="w-10 h-10 border-2 border-[var(--accent-base)] rounded-full overflow-hidden bg-[var(--bg-highlight)] shadow-[0px_0px_10px_var(--accent-base)] group-hover:shadow-[0px_0px_15px_var(--accent-hover)] group-hover:scale-105 transition-all duration-300">
               <img
                 src={`/vtop/users/image/?id=${user.regNo}`}
                 className="w-full h-full object-cover"
@@ -439,10 +542,11 @@ const DashboardApp = () => {
             showProgress={settings.showSemesterProgress}
             stats={stats}
             attendance={attendance}
-            avgAttendance={avgAttendance}
             assignments={assignments}
             upcoming={upcoming}
             dayName={getCorrectDayName(new Date())}
+            menuCategories={menu}
+            onNavigate={handleLinkClick}
           />
         );
       case "timetable":
@@ -481,16 +585,16 @@ const DashboardApp = () => {
             exit={{ opacity: 0, y: -10 }}
             className="h-full overflow-y-auto custom-scrollbar px-4 md:px-8 py-8 max-w-[1600px] mx-auto"
           >
-            <div className="bg-zinc-900 border-4 border-zinc-800 rounded-[2rem] shadow-sm min-h-[80vh] flex flex-col relative overflow-hidden">
+            <div className="bg-(--bg-surface) border-4 border-(--border-main) rounded-[2rem] shadow-sm min-h-[80vh] flex flex-col relative overflow-hidden">
               <div className="flex-1 p-6 lg:p-8 overflow-x-auto">
                 {pageContent ? (
                   <div
-                    className="legacy-content-wrapper text-zinc-300 font-sans"
+                    className="legacy-content-wrapper text-[var(--text-main)] font-sans"
                     dangerouslySetInnerHTML={{ __html: pageContent }}
                   />
                 ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-zinc-500 font-mono animate-pulse">
-                    <Loader2 className="w-16 h-16 text-blue-500 animate-spin mb-4" />
+                  <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] font-mono animate-pulse">
+                    <Loader2 className="w-16 h-16 text-[var(--accent-base)] animate-spin mb-4" />
                     <span className="text-xl font-bold font-expanded mb-0">
                       FETCHING DATA STREAM...
                     </span>
@@ -510,7 +614,7 @@ const DashboardApp = () => {
 
   return (
     <div
-      className={`min-h-screen font-mono selection:bg-blue-500 selection:text-white flex flex-col transition-all duration-300 ${isModernUI ? "bg-zinc-950 text-slate-200 opacity-100 pointer-events-auto" : "bg-transparent text-transparent opacity-0 pointer-events-none"}`}
+      className={`h-screen font-mono selection:bg-blue-500 selection:text-white flex flex-col transition-all duration-300 overflow-hidden ${isModernUI ? "opacity-100 pointer-events-auto" : "bg-transparent text-transparent opacity-0 pointer-events-none"}`}
       style={
         !isModernUI && isOmniboxOpen
           ? {
@@ -530,7 +634,7 @@ const DashboardApp = () => {
       <div
         className={`flex flex-col h-full ${!isModernUI ? "hidden" : "flex"}`}
       >
-        <header className="h-20 bg-zinc-950 border-b-4 border-zinc-800 sticky top-0 z-[100] px-6 md:px-8 flex items-center justify-between shadow-xl shrink-0">
+        <header className="h-20 bg-[var(--bg-main)] border-b-4 border-(--border-main) sticky top-0 z-[100] px-6 md:px-8 flex items-center justify-between shadow-xl shrink-0">
           <div
             className="flex items-center gap-4 group cursor-pointer h-full"
             onClick={() => setCurrentView("dashboard")}
@@ -543,7 +647,7 @@ const DashboardApp = () => {
                   e.stopPropagation();
                   setCurrentView("dashboard");
                 }}
-                className="w-10 h-10 flex items-center justify-center bg-zinc-900 border-2 border-zinc-700 rounded-lg text-zinc-400 hover:text-white hover:border-blue-500 transition-all active:scale-90"
+                className="w-10 h-10 flex items-center justify-center bg-(--bg-surface) border-2 border-[var(--border-dim)] rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:border-[var(--accent-base)] transition-all active:scale-90 shrink-0"
               >
                 <ArrowLeft className="w-5 h-5" />
               </motion.button>
@@ -551,7 +655,7 @@ const DashboardApp = () => {
             <div className="flex flex-col justify-center h-full gap-0.5">
               <div className="flex items-center gap-3">
                 <div className="relative group/logo">
-                  <div className="w-8 h-8 bg-blue-500 border-2 border-black text-black flex items-center justify-center font-expanded font-black text-lg rounded-lg shadow-[2px_2px_0px_0px_#fff] mb-0">
+                  <div className="w-8 h-8 bg-[var(--accent-base)] border-2 border-(--border-main) text-white flex items-center justify-center font-expanded font-black text-lg rounded-lg shadow-[2px_2px_0px_0px_var(--text-main)] mb-0">
                     V
                   </div>
                   <span className="absolute -top-1 -right-1 flex h-3 w-3">
@@ -559,21 +663,21 @@ const DashboardApp = () => {
                       className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${statusColor}`}
                     ></span>
                     <span
-                      className={`relative inline-flex rounded-full h-3 w-3 border-2 border-black ${statusColor}`}
+                      className={`relative inline-flex rounded-full h-3 w-3 border-2 border-(--border-main) ${statusColor}`}
                     ></span>
                   </span>
-                  <div className="absolute left-1/2 top-full mt-3 -translate-x-1/2 px-2.5 py-1 bg-zinc-800 text-zinc-200 text-[9px] font-bold uppercase tracking-widest rounded-md border border-zinc-700 opacity-0 group-hover/logo:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-[100] shadow-xl">
+                  <div className="absolute left-1/2 top-full mt-3 -translate-x-1/2 px-2.5 py-1 bg-[var(--bg-highlight)] text-[var(--text-main)] text-[9px] font-bold uppercase tracking-widest rounded-md border border-[var(--border-dim)] opacity-0 group-hover/logo:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-[100] shadow-xl">
                     {status}
-                    <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-zinc-800 border-t border-l border-zinc-700 rotate-45"></div>
+                    <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[var(--bg-highlight)] border-t border-l border-[var(--border-dim)] rotate-45"></div>
                   </div>
                 </div>
 
-                <h1 className="font-expanded font-black text-3xl text-zinc-200 tracking-tight uppercase truncate max-w-[50vw] leading-none mt-1 mb-0">
+                <h1 className="font-expanded font-black text-3xl text-[var(--text-main)] tracking-tight uppercase truncate max-w-[200px] sm:max-w-[40vw] leading-none mt-1 mb-0">
                   {getPageTitle(currentView, contentTitle)}
                 </h1>
               </div>
               {currentView === "timetable" ? (
-                <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5 ml-11 mb-0">
+                <p className="text-[9px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-0.5 ml-11 mb-0">
                   {ttCourses.length} COURSES REGISTERED
                 </p>
               ) : null}
@@ -585,7 +689,7 @@ const DashboardApp = () => {
           <AnimatePresence mode="wait">
             <motion.div
               key={currentView}
-              className="h-full w-full"
+              className="h-full w-full flex flex-col"
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}

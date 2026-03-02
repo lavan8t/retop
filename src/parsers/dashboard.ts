@@ -23,32 +23,47 @@ export function parseProctorMessage(html: string) {
 }
 
 export function parseDigitalAssignments(html: string): Assignment[] {
-  if (!html || html.includes("No Data") || html.includes("No Records"))
+  if (
+    !html ||
+    html.includes("No Data") ||
+    html.includes("No Records") ||
+    html.trim() === ""
+  )
     return [];
 
   const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
-  const rows = doc.querySelectorAll("table tr");
+  // VTOP's HTML sometimes has malformed tags like <<td, so we sanitize it slightly
+  const cleanHtml = html.replace(/<</g, "<");
+  const doc = parser.parseFromString(cleanHtml, "text/html");
+
+  // Target rows specifically inside the tbody to avoid the header <tr>
+  const rows = doc.querySelectorAll("table tbody tr");
   const assignments: Assignment[] = [];
 
-  for (let i = 1; i < rows.length; i++) {
-    const row = rows[i] as Element;
+  rows.forEach((row) => {
     const cols = row.querySelectorAll("td");
-    if (cols.length < 5) continue;
 
-    const code = cols[1]?.textContent?.trim();
-    const courseName = cols[2]?.textContent?.trim();
-    const title = cols[3]?.textContent?.trim();
-    const dueDate = cols[4]?.textContent?.trim();
+    // According to the new HTML structure:
+    // th[0] = Index (#) -> Ignored by querySelectorAll("td")
+    // td[0] = Course Name
+    // td[1] = Title
+    // td[2] = Last Date
+
+    if (cols.length < 3) return;
+
+    const courseName = cols[0]?.textContent?.trim() || "";
+    const title = cols[1]?.textContent?.trim() || "";
+    const dueDate = cols[2]?.textContent?.trim() || "";
 
     if (title && dueDate) {
       assignments.push({
-        course: `${code} - ${courseName}`,
+        course: courseName,
         title,
         dueDate,
       });
     }
-  }
+  });
+
   return assignments;
 }
 

@@ -1,5 +1,5 @@
 import React from "react";
-import { AppSettings } from "../utils/settings-store";
+import { AppSettings, resetDynamicThemeSeed } from "../utils/settings-store";
 import {
   Monitor,
   Moon,
@@ -32,11 +32,11 @@ const NeoSection = ({ title, icon: Icon, children }: any) => (
   >
     <div className="flex items-center gap-4">
       {/* Icon Container */}
-      <div className="p-3 bg-blue-500 border-4 border-zinc-800 shadow-[4px_4px_0px_0px_var(--border-main)] rounded-xl">
+      <div className="p-3 bg-(--accent-base) border-4 border-(--border-main) shadow-[4px_4px_0px_0px_var(--border-main)] rounded-xl">
         <Icon className="w-6 h-6 text-white" />
       </div>
       {/* Title */}
-      <h2 className="text-3xl font-black font-expanded text-zinc-200 uppercase tracking-tighter drop-shadow-sm">
+      <h2 className="text-3xl font-black font-expanded text-(--text-main) uppercase tracking-tighter drop-shadow-sm">
         {title}
       </h2>
     </div>
@@ -47,8 +47,8 @@ const NeoSection = ({ title, icon: Icon, children }: any) => (
 const NeoCard = ({ children, className = "" }: any) => (
   <div
     className={`
-    bg-zinc-900 border-4 border-zinc-800 rounded-4xl p-6 
-    shadow-[8px_8px_0px_0px_rgba(0,0,0,0.3)] hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,0.4)]
+    bg-(--bg-surface) border-4 border-(--border-main) rounded-4xl p-6 
+    shadow-[8px_8px_0px_0px_var(--border-main)] hover:shadow-[12px_12px_0px_0px_var(--border-main)]
     hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group
     ${className}
   `}
@@ -67,8 +67,8 @@ const DiamondToggle = ({
   <button
     onClick={onToggle}
     className={`
-      relative w-16 h-8 border-4 border-zinc-800 rounded-lg transition-colors duration-300 
-      ${active ? "bg-blue-500" : "bg-zinc-950"}
+      relative w-16 h-8 border-4 border-(--border-main) rounded-lg transition-colors duration-300 
+      ${active ? "bg-(--accent-base)" : "bg-(--bg-highlight)"}
     `}
   >
     {/* Track Line */}
@@ -77,7 +77,7 @@ const DiamondToggle = ({
     {/* Rhombus Knob */}
     <div
       className={`
-        absolute top-1/2 -translate-y-1/2 w-6 h-6 bg-white border-4 border-zinc-800 
+        absolute top-1/2 -translate-y-1/2 w-6 h-6 bg-white border-4 border-(--border-main) 
         transform rotate-45 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)]
         transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]
         ${active ? "left-[calc(100%-28px)] rotate-225" : "left-1 rotate-45"}
@@ -109,7 +109,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           transition: { staggerChildren: 0.15 },
         },
       }}
-      className="h-full overflow-y-auto custom-scrollbar p-6 md:p-8 bg-zinc-950 text-zinc-200"
+      className="h-full overflow-y-auto custom-scrollbar p-6 md:p-8 bg-(--bg-main) text-(--text-main)"
     >
       <div className="max-w-5xl mx-auto space-y-12">
         {/* APPEARANCE */}
@@ -140,8 +140,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 onClick={() => updateSetting("themeMode", "dark")}
                 className={`flex-1 py-4 rounded-xl border-4 font-bold uppercase tracking-wider transition-all ${
                   settings.themeMode === "dark"
-                    ? "bg-zinc-950 border-blue-500 text-blue-500 shadow-[4px_4px_0px_0px_#3b82f6]"
-                    : "bg-zinc-950 border-zinc-800 text-zinc-500 hover:border-zinc-600"
+                    ? "bg-(--bg-highlight) border-(--accent-base) text-(--accent-base) shadow-[4px_4px_0px_0px_var(--accent-base)]"
+                    : "bg-(--bg-surface) border-(--border-dim) text-(--text-muted) hover:border-(--border-main)"
                 }`}
               >
                 Dark
@@ -150,11 +150,21 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 onClick={() => updateSetting("themeMode", "light")}
                 className={`flex-1 py-4 rounded-xl border-4 font-bold uppercase tracking-wider transition-all ${
                   settings.themeMode === "light"
-                    ? "bg-white border-blue-500 text-black shadow-[4px_4px_0px_0px_#3b82f6]"
-                    : "bg-zinc-950 border-zinc-800 text-zinc-500 hover:border-zinc-600"
+                    ? "bg-white border-(--accent-base) text-black shadow-[4px_4px_0px_0px_var(--accent-base)]"
+                    : "bg-(--bg-surface) border-(--border-dim) text-(--text-muted) hover:border-(--border-main)"
                 }`}
               >
                 Light
+              </button>
+              <button
+                onClick={() => updateSetting("themeMode", "amoled")}
+                className={`flex-1 py-4 rounded-xl border-4 font-bold uppercase tracking-wider transition-all ${
+                  settings.themeMode === "amoled"
+                    ? "bg-black border-(--accent-base) text-(--accent-base) shadow-[4px_4px_0px_0px_var(--accent-base)]"
+                    : "bg-(--bg-surface) border-(--border-dim) text-(--text-muted) hover:border-(--border-main)"
+                }`}
+              >
+                AMOLED
               </button>
             </div>
           </NeoCard>
@@ -170,23 +180,46 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   Personalize your experience
                 </p>
               </div>
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                  Random
+                </span>
+                <DiamondToggle
+                  active={settings.randomAccentColor}
+                  onToggle={() => {
+                    if (!settings.randomAccentColor) {
+                      resetDynamicThemeSeed();
+                    }
+                    updateSetting(
+                      "randomAccentColor",
+                      !settings.randomAccentColor,
+                    );
+                  }}
+                />
+              </div>
             </div>
-            <div className="flex justify-between gap-2 p-2 bg-zinc-950/50 rounded-xl border-2 border-zinc-800">
+            <div
+              className={`flex justify-between gap-2 p-2 bg-zinc-950/50 rounded-xl border-2 border-zinc-800 transition-opacity ${settings.randomAccentColor ? "opacity-50 pointer-events-none" : "opacity-100"}`}
+            >
               {COLORS.map((c) => (
                 <button
                   key={c.id}
-                  onClick={() => updateSetting("accentColor", c.id as any)}
+                  onClick={() =>
+                    !settings.randomAccentColor &&
+                    updateSetting("accentColor", c.id as any)
+                  }
                   className={`w-10 h-10 md:w-12 md:h-12 rounded-lg border-4 flex items-center justify-center transition-all duration-300 transform ${
-                    settings.accentColor === c.id
+                    settings.accentColor === c.id && !settings.randomAccentColor
                       ? "scale-110 shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)] border-white rotate-45"
                       : "border-zinc-800 hover:scale-105 hover:border-zinc-600"
                   }`}
                   style={{ backgroundColor: c.hex }}
                   title={c.label}
                 >
-                  {settings.accentColor === c.id && (
-                    <Check className="w-6 h-6 text-white drop-shadow-md -rotate-45" />
-                  )}
+                  {settings.accentColor === c.id &&
+                    !settings.randomAccentColor && (
+                      <Check className="w-6 h-6 text-white drop-shadow-md -rotate-45" />
+                    )}
                 </button>
               ))}
             </div>

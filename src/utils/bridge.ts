@@ -47,6 +47,9 @@ export function initializeContainer() {
   const host = document.createElement("div");
   host.id = "vtop-remastered-host";
 
+  // Set default fixed positioning.
+  host.style.cssText =
+    "position: fixed; inset: 0; z-index: 2147483647; pointer-events: none; background: transparent;";
   document.body.appendChild(host);
 
   shadowRoot = host.attachShadow({ mode: "open" });
@@ -58,11 +61,10 @@ export function initializeContainer() {
 
   const appRoot = document.createElement("div");
   appRoot.id = "vtop-remastered-root";
-
-  appRoot.style.cssText = "width: 100%; height: 100%; overflow-y: auto;";
+  appRoot.style.cssText =
+    "width: 100%; height: 100%; pointer-events: none; background: transparent;";
   shadowRoot.appendChild(appRoot);
 
-  createToggleButton();
   isInitialized = true;
 }
 
@@ -83,31 +85,38 @@ export function removeSplashScreen() {
   }
 }
 
-function createToggleButton() {
-  if (document.getElementById("vtop-ui-toggle-container")) return;
-
-  const container = document.createElement("div");
-  container.id = "vtop-ui-toggle-container";
-
-  const btn = document.createElement("button");
-  btn.innerHTML = "RETURN TO MODERN UI";
-  btn.className = "vtop-toggle-btn";
-
-  btn.onclick = () => {
-    window.dispatchEvent(new Event("vtop-restore-ui"));
-  };
-
-  container.appendChild(btn);
-  document.body.appendChild(container);
-}
-
 export function setUIVisibility(visible: boolean) {
+  const host = document.getElementById("vtop-remastered-host");
+  const appRoot = shadowRoot
+    ? shadowRoot.getElementById("vtop-remastered-root")
+    : null;
+
   if (visible) {
     document.body.classList.remove("show-legacy-ui");
     document.body.style.overflow = "hidden";
+
+    // Restore pointer events so Modern UI can be interacted with
+    if (host) host.style.setProperty("pointer-events", "auto", "important");
+    if (appRoot)
+      appRoot.style.setProperty("pointer-events", "auto", "important");
   } else {
     document.body.classList.add("show-legacy-ui");
     document.body.style.overflow = "auto";
+
+    // CRITICAL FIX: Force the shadow host to remain visible so React can render the Return Button.
+    // We set pointer-events to 'none' so all clicks bypass the host and hit the legacy UI below.
+    if (host) {
+      host.style.setProperty("display", "block", "important");
+      host.style.setProperty("opacity", "1", "important");
+      host.style.setProperty("visibility", "visible", "important");
+      host.style.setProperty("pointer-events", "none", "important");
+    }
+    if (appRoot) {
+      appRoot.style.setProperty("display", "block", "important");
+      appRoot.style.setProperty("opacity", "1", "important");
+      appRoot.style.setProperty("visibility", "visible", "important");
+      appRoot.style.setProperty("pointer-events", "none", "important");
+    }
   }
 }
 

@@ -56,6 +56,7 @@ import {
   getCorrectDayName,
 } from "../utils/timetable-slots";
 import { useSettings, applyTheme } from "../utils/settings-store";
+import { LegacyReturnButton } from "../components/LegacyReturnButton";
 
 type ViewType =
   | "dashboard"
@@ -117,7 +118,6 @@ const navigateLegacy = (title: string) => {
   if (target) target.click();
   else {
     console.warn("Legacy link not found for:", title);
-    alert(`Could not automatically open "${title}" in Legacy UI.`);
   }
 };
 
@@ -135,10 +135,13 @@ export function renderDashboard() {
 const DashboardApp = () => {
   const [user, setUser] = useState({ name: "Student", regNo: "..." });
   const [menu, setMenu] = useState<MenuCategory[]>([]);
-  const [isModernUI, setIsModernUI] = useState(true);
   const [isOmniboxOpen, setIsOmniboxOpen] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const { settings, updateSetting } = useSettings();
+
+  const [isModernUI, setIsModernUI] = useState(() => {
+    return sessionStorage.getItem("vtop-legacy-mode") !== "true";
+  });
 
   const [currentView, setCurrentView] = useState<ViewType>("dashboard");
   const [contentTitle, setContentTitle] = useState("");
@@ -146,7 +149,6 @@ const DashboardApp = () => {
 
   const [stats, setStats] = useState({ cgpa: "...", credits: "..." });
   const [attendance, setAttendance] = useState<CourseSummary[]>([]);
-  const [avgAttendance, setAvgAttendance] = useState<number | string>("...");
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [upcoming, setUpcoming] = useState<UpcomingClass[]>([]);
 
@@ -157,8 +159,6 @@ const DashboardApp = () => {
   const [ttViewMode, setTtViewMode] = useState<"grid" | "list" | "week">(
     "grid",
   );
-
-  const [pageContent, setPageContent] = useState("");
 
   const networkRef = useRef<VTOPNetwork | null>(null);
   const csrfRef = useRef<string>("");
@@ -227,19 +227,8 @@ const DashboardApp = () => {
 
   useEffect(() => {
     setUIVisibility(isModernUI);
+    sessionStorage.setItem("vtop-legacy-mode", (!isModernUI).toString());
   }, [isModernUI]);
-
-  useEffect(() => {
-    if (attendance.length > 0) {
-      const total = attendance.reduce((acc, curr) => {
-        const val = parseFloat(curr.attendance);
-        return acc + (isNaN(val) ? 0 : val);
-      }, 0);
-      setAvgAttendance(Math.ceil(total / attendance.length));
-    } else {
-      setAvgAttendance("N/A");
-    }
-  }, [attendance]);
 
   const fetchUserProfile = async () => {
     if (!networkRef.current) return;
@@ -342,40 +331,25 @@ const DashboardApp = () => {
     setIsOmniboxOpen(false);
     setShowProfileMenu(false);
 
-    if (!isModernUI) {
-      navigateLegacy(link.title);
-      return;
-    }
     if (link.url === "#settings" || link.title.toLowerCase() === "settings") {
+      setIsModernUI(true);
       setCurrentView("settings");
       return;
     }
-    if (!networkRef.current) return;
 
     const dest = getDestinationView(link);
-    if (dest !== "content") {
-      setCurrentView(dest);
+
+    if (dest === "content") {
+      setIsModernUI(false);
+      setTimeout(() => {
+        navigateLegacy(link.title);
+      }, 50);
       return;
     }
 
-    setCurrentView("content");
-    setContentTitle(link.title.toUpperCase());
-    setPageContent("");
-
-    try {
-      setStatus(`Fetching ${link.title}...`);
-      const html = await networkRef.current.fetchFragment(link.url);
-      const cleanHtml = html.replace(
-        /<script\b[^>]*>([\s\S]*?)<\/script>/gm,
-        "",
-      );
-      setPageContent(cleanHtml);
-      setStatus("Active");
-    } catch {
-      setPageContent(
-        '<div class="p-10 text-rose-500 font-expanded font-bold text-center border-4 border-rose-500 rounded-3xl m-4 bg-rose-950/30">Failed to load content.</div>',
-      );
-    }
+    if (!networkRef.current) return;
+    setIsModernUI(true);
+    setCurrentView(dest);
   };
 
   const handleLogout = () => {
@@ -427,21 +401,20 @@ const DashboardApp = () => {
 
   const renderNavbarRight = () => {
     return (
-      <div className="flex items-center gap-4">
-        {/* Favorites inside Navbar on Dashboard */}
+      <div className="flex items-center gap-4 pointer-events-auto">
         {currentView === "dashboard" && (
           <div className="hidden xl:flex items-center gap-2.5 mr-4">
             {favoriteLinks.map((link, idx) => (
               <button
                 key={idx}
                 onClick={() => handleLinkClick(link as QuickLink)}
-                className={`flex items-center gap-2 px-3.5 py-1.5 border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_#000] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_#000] active:translate-y-0 active:shadow-none transition-all font-black font-expanded text-xs tracking-wide uppercase text-black ${link.color}`}
+                className={`flex items-center gap-2 px-3.5 py-1.5 border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_#000] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_#000] active:translate-y-0 active:shadow-none transition-all font-black font-expanded text-xs tracking-wide uppercase text-black ${link.color} cursor-pointer`}
               >
                 <link.icon className="w-4 h-4" />
                 <span>{link.title}</span>
               </button>
             ))}
-            <div className="w-1 h-8 bg-zinc-800 rounded-full mx-2"></div>
+            <div className="w-1 h-8 bg-[var(--border-dim)] rounded-full mx-2"></div>
           </div>
         )}
 
@@ -486,7 +459,7 @@ const DashboardApp = () => {
         {currentView !== "dashboard" && (
           <button
             onClick={() => setIsOmniboxOpen(true)}
-            className="hidden lg:flex items-center gap-3 px-3 py-2 bg-(--bg-surface) border-2 border-(--border-main) rounded-full text-[var(--text-muted)] hover:border-[var(--accent-base)] hover:text-[var(--text-main)] transition-all group shadow-lg active:scale-95"
+            className="hidden lg:flex items-center gap-3 px-3 py-2 bg-(--bg-surface) border-2 border-(--border-main) rounded-full text-[var(--text-muted)] hover:border-[var(--accent-base)] hover:text-[var(--text-main)] transition-all group shadow-lg active:scale-95 cursor-pointer"
           >
             <Menu className="w-5 h-5 group-hover:rotate-12 transition-transform" />
             <span className="font-bold text-xs tracking-widest uppercase">
@@ -501,7 +474,7 @@ const DashboardApp = () => {
         <div className="relative">
           <button
             onClick={() => setShowProfileMenu(!showProfileMenu)}
-            className="flex items-center gap-3 focus:outline-none group"
+            className="flex items-center gap-3 focus:outline-none group cursor-pointer"
           >
             <div className="text-right hidden sm:block">
               <div className="text-sm font-bold text-[var(--text-main)] uppercase tracking-wider group-hover:text-[var(--accent-hover)] transition-colors">
@@ -579,30 +552,12 @@ const DashboardApp = () => {
         );
       case "content":
         return (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="h-full overflow-y-auto custom-scrollbar px-4 md:px-8 py-8 max-w-[1600px] mx-auto"
-          >
-            <div className="bg-(--bg-surface) border-4 border-(--border-main) rounded-[2rem] shadow-sm min-h-[80vh] flex flex-col relative overflow-hidden">
-              <div className="flex-1 p-6 lg:p-8 overflow-x-auto">
-                {pageContent ? (
-                  <div
-                    className="legacy-content-wrapper text-[var(--text-main)] font-sans"
-                    dangerouslySetInnerHTML={{ __html: pageContent }}
-                  />
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] font-mono animate-pulse">
-                    <Loader2 className="w-16 h-16 text-[var(--accent-base)] animate-spin mb-4" />
-                    <span className="text-xl font-bold font-expanded mb-0">
-                      FETCHING DATA STREAM...
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </motion.div>
+          <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] font-mono animate-pulse pointer-events-auto">
+            <Loader2 className="w-16 h-16 text-[var(--accent-base)] animate-spin mb-4" />
+            <span className="text-xl font-bold font-expanded mb-0">
+              LAUNCHING LEGACY SYSTEM...
+            </span>
+          </div>
         );
       default:
         return null;
@@ -613,93 +568,103 @@ const DashboardApp = () => {
     status === "Online" || status === "Active" ? "bg-lime-400" : "bg-red-500";
 
   return (
-    <div
-      className={`h-screen font-mono selection:bg-blue-500 selection:text-white flex flex-col transition-all duration-300 overflow-hidden ${isModernUI ? "opacity-100 pointer-events-auto" : "bg-transparent text-transparent opacity-0 pointer-events-none"}`}
-      style={
-        !isModernUI && isOmniboxOpen
-          ? {
-              pointerEvents: "auto",
-              opacity: 1,
-              backgroundColor: "transparent",
-            }
-          : {}
-      }
-    >
-      <Omnibox
-        isOpen={isOmniboxOpen}
-        onClose={() => setIsOmniboxOpen(false)}
-        menuCategories={menu}
-        onNavigate={handleLinkClick}
-      />
-      <div
-        className={`flex flex-col h-full ${!isModernUI ? "hidden" : "flex"}`}
-      >
-        <header className="h-20 bg-[var(--bg-main)] border-b-4 border-(--border-main) sticky top-0 z-[100] px-6 md:px-8 flex items-center justify-between shadow-xl shrink-0">
-          <div
-            className="flex items-center gap-4 group cursor-pointer h-full"
-            onClick={() => setCurrentView("dashboard")}
+    <>
+      <AnimatePresence>
+        {isModernUI && (
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{
+              type: "spring",
+              damping: 35,
+              stiffness: 300,
+              mass: 0.8,
+            }}
+            className="fixed inset-0 h-screen font-mono selection:bg-blue-500 selection:text-white flex flex-col transition-opacity duration-300 overflow-hidden pointer-events-auto bg-[var(--bg-main)] z-[100]"
           >
-            {currentView !== "dashboard" && (
-              <motion.button
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setCurrentView("dashboard");
-                }}
-                className="w-10 h-10 flex items-center justify-center bg-(--bg-surface) border-2 border-[var(--border-dim)] rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:border-[var(--accent-base)] transition-all active:scale-90 shrink-0"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </motion.button>
-            )}
-            <div className="flex flex-col justify-center h-full gap-0.5">
-              <div className="flex items-center gap-3">
-                <div className="relative group/logo">
-                  <div className="w-8 h-8 bg-[var(--accent-base)] border-2 border-(--border-main) text-white flex items-center justify-center font-expanded font-black text-lg rounded-lg shadow-[2px_2px_0px_0px_var(--text-main)] mb-0">
-                    V
-                  </div>
-                  <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                    <span
-                      className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${statusColor}`}
-                    ></span>
-                    <span
-                      className={`relative inline-flex rounded-full h-3 w-3 border-2 border-(--border-main) ${statusColor}`}
-                    ></span>
-                  </span>
-                  <div className="absolute left-1/2 top-full mt-3 -translate-x-1/2 px-2.5 py-1 bg-[var(--bg-highlight)] text-[var(--text-main)] text-[9px] font-bold uppercase tracking-widest rounded-md border border-[var(--border-dim)] opacity-0 group-hover/logo:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-[100] shadow-xl">
-                    {status}
-                    <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[var(--bg-highlight)] border-t border-l border-[var(--border-dim)] rotate-45"></div>
+            <Omnibox
+              isOpen={isOmniboxOpen}
+              onClose={() => setIsOmniboxOpen(false)}
+              menuCategories={menu}
+              onNavigate={handleLinkClick}
+            />
+            <div className="flex flex-col h-full pointer-events-auto">
+              <header className="h-20 bg-[var(--bg-main)] border-b-4 border-(--border-main) sticky top-0 z-[100] px-6 md:px-8 flex items-center justify-between shadow-xl shrink-0">
+                <div
+                  className="flex items-center gap-4 group cursor-pointer h-full"
+                  onClick={() => setCurrentView("dashboard")}
+                >
+                  {currentView !== "dashboard" && (
+                    <motion.button
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentView("dashboard");
+                      }}
+                      className="w-10 h-10 flex items-center justify-center bg-(--bg-surface) border-2 border-[var(--border-dim)] rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:border-[var(--accent-base)] transition-all active:scale-90 shrink-0 cursor-pointer"
+                    >
+                      <ArrowLeft className="w-5 h-5" />
+                    </motion.button>
+                  )}
+                  <div className="flex flex-col justify-center h-full gap-0.5">
+                    <div className="flex items-center gap-3">
+                      <div className="relative group/logo">
+                        <div className="w-8 h-8 bg-[var(--accent-base)] border-2 border-(--border-main) text-white flex items-center justify-center font-expanded font-black text-lg rounded-lg shadow-[2px_2px_0px_0px_var(--text-main)] mb-0">
+                          V
+                        </div>
+                        <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                          <span
+                            className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${statusColor}`}
+                          ></span>
+                          <span
+                            className={`relative inline-flex rounded-full h-3 w-3 border-2 border-(--border-main) ${statusColor}`}
+                          ></span>
+                        </span>
+                        <div className="absolute left-1/2 top-full mt-3 -translate-x-1/2 px-2.5 py-1 bg-[var(--bg-highlight)] text-[var(--text-main)] text-[9px] font-bold uppercase tracking-widest rounded-md border border-[var(--border-dim)] opacity-0 group-hover/logo:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-[100] shadow-xl">
+                          {status}
+                          <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[var(--bg-highlight)] border-t border-l border-[var(--border-dim)] rotate-45"></div>
+                        </div>
+                      </div>
+
+                      <h1 className="font-expanded font-black text-3xl text-[var(--text-main)] tracking-tight uppercase truncate max-w-[200px] sm:max-w-[40vw] leading-none mt-1 mb-0 lowercase">
+                        {getPageTitle(currentView, contentTitle)}
+                      </h1>
+                    </div>
+                    {currentView === "timetable" ? (
+                      <p className="text-[9px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-0.5 ml-11 mb-0">
+                        {ttCourses.length} COURSES REGISTERED
+                      </p>
+                    ) : null}
                   </div>
                 </div>
-
-                <h1 className="font-expanded font-black text-3xl text-[var(--text-main)] tracking-tight uppercase truncate max-w-[200px] sm:max-w-[40vw] leading-none mt-1 mb-0">
-                  {getPageTitle(currentView, contentTitle)}
-                </h1>
-              </div>
-              {currentView === "timetable" ? (
-                <p className="text-[9px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-0.5 ml-11 mb-0">
-                  {ttCourses.length} COURSES REGISTERED
-                </p>
-              ) : null}
+                {renderNavbarRight()}
+              </header>
+              <main className="flex-1 overflow-hidden relative">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={currentView}
+                    className="h-full w-full flex flex-col"
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -15 }}
+                    transition={{ duration: 0.25, ease: "easeOut" }}
+                  >
+                    {renderContent()}
+                  </motion.div>
+                </AnimatePresence>
+              </main>
             </div>
-          </div>
-          {renderNavbarRight()}
-        </header>
-        <main className="flex-1 overflow-hidden relative">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentView}
-              className="h-full w-full flex flex-col"
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-            >
-              {renderContent()}
-            </motion.div>
-          </AnimatePresence>
-        </main>
-      </div>
-    </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {!isModernUI && (
+          <LegacyReturnButton onClick={() => setIsModernUI(true)} />
+        )}
+      </AnimatePresence>
+    </>
   );
 };

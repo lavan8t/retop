@@ -17,7 +17,8 @@ import {
   getAppRoot,
   injectScriptFile,
 } from "../utils/bridge";
-import { applyTheme, useSettings } from "../utils/settings-store";
+import { useSettings } from "../utils/settings-store";
+import { LegacyReturnButton } from "../components/LegacyReturnButton";
 
 const triggerStudentSetup = async (csrf: string) => {
   try {
@@ -79,8 +80,11 @@ const LoginPage = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [captchaSrc, setCaptchaSrc] = useState(initialCaptcha);
-  const [isModernUI, setIsModernUI] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+
+  const [isModernUI, setIsModernUI] = useState(() => {
+    return sessionStorage.getItem("vtop-legacy-mode") !== "true";
+  });
 
   const [formData, setFormData] = useState({
     username: "",
@@ -88,23 +92,15 @@ const LoginPage = ({
     captcha: "",
   });
 
-  const { settings } = useSettings();
-
   useEffect(() => {
     const initSession = async () => {
       await triggerStudentSetup(csrfToken);
-
-      if (mode === "IMAGE") {
-        refreshCaptcha();
-      }
+      if (mode === "IMAGE") refreshCaptcha();
     };
-
     initSession();
 
     if (mode === "GOOGLE") {
-      const handleSolved = (e: CustomEvent) => {
-        submitLogin(e.detail);
-      };
+      const handleSolved = (e: CustomEvent) => submitLogin(e.detail);
       window.addEventListener(
         "vtop-captcha-solved",
         handleSolved as EventListener,
@@ -125,6 +121,7 @@ const LoginPage = ({
 
   useEffect(() => {
     setUIVisibility(isModernUI);
+    sessionStorage.setItem("vtop-legacy-mode", (!isModernUI).toString());
   }, [isModernUI]);
 
   const refreshCaptcha = async () => {
@@ -134,7 +131,7 @@ const LoginPage = ({
       const match = html.match(/src="([^"]+)"/);
       if (match) setCaptchaSrc(match[1]);
     } catch (e) {
-      console.error("Failed to refresh captcha:", e);
+      console.error(e);
     }
   };
 
@@ -145,216 +142,144 @@ const LoginPage = ({
   const submitLogin = (gResponseToken?: string) => {
     const { username, password, captcha } = formData;
     if (!username || !password) return;
-
-    const payload: any = {
-      _csrf: csrfToken,
-      username: username,
-      password: password,
-    };
-
-    if (mode === "GOOGLE") {
-      if (gResponseToken) payload["gResponse"] = gResponseToken;
-    } else if (mode === "IMAGE") {
-      if (!captcha) return;
-      payload["captchaCheck"] = captcha;
-    }
-
+    const payload: any = { _csrf: csrfToken, username, password };
+    if (mode === "GOOGLE" && gResponseToken)
+      payload["gResponse"] = gResponseToken;
+    else if (mode === "IMAGE" && captcha) payload["captchaCheck"] = captcha;
     createHiddenForm("/vtop/login", payload).submit();
   };
 
   const handleAuthorize = () => {
-    const { username, password, captcha } = formData;
-
-    if (!username || !password) return;
-    if (mode === "IMAGE" && !captcha) return;
-
+    if (!formData.username || !formData.password) return;
     setIsLoading(true);
-
-    if (mode === "GOOGLE") {
+    if (mode === "GOOGLE")
       window.dispatchEvent(new Event("vtop-invoke-captcha"));
-    } else {
-      submitLogin();
-    }
+    else submitLogin();
   };
 
   return (
-    <div className="min-h-screen flex overflow-hidden selection:bg-yellow-400 selection:text-black">
-      {/* LEFT SIDE */}
-      <div className="hidden lg:flex w-[45%] bg-(--accent-base) border-r-[6px] border-(--border-main) flex-col justify-center p-12 relative">
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 120 }}
-          className="relative z-10"
-        >
-          <div className="text-[10rem] font-expanded font-black leading-none text-white drop-shadow-[10px_10px_0px_var(--border-main)]">
-            re.
-          </div>
-          <div className="bg-yellow-400 text-black inline-block px-8 py-3 border-4 border-(--border-main) rounded-4xl -rotate-2 shadow-[8px_8px_0px_0px_var(--border-main)] mt-4">
-            <span className="text-4xl font-expanded font-black uppercase italic tracking-tighter">
-              retop
-            </span>
-          </div>
-          <p className="mt-10 text-2xl font-expanded font-bold leading-[1.1] max-w-sm text-white/95 uppercase italic">
-            Direct access to your academic terminal.
-          </p>
-        </motion.div>
-        <div
-          className="absolute inset-0 opacity-10 pointer-events-none"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle, #000 2px, transparent 2px)",
-            backgroundSize: "30px 30px",
-          }}
-        ></div>
-      </div>
-
-      {/* RIGHT SIDE */}
-      <div className="flex-1 flex items-center justify-center p-6 bg-(--bg-main)">
-        <motion.div
-          initial={{ y: 30, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="w-full max-w-md bg-(--bg-surface) border-[5px] border-(--border-main) rounded-[3rem] p-8 shadow-[16px_16px_0px_0px_var(--border-main)]"
-        >
-          <div className="mb-10">
-            <h2 className="text-5xl font-expanded font-black uppercase tracking-tighter mb-2 italic">
-              Terminal
-            </h2>
-            <div className="h-3 w-32 bg-pink-500 border-2 border-(--border-main) rounded-full shadow-[4px_4px_0px_0px_var(--border-main)]"></div>
-          </div>
-
-          <div className="space-y-8">
-            <div className="relative">
-              <label className="absolute -top-4 left-6 bg-yellow-400 border-2 border-(--border-main) px-3 py-0.5 text-xs font-expanded font-black uppercase z-10 rounded-lg shadow-[3px_3px_0px_0px_var(--border-main)] text-black">
-                Identity
-              </label>
-              <div className="relative group">
-                <input
-                  type="text"
-                  placeholder="REG NO."
-                  value={formData.username}
-                  onChange={(e) =>
-                    handleInputChange("username", e.target.value)
-                  }
-                  className="w-full bg-(--bg-highlight) border-[3px] border-(--border-main) rounded-3xl p-4 pl-6 font-expanded font-black text-xl outline-none focus:bg-(--bg-surface) transition-all uppercase placeholder-(--text-muted) text-(--text-main)"
-                />
-                <User className="absolute right-6 top-1/2 -translate-y-1/2 w-6 h-6 text-(--text-main)" />
-              </div>
-            </div>
-
-            <div className="relative">
-              <label className="absolute -top-4 left-6 bg-pink-500 border-2 border-(--border-main) px-3 py-0.5 text-xs font-expanded font-black uppercase z-10 text-white rounded-lg shadow-[3px_3px_0px_0px_var(--border-main)]">
-                Access
-              </label>
-              <div className="relative group">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={(e) =>
-                    handleInputChange("password", e.target.value)
-                  }
-                  className="w-full bg-(--bg-highlight) border-[3px] border-(--border-main) rounded-3xl p-4 pl-6 font-expanded font-black text-xl outline-none focus:bg-(--bg-surface) transition-all placeholder-(--text-muted) text-(--text-main)"
-                />
-                <button
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-6 top-1/2 -translate-y-1/2 text-(--text-main) hover:scale-110 transition-transform"
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-6 h-6" />
-                  ) : (
-                    <Eye className="w-6 h-6" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* ONLY SHOW CAPTCHA IF MODE IS IMAGE */}
-            {mode === "IMAGE" && (
-              <div className="flex gap-4">
-                <div className="flex-1 relative">
-                  <label className="absolute -top-4 left-6 bg-lime-400 border-2 border-(--border-main) px-3 py-0.5 text-xs font-expanded font-black uppercase z-10 rounded-lg shadow-[3px_3px_0px_0px_var(--border-main)] text-black">
-                    Captcha
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="CODE"
-                    value={formData.captcha}
-                    onChange={(e) =>
-                      handleInputChange("captcha", e.target.value)
-                    }
-                    className="w-full bg-(--bg-highlight) border-[3px] border-(--border-main) rounded-3xl p-4 pl-6 font-expanded font-black text-xl outline-none focus:bg-(--bg-surface) uppercase text-(--text-main) placeholder-(--text-muted)"
-                  />
+    <>
+      <AnimatePresence>
+        {isModernUI && (
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{
+              type: "spring",
+              damping: 35,
+              stiffness: 300,
+              mass: 0.8,
+            }}
+            className="fixed inset-0 min-h-screen flex overflow-hidden selection:bg-yellow-400 selection:text-black pointer-events-auto bg-(--bg-main) z-[100]"
+          >
+            <div className="hidden lg:flex w-[45%] bg-(--accent-base) border-r-[6px] border-(--border-main) flex-col justify-center p-12 relative">
+              <div className="relative z-10">
+                <div className="text-[10rem] font-expanded font-black leading-none text-white drop-shadow-[10px_10px_0px_var(--border-main)] lowercase">
+                  re.
                 </div>
-                <div className="w-36 h-20 border-[3px] border-(--border-main) rounded-3xl overflow-hidden relative bg-white group shadow-[6px_6px_0px_0px_var(--border-main)]">
-                  {captchaSrc && (
-                    <img
-                      src={captchaSrc}
-                      alt="captcha"
-                      className="w-full h-full object-contain p-2"
+                <div className="bg-yellow-400 text-black inline-block px-8 py-3 border-4 border-(--border-main) rounded-4xl -rotate-2 shadow-[8px_8px_0px_0px_var(--border-main)] mt-4">
+                  <span className="text-4xl font-expanded font-black uppercase italic tracking-tighter">
+                    retop
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-1 flex items-center justify-center p-6">
+              <motion.div
+                initial={{ y: 30, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                className="w-full max-w-md bg-(--bg-surface) border-[5px] border-(--border-main) rounded-[3rem] p-8 shadow-[16px_16px_0px_0px_var(--border-main)]"
+              >
+                <div className="mb-10">
+                  <h2 className="text-5xl font-expanded font-black lowercase tracking-tighter mb-2 italic">
+                    re.
+                  </h2>
+                  <div className="h-3 w-24 bg-pink-500 border-2 border-(--border-main) rounded-full shadow-[4px_4px_0px_0px_var(--border-main)]"></div>
+                </div>
+
+                <div className="space-y-8">
+                  <div className="relative">
+                    <label className="absolute -top-4 left-6 bg-yellow-400 border-2 border-(--border-main) px-3 py-0.5 text-xs font-expanded font-black uppercase z-10 rounded-lg shadow-[3px_3px_0px_0px_var(--border-main)] text-black">
+                      Identity
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="REG NO."
+                      value={formData.username}
+                      onChange={(e) =>
+                        handleInputChange("username", e.target.value)
+                      }
+                      className="w-full bg-(--bg-highlight) border-[3px] border-(--border-main) rounded-3xl p-4 pl-6 font-expanded font-black text-xl outline-none focus:bg-(--bg-surface) uppercase text-(--text-main) placeholder-(--text-muted)"
                     />
+                  </div>
+                  <div className="relative">
+                    <label className="absolute -top-4 left-6 bg-pink-500 border-2 border-(--border-main) px-3 py-0.5 text-xs font-expanded font-black uppercase z-10 text-white rounded-lg shadow-[3px_3px_0px_0px_var(--border-main)]">
+                      Access
+                    </label>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={formData.password}
+                      onChange={(e) =>
+                        handleInputChange("password", e.target.value)
+                      }
+                      className="w-full bg-(--bg-highlight) border-[3px] border-(--border-main) rounded-3xl p-4 pl-6 font-expanded font-black text-xl outline-none focus:bg-(--bg-surface) text-(--text-main) placeholder-(--text-muted)"
+                    />
+                  </div>
+
+                  {mode === "IMAGE" && (
+                    <div className="flex gap-4">
+                      <input
+                        type="text"
+                        placeholder="CAPTCHA"
+                        value={formData.captcha}
+                        onChange={(e) =>
+                          handleInputChange("captcha", e.target.value)
+                        }
+                        className="flex-1 bg-(--bg-highlight) border-[3px] border-(--border-main) rounded-3xl p-4 font-expanded font-black text-xl outline-none uppercase"
+                      />
+                      <div className="w-32 h-20 bg-white border-[3px] border-(--border-main) rounded-3xl overflow-hidden shadow-[6px_6px_0px_0px_var(--border-main)]">
+                        <img
+                          src={captchaSrc}
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    </div>
                   )}
+
                   <button
-                    onClick={refreshCaptcha}
-                    className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                    onClick={handleAuthorize}
+                    disabled={isLoading}
+                    className={`w-full border-[5px] border-(--border-main) rounded-4xl py-5 text-3xl font-expanded font-black uppercase tracking-tighter flex items-center justify-center gap-4 ${isLoading ? "bg-(--bg-highlight) text-(--text-muted)" : "bg-(--accent-base) text-white shadow-[8px_8px_0px_0px_var(--border-main)] active:translate-y-1 active:shadow-none"}`}
                   >
-                    <RefreshCw className="text-white w-8 h-8" />
+                    {isLoading ? (
+                      <Loader2 className="animate-spin" />
+                    ) : (
+                      <>
+                        Authorize <ArrowRight />
+                      </>
+                    )}
                   </button>
                 </div>
-              </div>
-            )}
-
-            <button
-              onClick={handleAuthorize}
-              disabled={isLoading}
-              className={`
-                w-full border-[5px] border-(--border-main) rounded-4xl py-5 text-3xl font-expanded font-black uppercase tracking-tighter
-                flex items-center justify-center gap-4 transition-all relative
-                ${
-                  isLoading
-                    ? "bg-(--bg-highlight) cursor-not-allowed text-(--text-muted) shadow-none"
-                    : "bg-(--accent-base) hover:bg-(--accent-hover) text-white shadow-[8px_8px_0px_0px_var(--border-main)] active:translate-x-1 active:translate-y-1 active:shadow-none"
-                }
-              `}
-            >
-              <AnimatePresence mode="wait">
-                {isLoading ? (
-                  <motion.div
-                    key="loader"
-                    initial={{ rotate: 0 }}
-                    animate={{ rotate: 360 }}
-                    transition={{
-                      repeat: Infinity,
-                      duration: 1,
-                      ease: "linear",
-                    }}
-                  >
-                    <Loader2 className="w-8 h-8" />
-                  </motion.div>
-                ) : (
-                  <>
-                    <span>Authorize</span>
-                    <ArrowRight className="w-8 h-8" />
-                  </>
-                )}
-              </AnimatePresence>
-            </button>
-          </div>
-
-          <div className="mt-10 flex items-center justify-between border-t-[3px] border-(--border-main) pt-6">
-            <button
-              onClick={() => setIsModernUI(false)}
-              className="bg-(--text-main) text-(--bg-main) px-6 py-2 font-expanded font-black uppercase text-xs rounded-xl shadow-[4px_4px_0px_0px_var(--border-dim)] hover:opacity-80 transition-all active:translate-y-1 active:shadow-none"
-            >
-              Legacy View
-            </button>
-            <div className="flex items-center gap-2 text-(--text-muted) font-expanded font-black uppercase text-[10px] tracking-widest">
-              <ShieldCheck className="w-4 h-4 text-emerald-500" />
-              <span>Secure retop Session</span>
+                <button
+                  onClick={() => setIsModernUI(false)}
+                  className="mt-8 text-xs font-expanded font-black uppercase underline text-(--text-muted)"
+                >
+                  Legacy View
+                </button>
+              </motion.div>
             </div>
-          </div>
-        </motion.div>
-      </div>
-    </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {!isModernUI && (
+          <LegacyReturnButton onClick={() => setIsModernUI(true)} />
+        )}
+      </AnimatePresence>
+    </>
   );
 };

@@ -1,10 +1,8 @@
 @import "tailwindcss";
-@import url("https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,GRAD,ROND@6..144,100,100&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Anek+Tamil:wdth,wght@125,100..800&display=swap");
-
+@import url("https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,slnt,wdth,wght,GRAD,ROND@6..144,-10..0,25..151,1..1000,0..100,100&display=swap");
 @theme {
   --font-sans: "Google Sans Flex", ui-sans-serif, system-ui, sans-serif;
-  --font-expanded: "Anek Tamil", sans-serif;
+  --font-expanded: "Google Sans Flex", sans-serif;
 }
 
 /* --- 1. GLOBAL RESET & VARIABLES --- */
@@ -42,9 +40,9 @@
     --card-red: #d69090;
 
     /* Base Layout Specs */
-    background-color: var(--bg-main);
+    background-color: transparent;
     color: var(--text-main);
-    font-family: "Google Sans Flex", "Roboto", sans-serif;
+    font-family: var(--font-sans);
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     width: 100%;
@@ -113,13 +111,17 @@
 }
 
 /* --- 3. FONTS --- */
-#vtop-remastered-root *:not(i):not(.font-expanded) {
-  font-family: "Google Sans Flex", "Roboto", sans-serif !important;
+#vtop-remastered-root *:not(i) {
+  font-family: var(--font-sans) !important;
 }
 
 #vtop-remastered-root .font-expanded {
-  font-family: "Anek Tamil", sans-serif !important;
-  font-variation-settings: "wdth" 125;
+  font-family: var(--font-expanded) !important;
+  font-variation-settings:
+    "wdth" 125,
+    "wght" 800,
+    "GRAD" 100,
+    "ROND" 100 !important;
   margin-bottom: 0 !important;
   line-height: 1 !important;
 }

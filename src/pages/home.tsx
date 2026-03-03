@@ -22,6 +22,8 @@ import {
   Bus,
   Layers,
   ChevronRight,
+  ArrowUpDown,
+  ArrowUpRight,
 } from "lucide-react";
 import {
   CourseSummary,
@@ -85,6 +87,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
+  // Sorting State for Attendance
+  const [attSort, setAttSort] = useState<"default" | "asc" | "desc">("default");
+
   const [activeMenu, setActiveMenu] = useState<{
     cat: MenuCategory;
     rect: DOMRect;
@@ -138,6 +143,16 @@ export const HomeView: React.FC<HomeViewProps> = ({
     );
   }, [query, menuCategories]);
 
+  // Handle Attendance Sorting logic
+  const sortedAttendance = useMemo(() => {
+    if (attSort === "default") return attendance;
+    return [...attendance].sort((a, b) => {
+      const valA = parseFloat(a.attendance) || 0;
+      const valB = parseFloat(b.attendance) || 0;
+      return attSort === "asc" ? valA - valB : valB - valA;
+    });
+  }, [attendance, attSort]);
+
   useEffect(() => {
     if (!query && !activeMenu) return;
     const currentList = activeMenu ? activeMenu.cat.links : flattenedLinks;
@@ -167,10 +182,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
   }, [query, flattenedLinks, selectedIndex, activeMenu, onNavigate]);
 
   return (
-    <div className="h-full w-full flex flex-col lg:flex-row gap-6 p-4 md:p-6 lg:p-8 overflow-y-auto lg:overflow-hidden bg-[var(--bg-main)] max-w-[1700px] mx-auto relative">
+    <div className="h-full w-full flex flex-col lg:flex-row gap-6 p-4 md:p-6 lg:p-8 overflow-y-auto lg:overflow-hidden bg-(--bg-main) max-w-425 mx-auto relative">
       {/* LEFT PANE: Search & Legacy Navigation */}
-      <div className="w-full lg:w-[30%] xl:w-[25%] flex flex-col border-4 border-black bg-[var(--bg-surface)] rounded-[2rem] shadow-[8px_8px_0px_0px_#000] overflow-hidden shrink-0 h-[50vh] lg:h-full relative z-30">
-        <div className="p-4 border-b-4 border-black bg-[var(--bg-surface)] shrink-0 flex items-center gap-3 relative z-20">
+      {/* Search Pane Width increased by ~30% from the previous size (lg: 20->26, xl: 15->20) */}
+      <div className="w-full lg:w-[26%] xl:w-[20%] flex flex-col border-4 border-black bg-(--bg-surface) rounded-4xl shadow-[8px_8px_0px_0px_#000] overflow-hidden shrink-0 h-[50vh] lg:h-full relative z-30">
+        <div className="p-4 border-b-4 border-black bg-(--bg-surface) shrink-0 flex items-center gap-3 relative z-20">
           <div className="w-10 h-10 bg-blue-500 text-white flex items-center justify-center font-bold border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_#000] shrink-0">
             <Search className="w-5 h-5" />
           </div>
@@ -178,7 +194,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             ref={inputRef}
             type="text"
             placeholder="WHERE TO?"
-            className="bg-transparent text-xl font-expanded font-black text-[var(--text-main)] focus:outline-none w-full placeholder-[var(--text-dim)] tracking-tight uppercase"
+            className="bg-transparent text-xl font-expanded font-black text-(--text-main) focus:outline-none w-full placeholder-(--text-dim) tracking-tight uppercase"
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -188,10 +204,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
           />
         </div>
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar bg-[var(--bg-main)] relative z-10">
+        <div className="flex-1 overflow-y-auto custom-scrollbar bg-(--bg-main) relative z-10">
           {query ? (
             flattenedLinks.length === 0 ? (
-              <div className="flex flex-col items-center justify-center p-8 text-[var(--text-dim)]">
+              <div className="flex flex-col items-center justify-center p-8 text-(--text-dim)">
                 <AlertCircle className="w-8 h-8 mb-3 opacity-50" />
                 <span className="font-expanded text-sm uppercase tracking-widest">
                   No Matches
@@ -210,8 +226,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-3 border-2
                         ${
                           isSelected
-                            ? "bg-blue-500 text-white border-black shadow-[3px_3px_0px_0px_#000] -translate-y-[1px]"
-                            : "bg-[var(--bg-surface)] border-transparent text-[var(--text-muted)] hover:border-[var(--border-dim)]"
+                            ? "bg-blue-500 text-white border-black shadow-[3px_3px_0px_0px_#000] -translate-y-px"
+                            : "bg-(--bg-surface) border-transparent text-(--text-muted) hover:border-(--border-dim)"
                         }
                       `}
                     >
@@ -246,7 +262,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         color: iconColor,
                       });
                     }}
-                    className={`w-full bg-transparent p-3 flex items-center justify-between group rounded-2xl transition-all border-2 ${isActive ? "bg-[var(--bg-highlight)] border-[var(--border-main)] shadow-sm" : "border-transparent hover:bg-[var(--bg-surface)] hover:border-[var(--border-dim)]"}`}
+                    className={`w-full bg-transparent p-3 flex items-center justify-between group rounded-2xl transition-all border-2 ${isActive ? "bg-(--bg-highlight) border-(--border-main) shadow-sm" : "border-transparent hover:bg-(--bg-surface) hover:border-(--border-dim)"}`}
                   >
                     <div className="flex items-center gap-4">
                       <div
@@ -255,13 +271,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         <CatIcon className="w-4 h-4 text-black" />
                       </div>
                       <h3
-                        className={`text-sm font-black tracking-wide mb-0 font-expanded uppercase ${isActive ? "text-[var(--text-main)]" : "text-[var(--text-muted)] group-hover:text-[var(--text-main)]"}`}
+                        className={`text-sm font-black tracking-wide mb-0 font-expanded uppercase ${isActive ? "text-(--text-main)" : "text-(--text-muted) group-hover:text-(--text-main)"}`}
                       >
                         {cat.title}
                       </h3>
                     </div>
                     <ChevronRight
-                      className={`w-5 h-5 transition-transform ${isActive ? "text-blue-500 translate-x-1" : "text-[var(--text-dim)] group-hover:text-[var(--text-muted)]"}`}
+                      className={`w-5 h-5 transition-transform ${isActive ? "text-blue-500 translate-x-1" : "text-(--text-dim) group-hover:text-(--text-muted)"}`}
                     />
                   </button>
                 );
@@ -279,7 +295,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             animate={{ opacity: 1, scale: 1, x: 0 }}
             exit={{ opacity: 0, scale: 0.95, x: -10 }}
             transition={{ type: "spring", stiffness: 600, damping: 35 }}
-            className={`fixed z-[200] bg-zinc-950/85 backdrop-blur-3xl border-4 border-black rounded-[2rem] shadow-[16px_16px_0px_0px_rgba(0,0,0,0.6)] p-3 flex flex-col`}
+            className={`fixed z-200 bg-zinc-950/85 backdrop-blur-3xl border-4 border-black rounded-4xl shadow-[16px_16px_0px_0px_rgba(0,0,0,0.6)] p-3 flex flex-col`}
             style={{
               left: Math.min(
                 activeMenu.rect.right + 12,
@@ -343,16 +359,38 @@ export const HomeView: React.FC<HomeViewProps> = ({
       {/* RIGHT PANE: Main Content Grid */}
       <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0 overflow-y-auto lg:overflow-visible pb-10 lg:pb-0 pt-2 -mt-2 px-1 -mx-1">
         {/* Attendance Column */}
-        <div className="w-full lg:w-[40%] xl:w-[35%] flex flex-col shrink-0 min-h-[400px] lg:min-h-0 h-full pt-1">
+        <div className="w-full lg:w-[40%] xl:w-[35%] flex flex-col shrink-0 min-h-100 lg:min-h-0 h-full pt-1">
           <ListCard
             title="Attendance"
             bgClass="bg-yellow-400"
             borderClass="border-yellow-500"
+            headerAction={
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setAttSort((prev) =>
+                    prev === "default"
+                      ? "desc"
+                      : prev === "desc"
+                        ? "asc"
+                        : "default",
+                  );
+                }}
+                className="flex items-center justify-center p-1.5 bg-black/10 hover:bg-black/20 rounded-lg transition-colors text-black active:scale-95"
+                title="Sort by Percentage"
+              >
+                <ArrowUpDown
+                  className={`w-4 h-4 transition-transform ${attSort === "asc" ? "rotate-180" : ""}`}
+                />
+              </button>
+            }
           >
-            {attendance.length === 0 ? (
+            {sortedAttendance.length === 0 ? (
               <EmptyState msg="No Registered Courses" />
             ) : (
-              attendance.map((c, i) => <AttendanceRow key={i} course={c} />)
+              sortedAttendance.map((c, i) => (
+                <AttendanceRow key={i} course={c} />
+              ))
             )}
           </ListCard>
         </div>
@@ -360,7 +398,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         {/* Stats & Tall Lists Column */}
         <div className="flex-1 flex flex-col gap-6 min-h-0 pt-1">
           {/* Top Row: Mini Cards */}
-          <div className="flex flex-col sm:flex-row gap-6 shrink-0 h-auto lg:h-[150px]">
+          <div className="flex flex-col sm:flex-row gap-6 shrink-0 h-auto lg:h-37.5">
             <div className="flex-1 h-full">
               {showProgress ? (
                 <SolidProgressCard progress={progress} />
@@ -392,6 +430,16 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 title={`${dayName}`}
                 bgClass="bg-pink-400"
                 borderClass="border-pink-500"
+                onClick={() =>
+                  onNavigate({
+                    title: "Time Table",
+                    url: "studenttimetable",
+                    category: "Core",
+                  })
+                }
+                headerAction={
+                  <ArrowUpRight className="w-5 h-5 text-black opacity-60 group-hover:opacity-100 transition-opacity" />
+                }
               >
                 {upcoming.length === 0 ? (
                   <EmptyState msg="No Classes Scheduled" icon={CalendarDays} />
@@ -401,7 +449,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               </ListCard>
             </div>
 
-            <div className="flex-1 min-h-[350px] lg:min-h-0 h-full flex flex-col">
+            <div className="flex-1 min-h-87.5 lg:min-h-0 h-full flex flex-col">
               <ListCard
                 title="Assignments"
                 count={assignments.length}

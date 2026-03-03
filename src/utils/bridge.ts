@@ -110,12 +110,14 @@ export function setUIVisibility(visible: boolean) {
       host.style.setProperty("opacity", "1", "important");
       host.style.setProperty("visibility", "visible", "important");
       host.style.setProperty("pointer-events", "none", "important");
+      host.style.setProperty("background-color", "transparent", "important");
     }
     if (appRoot) {
       appRoot.style.setProperty("display", "block", "important");
       appRoot.style.setProperty("opacity", "1", "important");
       appRoot.style.setProperty("visibility", "visible", "important");
       appRoot.style.setProperty("pointer-events", "none", "important");
+      appRoot.style.setProperty("background-color", "transparent", "important");
     }
   }
 }

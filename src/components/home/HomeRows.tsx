@@ -1,4 +1,3 @@
-import React from "react";
 import { MapPin, Clock } from "lucide-react";
 import { CourseSummary, Assignment } from "../../types/vtop";
 import { UpcomingClass } from "../../utils/timetable-slots";
@@ -13,12 +12,12 @@ export const AttendanceRow = ({ course }: { course: CourseSummary }) => {
     statusColor = "bg-yellow-400 text-black border-yellow-500/50";
 
   return (
-    <div className="flex items-center justify-between p-3 rounded-xl border-2 border-[var(--border-dim)] bg-[var(--bg-surface)] hover:border-[var(--text-dim)] transition-all group">
+    <div className="flex items-center justify-between p-3 rounded-xl border-2 border-(--border-dim) bg-(--bg-surface) hover:border-(--text-dim) transition-all group">
       <div className="min-w-0 flex-1 pr-3">
-        <div className="text-xs font-bold text-[var(--text-main)] truncate">
+        <div className="text-xs font-bold text-(--text-main) truncate">
           {course.name}
         </div>
-        <div className="text-[9px] font-mono text-[var(--text-muted)] mt-0.5 truncate uppercase">
+        <div className="text-[9px] font-mono text-(--text-muted) mt-0.5 truncate uppercase">
           {course.code}
         </div>
       </div>
@@ -32,15 +31,15 @@ export const AttendanceRow = ({ course }: { course: CourseSummary }) => {
 };
 
 export const ScheduleRow = ({ item }: { item: UpcomingClass }) => {
-  const isLab = item.course.type.includes("Lab");
+  const isLab = item.course?.type?.includes("Lab") || false;
   return (
-    <div className="flex gap-3 p-3 rounded-xl border-2 border-[var(--border-dim)] bg-[var(--bg-surface)] hover:border-blue-500 transition-all group">
-      <div className="w-14 shrink-0 flex flex-col items-center justify-center border-r-2 border-[var(--border-dim)] pr-3">
-        <span className="text-sm font-black font-expanded text-[var(--text-main)] leading-none">
+    <div className="flex gap-3 p-3 rounded-xl border-2 border-(--border-dim) bg-(--bg-surface) hover:border-blue-500 transition-all group">
+      <div className="w-14 shrink-0 flex flex-col items-center justify-center border-r-2 border-(--border-dim) pr-3">
+        <span className="text-sm font-black font-expanded text-(--text-main) leading-none">
           {item.time}
         </span>
         <span
-          className={`text-[8px] font-bold uppercase mt-1 px-1.5 py-0.5 rounded border leading-none ${item.status === "Now" ? "bg-red-500/20 text-red-400 border-red-500/50 animate-pulse" : "bg-[var(--bg-highlight)] text-[var(--text-muted)] border-[var(--border-main)]"}`}
+          className={`text-[8px] font-bold uppercase mt-1 px-1.5 py-0.5 rounded border leading-none ${item.status === "Now" ? "bg-red-500/20 text-red-400 border-red-500/50 animate-pulse" : "bg-(--bg-highlight) text-(--text-muted) border-(--border-main)"}`}
         >
           {item.status}
         </span>
@@ -52,11 +51,11 @@ export const ScheduleRow = ({ item }: { item: UpcomingClass }) => {
           >
             {item.course.slot}
           </span>
-          <span className="text-xs font-bold text-[var(--text-main)] truncate leading-none mt-0.5">
+          <span className="text-xs font-bold text-(--text-main) truncate leading-none mt-0.5">
             {getCourseAcronym(item.course.title)}
           </span>
         </div>
-        <div className="flex items-center gap-3 text-[10px] font-mono text-[var(--text-muted)] mt-0.5">
+        <div className="flex items-center gap-3 text-[10px] font-mono text-(--text-muted) mt-0.5">
           <span className="flex items-center gap-1">
             <MapPin className="w-3 h-3" />
             {item.course.venue}
@@ -72,13 +71,13 @@ export const ScheduleRow = ({ item }: { item: UpcomingClass }) => {
 };
 
 export const AssignmentRow = ({ assignment }: { assignment: Assignment }) => (
-  <div className="p-3.5 rounded-xl border-2 border-[var(--border-dim)] bg-[var(--bg-surface)] hover:border-blue-500 hover:bg-blue-500/5 transition-all group cursor-default">
+  <div className="p-3.5 rounded-xl border-2 border-(--border-dim) bg-(--bg-surface) hover:border-blue-500 hover:bg-blue-500/5 transition-all group cursor-default">
     <div className="flex justify-between items-start gap-3">
       <div className="flex-1 min-w-0">
-        <div className="text-xs font-bold text-[var(--text-main)] leading-tight group-hover:text-blue-400 transition-colors line-clamp-2">
+        <div className="text-xs font-bold text-(--text-main) leading-tight group-hover:text-blue-400 transition-colors line-clamp-2">
           {assignment.title}
         </div>
-        <div className="text-[10px] font-mono text-[var(--text-muted)] mt-1.5 truncate">
+        <div className="text-[10px] font-mono text-(--text-muted) mt-1.5 truncate">
           {assignment.course}
         </div>
       </div>

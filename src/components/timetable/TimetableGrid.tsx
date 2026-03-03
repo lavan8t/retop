@@ -202,7 +202,7 @@ export const TimetableGrid = ({ courses }: { courses: TimetableCourse[] }) => {
                 }
               `}
             >
-              <span className="text-xl md:text-2xl font-black font-expanded leading-[0.85] tracking-tight mb-auto w-full break-words">
+              <span className="text-xl md:text-2xl font-black font-expanded leading-[0.85] tracking-tight mb-auto w-full wrap-break-word">
                 {getCourseAcronym(cellContent.title)}
               </span>
               <span className="text-[10px] md:text-xs uppercase font-bold tracking-widest opacity-80 mt-1 bg-black/40 px-2 py-1 rounded-md border border-white/10 w-fit truncate max-w-full">
@@ -221,7 +221,7 @@ export const TimetableGrid = ({ courses }: { courses: TimetableCourse[] }) => {
     <>
       <div
         ref={gridRef}
-        className="h-full w-full rounded-[2rem] border-4 border-zinc-900 bg-zinc-950 shadow-2xl overflow-hidden p-2 relative"
+        className="h-full w-full rounded-4xl border-4 border-zinc-900 bg-zinc-950 shadow-2xl overflow-hidden p-2 relative"
       >
         <div className="h-full w-full overflow-auto custom-scrollbar rounded-xl">
           {/* 
@@ -235,7 +235,7 @@ export const TimetableGrid = ({ courses }: { courses: TimetableCourse[] }) => {
             1. Header (48px)
             2. 5 Days (minmax 120px)
            */}
-          <div className="grid min-w-[1000px] h-full grid-cols-[40px_repeat(6,minmax(0,1fr))_32px_repeat(7,minmax(0,1fr))] grid-rows-[48px_repeat(5,minmax(120px,1fr))]">
+          <div className="grid min-w-250 h-full grid-cols-[40px_repeat(6,minmax(0,1fr))_32px_repeat(7,minmax(0,1fr))] grid-rows-[48px_repeat(5,minmax(120px,1fr))]">
             {gridCells}
           </div>
         </div>

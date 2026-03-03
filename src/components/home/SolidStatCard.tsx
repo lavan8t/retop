@@ -11,7 +11,7 @@ export const SolidStatCard = ({
       shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] 
       transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] 
       hover:-translate-y-1 hover:shadow-[10px_10px_0px_0px_rgba(0,0,0,1)]
-      relative overflow-hidden group h-full flex flex-col justify-center min-h-[140px] lg:min-h-0
+      relative overflow-hidden group h-full flex flex-col justify-center min-h-35 lg:min-h-0
     `}
   >
     <div className="absolute -right-4 -bottom-4 opacity-20 group-hover:opacity-30 transition-all duration-500 group-hover:rotate-12 group-hover:scale-110 pointer-events-none">

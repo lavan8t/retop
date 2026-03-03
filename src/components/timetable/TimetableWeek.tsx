@@ -71,7 +71,7 @@ export const TimetableWeek = ({ courses }: { courses: TimetableCourse[] }) => {
 
   return (
     <div
-      className="h-full w-full overflow-hidden flex flex-col bg-zinc-950 border-4 border-zinc-800 rounded-[2rem] shadow-xl relative"
+      className="h-full w-full overflow-hidden flex flex-col bg-zinc-950 border-4 border-zinc-800 rounded-4xl shadow-xl relative"
       onClick={() => setSelectedCell(null)}
     >
       <div className="overflow-auto custom-scrollbar flex-1 relative w-full h-full">
@@ -163,7 +163,7 @@ export const TimetableWeek = ({ courses }: { courses: TimetableCourse[] }) => {
                       key={`cell-${dIdx}-${time.hour}`}
                       className={`relative border-b-2 border-r-2 border-zinc-800/50 p-1 h-32 group transition-colors ${
                         // Use z-50 for parent when selected to ensure it sits on top of siblings
-                        isSelected ? "z-[60]" : "z-10"
+                        isSelected ? "z-60" : "z-10"
                       } ${
                         currentDayIndex === dIdx
                           ? "bg-zinc-800/20"
@@ -189,7 +189,7 @@ export const TimetableWeek = ({ courses }: { courses: TimetableCourse[] }) => {
                                  cursor-default relative
                                  ${
                                    isSelected
-                                     ? `h-auto min-h-full absolute left-1 right-1 scale-[1.02] z-[70] ${selectedClasses} ${time.hour >= 15 ? "bottom-1" : "top-1"}`
+                                     ? `h-auto min-h-full absolute left-1 right-1 scale-[1.02] z-70 ${selectedClasses} ${time.hour >= 15 ? "bottom-1" : "top-1"}`
                                      : `h-full ${baseBg} border-zinc-700/60 text-zinc-300 hover:text-zinc-50 ${hoverClasses} ${
                                          isCurrent ? currentClasses : ""
                                        }`

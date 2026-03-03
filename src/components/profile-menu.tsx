@@ -149,7 +149,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="absolute right-0 top-16 mt-2 w-80 bg-zinc-950 border-4 border-zinc-800 rounded-[2rem] shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-50 overflow-hidden origin-top-right"
+              className="absolute right-0 top-16 mt-2 w-80 bg-zinc-950 border-4 border-zinc-800 rounded-4xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-50 overflow-hidden origin-top-right"
             >
               <div className="p-3 bg-zinc-950">
                 <div className="grid grid-cols-2 gap-2">

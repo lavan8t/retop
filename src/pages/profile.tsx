@@ -27,7 +27,7 @@ const InfoRow = ({ label, value }: { label: string; value: string }) => (
       {label}
     </span>
 
-    <span className="text-sm font-bold font-mono text-zinc-200 whitespace-normal break-words leading-tight">
+    <span className="text-sm font-bold font-mono text-zinc-200 whitespace-normal wrap-break-word leading-tight">
       {value && value !== "-" ? (
         value
       ) : (
@@ -43,7 +43,7 @@ const AddressCard = ({ title, data }: { title: string; data: any }) => (
       <MapPin className="w-3 h-3" /> {title}
     </h4>
     <div className="space-y-1 overflow-hidden">
-      <div className="text-sm font-black text-zinc-200 leading-tight break-words">
+      <div className="text-sm font-black text-zinc-200 leading-tight wrap-break-word">
         {data.street}
       </div>
       <div className="text-[10px] font-mono text-zinc-500 truncate">
@@ -77,7 +77,7 @@ const BentoCard = ({
     initial={{ y: 20, opacity: 0 }}
     animate={{ y: 0, opacity: 1 }}
     transition={{ delay }}
-    className={`bg-zinc-900 border-4 border-zinc-800 rounded-[2rem] p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,0.25)] hover:shadow-[10px_10px_0px_0px_rgba(0,0,0,0.25)] hover:-translate-y-0.5 transition-all flex flex-col min-w-0 ${colSpan} ${className}`}
+    className={`bg-zinc-900 border-4 border-zinc-800 rounded-4xl p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,0.25)] hover:shadow-[10px_10px_0px_0px_rgba(0,0,0,0.25)] hover:-translate-y-0.5 transition-all flex flex-col min-w-0 ${colSpan} ${className}`}
   >
     {title && (
       <div className="flex items-center gap-3 mb-1.5 pb-1 border-b-4 border-zinc-800 shrink-0">
@@ -133,16 +133,16 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
 
   return (
     <div className="h-full overflow-y-auto bg-zinc-100 dark:bg-black p-4 md:p-6 text-zinc-200 font-mono custom-scrollbar">
-      <div className="max-w-[1500px] mx-auto grid grid-cols-1 md:grid-cols-6 gap-4">
+      <div className="max-w-375 mx-auto grid grid-cols-1 md:grid-cols-6 gap-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="md:col-span-4 bg-cyan-400 border-4 border-black rounded-[2rem] p-6 shadow-[8px_8px_0px_0px_#000] relative overflow-hidden group flex items-center min-h-[200px]"
+          className="md:col-span-4 bg-cyan-400 border-4 border-black rounded-4xl p-6 shadow-[8px_8px_0px_0px_#000] relative overflow-hidden group flex items-center min-h-50"
         >
           <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
           <div className="relative z-10 w-full flex flex-col md:flex-row items-center md:items-start gap-8">
             <div className="shrink-0">
-              <div className="w-32 h-32 md:w-36 md:h-36 rounded-[2rem] border-4 border-black bg-white overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] rotate-[-2deg] group-hover:rotate-0 transition-transform duration-300">
+              <div className="w-32 h-32 md:w-36 md:h-36 rounded-4xl border-4 border-black bg-white overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -rotate-2 group-hover:rotate-0 transition-transform duration-300">
                 {data.basic.photoUrl ? (
                   <img
                     src={data.basic.photoUrl}
@@ -182,7 +182,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1 }}
-          className="md:col-span-2 bg-yellow-400 border-4 border-black rounded-[2rem] p-6 flex flex-col justify-between shadow-[8px_8px_0px_0px_#000] relative overflow-hidden min-h-[200px]"
+          className="md:col-span-2 bg-yellow-400 border-4 border-black rounded-4xl p-6 flex flex-col justify-between shadow-[8px_8px_0px_0px_#000] relative overflow-hidden min-h-50"
         >
           <div className="absolute -bottom-8 -right-8 text-black/5">
             <Shield className="w-48 h-48" />
@@ -277,7 +277,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
             <span className="text-[9px] font-black uppercase text-zinc-500 block mb-1 tracking-widest">
               Previous Institution
             </span>
-            <p className="text-xs font-bold leading-tight break-words">
+            <p className="text-xs font-bold leading-tight wrap-break-word">
               {data.education.school}
             </p>
           </div>
@@ -303,7 +303,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
           icon={Briefcase}
           delay={0.4}
           colSpan="md:col-span-3"
-          className="border-l-[12px] border-l-blue-500"
+          className="border-l-12 border-l-blue-500"
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 h-full items-center">
             <div className="space-y-1">
@@ -344,7 +344,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
         >
           {data.hostel ? (
             <div className="flex gap-6 h-full items-center">
-              <div className="bg-zinc-800 p-4 rounded-2xl border-4 border-zinc-800 text-center flex flex-col justify-center min-w-[120px] shadow-inner shrink-0">
+              <div className="bg-zinc-800 p-4 rounded-2xl border-4 border-zinc-800 text-center flex flex-col justify-center min-w-30 shadow-inner shrink-0">
                 <div className="text-[10px] uppercase font-black text-zinc-500 tracking-widest mb-1">
                   Room
                 </div>

@@ -23,7 +23,7 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="flex flex-col items-center justify-center h-full border-4 border-dashed border-zinc-900 rounded-[2rem] bg-zinc-900/30"
+          className="flex flex-col items-center justify-center h-full border-4 border-dashed border-zinc-900 rounded-4xl bg-zinc-900/30"
         >
           <Layers className="w-16 h-16 text-zinc-800 mb-6 animate-pulse" />
           <p className="text-zinc-500 font-bold text-xl uppercase tracking-widest">

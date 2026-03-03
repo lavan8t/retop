@@ -171,7 +171,7 @@ const LoginPage = ({
               stiffness: 300,
               mass: 0.8,
             }}
-            className="fixed inset-0 min-h-screen flex overflow-hidden selection:bg-yellow-400 selection:text-black pointer-events-auto bg-(--bg-main) z-[100]"
+            className="fixed inset-0 min-h-screen flex overflow-hidden selection:bg-yellow-400 selection:text-black pointer-events-auto bg-(--bg-main) z-100"
           >
             <div className="hidden lg:flex w-[45%] bg-(--accent-base) border-r-[6px] border-(--border-main) flex-col justify-center p-12 relative">
               <div className="relative z-10">

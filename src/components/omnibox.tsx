@@ -97,7 +97,7 @@ export const Omnibox: React.FC<OmniboxProps> = ({
     if (query) {
       if (flattenedLinks.length === 0)
         return (
-          <div className="flex flex-col items-center justify-center p-12 text-zinc-500 text-sm border-4 border-dashed border-zinc-800 m-4 rounded-[2rem] bg-zinc-950/50">
+          <div className="flex flex-col items-center justify-center p-12 text-zinc-500 text-sm border-4 border-dashed border-zinc-800 m-4 rounded-4xl bg-zinc-950/50">
             <AlertCircle className="w-12 h-12 mb-4 opacity-50" />
             <span className="font-expanded text-lg uppercase tracking-widest">
               No matches found
@@ -254,7 +254,7 @@ export const Omnibox: React.FC<OmniboxProps> = ({
 
   return (
     <div
-      className={`fixed inset-0 z-[200] flex items-start justify-center pt-[5vh] md:pt-[10vh] transition-all duration-300 ${
+      className={`fixed inset-0 z-200 flex items-start justify-center pt-[5vh] md:pt-[10vh] transition-all duration-300 ${
         isAnimating
           ? "bg-zinc-950/90 backdrop-blur-md opacity-100"
           : "bg-transparent backdrop-blur-none opacity-0"
@@ -264,7 +264,7 @@ export const Omnibox: React.FC<OmniboxProps> = ({
       <div
         className={`
             w-full max-w-3xl flex flex-col max-h-[80vh] overflow-hidden transform transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-            bg-zinc-950 border-4 border-zinc-800 rounded-[2rem] shadow-[12px_12px_0px_0px_#000]
+            bg-zinc-950 border-4 border-zinc-800 rounded-4xl shadow-[12px_12px_0px_0px_#000]
             ${isAnimating ? "scale-100 translate-y-0 opacity-100" : "scale-95 translate-y-8 opacity-0"}
         `}
         onClick={(e) => {

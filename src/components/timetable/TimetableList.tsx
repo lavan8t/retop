@@ -1,11 +1,10 @@
-import React from "react";
 import { TimetableCourse } from "../../types/vtop";
 import { MapPin } from "lucide-react";
 
 export const TimetableList = ({ courses }: { courses: TimetableCourse[] }) => (
-  <div className="h-full overflow-hidden bg-zinc-900 border-4 border-zinc-800 rounded-[2rem] shadow-xl flex flex-col">
+  <div className="h-full overflow-hidden bg-zinc-900 border-4 border-zinc-800 rounded-4xl shadow-xl flex flex-col">
     <div className="flex-1 overflow-auto custom-scrollbar">
-      <table className="w-full text-left border-collapse table-fixed min-w-[800px]">
+      <table className="w-full text-left border-collapse table-fixed min-w-200">
         <thead className="sticky top-0 bg-zinc-950 z-10 shadow-md">
           <tr className="text-blue-400 font-expanded font-bold text-sm uppercase tracking-wider border-b-2 border-zinc-800">
             <th className="py-4 px-6 w-[15%]">Code</th>

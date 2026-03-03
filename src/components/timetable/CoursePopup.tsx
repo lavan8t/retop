@@ -89,7 +89,7 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
         className={`
             fixed z-50 w-72 bg-zinc-900 border-2 ${colors.border} 
             rounded-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] overflow-hidden
-            transform transition-all duration-[300ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] origin-top-left
+            transform transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] origin-top-left
             ${active ? "scale-100 opacity-100" : "scale-90 opacity-0"}
         `}
       >
@@ -110,7 +110,7 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
                   {course.type}
                 </span>
               </div>
-              <h2 className="text-sm font-black font-expanded text-white leading-tight break-words">
+              <h2 className="text-sm font-black font-expanded text-white leading-tight wrap-break-word">
                 {course.title}
               </h2>
             </div>

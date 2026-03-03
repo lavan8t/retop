@@ -182,7 +182,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-                <span className="text-xs font-bold text-zinc-200 px-2 min-w-[3rem] text-center">
+                <span className="text-xs font-bold text-zinc-200 px-2 min-w-12 text-center">
                   {currentPage} / {totalPages || 1}
                 </span>
                 <button
@@ -205,7 +205,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
               </span>
             </div>
           ) : filteredCourses.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-zinc-500 border-4 border-dashed border-zinc-900 rounded-[2rem] bg-zinc-900/30">
+            <div className="h-full flex flex-col items-center justify-center text-zinc-500 border-4 border-dashed border-zinc-900 rounded-4xl bg-zinc-900/30">
               <Search className="w-16 h-16 mb-4 opacity-20" />
               <span className="font-bold uppercase tracking-widest">
                 No matching courses
@@ -215,9 +215,9 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="border-4 border-zinc-800 rounded-[2rem] overflow-hidden bg-zinc-900 shadow-lg"
+              className="border-4 border-zinc-800 rounded-4xl overflow-hidden bg-zinc-900 shadow-lg"
             >
-              <table className="w-full text-left border-collapse table-fixed min-w-[800px]">
+              <table className="w-full text-left border-collapse table-fixed min-w-200">
                 <thead className="sticky top-0 bg-zinc-950 z-10 shadow-md">
                   <tr className="text-blue-400 font-expanded font-bold text-sm uppercase tracking-wider border-b-2 border-zinc-800">
                     <th className="py-4 px-6 w-[15%]">Code</th>

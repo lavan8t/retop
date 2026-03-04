@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import { Omnibox } from "../components/omnibox";
+import { ProfileMenu } from "../components/profile-menu";
 import {
   initializeContainer,
   getAppRoot,
@@ -26,16 +27,12 @@ import {
   Assignment,
   TimetableCourse,
   Semester,
+  CoursePageOption,
 } from "../types/vtop";
-import { Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-import { HomeView } from "./home";
-import { TimetableContentView } from "./timetable";
-import { SettingsPage } from "./settings";
-import { CurriculumPage } from "./curriculum";
-import { MarksPage } from "./marks";
-import { ProfilePage } from "./profile";
+import { TopBar } from "../components/layout/TopBar";
+import { ContentRouter } from "../components/layout/ContentRouter";
 import {
   getUpcomingClasses,
   UpcomingClass,
@@ -43,8 +40,6 @@ import {
 } from "../utils/timetable-slots";
 import { useSettings, applyTheme } from "../utils/settings-store";
 import { LegacyReturnButton } from "../components/LegacyReturnButton";
-import { TopBar } from "../components/layout/TopBar";
-import { ContentRouter } from "../components/layout/ContentRouter";
 
 type ViewType =
   | "dashboard"
@@ -53,7 +48,8 @@ type ViewType =
   | "curriculum"
   | "marks"
   | "profile"
-  | "settings";
+  | "settings"
+  | "coursePage";
 
 const getDestinationView = (link: QuickLink): ViewType | "content" => {
   const lowerTitle = link.title.toLowerCase();
@@ -67,12 +63,13 @@ const getDestinationView = (link: QuickLink): ViewType | "content" => {
   if (lowerTitle.includes("curriculum")) return "curriculum";
   if (lowerTitle.includes("mark") || lowerTitle.includes("grade"))
     return "marks";
-
   if (
     lowerTitle.includes("profile view") ||
     lowerUrl.includes("studentprofileallview")
   )
     return "profile";
+  if (lowerTitle.includes("course page") || lowerUrl.includes("coursepage"))
+    return "coursePage";
 
   return "content";
 };
@@ -83,9 +80,7 @@ const navigateLegacy = (title: string) => {
     (el) => el.textContent?.trim() === title || el.innerText?.trim() === title,
   );
   if (target) target.click();
-  else {
-    console.warn("Legacy link not found for:", title);
-  }
+  else console.warn("Legacy link not found for:", title);
 };
 
 export function renderDashboard() {
@@ -101,6 +96,7 @@ const DashboardApp = () => {
   const [user, setUser] = useState({ name: "Student", regNo: "..." });
   const [menu, setMenu] = useState<MenuCategory[]>([]);
   const [isOmniboxOpen, setIsOmniboxOpen] = useState(false);
+  const [omniboxInitial, setOmniboxInitial] = useState("");
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const { settings, updateSetting } = useSettings();
 
@@ -118,6 +114,7 @@ const DashboardApp = () => {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [upcoming, setUpcoming] = useState<UpcomingClass[]>([]);
 
+  // Timetable State (This now successfully feeds BOTH pages!)
   const [ttSemesters, setTtSemesters] = useState<Semester[]>([]);
   const [ttSelectedSem, setTtSelectedSem] = useState("");
   const [ttCourses, setTtCourses] = useState<TimetableCourse[]>([]);
@@ -126,9 +123,17 @@ const DashboardApp = () => {
     "grid",
   );
 
+  // Course Page Specific Option State
+  const [cpOptions, setCpOptions] = useState<CoursePageOption[]>([]);
+  const [cpSelectedSem, setCpSelectedSem] = useState("");
+  const [cpSelectedCourseId, setCpSelectedCourseId] = useState("");
+
   const networkRef = useRef<VTOPNetwork | null>(null);
   const csrfRef = useRef<string>("");
   const authIdRef = useRef<string>("");
+
+  const isOmniboxOpenRef = useRef(isOmniboxOpen);
+  isOmniboxOpenRef.current = isOmniboxOpen;
 
   const statusColor =
     status === "Online" || status === "Active" ? "bg-lime-400" : "bg-red-500";
@@ -173,13 +178,34 @@ const DashboardApp = () => {
     }, 2000);
 
     const handleKeys = (e: KeyboardEvent) => {
-      if (
-        e.key === "/" &&
-        !["INPUT", "TEXTAREA"].includes((e.target as HTMLElement).tagName) &&
-        currentView !== "dashboard"
-      ) {
-        e.preventDefault();
-        setIsOmniboxOpen(true);
+      const activeEl = document.activeElement as HTMLElement;
+      const targetEl = e.target as HTMLElement;
+
+      const isInput = (el: HTMLElement | null) => {
+        if (!el) return false;
+        const tag = el.tagName?.toUpperCase();
+        return (
+          tag === "INPUT" ||
+          tag === "TEXTAREA" ||
+          tag === "SELECT" ||
+          el.isContentEditable
+        );
+      };
+
+      if (isInput(activeEl) || isInput(targetEl)) return;
+      if (isOmniboxOpenRef.current) return;
+      if (e.key === "Escape") return;
+
+      if (currentView !== "dashboard") {
+        if (
+          e.key === "/" ||
+          (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey)
+        ) {
+          e.preventDefault();
+          isOmniboxOpenRef.current = true;
+          setOmniboxInitial(e.key === "/" ? "" : e.key);
+          setIsOmniboxOpen(true);
+        }
       }
     };
     window.addEventListener("keydown", handleKeys);
@@ -210,7 +236,6 @@ const DashboardApp = () => {
           );
         },
       );
-
       const profile = parseStudentProfile(html);
       if (profile?.basic?.name) {
         setUser((prev) => ({
@@ -220,7 +245,7 @@ const DashboardApp = () => {
         }));
       }
     } catch (err) {
-      console.warn("Failed to silently fetch user profile for name", err);
+      console.warn("Failed to fetch user profile", err);
     }
   };
 
@@ -247,8 +272,14 @@ const DashboardApp = () => {
         const sems = parseSemesters(semHTML);
         if (sems.length > 0) {
           const semId = sems[0].id;
+
           setTtSemesters(sems);
+
+          // Set Timetable default
           setTtSelectedSem(semId);
+          // Set Course Page default instantly from the same flawless array
+          setCpSelectedSem(semId);
+
           await loadTimetable(semId);
         }
       } catch (e) {
@@ -345,10 +376,9 @@ const DashboardApp = () => {
         `}</style>
       )}
 
-      {/* FIXED LOGO: Exclusively functions as the "Return to Legacy" button. It overlaps the TopBar placeholder. */}
       {isModernUI && (
         <div
-          className="group fixed top-0 z-150 h-20 px-6 md:px-8 flex items-center gap-4 cursor-pointer pointer-events-auto"
+          className="group fixed top-0 z-150 h-20 pl-6 md:pl-8 flex items-center gap-4 cursor-pointer pointer-events-auto"
           onClick={() => {
             setIsPeeking(false);
             setIsModernUI(false);
@@ -358,7 +388,6 @@ const DashboardApp = () => {
           <div className="flex flex-col justify-center h-full gap-0.5">
             <div className="flex items-center gap-3">
               <div className="relative flex items-baseline">
-                {/* Text uses difference blending to stay visible during bottom peek */}
                 <span
                   className={`font-expanded font-black text-[2.5rem] tracking-tighter italic lowercase leading-none select-none transition-all duration-300 ${isPeeking ? "text-white mix-blend-difference" : "text-(--text-main) hover:text-(--accent-hover)"}`}
                 >
@@ -371,12 +400,6 @@ const DashboardApp = () => {
                   <span
                     className={`relative inline-flex rounded-full h-3.5 w-3.5 ${statusColor}`}
                   ></span>
-                  <div
-                    className={`absolute left-1/2 top-full mt-3 -translate-x-1/2 px-2.5 py-1 bg-(--bg-highlight) text-(--text-main) text-[9px] font-bold uppercase tracking-widest rounded-md border border-(--border-dim) pointer-events-none whitespace-nowrap z-100 shadow-xl transition-opacity duration-200 ${isPeeking ? "opacity-0" : "opacity-0 group-hover:opacity-100"}`}
-                  >
-                    {status}
-                    <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-(--bg-highlight) border-t border-l border-(--border-dim) rotate-45"></div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -416,11 +439,12 @@ const DashboardApp = () => {
           >
             <Omnibox
               isOpen={isOmniboxOpen}
+              initialQuery={omniboxInitial}
               onClose={() => setIsOmniboxOpen(false)}
               menuCategories={menu}
               onNavigate={handleLinkClick}
             />
-            <div className="flex flex-col h-full pointer-events-auto">
+            <div className="flex flex-col h-full pointer-events-auto overflow-hidden">
               <TopBar
                 currentView={currentView}
                 contentTitle={contentTitle}
@@ -432,6 +456,9 @@ const DashboardApp = () => {
                 ttViewMode={ttViewMode}
                 setTtViewMode={setTtViewMode}
                 loadTimetable={loadTimetable}
+                cpSelectedSem={cpSelectedSem}
+                setCpSelectedSem={setCpSelectedSem}
+                setCpSelectedCourseId={setCpSelectedCourseId}
                 user={user}
                 showProfileMenu={showProfileMenu}
                 setShowProfileMenu={setShowProfileMenu}
@@ -444,7 +471,7 @@ const DashboardApp = () => {
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={currentView}
-                    className="h-full w-full flex flex-col"
+                    className="h-full w-full flex flex-col overflow-hidden"
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -15 }}
@@ -465,6 +492,11 @@ const DashboardApp = () => {
                       ttCourses={ttCourses}
                       ttLoading={ttLoading}
                       ttViewMode={ttViewMode}
+                      cpOptions={cpOptions}
+                      setCpOptions={setCpOptions}
+                      cpSelectedSem={cpSelectedSem}
+                      cpSelectedCourseId={cpSelectedCourseId}
+                      setCpSelectedCourseId={setCpSelectedCourseId}
                     />
                   </motion.div>
                 </AnimatePresence>

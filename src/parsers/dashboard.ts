@@ -77,9 +77,12 @@ export function parseCourseDetails(html: string): CourseSummary[] {
 
   rows.forEach((rowNode) => {
     const row = rowNode as Element;
+    // Fetch all cells (both th and td)
     const cells = row.querySelectorAll("td, th");
     if (cells.length < 4) return;
 
+    // cells[0] is the "#" index
+    // cells[1] is the "Code - Course Name"
     const codeNameCell = cells[1];
     const code =
       codeNameCell.querySelector("span.fw-bold")?.textContent?.trim() || "";
@@ -89,16 +92,28 @@ export function parseCourseDetails(html: string): CourseSummary[] {
       .replace(/^-+\s*/, "")
       .trim();
 
+    // cells[2] is the "Type" column (e.g., ELA, ETH, TH, LO, SS)
+    const typeCell = cells[2];
+    const type = typeCell?.textContent?.trim() || "";
+
+    // cells[3] is the "Attendance" column
     const attendanceCell = cells[3];
-    const attendance = attendanceCell.textContent?.trim() || "0";
+    const rawAttendance = attendanceCell.textContent?.trim() || "0";
+
+    // Parse the float and round it to remove the ".0" (e.g., "84.0" -> "84")
+    const parsedAttendance = parseFloat(rawAttendance);
+    const formattedAttendance = isNaN(parsedAttendance)
+      ? "0"
+      : Math.round(parsedAttendance).toString();
 
     if (code) {
       courses.push({
         code: code,
         name: name,
+        type: type,
         slot: "N/A",
         faculty: "N/A",
-        attendance: attendance.includes("%") ? attendance : attendance + "%",
+        attendance: formattedAttendance,
       });
     }
   });

@@ -5,6 +5,7 @@ import { CurriculumPage } from "../../pages/curriculum";
 import { MarksPage } from "../../pages/marks";
 import { ProfilePage } from "../../pages/profile";
 import { SettingsPage } from "../../pages/settings";
+import { CoursePage } from "../../pages/course-page";
 
 export const ContentRouter = ({
   currentView,
@@ -21,6 +22,16 @@ export const ContentRouter = ({
   ttCourses,
   ttLoading,
   ttViewMode,
+
+  // Destructure the newly added Course Page props here
+  cpOptions,
+  setCpOptions,
+  cpSemesters,
+  setCpSemesters,
+  cpSelectedSem,
+  setCpSelectedSem,
+  cpSelectedCourseId,
+  setCpSelectedCourseId,
 }: any) => {
   if (!networkRef.current) return null;
 
@@ -54,6 +65,23 @@ export const ContentRouter = ({
       return <ProfilePage network={networkRef.current} />;
     case "settings":
       return <SettingsPage settings={settings} updateSetting={updateSetting} />;
+
+    case "coursePage":
+      return (
+        <CoursePage
+          network={networkRef.current}
+          menu={menu}
+          cpOptions={cpOptions}
+          setCpOptions={setCpOptions}
+          cpSemesters={cpSemesters}
+          setCpSemesters={setCpSemesters}
+          selectedSem={cpSelectedSem}
+          setSelectedSem={setCpSelectedSem}
+          selectedOptionId={cpSelectedCourseId}
+          setSelectedOptionId={setCpSelectedCourseId}
+        />
+      );
+
     case "content":
       return (
         <div className="flex flex-col items-center justify-center h-full text-(--text-muted) font-mono animate-pulse pointer-events-auto">

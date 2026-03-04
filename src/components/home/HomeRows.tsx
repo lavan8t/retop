@@ -1,3 +1,4 @@
+import React from "react";
 import { MapPin, Clock } from "lucide-react";
 import { CourseSummary, Assignment } from "../../types/vtop";
 import { UpcomingClass } from "../../utils/timetable-slots";
@@ -5,26 +6,50 @@ import { getCourseAcronym } from "../../utils/formatting";
 
 export const AttendanceRow = ({ course }: { course: CourseSummary }) => {
   const val = parseFloat(course.attendance);
-  let statusColor = "bg-lime-400 text-black border-lime-500/50";
-  if (isNaN(val)) statusColor = "bg-zinc-400 text-black border-zinc-500/50";
-  else if (val < 75) statusColor = "bg-red-500 text-white border-red-600/50";
-  else if (val < 80)
-    statusColor = "bg-yellow-400 text-black border-yellow-500/50";
+  const displayVal = isNaN(val) ? 0 : Math.round(val);
+
+  let barColor = "bg-(--att-safe)";
+  let numColor = "text-(--att-text-safe)";
+
+  if (isNaN(val)) {
+    barColor = "bg-zinc-500";
+    numColor = "text-zinc-500";
+  } else if (val < 75) {
+    barColor = "bg-(--att-danger)";
+    numColor = "text-(--att-text-danger)";
+  } else if (val < 80) {
+    barColor = "bg-(--att-warn)";
+    numColor = "text-(--att-text-warn)";
+  }
 
   return (
-    <div className="flex items-center justify-between p-3 rounded-xl border-2 border-(--border-dim) bg-(--bg-surface) hover:border-(--text-dim) transition-all group">
-      <div className="min-w-0 flex-1 pr-3">
-        <div className="text-xs font-bold text-(--text-main) truncate">
-          {course.name}
+    <div className="relative flex items-center justify-between p-3 rounded-xl border-2 border-(--border-dim) bg-(--bg-surface) hover:border-blue-500 transition-all group overflow-hidden cursor-pointer">
+      {/* Horizontal Progress Bar */}
+      <div
+        className={`absolute top-0 left-0 h-full border-r-2 border-(--border-dim) group-hover:border-blue-500/50 ${barColor} opacity-20 group-hover:opacity-30 transition-all duration-500 ease-out`}
+        style={{ width: `${displayVal}%` }}
+      />
+
+      <div className="relative z-10 min-w-0 flex-1 pr-3">
+        <div className="flex items-center gap-2 mb-0.5">
+          <div className="text-xs font-bold text-(--text-main) truncate group-hover:text-blue-500 transition-colors">
+            {course.name}
+          </div>
+          {course.type && (
+            <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded-md border border-(--border-dim) bg-(--bg-main) text-(--text-muted) leading-none shrink-0 group-hover:border-blue-500/30 transition-colors">
+              {course.type}
+            </span>
+          )}
         </div>
-        <div className="text-[9px] font-mono text-(--text-muted) mt-0.5 truncate uppercase">
+        <div className="text-[9px] font-mono text-(--text-muted) truncate uppercase group-hover:text-blue-400 transition-colors">
           {course.code}
         </div>
       </div>
+
       <div
-        className={`px-2.5 py-1.5 rounded-lg font-black font-expanded text-lg border-2 shadow-sm leading-none ${statusColor}`}
+        className={`relative z-10 font-black font-expanded text-2xl leading-none ${numColor} drop-`}
       >
-        {course.attendance}
+        {isNaN(val) ? "--" : displayVal}
       </div>
     </div>
   );

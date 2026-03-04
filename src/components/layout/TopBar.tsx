@@ -2,6 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
+  Home,
   RefreshCw,
   LayoutGrid,
   List,
@@ -10,7 +11,7 @@ import {
   BookOpen,
   GraduationCap,
   User,
-  Settings,
+  Layers,
 } from "lucide-react";
 import { QuickLink, Semester, TimetableCourse } from "../../types/vtop";
 import { SemesterDropdown } from "../timetable/SemesterDropdown";
@@ -27,12 +28,16 @@ interface TopBarProps {
   ttViewMode: "grid" | "list" | "week";
   setTtViewMode: (mode: "grid" | "list" | "week") => void;
   loadTimetable: (semId: string) => void;
+
+  cpSelectedSem: string;
+  setCpSelectedSem: (semId: string) => void;
+  setCpSelectedCourseId: (id: string) => void;
+
   user: { name: string; regNo: string };
   showProfileMenu: boolean;
   setShowProfileMenu: (show: boolean) => void;
   handleLinkClick: (link: QuickLink) => void;
   handleLogout: () => void;
-  setIsModernUI: (modern: boolean) => void;
   setIsOmniboxOpen: (open: boolean) => void;
   setCurrentView: (view: any) => void;
 }
@@ -44,6 +49,13 @@ const favoriteLinks = [
     category: "Core",
     icon: Calendar,
     color: "bg-purple-400",
+  },
+  {
+    title: "Course Page",
+    url: "academics/CoursePageConsolidated/CoursePage",
+    category: "Core",
+    icon: Layers,
+    color: "bg-cyan-400",
   },
   {
     title: "Curriculum",
@@ -58,20 +70,6 @@ const favoriteLinks = [
     category: "Core",
     icon: GraduationCap,
     color: "bg-lime-400",
-  },
-  {
-    title: "Profile",
-    url: "studentprofileallview",
-    category: "Core",
-    icon: User,
-    color: "bg-yellow-400",
-  },
-  {
-    title: "Settings",
-    url: "#settings",
-    category: "System",
-    icon: Settings,
-    color: "bg-pink-400",
   },
 ];
 
@@ -89,6 +87,8 @@ const getPageTitle = (view: string, dynamicTitle?: string) => {
       return "STUDENT PROFILE";
     case "settings":
       return "PREFERENCES";
+    case "coursePage":
+      return "COURSE PAGE";
     case "content":
       return dynamicTitle || "CONTENT";
     default:
@@ -107,37 +107,22 @@ export const TopBar: React.FC<TopBarProps> = ({
   ttViewMode,
   setTtViewMode,
   loadTimetable,
+  cpSelectedSem,
+  setCpSelectedSem,
+  setCpSelectedCourseId,
   user,
   showProfileMenu,
   setShowProfileMenu,
   handleLinkClick,
   handleLogout,
-  setIsModernUI,
   setIsOmniboxOpen,
   setCurrentView,
 }) => {
   return (
-    <header className="h-20 bg-(--bg-main) border-b-4 border-(--border-main) sticky top-0 z-100 px-6 md:px-8 flex items-center justify-between shadow-xl shrink-0">
-      <div
-        className="flex items-center gap-4 group cursor-pointer h-full"
-        onClick={() => setCurrentView("dashboard")}
-      >
-        {currentView !== "dashboard" && (
-          <motion.button
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            onClick={(e) => {
-              e.stopPropagation();
-              setCurrentView("dashboard");
-            }}
-            className="w-10 h-10 flex items-center justify-center bg-(--bg-surface) border-2 border-(--border-dim) rounded-lg text-(--text-muted) hover:text-(--text-main) hover:border-(--accent-base) transition-all active:scale-90 shrink-0 cursor-pointer"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </motion.button>
-        )}
+    <header className="h-20 bg-(--bg-main) border-b-4 border-(--border-main) sticky top-0 z-100 pl-6 md:pl-8 pr-0 flex items-center justify-between shadow-xl shrink-0">
+      <div className="flex items-center h-full">
         <div className="flex flex-col justify-center h-full gap-0.5">
           <div className="flex items-center gap-3">
-            {/* INVISIBLE PLACEHOLDER: Reserves exact space for the fixed re. logo */}
             <div className="relative flex items-baseline opacity-0 select-none pointer-events-none">
               <span className="font-expanded font-black text-[2.5rem] tracking-tighter italic lowercase leading-none">
                 re
@@ -146,22 +131,37 @@ export const TopBar: React.FC<TopBarProps> = ({
             </div>
 
             {currentView !== "dashboard" && (
-              <h1 className="font-expanded font-black text-3xl text-(--text-main) tracking-tight uppercase truncate max-w-50 sm:max-w-[40vw] leading-none mt-1 mb-0 ml-2 pl-3 border-l-4 border-(--border-dim)">
+              <motion.button
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrentView("dashboard");
+                }}
+                title="Return to Dashboard"
+                className="group/back w-10 h-10 ml-1 flex items-center justify-center bg-(--bg-surface) border-2 border-(--border-dim) rounded-lg text-(--text-muted) hover:text-white hover:bg-blue-500 hover:border-black transition-all active:scale-90 shrink-0 cursor-pointer pointer-events-auto shadow-sm hover:shadow-[2px_2px_0px_0px_#000]"
+              >
+                <ArrowLeft className="w-5 h-5 group-hover/back:hidden" />
+                <Home className="w-5 h-5 hidden group-hover/back:block" />
+              </motion.button>
+            )}
+
+            {currentView !== "dashboard" && (
+              <h1
+                onClick={() => setCurrentView("dashboard")}
+                title="Return to Dashboard"
+                className="font-expanded font-black text-3xl text-(--text-main) tracking-tight uppercase truncate max-w-50 sm:max-w-[30vw] leading-none mt-1 mb-0 ml-1 pl-3 border-l-4 border-(--border-dim) cursor-pointer hover:text-(--accent-hover) transition-colors pointer-events-auto"
+              >
                 {getPageTitle(currentView, contentTitle)}
               </h1>
             )}
           </div>
-          {currentView === "timetable" && (
-            <p className="text-[9px] text-(--text-muted) font-bold uppercase tracking-widest mt-0.5 ml-18 mb-0">
-              {ttCourses.length} COURSES REGISTERED
-            </p>
-          )}
         </div>
       </div>
 
-      <div className="flex items-center gap-4 pointer-events-auto">
+      <div className="flex items-center gap-4 h-full pointer-events-auto">
         {currentView === "dashboard" && (
-          <div className="hidden xl:flex items-center gap-2.5 mr-4">
+          <div className="hidden xl:flex items-center gap-2.5">
             {favoriteLinks.map((link, idx) => (
               <button
                 key={idx}
@@ -193,19 +193,19 @@ export const TopBar: React.FC<TopBarProps> = ({
             <div className="flex bg-(--bg-surface) border-2 border-(--border-dim) rounded-xl p-1 gap-1">
               <button
                 onClick={() => setTtViewMode("grid")}
-                className={`p-1.5 rounded-lg transition-all ${ttViewMode === "grid" ? "bg-(--accent-base) text-white shadow-sm" : "text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-highlight)"}`}
+                className={`p-1.5 rounded-lg transition-all ${ttViewMode === "grid" ? "bg-(--accent-base) text-white shadow-sm" : "text-(--text-muted) hover:text-(--text-main)"}`}
               >
                 <LayoutGrid className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setTtViewMode("list")}
-                className={`p-1.5 rounded-lg transition-all ${ttViewMode === "list" ? "bg-(--accent-base) text-white shadow-sm" : "text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-highlight)"}`}
+                className={`p-1.5 rounded-lg transition-all ${ttViewMode === "list" ? "bg-(--accent-base) text-white shadow-sm" : "text-(--text-muted) hover:text-(--text-main)"}`}
               >
                 <List className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setTtViewMode("week")}
-                className={`p-1.5 rounded-lg transition-all ${ttViewMode === "week" ? "bg-(--accent-base) text-white shadow-sm" : "text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-highlight)"}`}
+                className={`p-1.5 rounded-lg transition-all ${ttViewMode === "week" ? "bg-(--accent-base) text-white shadow-sm" : "text-(--text-muted) hover:text-(--text-main)"}`}
               >
                 <Calendar className="w-4 h-4" />
               </button>
@@ -214,10 +214,29 @@ export const TopBar: React.FC<TopBarProps> = ({
           </motion.div>
         )}
 
+        {currentView === "coursePage" && (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex items-center gap-2 mr-2"
+          >
+            {/* FIX: Feeds the working ttSemesters directly to the Course Page dropdown */}
+            <SemesterDropdown
+              semesters={ttSemesters}
+              selectedId={cpSelectedSem}
+              onChange={(sem: string) => {
+                setCpSelectedSem(sem);
+                setCpSelectedCourseId("");
+              }}
+            />
+            <div className="w-0.5 h-8 bg-(--border-dim) mx-1"></div>
+          </motion.div>
+        )}
+
         {currentView !== "dashboard" && (
           <button
             onClick={() => setIsOmniboxOpen(true)}
-            className="hidden lg:flex items-center gap-3 px-3 py-2 bg-(--bg-surface) border-2 border-(--border-main) rounded-full text-(--text-muted) hover:border-(--accent-base) hover:text-(--text-main) transition-all group shadow-lg active:scale-95 cursor-pointer"
+            className="hidden lg:flex items-center gap-3 px-3 py-2 mr-2 bg-(--bg-surface) border-2 border-(--border-main) rounded-full text-(--text-muted) hover:border-(--accent-base) hover:text-(--text-main) transition-all group shadow-lg active:scale-95 cursor-pointer"
           >
             <Menu className="w-5 h-5 group-hover:rotate-12 transition-transform" />
             <span className="font-bold text-xs tracking-widest uppercase">
@@ -229,10 +248,10 @@ export const TopBar: React.FC<TopBarProps> = ({
           </button>
         )}
 
-        <div className="relative">
+        <div className="relative h-full">
           <button
             onClick={() => setShowProfileMenu(!showProfileMenu)}
-            className="flex items-center gap-3 focus:outline-none group cursor-pointer"
+            className="flex items-center h-full focus:outline-none group cursor-pointer gap-3"
           >
             <div className="text-right hidden sm:block">
               <div className="text-sm font-bold text-(--text-main) uppercase tracking-wider group-hover:text-(--accent-hover) transition-colors">
@@ -244,21 +263,27 @@ export const TopBar: React.FC<TopBarProps> = ({
                 </div>
               )}
             </div>
-            <div className="w-10 h-10 border-2 border-(--accent-base) rounded-full overflow-hidden bg-(--bg-highlight) shadow-[0px_0px_10px_var(--accent-base)] group-hover:shadow-[0px_0px_15px_var(--accent-hover)] group-hover:scale-105 transition-all duration-300">
-              <img
-                src={`/vtop/users/image/?id=${user.regNo}`}
-                className="w-full h-full object-cover"
-              />
+            <div className="h-full bg-(--bg-highlight) overflow-hidden shrink-0 border-l-4 border-(--border-main) group-hover:brightness-110 transition-all flex items-center justify-center">
+              {user.regNo !== "..." ? (
+                <img
+                  src={`/vtop/users/image/?id=${user.regNo}`}
+                  className="w-full h-full object-contain"
+                  alt="Profile"
+                />
+              ) : (
+                <User className="w-8 h-8 text-(--text-dim)" />
+              )}
             </div>
           </button>
-          <ProfileMenu
-            isOpen={showProfileMenu}
-            userName={user.name}
-            onNavigate={handleLinkClick}
-            onLegacyToggle={() => setIsModernUI(false)}
-            onLogout={handleLogout}
-            onClose={() => setShowProfileMenu(false)}
-          />
+          <div className="absolute top-20 right-0 z-50">
+            <ProfileMenu
+              isOpen={showProfileMenu}
+              userName={user.name}
+              onNavigate={handleLinkClick}
+              onLogout={handleLogout}
+              onClose={() => setShowProfileMenu(false)}
+            />
+          </div>
         </div>
       </div>
     </header>

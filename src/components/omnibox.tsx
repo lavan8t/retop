@@ -49,6 +49,19 @@ const getCategoryIcon = (title: string) => {
   return Layers;
 };
 
+// Helper function for sequential fuzzy matching
+const fuzzyMatch = (text: string, query: string) => {
+  let tIdx = 0;
+  let qIdx = 0;
+  const t = text.toLowerCase();
+  const q = query.toLowerCase();
+  while (tIdx < t.length && qIdx < q.length) {
+    if (t[tIdx] === q[qIdx]) qIdx++;
+    tIdx++;
+  }
+  return qIdx === q.length;
+};
+
 export const Omnibox: React.FC<OmniboxProps> = ({
   isOpen,
   initialQuery = "",
@@ -81,13 +94,14 @@ export const Omnibox: React.FC<OmniboxProps> = ({
         requestAnimationFrame(() => setIsAnimating(true)),
       );
 
+      // Focus quicker than 50ms so user doesn't miss strokes
       setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus();
           const length = inputRef.current.value.length;
           inputRef.current.setSelectionRange(length, length);
         }
-      }, 50);
+      }, 10);
 
       setSelectedIndex(0);
       setExpandedCats(new Set());
@@ -96,7 +110,7 @@ export const Omnibox: React.FC<OmniboxProps> = ({
       const timer = setTimeout(() => setIsVisible(false), 300);
       return () => clearTimeout(timer);
     }
-  }, [isOpen, initialQuery]);
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -118,27 +132,53 @@ export const Omnibox: React.FC<OmniboxProps> = ({
   }, [isOpen]);
 
   const flattenedLinks = useMemo(() => {
-    if (!query) return [];
-    const lowerQ = query.toLowerCase();
-    const links: QuickLink[] = [];
+    if (!query.trim()) return [];
+    const lowerQ = query.toLowerCase().trim();
+    const matches: { link: QuickLink; score: number }[] = [];
+
     menuCategories.forEach((cat) => {
-      links.push(
-        ...cat.links.filter(
-          (l) =>
-            l.title.toLowerCase().includes(lowerQ) ||
-            cat.title.toLowerCase().includes(lowerQ),
-        ),
-      );
+      cat.links.forEach((link) => {
+        const titleLower = link.title.toLowerCase();
+        const catLower = cat.title.toLowerCase();
+
+        let score = 0;
+        if (titleLower === lowerQ) score = 100;
+        else if (titleLower.startsWith(lowerQ)) score = 80;
+        else if (titleLower.includes(lowerQ)) score = 50;
+        else if (catLower.includes(lowerQ)) score = 30;
+        else if (fuzzyMatch(titleLower, lowerQ)) score = 10;
+        else if (fuzzyMatch(catLower, lowerQ)) score = 5;
+
+        if (score > 0) {
+          matches.push({ link, score });
+        }
+      });
     });
-    return links;
+
+    return matches
+      .sort((a, b) => b.score - a.score)
+      .map((m) => m.link)
+      .slice(0, 15);
   }, [query, menuCategories]);
 
-  // Automatically scroll the selected item into view during keyboard navigation
+  // FIX: Switched from offsetTop to getBoundingClientRect() to make math exact regardless of wrapper nesting
   useEffect(() => {
-    if (query && isVisible) {
+    if (query && isVisible && scrollRef.current) {
+      const container = scrollRef.current;
       const el = document.getElementById(`omnibox-item-${selectedIndex}`);
-      if (el) {
-        el.scrollIntoView({ block: "nearest" });
+
+      if (el && container) {
+        const containerRect = container.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+
+        // Check if top of element is above top of container (add 8px buffer)
+        if (elRect.top < containerRect.top) {
+          container.scrollTop -= containerRect.top - elRect.top + 8;
+        }
+        // Check if bottom of element is below bottom of container (add 8px buffer)
+        else if (elRect.bottom > containerRect.bottom) {
+          container.scrollTop += elRect.bottom - containerRect.bottom + 8;
+        }
       }
     }
   }, [selectedIndex, query, isVisible]);
@@ -147,7 +187,7 @@ export const Omnibox: React.FC<OmniboxProps> = ({
     if (query) {
       if (flattenedLinks.length === 0)
         return (
-          <div className="flex flex-col items-center justify-center p-12 text-(--text-dim) text-sm border-4 border-dashed border-(--border-dim) m-4 rounded-[2rem] bg-(--bg-main)">
+          <div className="flex flex-col items-center justify-center p-12 text-(--text-dim) text-sm border-4 border-dashed border-(--border-dim) m-4 rounded-4xl bg-(--bg-main)">
             <AlertCircle className="w-12 h-12 mb-4 opacity-50" />
             <span className="font-expanded text-lg uppercase tracking-widest">
               No matches found
@@ -155,7 +195,7 @@ export const Omnibox: React.FC<OmniboxProps> = ({
           </div>
         );
       return (
-        <div className="p-3 space-y-2">
+        <div className="p-3 space-y-2 relative">
           {flattenedLinks.map((link, i) => {
             const isSelected = i === selectedIndex;
             return (
@@ -172,7 +212,7 @@ export const Omnibox: React.FC<OmniboxProps> = ({
                   w-full text-left px-5 py-4 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-4 border-2
                   ${
                     isSelected
-                      ? "bg-blue-500 text-white border-black shadow-[4px_4px_0px_0px_#000] -translate-y-[1px]"
+                      ? "bg-blue-500 text-white border-black shadow-[4px_4px_0px_0px_#000] -translate-y-px"
                       : "bg-(--bg-surface) border-transparent text-(--text-muted) hover:border-(--border-dim)"
                   }
                 `}
@@ -307,7 +347,7 @@ export const Omnibox: React.FC<OmniboxProps> = ({
 
   return (
     <div
-      className={`fixed inset-0 z-[200] flex items-start justify-center pt-[5vh] md:pt-[10vh] transition-all duration-300 ${
+      className={`fixed inset-0 z-200 flex items-start justify-center pt-[5vh] md:pt-[10vh] transition-all duration-300 ${
         isAnimating
           ? "bg-black/60 backdrop-blur-sm opacity-100"
           : "bg-transparent backdrop-blur-none opacity-0"
@@ -317,7 +357,7 @@ export const Omnibox: React.FC<OmniboxProps> = ({
       <div
         className={`
             w-full max-w-3xl flex flex-col max-h-[80vh] overflow-hidden transform transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-            bg-(--bg-surface) border-4 border-black rounded-[2rem] shadow-[16px_16px_0px_0px_#000]
+            bg-(--bg-surface) border-4 border-black rounded-4xl shadow-[16px_16px_0px_0px_#000]
             ${isAnimating ? "scale-100 translate-y-0 opacity-100" : "scale-95 translate-y-8 opacity-0"}
         `}
         onClick={(e) => {
@@ -331,6 +371,7 @@ export const Omnibox: React.FC<OmniboxProps> = ({
           </div>
           <div className="flex-1 z-10 min-w-0">
             <input
+              id="omnibox-input"
               ref={inputRef}
               type="text"
               className="w-full bg-transparent text-(--text-main) text-3xl font-expanded font-black focus:outline-none placeholder-(--text-dim) tracking-tight uppercase"
@@ -352,7 +393,7 @@ export const Omnibox: React.FC<OmniboxProps> = ({
 
         <div
           ref={scrollRef}
-          className="overflow-y-auto custom-scrollbar bg-(--bg-main) flex-1 scroll-smooth relative z-10"
+          className="overflow-y-auto custom-scrollbar bg-(--bg-main) flex-1 relative z-10"
         >
           {renderResults()}
         </div>

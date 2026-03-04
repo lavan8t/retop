@@ -87,8 +87,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  // Sorting State for Attendance
-  const [attSort, setAttSort] = useState<"default" | "asc" | "desc">("default");
+  const [attSort, setAttSort] = useState<"asc" | "desc">("asc");
 
   const [activeMenu, setActiveMenu] = useState<{
     cat: MenuCategory;
@@ -108,6 +107,18 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
   useEffect(() => {
     setTimeout(() => inputRef.current?.focus(), 100);
+  }, []);
+
+  useEffect(() => {
+    const handleGlobalType = (e: KeyboardEvent) => {
+      if (["INPUT", "TEXTAREA"].includes((e.target as HTMLElement).tagName))
+        return;
+      if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        inputRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", handleGlobalType);
+    return () => window.removeEventListener("keydown", handleGlobalType);
   }, []);
 
   useEffect(() => {
@@ -145,13 +156,23 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
   // Handle Attendance Sorting logic
   const sortedAttendance = useMemo(() => {
-    if (attSort === "default") return attendance;
     return [...attendance].sort((a, b) => {
       const valA = parseFloat(a.attendance) || 0;
       const valB = parseFloat(b.attendance) || 0;
       return attSort === "asc" ? valA - valB : valB - valA;
     });
   }, [attendance, attSort]);
+
+  // Handle auto-scroll for keyboard nav
+  useEffect(() => {
+    if (query) {
+      const el = document.getElementById(`home-search-item-${selectedIndex}`);
+      if (el) el.scrollIntoView({ block: "nearest" });
+    } else if (activeMenu) {
+      const el = document.getElementById(`home-popup-item-${selectedIndex}`);
+      if (el) el.scrollIntoView({ block: "nearest" });
+    }
+  }, [selectedIndex, query, activeMenu]);
 
   useEffect(() => {
     if (!query && !activeMenu) return;
@@ -183,8 +204,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
   return (
     <div className="h-full w-full flex flex-col lg:flex-row gap-6 p-4 md:p-6 lg:p-8 overflow-y-auto lg:overflow-hidden bg-(--bg-main) max-w-425 mx-auto relative">
-      {/* LEFT PANE: Search & Legacy Navigation */}
-      {/* Search Pane Width increased by ~30% from the previous size (lg: 20->26, xl: 15->20) */}
       <div className="w-full lg:w-[26%] xl:w-[20%] flex flex-col border-4 border-black bg-(--bg-surface) rounded-4xl shadow-[8px_8px_0px_0px_#000] overflow-hidden shrink-0 h-[50vh] lg:h-full relative z-30">
         <div className="p-4 border-b-4 border-black bg-(--bg-surface) shrink-0 flex items-center gap-3 relative z-20">
           <div className="w-10 h-10 bg-blue-500 text-white flex items-center justify-center font-bold border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_#000] shrink-0">
@@ -194,7 +213,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             ref={inputRef}
             type="text"
             placeholder="WHERE TO?"
-            className="bg-transparent text-xl font-expanded font-black text-(--text-main) focus:outline-none w-full placeholder-(--text-dim) tracking-tight uppercase"
+            className="bg-transparent text-xl font-expanded font-black text-(--text-main) focus:outline-none w-full placeholder-zinc-500 tracking-tight uppercase"
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -220,6 +239,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   return (
                     <button
                       key={i}
+                      id={`home-search-item-${i}`}
                       onClick={() => onNavigate(link)}
                       onMouseEnter={() => setSelectedIndex(i)}
                       className={`
@@ -265,6 +285,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     className={`w-full bg-transparent p-3 flex items-center justify-between group rounded-2xl transition-all border-2 ${isActive ? "bg-(--bg-highlight) border-(--border-main) shadow-sm" : "border-transparent hover:bg-(--bg-surface) hover:border-(--border-dim)"}`}
                   >
                     <div className="flex items-center gap-4">
+                      {/* Consistent rounded-xl matching omnibox */}
                       <div
                         className={`w-10 h-10 rounded-full border-2 border-black flex items-center justify-center shadow-[3px_3px_0px_0px_#000] ${iconColor} group-hover:-translate-y-0.5 group-hover:shadow-[4px_4px_0px_0px_#000] transition-all`}
                       >
@@ -287,7 +308,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </div>
 
-      {/* FLYOUT CONTEXT MENU */}
       <AnimatePresence>
         {activeMenu && (
           <motion.div
@@ -335,6 +355,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               {activeMenu.cat.links.map((link, i) => (
                 <button
                   key={i}
+                  id={`home-popup-item-${i}`}
                   onMouseEnter={() => setSelectedIndex(i)}
                   onClick={() => {
                     onNavigate(link);
@@ -368,16 +389,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setAttSort((prev) =>
-                    prev === "default"
-                      ? "desc"
-                      : prev === "desc"
-                        ? "asc"
-                        : "default",
-                  );
+                  setAttSort((prev) => (prev === "asc" ? "desc" : "asc"));
                 }}
                 className="flex items-center justify-center p-1.5 bg-black/10 hover:bg-black/20 rounded-lg transition-colors text-black active:scale-95"
-                title="Sort by Percentage"
+                title="Toggle Sort Order"
               >
                 <ArrowUpDown
                   className={`w-4 h-4 transition-transform ${attSort === "asc" ? "rotate-180" : ""}`}

@@ -1,5 +1,18 @@
 import { MenuCategory, QuickLink } from "../types/vtop";
 
+const sanitizeMenuTitle = (title: string): string => {
+  const lowerTitle = title.toLowerCase();
+
+  if (
+    lowerTitle.includes("course page consolidated") ||
+    lowerTitle === "course page"
+  ) {
+    return "Course Page";
+  }
+
+  return title;
+};
+
 export function scrapeMenu(doc: Document): MenuCategory[] {
   const categories: MenuCategory[] = [];
   const visitedUrls = new Set<string>();
@@ -27,8 +40,11 @@ export function scrapeMenu(doc: Document): MenuCategory[] {
     const anchors = container.querySelectorAll("a[data-url]");
 
     anchors.forEach((a) => {
-      const linkTitle = a.textContent?.trim() || "";
+      let linkTitle = a.textContent?.trim() || "";
+      linkTitle = sanitizeMenuTitle(linkTitle); // Sanitize the name here
+
       const url = a.getAttribute("data-url");
+
       if (linkTitle && url && !visitedUrls.has(url)) {
         visitedUrls.add(url);
         links.push({
@@ -53,7 +69,8 @@ export function scrapeMenu(doc: Document): MenuCategory[] {
 
   allLinks.forEach((a) => {
     const url = a.getAttribute("data-url");
-    const linkTitle = a.textContent?.trim() || "Untitled Module";
+    let linkTitle = a.textContent?.trim() || "Untitled Module";
+    linkTitle = sanitizeMenuTitle(linkTitle); // Sanitize catch-all links too
 
     if (url && !visitedUrls.has(url)) {
       visitedUrls.add(url);

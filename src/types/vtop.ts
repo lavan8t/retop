@@ -13,6 +13,7 @@ export interface MenuCategory {
 export interface CourseSummary {
   code: string;
   name: string;
+  type?: string;
   slot: string;
   faculty: string;
   attendance: string;

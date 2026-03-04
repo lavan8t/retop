@@ -8,6 +8,7 @@ export default defineConfig({
     emptyOutDir: true,
     outDir: "dist",
     cssCodeSplit: true,
+    chunkSizeWarningLimit: 1500,
     rollupOptions: {
       input: {
         content: resolve(__dirname, "src/content.ts"),

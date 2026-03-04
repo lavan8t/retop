@@ -40,15 +40,18 @@ function parseSectionMap(
   rows.forEach((row) => {
     const cells = row.querySelectorAll("td");
 
+    // Detect Context Headers (e.g., CURRENT ADDRESS, FATHER DETAILS)
     if (cells.length === 1 && cells[0].hasAttribute("colspan")) {
-      const headerText = cleanText(cells[0].textContent);
+      const headerText = cleanText(cells[0].textContent).toUpperCase();
       if (headerText) currentContext = headerText;
       return;
     }
 
+    // Extract Key-Value Pairs
     if (cells.length >= 2) {
-      for (let i = 0; i < cells.length; i += 2) {
-        const key = cleanText(cells[i].textContent);
+      // Loop with -1 to safely prevent reading rowspan image tags as text
+      for (let i = 0; i < cells.length - 1; i += 2) {
+        const key = cleanText(cells[i].textContent).toUpperCase();
         const val = cleanText(cells[i + 1]?.textContent);
         if (key) {
           map.set(`${currentContext}_${key}`, val);
@@ -77,7 +80,7 @@ export function parseStudentProfile(html: string): StudentProfile {
 
   const labels = doc.querySelectorAll("label.col-form-label");
   labels.forEach((label) => {
-    const text = cleanText(label.textContent);
+    const text = cleanText(label.textContent).toUpperCase();
     const sibling = cleanText(label.nextElementSibling?.textContent);
     if (text.includes("REGISTER NUMBER")) basic.regNo = sibling;
     if (text.includes("VIT EMAIL")) basic.email = sibling;
@@ -97,12 +100,13 @@ export function parseStudentProfile(html: string): StudentProfile {
     nationality: pMap.get("MAIN_NATIONALITY") || "",
     nativeState: pMap.get("MAIN_NATIVE STATE") || "",
     nativeLanguage: pMap.get("MAIN_NATIVE LANGUAGE") || "",
-    physicallyChallenged: pMap.get("MAIN_PHYSICALLY CHALLENGED") || "",
+    physicallyChallenged: pMap.get("MAIN_PHYSICALLY CHALLENGED") || "NO",
     aadhar: pMap.get("MAIN_AADHAR NUMBER") || "",
     mobile: pMap.get("MAIN_MOBILE NUMBER") || "",
     email:
       pMap.get("PERMANENT ADDRESS_EMAIL") ||
       pMap.get("CURRENT ADDRESS_EMAIL") ||
+      pMap.get("MAIN_EMAIL") ||
       "",
   };
 
@@ -138,22 +142,41 @@ export function parseStudentProfile(html: string): StudentProfile {
     classObtained: eMap.get("MAIN_CLASS OBTAINED") || "",
     year: eMap.get("MAIN_YEAR OF PASSING/ PASSED") || "",
     month: eMap.get("MAIN_MONTH OF PASSING/ PASSED") || "",
-    breakInStudy: eMap.get("MAIN_BREAK IN STUDY") || "NO",
-    breakReason: eMap.get("MAIN_REASON") || "-",
+    breakInStudy:
+      eMap.get("SCHOOL / COLLEGE ADDRESS_BREAK IN STUDY") ||
+      eMap.get("MAIN_BREAK IN STUDY") ||
+      "NO",
+    breakReason:
+      eMap.get("SCHOOL / COLLEGE ADDRESS_REASON") ||
+      eMap.get("MAIN_REASON") ||
+      "-",
     address: {
       street: "",
       area: eMap.get("SCHOOL / COLLEGE ADDRESS_AREA NAME") || "",
-      city: eMap.get("SCHOOL / COLLEGE ADDRESS_CITY / DISTRICT NAME") || "",
-      state: eMap.get("SCHOOL / COLLEGE ADDRESS_STATE NAME") || "",
+      city:
+        eMap.get("SCHOOL / COLLEGE ADDRESS_CITY / DISTRICT NAME") ||
+        eMap.get("SCHOOL / COLLEGE ADDRESS_CITY") ||
+        "",
+      state:
+        eMap.get("SCHOOL / COLLEGE ADDRESS_STATE NAME") ||
+        eMap.get("SCHOOL / COLLEGE ADDRESS_STATE") ||
+        "",
       country: "",
-      pincode: eMap.get("SCHOOL / COLLEGE ADDRESS_PINCODE / ZIPCODE") || "",
+      pincode:
+        eMap.get("SCHOOL / COLLEGE ADDRESS_PINCODE / ZIPCODE") ||
+        eMap.get("SCHOOL / COLLEGE ADDRESS_PINCODE") ||
+        "",
       phone: eMap.get("SCHOOL / COLLEGE ADDRESS_PHONE NUMBER[LAND LINE]") || "",
     },
   };
 
   const fMap = parseSectionMap(doc, "collapseThree");
   const getFamilyMember = (prefix: string): ProfileFamilyMember => ({
-    name: fMap.get(`${prefix}_FATHER NAME`) || fMap.get(`${prefix}_NAME`) || "",
+    name:
+      fMap.get(`${prefix}_FATHER NAME`) ||
+      fMap.get(`${prefix}_MOTHER NAME`) ||
+      fMap.get(`${prefix}_NAME`) ||
+      "",
     qualification: fMap.get(`${prefix}_QUALIFICATION`) || "",
     occupation: fMap.get(`${prefix}_OCCUPATION`) || "",
     organization: fMap.get(`${prefix}_ORGANIZATION`) || "",
@@ -164,10 +187,14 @@ export function parseStudentProfile(html: string): StudentProfile {
     address: {
       street: "",
       area: fMap.get(`${prefix}_OFFICIAL ADDRESS(AREA NAME)`) || "",
-      city: fMap.get(`${prefix}_CITY/DISTRICT`) || "",
+      city:
+        fMap.get(`${prefix}_CITY/DISTRICT`) || fMap.get(`${prefix}_CITY`) || "",
       state: fMap.get(`${prefix}_STATE`) || "",
       country: "",
-      pincode: fMap.get(`${prefix}_PINCODE/ZIPCODE`) || "",
+      pincode:
+        fMap.get(`${prefix}_PINCODE/ZIPCODE`) ||
+        fMap.get(`${prefix}_PINCODE`) ||
+        "",
       phone: fMap.get(`${prefix}_PHONE NUMBER[LAND LINE]`) || "",
     },
   });
@@ -181,7 +208,10 @@ export function parseStudentProfile(html: string): StudentProfile {
     studiedDetails: fMap.get("MAIN_STUDIED DETAILS") || "-",
     father: getFamilyMember("FATHER DETAILS"),
     mother: getFamilyMember("MOTHER DETAILS"),
-    guardian: fMap.get("MOTHER DETAILS_GUARDIAN INFO") || "PARENT",
+    guardian:
+      fMap.get("FATHER DETAILS_GUARDIAN INFO") ||
+      fMap.get("MOTHER DETAILS_GUARDIAN INFO") ||
+      "PARENT",
     friendMobile: pMap.get("PERMANENT ADDRESS_FRIEND MOBILE NUMBER") || "",
   };
 
@@ -210,12 +240,12 @@ export function parseStudentProfile(html: string): StudentProfile {
 
   if (!hostelNotFound && hMap.size > 0) {
     hostel = {
-      appNo: hMap.get("MAIN_Application Number") || "",
-      regNo: hMap.get("MAIN_Register Number") || "",
-      block: hMap.get("MAIN_Block Name") || "",
-      room: hMap.get("MAIN_Room No.") || "",
-      bedType: hMap.get("MAIN_Bed Type") || "",
-      mess: hMap.get("MAIN_Mess Information") || "",
+      appNo: hMap.get("MAIN_APPLICATION NUMBER") || "",
+      regNo: hMap.get("MAIN_REGISTER NUMBER") || "",
+      block: hMap.get("MAIN_BLOCK NAME") || "",
+      room: hMap.get("MAIN_ROOM NO.") || "",
+      bedType: hMap.get("MAIN_BED TYPE") || "",
+      mess: hMap.get("MAIN_MESS INFORMATION") || "",
     };
   }
 

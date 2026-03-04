@@ -1,11 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import { Omnibox } from "../components/omnibox";
-import { TopBar } from "../components/layout/TopBar";
-import { ContentRouter } from "../components/layout/ContentRouter";
-import { LegacyReturnButton } from "../components/LegacyReturnButton";
-import { motion, AnimatePresence } from "framer-motion";
-
 import {
   initializeContainer,
   getAppRoot,
@@ -32,12 +27,24 @@ import {
   TimetableCourse,
   Semester,
 } from "../types/vtop";
+import { Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
+import { HomeView } from "./home";
+import { TimetableContentView } from "./timetable";
+import { SettingsPage } from "./settings";
+import { CurriculumPage } from "./curriculum";
+import { MarksPage } from "./marks";
+import { ProfilePage } from "./profile";
 import {
   getUpcomingClasses,
   UpcomingClass,
   getCorrectDayName,
 } from "../utils/timetable-slots";
 import { useSettings, applyTheme } from "../utils/settings-store";
+import { LegacyReturnButton } from "../components/LegacyReturnButton";
+import { TopBar } from "../components/layout/TopBar";
+import { ContentRouter } from "../components/layout/ContentRouter";
 
 type ViewType =
   | "dashboard"
@@ -60,11 +67,13 @@ const getDestinationView = (link: QuickLink): ViewType | "content" => {
   if (lowerTitle.includes("curriculum")) return "curriculum";
   if (lowerTitle.includes("mark") || lowerTitle.includes("grade"))
     return "marks";
+
   if (
     lowerTitle.includes("profile view") ||
     lowerUrl.includes("studentprofileallview")
   )
     return "profile";
+
   return "content";
 };
 
@@ -74,7 +83,9 @@ const navigateLegacy = (title: string) => {
     (el) => el.textContent?.trim() === title || el.innerText?.trim() === title,
   );
   if (target) target.click();
-  else console.warn("Legacy link not found for:", title);
+  else {
+    console.warn("Legacy link not found for:", title);
+  }
 };
 
 export function renderDashboard() {
@@ -93,21 +104,20 @@ const DashboardApp = () => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const { settings, updateSetting } = useSettings();
 
-  const [isModernUI, setIsModernUI] = useState(
-    () => sessionStorage.getItem("vtop-legacy-mode") !== "true",
-  );
+  const [isModernUI, setIsModernUI] = useState(() => {
+    return sessionStorage.getItem("vtop-legacy-mode") !== "true";
+  });
+
   const [isPeeking, setIsPeeking] = useState(false);
   const [currentView, setCurrentView] = useState<ViewType>("dashboard");
   const [contentTitle, setContentTitle] = useState("");
   const [status, setStatus] = useState("Initializing...");
 
-  // Data State
   const [stats, setStats] = useState({ cgpa: "...", credits: "..." });
   const [attendance, setAttendance] = useState<CourseSummary[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [upcoming, setUpcoming] = useState<UpcomingClass[]>([]);
 
-  // Timetable State
   const [ttSemesters, setTtSemesters] = useState<Semester[]>([]);
   const [ttSelectedSem, setTtSelectedSem] = useState("");
   const [ttCourses, setTtCourses] = useState<TimetableCourse[]>([]);
@@ -125,6 +135,7 @@ const DashboardApp = () => {
 
   useEffect(() => {
     applyTheme(settings);
+
     const authIdInput = document.getElementById(
       "authorizedIDX",
     ) as HTMLInputElement;
@@ -142,7 +153,9 @@ const DashboardApp = () => {
     authIdRef.current = authId;
     networkRef.current = new VTOPNetwork(csrf, authId);
 
-    setUser(scrapeUserProfile(document));
+    const userProfile = scrapeUserProfile(document);
+    setUser(userProfile);
+
     fetchData().then(() => setTimeout(() => removeSplashScreen(), 500));
     fetchUserProfile();
 
@@ -197,6 +210,7 @@ const DashboardApp = () => {
           );
         },
       );
+
       const profile = parseStudentProfile(html);
       if (profile?.basic?.name) {
         setUser((prev) => ({
@@ -240,6 +254,7 @@ const DashboardApp = () => {
       } catch (e) {
         console.warn(e);
       }
+
       setStatus("Online");
     } catch {
       setStatus("Sync Failed");
@@ -292,6 +307,7 @@ const DashboardApp = () => {
     }
 
     const dest = getDestinationView(link);
+
     if (dest === "content") {
       setIsModernUI(false);
       setContentTitle(link.title);
@@ -315,10 +331,13 @@ const DashboardApp = () => {
 
   return (
     <>
-      {/* Forces the Legacy UI to be visible during Peek (No White Filter) */}
       {isPeeking && (
         <style>{`
-          #page-wrapper, .container-fluid, .wrapper, body > table, body > form {
+          body:not(.show-legacy-ui) #page-wrapper, 
+          body:not(.show-legacy-ui) .container-fluid, 
+          body:not(.show-legacy-ui) .wrapper, 
+          body:not(.show-legacy-ui) body > table, 
+          body:not(.show-legacy-ui) body > form {
             opacity: 1 !important;
             pointer-events: auto !important;
             transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
@@ -326,25 +345,22 @@ const DashboardApp = () => {
         `}</style>
       )}
 
-      {/* FIXED LOGO TRIGGER: Stays physically detached from the animating UI */}
+      {/* FIXED LOGO: Exclusively functions as the "Return to Legacy" button. It overlaps the TopBar placeholder. */}
       {isModernUI && (
         <div
           className="group fixed top-0 z-150 h-20 px-6 md:px-8 flex items-center gap-4 cursor-pointer pointer-events-auto"
-          onMouseEnter={() => setIsPeeking(true)}
-          onMouseLeave={() => setIsPeeking(false)}
           onClick={() => {
             setIsPeeking(false);
             setIsModernUI(false);
           }}
           title="Return to Legacy UI"
         >
-          {currentView !== "dashboard" && <div className="w-10 shrink-0" />}
           <div className="flex flex-col justify-center h-full gap-0.5">
             <div className="flex items-center gap-3">
               <div className="relative flex items-baseline">
-                {/* Text uses difference blending to stay visible when background changes */}
+                {/* Text uses difference blending to stay visible during bottom peek */}
                 <span
-                  className={`font-expanded font-black text-[2.5rem] tracking-tighter italic lowercase leading-none select-none transition-all duration-300 ${isPeeking ? "text-white mix-blend-difference" : "text-(--text-main)"}`}
+                  className={`font-expanded font-black text-[2.5rem] tracking-tighter italic lowercase leading-none select-none transition-all duration-300 ${isPeeking ? "text-white mix-blend-difference" : "text-(--text-main) hover:text-(--accent-hover)"}`}
                 >
                   re
                 </span>
@@ -421,7 +437,6 @@ const DashboardApp = () => {
                 setShowProfileMenu={setShowProfileMenu}
                 handleLinkClick={handleLinkClick}
                 handleLogout={handleLogout}
-                setIsModernUI={setIsModernUI}
                 setIsOmniboxOpen={setIsOmniboxOpen}
                 setCurrentView={setCurrentView}
               />

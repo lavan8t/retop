@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Semester } from "../../types/vtop";
 import { Calendar, ChevronDown } from "lucide-react";
 
@@ -14,7 +14,7 @@ export const SemesterDropdown = ({ semesters, selectedId, onChange }: any) => {
         className="flex items-center gap-2 bg-zinc-900 border-2 border-zinc-700 px-3 py-1.5 rounded-xl text-zinc-300 font-bold hover:border-blue-500 hover:text-white transition-all active:scale-95 text-xs group"
       >
         <Calendar className="w-3.5 h-3.5 text-blue-500 group-hover:text-white transition-colors" />
-        <span className="uppercase tracking-wide truncate max-w-[120px] font-expanded">
+        <span className="uppercase tracking-wide truncate max-w-30 font-expanded">
           {selected?.label || "Select Sem"}
         </span>
         <ChevronDown

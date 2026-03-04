@@ -1,8 +1,8 @@
 @import "tailwindcss";
 @import url("https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,slnt,wdth,wght,GRAD,ROND@6..144,-10..0,25..151,1..1000,0..100,100&display=swap");
 @theme {
-  --font-sans: "Google Sans Flex", ui-sans-serif, system-ui, sans-serif;
-  --font-expanded: "Google Sans Flex", sans-serif;
+  --font-sans: "Google Sans Flex", system-ui, sans-serif;
+  --font-expanded: "Google Sans Flex", system-ui, sans-serif;
 }
 
 /* --- 1. GLOBAL RESET & VARIABLES --- */
@@ -38,6 +38,16 @@
     --card-yellow: #d6ca90;
     --card-blue: #8ba6d6;
     --card-red: #d69090;
+
+    /* Attendance Status Colors (Sharper for Dark Mode) */
+    --att-safe: #00e676;
+    --att-warn: #ffea00;
+    --att-danger: #ff1744;
+
+    /* Text matches exactly in dark mode since contrast is fine */
+    --att-text-safe: #00e676;
+    --att-text-warn: #ffea00;
+    --att-text-danger: #ff1744;
 
     /* Base Layout Specs */
     background-color: transparent;
@@ -87,6 +97,14 @@
   --text-dim: #737373;
 
   --text-inverse: #000000;
+
+  --att-safe: #00e676;
+  --att-warn: #ffea00;
+  --att-danger: #ff1744;
+
+  --att-text-safe: #00e676;
+  --att-text-warn: #ffea00;
+  --att-text-danger: #ff1744;
 }
 
 #vtop-remastered-root[data-theme="light"] {
@@ -108,6 +126,16 @@
   --card-yellow: #facc15;
   --card-blue: #60a5fa;
   --card-red: #f87171;
+
+  /* Attendance Status Colors (More Neon for Light Mode bars) */
+  --att-safe: #39ff14;
+  --att-warn: #ffe600;
+  --att-danger: #ff0055;
+
+  /* Solid, readable text colors for Light Mode */
+  --att-text-safe: #16a34a;
+  --att-text-warn: #d97706;
+  --att-text-danger: #dc2626;
 }
 
 /* --- 3. FONTS --- */

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { VTOPNetwork } from "../utils/network";
 import { parseStudentProfile } from "../parsers/profile";
 import { StudentProfile } from "../types/vtop";
+import { VitLogo } from "../components/VitLogo";
 import {
   User,
   Smartphone,
@@ -10,10 +11,9 @@ import {
   Loader2,
   GraduationCap,
   Briefcase,
-  Home,
-  Phone,
   Building,
   Shield,
+  HeartPulse,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -22,43 +22,42 @@ interface ProfilePageProps {
 }
 
 const InfoRow = ({ label, value }: { label: string; value: string }) => (
-  <div className="flex flex-col border-b border-zinc-800 py-1.5 last:border-0 hover:bg-zinc-800/50 px-3 -mx-3 rounded transition-colors overflow-hidden">
-    <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 mb-0.5 truncate">
+  <div className="flex flex-col border-b-2 border-black/10 py-1.5 last:border-0 hover:bg-black/5 px-2 -mx-2 rounded transition-colors overflow-hidden">
+    <span className="text-[10px] font-black uppercase tracking-widest text-black/60 mb-0.5 truncate">
       {label}
     </span>
-
-    <span className="text-sm font-bold font-mono text-zinc-200 whitespace-normal wrap-break-word leading-tight">
+    <span className="text-sm font-bold font-mono text-black whitespace-normal wrap-break-word leading-tight">
       {value && value !== "-" ? (
         value
       ) : (
-        <span className="text-zinc-600">-</span>
+        <span className="text-black/30">-</span>
       )}
     </span>
   </div>
 );
 
 const AddressCard = ({ title, data }: { title: string; data: any }) => (
-  <div className="bg-zinc-800/50 p-3 rounded-xl border-2 border-zinc-800 h-full flex flex-col justify-center min-w-0">
-    <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 flex items-center gap-2 border-b-2 border-zinc-800 pb-1.5 shrink-0">
+  <div className="bg-white/50 p-3 rounded-xl border-2 border-black h-full flex flex-col justify-center min-w-0">
+    <h4 className="text-[10px] font-black uppercase tracking-widest text-black/70 mb-2 flex items-center gap-2 border-b-2 border-black/20 pb-1.5 shrink-0">
       <MapPin className="w-3 h-3" /> {title}
     </h4>
     <div className="space-y-1 overflow-hidden">
-      <div className="text-sm font-black text-zinc-200 leading-tight wrap-break-word">
+      <div className="text-sm font-black text-black leading-tight wrap-break-word">
         {data.street}
       </div>
-      <div className="text-[10px] font-mono text-zinc-500 truncate">
+      <div className="text-[10px] font-mono text-black/70 truncate">
         {data.area}
       </div>
-      <div className="text-[10px] font-mono text-zinc-500 truncate">
+      <div className="text-[10px] font-mono text-black/70 truncate">
         {data.city}, {data.state}
       </div>
-      <div className="text-[10px] font-mono text-zinc-500 truncate">
+      <div className="text-[10px] font-mono text-black/70 truncate">
         {data.country} -{" "}
-        <span className="text-zinc-200 font-bold">{data.pincode}</span>
+        <span className="text-black font-bold">{data.pincode}</span>
       </div>
       {data.phone && (
-        <div className="text-[10px] font-bold flex items-center gap-2 mt-2 text-blue-500 pt-2 border-t border-zinc-800 shrink-0">
-          <Phone className="w-3 h-3" /> {data.phone}
+        <div className="text-[10px] font-bold flex items-center gap-2 mt-2 text-black pt-2 border-t border-black/20 shrink-0">
+          <Smartphone className="w-3 h-3" /> {data.phone}
         </div>
       )}
     </div>
@@ -71,20 +70,20 @@ const BentoCard = ({
   children,
   delay,
   colSpan = "md:col-span-1",
-  className = "",
+  className = "bg-white",
 }: any) => (
   <motion.div
     initial={{ y: 20, opacity: 0 }}
     animate={{ y: 0, opacity: 1 }}
     transition={{ delay }}
-    className={`bg-zinc-900 border-4 border-zinc-800 rounded-4xl p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,0.25)] hover:shadow-[10px_10px_0px_0px_rgba(0,0,0,0.25)] hover:-translate-y-0.5 transition-all flex flex-col min-w-0 ${colSpan} ${className}`}
+    className={`border-4 border-black text-black rounded-3xl p-5 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-all flex flex-col min-w-0 ${colSpan} ${className}`}
   >
     {title && (
-      <div className="flex items-center gap-3 mb-1.5 pb-1 border-b-4 border-zinc-800 shrink-0">
-        <div className="p-1.5 bg-zinc-800 text-zinc-200 rounded-lg shadow-sm">
-          <Icon className="w-3.5 h-3.5" />
+      <div className="flex items-center gap-3 mb-3 pb-2 border-b-4 border-black shrink-0">
+        <div className="p-1.5 bg-black text-white rounded-lg shadow-sm">
+          <Icon className="w-4 h-4" />
         </div>
-        <h3 className="font-expanded font-black text-base uppercase tracking-tight text-zinc-200 truncate">
+        <h3 className="font-expanded font-black text-lg uppercase tracking-tight truncate">
           {title}
         </h3>
       </div>
@@ -93,6 +92,174 @@ const BentoCard = ({
   </motion.div>
 );
 
+const toTitleCase = (str: string) => {
+  if (!str) return "";
+  return str.replace(
+    /\w\S*/g,
+    (txt) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase(),
+  );
+};
+
+const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
+  const isHosteller = !!data.hostel;
+  const address = data.permanentAddress;
+  const contactNo =
+    data.permanentAddress.phone || data.personal.mobile || "Not Provided";
+
+  // Strict font enforcement
+  const fontArial = "!font-['Arial',_Helvetica,_sans-serif]";
+  const fontTimes = "!font-['Times_New_Roman',_Times,_serif]";
+
+  return (
+    <div className="group w-full max-w-74 mx-auto aspect-64/100 perspective-[1000px] cursor-pointer shrink-0">
+      {/* Container for 3D flip */}
+      <div className="relative w-full h-full transition-transform duration-700 transform-3d group-hover:transform-[rotateY(180deg)] shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] rounded-2xl">
+        {/* FRONT SIDE */}
+        <div
+          className={`absolute inset-0 backface-hidden bg-white rounded-2xl border-2 border-zinc-400 flex flex-col overflow-hidden text-black ${fontArial}`}
+        >
+          {/* Header: Reduced pt-5 to pt-3, removed bottom margins */}
+          <div className="flex flex-col items-center pt-3 px-3 shrink-0">
+            <div className="w-47.5 mx-auto flex justify-center [&>svg]:w-full [&>svg]:h-[auto!important] [&>svg]:max-h-16.25">
+              <VitLogo />
+            </div>
+
+            <h3
+              className={`text-[17px] font-extrabold scale-x-120 text-zinc-800 ${fontTimes}`}
+            >
+              VELLORE CAMPUS
+            </h3>
+          </div>
+
+          <div className="flex-1 flex flex-col justify-center top-1 items-center px-4 w-full">
+            <div className="w-38.5 h-59 overflow-hidden flex items-center justify-center z-10">
+              {data.basic.photoUrl ? (
+                <img
+                  src={data.basic.photoUrl}
+                  className="w-full h-full object-contain brightness-110"
+                  alt="Student"
+                />
+              ) : (
+                <User className="w-20 h-20 text-zinc-300" />
+              )}
+            </div>
+          </div>
+
+          <div className={`flex flex-col items-center shrink-0 pb-1`}>
+            <div
+              className={`font-bold text-[25px] ${fontArial} text-[#181d79] tracking-tight leading-none text-center px-2`}
+            >
+              {toTitleCase(data.basic.name)}
+            </div>
+            <div
+              className={`font-bold text-[18px] ${fontArial} text-black mt-4`}
+            >
+              {data.basic.regNo}
+            </div>
+          </div>
+
+          {/* Footer Banner: Reduced py-2.5 to py-1.5 */}
+          <div
+            className={`text-[#ffffff] text-center py-1 font-bold text-[22px] tracking-wide shrink-0 ${fontArial}`}
+            style={{
+              backgroundColor: isHosteller ? "#181d79" : "#C41E3A",
+            }}
+          >
+            {isHosteller ? "HOSTELLER" : "DAY SCHOLAR"}
+          </div>
+        </div>
+
+        {/* BACK SIDE: Reduced global padding from p-5 to p-3 to reclaim space */}
+        <div className="absolute inset-0 backface-hidden transform-[rotateY(180deg)] bg-white rounded-2xl border-2 border-zinc-400 flex flex-col p-3 text-black text-[12px] leading-tight overflow-hidden">
+          <div className="flex gap-1">
+            <span className={`italic font-bold ${fontTimes}`}>App. No:</span>{" "}
+            <span className={`font-bold ml-1 ${fontArial}`}>
+              {data.personal.appNo}
+            </span>
+          </div>
+
+          <div className="flex gap-1 mt-1">
+            <span className={`italic font-bold ${fontTimes}`}>
+              Blood Group :
+            </span>{" "}
+            <span className={`font-bold ml-1 ${fontArial}`}>
+              {data.personal.bloodGroup}
+            </span>
+          </div>
+
+          {/* Reduced all mt-3 section dividers to mt-1.5 */}
+          <div className={`mt-1.5 italic font-bold ${fontTimes}`}>
+            Official Address :
+          </div>
+          <div
+            className={`font-bold ml-2 text-[11px] leading-snug ${fontArial}`}
+          >
+            Vellore Institute of Technology,
+            <br />
+            Vellore - 632 014, Tamilnadu, India.
+            <br />
+            Ph : 0416 224 3091
+            <br />
+            Fax : 0416 224 3092
+          </div>
+
+          <div className={`mt-1.5 italic font-bold ${fontTimes}`}>
+            Address :
+          </div>
+          <div
+            className={`font-bold ml-2 text-[11px] leading-snug uppercase ${fontArial}`}
+          >
+            {address.street},<br />
+            {address.area}, {address.city},<br />
+            {address.pincode}, {address.state},<br />
+            {address.country}
+          </div>
+
+          <div className={`mt-1.5 italic font-bold ${fontTimes}`}>
+            Contact No. :
+          </div>
+          <div className={`font-bold ml-2 text-[13px] ${fontArial}`}>
+            {contactNo}
+          </div>
+
+          <div className="mt-1.5 flex gap-1">
+            <span className={`italic font-bold ${fontTimes}`}>
+              Valid Upto :
+            </span>{" "}
+            <span className={`font-bold text-[13px] ml-1 ${fontArial}`}>
+              JUL-2028
+            </span>
+          </div>
+
+          {/* Reduced mt-4 to mt-2 for signature block */}
+          <div className="mt-2 flex justify-between text-[11px] italic items-end">
+            <div className="text-center flex flex-col items-center">
+              <span className="text-xl -mb-2 text-black/70 italic font-['cursive']!"></span>
+              <span className={fontTimes}> </span>
+            </div>
+            <div className="text-center flex flex-col items-center">
+              <span className="text-xl -mb-2 text-black/70 italic font-['cursive']!"></span>
+              <span className={fontTimes}> </span>
+            </div>
+          </div>
+
+          {/* TEC-IT API Barcode & Footer: mt-auto naturally pushes this to the bottom */}
+          <div className="mt-auto flex flex-col items-center">
+            <img
+              src={`https://barcode.tec-it.com/barcode.ashx?data=${data.basic.regNo}&code=Code128`}
+              alt="Barcode"
+              className="w-[68%] h-auto mix-blend-multiply"
+            />
+            <div className={`font-bold text-[13px] ${fontTimes}`}>
+              Website : www.vit.ac.in
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<StudentProfile | null>(null);
@@ -100,7 +267,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        // Automatically uses the authorizedID scoped cache from network.ts
         const html = await network.fetchWithCache(
           "student_profile_data",
           async () =>
@@ -120,7 +286,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
 
   if (loading) {
     return (
-      <div className="h-full flex flex-col items-center justify-center text-zinc-500 gap-4 animate-pulse bg-zinc-50 dark:bg-black">
+      <div className="h-full flex flex-col items-center justify-center text-zinc-500 gap-4 animate-pulse bg-zinc-50 dark:bg-zinc-900">
         <Loader2 className="w-10 h-10 animate-spin text-black dark:text-white" />
         <span className="text-xs font-bold tracking-widest uppercase">
           Fetching Profile...
@@ -132,241 +298,221 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
   if (!data) return null;
 
   return (
-    <div className="h-full overflow-y-auto bg-zinc-100 dark:bg-black p-4 md:p-6 text-zinc-200 font-mono custom-scrollbar">
-      <div className="max-w-375 mx-auto grid grid-cols-1 md:grid-cols-6 gap-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="md:col-span-4 bg-cyan-400 border-4 border-black rounded-4xl p-6 shadow-[8px_8px_0px_0px_#000] relative overflow-hidden group flex items-center min-h-50"
-        >
-          <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-          <div className="relative z-10 w-full flex flex-col md:flex-row items-center md:items-start gap-8">
-            <div className="shrink-0">
-              <div className="w-32 h-32 md:w-36 md:h-36 rounded-4xl border-4 border-black bg-white overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -rotate-2 group-hover:rotate-0 transition-transform duration-300">
-                {data.basic.photoUrl ? (
-                  <img
-                    src={data.basic.photoUrl}
-                    className="w-full h-full object-cover"
-                    alt="Student"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-zinc-100">
-                    <User className="w-16 h-16 text-zinc-400" />
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="flex-1 min-w-0 flex flex-col justify-center items-center md:items-start text-center md:text-left h-full">
-              <h1 className="font-expanded font-black text-3xl md:text-5xl uppercase leading-none text-black tracking-tighter mb-4 drop-shadow-sm">
-                {data.basic.name}
-              </h1>
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-4">
-                <span className="bg-black text-white px-4 py-1.5 rounded-xl text-sm font-bold border-2 border-black font-mono tracking-widest shadow-sm">
-                  {data.basic.regNo}
-                </span>
-                <span className="bg-white/40 text-black border-2 border-black/20 px-4 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-tight">
-                  {data.basic.program}
-                </span>
-              </div>
-              <div className="text-xs font-black text-black/70 space-y-1">
-                <p>{data.basic.school}</p>
-                <p className="opacity-60 font-mono tracking-tight">
-                  {data.basic.email}
-                </p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+    <div className="h-full overflow-y-auto bg-(--bg-main) p-4 md:p-8 font-mono custom-scrollbar">
+      <div className="max-w-375 mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
+        {/* LEFT COLUMN: ID CARD & ACADEMIC SPILLOVER */}
+        <div className="lg:col-span-4 flex flex-col gap-6 md:gap-8 items-center lg:items-stretch">
+          <DigitalIDCard data={data} />
 
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.1 }}
-          className="md:col-span-2 bg-yellow-400 border-4 border-black rounded-4xl p-6 flex flex-col justify-between shadow-[8px_8px_0px_0px_#000] relative overflow-hidden min-h-50"
-        >
-          <div className="absolute -bottom-8 -right-8 text-black/5">
-            <Shield className="w-48 h-48" />
-          </div>
-          <div className="relative z-10 h-full flex flex-col justify-between">
-            <div className="flex justify-between items-start mb-4 gap-4">
-              <div className="min-w-0 flex-1">
-                <span className="text-[10px] font-black uppercase tracking-widest text-black/60 block mb-1">
-                  Proctor
-                </span>
-                <h3 className="font-expanded font-black text-xl uppercase leading-tight text-black line-clamp-2">
-                  {data.proctor.name}
-                </h3>
-                <p className="text-[10px] font-bold text-black/70 mt-1">
-                  {data.proctor.designation}
-                </p>
+          <BentoCard
+            title="Academic Details"
+            icon={GraduationCap}
+            delay={0.1}
+            className="bg-[#c4f135]"
+          >
+            <div className="space-y-3">
+              <div className="bg-white/40 p-3 rounded-xl border-2 border-black">
+                <div className="text-[10px] font-black uppercase tracking-widest text-black/60 mb-0.5">
+                  Program
+                </div>
+                <div className="text-base font-black leading-tight">
+                  {data.basic.program}
+                </div>
               </div>
-              <div className="w-16 h-16 rounded-2xl border-4 border-black bg-white overflow-hidden shrink-0 shadow-sm">
+              <div className="bg-white/40 p-3 rounded-xl border-2 border-black">
+                <div className="text-[10px] font-black uppercase tracking-widest text-black/60 mb-0.5">
+                  School
+                </div>
+                <div className="text-sm font-bold leading-tight">
+                  {data.basic.school}
+                </div>
+              </div>
+              <div className="bg-white/40 p-3 rounded-xl border-2 border-black">
+                <div className="text-[10px] font-black uppercase tracking-widest text-black/60 mb-0.5">
+                  Institutional Email
+                </div>
+                <div className="text-sm font-bold leading-tight break-all">
+                  {data.basic.email}
+                </div>
+              </div>
+            </div>
+          </BentoCard>
+        </div>
+
+        {/* RIGHT COLUMN: REMAINING STUDENT DATA */}
+        <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 auto-rows-max">
+          <BentoCard
+            title="Proctor Profile"
+            icon={Shield}
+            delay={0.2}
+            colSpan="md:col-span-2"
+            className="bg-[#ffd500]"
+          >
+            <div className="flex flex-col md:flex-row gap-6 items-center md:items-stretch">
+              <div className="w-28 h-36 border-4 border-black bg-white rounded-xl overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -rotate-3 shrink-0 flex items-center justify-center">
                 {data.proctor.photoUrl ? (
                   <img
                     src={data.proctor.photoUrl}
                     className="w-full h-full object-cover"
+                    alt="Proctor"
                   />
                 ) : (
-                  <Shield className="m-auto w-8 h-8 text-zinc-300" />
+                  <Shield
+                    color="#e5e5e5"
+                    className="w-12 h-12 text-[#e5e5e5]"
+                  />
                 )}
               </div>
-            </div>
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2 bg-black/5 p-1.5 rounded-lg border border-black/10 text-xs font-bold text-black">
-                <Smartphone className="w-3.5 h-3.5" /> {data.proctor.mobile}
-              </div>
-              <div className="flex items-center gap-2 bg-black/5 p-1.5 rounded-lg border border-black/10 text-[10px] font-bold text-black">
-                <Mail className="w-3.5 h-3.5" />{" "}
-                <span className="truncate">{data.proctor.email}</span>
-              </div>
-              <div className="flex items-center gap-2 bg-black/5 p-1.5 rounded-lg border border-black/10 text-[10px] font-bold text-black">
-                <MapPin className="w-3.5 h-3.5" /> {data.proctor.cabin}
-              </div>
-            </div>
-          </div>
-        </motion.div>
 
-        <BentoCard
-          title="Personal"
-          icon={User}
-          delay={0.2}
-          colSpan="md:col-span-2"
-        >
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1 mb-4">
-            <InfoRow label="App No" value={data.personal.appNo} />
-            <InfoRow label="DOB" value={data.personal.dob} />
-            <InfoRow label="Gender" value={data.personal.gender} />
-            <InfoRow label="Blood" value={data.personal.bloodGroup} />
-            <InfoRow label="Language" value={data.personal.nativeLanguage} />
-            <InfoRow label="State" value={data.personal.nativeState} />
-            <InfoRow label="Aadhar" value={data.personal.aadhar} />
-            <InfoRow label="Nationality" value={data.personal.nationality} />
-          </div>
-          <div className="pt-3 border-t border-zinc-800 grid grid-cols-2 gap-3">
-            <div className="bg-zinc-800/50 p-2 rounded-xl text-center border-2 border-zinc-800">
-              <div className="text-xl font-black">{data.family.brothers}</div>
-              <div className="text-[9px] font-bold uppercase text-zinc-500">
-                Brothers
+              <div className="flex-1 min-w-0 flex flex-col justify-center w-full">
+                <h3 className="font-expanded font-black text-2xl uppercase leading-none mb-1 text-black">
+                  {data.proctor.name}
+                </h3>
+                <p className="text-xs font-bold text-black/70 mb-4 tracking-tight">
+                  {data.proctor.designation}
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex items-center gap-2 bg-white/40 p-2 rounded-lg border-2 border-black text-xs font-bold">
+                    <Smartphone className="w-4 h-4 shrink-0" />{" "}
+                    {data.proctor.mobile}
+                  </div>
+                  <div className="flex items-center gap-2 bg-white/40 p-2 rounded-lg border-2 border-black text-xs font-bold">
+                    <MapPin className="w-4 h-4 shrink-0" /> {data.proctor.cabin}
+                  </div>
+                  <div className="flex items-center gap-2 bg-white/40 p-2 rounded-lg border-2 border-black text-xs font-bold sm:col-span-2">
+                    <Mail className="w-4 h-4 shrink-0" />{" "}
+                    <span className="truncate">{data.proctor.email}</span>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="bg-zinc-800/50 p-2 rounded-xl text-center border-2 border-zinc-800">
-              <div className="text-xl font-black">{data.family.sisters}</div>
-              <div className="text-[9px] font-bold uppercase text-zinc-500">
-                Sisters
+          </BentoCard>
+
+          <BentoCard
+            title="Guardian / Father"
+            icon={Briefcase}
+            delay={0.3}
+            colSpan="md:col-span-2"
+            className="bg-[#ff6b6b]"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="bg-white p-4 rounded-xl border-4 border-black shadow-inner space-y-1">
+                <InfoRow label="Full Name" value={data.family.father.name} />
+                <InfoRow
+                  label="Qualification"
+                  value={data.family.father.qualification}
+                />
+                <InfoRow
+                  label="Occupation"
+                  value={data.family.father.occupation}
+                />
+                <InfoRow
+                  label="Annual Income"
+                  value={data.family.father.income}
+                />
+                <div className="mt-4 p-2 bg-black text-white rounded-lg border-2 border-black text-center flex items-center justify-between px-4">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-white/70">
+                    Local Guardian
+                  </span>
+                  <span className="text-sm font-black">
+                    {data.family.guardian || "N/A"}
+                  </span>
+                </div>
               </div>
-            </div>
-          </div>
-        </BentoCard>
-
-        <BentoCard
-          title="Education"
-          icon={GraduationCap}
-          delay={0.3}
-          colSpan="md:col-span-2"
-        >
-          <div className="grid grid-cols-2 gap-x-3 gap-y-1 mb-3">
-            <InfoRow label="Degree" value={data.education.degree} />
-            <InfoRow
-              label="Qualification"
-              value={data.education.qualification}
-            />
-            <InfoRow label="Board" value={data.education.board} />
-            <InfoRow label="Year" value={data.education.year} />
-          </div>
-          <div className="bg-zinc-800/40 p-3 rounded-xl border-2 border-zinc-800">
-            <span className="text-[9px] font-black uppercase text-zinc-500 block mb-1 tracking-widest">
-              Previous Institution
-            </span>
-            <p className="text-xs font-bold leading-tight wrap-break-word">
-              {data.education.school}
-            </p>
-          </div>
-        </BentoCard>
-
-        <BentoCard
-          title="Location"
-          icon={MapPin}
-          delay={0.3}
-          colSpan="md:col-span-2"
-        >
-          <div className="flex flex-col gap-4 h-full">
-            <AddressCard title="Current Address" data={data.currentAddress} />
-            <AddressCard
-              title="Permanent Address"
-              data={data.permanentAddress}
-            />
-          </div>
-        </BentoCard>
-
-        <BentoCard
-          title="Father"
-          icon={Briefcase}
-          delay={0.4}
-          colSpan="md:col-span-3"
-          className="border-l-12 border-l-blue-500"
-        >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 h-full items-center">
-            <div className="space-y-1">
-              <InfoRow label="Full Name" value={data.family.father.name} />
-              <InfoRow
-                label="Qualification"
-                value={data.family.father.qualification}
+              <AddressCard
+                title="Official Address"
+                data={data.family.father.address}
               />
-              <InfoRow
-                label="Occupation"
-                value={data.family.father.occupation}
-              />
-              <InfoRow
-                label="Annual Income"
-                value={data.family.father.income}
-              />
-              <div className="mt-2 p-2 bg-zinc-800/50 rounded-lg border border-zinc-800 text-center">
-                <span className="text-[9px] font-bold text-zinc-500 block uppercase">
-                  Guardian
+            </div>
+          </BentoCard>
+
+          <div className="grid grid-cols-1 gap-6 md:gap-8 md:col-span-2 md:grid-cols-2">
+            <BentoCard
+              title="Personal"
+              icon={HeartPulse}
+              delay={0.4}
+              className="bg-cyan-300"
+            >
+              <div className="bg-white p-3 rounded-xl border-2 border-black space-y-1">
+                <InfoRow label="DOB" value={data.personal.dob} />
+                <InfoRow label="Gender" value={data.personal.gender} />
+                <InfoRow
+                  label="Language"
+                  value={data.personal.nativeLanguage}
+                />
+                <InfoRow
+                  label="Native State"
+                  value={data.personal.nativeState}
+                />
+                <InfoRow
+                  label="Nationality"
+                  value={data.personal.nationality}
+                />
+              </div>
+            </BentoCard>
+
+            <BentoCard
+              title="Education"
+              icon={GraduationCap}
+              delay={0.4}
+              className="bg-[#a8a4ff]"
+            >
+              <div className="bg-white p-3 rounded-xl border-2 border-black space-y-1 mb-4">
+                <InfoRow label="Degree" value={data.education.degree} />
+                <InfoRow
+                  label="Qualification"
+                  value={data.education.qualification}
+                />
+                <InfoRow label="Board" value={data.education.board} />
+                <InfoRow label="Passing Year" value={data.education.year} />
+              </div>
+              <div className="bg-white p-3 rounded-xl border-2 border-black text-center">
+                <span className="text-[10px] font-black uppercase text-black/50 block mb-1 tracking-widest">
+                  Previous Institution
                 </span>
-                <span className="text-xs font-black text-blue-400">
-                  {data.family.guardian}
-                </span>
+                <p className="text-xs font-bold leading-tight line-clamp-2">
+                  {data.education.school}
+                </p>
               </div>
-            </div>
-            <AddressCard
-              title="Father Official"
-              data={data.family.father.address}
-            />
+            </BentoCard>
           </div>
-        </BentoCard>
 
-        <BentoCard
-          title="Hostel"
-          icon={Building}
-          delay={0.5}
-          colSpan="md:col-span-3"
-        >
-          {data.hostel ? (
-            <div className="flex gap-6 h-full items-center">
-              <div className="bg-zinc-800 p-4 rounded-2xl border-4 border-zinc-800 text-center flex flex-col justify-center min-w-30 shadow-inner shrink-0">
-                <div className="text-[10px] uppercase font-black text-zinc-500 tracking-widest mb-1">
-                  Room
+          <BentoCard
+            title="Hostel Allocation"
+            icon={Building}
+            delay={0.5}
+            colSpan="md:col-span-2"
+            className="bg-[#ff9e42]"
+          >
+            {data.hostel ? (
+              <div className="flex flex-col sm:flex-row gap-6 items-center">
+                <div className="bg-black p-6 rounded-2xl border-4 border-black text-center flex flex-col justify-center w-full sm:w-auto min-w-35 shadow-inner shrink-0 rotate-1">
+                  <div className="text-[10px] uppercase font-black text-white/50 tracking-widest mb-1">
+                    Room No.
+                  </div>
+                  <div className="text-5xl font-black text-white">
+                    {data.hostel.room}
+                  </div>
+                  <div className="text-[11px] font-bold text-[#ff9e42] mt-2 bg-white/10 py-1 rounded-md px-2 truncate max-w-full">
+                    {data.hostel.block}
+                  </div>
                 </div>
-                <div className="text-4xl font-black text-white">
-                  {data.hostel.room}
-                </div>
-                <div className="text-[10px] font-bold opacity-60 mt-1 truncate max-w-full px-1">
-                  {data.hostel.block}
+                <div className="flex-1 space-y-2 w-full bg-white p-4 rounded-xl border-4 border-black">
+                  <InfoRow label="Bed Type" value={data.hostel.bedType} />
+                  <InfoRow label="Mess Plan" value={data.hostel.mess} />
+                  <InfoRow label="Hostel App No" value={data.hostel.appNo} />
                 </div>
               </div>
-              <div className="flex-1 space-y-1.5 min-w-0">
-                <InfoRow label="Bed Type" value={data.hostel.bedType} />
-                <InfoRow label="Mess Plan" value={data.hostel.mess} />
-                <InfoRow label="App No" value={data.hostel.appNo} />
+            ) : (
+              <div className="h-full w-full flex items-center justify-center p-8 bg-white border-4 border-dashed border-black rounded-2xl text-black/40 font-black text-xl uppercase tracking-widest text-center">
+                Registered As
+                <br />
+                Day Boarder
               </div>
-            </div>
-          ) : (
-            <div className="h-full flex items-center justify-center p-8 border-4 border-dashed border-zinc-800 rounded-3xl text-zinc-500 font-black uppercase tracking-widest">
-              Day Boarder
-            </div>
-          )}
-        </BentoCard>
+            )}
+          </BentoCard>
+        </div>
       </div>
     </div>
   );

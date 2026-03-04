@@ -17,7 +17,11 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["dist/injected.js", "dist/style.css"],
+      "resources": [
+        "dist/injected.js",
+        "dist/style.css",
+        "dist/assets/vit.svg"
+      ],
       "matches": ["https://vtop.vit.ac.in/*"]
     }
   ]

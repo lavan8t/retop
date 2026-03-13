@@ -57,8 +57,21 @@ const getDestinationView = (link: QuickLink): ViewType | "content" => {
 };
 
 export const DashboardApp = () => {
-  // Device Blocker State
-  const [isBlocked, setIsBlocked] = useState(false);
+  // Device Blocker State: Evaluate IMMEDIATELY before the first render
+  const [isBlocked, setIsBlocked] = useState(() => {
+    if (typeof window === "undefined" || typeof navigator === "undefined")
+      return false;
+
+    const isMobileUA =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent,
+      );
+    const isTouchMac =
+      navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+    const isSmallScreen = window.innerWidth < 1024;
+
+    return isMobileUA || isTouchMac || isSmallScreen;
+  });
 
   const [user, setUser] = useState({
     name: MockData.MOCK_USER.name,

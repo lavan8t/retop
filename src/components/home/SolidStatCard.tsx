@@ -1,0 +1,34 @@
+export const SolidStatCard = ({
+  title,
+  value,
+  subtitle,
+  bgClass,
+  icon: Icon,
+}: any) => (
+  <div
+    className={`
+      ${bgClass} border-4 border-black rounded-3xl p-5 
+      shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] 
+      transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] 
+      hover:-translate-y-1 hover:shadow-[10px_10px_0px_0px_rgba(0,0,0,1)]
+      relative overflow-hidden group h-full flex flex-col justify-center min-h-35 lg:min-h-0
+    `}
+  >
+    <div className="absolute -right-4 -bottom-4 opacity-20 group-hover:opacity-30 transition-all duration-500 group-hover:rotate-12 group-hover:scale-110 pointer-events-none">
+      <Icon className="w-28 h-28 text-black" />
+    </div>
+    <div className="relative z-10 flex flex-col justify-center h-full">
+      <h3 className="text-black font-bold font-expanded uppercase tracking-widest text-xs border-b-2 border-black/20 pb-1 w-fit mb-1">
+        {title}
+      </h3>
+      <div className="text-4xl md:text-5xl font-black font-expanded text-black tracking-tighter leading-none drop-shadow-sm mt-1">
+        {value}
+      </div>
+      {subtitle && (
+        <p className="text-[10px] font-bold font-mono text-black/60 uppercase mt-2 tracking-wide">
+          {subtitle}
+        </p>
+      )}
+    </div>
+  </div>
+);

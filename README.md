@@ -1,6 +1,9 @@
+![retop](URL_OF_LIGHT_IMAGE#gh-light-mode-only)
+![retop](URL_OF_DARK_IMAGE#gh-dark-mode-only)
+
 # retop
 
-> A zero-dependency, strongly-typed mock data repository for building university portal interfaces without the headache.
+> A reimagined , strongly-typed, brutalist themed university portal interface.
 
 ## Why I Built This
 

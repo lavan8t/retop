@@ -18,7 +18,9 @@ import {
   CoursePageOption,
 } from "../types/vtop";
 import { motion, AnimatePresence } from "framer-motion";
+import { MonitorOff } from "lucide-react";
 
+// Import our Mock Data
 import * as MockData from "../utils/mock-data";
 
 export type ViewType =
@@ -55,7 +57,9 @@ const getDestinationView = (link: QuickLink): ViewType | "content" => {
 };
 
 export const DashboardApp = () => {
-  // Initialize state directly with Mock Data
+  // Device Blocker State
+  const [isBlocked, setIsBlocked] = useState(false);
+
   const [user, setUser] = useState({
     name: MockData.MOCK_USER.name,
     regNo: MockData.MOCK_USER.regNo,
@@ -109,6 +113,30 @@ export const DashboardApp = () => {
 
   const isOmniboxOpenRef = useRef(isOmniboxOpen);
   isOmniboxOpenRef.current = isOmniboxOpen;
+
+  // Device & Screen Checker
+  useEffect(() => {
+    const checkDevice = () => {
+      // 1. Detect actual mobile devices via User-Agent (catches "Request Desktop Site")
+      const isMobileUA =
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent,
+        );
+
+      // 2. Catch iPads pretending to be Macs when requesting desktop site
+      const isTouchMac =
+        navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+
+      // 3. Catch strictly narrow windows
+      const isSmallScreen = window.innerWidth < 1024;
+
+      setIsBlocked(isMobileUA || isTouchMac || isSmallScreen);
+    };
+
+    checkDevice();
+    window.addEventListener("resize", checkDevice);
+    return () => window.removeEventListener("resize", checkDevice);
+  }, []);
 
   useEffect(() => {
     applyTheme(settings);
@@ -188,6 +216,34 @@ export const DashboardApp = () => {
     alert("Logout clicked! (Disabled in mock environment)");
   };
 
+  // --- NEO-BRUTALIST BLOCKER SCREEN ---
+  if (isBlocked) {
+    return (
+      <div className="fixed inset-0 z-99 bg-zinc-950 flex flex-col items-center justify-center p-6 font-mono selection:bg-black selection:text-yellow-400">
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0, rotate: -5 }}
+          animate={{ scale: 1, opacity: 1, rotate: -2 }}
+          className="bg-yellow-400 border-4 border-black p-8 md:p-10 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] max-w-sm w-full text-center flex flex-col items-center"
+        >
+          <div className="bg-black p-4 rounded-2xl border-4 border-black shadow-[4px_4px_0px_0px_var(--text-main)] mb-6">
+            <MonitorOff className="w-12 h-12 text-yellow-400" />
+          </div>
+          <h1 className="text-4xl font-black font-expanded uppercase tracking-tighter mb-4 text-black leading-none">
+            Desktop
+            <br />
+            Only
+          </h1>
+          <div className="w-16 h-2 bg-black mb-5"></div>
+          <p className="font-bold text-black text-sm leading-snug">
+            This experience requires a full desktop environment. Mobile devices
+            and "Request Desktop Site" modes are not supported.
+          </p>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // --- ACTUAL DESKTOP APPLICATION ---
   return (
     <div className="fixed inset-0 h-screen font-mono selection:bg-blue-500 selection:text-white flex flex-col overflow-hidden bg-(--bg-main) z-100 pointer-events-auto">
       <Omnibox

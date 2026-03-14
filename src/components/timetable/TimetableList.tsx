@@ -1,9 +1,60 @@
 import { TimetableCourse } from "../../types/vtop";
-import { MapPin } from "lucide-react";
+import { MapPin, User, Clock } from "lucide-react";
+import { motion } from "framer-motion";
 
 export const TimetableList = ({ courses }: { courses: TimetableCourse[] }) => (
-  <div className="h-full overflow-hidden bg-zinc-900 border-4 border-zinc-800 rounded-4xl shadow-xl flex flex-col">
-    <div className="flex-1 overflow-auto custom-scrollbar">
+  // FIX: Changed h-full overflow-hidden to allow for dynamic heights on mobile
+  <div className="h-full w-full bg-zinc-950 md:bg-zinc-900 md:border-4 border-black rounded-2xl md:rounded-4xl flex flex-col">
+    {/* MOBILE VIEW */}
+    <div className="md:hidden flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-4 pb-40 p-2">
+      {courses.map((c, i) => {
+        const isLab = c.type.includes("Lab");
+        return (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05 }}
+            // FIX: Removed height restrictions, added shadow-[4px_4px_0px_0px_#000] for consistency
+            className="bg-zinc-900 border-2 border-black rounded-2xl p-4 shadow-[4px_4px_0px_0px_#000] flex flex-col gap-3 shrink-0"
+          >
+            <div className="flex justify-between items-start">
+              <span
+                className={`px-2 py-1 rounded-lg border-2 border-black text-[10px] font-black uppercase ${isLab ? "bg-purple-400" : "bg-cyan-400"}`}
+              >
+                {c.code}
+              </span>
+              <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">
+                {c.type}
+              </span>
+            </div>
+
+            <h3 className="text-base font-black font-expanded text-white leading-tight">
+              {c.title}
+            </h3>
+
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-400 bg-zinc-950 p-2 rounded-xl border border-zinc-800">
+                <Clock className="w-3 h-3 text-blue-400" />
+                <span className="truncate">{c.slot}</span>
+              </div>
+              <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-400 bg-zinc-950 p-2 rounded-xl border border-zinc-800">
+                <MapPin className="w-3 h-3 text-red-400" />
+                <span className="truncate">{c.venue}</span>
+              </div>
+              <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-400 bg-zinc-950 p-2 rounded-xl border border-zinc-800 col-span-2">
+                <User className="w-3 h-3 text-emerald-400" />
+                <span className="truncate">{c.faculty}</span>
+              </div>
+            </div>
+          </motion.div>
+        );
+      })}
+    </div>
+
+    {/* --- DESKTOP VIEW --- */}
+    {/* FIX: Added pb-32 xl:pb-0 */}
+    <div className="hidden md:block flex-1 overflow-auto custom-scrollbar pb-32 xl:pb-0">
       <table className="w-full text-left border-collapse table-fixed min-w-200">
         <thead className="sticky top-0 bg-zinc-950 z-10 shadow-md">
           <tr className="text-blue-400 font-expanded font-bold text-sm uppercase tracking-wider border-b-2 border-zinc-800">

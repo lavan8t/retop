@@ -2,13 +2,14 @@ import { motion } from "framer-motion";
 import { TrendingUp } from "lucide-react";
 
 export const SolidProgressCard = ({ progress }: { progress: number }) => (
-  <div
+  <motion.div
+    whileHover={{ y: -6, boxShadow: "10px 10px 0px 0px rgba(0,0,0,1)" }}
+    whileTap={{ scale: 0.95, y: 0, boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)" }}
+    transition={{ type: "spring", stiffness: 400, damping: 25 }}
     className={`
       bg-cyan-400 border-4 border-black rounded-3xl p-5 
       shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] 
-      transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] 
-      hover:-translate-y-1 hover:shadow-[10px_10px_0px_0px_rgba(0,0,0,1)]
-      relative overflow-hidden group h-full flex flex-col justify-center min-h-35 lg:min-h-0
+      relative overflow-hidden group h-full flex flex-col justify-center min-h-35 lg:min-h-0 cursor-pointer select-none
     `}
   >
     <div className="absolute -right-4 -bottom-4 opacity-20 group-hover:opacity-30 transition-all duration-500 group-hover:rotate-12 group-hover:scale-110 pointer-events-none">
@@ -20,7 +21,7 @@ export const SolidProgressCard = ({ progress }: { progress: number }) => (
         <h3 className="text-black font-bold font-expanded uppercase tracking-widest text-xs border-b-2 border-black/20 pb-1">
           Semester Progress
         </h3>
-        <span className="font-black text-2xl text-black leading-none">
+        <span className="font-black font-expanded text-2xl text-black leading-none drop-shadow-sm">
           {progress}%
         </span>
       </div>
@@ -34,11 +35,11 @@ export const SolidProgressCard = ({ progress }: { progress: number }) => (
             transition={{ duration: 1.5, ease: "circOut", delay: 0.2 }}
           ></motion.div>
         </div>
-        <div className="flex justify-between text-[9px] font-bold font-mono text-black/50 uppercase">
+        <div className="flex justify-between text-[9px] font-bold font-mono text-black/50 uppercase mt-1.5">
           <span>Start: Jan</span>
           <span>Target: May</span>
         </div>
       </div>
     </div>
-  </div>
+  </motion.div>
 );

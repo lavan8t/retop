@@ -75,6 +75,16 @@ export const MOCK_ATTENDANCE: CourseSummary[] = [
     attended: 46,
     total: 50,
   },
+  {
+    code: "CSE2001",
+    name: "Data Structures and Algorithms",
+    type: "Embedded Theory and Lab",
+    slot: "C1+TC1+L31+L32+S1",
+    faculty: "Dr. Williams",
+    attendance: "88%",
+    attended: 22,
+    total: 25,
+  },
 ];
 
 export const MOCK_ASSIGNMENTS: Assignment[] = [
@@ -119,6 +129,42 @@ export const MOCK_TIMETABLE: TimetableCourse[] = [
     venue: "SJT 205 (Lab)",
     faculty: "Dr. Johnson",
     classId: "CR1002",
+    status: "Registered",
+  },
+  {
+    code: "CSE2001",
+    title: "Data Structures and Algorithms",
+    type: "ETH",
+    credits: "4",
+    category: "PC",
+    slot: "C1+TC1",
+    venue: "SJT 302",
+    faculty: "Dr. Williams",
+    classId: "CR1003",
+    status: "Registered",
+  },
+  {
+    code: "CSE2001",
+    title: "Data Structures and Algorithms",
+    type: "ELA",
+    credits: "0",
+    category: "PC",
+    slot: "L31+L32+S1", // S1 indicates Saturday Slot 1
+    venue: "TT 401 (Lab)",
+    faculty: "Dr. Williams",
+    classId: "CR1003",
+    status: "Registered",
+  },
+  {
+    code: "STS2001",
+    title: "Soft Skills",
+    type: "SS",
+    credits: "1",
+    category: "UC",
+    slot: "S11+S12", // Weekend specific slots
+    venue: "SJT 701",
+    faculty: "Prof. Miller",
+    classId: "CR1004",
     status: "Registered",
   },
 ];
@@ -215,6 +261,18 @@ export const MOCK_CURRICULUM_COURSES: Record<string, CurriculumCourse[]> = {
       j: "0",
       basket: "None",
     },
+    {
+      sl: "3",
+      code: "CSE2001",
+      title: "Data Structures and Algorithms",
+      type: "E",
+      credits: "4",
+      l: "3",
+      t: "0",
+      p: "2",
+      j: "0",
+      basket: "None",
+    },
   ],
 };
 
@@ -247,6 +305,25 @@ export const MOCK_COURSE_MARKS: CourseMarks[] = [
         weightage: "15",
         scoredMark: "48",
         scoredPercentage: "96%",
+        status: "Present",
+      },
+    ],
+  },
+  {
+    code: "CSE2001",
+    title: "Data Structures and Algorithms",
+    type: "Lab",
+    credits: "1",
+    classNumber: "CR1003",
+    slot: "S1", // Saturday Assessment
+    faculty: "Dr. Williams",
+    assessments: [
+      {
+        title: "Lab FAT",
+        maxMark: "100",
+        weightage: "50",
+        scoredMark: "92",
+        scoredPercentage: "92%",
         status: "Present",
       },
     ],

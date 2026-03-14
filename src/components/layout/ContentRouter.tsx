@@ -22,6 +22,7 @@ export const ContentRouter = ({
   ttCourses,
   ttLoading,
   ttViewMode,
+  setTtViewMode,
   cpOptions,
   setCpOptions,
   cpSemesters,
@@ -53,6 +54,7 @@ export const ContentRouter = ({
           courses={ttCourses}
           loading={ttLoading}
           viewMode={ttViewMode}
+          setViewMode={setTtViewMode} // <-- PASSED IT HERE
         />
       );
     case "curriculum":

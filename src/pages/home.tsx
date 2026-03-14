@@ -106,7 +106,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
   ];
 
   useEffect(() => {
-    setTimeout(() => inputRef.current?.focus(), 100);
+    // Only auto-focus on desktop
+    if (window.innerWidth >= 1024) {
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
   }, []);
 
   useEffect(() => {
@@ -114,7 +117,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       if (["INPUT", "TEXTAREA"].includes((e.target as HTMLElement).tagName))
         return;
       if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        inputRef.current?.focus();
+        if (window.innerWidth >= 1024) inputRef.current?.focus();
       }
     };
     window.addEventListener("keydown", handleGlobalType);
@@ -204,7 +207,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
   return (
     <div className="h-full w-full flex flex-col lg:flex-row gap-6 p-4 md:p-6 lg:p-8 overflow-y-auto lg:overflow-hidden bg-(--bg-main) max-w-425 mx-auto relative">
-      <div className="w-full lg:w-[26%] xl:w-[20%] flex flex-col border-4 border-black bg-(--bg-surface) rounded-4xl shadow-[8px_8px_0px_0px_#000] overflow-hidden shrink-0 h-[50vh] lg:h-full relative z-30">
+      {/* LEFT PANE: Search / Menu (HIDDEN ON MOBILE, VISIBLE ON DESKTOP `lg`) */}
+      <div className="hidden lg:flex w-full lg:w-[26%] xl:w-[20%] flex-col border-4 border-black bg-(--bg-surface) rounded-4xl shadow-[8px_8px_0px_0px_#000] overflow-hidden shrink-0 h-[50vh] lg:h-full relative z-30">
         <div className="p-4 border-b-4 border-black bg-(--bg-surface) shrink-0 flex items-center gap-3 relative z-20">
           <div className="w-10 h-10 bg-blue-500 text-white flex items-center justify-center font-bold border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_#000] shrink-0">
             <Search className="w-5 h-5" />
@@ -285,7 +289,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     className={`w-full bg-transparent p-3 flex items-center justify-between group rounded-2xl transition-all border-2 ${isActive ? "bg-(--bg-highlight) border-(--border-main) shadow-sm" : "border-transparent hover:bg-(--bg-surface) hover:border-(--border-dim)"}`}
                   >
                     <div className="flex items-center gap-4">
-                      {/* Consistent rounded-xl matching omnibox */}
                       <div
                         className={`w-10 h-10 rounded-full border-2 border-black flex items-center justify-center shadow-[3px_3px_0px_0px_#000] ${iconColor} group-hover:-translate-y-0.5 group-hover:shadow-[4px_4px_0px_0px_#000] transition-all`}
                       >
@@ -380,7 +383,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
       {/* RIGHT PANE: Main Content Grid */}
       <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0 overflow-y-auto lg:overflow-visible pb-10 lg:pb-0 pt-2 -mt-2 px-1 -mx-1">
         {/* Attendance Column */}
-        <div className="w-full lg:w-[40%] xl:w-[35%] flex flex-col shrink-0 min-h-100 lg:min-h-0 h-full pt-1">
+        {/* FIX: Removed min-h-100 and made it shrink to content vertically on mobile */}
+        <div className="w-full lg:w-[40%] xl:w-[35%] flex flex-col shrink-0 h-auto lg:h-full pt-1">
           <ListCard
             title="Attendance"
             bgClass="bg-yellow-400"
@@ -440,7 +444,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
           {/* Bottom Row: Schedule & Assignments */}
           <div className="flex-1 flex flex-col sm:flex-row gap-6 min-h-0">
-            <div className="flex-1 min-h-87.5 lg:min-h-0 h-full flex flex-col">
+            {/* FIX: Removed min-h-87.5 so the cards resize perfectly to their content */}
+            <div className="flex-1 h-auto lg:h-full flex flex-col">
               <ListCard
                 title={`${dayName}`}
                 bgClass="bg-pink-400"
@@ -464,7 +469,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               </ListCard>
             </div>
 
-            <div className="flex-1 min-h-87.5 lg:min-h-0 h-full flex flex-col">
+            <div className="flex-1 h-auto lg:h-full flex flex-col">
               <ListCard
                 title="Assignments"
                 count={assignments.length}

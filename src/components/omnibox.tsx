@@ -62,6 +62,16 @@ const fuzzyMatch = (text: string, query: string) => {
   return qIdx === q.length;
 };
 
+// FIX: Changed url to '#settings' and 'studentprofileallview' to correctly trigger the ContentRouter
+const staticLinks: QuickLink[] = [
+  { title: "Settings & Preferences", url: "#settings", category: "System" },
+  {
+    title: "Student Profile",
+    url: "studentprofileallview",
+    category: "System",
+  },
+];
+
 export const Omnibox: React.FC<OmniboxProps> = ({
   isOpen,
   initialQuery = "",
@@ -92,8 +102,6 @@ export const Omnibox: React.FC<OmniboxProps> = ({
       // Focus instantly when it opens
       setTimeout(() => {
         if (inputRef.current) {
-          // Prevent auto-focus on very small mobile screens to stop the keyboard from instantly eating screen space,
-          // unless they actually tapped the search icon
           if (window.innerWidth > 768 || initialQuery !== "") {
             inputRef.current.focus();
             const length = inputRef.current.value.length;
@@ -128,6 +136,21 @@ export const Omnibox: React.FC<OmniboxProps> = ({
     const lowerQ = query.toLowerCase().trim();
     const matches: { link: QuickLink; score: number }[] = [];
 
+    // Check static system links (Settings, Profile, etc.)
+    staticLinks.forEach((link) => {
+      const titleLower = link.title.toLowerCase();
+      const catLower = link.category.toLowerCase();
+      let score = 0;
+      if (titleLower === lowerQ) score = 100;
+      else if (titleLower.startsWith(lowerQ)) score = 80;
+      else if (titleLower.includes(lowerQ)) score = 50;
+      else if (catLower.includes(lowerQ)) score = 30;
+      else if (fuzzyMatch(titleLower, lowerQ)) score = 10;
+
+      if (score > 0) matches.push({ link, score });
+    });
+
+    // Check fetched menu categories
     menuCategories.forEach((cat) => {
       cat.links.forEach((link) => {
         const titleLower = link.title.toLowerCase();

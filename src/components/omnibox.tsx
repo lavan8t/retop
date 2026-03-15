@@ -215,7 +215,9 @@ export const Omnibox: React.FC<OmniboxProps> = ({
         <div className="p-2 md:p-3 space-y-2 relative">
           {flattenedLinks.map((link, i) => {
             const isSelected = i === selectedIndex;
-            const isPinned = pinnedLinks.some((p) => p.url === link.url);
+            // FIX: match against link.title explicitly
+            const isPinned = pinnedLinks.some((p) => p.title === link.title);
+
             return (
               <div
                 key={i}
@@ -334,8 +336,9 @@ export const Omnibox: React.FC<OmniboxProps> = ({
               >
                 <div className="overflow-y-auto max-h-[50vh] custom-scrollbar p-1.5 md:p-2 space-y-1">
                   {cat.links.map((link, i) => {
+                    // FIX: match against link.title explicitly
                     const isPinned = pinnedLinks.some(
-                      (p) => p.url === link.url,
+                      (p) => p.title === link.title,
                     );
                     return (
                       <div

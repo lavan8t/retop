@@ -1,16 +1,18 @@
 import React, { useEffect, useState, useRef } from "react";
 import { TimetableCourse } from "../../types/vtop";
-import { X, MapPin, User, Clock, GraduationCap } from "lucide-react";
+import { X, MapPin, User, Clock, GraduationCap, PieChart } from "lucide-react";
 
 interface CoursePopupProps {
   course: TimetableCourse | null;
   position: { x: number; y: number } | null;
+  attendance?: string;
   onClose: () => void;
 }
 
 export const CoursePopup: React.FC<CoursePopupProps> = ({
   course,
   position,
+  attendance,
   onClose,
 }) => {
   const [active, setActive] = useState(false);
@@ -19,9 +21,6 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
 
   useEffect(() => {
     if (course && position && popupRef.current) {
-      // Calculate position to keep within bounds
-      // We assume standard viewport
-      // Measure actual height if potential, or fallback
       const popupWidth = 320;
       const popupHeight = popupRef.current.offsetHeight || 300;
       const padding = 16;
@@ -29,29 +28,13 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
       let x = position.x;
       let y = position.y;
 
-      // Horizontal bounds
-      if (x + popupWidth > window.innerWidth - padding) {
+      if (x + popupWidth > window.innerWidth - padding)
         x = window.innerWidth - popupWidth - padding;
-      }
-      if (x < padding) {
-        x = padding;
-      }
+      if (x < padding) x = padding;
 
-      // Vertical bounds
-      // Only constrain if it TRULY overflows.
-      // If y is large, it means we clicked near bottom.
-      if (y + popupHeight > window.innerHeight - padding) {
-        // Only flip if there is space above? Or just clamp?
-        // Let's clamp to bottom edge
+      if (y + popupHeight > window.innerHeight - padding)
         y = window.innerHeight - popupHeight - padding;
-      }
-
-      // If clamping makes it go too high (negative top), verify
-      if (y < padding) {
-        // If it's too tall, maybe we should just scroll it or let it be?
-        // For now, prioritize top visibility
-        y = padding;
-      }
+      if (y < padding) y = padding;
 
       setAdjustedPosition({ x, y });
       requestAnimationFrame(() => setActive(true));
@@ -64,43 +47,25 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
 
   const isLab = course.type.includes("Lab");
   const colors = isLab
-    ? {
-        bg: "bg-purple-950",
-        border: "border-purple-500",
-        text: "text-purple-100",
-        icon: "text-purple-400",
-      }
-    : {
-        bg: "bg-blue-950",
-        border: "border-blue-500",
-        text: "text-blue-100",
-        icon: "text-blue-400",
-      };
+    ? { bg: "bg-purple-400", text: "text-black", icon: "text-purple-500" }
+    : { bg: "bg-cyan-400", text: "text-black", icon: "text-blue-500" };
 
   return (
     <>
       <div
         ref={popupRef}
         onClick={(e) => e.stopPropagation()}
-        style={{
-          top: adjustedPosition.y,
-          left: adjustedPosition.x,
-        }}
-        className={`
-            fixed z-50 w-72 bg-zinc-900 border-2 ${colors.border} 
-            rounded-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] overflow-hidden
-            transform transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] origin-top-left
-            ${active ? "scale-100 opacity-100" : "scale-90 opacity-0"}
-        `}
+        style={{ top: adjustedPosition.y, left: adjustedPosition.x }}
+        className={`fixed z-50 w-72 bg-zinc-900 border-2 border-black rounded-2xl shadow-[8px_8px_0px_0px_#000] overflow-hidden transform transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] origin-top-left ${active ? "scale-100 opacity-100" : "scale-90 opacity-0"}`}
       >
         <div
-          className={`${colors.bg} p-3 border-b-2 border-zinc-800 relative overflow-hidden`}
+          className={`${colors.bg} p-3 border-b-2 border-black relative overflow-hidden`}
         >
           <div className="relative z-10 flex justify-between items-start gap-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span
-                  className={`px-1.5 py-0.5 rounded border ${colors.border} bg-black/30 text-[9px] font-black uppercase tracking-widest text-white`}
+                  className={`px-1.5 py-0.5 rounded border-2 border-black bg-white/30 text-[9px] font-black uppercase tracking-widest ${colors.text}`}
                 >
                   {course.code}
                 </span>
@@ -110,13 +75,15 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
                   {course.type}
                 </span>
               </div>
-              <h2 className="text-sm font-black font-expanded text-white leading-tight wrap-break-word">
+              <h2
+                className={`text-sm font-black font-expanded leading-tight wrap-break-word ${colors.text}`}
+              >
                 {course.title}
               </h2>
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 bg-black/20 hover:bg-black/40 rounded-full text-white transition-colors border border-transparent hover:border-white/20 shrink-0"
+              className={`p-1.5 bg-black/10 hover:bg-black/20 rounded-full transition-colors border-2 border-transparent hover:border-black shrink-0 ${colors.text}`}
             >
               <X className="w-3 h-3" />
             </button>
@@ -124,9 +91,9 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
         </div>
 
         <div className="p-3 space-y-2 bg-zinc-900">
-          <div className="flex items-center gap-3 p-2 bg-zinc-950 rounded-xl border border-zinc-800">
+          <div className="flex items-center gap-3 p-2 bg-zinc-950 rounded-xl border-2 border-black">
             <div
-              className={`w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center border border-zinc-800 ${colors.icon}`}
+              className={`w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center border-2 border-black ${colors.icon}`}
             >
               <User className="w-4 h-4" />
             </div>
@@ -135,7 +102,7 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
                 Faculty
               </p>
               <p
-                className="text-white font-bold text-xs truncate"
+                className="text-zinc-200 font-bold text-xs truncate"
                 title={course.faculty}
               >
                 {course.faculty}
@@ -144,33 +111,48 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            <div className="p-2 bg-zinc-950 rounded-xl border border-zinc-800">
+            <div className="p-2 bg-zinc-950 rounded-xl border-2 border-black">
               <div className="flex items-center gap-1.5 text-zinc-500 text-[9px] font-bold uppercase mb-1">
                 <MapPin className="w-3 h-3" /> Venue
               </div>
-              <p className="text-white font-black text-xs">{course.venue}</p>
+              <p className="text-zinc-200 font-black text-xs truncate">
+                {course.venue}
+              </p>
             </div>
-            <div className="p-2 bg-zinc-950 rounded-xl border border-zinc-800">
+            <div className="p-2 bg-zinc-950 rounded-xl border-2 border-black">
               <div className="flex items-center gap-1.5 text-zinc-500 text-[9px] font-bold uppercase mb-1">
                 <GraduationCap className="w-3 h-3" /> Credits
               </div>
-              <p className="text-white font-black text-xs">{course.credits}</p>
+              <p className="text-zinc-200 font-black text-xs">
+                {course.credits}
+              </p>
             </div>
-          </div>
 
-          <div className="p-2 bg-zinc-950 rounded-xl border border-zinc-800">
-            <div className="flex items-center gap-1.5 text-zinc-500 text-[9px] font-bold uppercase mb-2">
-              <Clock className="w-3 h-3" /> Slots
+            <div className="p-2 bg-zinc-950 rounded-xl border-2 border-black">
+              <div className="flex items-center gap-1.5 text-zinc-500 text-[9px] font-bold uppercase mb-2">
+                <Clock className="w-3 h-3" /> Slots
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {course.slot.split("+").map((s, i) => (
+                  <span
+                    key={i}
+                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded border-2 border-black ${colors.bg} ${colors.text}`}
+                  >
+                    {s}
+                  </span>
+                ))}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-1">
-              {course.slot.split("+").map((s, i) => (
-                <span
-                  key={i}
-                  className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${colors.border} bg-black/20 ${colors.text}`}
-                >
-                  {s}
-                </span>
-              ))}
+
+            <div className="p-2 bg-zinc-950 rounded-xl border-2 border-black">
+              <div className="flex items-center gap-1.5 text-zinc-500 text-[9px] font-bold uppercase mb-2">
+                <PieChart className="w-3 h-3" /> Attendance
+              </div>
+              <p
+                className={`font-black text-sm ${attendance && parseFloat(attendance) < 75 ? "text-red-500" : "text-emerald-400"}`}
+              >
+                {attendance || "N/A"}
+              </p>
             </div>
           </div>
         </div>

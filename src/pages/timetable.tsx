@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { TimetableCourse } from "../types/vtop";
+import { TimetableCourse, CourseSummary } from "../types/vtop";
 import { Layers, Loader2, LayoutGrid, List, Calendar } from "lucide-react";
 import { TimetableGrid } from "../components/timetable/TimetableGrid";
 import { TimetableList } from "../components/timetable/TimetableList";
@@ -11,6 +11,7 @@ interface TimetableContentViewProps {
   loading: boolean;
   viewMode: "grid" | "list" | "week";
   setViewMode: (mode: "grid" | "list" | "week") => void;
+  attendance: CourseSummary[];
 }
 
 const TABS = [
@@ -24,6 +25,7 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
   loading,
   viewMode,
   setViewMode,
+  attendance,
 }) => {
   useEffect(() => {
     if (window.innerWidth < 768 && viewMode === "grid") {
@@ -34,9 +36,9 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
 
   return (
     <>
-      <div className="flex-1 overflow-hidden p-3 md:p-6 relative h-full bg-zinc-950 flex flex-col gap-4">
+      <div className="flex-1 overflow-hidden relative h-full bg-(--bg-main) flex flex-col">
         {/* --- NEO-BRUTALIST TAB BAR --- */}
-        <div className="flex md:hidden justify-center shrink-0 z-10">
+        <div className="flex md:hidden justify-center shrink-0 z-10 p-3 pb-0">
           <div className="flex bg-zinc-900 border-2 md:border-4 border-black rounded-3xl p-1.5 shadow-[4px_4px_0px_0px_#000] gap-1 md:gap-2">
             {TABS.map((tab) => {
               const isActive = viewMode === tab.id;
@@ -79,7 +81,7 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="flex flex-col items-center justify-center h-full border-4 border-dashed border-zinc-900 rounded-4xl bg-zinc-900/30"
+              className="flex flex-col items-center justify-center h-full border-4 border-dashed border-zinc-900 rounded-4xl bg-zinc-900/30 m-6"
             >
               <Layers className="w-16 h-16 text-zinc-800 mb-6 animate-pulse" />
               <p className="text-zinc-500 font-bold text-xl uppercase tracking-widest text-center px-4">
@@ -102,11 +104,11 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
               className="h-full w-full"
             >
               {viewMode === "grid" ? (
-                <TimetableGrid courses={courses} />
+                <TimetableGrid courses={courses} attendance={attendance} />
               ) : viewMode === "list" ? (
-                <TimetableList courses={courses} />
+                <TimetableList courses={courses} attendance={attendance} />
               ) : (
-                <TimetableWeek courses={courses} />
+                <TimetableWeek courses={courses} attendance={attendance} />
               )}
             </motion.div>
           )}

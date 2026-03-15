@@ -1,10 +1,27 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
-import { TimetableCourse } from "../../types/vtop";
+import { TimetableCourse, CourseSummary } from "../../types/vtop";
 import { getGridPositions, DAYS } from "../../utils/timetable-slots";
 import { getCourseAcronym } from "../../utils/formatting";
 import { CoursePopup } from "./CoursePopup";
+import { Icon } from "@iconify-icon/react";
 
-export const TimetableGrid = ({ courses }: { courses: TimetableCourse[] }) => {
+const getAttendanceEmoji = (attendanceStr?: string) => {
+  if (!attendanceStr) return "";
+  const val = parseFloat(attendanceStr);
+  if (isNaN(val)) return "";
+  if (val > 90) return "😎";
+  if (val > 80) return "😄";
+  if (val > 75) return "😐";
+  return "😭";
+};
+
+export const TimetableGrid = ({
+  courses,
+  attendance,
+}: {
+  courses: TimetableCourse[];
+  attendance: CourseSummary[];
+}) => {
   const [selectedCourse, setSelectedCourse] = useState<{
     data: TimetableCourse;
     position: { x: number; y: number };
@@ -128,12 +145,30 @@ export const TimetableGrid = ({ courses }: { courses: TimetableCourse[] }) => {
       );
       const cellContent = activeCourses[0];
 
-      gridCells.push(
-        <div
-          key={`c-${dIdx}-${colIdx}`}
-          className="relative border-b border-r border-zinc-800 p-1 md:p-1.5 group transition-colors bg-zinc-950/50 w-full h-full"
-        >
-          {cellContent ? (
+      if (cellContent) {
+        const isLab = cellContent.type.includes("Lab");
+        const attStr = attendance?.find(
+          (a) => a.code === cellContent.code,
+        )?.attendance;
+        const emoji = getAttendanceEmoji(attStr);
+
+        // --- Solid Neon Theme Colors (Home Screen Style) ---
+        const colorClasses = isLab
+          ? "bg-purple-400 border-black hover:shadow-[4px_4px_0px_0px_#000]"
+          : "bg-cyan-400 border-black hover:shadow-[4px_4px_0px_0px_#000]";
+
+        const titleColor = "text-black";
+        const slotColor = "text-black/70";
+
+        // Footer styling
+        const footerBg = "bg-white/30 border-black";
+        const footerText = "text-black/80";
+
+        gridCells.push(
+          <div
+            key={`c-${dIdx}-${colIdx}`}
+            className="relative border-b border-r border-zinc-800 p-1 md:p-1.5 group transition-colors bg-(--bg-main) w-full h-full"
+          >
             <button
               data-tile="true"
               onClick={(e) => {
@@ -145,24 +180,52 @@ export const TimetableGrid = ({ courses }: { courses: TimetableCourse[] }) => {
                 });
               }}
               className={`
-                w-full h-full rounded-xl flex flex-col items-start justify-start text-left p-2.5 md:p-3
+                w-full h-full rounded-xl flex flex-col items-start justify-start text-left overflow-hidden
                 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-                hover:scale-[1.02] hover:z-50 hover:shadow-2xl border-2
-                ${cellContent.type.includes("Lab") ? "bg-purple-950/30 text-purple-300 border-purple-900/50 shadow-[4px_4px_0px_0px_rgba(168,85,247,0.1)] hover:border-purple-500 hover:bg-purple-900/40" : "bg-blue-950/30 text-blue-300 border-blue-900/50 shadow-[4px_4px_0px_0px_rgba(59,130,246,0.1)] hover:border-blue-500 hover:bg-blue-900/40"}
+                hover:-translate-y-0.5 border-2
+                ${colorClasses}
               `}
             >
-              <span className="text-base sm:text-lg md:text-lg font-black font-expanded leading-tight md:leading-snug tracking-tight mb-auto w-full wrap-break-word">
-                {getCourseAcronym(cellContent.title)}
-              </span>
-              <span className="text-[10px] sm:text-[11px] md:text-xs uppercase font-bold tracking-widest opacity-90 mt-1.5 bg-black/40 px-2 py-1 rounded-md border border-white/10 w-fit truncate max-w-full">
-                {cellContent.venue}
-              </span>
+              <div className="mb-auto w-full flex flex-col items-start p-2.5 md:p-3">
+                <div
+                  className={`text-base sm:text-lg md:text-lg font-black font-expanded leading-tight md:leading-snug tracking-tight w-full flex items-start justify-between gap-1 ${titleColor}`}
+                >
+                  <span className="wrap-break-word pr-1">
+                    {getCourseAcronym(cellContent.title)}
+                  </span>
+                  <span className="shrink-0 text-sm">{emoji}</span>
+                </div>
+                <span
+                  className={`text-[9px] sm:text-[10px] md:text-[11px] font-bold mt-1 uppercase tracking-widest ${slotColor}`}
+                >
+                  {cellContent.slot}
+                </span>
+              </div>
+
+              <div
+                className={`flex items-center gap-1.5 w-full text-[8px] sm:text-[9px] md:text-[10px] uppercase font-black tracking-widest px-2.5 pt-1.5 pb-2 md:px-3 md:pt-2 md:pb-2 border-t-2 mt-auto ${footerBg} ${footerText}`}
+              >
+                <Icon
+                  icon="heroicons:map-pin-20-solid"
+                  width="15"
+                  height="15"
+                  className="shrink-0"
+                />
+                <span className="truncate">{cellContent.venue}</span>
+              </div>
             </button>
-          ) : (
-            <div className="w-full h-full rounded hover:bg-zinc-900/30 transition-colors"></div>
-          )}
-        </div>,
-      );
+          </div>,
+        );
+      } else {
+        gridCells.push(
+          <div
+            key={`c-${dIdx}-${colIdx}`}
+            className="relative border-b border-r border-zinc-800 p-1 md:p-1.5 group transition-colors bg-(--bg-main) w-full h-full"
+          >
+            <div className="w-full h-full rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors"></div>
+          </div>,
+        );
+      }
     }
   });
 
@@ -170,13 +233,13 @@ export const TimetableGrid = ({ courses }: { courses: TimetableCourse[] }) => {
     <>
       <div
         ref={gridRef}
-        className="h-full w-full rounded-2xl md:rounded-4xl border-2 md:border-4 border-zinc-900 bg-(--bg-main) shadow-2xl overflow-hidden relative"
+        className="h-full w-full bg-(--bg-main) overflow-hidden relative"
       >
         <div
-          className="h-full w-full overflow-auto custom-scrollbar rounded-xl pb-32 xl:pb-0 touch-pan-x touch-pan-y overscroll-none cursor-grab active:cursor-grabbing"
+          className="h-full w-full overflow-auto custom-scrollbar pb-32 xl:pb-0 touch-pan-x touch-pan-y overscroll-none"
           style={{ WebkitOverflowScrolling: "touch" }}
         >
-          <div className="grid min-w-400 md:min-w-350 xl:min-w-400 h-full grid-cols-[40px_repeat(6,minmax(0,1fr))_32px_repeat(7,minmax(0,1fr))] md:grid-cols-[50px_repeat(6,minmax(0,1fr))_40px_repeat(7,minmax(0,1fr))] grid-rows-[40px_repeat(6,minmax(85px,1fr))]">
+          <div className="grid min-w-400 md:min-w-475 xl:min-w-550 h-full grid-cols-[40px_repeat(6,minmax(0,1fr))_32px_repeat(7,minmax(0,1fr))] md:grid-cols-[50px_repeat(6,minmax(0,1fr))_40px_repeat(7,minmax(0,1fr))] grid-rows-[40px_repeat(6,minmax(120px,1fr))]">
             {gridCells}
           </div>
         </div>
@@ -184,6 +247,10 @@ export const TimetableGrid = ({ courses }: { courses: TimetableCourse[] }) => {
       <CoursePopup
         course={selectedCourse?.data || null}
         position={selectedCourse?.position || null}
+        attendance={
+          attendance?.find((a) => a.code === selectedCourse?.data.code)
+            ?.attendance
+        }
         onClose={() => setSelectedCourse(null)}
       />
     </>

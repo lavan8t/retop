@@ -100,6 +100,7 @@ const toTitleCase = (str: string) => {
 };
 
 const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
+  const [isFlipped, setIsFlipped] = useState(false);
   const isHosteller = !!data.hostel;
   const address = data.permanentAddress;
   const contactNo =
@@ -111,8 +112,17 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
   const fontTimes = "!font-['Times_New_Roman',_Times,_serif]";
 
   return (
-    <div className="group w-full max-w-74 mx-auto aspect-64/100 perspective-[1000px] cursor-pointer shrink-0">
-      <div className="relative w-full h-full transition-transform duration-700 transform-3d group-hover:transform-[rotateY(180deg)] shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] rounded-2xl">
+    <div
+      className="group w-full max-w-74 mx-auto aspect-64/100 perspective-[1000px] cursor-pointer shrink-0"
+      onClick={() => setIsFlipped(!isFlipped)}
+    >
+      <div
+        className={`relative w-full h-full transition-transform duration-700 transform-3d shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] rounded-2xl ${
+          isFlipped
+            ? "transform-[rotateY(180deg)]"
+            : "group-hover:transform-[rotateY(180deg)]"
+        }`}
+      >
         {/* FRONT SIDE */}
         <div
           className={`absolute inset-0 backface-hidden bg-white rounded-2xl border-2 border-zinc-400 flex flex-col overflow-hidden text-black ${fontArial}`}
@@ -269,7 +279,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = () => {
   if (!data) return null;
 
   return (
-    <div className="h-full overflow-y-auto bg-(--bg-main) p-4 md:p-8 font-mono custom-scrollbar">
+    <div className="h-full overflow-y-auto bg-(--bg-main) p-4 md:p-8 font-mono custom-scrollbar pb-32">
       <div className="max-w-375 mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
         {/* LEFT COLUMN: ID CARD & ACADEMIC SPILLOVER */}
         <div className="lg:col-span-4 flex flex-col gap-6 md:gap-8 items-center lg:items-stretch">

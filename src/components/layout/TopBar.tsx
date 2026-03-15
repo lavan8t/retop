@@ -272,16 +272,6 @@ export const TopBar: React.FC<TopBarProps> = ({
                 )}
               </div>
             </button>
-
-            <div className="absolute top-16 md:top-18 right-0 z-50">
-              <ProfileMenu
-                isOpen={showProfileMenu}
-                userName={user.name}
-                onNavigate={handleLinkClick}
-                onLogout={handleLogout}
-                onClose={() => setShowProfileMenu(false)}
-              />
-            </div>
           </div>
         </div>
       </header>

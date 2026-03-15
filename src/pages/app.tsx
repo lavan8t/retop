@@ -3,7 +3,8 @@ import { createRoot } from "react-dom/client";
 import { TopBar } from "../components/layout/TopBar";
 import { ContentRouter } from "../components/layout/ContentRouter";
 import { BottomNav } from "../components/layout/BottomNav";
-import { FloatingViewToggle } from "../components/timetable/FloatingViewToggle"; // ADDED IMPORT
+import { FloatingViewToggle } from "../components/timetable/FloatingViewToggle";
+import { ProfileMenu } from "../components/profile-menu";
 import {
   getUpcomingClasses,
   UpcomingClass,
@@ -233,6 +234,26 @@ export const DashboardApp = () => {
           />
 
           <main className="flex-1 overflow-hidden relative">
+            <AnimatePresence>
+              {showProfileMenu && (
+                <>
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-40 bg-black/10 backdrop-blur-[2px]"
+                    onClick={() => setShowProfileMenu(false)}
+                  />
+                  <ProfileMenu
+                    userName={user.name}
+                    onNavigate={handleLinkClick}
+                    onLogout={() => {}}
+                    onClose={() => setShowProfileMenu(false)}
+                  />
+                </>
+              )}
+            </AnimatePresence>
+
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentView}
@@ -283,7 +304,6 @@ export const DashboardApp = () => {
         onTogglePin={handleTogglePin}
       />
 
-      {/* ADDED: Injects the floating scroll-aware pill only on the Timetable view */}
       {currentView === "timetable" && !isOmniboxOpen && (
         <FloatingViewToggle viewMode={ttViewMode} setViewMode={setTtViewMode} />
       )}

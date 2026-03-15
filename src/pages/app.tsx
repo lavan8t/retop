@@ -60,6 +60,22 @@ const getDestinationView = (link: QuickLink): ViewType | "content" => {
   return "content";
 };
 
+// --- HASH ROUTING UTILITY ---
+const getViewFromHash = (): ViewType => {
+  const hash = window.location.hash.replace("#", "");
+  const validViews = [
+    "dashboard",
+    "content",
+    "timetable",
+    "curriculum",
+    "marks",
+    "profile",
+    "settings",
+    "coursePage",
+  ];
+  return validViews.includes(hash) ? (hash as ViewType) : "dashboard";
+};
+
 export const DashboardApp = () => {
   const [user, setUser] = useState({
     name: MockData.MOCK_USER.name,
@@ -77,9 +93,36 @@ export const DashboardApp = () => {
   const [isOmniboxOpen, setIsOmniboxOpen] = useState(false);
   const [omniboxInitial, setOmniboxInitial] = useState("");
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [currentView, setCurrentView] = useState<ViewType>("dashboard");
   const [status, setStatus] = useState("Mock Online");
   const { settings, updateSetting } = useSettings();
+
+  // --- STATE MODIFIED FOR HASH ROUTING ---
+  // Initialize state directly from the URL hash
+  const [currentView, _setCurrentView] = useState<ViewType>(getViewFromHash());
+
+  // Wrapper function: Navigating sets the hash, which triggers the state update via event listener
+  const setCurrentView = (view: ViewType) => {
+    if (window.location.hash !== `#${view}`) {
+      window.location.hash = view;
+    }
+  };
+
+  useEffect(() => {
+    // Ensure we have a baseline hash for the back stack to register against
+    if (!window.location.hash) {
+      window.history.replaceState(null, "", "#dashboard");
+      _setCurrentView("dashboard");
+    }
+
+    // Listen for browser Back/Forward navigation to update the UI
+    const handleHashChange = () => {
+      _setCurrentView(getViewFromHash());
+    };
+
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
+  // ----------------------------------------
 
   const [ttSemesters, setTtSemesters] = useState<Semester[]>(
     MockData.MOCK_SEMESTERS,
@@ -244,7 +287,7 @@ export const DashboardApp = () => {
                   ttCourses={ttCourses}
                   ttLoading={ttLoading}
                   ttViewMode={ttViewMode}
-                  setTtViewMode={setTtViewMode} /* <--- ADD THIS LINE HERE */
+                  setTtViewMode={setTtViewMode}
                   cpOptions={cpOptions}
                   setCpOptions={setCpOptions}
                   cpSelectedSem={cpSelectedSem}
@@ -257,7 +300,6 @@ export const DashboardApp = () => {
         </div>
       </div>
 
-      {/* --- ADDED BOTTOM NAV COMPONENT OUTSIDE THE MAIN FLOW --- */}
       <BottomNav currentView={currentView} setCurrentView={setCurrentView} />
     </>
   );

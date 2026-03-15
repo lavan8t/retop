@@ -267,7 +267,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = () => {
 
   if (loading) {
     return (
-      <div className="h-full flex flex-col items-center justify-center text-zinc-500 gap-4 animate-pulse bg-zinc-50 dark:bg-zinc-900">
+      <div className="h-full flex flex-col items-center justify-center text-zinc-500 gap-4 animate-pulse bg-(--bg-main)">
         <Loader2 className="w-10 h-10 animate-spin text-black dark:text-white" />
         <span className="text-xs font-bold tracking-widest uppercase">
           Fetching Profile...

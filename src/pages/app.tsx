@@ -21,10 +21,7 @@ import {
 } from "../types/vtop";
 import { motion, AnimatePresence } from "framer-motion";
 
-// Import our Mock Data
 import * as MockData from "../utils/mock-data";
-
-// Import styles directly here since this is now the entry point
 import "../input.css";
 
 export type ViewType =
@@ -37,7 +34,7 @@ export type ViewType =
   | "settings"
   | "coursePage";
 
-const getDestinationView = (link: QuickLink): ViewType | "content" => {
+export const getDestinationView = (link: QuickLink): ViewType | "content" => {
   const lowerTitle = link.title.toLowerCase();
   const lowerUrl = link.url.toLowerCase();
 
@@ -60,7 +57,6 @@ const getDestinationView = (link: QuickLink): ViewType | "content" => {
   return "content";
 };
 
-// --- HASH ROUTING UTILITY ---
 const getViewFromHash = (): ViewType => {
   const hash = window.location.hash.replace("#", "");
   const validViews = [
@@ -96,11 +92,32 @@ export const DashboardApp = () => {
   const [status, setStatus] = useState("Mock Online");
   const { settings, updateSetting } = useSettings();
 
-  // --- STATE MODIFIED FOR HASH ROUTING ---
-  // Initialize state directly from the URL hash
   const [currentView, _setCurrentView] = useState<ViewType>(getViewFromHash());
 
-  // Wrapper function: Navigating sets the hash, which triggers the state update via event listener
+  // Dynamic Dock Pinned Links
+  const [pinnedLinks, setPinnedLinks] = useState<QuickLink[]>([
+    { title: "Time Table", url: "studenttimetable", category: "Core" },
+    {
+      title: "Course Page",
+      url: "academics/CoursePageConsolidated/CoursePage",
+      category: "Core",
+    },
+    { title: "Marks", url: "mark", category: "Core" },
+  ]);
+
+  const handleTogglePin = (link: QuickLink) => {
+    setPinnedLinks((prev) => {
+      if (prev.some((p) => p.url === link.url)) {
+        return prev.filter((p) => p.url !== link.url);
+      }
+      if (prev.length >= 3) {
+        alert("You can only pin up to 3 custom items in the bottom dock.");
+        return prev;
+      }
+      return [...prev, link];
+    });
+  };
+
   const setCurrentView = (view: ViewType) => {
     if (window.location.hash !== `#${view}`) {
       window.location.hash = view;
@@ -108,13 +125,11 @@ export const DashboardApp = () => {
   };
 
   useEffect(() => {
-    // Ensure we have a baseline hash for the back stack to register against
     if (!window.location.hash) {
       window.history.replaceState(null, "", "#dashboard");
       _setCurrentView("dashboard");
     }
 
-    // Listen for browser Back/Forward navigation to update the UI
     const handleHashChange = () => {
       _setCurrentView(getViewFromHash());
     };
@@ -122,7 +137,6 @@ export const DashboardApp = () => {
     window.addEventListener("hashchange", handleHashChange);
     return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
-  // ----------------------------------------
 
   const [ttSemesters, setTtSemesters] = useState<Semester[]>(
     MockData.MOCK_SEMESTERS,
@@ -152,29 +166,6 @@ export const DashboardApp = () => {
   const networkRef = useRef<any>({ isMockMode: true });
   const isOmniboxOpenRef = useRef(isOmniboxOpen);
   isOmniboxOpenRef.current = isOmniboxOpen;
-
-  const [pinnedLinks, setPinnedLinks] = useState<QuickLink[]>([
-    { title: "Time Table", url: "studenttimetable", category: "Core" },
-    {
-      title: "Course Page",
-      url: "academics/CoursePageConsolidated/CoursePage",
-      category: "Core",
-    },
-    { title: "Marks", url: "mark", category: "Core" },
-  ]);
-
-  const handleTogglePin = (link: QuickLink) => {
-    setPinnedLinks((prev) => {
-      if (prev.some((p) => p.url === link.url)) {
-        return prev.filter((p) => p.url !== link.url);
-      }
-      if (prev.length >= 3) {
-        alert("You can only pin up to 3 custom items in the bottom dock.");
-        return prev;
-      }
-      return [...prev, link];
-    });
-  };
 
   useEffect(() => {
     applyTheme(settings);
@@ -259,7 +250,6 @@ export const DashboardApp = () => {
           onClose={() => setIsOmniboxOpen(false)}
           menuCategories={menu}
           onNavigate={handleLinkClick}
-          // Add these two lines:
           pinnedLinks={pinnedLinks}
           onTogglePin={handleTogglePin}
         />
@@ -326,12 +316,19 @@ export const DashboardApp = () => {
         </div>
       </div>
 
-      <BottomNav currentView={currentView} setCurrentView={setCurrentView} />
+      <BottomNav
+        currentView={currentView}
+        setCurrentView={setCurrentView}
+        pinnedLinks={pinnedLinks}
+        onNavigate={handleLinkClick}
+        getDestinationView={getDestinationView}
+        isOmniboxOpen={isOmniboxOpen}
+        setIsOmniboxOpen={setIsOmniboxOpen}
+      />
     </>
   );
 };
 
-// --- DOM MOUNTING LOGIC ---
 const rootElement = document.getElementById("root");
 if (rootElement) {
   const root = createRoot(rootElement);

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { QuickLink } from "../types/vtop";
 
 export interface AppSettings {
   defaultView: "modern" | "legacy";
@@ -9,6 +10,7 @@ export interface AppSettings {
   googleLinked: boolean;
   calendarSync: boolean;
   driveSync: boolean;
+  pinnedLinks: QuickLink[];
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -20,12 +22,21 @@ const DEFAULT_SETTINGS: AppSettings = {
   googleLinked: false,
   calendarSync: false,
   driveSync: false,
+  pinnedLinks: [
+    { title: "Time Table", url: "studenttimetable", category: "Core" },
+    { title: "Marks", url: "mark", category: "Core" },
+    {
+      title: "Student Profile",
+      url: "studentprofileallview",
+      category: "System",
+    },
+  ],
 };
 
 const DYNAMIC_THEME_STORAGE_KEY = "vtop-random-theme";
 const LEGACY_RANDOM_KEY = "vtop-random-accent";
 const STATIC_ACCENTS: Record<
-  AppSettings["accentColor"],
+  string,
   { base: string; hover: string; active: string; tint: string }
 > = {
   blue: {

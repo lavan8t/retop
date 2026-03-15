@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
-import { Omnibox } from "../components/omnibox";
 import { TopBar } from "../components/layout/TopBar";
 import { ContentRouter } from "../components/layout/ContentRouter";
 import { BottomNav } from "../components/layout/BottomNav";
@@ -40,18 +39,21 @@ export const getDestinationView = (link: QuickLink): ViewType | "content" => {
 
   if (
     lowerTitle.includes("time table") ||
-    lowerUrl.includes("studenttimetable")
+    lowerTitle.includes("timetable") ||
+    lowerUrl.includes("timetable")
   )
     return "timetable";
-  if (lowerTitle.includes("curriculum")) return "curriculum";
-  if (lowerTitle.includes("mark") || lowerTitle.includes("grade"))
-    return "marks";
+  if (lowerTitle.includes("curriculum") || lowerUrl.includes("curriculum"))
+    return "curriculum";
   if (
-    lowerTitle.includes("profile view") ||
-    lowerUrl.includes("studentprofileallview")
+    lowerTitle.includes("mark") ||
+    lowerTitle.includes("grade") ||
+    lowerUrl.includes("mark")
   )
+    return "marks";
+  if (lowerTitle.includes("profile") || lowerUrl.includes("profile"))
     return "profile";
-  if (lowerTitle.includes("course page") || lowerUrl.includes("coursepage"))
+  if (lowerTitle.includes("course") || lowerUrl.includes("course"))
     return "coursePage";
 
   return "content";
@@ -73,49 +75,46 @@ const getViewFromHash = (): ViewType => {
 };
 
 export const DashboardApp = () => {
-  const [user, setUser] = useState({
+  const [user] = useState({
     name: MockData.MOCK_USER.name,
     regNo: MockData.MOCK_USER.regNo,
   });
-  const [menu, setMenu] = useState<MenuCategory[]>(MockData.MOCK_MENU);
-  const [stats, setStats] = useState(MockData.MOCK_STATS);
-  const [attendance, setAttendance] = useState<CourseSummary[]>(
-    MockData.MOCK_ATTENDANCE,
-  );
-  const [assignments, setAssignments] = useState<Assignment[]>(
-    MockData.MOCK_ASSIGNMENTS,
-  );
+  const [menu] = useState<MenuCategory[]>(MockData.MOCK_MENU);
+  const [stats] = useState(MockData.MOCK_STATS);
+  const [attendance] = useState<CourseSummary[]>(MockData.MOCK_ATTENDANCE);
+  const [assignments] = useState<Assignment[]>(MockData.MOCK_ASSIGNMENTS);
 
   const [isOmniboxOpen, setIsOmniboxOpen] = useState(false);
   const [omniboxInitial, setOmniboxInitial] = useState("");
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [status, setStatus] = useState("Mock Online");
+  const [status] = useState("Mock Online");
   const { settings, updateSetting } = useSettings();
 
   const [currentView, _setCurrentView] = useState<ViewType>(getViewFromHash());
 
-  // Dynamic Dock Pinned Links
-  const [pinnedLinks, setPinnedLinks] = useState<QuickLink[]>([
-    { title: "Time Table", url: "studenttimetable", category: "Core" },
-    {
-      title: "Course Page",
-      url: "academics/CoursePageConsolidated/CoursePage",
-      category: "Core",
-    },
-    { title: "Marks", url: "mark", category: "Core" },
-  ]);
+  const pinnedLinks = settings.pinnedLinks || [];
 
   const handleTogglePin = (link: QuickLink) => {
-    setPinnedLinks((prev) => {
-      if (prev.some((p) => p.title === link.title)) {
-        return prev.filter((p) => p.title !== link.title);
+    const dest = getDestinationView(link);
+    if (dest === "content") {
+      alert("Only ReTop exclusive native pages can be pinned to the dock.");
+      return;
+    }
+
+    const isAlreadyPinned = pinnedLinks.some(
+      (p) => getDestinationView(p) === dest,
+    );
+
+    if (isAlreadyPinned) {
+      const newPins = pinnedLinks.filter((p) => getDestinationView(p) !== dest);
+      updateSetting("pinnedLinks", newPins);
+    } else {
+      if (pinnedLinks.length >= 3) {
+        alert("You can only pin up to 3 custom items.");
+        return;
       }
-      if (prev.length >= 3) {
-        alert("You can only pin up to 3 custom items in the bottom dock.");
-        return prev;
-      }
-      return [...prev, link];
-    });
+      updateSetting("pinnedLinks", [...pinnedLinks, link]);
+    }
   };
 
   const setCurrentView = (view: ViewType) => {
@@ -129,18 +128,12 @@ export const DashboardApp = () => {
       window.history.replaceState(null, "", "#dashboard");
       _setCurrentView("dashboard");
     }
-
-    const handleHashChange = () => {
-      _setCurrentView(getViewFromHash());
-    };
-
+    const handleHashChange = () => _setCurrentView(getViewFromHash());
     window.addEventListener("hashchange", handleHashChange);
     return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
 
-  const [ttSemesters, setTtSemesters] = useState<Semester[]>(
-    MockData.MOCK_SEMESTERS,
-  );
+  const [ttSemesters] = useState<Semester[]>(MockData.MOCK_SEMESTERS);
   const [ttSelectedSem, setTtSelectedSem] = useState(
     MockData.MOCK_SEMESTERS[0]?.id || "",
   );
@@ -155,7 +148,7 @@ export const DashboardApp = () => {
     "grid",
   );
 
-  const [cpOptions, setCpOptions] = useState<CoursePageOption[]>(
+  const [cpOptions] = useState<CoursePageOption[]>(
     MockData.MOCK_COURSE_OPTIONS,
   );
   const [cpSelectedSem, setCpSelectedSem] = useState(
@@ -164,54 +157,33 @@ export const DashboardApp = () => {
   const [cpSelectedCourseId, setCpSelectedCourseId] = useState("");
 
   const networkRef = useRef<any>({ isMockMode: true });
-  const isOmniboxOpenRef = useRef(isOmniboxOpen);
-  isOmniboxOpenRef.current = isOmniboxOpen;
 
   useEffect(() => {
     applyTheme(settings);
-
     const handleKeys = (e: KeyboardEvent) => {
       const activeEl = document.activeElement as HTMLElement;
-      const targetEl = e.target as HTMLElement;
-
-      const isInput = (el: HTMLElement | null) => {
-        if (!el) return false;
-        const tag = el.tagName?.toUpperCase();
-        return (
-          tag === "INPUT" ||
-          tag === "TEXTAREA" ||
-          tag === "SELECT" ||
-          el.isContentEditable
-        );
-      };
-
-      if (isInput(activeEl) || isInput(targetEl)) return;
-      if (isOmniboxOpenRef.current) return;
-      if (e.key === "Escape") return;
-
+      if (
+        activeEl.tagName === "INPUT" ||
+        activeEl.tagName === "TEXTAREA" ||
+        isOmniboxOpen
+      )
+        return;
       if (currentView !== "dashboard") {
-        if (
-          e.key === "/" ||
-          (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey)
-        ) {
+        if (e.key === "/" || (e.key.length === 1 && !e.ctrlKey && !e.metaKey)) {
           e.preventDefault();
-          isOmniboxOpenRef.current = true;
           setOmniboxInitial(e.key === "/" ? "" : e.key);
           setIsOmniboxOpen(true);
         }
       }
     };
-
     window.addEventListener("keydown", handleKeys);
     return () => window.removeEventListener("keydown", handleKeys);
-  }, [currentView, settings]);
+  }, [currentView, settings, isOmniboxOpen]);
 
   const loadTimetable = async (semId: string) => {
     setTtLoading(true);
     setTtSelectedSem(semId);
     setTimeout(() => {
-      setTtCourses(MockData.MOCK_TIMETABLE);
-      setUpcoming(getUpcomingClasses(MockData.MOCK_TIMETABLE));
       setTtLoading(false);
     }, 400);
   };
@@ -219,41 +191,21 @@ export const DashboardApp = () => {
   const handleLinkClick = async (link: QuickLink) => {
     setIsOmniboxOpen(false);
     setShowProfileMenu(false);
-
-    if (link.url === "#settings" || link.title.toLowerCase() === "settings") {
+    if (link.url === "#settings") {
       setCurrentView("settings");
       return;
     }
-
     const dest = getDestinationView(link);
-
     if (dest === "content") {
-      alert(
-        "This legacy page link is not available in the standalone mock environment.",
-      );
+      alert("Legacy views are restricted in this mock.");
       return;
     }
-
     setCurrentView(dest);
-  };
-
-  const handleLogout = () => {
-    alert("Logout clicked! (Disabled in mock environment)");
   };
 
   return (
     <>
       <div className="fixed inset-0 h-screen font-mono selection:bg-blue-500 selection:text-white flex flex-col overflow-hidden bg-(--bg-main) z-0 pointer-events-auto">
-        <Omnibox
-          isOpen={isOmniboxOpen}
-          initialQuery={omniboxInitial}
-          onClose={() => setIsOmniboxOpen(false)}
-          menuCategories={menu}
-          onNavigate={handleLinkClick}
-          pinnedLinks={pinnedLinks}
-          onTogglePin={handleTogglePin}
-        />
-
         <div className="flex flex-col h-full pointer-events-auto overflow-hidden">
           <TopBar
             currentView={currentView}
@@ -273,9 +225,10 @@ export const DashboardApp = () => {
             showProfileMenu={showProfileMenu}
             setShowProfileMenu={setShowProfileMenu}
             handleLinkClick={handleLinkClick}
-            handleLogout={handleLogout}
+            handleLogout={() => {}}
             setIsOmniboxOpen={setIsOmniboxOpen}
             setCurrentView={setCurrentView}
+            pinnedLinks={pinnedLinks}
           />
 
           <main className="flex-1 overflow-hidden relative">
@@ -286,7 +239,7 @@ export const DashboardApp = () => {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -15 }}
-                transition={{ duration: 0.25, ease: "easeOut" }}
+                transition={{ duration: 0.25 }}
               >
                 <ContentRouter
                   currentView={currentView}
@@ -305,7 +258,7 @@ export const DashboardApp = () => {
                   ttViewMode={ttViewMode}
                   setTtViewMode={setTtViewMode}
                   cpOptions={cpOptions}
-                  setCpOptions={setCpOptions}
+                  setCpOptions={() => {}}
                   cpSelectedSem={cpSelectedSem}
                   cpSelectedCourseId={cpSelectedCourseId}
                   setCpSelectedCourseId={setCpSelectedCourseId}
@@ -316,6 +269,7 @@ export const DashboardApp = () => {
         </div>
       </div>
 
+      {/* Unified Dock & Omnibox component */}
       <BottomNav
         currentView={currentView}
         setCurrentView={setCurrentView}
@@ -324,6 +278,9 @@ export const DashboardApp = () => {
         getDestinationView={getDestinationView}
         isOmniboxOpen={isOmniboxOpen}
         setIsOmniboxOpen={setIsOmniboxOpen}
+        menuCategories={menu}
+        initialQuery={omniboxInitial}
+        onTogglePin={handleTogglePin}
       />
     </>
   );
@@ -331,8 +288,7 @@ export const DashboardApp = () => {
 
 const rootElement = document.getElementById("root");
 if (rootElement) {
-  const root = createRoot(rootElement);
-  root.render(
+  createRoot(rootElement).render(
     <React.StrictMode>
       <DashboardApp />
     </React.StrictMode>,

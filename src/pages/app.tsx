@@ -153,6 +153,29 @@ export const DashboardApp = () => {
   const isOmniboxOpenRef = useRef(isOmniboxOpen);
   isOmniboxOpenRef.current = isOmniboxOpen;
 
+  const [pinnedLinks, setPinnedLinks] = useState<QuickLink[]>([
+    { title: "Time Table", url: "studenttimetable", category: "Core" },
+    {
+      title: "Course Page",
+      url: "academics/CoursePageConsolidated/CoursePage",
+      category: "Core",
+    },
+    { title: "Marks", url: "mark", category: "Core" },
+  ]);
+
+  const handleTogglePin = (link: QuickLink) => {
+    setPinnedLinks((prev) => {
+      if (prev.some((p) => p.url === link.url)) {
+        return prev.filter((p) => p.url !== link.url);
+      }
+      if (prev.length >= 3) {
+        alert("You can only pin up to 3 custom items in the bottom dock.");
+        return prev;
+      }
+      return [...prev, link];
+    });
+  };
+
   useEffect(() => {
     applyTheme(settings);
 
@@ -236,6 +259,9 @@ export const DashboardApp = () => {
           onClose={() => setIsOmniboxOpen(false)}
           menuCategories={menu}
           onNavigate={handleLinkClick}
+          // Add these two lines:
+          pinnedLinks={pinnedLinks}
+          onTogglePin={handleTogglePin}
         />
 
         <div className="flex flex-col h-full pointer-events-auto overflow-hidden">

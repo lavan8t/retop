@@ -23,6 +23,7 @@ import {
   FlaskConical,
   Bus,
   Layers,
+  Pin,
 } from "lucide-react";
 
 interface OmniboxProps {
@@ -31,9 +32,11 @@ interface OmniboxProps {
   onClose: () => void;
   menuCategories: MenuCategory[];
   onNavigate: (link: QuickLink) => void;
+  pinnedLinks: QuickLink[];
+  onTogglePin: (link: QuickLink) => void;
 }
 
-const getCategoryIcon = (title: string) => {
+export const getCategoryIcon = (title: string) => {
   const t = title.toLowerCase();
   if (t.includes("academic")) return BookOpen;
   if (t.includes("examination")) return FileSignature;
@@ -62,7 +65,6 @@ const fuzzyMatch = (text: string, query: string) => {
   return qIdx === q.length;
 };
 
-// FIX: Changed url to '#settings' and 'studentprofileallview' to correctly trigger the ContentRouter
 const staticLinks: QuickLink[] = [
   { title: "Settings & Preferences", url: "#settings", category: "System" },
   {
@@ -78,12 +80,22 @@ export const Omnibox: React.FC<OmniboxProps> = ({
   onClose,
   menuCategories,
   onNavigate,
+  pinnedLinks,
+  onTogglePin,
 }) => {
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const toggleCategory = (title: string) => {
     setExpandedCats((prev) => {
@@ -99,10 +111,9 @@ export const Omnibox: React.FC<OmniboxProps> = ({
       setQuery(initialQuery);
       setSelectedIndex(0);
       setExpandedCats(new Set());
-      // Focus instantly when it opens
       setTimeout(() => {
         if (inputRef.current) {
-          if (window.innerWidth > 768 || initialQuery !== "") {
+          if (!isMobile || initialQuery !== "") {
             inputRef.current.focus();
             const length = inputRef.current.value.length;
             inputRef.current.setSelectionRange(length, length);
@@ -110,11 +121,10 @@ export const Omnibox: React.FC<OmniboxProps> = ({
         }
       }, 50);
     }
-  }, [isOpen, initialQuery]);
+  }, [isOpen, initialQuery, isMobile]);
 
   useEffect(() => {
     if (!isOpen) return;
-
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
@@ -122,7 +132,6 @@ export const Omnibox: React.FC<OmniboxProps> = ({
         onClose();
       }
     };
-
     window.addEventListener("keydown", handleGlobalKeyDown);
     return () => window.removeEventListener("keydown", handleGlobalKeyDown);
   }, [isOpen, onClose]);
@@ -136,7 +145,6 @@ export const Omnibox: React.FC<OmniboxProps> = ({
     const lowerQ = query.toLowerCase().trim();
     const matches: { link: QuickLink; score: number }[] = [];
 
-    // Check static system links (Settings, Profile, etc.)
     staticLinks.forEach((link) => {
       const titleLower = link.title.toLowerCase();
       const catLower = link.category.toLowerCase();
@@ -150,12 +158,10 @@ export const Omnibox: React.FC<OmniboxProps> = ({
       if (score > 0) matches.push({ link, score });
     });
 
-    // Check fetched menu categories
     menuCategories.forEach((cat) => {
       cat.links.forEach((link) => {
         const titleLower = link.title.toLowerCase();
         const catLower = cat.title.toLowerCase();
-
         let score = 0;
         if (titleLower === lowerQ) score = 100;
         else if (titleLower.startsWith(lowerQ)) score = 80;
@@ -209,44 +215,66 @@ export const Omnibox: React.FC<OmniboxProps> = ({
         <div className="p-2 md:p-3 space-y-2 relative">
           {flattenedLinks.map((link, i) => {
             const isSelected = i === selectedIndex;
+            const isPinned = pinnedLinks.some((p) => p.url === link.url);
             return (
-              <button
+              <div
                 key={i}
                 id={`omnibox-item-${i}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onNavigate(link);
-                  onClose();
-                }}
-                onMouseEnter={() => setSelectedIndex(i)}
-                className={`
-                  w-full text-left px-4 py-3 md:px-5 md:py-4 rounded-xl text-xs md:text-sm font-bold transition-all duration-200 flex items-center gap-3 md:gap-4 border-2
-                  ${
-                    isSelected
-                      ? "bg-blue-500 text-white border-black shadow-[3px_3px_0px_0px_#000] md:shadow-[4px_4px_0px_0px_#000] -translate-y-px"
-                      : "bg-(--bg-surface) border-transparent text-(--text-muted) hover:border-(--border-dim)"
-                  }
-                `}
+                className="flex items-center gap-2 w-full"
               >
-                <FileText
-                  className={`w-4 h-4 md:w-5 md:h-5 shrink-0 ${isSelected ? "opacity-100" : "opacity-50"}`}
-                />
-                <span className="flex-1 truncate text-sm md:text-base">
-                  {link.title}
-                </span>
-                <span
-                  className={`text-[9px] md:text-[10px] uppercase font-bold px-2 py-1.5 rounded-lg border-2 shrink-0 leading-none hidden sm:block ${
-                    isSelected
-                      ? "border-white/30 bg-white/20 text-white"
-                      : "border-(--border-dim) bg-(--bg-highlight) text-(--text-muted)"
-                  }`}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onNavigate(link);
+                    onClose();
+                  }}
+                  onMouseEnter={() => setSelectedIndex(i)}
+                  className={`
+                    flex-1 text-left px-4 py-3 md:px-5 md:py-4 rounded-xl text-xs md:text-sm font-bold transition-all duration-200 flex items-center gap-3 md:gap-4 border-2
+                    ${
+                      isSelected
+                        ? "bg-blue-500 text-white border-black shadow-[3px_3px_0px_0px_#000] md:shadow-[4px_4px_0px_0px_#000] -translate-y-px"
+                        : "bg-(--bg-surface) border-transparent text-(--text-muted) hover:border-(--border-dim)"
+                    }
+                  `}
                 >
-                  {link.category}
-                </span>
-                {isSelected && (
-                  <CornerDownRight className="w-4 h-4 md:w-5 md:h-5 shrink-0" />
-                )}
-              </button>
+                  <FileText
+                    className={`w-4 h-4 md:w-5 md:h-5 shrink-0 ${isSelected ? "opacity-100" : "opacity-50"}`}
+                  />
+                  <span className="flex-1 truncate text-sm md:text-base">
+                    {link.title}
+                  </span>
+                  <span
+                    className={`text-[9px] md:text-[10px] uppercase font-bold px-2 py-1.5 rounded-lg border-2 shrink-0 leading-none hidden sm:block ${
+                      isSelected
+                        ? "border-white/30 bg-white/20 text-white"
+                        : "border-(--border-dim) bg-(--bg-highlight) text-(--text-muted)"
+                    }`}
+                  >
+                    {link.category}
+                  </span>
+                  {isSelected && (
+                    <CornerDownRight className="w-4 h-4 md:w-5 md:h-5 shrink-0" />
+                  )}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onTogglePin(link);
+                  }}
+                  className={`p-3 md:p-4 rounded-xl transition-colors border-2 shrink-0 ${
+                    isPinned
+                      ? "bg-black text-white border-black shadow-[2px_2px_0px_0px_#000]"
+                      : "bg-(--bg-surface) border-transparent hover:border-(--border-dim) text-(--text-muted) hover:text-(--text-main)"
+                  }`}
+                  title={isPinned ? "Unpin from Dock" : "Pin to Dock"}
+                >
+                  <Pin
+                    className="w-4 h-4 md:w-5 md:h-5"
+                    fill={isPinned ? "currentColor" : "none"}
+                  />
+                </button>
+              </div>
             );
           })}
         </div>
@@ -305,22 +333,48 @@ export const Omnibox: React.FC<OmniboxProps> = ({
                 }`}
               >
                 <div className="overflow-y-auto max-h-[50vh] custom-scrollbar p-1.5 md:p-2 space-y-1">
-                  {cat.links.map((link, i) => (
-                    <button
-                      key={i}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onNavigate(link);
-                        onClose();
-                      }}
-                      className="w-full text-left px-3 py-2.5 md:px-4 md:py-3 rounded-lg md:rounded-xl text-xs font-bold text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-surface) transition-all flex items-center gap-3 group border-2 border-transparent hover:border-(--border-dim)"
-                    >
-                      <div className="w-1.5 h-1.5 rounded-full bg-(--border-dim) group-hover:bg-blue-500 transition-colors shrink-0"></div>
-                      <span className="flex-1 leading-tight truncate">
-                        {link.title}
-                      </span>
-                    </button>
-                  ))}
+                  {cat.links.map((link, i) => {
+                    const isPinned = pinnedLinks.some(
+                      (p) => p.url === link.url,
+                    );
+                    return (
+                      <div
+                        key={i}
+                        className="flex items-center gap-1.5 w-full group/link"
+                      >
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onNavigate(link);
+                            onClose();
+                          }}
+                          className="flex-1 text-left px-3 py-2.5 md:px-4 md:py-3 rounded-lg md:rounded-xl text-xs font-bold text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-surface) transition-all flex items-center gap-3 border-2 border-transparent hover:border-(--border-dim)"
+                        >
+                          <div className="w-1.5 h-1.5 rounded-full bg-(--border-dim) group-hover/link:bg-blue-500 transition-colors shrink-0"></div>
+                          <span className="flex-1 leading-tight truncate">
+                            {link.title}
+                          </span>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onTogglePin(link);
+                          }}
+                          className={`p-2 rounded-lg transition-colors border-2 shrink-0 ${
+                            isPinned
+                              ? "bg-black text-white border-black shadow-[2px_2px_0px_0px_#000]"
+                              : "bg-transparent border-transparent hover:border-(--border-dim) text-(--text-muted) hover:text-(--text-main)"
+                          }`}
+                          title={isPinned ? "Unpin from Dock" : "Pin to Dock"}
+                        >
+                          <Pin
+                            className="w-4 h-4"
+                            fill={isPinned ? "currentColor" : "none"}
+                          />
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -363,19 +417,27 @@ export const Omnibox: React.FC<OmniboxProps> = ({
           animate={{ opacity: 1, backdropFilter: "blur(4px)" }}
           exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-200 flex items-start justify-center pt-[2vh] md:pt-[10vh] px-2 md:px-0 bg-black/60"
+          className={`fixed inset-0 z-200 flex bg-black/60 ${isMobile ? "items-end" : "items-start justify-center pt-[10vh] px-2"}`}
           onClick={onClose}
         >
           <motion.div
-            initial={{ scale: 0.95, y: -20, opacity: 0 }}
-            animate={{ scale: 1, y: 0, opacity: 1 }}
-            exit={{ scale: 0.95, y: -20, opacity: 0 }}
+            initial={
+              isMobile ? { y: "100%" } : { scale: 0.95, y: -20, opacity: 0 }
+            }
+            animate={isMobile ? { y: 0 } : { scale: 1, y: 0, opacity: 1 }}
+            exit={
+              isMobile ? { y: "100%" } : { scale: 0.95, y: -20, opacity: 0 }
+            }
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className="w-full max-w-3xl flex flex-col max-h-[95vh] md:max-h-[80vh] overflow-hidden bg-(--bg-surface) border-2 md:border-4 border-black rounded-3xl md:rounded-4xl shadow-[8px_8px_0px_0px_#000] md:shadow-[16px_16px_0px_0px_#000]"
+            className={`w-full flex flex-col overflow-hidden bg-(--bg-surface) shadow-[0px_-8px_0px_0px_#000] sm:shadow-[16px_16px_0px_0px_#000] ${
+              isMobile
+                ? "max-h-[90vh] rounded-t-3xl border-t-4 border-black pb-6"
+                : "max-w-3xl max-h-[80vh] rounded-4xl border-4 border-black"
+            }`}
             onClick={(e) => {
               e.stopPropagation();
-              if (window.innerWidth > 768) {
-                inputRef.current?.focus();
+              if (!isMobile && inputRef.current) {
+                inputRef.current.focus();
               }
             }}
           >
@@ -412,7 +474,6 @@ export const Omnibox: React.FC<OmniboxProps> = ({
               {renderResults()}
             </div>
 
-            {/* Hidden on mobile, as keyboard hints are desktop-centric */}
             <div className="hidden md:flex bg-(--bg-surface) px-8 py-4 justify-between items-center border-t-4 border-black shrink-0 z-20">
               <div className="flex gap-6 text-[10px] text-(--text-muted) font-bold tracking-widest uppercase">
                 <span className="flex items-center gap-1.5">

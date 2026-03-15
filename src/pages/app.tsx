@@ -107,8 +107,8 @@ export const DashboardApp = () => {
 
   const handleTogglePin = (link: QuickLink) => {
     setPinnedLinks((prev) => {
-      if (prev.some((p) => p.url === link.url)) {
-        return prev.filter((p) => p.url !== link.url);
+      if (prev.some((p) => p.title === link.title)) {
+        return prev.filter((p) => p.title !== link.title);
       }
       if (prev.length >= 3) {
         alert("You can only pin up to 3 custom items in the bottom dock.");

@@ -24,6 +24,10 @@ import {
   Bus,
   Layers,
   Pin,
+  Calendar,
+  GraduationCap,
+  User,
+  Settings as SettingsIcon,
 } from "lucide-react";
 
 interface OmniboxProps {
@@ -34,10 +38,26 @@ interface OmniboxProps {
   onNavigate: (link: QuickLink) => void;
   pinnedLinks: QuickLink[];
   onTogglePin: (link: QuickLink) => void;
+  getDestinationView: (link: QuickLink) => string;
 }
 
-export const getCategoryIcon = (title: string) => {
+export const getCategoryIcon = (title: string, url: string = "") => {
   const t = title.toLowerCase();
+  const u = url.toLowerCase();
+
+  if (t.includes("time table") || u.includes("studenttimetable"))
+    return Calendar;
+  if (
+    t.includes("course page") ||
+    u.includes("coursepage") ||
+    t.includes("course")
+  )
+    return Layers;
+  if (t.includes("curriculum")) return BookOpen;
+  if (t.includes("mark") || t.includes("grade")) return GraduationCap;
+  if (t.includes("profile") || u.includes("studentprofileallview")) return User;
+  if (t.includes("setting") || u.includes("setting")) return SettingsIcon;
+
   if (t.includes("academic")) return BookOpen;
   if (t.includes("examination")) return FileSignature;
   if (t.includes("finance")) return Wallet;
@@ -50,14 +70,14 @@ export const getCategoryIcon = (title: string) => {
   if (t.includes("placement")) return Briefcase;
   if (t.includes("research")) return FlaskConical;
   if (t.includes("transport")) return Bus;
-  return Layers;
+  return FileText;
 };
 
 const fuzzyMatch = (text: string, query: string) => {
-  let tIdx = 0;
-  let qIdx = 0;
-  const t = text.toLowerCase();
-  const q = query.toLowerCase();
+  let tIdx = 0,
+    qIdx = 0;
+  const t = text.toLowerCase(),
+    q = query.toLowerCase();
   while (tIdx < t.length && qIdx < q.length) {
     if (t[tIdx] === q[qIdx]) qIdx++;
     tIdx++;
@@ -82,29 +102,20 @@ export const Omnibox: React.FC<OmniboxProps> = ({
   onNavigate,
   pinnedLinks,
   onTogglePin,
+  getDestinationView,
 }) => {
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 640);
-    checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
-
-  const toggleCategory = (title: string) => {
-    setExpandedCats((prev) => {
-      const next = new Set(prev);
-      if (next.has(title)) next.delete(title);
-      else next.add(title);
-      return next;
-    });
-  };
 
   useEffect(() => {
     if (isOpen) {
@@ -112,13 +123,8 @@ export const Omnibox: React.FC<OmniboxProps> = ({
       setSelectedIndex(0);
       setExpandedCats(new Set());
       setTimeout(() => {
-        if (inputRef.current) {
-          if (!isMobile || initialQuery !== "") {
-            inputRef.current.focus();
-            const length = inputRef.current.value.length;
-            inputRef.current.setSelectionRange(length, length);
-          }
-        }
+        if (inputRef.current && (!isMobile || initialQuery !== ""))
+          inputRef.current.focus();
       }, 50);
     }
   }, [isOpen, initialQuery, isMobile]);
@@ -145,36 +151,17 @@ export const Omnibox: React.FC<OmniboxProps> = ({
     const lowerQ = query.toLowerCase().trim();
     const matches: { link: QuickLink; score: number }[] = [];
 
-    staticLinks.forEach((link) => {
-      const titleLower = link.title.toLowerCase();
-      const catLower = link.category.toLowerCase();
-      let score = 0;
-      if (titleLower === lowerQ) score = 100;
-      else if (titleLower.startsWith(lowerQ)) score = 80;
-      else if (titleLower.includes(lowerQ)) score = 50;
-      else if (catLower.includes(lowerQ)) score = 30;
-      else if (fuzzyMatch(titleLower, lowerQ)) score = 10;
-
-      if (score > 0) matches.push({ link, score });
-    });
-
-    menuCategories.forEach((cat) => {
-      cat.links.forEach((link) => {
+    [...staticLinks, ...menuCategories.flatMap((c) => c.links)].forEach(
+      (link) => {
         const titleLower = link.title.toLowerCase();
-        const catLower = cat.title.toLowerCase();
         let score = 0;
         if (titleLower === lowerQ) score = 100;
         else if (titleLower.startsWith(lowerQ)) score = 80;
         else if (titleLower.includes(lowerQ)) score = 50;
-        else if (catLower.includes(lowerQ)) score = 30;
         else if (fuzzyMatch(titleLower, lowerQ)) score = 10;
-        else if (fuzzyMatch(catLower, lowerQ)) score = 5;
-
-        if (score > 0) {
-          matches.push({ link, score });
-        }
-      });
-    });
+        if (score > 0) matches.push({ link, score });
+      },
+    );
 
     return matches
       .sort((a, b) => b.score - a.score)
@@ -204,19 +191,22 @@ export const Omnibox: React.FC<OmniboxProps> = ({
     if (query) {
       if (flattenedLinks.length === 0)
         return (
-          <div className="flex flex-col items-center justify-center p-8 md:p-12 text-(--text-dim) text-sm border-2 md:border-4 border-dashed border-(--border-dim) m-3 md:m-4 rounded-3xl md:rounded-4xl bg-(--bg-main)">
-            <AlertCircle className="w-10 h-10 md:w-12 md:h-12 mb-3 md:mb-4 opacity-50" />
-            <span className="font-expanded text-base md:text-lg uppercase tracking-widest text-center">
-              No matches found
+          <div className="flex flex-col items-center justify-center p-12 text-(--text-dim) border-4 border-dashed border-(--border-dim) m-4 rounded-4xl bg-(--bg-main)">
+            <AlertCircle className="w-12 h-12 mb-4 opacity-50" />
+            <span className="font-expanded text-lg uppercase tracking-widest">
+              No matches
             </span>
           </div>
         );
       return (
-        <div className="p-2 md:p-3 space-y-2 relative">
+        <div className="p-3 space-y-2">
           {flattenedLinks.map((link, i) => {
             const isSelected = i === selectedIndex;
-            // FIX: match against link.title explicitly
-            const isPinned = pinnedLinks.some((p) => p.title === link.title);
+            // FIX: Map the link via getDestinationView to match aliases perfectly
+            const linkDest = getDestinationView(link);
+            const isPinned =
+              linkDest !== "content" &&
+              pinnedLinks.some((p) => getDestinationView(p) === linkDest);
 
             return (
               <div
@@ -264,16 +254,17 @@ export const Omnibox: React.FC<OmniboxProps> = ({
                     e.stopPropagation();
                     onTogglePin(link);
                   }}
-                  className={`p-3 md:p-4 rounded-xl transition-colors border-2 shrink-0 ${
+                  className={`p-3 md:p-4 rounded-xl transition-all border-2 shrink-0 ${
                     isPinned
-                      ? "bg-black text-white border-black shadow-[2px_2px_0px_0px_#000]"
-                      : "bg-(--bg-surface) border-transparent hover:border-(--border-dim) text-(--text-muted) hover:text-(--text-main)"
+                      ? "bg-(--accent-base) text-white border-black shadow-[2px_2px_0px_0px_#000]"
+                      : "bg-(--bg-surface) border-transparent hover:border-(--border-dim) text-(--text-muted)"
                   }`}
                   title={isPinned ? "Unpin from Dock" : "Pin to Dock"}
                 >
                   <Pin
                     className="w-4 h-4 md:w-5 md:h-5"
                     fill={isPinned ? "currentColor" : "none"}
+                    style={{ transform: isPinned ? "rotate(45deg)" : "none" }}
                   />
                 </button>
               </div>
@@ -284,102 +275,80 @@ export const Omnibox: React.FC<OmniboxProps> = ({
     }
 
     return (
-      <div className="columns-1 sm:columns-2 gap-3 md:gap-4 p-3 md:p-4">
-        {menuCategories.map((cat, catIdx) => {
+      <div className="columns-1 sm:columns-2 gap-4 p-4">
+        {menuCategories.map((cat, idx) => {
           const isExpanded = expandedCats.has(cat.title);
           const CatIcon = getCategoryIcon(cat.title);
-
           return (
             <div
-              key={catIdx}
-              className={`
-                break-inside-avoid mb-3 md:mb-4 bg-(--bg-surface) border-2 md:border-4 rounded-2xl overflow-hidden transition-all duration-200
-                ${isExpanded ? "border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] md:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] -translate-y-1" : "border-(--border-dim) hover:border-(--border-main)"}
-              `}
+              key={idx}
+              className={`break-inside-avoid mb-4 bg-(--bg-surface) border-2 md:border-4 rounded-2xl overflow-hidden transition-all ${isExpanded ? "border-black shadow-[6px_6px_0px_0px_#000] -translate-y-1" : "border-(--border-dim)"}`}
             >
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleCategory(cat.title);
-                }}
-                className="w-full bg-transparent p-3 md:p-4 flex items-center justify-between group transition-colors"
+                onClick={() =>
+                  setExpandedCats((prev) => {
+                    const n = new Set(prev);
+                    isExpanded ? n.delete(cat.title) : n.add(cat.title);
+                    return n;
+                  })
+                }
+                className="w-full p-4 flex items-center justify-between"
               >
                 <div className="flex items-center gap-3">
                   <div
-                    className={`w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center border-2 transition-all ${isExpanded ? "bg-blue-500 border-black text-white shadow-[2px_2px_0px_0px_#000]" : "bg-(--bg-main) border-(--border-dim) text-(--text-muted) group-hover:text-(--text-main) group-hover:border-(--border-main)"}`}
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center border-2 ${isExpanded ? "bg-blue-500 text-white border-black" : "bg-(--bg-main) text-(--text-muted)"}`}
                   >
                     <CatIcon className="w-4 h-4" />
                   </div>
-                  <h3
-                    className={`text-xs md:text-sm font-black tracking-wide mb-0 font-expanded uppercase ${
-                      isExpanded
-                        ? "text-(--text-main)"
-                        : "text-(--text-muted) group-hover:text-(--text-main)"
-                    }`}
-                  >
+                  <h3 className="text-sm font-black font-expanded uppercase">
                     {cat.title}
                   </h3>
                 </div>
                 {isExpanded ? (
-                  <ChevronDown className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
+                  <ChevronDown className="w-5 h-5 text-blue-500" />
                 ) : (
-                  <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-(--text-dim) group-hover:text-(--text-muted)" />
+                  <ChevronRight className="w-5 h-5 text-(--text-dim)" />
                 )}
               </button>
+              {isExpanded && (
+                <div className="border-t-4 border-black bg-(--bg-main) p-2 space-y-1">
+                  {cat.links.map((link, li) => {
+                    // FIX: Map the link via getDestinationView to match aliases perfectly
+                    const linkDest = getDestinationView(link);
+                    const isPinned =
+                      linkDest !== "content" &&
+                      pinnedLinks.some(
+                        (p) => getDestinationView(p) === linkDest,
+                      );
 
-              <div
-                className={`transition-all duration-300 ease-in-out bg-(--bg-main) ${
-                  isExpanded
-                    ? "max-h-[60vh] border-t-2 md:border-t-4 border-black"
-                    : "max-h-0 border-t-0 border-black"
-                }`}
-              >
-                <div className="overflow-y-auto max-h-[50vh] custom-scrollbar p-1.5 md:p-2 space-y-1">
-                  {cat.links.map((link, i) => {
-                    // FIX: match against link.title explicitly
-                    const isPinned = pinnedLinks.some(
-                      (p) => p.title === link.title,
-                    );
                     return (
-                      <div
-                        key={i}
-                        className="flex items-center gap-1.5 w-full group/link"
-                      >
+                      <div key={li} className="flex items-center gap-1">
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
+                          onClick={() => {
                             onNavigate(link);
                             onClose();
                           }}
-                          className="flex-1 text-left px-3 py-2.5 md:px-4 md:py-3 rounded-lg md:rounded-xl text-xs font-bold text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-surface) transition-all flex items-center gap-3 border-2 border-transparent hover:border-(--border-dim)"
+                          className="flex-1 text-left px-4 py-3 rounded-xl text-xs font-bold text-(--text-muted) hover:text-(--text-main) truncate"
                         >
-                          <div className="w-1.5 h-1.5 rounded-full bg-(--border-dim) group-hover/link:bg-blue-500 transition-colors shrink-0"></div>
-                          <span className="flex-1 leading-tight truncate">
-                            {link.title}
-                          </span>
+                          {link.title}
                         </button>
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onTogglePin(link);
-                          }}
-                          className={`p-2 rounded-lg transition-colors border-2 shrink-0 ${
-                            isPinned
-                              ? "bg-black text-white border-black shadow-[2px_2px_0px_0px_#000]"
-                              : "bg-transparent border-transparent hover:border-(--border-dim) text-(--text-muted) hover:text-(--text-main)"
-                          }`}
-                          title={isPinned ? "Unpin from Dock" : "Pin to Dock"}
+                          onClick={() => onTogglePin(link)}
+                          className={`p-2 rounded-lg border-2 transition-all ${isPinned ? "bg-black text-white border-black shadow-[2px_2px_0px_0px_#000]" : "border-transparent text-(--text-dim)"}`}
                         >
                           <Pin
                             className="w-4 h-4"
                             fill={isPinned ? "currentColor" : "none"}
+                            style={{
+                              transform: isPinned ? "rotate(45deg)" : "none",
+                            }}
                           />
                         </button>
                       </div>
                     );
                   })}
                 </div>
-              </div>
+              )}
             </div>
           );
         })}
@@ -387,117 +356,48 @@ export const Omnibox: React.FC<OmniboxProps> = ({
     );
   };
 
-  useEffect(() => {
-    if (!query) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        setSelectedIndex((prev) => (prev + 1) % flattenedLinks.length);
-      }
-      if (e.key === "ArrowUp") {
-        e.preventDefault();
-        setSelectedIndex(
-          (prev) => (prev - 1 + flattenedLinks.length) % flattenedLinks.length,
-        );
-      }
-      if (e.key === "Enter") {
-        e.preventDefault();
-        if (flattenedLinks[selectedIndex]) {
-          onNavigate(flattenedLinks[selectedIndex]);
-          onClose();
-        }
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [query, flattenedLinks, selectedIndex]);
-
   return (
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
-          animate={{ opacity: 1, backdropFilter: "blur(4px)" }}
-          exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
-          transition={{ duration: 0.2 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           className={`fixed inset-0 z-200 flex bg-black/60 ${isMobile ? "items-end" : "items-start justify-center pt-[10vh] px-2"}`}
           onClick={onClose}
         >
           <motion.div
-            initial={
-              isMobile ? { y: "100%" } : { scale: 0.95, y: -20, opacity: 0 }
-            }
-            animate={isMobile ? { y: 0 } : { scale: 1, y: 0, opacity: 1 }}
-            exit={
-              isMobile ? { y: "100%" } : { scale: 0.95, y: -20, opacity: 0 }
-            }
-            transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className={`w-full flex flex-col overflow-hidden bg-(--bg-surface) shadow-[0px_-8px_0px_0px_#000] sm:shadow-[16px_16px_0px_0px_#000] ${
-              isMobile
-                ? "max-h-[90vh] rounded-t-3xl border-t-4 border-black pb-6"
-                : "max-w-3xl max-h-[80vh] rounded-4xl border-4 border-black"
-            }`}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!isMobile && inputRef.current) {
-                inputRef.current.focus();
-              }
-            }}
+            initial={isMobile ? { y: "100%" } : { scale: 0.95, opacity: 0 }}
+            animate={isMobile ? { y: 0 } : { scale: 1, opacity: 1 }}
+            exit={isMobile ? { y: "100%" } : { scale: 0.95, opacity: 0 }}
+            transition={{ type: "spring", damping: 30 }}
+            className={`w-full flex flex-col overflow-hidden bg-(--bg-surface) shadow-[0px_-8px_0px_0px_#000] sm:shadow-[16px_16px_0px_0px_#000] ${isMobile ? "max-h-[90vh] rounded-t-3xl border-t-4 border-black pb-6" : "max-w-3xl max-h-[80vh] rounded-4xl border-4 border-black"}`}
+            onClick={(e) => e.stopPropagation()}
           >
-            <div className="border-b-2 md:border-b-4 border-black p-4 md:p-6 bg-(--bg-surface) flex items-center gap-3 md:gap-5 shrink-0 relative overflow-hidden z-20">
-              <div className="w-10 h-10 md:w-14 md:h-14 bg-blue-500 text-white flex items-center justify-center font-bold text-xl border-2 md:border-4 border-black rounded-xl md:rounded-2xl shadow-[2px_2px_0px_0px_#000] md:shadow-[4px_4px_0px_0px_#000] z-10 shrink-0 transform -rotate-3">
-                <Search className="w-5 h-5 md:w-7 md:h-7" />
+            <div className="border-b-4 border-black p-6 bg-(--bg-surface) flex items-center gap-5 shrink-0">
+              <div className="w-14 h-14 bg-blue-500 text-white flex items-center justify-center border-4 border-black rounded-2xl shadow-[4px_4px_0px_0px_#000] transform -rotate-3">
+                <Search className="w-7 h-7" />
               </div>
-              <div className="flex-1 z-10 min-w-0">
-                <input
-                  id="omnibox-input"
-                  ref={inputRef}
-                  type="text"
-                  className="w-full bg-transparent text-(--text-main) text-xl md:text-3xl font-expanded font-black focus:outline-none placeholder-(--text-dim) tracking-tight uppercase"
-                  placeholder="WHERE TO?"
-                  value={query}
-                  onChange={(e) => {
-                    setQuery(e.target.value);
-                    setSelectedIndex(0);
-                  }}
-                />
-              </div>
+              <input
+                ref={inputRef}
+                type="text"
+                className="flex-1 bg-transparent text-(--text-main) text-3xl font-expanded font-black focus:outline-none placeholder-(--text-dim) uppercase"
+                placeholder="WHERE TO?"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
               <button
                 onClick={onClose}
-                className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-(--bg-main) border-2 border-(--border-dim) rounded-xl md:rounded-2xl text-(--text-muted) hover:text-white hover:border-red-500 hover:bg-red-500 transition-all z-10 shadow-sm hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shrink-0"
+                className="w-12 h-12 flex items-center justify-center bg-(--bg-main) border-2 border-(--border-dim) rounded-2xl hover:bg-red-500 hover:text-white transition-all"
               >
-                <X className="w-5 h-5 md:w-6 md:h-6" />
+                <X className="w-6 h-6" />
               </button>
             </div>
-
             <div
               ref={scrollRef}
-              className="overflow-y-auto custom-scrollbar bg-(--bg-main) flex-1 relative z-10"
+              className="overflow-y-auto custom-scrollbar bg-(--bg-main) flex-1"
             >
               {renderResults()}
-            </div>
-
-            <div className="hidden md:flex bg-(--bg-surface) px-8 py-4 justify-between items-center border-t-4 border-black shrink-0 z-20">
-              <div className="flex gap-6 text-[10px] text-(--text-muted) font-bold tracking-widest uppercase">
-                <span className="flex items-center gap-1.5">
-                  <span className="px-1.5 py-0.5 bg-(--bg-highlight) rounded-lg border border-(--border-dim) shadow-sm text-(--text-main)">
-                    <ArrowDown className="w-3 h-3" />
-                  </span>{" "}
-                  Navigate
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="px-1.5 py-0.5 bg-(--bg-highlight) rounded-lg border border-(--border-dim) shadow-sm text-(--text-main)">
-                    <CornerDownRight className="w-3 h-3" />
-                  </span>{" "}
-                  Select
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="px-1.5 py-0.5 bg-(--bg-highlight) rounded-lg border border-(--border-dim) shadow-sm text-(--text-main)">
-                    ESC
-                  </span>{" "}
-                  Dismiss
-                </span>
-              </div>
             </div>
           </motion.div>
         </motion.div>

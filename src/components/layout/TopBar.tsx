@@ -16,7 +16,7 @@ import {
 import { QuickLink, Semester, TimetableCourse } from "../../types/vtop";
 import { SemesterDropdown } from "../timetable/SemesterDropdown";
 import { ProfileMenu } from "../profile-menu";
-
+import { getCategoryIcon } from "../omnibox";
 interface TopBarProps {
   currentView: string;
   contentTitle: string;
@@ -40,38 +40,9 @@ interface TopBarProps {
   handleLogout: () => void;
   setIsOmniboxOpen: (open: boolean) => void;
   setCurrentView: (view: any) => void;
-}
 
-const favoriteLinks = [
-  {
-    title: "Time Table",
-    url: "studenttimetable",
-    category: "Core",
-    icon: Calendar,
-    color: "bg-purple-400",
-  },
-  {
-    title: "Course Page",
-    url: "academics/CoursePageConsolidated/CoursePage",
-    category: "Core",
-    icon: Layers,
-    color: "bg-cyan-400",
-  },
-  {
-    title: "Curriculum",
-    url: "curriculum",
-    category: "Core",
-    icon: BookOpen,
-    color: "bg-blue-400",
-  },
-  {
-    title: "Marks",
-    url: "mark",
-    category: "Core",
-    icon: GraduationCap,
-    color: "bg-lime-400",
-  },
-];
+  pinnedLinks: QuickLink[];
+}
 
 const getPageTitle = (view: string, dynamicTitle?: string) => {
   switch (view) {
@@ -86,7 +57,7 @@ const getPageTitle = (view: string, dynamicTitle?: string) => {
     case "profile":
       return "STUDENT PROFILE";
     case "settings":
-      return "PREFERENCES";
+      return "SETTINGS";
     case "coursePage":
       return "COURSE PAGE";
     case "content":
@@ -117,7 +88,10 @@ export const TopBar: React.FC<TopBarProps> = ({
   handleLogout,
   setIsOmniboxOpen,
   setCurrentView,
+  pinnedLinks,
 }) => {
+  const dockColors = ["bg-purple-400", "bg-cyan-400", "bg-lime-400"];
+
   return (
     <>
       <header className="h-16 md:h-18 bg-(--bg-main) border-b-2 md:border-b-4 border-(--border-main) sticky top-0 z-100 pl-4 md:pl-8 pr-0 flex items-center justify-between shadow-xl shrink-0 transition-all">
@@ -168,16 +142,19 @@ export const TopBar: React.FC<TopBarProps> = ({
         <div className="flex items-center gap-2 md:gap-4 h-full pointer-events-auto">
           {currentView === "dashboard" && (
             <div className="hidden xl:flex items-center gap-2.5">
-              {favoriteLinks.map((link, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleLinkClick(link as QuickLink)}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_#000] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_#000] active:translate-y-0 active:shadow-none transition-all font-black font-expanded text-xs tracking-wide uppercase text-black ${link.color} cursor-pointer`}
-                >
-                  <link.icon className="w-4 h-4" />
-                  <span>{link.title}</span>
-                </button>
-              ))}
+              {pinnedLinks.slice(0, 3).map((link, idx) => {
+                const Icon = getCategoryIcon(link.title, link.url);
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => handleLinkClick(link)}
+                    className={`flex items-center gap-2 px-3.5 py-1.5 border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_#000] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_#000] active:translate-y-0 active:shadow-none transition-all font-black font-expanded text-xs tracking-wide uppercase text-black ${dockColors[idx]} cursor-pointer`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{link.title}</span>
+                  </button>
+                );
+              })}
               <div className="w-1 h-8 bg-(--border-dim) rounded-full mx-2"></div>
             </div>
           )}
@@ -197,7 +174,6 @@ export const TopBar: React.FC<TopBarProps> = ({
                 onChange={loadTimetable}
               />
 
-              {/* --- NEO-BRUTALIST VIEW TOGGLE --- */}
               <div className="hidden sm:flex bg-zinc-900 border-2 border-black rounded-xl p-1 gap-1 shadow-[2px_2px_0px_0px_#000]">
                 <button
                   onClick={() => setTtViewMode("grid")}
@@ -252,18 +228,10 @@ export const TopBar: React.FC<TopBarProps> = ({
             </motion.div>
           )}
 
-          <button
-            onClick={() => setIsOmniboxOpen(true)}
-            className="flex lg:hidden items-center justify-center p-2 mr-1 text-(--text-muted) hover:text-(--text-main) transition-colors cursor-pointer active:scale-90"
-          >
-            <Search className="w-4.5 h-4.5 md:w-5 md:h-5" />
-          </button>
-
           {currentView !== "dashboard" && (
-            /* --- NEO-BRUTALIST SEARCH PILL --- */
             <button
               onClick={() => setIsOmniboxOpen(true)}
-              className="hidden lg:flex items-center gap-2 px-3.5 py-1.5 mr-2 bg-zinc-900 border-2 border-black rounded-xl text-zinc-200 hover:text-cyan-400 shadow-[2px_2px_0px_0px_#000] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_#000] active:translate-y-0 active:shadow-none transition-all group cursor-pointer"
+              className="hidden xl:flex shrink-0 items-center gap-2 px-3.5 py-1.5 mr-2 bg-zinc-900 border-2 border-black rounded-xl text-zinc-200 hover:text-cyan-400 shadow-[2px_2px_0px_0px_#000] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_#000] active:translate-y-0 active:shadow-none transition-all group cursor-pointer"
             >
               <Search className="w-4 h-4 group-hover:rotate-12 transition-transform" />
               <span className="font-expanded font-bold text-[10px] tracking-widest uppercase mt-0.5">
@@ -275,7 +243,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             </button>
           )}
 
-          <div className="relative h-full">
+          <div className="relative h-full shrink-0 flex">
             <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
               className="flex items-center h-full focus:outline-none group cursor-pointer gap-3"

@@ -206,7 +206,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   }, [query, flattenedLinks, selectedIndex, activeMenu, onNavigate]);
 
   return (
-    <div className="h-full w-full flex flex-col lg:flex-row gap-6 p-4 md:p-6 lg:p-8 overflow-y-auto lg:overflow-hidden bg-(--bg-main) max-w-425 mx-auto relative">
+    <div className="h-full w-full flex flex-col lg:flex-row gap-6 py-4 pl-4 pr-0 md:py-6 md:pl-6 md:pr-0 lg:p-8 pb-20 lg:pb-8 overflow-y-auto lg:overflow-hidden bg-(--bg-main) max-w-425 mx-auto relative">
       {/* LEFT PANE: Search / Menu (HIDDEN ON MOBILE, VISIBLE ON DESKTOP `lg`) */}
       <div className="hidden lg:flex w-full lg:w-[26%] xl:w-[20%] flex-col border-4 border-black bg-(--bg-surface) rounded-4xl shadow-[8px_8px_0px_0px_#000] overflow-hidden shrink-0 h-[50vh] lg:h-full relative z-30">
         <div className="p-4 border-b-4 border-black bg-(--bg-surface) shrink-0 flex items-center gap-3 relative z-20">
@@ -381,9 +381,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
       </AnimatePresence>
 
       {/* RIGHT PANE: Main Content Grid */}
-      <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0 overflow-y-auto lg:overflow-visible pb-10 lg:pb-0 pt-2 -mt-2 px-1 -mx-1">
+      {/* FIX: Set flex-none on mobile so the div stretches to contain overflowing cards */}
+      <div className="flex-none lg:flex-1 w-full flex flex-col lg:flex-row gap-6 overflow-visible pt-2 -mt-2 pl-1 pr-4 md:pr-6 lg:pr-0 lg:px-0 -ml-1 lg:ml-0">
         {/* Attendance Column */}
-        {/* FIX: Removed min-h-100 and made it shrink to content vertically on mobile */}
         <div className="w-full lg:w-[40%] xl:w-[35%] flex flex-col shrink-0 h-auto lg:h-full pt-1">
           <ListCard
             title="Attendance"
@@ -415,7 +415,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
 
         {/* Stats & Tall Lists Column */}
-        <div className="flex-1 flex flex-col gap-6 min-h-0 pt-1">
+        {/* FIX: Set flex-none on mobile so the div stretches to contain overflowing cards */}
+        <div className="flex-none lg:flex-1 flex flex-col gap-6 lg:min-h-0 pt-1">
           {/* Top Row: Mini Cards */}
           <div className="flex flex-col sm:flex-row gap-6 shrink-0 h-auto lg:h-37.5">
             <div className="flex-1 h-full">
@@ -443,8 +444,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
 
           {/* Bottom Row: Schedule & Assignments */}
-          <div className="flex-1 flex flex-col sm:flex-row gap-6 min-h-0">
-            {/* FIX: Removed min-h-87.5 so the cards resize perfectly to their content */}
+          {/* FIX: Set flex-none on mobile so the div stretches to contain overflowing cards */}
+          <div className="flex-none lg:flex-1 flex flex-col sm:flex-row gap-6 lg:min-h-0">
             <div className="flex-1 h-auto lg:h-full flex flex-col">
               <ListCard
                 title={`${dayName}`}

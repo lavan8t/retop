@@ -6,14 +6,13 @@ import {
   FileText,
   CornerDownRight,
   X,
-  ArrowDown,
   AlertCircle,
   ChevronRight,
   ChevronDown,
   Pin,
 } from "lucide-react";
 import { QuickLink, MenuCategory } from "../../types/vtop";
-import { getCategoryIcon } from "../omnibox";
+import { getCategoryIcon } from "../../utils/icons";
 
 interface BottomNavProps {
   currentView: string;
@@ -79,13 +78,15 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   initialQuery = "",
   onTogglePin,
 }) => {
-  // --- DOCK STATE ---
   const [isVisible, setIsVisible] = useState(true);
   const [activeCallout, setActiveCallout] = useState<string | null>(null);
+
+  // Track BOTH scroll axes
   const lastScrollTop = useRef<Map<EventTarget, number>>(new Map());
+  const lastScrollLeft = useRef<Map<EventTarget, number>>(new Map());
+
   const calloutTimeout = useRef<number | null>(null);
 
-  // --- OMNIBOX STATE ---
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
@@ -93,10 +94,6 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1280);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  // --------------------------------------------------------------------------
-  // EFFECTS
-  // --------------------------------------------------------------------------
 
   useEffect(() => {
     const checkDevice = () => {
@@ -115,21 +112,34 @@ export const BottomNav: React.FC<BottomNavProps> = ({
     const handleScroll = (e: Event) => {
       const target = e.target as HTMLElement;
       if (!target || typeof target.scrollTop !== "number") return;
-      if (target.scrollHeight <= target.clientHeight + 20) return;
+
+      const hasVerticalScroll = target.scrollHeight > target.clientHeight + 20;
+      const hasHorizontalScroll = target.scrollWidth > target.clientWidth + 20;
+
+      if (!hasVerticalScroll && !hasHorizontalScroll) return;
 
       const currentScrollY = target.scrollTop;
+      const currentScrollX = target.scrollLeft;
       const previousScrollY = lastScrollTop.current.get(target) || 0;
-      const diff = currentScrollY - previousScrollY;
+      const previousScrollX = lastScrollLeft.current.get(target) || 0;
 
-      if (diff > 12) {
+      const diffY = currentScrollY - previousScrollY;
+      const diffX = currentScrollX - previousScrollX;
+
+      // Hide on down scroll OR horizontal scroll
+      if (diffY > 12 || Math.abs(diffX) > 12) {
         setIsVisible(false);
         lastScrollTop.current.set(target, currentScrollY);
-      } else if (diff < -12) {
+        lastScrollLeft.current.set(target, currentScrollX);
+      } else if (diffY < -12) {
+        // Reveal on upward scroll
         setIsVisible(true);
         lastScrollTop.current.set(target, currentScrollY);
+        lastScrollLeft.current.set(target, currentScrollX);
       }
 
-      if (currentScrollY <= 10) setIsVisible(true);
+      // Safety catch: always reveal at absolute top/left boundary
+      if (currentScrollY <= 10 && currentScrollX <= 10) setIsVisible(true);
     };
 
     window.addEventListener("scroll", handleScroll, {
@@ -153,10 +163,6 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       setQuery("");
     }
   }, [isOmniboxOpen, initialQuery, isMobile]);
-
-  // --------------------------------------------------------------------------
-  // LOGIC
-  // --------------------------------------------------------------------------
 
   const handleItemClick = (
     id: string,
@@ -266,10 +272,6 @@ export const BottomNav: React.FC<BottomNavProps> = ({
     getDestinationView,
   ]);
 
-  // --------------------------------------------------------------------------
-  // RENDER HELPERS
-  // --------------------------------------------------------------------------
-
   const renderOmniboxResults = () => {
     if (query) {
       if (flattenedLinks.length === 0)
@@ -325,7 +327,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                 </button>
                 <button
                   onClick={() => onTogglePin(link)}
-                  className={`p-3 md:p-4 rounded-xl transition-all border-2 shrink-0 ${
+                  className={`p-3 md:p-4 rounded-xl transition-all border-2 shrink-0 mr-0.5 mb-0.5 ${
                     isPinned
                       ? "bg-(--bg-surface) text-(--text-main) border-(--border-main) shadow-[2px_2px_0px_0px_var(--border-main)]"
                       : "bg-transparent border-transparent hover:border-(--border-dim) text-(--text-muted) hover:text-(--text-main)"
@@ -384,7 +386,6 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                 )}
               </button>
 
-              {/* RESTORED ACCORDION ANIMATIONS */}
               <AnimatePresence initial={false}>
                 {isExpanded && (
                   <motion.div
@@ -415,7 +416,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                             </button>
                             <button
                               onClick={() => onTogglePin(link)}
-                              className={`p-2 rounded-lg border-2 transition-all ${
+                              className={`p-2 rounded-lg border-2 transition-all mr-0.5 mb-0.5 ${
                                 isPinned
                                   ? "bg-(--bg-surface) text-(--text-main) border-(--border-main) shadow-[2px_2px_0px_0px_var(--border-main)]"
                                   : "bg-transparent border-transparent text-(--text-muted) hover:text-(--text-main)"
@@ -445,8 +446,6 @@ export const BottomNav: React.FC<BottomNavProps> = ({
     );
   };
 
-  // --- ANIMATION CONFIG ---
-  // Locked strictly to the requested settings
   const syncSpring: Transition = useMemo(
     () => ({ type: "spring", stiffness: 600, damping: 25, mass: 0.5 }),
     [],
@@ -460,8 +459,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   const omniboxDesktopClasses =
     "absolute top-[10vh] left-1/2 -translate-x-1/2 w-full max-w-3xl h-[80vh] rounded-[32px] border-4 border-black flex flex-col overflow-hidden shadow-[16px_16px_0px_0px_#000] z-[9999]";
   const dockClasses =
-    "absolute bottom-6 left-1/2 -translate-x-1/2 border-2 md:border-4 border-black rounded-[32px] shadow-[6px_6px_0px_0px_#000] flex flex-col items-center p-1.5 w-max h-max xl:hidden z-[9999]";
-
+    "absolute bottom-6 left-1/2 -translate-x-1/2 border-2 md:border-4 border-black rounded-[32px] shadow-[6px_6px_0px_0px_#000] flex flex-col items-center p-1.5 px-2 w-max h-max xl:hidden z-[9999]";
   const containerClasses = isOmniboxOpen
     ? isMobile
       ? omniboxMobileClasses
@@ -478,13 +476,13 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 z-[9998] backdrop-blur-sm"
+            className="fixed inset-0 bg-black/60 z-9998 backdrop-blur-sm"
             onClick={() => setIsOmniboxOpen(false)}
           />
         )}
       </AnimatePresence>
 
-      <div className="fixed inset-0 pointer-events-none z-[9999]">
+      <div className="fixed inset-0 pointer-events-none z-9999">
         <motion.nav
           layout
           initial={false}
@@ -561,8 +559,21 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                  {navItems.map((link) => {
+                  {navItems.map((link, idx) => {
                     const title = toTitleCase(link.fullTitle);
+
+                    // MAGIC: Anchor neo-brutalist shadows towards the center!
+                    // Left items shadow right, right items shadow left, middle items shadow straight down.
+                    const mid = (navItems.length - 1) / 2;
+                    let activeShadowClass =
+                      "shadow-[0px_2px_0px_0px_#000] -translate-y-px";
+                    if (idx < mid)
+                      activeShadowClass =
+                        "shadow-[2px_2px_0px_0px_#000] -translate-y-px";
+                    if (idx > mid)
+                      activeShadowClass =
+                        "shadow-[-2px_2px_0px_0px_#000] -translate-y-px";
+
                     return (
                       <motion.button
                         layout
@@ -575,8 +586,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                         className={`relative flex items-center justify-center transition-colors border-2 shrink-0 ${
                           isCompact
                             ? "flex-col w-13 h-13 sm:w-14 sm:h-14 rounded-[20px]"
-                            : "flex-row px-3.5 py-2.5 rounded-[24px]"
-                        } ${link.isActive ? `${link.color} text-black border-black shadow-[2px_2px_0px_0px_#000] -translate-y-px` : "text-zinc-400 hover:text-zinc-200 border-transparent bg-transparent hover:bg-zinc-800"}`}
+                            : "flex-row px-3.5 py-2.5 rounded-3xl"
+                        } ${link.isActive ? `${link.color} text-black border-black ${activeShadowClass}` : "text-zinc-400 hover:text-zinc-200 border-transparent bg-transparent hover:bg-zinc-800"}`}
                         whileTap={{ scale: 0.92 }}
                       >
                         <motion.div

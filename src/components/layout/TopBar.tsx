@@ -16,7 +16,8 @@ import {
 import { QuickLink, Semester, TimetableCourse } from "../../types/vtop";
 import { SemesterDropdown } from "../timetable/SemesterDropdown";
 import { ProfileMenu } from "../profile-menu";
-import { getCategoryIcon } from "../omnibox";
+import { getCategoryIcon } from "../../utils/icons";
+
 interface TopBarProps {
   currentView: string;
   contentTitle: string;

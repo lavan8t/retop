@@ -236,7 +236,7 @@ export const TimetableGrid = ({
         className="h-full w-full bg-(--bg-main) overflow-hidden relative"
       >
         <div
-          className="h-full w-full overflow-auto custom-scrollbar pb-32 xl:pb-0 touch-pan-x touch-pan-y overscroll-none"
+          className="h-full w-full overflow-auto custom-scrollbar touch-pan-x touch-pan-y overscroll-none"
           style={{ WebkitOverflowScrolling: "touch" }}
         >
           <div className="grid min-w-400 md:min-w-475 xl:min-w-550 h-full grid-cols-[40px_repeat(6,minmax(0,1fr))_32px_repeat(7,minmax(0,1fr))] md:grid-cols-[50px_repeat(6,minmax(0,1fr))_40px_repeat(7,minmax(0,1fr))] grid-rows-[40px_repeat(6,minmax(120px,1fr))]">

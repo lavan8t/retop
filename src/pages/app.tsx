@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { TopBar } from "../components/layout/TopBar";
 import { ContentRouter } from "../components/layout/ContentRouter";
 import { BottomNav } from "../components/layout/BottomNav";
+import { FloatingViewToggle } from "../components/timetable/FloatingViewToggle"; // ADDED IMPORT
 import {
   getUpcomingClasses,
   UpcomingClass,
@@ -269,7 +270,6 @@ export const DashboardApp = () => {
         </div>
       </div>
 
-      {/* Unified Dock & Omnibox component */}
       <BottomNav
         currentView={currentView}
         setCurrentView={setCurrentView}
@@ -282,6 +282,11 @@ export const DashboardApp = () => {
         initialQuery={omniboxInitial}
         onTogglePin={handleTogglePin}
       />
+
+      {/* ADDED: Injects the floating scroll-aware pill only on the Timetable view */}
+      {currentView === "timetable" && !isOmniboxOpen && (
+        <FloatingViewToggle viewMode={ttViewMode} setViewMode={setTtViewMode} />
+      )}
     </>
   );
 };

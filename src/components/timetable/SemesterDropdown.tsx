@@ -3,6 +3,33 @@ import { Semester } from "../../types/vtop";
 import { Calendar, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
+// SMART PARSER: Converts "Winter Semester 2025-26" -> "W'26"
+export const formatShortSemesterName = (label: string) => {
+  if (!label) return "";
+
+  // Extract the last two digits of the year string (e.g., "2023-24" -> "24")
+  const yearMatch = label.match(/\d{4}-(\d{2})/);
+  const yearSuffix = yearMatch ? `'${yearMatch[1]}` : "";
+
+  const lowerLabel = label.toLowerCase();
+  let prefix = "";
+
+  if (lowerLabel.includes("winter")) prefix = "W";
+  else if (lowerLabel.includes("fall")) prefix = "F";
+  else if (lowerLabel.includes("summer")) prefix = "S";
+  else if (lowerLabel.includes("tri semester")) {
+    // Handles Tri Semesters and potential OCR typos ("Ill" instead of "III")
+    if (lowerLabel.includes("i & iv")) prefix = "T14";
+    else if (lowerLabel.includes("ii & v")) prefix = "T25";
+    else if (lowerLabel.includes("iii & vi") || lowerLabel.includes("ill & vi"))
+      prefix = "T36";
+    else prefix = "T";
+  }
+
+  // If we successfully parsed both parts, return the short code, otherwise fallback to the original string
+  return prefix && yearSuffix ? `${prefix}${yearSuffix}` : label;
+};
+
 export const SemesterDropdown = ({ semesters, selectedId, onChange }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   const selected =
@@ -16,7 +43,8 @@ export const SemesterDropdown = ({ semesters, selectedId, onChange }: any) => {
       >
         <Calendar className="w-3 h-3 md:w-3.5 md:h-3.5 text-cyan-500 group-hover:text-cyan-400 transition-colors shrink-0" />
         <span className="uppercase tracking-wide truncate max-w-12.5 sm:max-w-20 md:max-w-30 font-expanded">
-          {selected?.label || "Select Sem"}
+          {/* Apply the formatter ONLY to the collapsed button view */}
+          {selected ? formatShortSemesterName(selected.label) : "Select Sem"}
         </span>
         <ChevronDown
           className={`w-3 h-3 md:w-3.5 md:h-3.5 transition-transform duration-200 shrink-0 ${isOpen ? "rotate-180" : ""}`}
@@ -52,6 +80,7 @@ export const SemesterDropdown = ({ semesters, selectedId, onChange }: any) => {
                         : "bg-transparent border-transparent text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 hover:border-black"
                     }`}
                   >
+                    {/* Retain the full, un-abbreviated label in the expanded list */}
                     {sem.label}
                   </button>
                 ))}

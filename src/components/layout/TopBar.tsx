@@ -120,7 +120,6 @@ export const TopBar: React.FC<TopBarProps> = ({
 }) => {
   return (
     <>
-      {/* Reduced desktop height from h-20 (80px) to h-[72px] (10% smaller) */}
       <header className="h-16 md:h-18 bg-(--bg-main) border-b-2 md:border-b-4 border-(--border-main) sticky top-0 z-100 pl-4 md:pl-8 pr-0 flex items-center justify-between shadow-xl shrink-0 transition-all">
         <div className="flex items-center h-full">
           <div className="flex flex-col justify-center h-full gap-0.5">
@@ -190,29 +189,43 @@ export const TopBar: React.FC<TopBarProps> = ({
               className="flex items-center gap-1 md:gap-2 mr-1 md:mr-2"
             >
               {ttLoading && (
-                <RefreshCw className="w-4 h-4 text-blue-400 animate-spin hidden sm:block" />
+                <RefreshCw className="w-4 h-4 text-cyan-400 animate-spin hidden sm:block" />
               )}
               <SemesterDropdown
                 semesters={ttSemesters}
                 selectedId={ttSelectedSem}
                 onChange={loadTimetable}
               />
-              <div className="hidden sm:flex bg-(--bg-surface) border-2 border-(--border-dim) rounded-xl p-1 gap-1">
+
+              {/* --- NEO-BRUTALIST VIEW TOGGLE --- */}
+              <div className="hidden sm:flex bg-zinc-900 border-2 border-black rounded-xl p-1 gap-1 shadow-[2px_2px_0px_0px_#000]">
                 <button
                   onClick={() => setTtViewMode("grid")}
-                  className={`p-1.5 rounded-lg transition-all ${ttViewMode === "grid" ? "bg-(--accent-base) text-white shadow-sm" : "text-(--text-muted) hover:text-(--text-main)"}`}
+                  className={`p-1.5 rounded-lg transition-all border-2 ${
+                    ttViewMode === "grid"
+                      ? "bg-cyan-400 text-black border-black shadow-[2px_2px_0px_0px_#000] -translate-y-px"
+                      : "border-transparent text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+                  }`}
                 >
                   <LayoutGrid className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setTtViewMode("list")}
-                  className={`p-1.5 rounded-lg transition-all ${ttViewMode === "list" ? "bg-(--accent-base) text-white shadow-sm" : "text-(--text-muted) hover:text-(--text-main)"}`}
+                  className={`p-1.5 rounded-lg transition-all border-2 ${
+                    ttViewMode === "list"
+                      ? "bg-cyan-400 text-black border-black shadow-[2px_2px_0px_0px_#000] -translate-y-px"
+                      : "border-transparent text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+                  }`}
                 >
                   <List className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setTtViewMode("week")}
-                  className={`p-1.5 rounded-lg transition-all ${ttViewMode === "week" ? "bg-(--accent-base) text-white shadow-sm" : "text-(--text-muted) hover:text-(--text-main)"}`}
+                  className={`p-1.5 rounded-lg transition-all border-2 ${
+                    ttViewMode === "week"
+                      ? "bg-cyan-400 text-black border-black shadow-[2px_2px_0px_0px_#000] -translate-y-px"
+                      : "border-transparent text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+                  }`}
                 >
                   <Calendar className="w-4 h-4" />
                 </button>
@@ -247,15 +260,16 @@ export const TopBar: React.FC<TopBarProps> = ({
           </button>
 
           {currentView !== "dashboard" && (
+            /* --- NEO-BRUTALIST SEARCH PILL --- */
             <button
               onClick={() => setIsOmniboxOpen(true)}
-              className="hidden lg:flex items-center gap-2 px-4 py-2 mr-2 bg-(--bg-surface) border-2 border-(--border-main) rounded-full text-(--text-muted) hover:border-(--accent-base) hover:text-(--text-main) transition-all group shadow-lg active:scale-95 cursor-pointer"
+              className="hidden lg:flex items-center gap-2 px-3.5 py-1.5 mr-2 bg-zinc-900 border-2 border-black rounded-xl text-zinc-200 hover:text-cyan-400 shadow-[2px_2px_0px_0px_#000] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_#000] active:translate-y-0 active:shadow-none transition-all group cursor-pointer"
             >
               <Search className="w-4 h-4 group-hover:rotate-12 transition-transform" />
-              <span className="font-bold text-xs tracking-widest uppercase">
+              <span className="font-expanded font-bold text-[10px] tracking-widest uppercase mt-0.5">
                 Search
               </span>
-              <kbd className="ml-1 font-mono bg-(--bg-highlight) text-(--text-muted) px-2 py-0.5 text-[10px] rounded-lg border border-(--border-dim) group-hover:text-(--text-main) group-hover:border-(--border-main)">
+              <kbd className="ml-1 font-mono bg-zinc-800 text-zinc-400 px-1.5 py-0.5 text-[9px] rounded-md border-2 border-zinc-700 group-hover:border-cyan-500 group-hover:text-cyan-400 transition-colors">
                 /
               </kbd>
             </button>
@@ -290,7 +304,6 @@ export const TopBar: React.FC<TopBarProps> = ({
               </div>
             </button>
 
-            {/* Adjusted dropdown position to match new 72px height */}
             <div className="absolute top-16 md:top-18 right-0 z-50">
               <ProfileMenu
                 isOpen={showProfileMenu}

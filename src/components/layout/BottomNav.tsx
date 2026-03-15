@@ -14,6 +14,14 @@ interface BottomNavProps {
   setIsOmniboxOpen: (val: boolean) => void;
 }
 
+const toTitleCase = (str: string) => {
+  return str
+    .toLowerCase()
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
 export const BottomNav: React.FC<BottomNavProps> = ({
   currentView,
   setCurrentView,
@@ -24,9 +32,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   setIsOmniboxOpen,
 }) => {
   const [isVisible, setIsVisible] = useState(true);
+  const [activeCallout, setActiveCallout] = useState<string | null>(null);
   const lastScrollTop = useRef<Map<EventTarget, number>>(new Map());
 
-  // Guarantee visibility is restored when changing tabs
+  // FIX: Use number for browser setTimeout instead of NodeJS.Timeout
+  const calloutTimeout = useRef<number | null>(null);
+
   useEffect(() => {
     setIsVisible(true);
   }, [currentView]);
@@ -41,8 +52,6 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       const previousScrollY = lastScrollTop.current.get(target) || 0;
       const diff = currentScrollY - previousScrollY;
 
-      // Scrolling down hides navbar, scrolling up restores it.
-      // Failsafe: only pop open if absolutely at the top (Removed bottom failsafe per request).
       if (diff > 12) {
         setIsVisible(false);
         lastScrollTop.current.set(target, currentScrollY);
@@ -62,6 +71,17 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       window.removeEventListener("scroll", handleScroll, { capture: true });
   }, []);
 
+  const handleItemClick = (id: string, onClick: () => void) => {
+    if (calloutTimeout.current !== null) {
+      window.clearTimeout(calloutTimeout.current);
+    }
+    setActiveCallout(id);
+    calloutTimeout.current = window.setTimeout(() => {
+      setActiveCallout(null);
+    }, 700);
+    onClick();
+  };
+
   const syncSpring: Transition = useMemo(
     () => ({ type: "spring", stiffness: 400, damping: 30, mass: 1 }),
     [],
@@ -70,7 +90,6 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   const navItems = useMemo(() => {
     const items = [];
 
-    // 1st Item: ALWAYS Home
     items.push({
       id: "dashboard",
       title: "Home",
@@ -82,12 +101,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({
 
     const colors = ["bg-purple-400", "bg-cyan-400", "bg-lime-400"];
 
-    // Middle 2 Custom Pinned Items (if available)
     pinnedLinks.slice(0, 2).forEach((link, idx) => {
       const dest = getDestinationView(link);
       items.push({
-        id: link.url,
+        id: link.title,
         title: link.title.split(" ")[0],
+        fullTitle: link.title,
         icon: getCategoryIcon(link.title),
         color: colors[idx],
         onClick: () => onNavigate(link),
@@ -96,7 +115,6 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       });
     });
 
-    // 4th Item: ALWAYS Search (Opens Omnibox)
     items.push({
       id: "search",
       title: "Search",
@@ -106,13 +124,13 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       isActive: isOmniboxOpen,
     });
 
-    // 5th Item: Last Custom Pinned Item (if available)
     if (pinnedLinks.length > 2) {
       const link = pinnedLinks[2];
       const dest = getDestinationView(link);
       items.push({
-        id: link.url,
+        id: link.title,
         title: link.title.split(" ")[0],
+        fullTitle: link.title,
         icon: getCategoryIcon(link.title),
         color: colors[2],
         onClick: () => onNavigate(link),
@@ -143,16 +161,19 @@ export const BottomNav: React.FC<BottomNavProps> = ({
         opacity: shouldShow ? 1 : 0,
       }}
       transition={syncSpring}
-      className="xl:hidden fixed bottom-6 left-1/2 bg-zinc-900 border-2 md:border-4 border-black rounded-4xl shadow-[6px_6px_0px_0px_#000] z-9999 flex items-center p-1.5 gap-1.5 pointer-events-auto w-max"
+      className="xl:hidden fixed bottom-6 left-1/2 bg-zinc-900 border-2 md:border-4 border-black rounded-4xl shadow-[6px_6px_0px_0px_#000] z-[9999] flex items-center p-1.5 gap-1.5 pointer-events-auto w-max"
     >
       {navItems.map((link) => {
+        const title = toTitleCase(link.fullTitle || link.title);
+        const isLong = title.length > 8;
+
         return (
           <motion.button
             layout
             transition={syncSpring}
             key={link.id}
-            onClick={link.onClick}
-            className={`relative flex items-center justify-center rounded-3xl transition-colors overflow-hidden px-3.5 py-2.5 border-2 ${
+            onClick={() => handleItemClick(link.id, link.onClick)}
+            className={`relative flex flex-col items-center justify-center rounded-2xl transition-colors border-2 w-13 h-13 sm:w-14 sm:h-14 shrink-0 ${
               link.isActive
                 ? `${link.color} text-black border-black shadow-[2px_2px_0px_0px_#000] -translate-y-px`
                 : "text-zinc-400 hover:text-zinc-200 border-transparent bg-transparent hover:bg-zinc-800"
@@ -167,22 +188,26 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               <link.icon
                 className={`w-5 h-5 sm:w-6 sm:h-6 transition-all ${
                   link.isActive ? "stroke-[2.5px]" : "stroke-2"
-                }`}
+                } ${!isLong ? "mb-0.5" : ""}`}
               />
             </motion.div>
 
-            <AnimatePresence initial={false}>
-              {link.isActive && (
+            {!isLong && (
+              <span className="block font-black font-expanded text-[8px] sm:text-[9px] tracking-wide text-center z-10 leading-none">
+                {title}
+              </span>
+            )}
+
+            <AnimatePresence>
+              {activeCallout === link.id && (
                 <motion.div
-                  initial={{ width: 0, opacity: 0 }}
-                  animate={{ width: "auto", opacity: 1 }}
-                  exit={{ width: 0, opacity: 0 }}
-                  transition={syncSpring}
-                  className="overflow-hidden whitespace-nowrap"
+                  initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 5, scale: 0.9 }}
+                  className="absolute bottom-[calc(100%+14px)] bg-black text-white px-3 py-1.5 rounded-lg text-[11px] font-black font-expanded tracking-widest whitespace-nowrap border-2 border-zinc-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] z-50 pointer-events-none"
                 >
-                  <span className="block font-black font-expanded uppercase text-[10px] sm:text-[11px] tracking-widest pl-2 z-10">
-                    {link.title}
-                  </span>
+                  {title}
+                  <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-black border-b-2 border-r-2 border-zinc-700 rotate-45" />
                 </motion.div>
               )}
             </AnimatePresence>

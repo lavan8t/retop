@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   GraduationCap,
   Coins,
@@ -62,6 +62,44 @@ const getCategoryIcon = (title: string) => {
   return Layers;
 };
 
+const catStyles = [
+  {
+    bg: "bg-cyan-400",
+    hover:
+      "hover:bg-cyan-400 hover:shadow-[3px_3px_0px_0px_var(--shadow-main)]",
+  },
+  {
+    bg: "bg-lime-400",
+    hover:
+      "hover:bg-lime-400 hover:shadow-[3px_3px_0px_0px_var(--shadow-main)]",
+  },
+  {
+    bg: "bg-blue-400",
+    hover:
+      "hover:bg-blue-400 hover:shadow-[3px_3px_0px_0px_var(--shadow-main)]",
+  },
+  {
+    bg: "bg-purple-400",
+    hover:
+      "hover:bg-purple-400 hover:shadow-[3px_3px_0px_0px_var(--shadow-main)]",
+  },
+  {
+    bg: "bg-pink-400",
+    hover:
+      "hover:bg-pink-400 hover:shadow-[3px_3px_0px_0px_var(--shadow-main)]",
+  },
+  {
+    bg: "bg-yellow-400",
+    hover:
+      "hover:bg-yellow-400 hover:shadow-[3px_3px_0px_0px_var(--shadow-main)]",
+  },
+  {
+    bg: "bg-orange-400",
+    hover:
+      "hover:bg-orange-400 hover:shadow-[3px_3px_0px_0px_var(--shadow-main)]",
+  },
+];
+
 interface HomeViewProps {
   showProgress: boolean;
   stats: { cgpa: string; credits: string };
@@ -86,7 +124,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
-
   const [attSort, setAttSort] = useState<"asc" | "desc">("asc");
 
   const [activeMenu, setActiveMenu] = useState<{
@@ -95,33 +132,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
     color: string;
   } | null>(null);
 
-  const catColors = [
-    "bg-cyan-400",
-    "bg-lime-400",
-    "bg-blue-400",
-    "bg-purple-400",
-    "bg-pink-400",
-    "bg-yellow-400",
-    "bg-orange-400",
-  ];
-
   useEffect(() => {
     // Only auto-focus on desktop
     if (window.innerWidth >= 1024) {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, []);
-
-  useEffect(() => {
-    const handleGlobalType = (e: KeyboardEvent) => {
-      if (["INPUT", "TEXTAREA"].includes((e.target as HTMLElement).tagName))
-        return;
-      if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        if (window.innerWidth >= 1024) inputRef.current?.focus();
-      }
-    };
-    window.addEventListener("keydown", handleGlobalType);
-    return () => window.removeEventListener("keydown", handleGlobalType);
   }, []);
 
   useEffect(() => {
@@ -157,7 +172,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
     );
   }, [query, menuCategories]);
 
-  // Handle Attendance Sorting logic
   const sortedAttendance = useMemo(() => {
     return [...attendance].sort((a, b) => {
       const valA = parseFloat(a.attendance) || 0;
@@ -195,10 +209,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
         if (currentList[selectedIndex]) {
           onNavigate(currentList[selectedIndex]);
           setActiveMenu(null);
+          setQuery("");
         }
       } else if (e.key === "Escape") {
         e.preventDefault();
         setActiveMenu(null);
+        setQuery("");
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -207,38 +223,51 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
   return (
     <div className="h-full w-full flex flex-col lg:flex-row gap-6 py-4 pl-4 pr-0 md:py-6 md:pl-6 md:pr-0 lg:p-8 pb-20 lg:pb-8 overflow-y-auto lg:overflow-hidden bg-(--bg-main) max-w-425 mx-auto relative">
-      {/* LEFT PANE: Search / Menu (HIDDEN ON MOBILE, VISIBLE ON DESKTOP `lg`) */}
-      <div className="hidden lg:flex w-full lg:w-[26%] xl:w-[20%] flex-col border-4 border-black bg-(--bg-surface) rounded-4xl shadow-[8px_8px_0px_0px_#000] overflow-hidden shrink-0 h-[50vh] lg:h-full relative z-30">
-        <div className="p-4 border-b-4 border-black bg-(--bg-surface) shrink-0 flex items-center gap-3 relative z-20">
-          <div className="w-10 h-10 bg-blue-500 text-white flex items-center justify-center font-bold border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_#000] shrink-0">
-            <Search className="w-5 h-5" />
+      {/* LEFT PANE: Omnibox Instance (HIDDEN ON MOBILE, VISIBLE ON DESKTOP `lg`) */}
+      <div className="hidden lg:flex w-full lg:w-[26%] xl:w-[20%] flex-col shrink-0 h-auto lg:h-full relative z-30 pt-1">
+        <motion.div
+          initial={{ boxShadow: "6px 6px 0px 0px var(--shadow-main)" }}
+          whileHover={{
+            y: -6,
+            boxShadow: "10px 10px 0px 0px var(--shadow-main)",
+          }}
+          transition={{
+            default: { type: "spring", stiffness: 400, damping: 25 },
+            boxShadow: { type: "tween", duration: 0.3 },
+          }}
+          className="bg-(--bg-highlight) border-4 border-purple-500 rounded-4xl flex flex-col h-[50vh] lg:h-full overflow-hidden min-h-0 lg:min-h-62.5 w-full shrink-0 relative z-30"
+        >
+          {/* Card Header matching ListCard but with Search Input */}
+          <div className="bg-purple-400 px-4 py-3 border-b-4 border-black flex justify-between items-center shrink-0 z-10 gap-3">
+            <div className="w-9 h-9 bg-blue-500 text-white flex items-center justify-center font-bold border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_var(--shadow-main)] shrink-0">
+              <Search className="w-4 h-4" />
+            </div>
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder="WHERE TO?"
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setSelectedIndex(0);
+                setActiveMenu(null);
+              }}
+              className="bg-transparent text-lg font-expanded font-black text-black focus:outline-none w-full placeholder-black/60 tracking-tight uppercase"
+            />
           </div>
-          <input
-            ref={inputRef}
-            type="text"
-            placeholder="WHERE TO?"
-            className="bg-transparent text-xl font-expanded font-black text-(--text-main) focus:outline-none w-full placeholder-zinc-500 tracking-tight uppercase"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setSelectedIndex(0);
-              setActiveMenu(null);
-            }}
-          />
-        </div>
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar bg-(--bg-main) relative z-10">
-          {query ? (
-            flattenedLinks.length === 0 ? (
-              <div className="flex flex-col items-center justify-center p-8 text-(--text-dim)">
-                <AlertCircle className="w-8 h-8 mb-3 opacity-50" />
-                <span className="font-expanded text-sm uppercase tracking-widest">
-                  No Matches
-                </span>
-              </div>
-            ) : (
-              <div className="p-3 space-y-1">
-                {flattenedLinks.map((link, i) => {
+          {/* List Content */}
+          <div className="flex-1 overflow-y-auto p-3 space-y-1 custom-scrollbar bg-(--bg-highlight)">
+            {query ? (
+              flattenedLinks.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-8 text-(--text-dim)">
+                  <AlertCircle className="w-8 h-8 mb-3 opacity-50" />
+                  <span className="font-expanded text-sm uppercase tracking-widest">
+                    No Matches
+                  </span>
+                </div>
+              ) : (
+                flattenedLinks.map((link, i) => {
                   const isSelected = i === selectedIndex;
                   return (
                     <button
@@ -247,10 +276,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
                       onClick={() => onNavigate(link)}
                       onMouseEnter={() => setSelectedIndex(i)}
                       className={`
-                        w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-3 border-2
+                        w-full text-left px-4 py-3 rounded-2xl text-xs font-bold transition-all duration-200 flex items-center gap-3 border-2
                         ${
                           isSelected
-                            ? "bg-blue-500 text-white border-black shadow-[3px_3px_0px_0px_#000] -translate-y-px"
+                            ? "bg-blue-500 text-white border-black shadow-[3px_3px_0px_0px_var(--shadow-main)] -translate-y-px"
                             : "bg-(--bg-surface) border-transparent text-(--text-muted) hover:border-(--border-dim)"
                         }
                       `}
@@ -264,51 +293,52 @@ export const HomeView: React.FC<HomeViewProps> = ({
                       )}
                     </button>
                   );
-                })}
-              </div>
-            )
-          ) : (
-            <div className="p-3 space-y-1.5">
-              {menuCategories.map((cat, catIdx) => {
-                const iconColor = catColors[catIdx % catColors.length];
+                })
+              )
+            ) : (
+              menuCategories.map((cat, catIdx) => {
+                const style = catStyles[catIdx % catStyles.length];
                 const CatIcon = getCategoryIcon(cat.title);
                 const isActive = activeMenu?.cat.title === cat.title;
 
                 return (
-                  <button
+                  <motion.button
                     key={catIdx}
+                    whileTap={{ scale: 0.96 }}
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedIndex(0);
                       setActiveMenu({
                         cat,
                         rect: e.currentTarget.getBoundingClientRect(),
-                        color: iconColor,
+                        color: style.bg,
                       });
                     }}
-                    className={`w-full bg-transparent p-3 flex items-center justify-between group rounded-2xl transition-all border-2 ${isActive ? "bg-(--bg-highlight) border-(--border-main) shadow-sm" : "border-transparent hover:bg-(--bg-surface) hover:border-(--border-dim)"}`}
+                    className={`flex w-full items-center justify-between p-2 rounded-3xl border-2 transition-all duration-150 group 
+                      ${isActive ? `${style.bg} border-black shadow-[3px_3px_0px_0px_var(--shadow-main)] -translate-y-0.5 text-black` : `border-transparent hover:border-black hover:-translate-y-0.5 text-(--text-main) ${style.hover}`}
+                    `}
                   >
-                    <div className="flex items-center gap-4">
-                      <div
-                        className={`w-10 h-10 rounded-full border-2 border-black flex items-center justify-center shadow-[3px_3px_0px_0px_#000] ${iconColor} group-hover:-translate-y-0.5 group-hover:shadow-[4px_4px_0px_0px_#000] transition-all`}
-                      >
-                        <CatIcon className="w-4 h-4 text-black" />
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 flex items-center justify-center shrink-0">
+                        <CatIcon
+                          className={`w-5 h-5 transition-colors ${isActive ? "text-black" : "text-(--text-main) group-hover:text-black"}`}
+                        />
                       </div>
-                      <h3
-                        className={`text-sm font-black tracking-wide mb-0 font-expanded uppercase ${isActive ? "text-(--text-main)" : "text-(--text-muted) group-hover:text-(--text-main)"}`}
+                      <span
+                        className={`font-expanded font-black text-[10px] uppercase tracking-wider text-left mt-0.5 transition-colors ${isActive ? "text-black" : "group-hover:text-black"}`}
                       >
                         {cat.title}
-                      </h3>
+                      </span>
                     </div>
                     <ChevronRight
-                      className={`w-5 h-5 transition-transform ${isActive ? "text-blue-500 translate-x-1" : "text-(--text-dim) group-hover:text-(--text-muted)"}`}
+                      className={`w-3.5 h-3.5 transition-all ${isActive ? "opacity-100 translate-x-0 text-black" : "opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 text-(--text-main) group-hover:text-black"}`}
                     />
-                  </button>
+                  </motion.button>
                 );
-              })}
-            </div>
-          )}
-        </div>
+              })
+            )}
+          </div>
+        </motion.div>
       </div>
 
       <AnimatePresence>
@@ -364,7 +394,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     onNavigate(link);
                     setActiveMenu(null);
                   }}
-                  className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all border-2 flex items-center gap-3 group ${i === selectedIndex ? "bg-blue-500 text-white border-black shadow-[2px_2px_0px_0px_#000]" : "bg-zinc-900 border-zinc-800 text-zinc-300 hover:border-zinc-600 hover:text-white"}`}
+                  className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all border-2 flex items-center gap-3 group ${i === selectedIndex ? "bg-blue-500 text-white border-black shadow-[2px_2px_0px_0px_var(--shadow-main)]" : "bg-zinc-900 border-zinc-800 text-zinc-300 hover:border-zinc-600 hover:text-white"}`}
                 >
                   <div
                     className={`w-2 h-2 rounded-full transition-colors shrink-0 ${i === selectedIndex ? "bg-white" : "bg-zinc-700 group-hover:bg-blue-500"}`}
@@ -381,7 +411,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
       </AnimatePresence>
 
       {/* RIGHT PANE: Main Content Grid */}
-      {/* FIX: Set flex-none on mobile so the div stretches to contain overflowing cards */}
       <div className="flex-none lg:flex-1 w-full flex flex-col lg:flex-row gap-6 overflow-visible pt-2 -mt-2 pl-1 pr-4 md:pr-6 lg:pr-0 lg:px-0 -ml-1 lg:ml-0">
         {/* Attendance Column */}
         <div className="w-full lg:w-[40%] xl:w-[35%] flex flex-col shrink-0 h-auto lg:h-full pt-1">
@@ -415,7 +444,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
 
         {/* Stats & Tall Lists Column */}
-        {/* FIX: Set flex-none on mobile so the div stretches to contain overflowing cards */}
         <div className="flex-none lg:flex-1 flex flex-col gap-6 lg:min-h-0 pt-1">
           {/* Top Row: Mini Cards */}
           <div className="flex flex-col sm:flex-row gap-6 shrink-0 h-auto lg:h-37.5">
@@ -444,7 +472,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
 
           {/* Bottom Row: Schedule & Assignments */}
-          {/* FIX: Set flex-none on mobile so the div stretches to contain overflowing cards */}
           <div className="flex-none lg:flex-1 flex flex-col sm:flex-row gap-6 lg:min-h-0">
             <div className="flex-1 h-auto lg:h-full flex flex-col">
               <ListCard

@@ -12,11 +12,20 @@ export const ListCard = ({
   <motion.div
     layout
     onClick={onClick}
+    initial={{ boxShadow: "6px 6px 0px 0px var(--shadow-main)" }}
+    whileHover={{ y: -6, boxShadow: "10px 10px 0px 0px var(--shadow-main)" }}
+    whileTap={{
+      scale: 0.95,
+      y: 0,
+      boxShadow: "4px 4px 0px 0px var(--shadow-main)",
+    }}
+    transition={{
+      default: { type: "spring", stiffness: 400, damping: 25 },
+      boxShadow: { type: "tween", duration: 0.3 },
+    }}
     className={`
       bg-(--bg-highlight) border-4 ${borderClass} rounded-4xl 
-      shadow-[6px_6px_0px_0px_rgba(0,0,0,0.2)] 
       flex flex-col h-auto lg:h-full overflow-hidden min-h-0 lg:min-h-62.5
-      transition-all duration-300 hover:-translate-y-1 hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.3)]
       ${onClick ? "cursor-pointer group" : ""}
     `}
   >
@@ -28,7 +37,7 @@ export const ListCard = ({
       </h3>
       <div className="flex items-center gap-2">
         {count !== undefined && (
-          <span className="text-[11px] font-black font-mono text-black bg-white/50 px-2 py-0.5 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)]">
+          <span className="text-[11px] font-black font-mono text-black bg-white/50 px-2 py-0.5 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_var(--shadow-main)]">
             {count}
           </span>
         )}

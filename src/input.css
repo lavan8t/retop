@@ -28,6 +28,7 @@
     --accent-tint: #1e3a8a;
 
     --text-inverse: #ffffff;
+    --shadow-main: #000000;
 
     /* Card Colors */
     --card-cyan: #8bcbd8;
@@ -93,6 +94,7 @@
   --text-dim: #737373;
 
   --text-inverse: #000000;
+  --shadow-main: #000000;
 
   --att-safe: #00e676;
   --att-warn: #ffea00;
@@ -116,6 +118,7 @@
   --text-dim: #525252;
 
   --text-inverse: #ffffff;
+  --shadow-main: #000000;
 
   --card-cyan: #22d3ee;
   --card-lime: #a3e635;

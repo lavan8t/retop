@@ -8,12 +8,19 @@ export const SolidStatCard = ({
   icon: Icon,
 }: any) => (
   <motion.div
-    whileHover={{ y: -6, boxShadow: "10px 10px 0px 0px rgba(0,0,0,1)" }}
-    whileTap={{ scale: 0.95, y: 0, boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)" }}
-    transition={{ type: "spring", stiffness: 400, damping: 25 }}
+    initial={{ boxShadow: "6px 6px 0px 0px var(--shadow-main)" }}
+    whileHover={{ y: -6, boxShadow: "10px 10px 0px 0px var(--shadow-main)" }}
+    whileTap={{
+      scale: 0.95,
+      y: 0,
+      boxShadow: "4px 4px 0px 0px var(--shadow-main)",
+    }}
+    transition={{
+      default: { type: "spring", stiffness: 400, damping: 25 },
+      boxShadow: { type: "tween", duration: 0.3 },
+    }}
     className={`
       ${bgClass} border-4 border-black rounded-3xl p-5 
-      shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] 
       relative overflow-hidden group h-full flex flex-col justify-center min-h-35 lg:min-h-0 cursor-pointer select-none
     `}
   >

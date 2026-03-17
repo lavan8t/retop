@@ -2,25 +2,30 @@
   "manifest_version": 3,
   "name": "re.top",
   "description": "college portal made better.",
-  "version": "0.2.0",
+  "version": "0.3.0",
 
   "permissions": [],
 
-  "host_permissions": ["https://vtop.vit.ac.in/*"],
+  "host_permissions": ["https://vtop.vit.ac.in/vtop/content/*"],
 
   "content_scripts": [
     {
-      "matches": ["https://vtop.vit.ac.in/*"],
+      "matches": ["https://vtop.vit.ac.in/vtop/content/*"],
+      "exclude_matches": ["https://vtop.vit.ac.in/vtop/login/error*"],
       "js": ["dist/content.js"],
       "run_at": "document_start"
     }
   ],
+
   "web_accessible_resources": [
     {
       "resources": [
         "dist/injected.js",
         "dist/style.css",
-        "dist/assets/vit.svg"
+        "dist/fonts/gsf.subset.woff2",
+        "dist/fonts/gsf.subset2.woff2",
+        "/fonts/gsf.subset.woff2",
+        "/fonts/gsf.subset2.woff2"
       ],
       "matches": ["https://vtop.vit.ac.in/*"]
     }

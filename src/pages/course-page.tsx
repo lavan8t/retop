@@ -401,7 +401,7 @@ export const CoursePage = ({
           ) : (
             <>
               {/* HORIZONTAL TABS */}
-              <div className="flex flex-wrap gap-3 shrink-0 mb-6 pb-4 border-b-4 border-zinc-800/50">
+              <div className="flex flex-wrap gap-3 mb-4 pb-4 pt-2">
                 {[
                   {
                     id: "materials",
@@ -439,10 +439,9 @@ export const CoursePage = ({
                 ))}
               </div>
 
-              {/* THIS DIV IS THE ONLY THING ALLOWED TO SCROLL */}
               <div className="flex-1 min-h-0 overflow-hidden">
                 {loading ? (
-                  <div className="h-full flex flex-col items-center justify-center border-4 border-dashed border-zinc-800 rounded-4xl bg-zinc-900/30">
+                  <div className="h-full flex flex-col items-center justify-center border-4 border-dashed border-zinc-800 rounded-4xl bg-(--bg-main)">
                     <Layers className="w-12 h-12 text-cyan-400 animate-bounce mb-4" />
                     <span className="text-zinc-500 font-bold uppercase tracking-widest animate-pulse">
                       Fetching Data...

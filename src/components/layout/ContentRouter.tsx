@@ -22,8 +22,7 @@ export const ContentRouter = ({
   ttCourses,
   ttLoading,
   ttViewMode,
-
-  // Destructure the newly added Course Page props here
+  setTtViewMode,
   cpOptions,
   setCpOptions,
   cpSemesters,
@@ -55,6 +54,8 @@ export const ContentRouter = ({
           courses={ttCourses}
           loading={ttLoading}
           viewMode={ttViewMode}
+          setViewMode={setTtViewMode}
+          attendance={attendance}
         />
       );
     case "curriculum":

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
-import { Omnibox } from "../components/omnibox";
 import { ProfileMenu } from "../components/profile-menu";
 import {
   initializeContainer,
@@ -33,6 +32,8 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import { TopBar } from "../components/layout/TopBar";
 import { ContentRouter } from "../components/layout/ContentRouter";
+import { BottomNav } from "../components/layout/BottomNav";
+import { FloatingViewToggle } from "../components/timetable/FloatingViewToggle";
 import {
   getUpcomingClasses,
   UpcomingClass,
@@ -57,21 +58,50 @@ const getDestinationView = (link: QuickLink): ViewType | "content" => {
 
   if (
     lowerTitle.includes("time table") ||
+    lowerTitle.includes("timetable") ||
+    lowerUrl.includes("timetable") ||
     lowerUrl.includes("studenttimetable")
   )
     return "timetable";
-  if (lowerTitle.includes("curriculum")) return "curriculum";
-  if (lowerTitle.includes("mark") || lowerTitle.includes("grade"))
+  if (lowerTitle.includes("curriculum") || lowerUrl.includes("curriculum"))
+    return "curriculum";
+  if (
+    lowerTitle.includes("mark") ||
+    lowerTitle.includes("grade") ||
+    lowerUrl.includes("mark")
+  )
     return "marks";
   if (
     lowerTitle.includes("profile view") ||
-    lowerUrl.includes("studentprofileallview")
+    lowerTitle.includes("profile") ||
+    lowerUrl.includes("studentprofileallview") ||
+    lowerUrl.includes("profile")
   )
     return "profile";
-  if (lowerTitle.includes("course page") || lowerUrl.includes("coursepage"))
+  if (
+    lowerTitle.includes("course page") ||
+    lowerTitle.includes("course") ||
+    lowerUrl.includes("coursepage") ||
+    lowerUrl.includes("course")
+  )
     return "coursePage";
 
   return "content";
+};
+
+const getViewFromHash = (): ViewType => {
+  const hash = window.location.hash.replace("#", "");
+  const validViews = [
+    "dashboard",
+    "content",
+    "timetable",
+    "curriculum",
+    "marks",
+    "profile",
+    "settings",
+    "coursePage",
+  ];
+  return validViews.includes(hash) ? (hash as ViewType) : "dashboard";
 };
 
 const navigateLegacy = (title: string) => {
@@ -105,7 +135,7 @@ const DashboardApp = () => {
   });
 
   const [isPeeking, setIsPeeking] = useState(false);
-  const [currentView, setCurrentView] = useState<ViewType>("dashboard");
+  const [currentView, _setCurrentView] = useState<ViewType>(getViewFromHash());
   const [contentTitle, setContentTitle] = useState("");
   const [status, setStatus] = useState("Initializing...");
 
@@ -114,7 +144,6 @@ const DashboardApp = () => {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [upcoming, setUpcoming] = useState<UpcomingClass[]>([]);
 
-  // Timetable State (This now successfully feeds BOTH pages!)
   const [ttSemesters, setTtSemesters] = useState<Semester[]>([]);
   const [ttSelectedSem, setTtSelectedSem] = useState("");
   const [ttCourses, setTtCourses] = useState<TimetableCourse[]>([]);
@@ -123,7 +152,6 @@ const DashboardApp = () => {
     "grid",
   );
 
-  // Course Page Specific Option State
   const [cpOptions, setCpOptions] = useState<CoursePageOption[]>([]);
   const [cpSelectedSem, setCpSelectedSem] = useState("");
   const [cpSelectedCourseId, setCpSelectedCourseId] = useState("");
@@ -135,8 +163,49 @@ const DashboardApp = () => {
   const isOmniboxOpenRef = useRef(isOmniboxOpen);
   isOmniboxOpenRef.current = isOmniboxOpen;
 
+  const pinnedLinks = settings.pinnedLinks || [];
+
   const statusColor =
     status === "Online" || status === "Active" ? "bg-lime-400" : "bg-red-500";
+
+  const setCurrentView = (view: ViewType) => {
+    if (window.location.hash !== `#${view}`) {
+      window.location.hash = view;
+    }
+  };
+
+  const handleTogglePin = (link: QuickLink) => {
+    const dest = getDestinationView(link);
+    if (dest === "content") {
+      alert("Only ReTop exclusive native pages can be pinned to the dock.");
+      return;
+    }
+
+    const isAlreadyPinned = pinnedLinks.some(
+      (p) => getDestinationView(p) === dest,
+    );
+
+    if (isAlreadyPinned) {
+      const newPins = pinnedLinks.filter((p) => getDestinationView(p) !== dest);
+      updateSetting("pinnedLinks", newPins);
+    } else {
+      if (pinnedLinks.length >= 3) {
+        alert("You can only pin up to 3 custom items.");
+        return;
+      }
+      updateSetting("pinnedLinks", [...pinnedLinks, link]);
+    }
+  };
+
+  useEffect(() => {
+    if (!window.location.hash) {
+      window.history.replaceState(null, "", "#dashboard");
+      _setCurrentView("dashboard");
+    }
+    const handleHashChange = () => _setCurrentView(getViewFromHash());
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
 
   useEffect(() => {
     applyTheme(settings);
@@ -275,9 +344,7 @@ const DashboardApp = () => {
 
           setTtSemesters(sems);
 
-          // Set Timetable default
           setTtSelectedSem(semId);
-          // Set Course Page default instantly from the same flawless array
           setCpSelectedSem(semId);
 
           await loadTimetable(semId);
@@ -384,27 +451,7 @@ const DashboardApp = () => {
             setIsModernUI(false);
           }}
           title="Return to Legacy UI"
-        >
-          <div className="flex flex-col justify-center h-full gap-0.5">
-            <div className="flex items-center gap-3">
-              <div className="relative flex items-baseline">
-                <span
-                  className={`font-expanded font-black text-[2.5rem] tracking-tighter italic lowercase leading-none select-none transition-all duration-300 ${isPeeking ? "text-white mix-blend-difference" : "text-(--text-main) hover:text-(--accent-hover)"}`}
-                >
-                  re
-                </span>
-                <div className="relative w-3.5 h-3.5 ml-0.5 mb-1">
-                  <span
-                    className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${statusColor}`}
-                  ></span>
-                  <span
-                    className={`relative inline-flex rounded-full h-3.5 w-3.5 ${statusColor}`}
-                  ></span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        ></div>
       )}
 
       <AnimatePresence>
@@ -437,17 +484,10 @@ const DashboardApp = () => {
             }}
             className={`fixed inset-0 h-screen font-mono selection:bg-blue-500 selection:text-white flex flex-col overflow-hidden bg-(--bg-main) z-100 ${!isModernUI && isPeeking ? "pointer-events-none" : "pointer-events-auto"} ${isPeeking ? "shadow-[0px_-20px_60px_rgba(0,0,0,0.6)]" : ""}`}
           >
-            <Omnibox
-              isOpen={isOmniboxOpen}
-              initialQuery={omniboxInitial}
-              onClose={() => setIsOmniboxOpen(false)}
-              menuCategories={menu}
-              onNavigate={handleLinkClick}
-            />
             <div className="flex flex-col h-full pointer-events-auto overflow-hidden">
               <TopBar
                 currentView={currentView}
-                contentTitle={contentTitle}
+                contentTitle={""}
                 status={status}
                 ttCourses={ttCourses}
                 ttLoading={ttLoading}
@@ -466,8 +506,29 @@ const DashboardApp = () => {
                 handleLogout={handleLogout}
                 setIsOmniboxOpen={setIsOmniboxOpen}
                 setCurrentView={setCurrentView}
+                pinnedLinks={pinnedLinks}
               />
               <main className="flex-1 overflow-hidden relative">
+                <AnimatePresence>
+                  {showProfileMenu && (
+                    <>
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-40 bg-black/10 backdrop-blur-[2px]"
+                        onClick={() => setShowProfileMenu(false)}
+                      />
+                      <ProfileMenu
+                        userName={user.name}
+                        onNavigate={handleLinkClick}
+                        onLogout={handleLogout}
+                        onClose={() => setShowProfileMenu(false)}
+                      />
+                    </>
+                  )}
+                </AnimatePresence>
+
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={currentView}
@@ -492,6 +553,7 @@ const DashboardApp = () => {
                       ttCourses={ttCourses}
                       ttLoading={ttLoading}
                       ttViewMode={ttViewMode}
+                      setTtViewMode={setTtViewMode}
                       cpOptions={cpOptions}
                       setCpOptions={setCpOptions}
                       cpSelectedSem={cpSelectedSem}
@@ -501,6 +563,27 @@ const DashboardApp = () => {
                   </motion.div>
                 </AnimatePresence>
               </main>
+
+              {/* FIX: Moved BottomNav and FloatingViewToggle inside the motion.div wrapper */}
+              <BottomNav
+                currentView={currentView}
+                setCurrentView={setCurrentView}
+                pinnedLinks={pinnedLinks}
+                onNavigate={handleLinkClick}
+                getDestinationView={getDestinationView}
+                isOmniboxOpen={isOmniboxOpen}
+                setIsOmniboxOpen={setIsOmniboxOpen}
+                menuCategories={menu}
+                initialQuery={omniboxInitial}
+                onTogglePin={handleTogglePin}
+              />
+
+              {currentView === "timetable" && !isOmniboxOpen && (
+                <FloatingViewToggle
+                  viewMode={ttViewMode}
+                  setViewMode={setTtViewMode}
+                />
+              )}
             </div>
           </motion.div>
         )}

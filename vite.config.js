@@ -14,12 +14,13 @@ export default defineConfig({
         content: resolve(__dirname, "src/content.ts"),
         injected: resolve(__dirname, "src/injected.ts"),
         style: resolve(__dirname, "src/input.css"),
+        login: resolve(__dirname, "src/login-theme.css"),
       },
       output: {
         entryFileNames: "[name].js",
         assetFileNames: (assetInfo) => {
-          if (assetInfo.name === "style.css") {
-            return "style.css";
+          if (assetInfo.name === "style.css" || assetInfo.name === "login.css" || assetInfo.name === "login-theme.css") {
+            return "[name].css";
           }
           return "assets/[name].[ext]";
         },

@@ -18,6 +18,7 @@ import {
   injectScriptFile,
 } from "../utils/bridge";
 import { useSettings } from "../utils/settings-store";
+import { autoSolveCaptcha } from "../utils/captchaSolver";
 import { LegacyReturnButton } from "../components/LegacyReturnButton";
 
 const triggerStudentSetup = async (csrf: string) => {
@@ -28,7 +29,7 @@ const triggerStudentSetup = async (csrf: string) => {
       body: new URLSearchParams({ _csrf: csrf, flag: "VTOP" }),
     });
   } catch (e) {
-    console.error("VTOP Remastered: Auto-student setup failed", e);
+    console.error("retop: Auto-student setup failed", e);
   }
 };
 
@@ -59,7 +60,7 @@ export function renderLoginPage() {
       <LoginPage
         csrfToken={csrfToken}
         initialCaptcha={imgEl?.src}
-        mode={mode}
+        initialMode={mode}
       />,
     );
 
@@ -72,11 +73,11 @@ export function renderLoginPage() {
 const LoginPage = ({
   csrfToken,
   initialCaptcha,
-  mode,
+  initialMode,
 }: {
   csrfToken: string;
   initialCaptcha?: string;
-  mode: "IMAGE" | "GOOGLE" | "NONE";
+  initialMode: "IMAGE" | "GOOGLE" | "NONE";
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [captchaSrc, setCaptchaSrc] = useState(initialCaptcha);
@@ -92,26 +93,77 @@ const LoginPage = ({
     captcha: "",
   });
 
+  const [mode, setMode] = useState<"IMAGE" | "GOOGLE" | "NONE">(initialMode);
+  const [siteKey, setSiteKey] = useState<string>("");
+
   useEffect(() => {
     const initSession = async () => {
       await triggerStudentSetup(csrfToken);
-      if (mode === "IMAGE") refreshCaptcha();
+
+      let currentMode = mode;
+
+      // If we're on the open page, we must fetch the login page to discover the captcha mode
+      if (window.location.pathname.includes("/vtop/open/page")) {
+        try {
+          const res = await fetch("/vtop/login");
+          const html = await res.text();
+
+          if (
+            html.includes('class="g-recaptcha"') ||
+            html.includes("data-sitekey")
+          ) {
+            currentMode = "GOOGLE";
+            setMode("GOOGLE");
+
+            // Extract sitekey
+            const match = html.match(/data-sitekey="([^"]+)"/);
+            if (match) {
+              setSiteKey(match[1]);
+              (window as any).__vtopCaptchaSitekey = match[1];
+              window.dispatchEvent(
+                new CustomEvent("vtop-init-captcha", { detail: match[1] }),
+              );
+            }
+
+            // Inject injected.js for handling captcha
+            if (!document.querySelector('script[src*="dist/injected.js"]')) {
+              const s = document.createElement("script");
+              s.src = chrome.runtime.getURL("dist/injected.js");
+              document.head.appendChild(s);
+            }
+          } else {
+            currentMode = "IMAGE";
+            setMode("IMAGE");
+          }
+        } catch (e) {
+          console.error("Failed to fetch login page for captcha mode", e);
+        }
+      } else if (currentMode === "GOOGLE") {
+        // If we didn't fetch because we are on /vtop/login directly, we can read the sitekey from DOM
+        const sk = document
+          .querySelector(".g-recaptcha")
+          ?.getAttribute("data-sitekey");
+        if (sk) {
+          (window as any).__vtopCaptchaSitekey = sk;
+          window.dispatchEvent(
+            new CustomEvent("vtop-init-captcha", { detail: sk }),
+          );
+        }
+      }
+
+      if (currentMode === "IMAGE") refreshCaptcha();
     };
     initSession();
+  }, []); // Run only once to avoid infinite loops
 
+  useEffect(() => {
     if (mode === "GOOGLE") {
-      const handleSolved = (e: CustomEvent) => submitLogin(e.detail);
-      window.addEventListener(
-        "vtop-captcha-solved",
-        handleSolved as EventListener,
-      );
+      const handleSolved = (e: Event) => submitLogin((e as CustomEvent).detail);
+      window.addEventListener("vtop-captcha-solved", handleSolved);
       return () =>
-        window.removeEventListener(
-          "vtop-captcha-solved",
-          handleSolved as EventListener,
-        );
+        window.removeEventListener("vtop-captcha-solved", handleSolved);
     }
-  }, [csrfToken, mode]);
+  }, [mode]);
 
   useEffect(() => {
     const restoreHandler = () => setIsModernUI(true);
@@ -139,13 +191,56 @@ const LoginPage = ({
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const submitLogin = (gResponseToken?: string) => {
+  const submitLogin = async (gResponseToken?: string) => {
     const { username, password, captcha } = formData;
     if (!username || !password) return;
+
+    if (window.location.pathname.includes("/vtop/open/page")) {
+      setIsLoading(true);
+      const payload = new URLSearchParams();
+      payload.append("_csrf", csrfToken);
+      payload.append("username", username);
+      payload.append("password", password);
+
+      if (mode === "GOOGLE" && gResponseToken)
+        payload.append("gResponse", gResponseToken);
+      else if (mode === "IMAGE" && captcha)
+        payload.append("captchaStr", captcha);
+
+      try {
+        const res = await fetch("/vtop/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: payload,
+        });
+
+        const html = await res.text();
+        const authMatch = html.match(
+          /name="authorizedIDX" id="authorizedIDX" value="([^"]+)"/,
+        );
+
+        if (authMatch) {
+          window.history.pushState({}, "", "/vtop/content");
+          const evt = new CustomEvent("vtop-login-success", {
+            detail: authMatch[1],
+          });
+          window.dispatchEvent(evt);
+        } else {
+          setIsLoading(false);
+          setFormData((prev) => ({ ...prev, password: "", captcha: "" }));
+          if (mode === "IMAGE") refreshCaptcha();
+        }
+      } catch (err) {
+        setIsLoading(false);
+        console.error(err);
+      }
+      return;
+    }
+
     const payload: any = { _csrf: csrfToken, username, password };
     if (mode === "GOOGLE" && gResponseToken)
       payload["gResponse"] = gResponseToken;
-    else if (mode === "IMAGE" && captcha) payload["captchaCheck"] = captcha;
+    else if (mode === "IMAGE" && captcha) payload["captchaStr"] = captcha;
     createHiddenForm("/vtop/login", payload).submit();
   };
 
@@ -153,7 +248,7 @@ const LoginPage = ({
     if (!formData.username || !formData.password) return;
     setIsLoading(true);
     if (mode === "GOOGLE")
-      window.dispatchEvent(new Event("vtop-invoke-captcha"));
+      window.dispatchEvent(new Event("vtop-trigger-verify"));
     else submitLogin();
   };
 
@@ -162,115 +257,165 @@ const LoginPage = ({
       <AnimatePresence>
         {isModernUI && (
           <motion.div
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={{
-              type: "spring",
-              damping: 35,
-              stiffness: 300,
-              mass: 0.8,
-            }}
-            className="fixed inset-0 min-h-screen flex overflow-hidden selection:bg-yellow-400 selection:text-black pointer-events-auto bg-(--bg-main) z-100"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 min-h-screen flex items-center justify-center bg-black/40 backdrop-blur-md z-100 p-4 md:p-6 lg:p-8"
           >
-            <div className="hidden lg:flex w-[45%] bg-(--accent-base) border-r-[6px] border-(--border-main) flex-col justify-center p-12 relative">
-              <div className="relative z-10">
-                <div className="text-[10rem] font-expanded font-black leading-none text-white drop-shadow-[10px_10px_0px_var(--border-main)] lowercase">
-                  re.
-                </div>
-                <div className="bg-yellow-400 text-black inline-block px-8 py-3 border-4 border-(--border-main) rounded-4xl -rotate-2 shadow-[8px_8px_0px_0px_var(--border-main)] mt-4">
-                  <span className="text-4xl font-expanded font-black uppercase italic tracking-tighter">
-                    retop
-                  </span>
-                </div>
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{
+                type: "spring",
+                damping: 35,
+                stiffness: 300,
+                mass: 0.8,
+              }}
+              className="w-full h-full flex overflow-hidden selection:bg-(--accent-base) selection:text-(--text-inverse) pointer-events-auto bg-(--bg-main) rounded-4xl gap-6"
+            >
+              <div className="hidden lg:flex w-full lg:w-[45%] xl:w-[40%] flex-col h-full relative z-30">
+                <motion.div className="bg-(--bg-highlight) border-4 border-(--border-main) rounded-4xl flex flex-col justify-center items-center h-full w-full shrink-0 relative z-30 shadow-none overflow-hidden">
+                  <div className="relative z-10 text-center flex flex-col items-center">
+                    <div className="w-24 h-24 bg-(--accent-base) text-(--text-inverse) rounded-3xl border-4 border-(--border-main) flex items-center justify-center shadow-none mb-8">
+                      <ShieldCheck className="w-12 h-12" />
+                    </div>
+
+                    <div className="text-[8rem] font-expanded font-black leading-none text-(--text-main) lowercase [text-shadow:6px_6px_0px_var(--shadow-main)]">
+                      re.
+                    </div>
+                    <div className="bg-(--accent-base) text-(--text-inverse) inline-block px-8 py-3 border-4 border-(--border-main) rounded-4xl -rotate-2 shadow-none mt-4">
+                      <span className="text-4xl font-expanded font-black uppercase italic">
+                        top
+                      </span>
+                    </div>
+                    <p className="mt-8 font-expanded font-bold text-(--text-muted) uppercase text-sm">
+                      Student Portal Remastered
+                    </p>
+                  </div>
+                </motion.div>
               </div>
-            </div>
 
-            <div className="flex-1 flex items-center justify-center p-6">
-              <motion.div
-                initial={{ y: 30, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                className="w-full max-w-md bg-(--bg-surface) border-[5px] border-(--border-main) rounded-[3rem] p-8 shadow-[16px_16px_0px_0px_var(--border-main)]"
-              >
-                <div className="mb-10">
-                  <h2 className="text-5xl font-expanded font-black lowercase tracking-tighter mb-2 italic">
-                    re.
-                  </h2>
-                  <div className="h-3 w-24 bg-pink-500 border-2 border-(--border-main) rounded-full shadow-[4px_4px_0px_0px_var(--border-main)]"></div>
-                </div>
-
-                <div className="space-y-8">
-                  <div className="relative">
-                    <label className="absolute -top-4 left-6 bg-yellow-400 border-2 border-(--border-main) px-3 py-0.5 text-xs font-expanded font-black uppercase z-10 rounded-lg shadow-[3px_3px_0px_0px_var(--border-main)] text-black">
-                      Identity
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="REG NO."
-                      value={formData.username}
-                      onChange={(e) =>
-                        handleInputChange("username", e.target.value)
-                      }
-                      className="w-full bg-(--bg-highlight) border-[3px] border-(--border-main) rounded-3xl p-4 pl-6 font-expanded font-black text-xl outline-none focus:bg-(--bg-surface) uppercase text-(--text-main) placeholder-(--text-muted)"
-                    />
-                  </div>
-                  <div className="relative">
-                    <label className="absolute -top-4 left-6 bg-pink-500 border-2 border-(--border-main) px-3 py-0.5 text-xs font-expanded font-black uppercase z-10 text-white rounded-lg shadow-[3px_3px_0px_0px_var(--border-main)]">
+              <div className="flex-1 h-full flex items-center justify-center lg:justify-start lg:pl-12">
+                <motion.div
+                  initial={{ y: 30, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  className="w-full max-w-lg bg-(--bg-highlight) border-4 border-(--border-main) rounded-4xl p-8 shadow-none flex flex-col"
+                >
+                  <div className="mb-10">
+                    <h2 className="text-4xl font-expanded font-black uppercase text-(--text-main) mb-3">
                       Access
-                    </label>
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      placeholder="••••••••"
-                      value={formData.password}
-                      onChange={(e) =>
-                        handleInputChange("password", e.target.value)
-                      }
-                      className="w-full bg-(--bg-highlight) border-[3px] border-(--border-main) rounded-3xl p-4 pl-6 font-expanded font-black text-xl outline-none focus:bg-(--bg-surface) text-(--text-main) placeholder-(--text-muted)"
-                    />
+                    </h2>
+                    <div className="h-2 w-16 bg-(--accent-base) border-2 border-(--border-main) rounded-full shadow-none"></div>
                   </div>
 
-                  {mode === "IMAGE" && (
-                    <div className="flex gap-4">
+                  <div className="space-y-6">
+                    <div className="relative group">
+                      <label className="absolute -top-3 left-4 bg-(--bg-surface) border-2 border-(--border-main) px-2 py-0.5 text-[10px] font-expanded font-black uppercase z-10 rounded-lg shadow-none text-(--text-main) group-focus-within:bg-(--accent-base) group-focus-within:text-(--text-inverse) transition-colors">
+                        Identity
+                      </label>
                       <input
                         type="text"
-                        placeholder="CAPTCHA"
-                        value={formData.captcha}
+                        placeholder="REG NO."
+                        value={formData.username}
                         onChange={(e) =>
-                          handleInputChange("captcha", e.target.value)
+                          handleInputChange("username", e.target.value)
                         }
-                        className="flex-1 bg-(--bg-highlight) border-[3px] border-(--border-main) rounded-3xl p-4 font-expanded font-black text-xl outline-none uppercase"
+                        className="w-full bg-(--bg-surface) border-4 border-(--border-main) rounded-2xl p-4 pl-5 font-expanded font-black text-xl outline-none focus:shadow-[4px_4px_0px_0px_var(--shadow-main)] focus:-translate-y-1 transition-all uppercase text-(--text-main) placeholder-(--text-muted)"
                       />
-                      <div className="w-32 h-20 bg-white border-[3px] border-(--border-main) rounded-3xl overflow-hidden shadow-[6px_6px_0px_0px_var(--border-main)]">
-                        <img
-                          src={captchaSrc}
-                          className="w-full h-full object-contain"
-                        />
-                      </div>
                     </div>
-                  )}
+                    <div className="relative group">
+                      <label className="absolute -top-3 left-4 bg-(--bg-surface) border-2 border-(--border-main) px-2 py-0.5 text-[10px] font-expanded font-black uppercase z-10 rounded-lg shadow-none text-(--text-main) group-focus-within:bg-(--accent-base) group-focus-within:text-(--text-inverse) transition-colors">
+                        Security
+                      </label>
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={formData.password}
+                        onChange={(e) =>
+                          handleInputChange("password", e.target.value)
+                        }
+                        className="w-full bg-(--bg-surface) border-4 border-(--border-main) rounded-2xl p-4 pl-5 font-expanded font-black text-xl outline-none focus:shadow-[4px_4px_0px_0px_var(--shadow-main)] focus:-translate-y-1 transition-all text-(--text-main) placeholder-(--text-muted) pr-12"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-(--text-muted) hover:text-(--text-main) transition-colors p-1 bg-(--bg-surface) rounded-lg border-2 border-transparent hover:border-(--border-dim)"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
 
-                  <button
-                    onClick={handleAuthorize}
-                    disabled={isLoading}
-                    className={`w-full border-[5px] border-(--border-main) rounded-4xl py-5 text-3xl font-expanded font-black uppercase tracking-tighter flex items-center justify-center gap-4 ${isLoading ? "bg-(--bg-highlight) text-(--text-muted)" : "bg-(--accent-base) text-white shadow-[8px_8px_0px_0px_var(--border-main)] active:translate-y-1 active:shadow-none"}`}
-                  >
-                    {isLoading ? (
-                      <Loader2 className="animate-spin" />
-                    ) : (
-                      <>
-                        Authorize <ArrowRight />
-                      </>
+                    {mode === "IMAGE" && (
+                      <div className="flex gap-4">
+                        <div className="relative group flex-1">
+                          <label className="absolute -top-3 left-4 bg-(--bg-surface) border-2 border-(--border-main) px-2 py-0.5 text-[10px] font-expanded font-black uppercase z-10 rounded-lg shadow-none text-(--text-main) group-focus-within:bg-(--accent-base) group-focus-within:text-(--text-inverse) transition-colors">
+                            Verification
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="CAPTCHA"
+                            value={formData.captcha}
+                            onChange={(e) =>
+                              handleInputChange("captcha", e.target.value)
+                            }
+                            className="w-full bg-(--bg-surface) border-4 border-(--border-main) rounded-2xl p-4 pl-5 font-expanded font-black text-xl outline-none uppercase focus:shadow-[4px_4px_0px_0px_var(--shadow-main)] focus:-translate-y-1 transition-all text-(--text-main)"
+                          />
+                        </div>
+                        <div
+                          className="w-30 bg-white border-4 border-(--border-main) rounded-2xl overflow-hidden shadow-none relative flex items-center justify-center shrink-0 group cursor-pointer active:translate-y-1 active:shadow-none transition-all"
+                          onClick={refreshCaptcha}
+                          title="Click to refresh captcha"
+                        >
+                          <img
+                            src={captchaSrc}
+                            className="w-full h-full object-contain"
+                            alt="CAPTCHA"
+                            crossOrigin="anonymous"
+                            onLoad={async (e) => {
+                              const val = await autoSolveCaptcha(
+                                e.target as HTMLImageElement,
+                              );
+                              if (val) handleInputChange("captcha", val);
+                            }}
+                          />
+                          <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <RefreshCw className="w-5 h-5 text-white" />
+                          </div>
+                        </div>
+                      </div>
                     )}
-                  </button>
-                </div>
-                <button
-                  onClick={() => setIsModernUI(false)}
-                  className="mt-8 text-xs font-expanded font-black uppercase underline text-(--text-muted)"
-                >
-                  Legacy View
-                </button>
-              </motion.div>
-            </div>
+
+                    <button
+                      onClick={handleAuthorize}
+                      disabled={isLoading}
+                      className={`w-full border-4 border-(--border-main) rounded-2xl py-4 text-2xl font-expanded font-black uppercase flex items-center justify-center gap-3 transition-all duration-200 mt-2 ${isLoading ? "bg-(--bg-surface) text-(--text-muted) cursor-not-allowed" : "bg-(--accent-base) text-(--text-inverse) shadow-none hover:-translate-y-1 hover:shadow-[8px_8px_0px_0px_var(--shadow-main)] active:translate-y-1 active:shadow-none"}`}
+                    >
+                      {isLoading ? (
+                        <Loader2 className="animate-spin w-6 h-6" />
+                      ) : (
+                        <>
+                          Authorize <ArrowRight className="w-6 h-6" />
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="mt-6 flex justify-center">
+                    <button
+                      onClick={() => setIsModernUI(false)}
+                      className="text-[10px] font-expanded font-bold uppercase hover:text-(--accent-base) text-(--text-muted) transition-colors flex items-center gap-1 underline underline-offset-2"
+                    >
+                      Return to Legacy View
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

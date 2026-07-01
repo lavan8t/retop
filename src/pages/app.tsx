@@ -412,7 +412,7 @@ const DashboardApp = () => {
           setTtSemesters(sems);
           setTtSelectedSem(semId);
           setCpSelectedSem(semId);
-          setCalSemesters(sems.map(s => ({ id: s.id, name: s.label })));
+          setCalSemesters(sems);
           setCalSelectedSem(semId);
           await loadTimetable(semId);
         }

@@ -313,7 +313,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             >
               <div className="w-10 h-10 md:w-12 md:h-12 relative flex items-center justify-center">
                 {!showProfileMenu && (
-                  <motion.div className="w-10 h-10 md:w-12 md:h-12 absolute inset-0 rounded-full overflow-hidden shrink-0 border-2 border-(--border-main) group-hover:border-(--accent-base) shadow-sm transition-all flex items-center justify-center bg-(--bg-highlight) z-[9999]">
+                  <motion.div className="w-10 h-10 md:w-12 md:h-12 absolute inset-0 rounded-full overflow-hidden shrink-0 border-2 border-(--border-main) group-hover:border-(--accent-base) shadow-sm transition-all flex items-center justify-center bg-(--bg-highlight) z-9999">
                     {user.regNo !== "..." ? (
                       <img
                         src={`/vtop/users/image/?id=${user.regNo}`}

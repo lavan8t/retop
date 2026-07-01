@@ -107,8 +107,8 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
     data.permanentAddress.phone || data.personal.mobile || "Not Provided";
 
   // Strict font enforcement
-  const fontArial = "!font-['Arial',_Helvetica,_sans-serif]";
-  const fontTimes = "!font-['Times_New_Roman',_Times,_serif]";
+  const fontArial = "font-['Arial',Helvetica,sans-serif]!";
+  const fontTimes = "font-['Times_New_Roman',Times,serif]!";
 
   return (
     <div className="group w-full max-w-74 mx-auto aspect-64/100 perspective-[1000px] cursor-pointer shrink-0">

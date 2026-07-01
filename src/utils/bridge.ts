@@ -22,6 +22,17 @@ export function getAppRoot(): HTMLElement | null {
     : null;
 }
 
+export function injectGlobalFonts() {
+  if (!document.getElementById("vtop-remastered-fonts")) {
+    const fontLink = document.createElement("link");
+    fontLink.id = "vtop-remastered-fonts";
+    fontLink.rel = "stylesheet";
+    fontLink.href =
+      "https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,slnt,wdth,wght,GRAD,ROND@6..144,-10..0,25..151,1..1000,100,0..100&family=Anek+Tamil:wdth,wght@125,100..800&display=swap";
+    safeAppend(fontLink);
+  }
+}
+
 export function injectGlobalStyles() {
   if (document.getElementById("vtop-remastered-global-css")) return;
 
@@ -31,14 +42,7 @@ export function injectGlobalStyles() {
   link.href = chrome.runtime.getURL("dist/style.css");
   safeAppend(link);
 
-  if (!document.getElementById("vtop-remastered-fonts")) {
-    const fontLink = document.createElement("link");
-    fontLink.id = "vtop-remastered-fonts";
-    fontLink.rel = "stylesheet";
-    fontLink.href =
-      "https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,GRAD,ROND@6..144,100,100&display=swap&family=Anek+Tamil:wdth,wght@125,100..800&display=swap";
-    safeAppend(fontLink);
-  }
+  injectGlobalFonts();
 }
 
 export function initializeContainer() {
@@ -73,7 +77,7 @@ export function injectSplashScreen() {
   const splash = document.createElement("div");
   splash.id = "vtop-remastered-splash";
 
-  splash.innerHTML = `<div style="color:white; font-family:sans-serif;">Loading VTOP Remastered...</div>`;
+  splash.innerHTML = `<div style="color:white; font-family:sans-serif;">Loading retop...</div>`;
   safeAppend(splash);
 }
 

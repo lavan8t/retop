@@ -50,6 +50,14 @@ export class VTOPNetwork {
     if (!forceRefresh) {
       const cached = getCachedData<string>(userScopedKey);
       if (cached) {
+        // Stale-while-revalidate: return cached but fetch latest in background to update cache
+        fetcher().then(data => {
+          if (data && data.length > 50 && !data.includes("Invalid")) {
+            setCachedData(userScopedKey, data);
+          }
+        }).catch(err => {
+          console.error(`[VTOP Network] Background cache update failed for ${userScopedKey}`, err);
+        });
         return cached;
       }
     }
@@ -282,29 +290,24 @@ export class VTOPNetwork {
     script.remove();
   }
 
+  // Update this method in src/utils/network.ts
   async fetchFragment(
     endpoint: string,
-    cacheKey?: string,
-    extraParams?: Record<string, string>,
+    data?: Record<string, string>, // Add this optional parameter
   ): Promise<string> {
-    const url = `https://vtop.vit.ac.in/vtop/${endpoint}`;
+    const url = endpoint.startsWith("http") ? endpoint : `/vtop/${endpoint}`;
+
     const body = new URLSearchParams();
+    body.append("_csrf", this.csrf);
+    body.append("authorizedID", this.authorizedID);
+    body.append("x", new Date().toUTCString()); // Browser cache-buster
 
-    const domCsrf = document.querySelector(
-      'input[name="_csrf"]',
-    ) as HTMLInputElement;
-    const domAuth = document.querySelector(
-      'input[name="authorizedID"]',
-    ) as HTMLInputElement;
+    // Append custom parameters if they exist
+    if (data) {
+      Object.entries(data).forEach(([key, value]) => body.append(key, value));
+    }
 
-    body.append("_csrf", domCsrf?.value || this.csrf);
-    body.append("authorizedID", domAuth?.value || this.authorizedID);
-    body.append("x", new Date().toUTCString());
-
-    if (extraParams)
-      Object.entries(extraParams).forEach(([k, v]) => body.append(k, v));
-
-    const response = await fetch(url, {
+    const res = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
@@ -312,7 +315,8 @@ export class VTOPNetwork {
       },
       body: body,
     });
-    return await response.text();
+
+    return await res.text();
   }
 
   async getDigitalAssignmentLanding(): Promise<string> {

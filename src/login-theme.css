@@ -1,0 +1,837 @@
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,slnt,wdth,wght,GRAD,ROND@6..144,-10..0,25..151,1..1000,100,0..100&display=swap');
+
+/* Material Brutalist Login Theme */
+:root, [data-theme="dark"] {
+  --accent-base: #3b82f6; /* Fallback, overridden by JS */
+
+  /* Default Professional Dark Theme mapped exactly to input.css */
+  --bg-main: color-mix(in srgb, var(--accent-base) 3%, #09090b);
+  --bg-card: color-mix(in srgb, var(--accent-base) 5%, #18181b);
+  --border-main: color-mix(in srgb, var(--accent-base) 20%, #3f3f46);
+  --text-main: color-mix(in srgb, var(--accent-base) 10%, #f8fafc);
+  --text-muted: color-mix(in srgb, var(--accent-base) 10%, #94a3b8);
+  --shadow-main: color-mix(in srgb, color-mix(in srgb, var(--accent-base) 20%, #52525b) 30%, transparent); /* Lighter shadow for dark theme */
+}
+
+[data-theme="light"] {
+  --accent-base: #3b82f6;
+  --bg-main: color-mix(in srgb, var(--accent-base) 2%, #f8fafc);
+  --bg-card: #ffffff;
+  --border-main: color-mix(in srgb, var(--accent-base) 15%, #e2e8f0);
+  --text-main: color-mix(in srgb, var(--accent-base) 20%, #0f172a);
+  --text-muted: color-mix(in srgb, var(--accent-base) 15%, #475569);
+  --shadow-main: rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="amoled"] {
+  --accent-base: #3b82f6;
+  --bg-main: #000000;
+  --bg-card: #000000;
+  --border-main: color-mix(in srgb, var(--accent-base) 25%, #262626);
+  --text-main: #ffffff;
+  --text-muted: #a3a3a3;
+  --shadow-main: color-mix(in srgb, color-mix(in srgb, var(--accent-base) 20%, #3f3f46) 30%, transparent); /* Lighter shadow for amoled */
+}
+
+/* Force body styling */
+body, body.WhiteBackground, html {
+  background-color: var(--bg-main) !important;
+  color: var(--text-main) !important;
+  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
+  font-variation-settings: "wdth" 100, "wght" 500, "GRAD" 0, "ROND" 0 !important;
+}
+
+/* Transform Top Header to Responsive Sidebar */
+#vtopOpenPageHeader {
+  background: transparent !important;
+  background-image: none !important; /* Remove gradients */
+  box-shadow: none !important;
+  padding: 0 1rem !important;
+  z-index: 1000 !important;
+  user-select: none !important;
+}
+
+#vtopOpenPageHeader .container-fluid {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+  height: 100% !important;
+  transform: translateY(-1.5rem) !important;
+}
+
+/* Sidebar on large screens */
+@media (min-width: 992px) {
+  #vtopOpenPageHeader {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    width: 350px !important;
+    height: 100vh !important;
+    border-right: none !important;
+    border-bottom: none !important;
+  }
+  
+  body {
+    padding-left: 350px !important;
+  }
+  
+  /* Scale up elements heavily for sidebar */
+  #vtopOpenPageHeader .VITEmblem, #vtopOpenPageHeader .VITEmblem svg {
+    width: 360px !important;
+    max-width: 80% !important;
+    height: auto !important;
+    margin-bottom: 0 !important;
+  }
+  
+  #vtopOpenPageHeader .retop-campus-text {
+    width: 360px !important;
+    max-width: 80% !important;
+    font-size: 1.1rem !important;
+    margin-top: 0.5rem !important;
+  }
+}
+
+/* Base Body Layout */
+html, body {
+  min-height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background-color: var(--bg-main) !important;
+}
+
+body {
+  display: flex !important;
+  flex-direction: column !important;
+  overflow-x: hidden !important;
+}
+
+/* Mobile Layout (Default) */
+#vtopOpenPageHeader {
+  width: 100% !important;
+  height: auto !important;
+  position: relative !important;
+  border-bottom: 3px solid var(--border-main) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  padding: 2rem 0 !important;
+  overflow: hidden !important;
+  order: 1 !important;
+}
+
+.container-fluid {
+  width: 100% !important;
+  padding: 2rem 5% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 1 0 auto !important;
+  order: 2 !important;
+  position: relative;
+  z-index: 5;
+  background: transparent !important;
+}
+
+/* Desktop Flex Layout (50/50) */
+@media (min-width: 992px) {
+  body {
+    display: flex !important;
+    flex-direction: row !important;
+    height: 100vh !important;
+    width: 100vw !important;
+  }
+  
+  .container-fluid {
+    flex: 0 0 50% !important;
+    width: 50% !important;
+    height: 100vh !important;
+    padding: 0 10% !important; /* Breathing room but very wide */
+    order: 1 !important; /* Left Side */
+  }
+  
+  #vtopOpenPageHeader {
+    flex: 0 0 50% !important;
+    width: 50% !important;
+    height: 100vh !important;
+    border-bottom: none !important;
+    border-left: none !important; 
+    justify-content: center !important;
+    background: transparent !important; 
+    order: 2 !important; /* Right Side */
+  }
+}
+
+/* Brutally force the native VTOP container to be wide, overriding all framework column rules */
+.container-fluid #loginBox {
+  width: 100% !important;
+  max-width: 100% !important;
+  flex: 0 0 100% !important; /* Overrides col-xl-4 flex constraints */
+  margin: 0 !important; /* Kills mx-auto and mt-5 */
+  padding: 0 !important;
+}
+
+/* Brutally strip ALL native Bootstrap wrappers of any card/box/background looks */
+.container-fluid .card,
+.container-fluid .card-header,
+.container-fluid .card-body {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  width: 100% !important;
+  padding: 0 !important;
+}
+
+/* Ensure Logo and text are correctly sized */
+#vtopOpenPageHeader .VITEmblem, #vtopOpenPageHeader .VITEmblem svg {
+  width: 280px !important;
+  max-width: 80vw !important;
+  height: auto !important;
+  margin-bottom: 0 !important;
+  position: relative;
+  z-index: 10;
+  color: var(--text-main) !important;
+}
+
+#vtopOpenPageHeader .retop-campus-text {
+  width: 280px !important;
+  max-width: 80vw !important;
+  text-align: center !important;
+  font-family: 'Times New Roman', serif !important;
+  font-weight: bold !important;
+  font-size: 0.95rem !important;
+  color: var(--text-main) !important;
+  margin-top: 0.5rem !important;
+  text-transform: uppercase !important;
+  position: relative;
+  z-index: 10;
+  letter-spacing: 0.05em;
+}
+
+/* Base Header Font Styling */
+#vtopOpenPageHeader * {
+  color: var(--text-main) !important;
+}
+
+/* Footer on Right Side */
+#retop-custom-footer {
+  position: absolute !important;
+  bottom: 1rem !important;
+  left: 0 !important;
+  width: 100% !important;
+  text-align: center !important;
+  color: var(--text-muted) !important;
+  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
+  font-size: 0.75rem !important;
+  z-index: 10;
+}
+
+/* ASCII Animation */
+#retop-ascii-anim {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto; /* interactive */
+  font-family: monospace !important;
+  font-size: 14px !important;
+  line-height: 14px !important;
+  color: var(--accent-base) !important;
+  opacity: 0.25;
+  overflow: hidden;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  white-space: pre;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Hide card styling to make it fully compact */
+#loginBox, .card, .bg-white, .bg-light, .pageBody, .wrapper, .container-fluid {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--text-main) !important;
+}
+
+#loginBox {
+  padding: 0 1rem !important;
+  margin-top: 2rem !important;
+  margin-bottom: 2rem !important;
+}
+
+#loginBox:hover, .card:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.card-header.loginBoxBorder {
+  border: none !important; /* Removes both bottom AND the native top blue border */
+  background: transparent !important;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  text-align: left !important;
+}
+
+.card-header h4 {
+  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
+  font-variation-settings: "wdth" 151, "wght" 800, "GRAD" 100, "ROND" 100, "slnt" -10 !important;
+  text-transform: lowercase !important;
+  letter-spacing: -0.05em;
+  transition: font-variation-settings 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  font-size: 2.5rem;
+  color: var(--text-main) !important;
+  margin: 0;
+  margin-bottom: 0.25rem !important;
+  text-align: left !important;
+  user-select: none !important;
+  display: inline-block !important; /* Prevent spanning full width */
+}
+
+.card-header h4:hover {
+  font-variation-settings: "wdth" 151, "wght" 1, "GRAD" 100, "ROND" 100, "slnt" -10 !important;
+}
+
+#retop-welcome-text {
+  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
+  color: var(--text-muted) !important;
+  font-size: 1.05rem !important;
+  margin: 0 !important;
+  text-align: left !important;
+  font-variation-settings: "wght" 500 !important;
+}
+
+/* Input Group Container */
+.input-group:has(#username) {
+  margin-top: 1.5rem !important;
+}
+
+#username {
+  text-transform: uppercase !important;
+}
+
+.input-group {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  flex-wrap: nowrap !important;
+  margin-bottom: 1rem !important;
+  position: relative !important;
+}
+
+/* Icons Wrappers (Username & Eye) */
+.input-group-text, .btn-light {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  color: var(--text-muted) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Completely hide Username Icon & Lock Icon */
+#basic-addon1, #retop-lock-icon {
+  display: none !important;
+}
+
+/* Input Styling */
+.form-control {
+  background-color: var(--bg-main) !important;
+  border: 3px solid var(--border-main) !important;
+  color: var(--text-main) !important;
+  border-radius: 0.75rem !important;
+  font-size: 1.1rem !important;
+  padding: 0.75rem 1rem !important;
+  height: 48px !important;
+  transition: all 0.2s;
+  flex: 1 1 auto;
+}
+
+/* Floating Label Animation */
+.retop-floating-label {
+  position: absolute;
+  left: 1rem; /* Icons removed, align with text */
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--bg-main);
+  padding: 0 0.5rem;
+  color: var(--text-muted) !important;
+  pointer-events: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 1.1rem;
+  z-index: 10;
+  border-radius: 0.25rem;
+  margin: 0 !important;
+}
+
+.form-control:focus ~ .retop-floating-label,
+.form-control:not(:placeholder-shown) ~ .retop-floating-label {
+  top: 0;
+  left: 0.5rem;
+  transform: translateY(-50%) scale(0.85);
+  color: var(--accent-base) !important;
+  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
+  font-variation-settings: "wght" 800, "wdth" 125 !important;
+}
+
+.input-group-text svg, .btn-light svg {
+  width: 24px !important;
+  height: 24px !important;
+  color: var(--text-muted) !important;
+  transition: color 0.2s, transform 0.2s;
+}
+
+.btn-light:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.btn-light:active {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.btn-light:hover svg {
+  transform: scale(1.1);
+}
+
+.form-control:focus {
+  border-color: var(--accent-base) !important;
+  box-shadow: 4px 4px 0px 0px var(--shadow-main) !important;
+  transform: translate(-1px, -1px);
+  outline: none !important;
+}
+
+/* Color icon when input is focused */
+.form-control:focus ~ .input-group-text svg,
+.form-control:focus ~ .btn-light svg,
+.input-group-text:has(~ .form-control:focus) svg {
+  color: var(--accent-base) !important;
+}
+
+/* Eye Toggle Logic - Animated Stroke */
+#passwordIcon .retop-eye-strike {
+  stroke-dasharray: 29; /* length of the diagonal strike line */
+  stroke-dashoffset: 29; /* default hidden (not struck) */
+  transition: stroke-dashoffset 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* VTOP uses fa-eye when password is hidden, so show the strike */
+#passwordIcon.fa-eye .retop-eye-strike {
+  stroke-dashoffset: 0; 
+}
+
+/* fa-eye-slash is used when password is visible, so hide the strike */
+#passwordIcon.fa-eye-slash .retop-eye-strike {
+  stroke-dashoffset: 29; 
+}
+
+/* Toast Popup - Brutalist Snackbar */
+.retop-error-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 25vw;
+  transform: translateX(-50%);
+  background: #ffcccc;
+  color: #dc3545;
+  border: 2px solid #dc3545;
+  box-shadow: 3px 3px 0px #dc3545;
+  padding: 12px 20px;
+  border-radius: 6px;
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  animation: slideUpCenter 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+[data-theme="dark"] .retop-error-toast {
+  background: #3f1a1a;
+  color: #ffb3b3;
+  border: 2px solid #ffb3b3;
+  box-shadow: 3px 3px 0px #ffb3b3;
+}
+
+/* Yellow warning toast for Captcha */
+.retop-error-toast.retop-warning-toast {
+  background: #fff3cd;
+  color: #856404;
+  border: 2px solid #856404;
+  box-shadow: 3px 3px 0px #856404;
+}
+
+[data-theme="dark"] .retop-error-toast.retop-warning-toast {
+  background: #332701;
+  color: #ffda6a;
+  border: 2px solid #ffda6a;
+  box-shadow: 3px 3px 0px #ffda6a;
+}
+
+@keyframes slideUpCenter {
+  from {
+    bottom: -100px;
+    opacity: 0;
+  }
+  to {
+    bottom: 24px;
+    opacity: 1;
+  }
+}
+
+@keyframes slideDownCenter {
+  from {
+    bottom: 24px;
+    opacity: 1;
+  }
+  to {
+    bottom: -100px;
+    opacity: 0;
+  }
+}
+
+/* Buttons */
+.btn-primary,
+.btn-success {
+  background-color: var(--accent-base) !important;
+  border: none !important;
+  color: white !important;
+  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
+  font-variation-settings: "wdth" 151, "wght" 800, "GRAD" 100, "ROND" 100 !important;
+  text-transform: uppercase;
+  border-radius: 0.75rem !important;
+  box-shadow: none !important;
+  padding: 0.5rem 1.5rem !important;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+  transition: all 0.15s ease-out;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.btn-primary:hover,
+.btn-success:hover {
+  transform: translateY(-2px);
+  box-shadow: 3px 3px 0px 0px var(--shadow-main) !important;
+}
+
+.btn-primary:active,
+.btn-success:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px 0px var(--shadow-main) !important;
+}
+
+/* Links at the bottom */
+.card-footer {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-top: 1rem !important;
+  padding: 1rem 0.5rem 0 !important;
+  background: transparent !important;
+}
+
+.card-footer .text-end {
+  margin: 0 !important;
+  flex-shrink: 0 !important;
+}
+
+.retop-forgot-links {
+  color: var(--text-muted) !important;
+  font-size: 0.95rem !important;
+  font-variation-settings: "wght" 500 !important;
+}
+
+.retop-forgot-links a {
+  color: var(--text-main) !important;
+  text-transform: none !important;
+  font-size: 0.95rem !important;
+  font-variation-settings: "wght" 600 !important;
+  letter-spacing: normal !important;
+  display: inline !important;
+  margin: 0 !important;
+  text-decoration: underline !important;
+  text-underline-offset: 4px !important;
+  text-decoration-color: var(--border-main) !important;
+  transition: all 0.2s !important;
+}
+
+.retop-forgot-links a:hover {
+  text-decoration-color: var(--text-main) !important;
+}
+
+.card-footer .text-success {
+  color: var(--text-muted) !important;
+  font-style: normal !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s !important;
+}
+
+.card-footer .text-success:hover {
+  color: var(--text-main) !important;
+  transform: scale(1.1);
+  box-shadow: none !important;
+  text-decoration: none !important;
+}
+
+/* CAPTCHA Layout - Ultra Compact Restructure */
+#retop-captcha-container {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.75rem !important;
+  margin-bottom: 1.5rem !important;
+  margin-top: 1rem !important;
+  width: 100% !important;
+}
+
+/* Captcha Input */
+#retop-captcha-container #captchaStr {
+  width: 140px !important;
+  flex: 0 0 auto !important;
+  height: 48px !important;
+  font-size: 1.25rem !important;
+  text-align: center !important;
+  letter-spacing: 0.2em !important;
+  font-variation-settings: "wght" 800 !important;
+  border-radius: 0.75rem !important;
+  margin: 0 !important;
+  text-transform: uppercase !important;
+  box-shadow: var(--shadow-main) !important;
+}
+
+#retop-captcha-container #captchaStr::placeholder {
+  color: transparent !important;
+}
+
+/* Captcha Block Wrapper */
+#captchaBlock {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  margin-bottom: 0 !important;
+  flex-shrink: 0;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Captcha Image ONLY */
+#captchaBlock > img {
+  height: 48px !important;
+  width: auto !important; /* NEVER change aspect ratio */
+  object-fit: contain !important;
+  border: none !important;
+  border-radius: 0.25rem !important;
+  box-shadow: none !important;
+  background-color: white !important; /* When inverted, becomes black background */
+  /* Default is Dark/AMOLED, so invert */
+  filter: invert(1) hue-rotate(180deg) contrast(1.2) !important;
+  margin: 0 -30px 0 0 !important; /* Overlap reload button into the image's blank right space */
+  padding: 0 !important;
+  mix-blend-mode: screen !important;
+}
+
+/* Revert inversion in Light Mode */
+[data-theme="light"] #captchaBlock > img {
+  filter: none !important;
+  mix-blend-mode: multiply !important;
+}
+
+/* Captcha Reload Button */
+.retop-reload-btn, #button-addon2 {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: auto !important;
+  width: auto !important;
+  padding: 0 !important;
+  margin: 0 0 0 0.5rem !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  color: var(--text-muted) !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+  transition: all 0.2s !important;
+  text-decoration: none !important;
+  flex-shrink: 0 !important;
+  outline: none !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  border-radius: 0 !important;
+}
+
+.retop-reload-btn i, .retop-reload-btn img,
+#button-addon2 i, #button-addon2 img {
+  font-size: 1.5rem !important;
+  height: 24px !important;
+  width: auto !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Invert image icon for dark mode so it's visible */
+.retop-reload-btn img, #button-addon2 img {
+  filter: invert(1) !important;
+}
+[data-theme="light"] .retop-reload-btn img,
+[data-theme="light"] #button-addon2 img {
+  filter: none !important;
+}
+
+/* Unified Icon Hover Effects */
+#passwordIcon,
+.retop-reload-btn, #button-addon2,
+.retop-home-icon {
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+}
+
+#passwordIcon:hover,
+.retop-reload-btn:hover, #button-addon2:hover,
+.retop-home-icon:hover {
+  transform: translateY(-2px) scale(1.1) !important;
+  color: var(--accent-base) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#passwordIcon:active,
+.retop-reload-btn:active, #button-addon2:active,
+.retop-home-icon:active {
+  transform: translateY(0px) scale(0.95) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Fix modal timeouts */
+.modal-content {
+  background-color: var(--bg-card) !important;
+  border: 3px solid var(--border-main) !important;
+  border-radius: 1rem !important;
+  box-shadow: 6px 6px 0px 0px var(--shadow-main) !important;
+}
+.modal-header, .modal-footer {
+  border-color: var(--border-main) !important;
+}
+.modal-title {
+  color: var(--text-main) !important;
+  font-variation-settings: "wdth" 151, "wght" 800 !important;
+}
+
+/* Global VTOP Loader Replacement (Brutalist Spinner) */
+img[src*="loader" i],
+img[src*="ajax" i],
+img[src*="loading" i],
+img[src*="spinner" i],
+#processLoader img {
+  content: "" !important; /* Hides the native GIF in WebKit */
+  display: inline-block !important;
+  width: 32px !important;
+  height: 32px !important;
+  background-color: var(--accent-base) !important;
+  animation: retop-flip 1.2s infinite ease-in-out !important;
+  border: 2px solid var(--text-main) !important;
+  box-shadow: 3px 3px 0px var(--shadow-main) !important;
+  padding: 0 !important;
+  border-radius: 4px !important;
+}
+
+#processLoader {
+  background-color: color-mix(in srgb, var(--bg-main) 60%, transparent) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+@keyframes retop-flip {
+  0% { transform: perspective(120px) rotateX(0deg) rotateY(0deg); }
+  50% { transform: perspective(120px) rotateX(-180.1deg) rotateY(0deg); }
+  100% { transform: perspective(120px) rotateX(-180deg) rotateY(-179.9deg); }
+}
+
+/* Footer and ASCII Art Wrapper */
+#retop-right-footer-wrapper {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-end;
+  pointer-events: none; /* Let clicks pass through */
+  z-index: 1;
+}
+#retop-right-footer-wrapper > * {
+  pointer-events: auto; /* Enable clicks on actual footer text if needed */
+}
+
+#retop-ascii-art {
+  --ascii-opacity: 0.4;
+  --ascii-color: var(--text-muted);
+  
+  font-family: monospace !important;
+  font-size: 7px !important;
+  line-height: 1 !important;
+  color: var(--ascii-color) !important;
+  pointer-events: none !important;
+  white-space: pre;
+  margin: 0;
+  margin-right: -15vw;
+  padding: 0;
+  text-align: right;
+  opacity: var(--ascii-opacity);
+}
+
+[data-theme="dark"] #retop-ascii-art,
+[data-theme="amoled"] #retop-ascii-art {
+  --ascii-opacity: 0.35;
+  --ascii-color: #ffffff; /* Explicitly light color as requested */
+}
+
+[data-theme="light"] #retop-ascii-art {
+  --ascii-opacity: 0.15;
+  --ascii-color: #000000;
+}
+
+@keyframes retop-ascii-rise {
+  0% {
+    transform: translateY(100vh);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* Home Icon */
+.retop-home-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  color: var(--text-muted) !important;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+}
+
+/* Hover effect moved to unified block above */

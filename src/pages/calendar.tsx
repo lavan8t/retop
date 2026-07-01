@@ -140,37 +140,37 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
   }, [activeMonthIdx, availableMonths, selectedSem, selectedGroup, network]);
 
   return (
-    <div className="h-full flex flex-col bg-[var(--bg-main)] font-mono text-[var(--text-main)] overflow-hidden p-4 md:p-8">
+    <div className="h-full flex flex-col bg-(--bg-main) font-mono text-(--text-main) overflow-hidden p-4 md:p-8">
       {loadingInitial ? (
-        <div className="flex-1 flex flex-col items-center justify-center animate-pulse border-4 border-dashed border-[var(--border-main)] rounded-4xl">
-          <Loader2 className="w-16 h-16 mb-6 animate-spin text-[var(--accent-base)]" />
-          <span className="text-xl font-black uppercase font-expanded tracking-widest text-[var(--text-muted)]">
+        <div className="flex-1 flex flex-col items-center justify-center animate-pulse border-4 border-dashed border-(--border-main) rounded-4xl">
+          <Loader2 className="w-16 h-16 mb-6 animate-spin text-(--accent-base)" />
+          <span className="text-xl font-black uppercase font-expanded tracking-widest text-(--text-muted)">
             Syncing Calendar...
           </span>
         </div>
       ) : availableMonths.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center border-4 border-dashed border-[var(--border-main)] rounded-4xl">
-          <CalendarIcon className="w-20 h-20 mb-6 text-[var(--text-muted)]" />
-          <span className="text-2xl font-black uppercase font-expanded text-[var(--text-main)]">
+        <div className="flex-1 flex flex-col items-center justify-center border-4 border-dashed border-(--border-main) rounded-4xl">
+          <CalendarIcon className="w-20 h-20 mb-6 text-(--text-muted)" />
+          <span className="text-2xl font-black uppercase font-expanded text-(--text-main)">
             Select a Semester
           </span>
-          <p className="mt-2 text-[var(--text-muted)] font-bold text-sm">
+          <p className="mt-2 text-(--text-muted) font-bold text-sm">
             Use the top navigation bar to load data.
           </p>
         </div>
       ) : (
         <div className="flex-1 flex flex-col min-h-0 max-w-7xl mx-auto w-full">
           {/* Brutalist Controller Header */}
-          <div className="flex flex-col md:flex-row items-center justify-between bg-[var(--bg-card)] border-4 border-[var(--border-main)] rounded-t-3xl p-4 gap-4 shrink-0 shadow-none z-20 relative">
+          <div className="flex flex-col md:flex-row items-center justify-between bg-(--bg-card) border-4 border-(--border-main) rounded-t-3xl p-4 gap-4 shrink-0 shadow-none z-20 relative">
             {/* Group Selector */}
             <div className="w-full md:w-auto flex flex-col">
-              <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1 pl-1">
+              <label className="text-[10px] font-black uppercase tracking-widest text-(--text-muted) mb-1 pl-1">
                 Class Group
               </label>
               <select
                 value={selectedGroup}
                 onChange={(e) => setSelectedGroup(e.target.value)}
-                className="w-full md:w-48 appearance-none bg-[var(--bg-main)] border-4 border-[var(--border-main)] text-[var(--text-main)] text-sm font-bold p-2.5 rounded-xl outline-none focus:border-[var(--accent-base)] transition-colors cursor-pointer shadow-none"
+                className="w-full md:w-48 appearance-none bg-(--bg-main) border-4 border-(--border-main) text-(--text-main) text-sm font-bold p-2.5 rounded-xl outline-none focus:border-(--accent-base) transition-colors cursor-pointer shadow-none"
               >
                 {classGroups.map((group) => (
                   <option key={group.id} value={group.id}>
@@ -185,7 +185,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
               <button
                 onClick={() => setActiveMonthIdx((p) => Math.max(0, p - 1))}
                 disabled={activeMonthIdx === 0}
-                className="group p-3 border-4 border-(--border-main) rounded-xl bg-(--bg-main) hover:bg-(--accent-base) hover:text-[var(--text-inverse)] transition-all disabled:opacity-30 disabled:pointer-events-none active:translate-y-1 shadow-none hover:shadow-none"
+                className="group p-3 border-4 border-(--border-main) rounded-xl bg-(--bg-main) hover:bg-(--accent-base) hover:text-(--text-inverse) transition-all disabled:opacity-30 disabled:pointer-events-none active:translate-y-1 shadow-none hover:shadow-none"
               >
                 <ChevronLeft className="w-6 h-6 stroke-[3px]" />
               </button>
@@ -197,13 +197,13 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
                 <div className="flex items-center gap-4 mt-1">
                   <div className="flex items-center gap-1.5">
                     <div className="w-3 h-3 bg-red-500 border-2 border-(--border-main) rounded-sm shadow-sm"></div>
-                    <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
+                    <span className="text-[10px] font-bold text-(--text-muted) uppercase tracking-wider">
                       Holiday
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-3 h-3 bg-yellow-400 border-2 border-(--border-main) rounded-sm shadow-sm"></div>
-                    <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
+                    <span className="text-[10px] font-bold text-(--text-muted) uppercase tracking-wider">
                       Exam
                     </span>
                   </div>
@@ -217,7 +217,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
                   )
                 }
                 disabled={activeMonthIdx === availableMonths.length - 1}
-                className="group p-3 border-4 border-[var(--border-main)] rounded-xl bg-[var(--bg-main)] hover:bg-[var(--accent-base)] hover:text-[var(--text-inverse)] transition-all disabled:opacity-30 disabled:pointer-events-none active:translate-y-1 shadow-none hover:shadow-none"
+                className="group p-3 border-4 border-(--border-main) rounded-xl bg-(--bg-main) hover:bg-(--accent-base) hover:text-(--text-inverse) transition-all disabled:opacity-30 disabled:pointer-events-none active:translate-y-1 shadow-none hover:shadow-none"
               >
                 <ChevronRight className="w-6 h-6 stroke-[3px]" />
               </button>
@@ -225,23 +225,21 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
           </div>
 
           {/* Grid Container */}
-          <div className="flex-1 flex flex-col bg-[var(--bg-card)] border-x-4 border-b-4 border-[var(--border-main)] rounded-b-3xl shadow-none overflow-hidden relative z-10">
-            <div className="grid grid-cols-7 border-b-4 border-[var(--border-main)] bg-[var(--bg-main)] shrink-0">
+          <div className="flex-1 flex flex-col bg-(--bg-card) border-x-4 border-b-4 border-(--border-main) rounded-b-3xl shadow-none overflow-hidden relative z-10">
+            <div className="grid grid-cols-7 border-b-4 border-(--border-main) bg-(--bg-main) shrink-0">
               {WEEKDAYS.map((day, i) => (
                 <div
                   key={day}
                   className={`py-3 text-center font-expanded font-black text-xs md:text-sm uppercase tracking-widest ${
-                    i === 0 || i === 6
-                      ? "text-red-500"
-                      : "text-[var(--text-muted)]"
-                  } border-r-4 border-[var(--border-main)] last:border-r-0`}
+                    i === 0 || i === 6 ? "text-red-500" : "text-(--text-muted)"
+                  } border-r-4 border-(--border-main) last:border-r-0`}
                 >
                   {day}
                 </div>
               ))}
             </div>
 
-            <div className="flex-1 overflow-y-auto custom-scrollbar bg-[var(--bg-main)] relative">
+            <div className="flex-1 overflow-y-auto custom-scrollbar bg-(--bg-main) relative">
               <AnimatePresence mode="wait">
                 {loadingGrid ? (
                   <motion.div
@@ -249,9 +247,9 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="absolute inset-0 flex items-center justify-center bg-[var(--bg-main)]/80 backdrop-blur-sm z-30"
+                    className="absolute inset-0 flex items-center justify-center bg-(--bg-main)/80 backdrop-blur-sm z-30"
                   >
-                    <Loader2 className="w-12 h-12 animate-spin text-[var(--accent-base)]" />
+                    <Loader2 className="w-12 h-12 animate-spin text-(--accent-base)" />
                   </motion.div>
                 ) : gridData ? (
                   <motion.div
@@ -266,7 +264,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
                       (_, i) => (
                         <div
                           key={`empty-${i}`}
-                          className="border-r-4 border-b-4 border-[var(--border-main)]/50 bg-[var(--bg-main)] opacity-40 pointer-events-none"
+                          className="border-r-4 border-b-4 border-(--border-main)/50 bg-(--bg-main) opacity-40 pointer-events-none"
                         />
                       ),
                     )}
@@ -276,15 +274,14 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
                         new Date().toDateString() ===
                         day.dateObj.toDateString();
 
-                      let bgClass =
-                        "bg-[var(--bg-card)] hover:bg-[var(--bg-main)]";
-                      let borderClass = "border-[var(--border-main)]";
-                      let textClass = "text-[var(--text-muted)]";
-                      let numberClass = "text-[var(--text-main)]";
+                      let bgClass = "bg-(--bg-card) hover:bg-(--bg-main)";
+                      let borderClass = "border-(--border-main)";
+                      let textClass = "text-(--text-muted)";
+                      let numberClass = "text-(--text-main)";
                       let accentBar = "";
 
                       if (day.isInstructional) {
-                        textClass = "text-[var(--text-main)]";
+                        textClass = "text-(--text-main)";
                       }
                       if (day.isHoliday) {
                         bgClass = "bg-red-500 text-black hover:bg-red-400";
@@ -301,17 +298,17 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
                         accentBar = "bg-yellow-900/20";
                       } else if (isToday) {
                         bgClass =
-                          "bg-[var(--accent-base)] text-[var(--text-inverse)] hover:brightness-110";
-                        borderClass = "border-[var(--border-main)]";
-                        textClass = "text-[var(--text-inverse)]/90";
-                        numberClass = "text-[var(--text-inverse)]";
+                          "bg-(--accent-base) text-(--text-inverse) hover:brightness-110";
+                        borderClass = "border-(--border-main)";
+                        textClass = "text-(--text-inverse)/90";
+                        numberClass = "text-(--text-inverse)";
                         accentBar = "bg-black/20";
                       }
 
                       return (
                         <div
                           key={idx}
-                          className={`min-h-[120px] md:min-h-[160px] p-2 md:p-3 border-r-4 border-b-4 transition-all duration-200 flex flex-col group relative overflow-hidden ${bgClass} ${borderClass}`}
+                          className={`min-h-30 md:min-h-40 p-2 md:p-3 border-r-4 border-b-4 transition-all duration-200 flex flex-col group relative overflow-hidden ${bgClass} ${borderClass}`}
                         >
                           {accentBar && (
                             <div
@@ -347,7 +344,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
                                   className={`inline-flex items-center gap-1 text-[9px] md:text-[10px] font-black px-1.5 py-0.5 rounded-md uppercase w-fit truncate ${
                                     day.isHoliday || day.isExam || isToday
                                       ? "bg-black/10 text-black"
-                                      : "bg-[var(--bg-main)] border border-[var(--border-main)] text-[var(--text-muted)]"
+                                      : "bg-(--bg-main) border border-(--border-main) text-(--text-muted)"
                                   }`}
                                 >
                                   <Info className="w-3 h-3 shrink-0" />
@@ -370,7 +367,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
                     }).map((_, i) => (
                       <div
                         key={`fill-${i}`}
-                        className="border-r-4 border-b-4 border-[var(--border-main)]/50 bg-[var(--bg-main)] opacity-40 pointer-events-none"
+                        className="border-r-4 border-b-4 border-(--border-main)/50 bg-(--bg-main) opacity-40 pointer-events-none"
                       />
                     ))}
                   </motion.div>

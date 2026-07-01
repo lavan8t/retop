@@ -71,7 +71,7 @@ interface HomeViewProps {
   onNavigate: (link: QuickLink) => void;
   ttCourses: TimetableCourse[]; // Added to pass full timetable
   use24HourTime?: boolean;
-  calSemesters?: { id: string; name: string }[];
+  calSemesters?: { id: string; label: string }[];
   calSelectedSem?: string;
 }
 
@@ -278,7 +278,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       base = `${startM} - ${endM}`;
     }
 
-    const semName = calSemesters.find(s => s.id === calSelectedSem)?.name || "";
+    const semName = calSemesters.find(s => s.id === calSelectedSem)?.label || "";
     return { text: base, semName };
   }, [calendarDays, calSemesters, calSelectedSem]);
 
@@ -665,7 +665,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
         {/* Surface level list (no card wrapper) */}
         <div 
-          className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-4 pr-3 pb-32 pt-[150px] -mt-[120px] -mb-12 relative z-0 pointer-events-auto"
+          className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-4 pr-3 pb-32 pt-[150px] mt-[-120px] -mb-12 relative z-0 pointer-events-auto"
           style={{ maskImage: "linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)" }}
         >
           {calendarDays.map((d, dIdx) => {
@@ -728,7 +728,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 {/* Events list on the right */}
                 <div className="flex flex-col gap-3 flex-1 min-w-0 pb-4 border-l-2 border-(--border-dim) pl-4">
                   {doneEvents.map((evt, i) => (
-                    <div key={`done-${i}`} className="opacity-50 grayscale-[50%] pointer-events-none transition-all">
+                    <div key={`done-${i}`} className="opacity-50 grayscale-50 pointer-events-none transition-all">
                       {evt.type === 'class' ? 
                         <ScheduleRow 
                            item={evt.data as UpcomingClass} 
@@ -744,7 +744,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     <div ref={nowRef} className="flex items-center gap-2 my-1 relative -ml-6 scroll-mt-32">
                       <div className="w-4 h-px bg-(--accent-base)"></div>
                       <div className="w-1.5 h-1.5 rounded-full bg-(--accent-base) shrink-0"></div>
-                      <div className="h-px flex-1 bg-gradient-to-r from-(--accent-base) to-transparent opacity-50"></div>
+                      <div className="h-px flex-1 bg-linear-to-r from-(--accent-base) to-transparent opacity-50"></div>
                       <span className="text-[8px] font-expanded font-black text-(--accent-base) uppercase absolute left-8 -top-3.5 bg-(--bg-main) px-1">Now</span>
                     </div>
                   )}
@@ -752,7 +752,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     <div ref={nowRef} className="flex items-center gap-2 mb-1 relative -ml-6 scroll-mt-32">
                       <div className="w-4 h-px bg-(--accent-base)"></div>
                       <div className="w-1.5 h-1.5 rounded-full bg-(--accent-base) shrink-0"></div>
-                      <div className="h-px flex-1 bg-gradient-to-r from-(--accent-base) to-transparent opacity-50"></div>
+                      <div className="h-px flex-1 bg-linear-to-r from-(--accent-base) to-transparent opacity-50"></div>
                       <span className="text-[8px] font-expanded font-black text-(--accent-base) uppercase absolute left-8 -top-3.5 bg-(--bg-main) px-1">Now</span>
                     </div>
                   )}

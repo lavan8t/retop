@@ -98,12 +98,12 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
       initial="hidden"
       animate="visible"
       exit="exit"
-      className="absolute right-2 top-2 md:right-4 md:top-4 w-64 bg-(--bg-surface) border-4 border-(--border-main) rounded-4xl shadow-[4px_4px_0px_0px_var(--border-main)] z-[9999] overflow-hidden origin-top-right flex flex-col will-change-transform transform-gpu"
+      className="absolute right-2 top-2 md:right-4 md:top-4 w-64 bg-(--bg-surface) border-4 border-(--border-main) rounded-4xl shadow-[4px_4px_0px_0px_var(--border-main)] z-9999 overflow-hidden origin-top-right flex flex-col will-change-transform transform-gpu"
     >
       <div className="overflow-y-auto custom-scrollbar p-2 flex-1">
         {/* Profile Header */}
         <div className="flex flex-col items-center justify-center p-4 mb-2 border-b-2 border-(--border-dim) overflow-hidden w-full">
-          <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-(--border-main) shadow-sm transition-all mb-3 cursor-default bg-(--bg-highlight) shrink-0 z-[9999]">
+          <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-(--border-main) shadow-sm transition-all mb-3 cursor-default bg-(--bg-highlight) shrink-0 z-9999">
             {userRegNo !== "..." && userRegNo ? (
               <img
                 src={`/vtop/users/image/?id=${userRegNo}`}

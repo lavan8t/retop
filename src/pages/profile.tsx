@@ -22,41 +22,41 @@ interface ProfilePageProps {
 }
 
 const InfoRow = ({ label, value }: { label: string; value: string }) => (
-  <div className="flex flex-col border-b-2 border-black/10 py-1.5 last:border-0 hover:bg-black/5 px-2 -mx-2 rounded transition-colors overflow-hidden">
-    <span className="text-[10px] font-black uppercase tracking-widest text-black/60 mb-0.5 truncate">
+  <div className="flex flex-col border-b-2 border-(--border-main)/10 py-1.5 last:border-0 hover:bg-(--bg-highlight) px-2 -mx-2 rounded transition-colors overflow-hidden">
+    <span className="text-[10px] font-black uppercase  text-(--text-muted) mb-0.5 truncate">
       {label}
     </span>
-    <span className="text-sm font-bold font-mono text-black whitespace-normal wrap-break-word leading-tight">
+    <span className="text-sm font-bold font-mono text-(--text-main) whitespace-normal wrap-break-word leading-tight">
       {value && value !== "-" ? (
         value
       ) : (
-        <span className="text-black/30">-</span>
+        <span className="text-(--text-dim)">-</span>
       )}
     </span>
   </div>
 );
 
 const AddressCard = ({ title, data }: { title: string; data: any }) => (
-  <div className="bg-white/50 p-3 rounded-xl border-2 border-black h-full flex flex-col justify-center min-w-0">
-    <h4 className="text-[10px] font-black uppercase tracking-widest text-black/70 mb-2 flex items-center gap-2 border-b-2 border-black/20 pb-1.5 shrink-0">
+  <div className="bg-(--bg-highlight) p-3 rounded-xl border-2 border-(--border-main) h-full flex flex-col justify-center min-w-0">
+    <h4 className="text-[10px] font-black uppercase  text-(--text-muted) mb-2 flex items-center gap-2 border-b-2 border-(--border-main)/20 pb-1.5 shrink-0">
       <MapPin className="w-3 h-3" /> {title}
     </h4>
     <div className="space-y-1 overflow-hidden">
-      <div className="text-sm font-black text-black leading-tight wrap-break-word">
+      <div className="text-sm font-black text-(--text-main) leading-tight wrap-break-word">
         {data.street}
       </div>
-      <div className="text-[10px] font-mono text-black/70 truncate">
+      <div className="text-[10px] font-mono text-(--text-muted) truncate">
         {data.area}
       </div>
-      <div className="text-[10px] font-mono text-black/70 truncate">
+      <div className="text-[10px] font-mono text-(--text-muted) truncate">
         {data.city}, {data.state}
       </div>
-      <div className="text-[10px] font-mono text-black/70 truncate">
+      <div className="text-[10px] font-mono text-(--text-muted) truncate">
         {data.country} -{" "}
-        <span className="text-black font-bold">{data.pincode}</span>
+        <span className="text-(--text-main) font-bold">{data.pincode}</span>
       </div>
       {data.phone && (
-        <div className="text-[10px] font-bold flex items-center gap-2 mt-2 text-black pt-2 border-t border-black/20 shrink-0">
+        <div className="text-[10px] font-bold flex items-center gap-2 mt-2 text-(--text-main) pt-2 border-t border-(--border-main)/20 shrink-0">
           <Smartphone className="w-3 h-3" /> {data.phone}
         </div>
       )}
@@ -70,20 +70,20 @@ const BentoCard = ({
   children,
   delay,
   colSpan = "md:col-span-1",
-  className = "bg-white",
+  className = "bg-(--bg-surface)",
 }: any) => (
   <motion.div
     initial={{ y: 20, opacity: 0 }}
     animate={{ y: 0, opacity: 1 }}
     transition={{ delay }}
-    className={`border-4 border-black text-black rounded-3xl p-5 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-all flex flex-col min-w-0 ${colSpan} ${className}`}
+    className={`border-4 border-(--border-main) text-(--text-main) rounded-3xl p-5 shadow-none hover:shadow-[4px_4px_0px_0px_var(--shadow-main)] hover:-translate-y-1 transition-all flex flex-col min-w-0 ${colSpan} ${className}`}
   >
     {title && (
-      <div className="flex items-center gap-3 mb-3 pb-2 border-b-4 border-black shrink-0">
-        <div className="p-1.5 bg-black text-white rounded-lg shadow-sm">
+      <div className="flex items-center gap-3 mb-3 pb-2 border-b-4 border-(--border-main) shrink-0">
+        <div className="p-1.5 bg-(--text-main) text-(--bg-main) rounded-lg shadow-sm">
           <Icon className="w-4 h-4" />
         </div>
-        <h3 className="font-expanded font-black text-lg uppercase tracking-tight truncate">
+        <h3 className="font-expanded font-black text-lg uppercase  truncate">
           {title}
         </h3>
       </div>
@@ -113,10 +113,10 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
   return (
     <div className="group w-full max-w-74 mx-auto aspect-64/100 perspective-[1000px] cursor-pointer shrink-0">
       {/* Container for 3D flip */}
-      <div className="relative w-full h-full transition-transform duration-700 transform-3d group-hover:transform-[rotateY(180deg)] shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] rounded-2xl">
+      <div className="relative w-full h-full transition-transform duration-700 transform-3d group-hover:transform-[rotateY(180deg)] shadow-none rounded-2xl">
         {/* FRONT SIDE */}
         <div
-          className={`absolute inset-0 backface-hidden bg-white rounded-2xl border-2 border-zinc-400 flex flex-col overflow-hidden text-black ${fontArial}`}
+          className={`absolute inset-0 backface-hidden bg-(--bg-surface) rounded-2xl border-2 border-zinc-400 flex flex-col overflow-hidden text-(--text-main) ${fontArial}`}
         >
           {/* Header: Reduced pt-5 to pt-3, removed bottom margins */}
           <div className="flex flex-col items-center pt-3 px-3 shrink-0">
@@ -147,12 +147,12 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
 
           <div className={`flex flex-col items-center shrink-0 pb-1`}>
             <div
-              className={`font-bold text-[25px] ${fontArial} text-[#181d79] tracking-tight leading-none text-center px-2`}
+              className={`font-bold text-[25px] ${fontArial} text-[#181d79]  leading-none text-center px-2`}
             >
               {toTitleCase(data.basic.name)}
             </div>
             <div
-              className={`font-bold text-[18px] ${fontArial} text-black mt-4`}
+              className={`font-bold text-[18px] ${fontArial} text-(--text-main) mt-4`}
             >
               {data.basic.regNo}
             </div>
@@ -160,7 +160,7 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
 
           {/* Footer Banner: Reduced py-2.5 to py-1.5 */}
           <div
-            className={`text-[#ffffff] text-center py-1 font-bold text-[22px] tracking-wide shrink-0 ${fontArial}`}
+            className={`text-[#ffffff] text-center py-1 font-bold text-[22px]  shrink-0 ${fontArial}`}
             style={{
               backgroundColor: isHosteller ? "#181d79" : "#C41E3A",
             }}
@@ -170,7 +170,7 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
         </div>
 
         {/* BACK SIDE: Reduced global padding from p-5 to p-3 to reclaim space */}
-        <div className="absolute inset-0 backface-hidden transform-[rotateY(180deg)] bg-white rounded-2xl border-2 border-zinc-400 flex flex-col p-3 text-black text-[12px] leading-tight overflow-hidden">
+        <div className="absolute inset-0 backface-hidden transform-[rotateY(180deg)] bg-(--bg-surface) rounded-2xl border-2 border-zinc-400 flex flex-col p-3 text-(--text-main) text-[12px] leading-tight overflow-hidden">
           <div className="flex gap-1">
             <span className={`italic font-bold ${fontTimes}`}>App. No:</span>{" "}
             <span className={`font-bold ml-1 ${fontArial}`}>
@@ -234,11 +234,11 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
           {/* Reduced mt-4 to mt-2 for signature block */}
           <div className="mt-2 flex justify-between text-[11px] italic items-end">
             <div className="text-center flex flex-col items-center">
-              <span className="text-xl -mb-2 text-black/70 italic font-['cursive']!"></span>
+              <span className="text-xl -mb-2 text-(--text-muted) italic font-['cursive']!"></span>
               <span className={fontTimes}> </span>
             </div>
             <div className="text-center flex flex-col items-center">
-              <span className="text-xl -mb-2 text-black/70 italic font-['cursive']!"></span>
+              <span className="text-xl -mb-2 text-(--text-muted) italic font-['cursive']!"></span>
               <span className={fontTimes}> </span>
             </div>
           </div>
@@ -287,8 +287,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
   if (loading) {
     return (
       <div className="h-full flex flex-col items-center justify-center text-zinc-500 gap-4 animate-pulse bg-zinc-50 dark:bg-zinc-900">
-        <Loader2 className="w-10 h-10 animate-spin text-black dark:text-white" />
-        <span className="text-xs font-bold tracking-widest uppercase">
+        <Loader2 className="w-10 h-10 animate-spin text-(--text-main) dark:text-(--text-inverse)" />
+        <span className="text-xs font-bold  uppercase">
           Fetching Profile...
         </span>
       </div>
@@ -308,27 +308,26 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
             title="Academic Details"
             icon={GraduationCap}
             delay={0.1}
-            className="bg-[#c4f135]"
           >
             <div className="space-y-3">
-              <div className="bg-white/40 p-3 rounded-xl border-2 border-black">
-                <div className="text-[10px] font-black uppercase tracking-widest text-black/60 mb-0.5">
+              <div className="bg-(--bg-surface)/40 p-3 rounded-xl border-2 border-(--border-main)">
+                <div className="text-[10px] font-black uppercase  text-(--text-muted) mb-0.5">
                   Program
                 </div>
                 <div className="text-base font-black leading-tight">
                   {data.basic.program}
                 </div>
               </div>
-              <div className="bg-white/40 p-3 rounded-xl border-2 border-black">
-                <div className="text-[10px] font-black uppercase tracking-widest text-black/60 mb-0.5">
+              <div className="bg-(--bg-surface)/40 p-3 rounded-xl border-2 border-(--border-main)">
+                <div className="text-[10px] font-black uppercase  text-(--text-muted) mb-0.5">
                   School
                 </div>
                 <div className="text-sm font-bold leading-tight">
                   {data.basic.school}
                 </div>
               </div>
-              <div className="bg-white/40 p-3 rounded-xl border-2 border-black">
-                <div className="text-[10px] font-black uppercase tracking-widest text-black/60 mb-0.5">
+              <div className="bg-(--bg-surface)/40 p-3 rounded-xl border-2 border-(--border-main)">
+                <div className="text-[10px] font-black uppercase  text-(--text-muted) mb-0.5">
                   Institutional Email
                 </div>
                 <div className="text-sm font-bold leading-tight break-all">
@@ -346,10 +345,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
             icon={Shield}
             delay={0.2}
             colSpan="md:col-span-2"
-            className="bg-[#ffd500]"
           >
             <div className="flex flex-col md:flex-row gap-6 items-center md:items-stretch">
-              <div className="w-28 h-36 border-4 border-black bg-white rounded-xl overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -rotate-3 shrink-0 flex items-center justify-center">
+              <div className="w-28 h-36 border-4 border-(--border-main) bg-(--bg-surface) rounded-xl overflow-hidden shadow-none -rotate-3 shrink-0 flex items-center justify-center">
                 {data.proctor.photoUrl ? (
                   <img
                     src={data.proctor.photoUrl}
@@ -365,22 +363,22 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
               </div>
 
               <div className="flex-1 min-w-0 flex flex-col justify-center w-full">
-                <h3 className="font-expanded font-black text-2xl uppercase leading-none mb-1 text-black">
+                <h3 className="font-expanded font-black text-2xl uppercase leading-none mb-1 text-(--text-main)">
                   {data.proctor.name}
                 </h3>
-                <p className="text-xs font-bold text-black/70 mb-4 tracking-tight">
+                <p className="text-xs font-bold text-(--text-muted) mb-4 ">
                   {data.proctor.designation}
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="flex items-center gap-2 bg-white/40 p-2 rounded-lg border-2 border-black text-xs font-bold">
+                  <div className="flex items-center gap-2 bg-(--bg-surface)/40 p-2 rounded-lg border-2 border-(--border-main) text-xs font-bold">
                     <Smartphone className="w-4 h-4 shrink-0" />{" "}
                     {data.proctor.mobile}
                   </div>
-                  <div className="flex items-center gap-2 bg-white/40 p-2 rounded-lg border-2 border-black text-xs font-bold">
+                  <div className="flex items-center gap-2 bg-(--bg-surface)/40 p-2 rounded-lg border-2 border-(--border-main) text-xs font-bold">
                     <MapPin className="w-4 h-4 shrink-0" /> {data.proctor.cabin}
                   </div>
-                  <div className="flex items-center gap-2 bg-white/40 p-2 rounded-lg border-2 border-black text-xs font-bold sm:col-span-2">
+                  <div className="flex items-center gap-2 bg-(--bg-surface)/40 p-2 rounded-lg border-2 border-(--border-main) text-xs font-bold sm:col-span-2">
                     <Mail className="w-4 h-4 shrink-0" />{" "}
                     <span className="truncate">{data.proctor.email}</span>
                   </div>
@@ -394,10 +392,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
             icon={Briefcase}
             delay={0.3}
             colSpan="md:col-span-2"
-            className="bg-[#ff6b6b]"
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="bg-white p-4 rounded-xl border-4 border-black shadow-inner space-y-1">
+              <div className="bg-(--bg-surface) p-4 rounded-xl border-4 border-(--border-main) shadow-inner space-y-1">
                 <InfoRow label="Full Name" value={data.family.father.name} />
                 <InfoRow
                   label="Qualification"
@@ -411,8 +408,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
                   label="Annual Income"
                   value={data.family.father.income}
                 />
-                <div className="mt-4 p-2 bg-black text-white rounded-lg border-2 border-black text-center flex items-center justify-between px-4">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-white/70">
+                <div className="mt-4 p-2 bg-(--text-main) text-(--bg-main) rounded-lg border-2 border-(--border-main) text-center flex items-center justify-between px-4">
+                  <span className="text-[10px] font-bold uppercase  text-(--bg-main)/70">
                     Local Guardian
                   </span>
                   <span className="text-sm font-black">
@@ -434,7 +431,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
               delay={0.4}
               className="bg-cyan-300"
             >
-              <div className="bg-white p-3 rounded-xl border-2 border-black space-y-1">
+              <div className="bg-(--bg-surface) p-3 rounded-xl border-2 border-(--border-main) space-y-1">
                 <InfoRow label="DOB" value={data.personal.dob} />
                 <InfoRow label="Gender" value={data.personal.gender} />
                 <InfoRow
@@ -456,9 +453,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
               title="Education"
               icon={GraduationCap}
               delay={0.4}
-              className="bg-[#a8a4ff]"
             >
-              <div className="bg-white p-3 rounded-xl border-2 border-black space-y-1 mb-4">
+              <div className="bg-(--bg-surface) p-3 rounded-xl border-2 border-(--border-main) space-y-1 mb-4">
                 <InfoRow label="Degree" value={data.education.degree} />
                 <InfoRow
                   label="Qualification"
@@ -467,8 +463,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
                 <InfoRow label="Board" value={data.education.board} />
                 <InfoRow label="Passing Year" value={data.education.year} />
               </div>
-              <div className="bg-white p-3 rounded-xl border-2 border-black text-center">
-                <span className="text-[10px] font-black uppercase text-black/50 block mb-1 tracking-widest">
+              <div className="bg-(--bg-surface) p-3 rounded-xl border-2 border-(--border-main) text-center">
+                <span className="text-[10px] font-black uppercase text-(--text-main)/50 block mb-1 ">
                   Previous Institution
                 </span>
                 <p className="text-xs font-bold leading-tight line-clamp-2">
@@ -483,29 +479,28 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
             icon={Building}
             delay={0.5}
             colSpan="md:col-span-2"
-            className="bg-[#ff9e42]"
           >
             {data.hostel ? (
               <div className="flex flex-col sm:flex-row gap-6 items-center">
-                <div className="bg-black p-6 rounded-2xl border-4 border-black text-center flex flex-col justify-center w-full sm:w-auto min-w-35 shadow-inner shrink-0 rotate-1">
-                  <div className="text-[10px] uppercase font-black text-white/50 tracking-widest mb-1">
+                <div className="bg-(--text-main) p-6 rounded-2xl border-4 border-(--border-main) text-center flex flex-col justify-center w-full sm:w-auto min-w-35 shadow-inner shrink-0 rotate-1">
+                  <div className="text-[10px] uppercase font-black text-(--bg-main)/50  mb-1">
                     Room No.
                   </div>
-                  <div className="text-5xl font-black text-white">
+                  <div className="text-5xl font-black text-(--bg-main)">
                     {data.hostel.room}
                   </div>
-                  <div className="text-[11px] font-bold text-[#ff9e42] mt-2 bg-white/10 py-1 rounded-md px-2 truncate max-w-full">
+                  <div className="text-[11px] font-bold text-(--bg-main) mt-2 bg-(--bg-surface)/10 py-1 rounded-md px-2 truncate max-w-full">
                     {data.hostel.block}
                   </div>
                 </div>
-                <div className="flex-1 space-y-2 w-full bg-white p-4 rounded-xl border-4 border-black">
+                <div className="flex-1 space-y-2 w-full bg-(--bg-surface) p-4 rounded-xl border-4 border-(--border-main)">
                   <InfoRow label="Bed Type" value={data.hostel.bedType} />
                   <InfoRow label="Mess Plan" value={data.hostel.mess} />
                   <InfoRow label="Hostel App No" value={data.hostel.appNo} />
                 </div>
               </div>
             ) : (
-              <div className="h-full w-full flex items-center justify-center p-8 bg-white border-4 border-dashed border-black rounded-2xl text-black/40 font-black text-xl uppercase tracking-widest text-center">
+              <div className="h-full w-full flex items-center justify-center p-8 bg-(--bg-surface) border-4 border-dashed border-(--border-main) rounded-2xl text-(--text-main)/40 font-black text-xl uppercase  text-center">
                 Registered As
                 <br />
                 Day Boarder

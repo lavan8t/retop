@@ -426,13 +426,13 @@ export const BottomNav: React.FC<BottomNavProps> = ({
         const title = toTitleCase(link.fullTitle);
         const mid = (navItems.length - 1) / 2;
         let activeShadowClass =
-          "shadow-[0px_2px_0px_0px_var(--shadow-main)] -translate-y-px";
+          "shadow-none -translate-y-px";
         if (idx < mid)
           activeShadowClass =
-            "shadow-[2px_2px_0px_0px_var(--shadow-main)] -translate-y-px";
+            "shadow-none -translate-y-px";
         if (idx > mid)
           activeShadowClass =
-            "shadow-[-2px_2px_0px_0px_var(--shadow-main)] -translate-y-px";
+            "shadow-none -translate-y-px";
 
         return (
           <motion.button
@@ -450,7 +450,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                 : "flex-row px-3.5 py-2.5 rounded-3xl"
             } ${
               link.isActive
-                ? `${link.color} text-black border-black ${activeShadowClass}`
+                ? `${link.color} text-black border-(--border-main) ${activeShadowClass}`
                 : "text-zinc-400 hover:text-zinc-200 border-transparent bg-transparent hover:bg-zinc-800"
             }`}
             whileTap={{ scale: 0.96 }}
@@ -474,7 +474,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                     transition={spring}
                     className="overflow-hidden whitespace-nowrap"
                   >
-                    <span className="block font-black font-expanded uppercase text-[10px] sm:text-[11px] tracking-widest pl-2 z-10">
+                    <span className="block font-black font-expanded uppercase text-[10px] sm:text-[11px]  pl-2 z-10">
                       {link.title}
                     </span>
                   </motion.div>
@@ -488,7 +488,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                     initial={{ opacity: 0, y: 10, scale: 0.9 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 5, scale: 0.9 }}
-                    className="absolute bottom-[calc(100%+14px)] bg-(--bg-surface) text-(--text-main) px-3 py-1.5 rounded-lg text-[11px] font-black font-expanded tracking-widest whitespace-nowrap border-2 border-(--border-main) shadow-[4px_4px_0px_0px_var(--border-main)] z-50 pointer-events-none"
+                    className="absolute bottom-[calc(100%+14px)] bg-(--bg-surface) text-(--text-main) px-3 py-1.5 rounded-lg text-[11px] font-black font-expanded  whitespace-nowrap border-2 border-(--border-main) shadow-[4px_4px_0px_0px_var(--border-main)] z-50 pointer-events-none"
                   >
                     {title}
                     <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-(--bg-surface) border-b-2 border-r-2 border-(--border-main) rotate-45" />
@@ -508,7 +508,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
         return (
           <div className="flex flex-col items-center justify-center p-12 text-(--text-dim) border-4 border-dashed border-(--border-dim) m-4 rounded-4xl bg-(--bg-main)">
             <AlertCircle className="w-12 h-12 mb-4 opacity-50" />
-            <span className="font-expanded text-lg uppercase tracking-widest">
+            <span className="font-expanded text-lg uppercase ">
               No matches
             </span>
           </div>
@@ -536,7 +536,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                   onMouseEnter={() => setSelectedIndex(i)}
                   className={`flex-1 text-left px-4 py-3 md:px-5 md:py-4 rounded-xl text-xs md:text-sm font-bold transition-all flex items-center gap-3 md:gap-4 border-2 ${
                     isSelected
-                      ? "bg-blue-500 text-white border-black shadow-[3px_3px_0px_0px_var(--shadow-main)] md:shadow-[4px_4px_0px_0px_var(--shadow-main)] -translate-y-px"
+                      ? "bg-blue-500 text-white border-(--border-main) shadow-none md:shadow-none -translate-y-px"
                       : "bg-(--bg-surface) border-transparent text-(--text-muted) hover:border-(--border-dim)"
                   }`}
                 >
@@ -559,7 +559,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                   onClick={() => onTogglePin(link)}
                   className={`p-3 md:p-4 rounded-xl transition-all border-2 shrink-0 mr-0.5 mb-0.5 ${
                     isPinned
-                      ? "bg-(--bg-surface) text-(--text-main) border-(--border-main) shadow-[2px_2px_0px_0px_var(--shadow-main)]"
+                      ? "bg-(--bg-surface) text-(--text-main) border-(--border-main) shadow-none"
                       : "bg-transparent border-transparent hover:border-(--border-dim) text-(--text-muted) hover:text-(--text-main)"
                   }`}
                   title={isPinned ? "Unpin from Dock" : "Pin to Dock"}
@@ -594,7 +594,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                   })
                 }
                 className={`flex w-full items-center justify-between p-2 rounded-3xl border-2 transition-all duration-150 group 
-                  ${isExpanded ? `bg-blue-400 border-black shadow-[3px_3px_0px_0px_var(--shadow-main)] -translate-y-0.5 text-black` : `border-transparent hover:border-black hover:-translate-y-0.5 text-(--text-main)`}
+                  ${isExpanded ? `bg-blue-400 border-(--border-main) shadow-none -translate-y-0.5 text-black` : `border-transparent hover:border-(--border-main) hover:-translate-y-0.5 text-(--text-main)`}
                 `}
               >
                 <div className="flex items-center gap-3">
@@ -604,7 +604,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                     />
                   </div>
                   <span
-                    className={`font-expanded font-black text-sm sm:text-base uppercase tracking-wider text-left mt-0.5 transition-colors ${isExpanded ? "text-black" : "group-hover:text-black"}`}
+                    className={`font-expanded font-black text-sm sm:text-base uppercase  text-left mt-0.5 transition-colors ${isExpanded ? "text-black" : "group-hover:text-black"}`}
                   >
                     {cat.title}
                   </span>
@@ -641,7 +641,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                                 onNavigate(link);
                                 setIsOmniboxOpen(false);
                               }}
-                              className="flex-1 text-left px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-black font-expanded uppercase tracking-wider border-2 border-transparent transition-all truncate text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-highlight) hover:border-(--border-main) hover:shadow-[3px_3px_0px_0px_var(--shadow-main)] hover:-translate-y-px"
+                              className="flex-1 text-left px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-black font-expanded uppercase  border-2 border-transparent transition-all truncate text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-highlight) hover:border-(--border-main) hover:shadow-[3px_3px_0px_0px_var(--shadow-main)] hover:-translate-y-px"
                             >
                               {link.title}
                             </button>
@@ -649,7 +649,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                               onClick={() => onTogglePin(link)}
                               className={`p-2.5 rounded-2xl border-2 transition-all shrink-0 ${
                                 isPinned
-                                  ? "bg-yellow-400 text-black border-black shadow-[3px_3px_0px_0px_var(--shadow-main)] -translate-y-px"
+                                  ? "bg-yellow-400 text-black border-(--border-main) shadow-none -translate-y-px"
                                   : "bg-transparent border-transparent text-(--text-dim) hover:text-(--text-main) hover:bg-(--bg-highlight) hover:border-(--border-main) hover:shadow-[3px_3px_0px_0px_var(--shadow-main)] hover:-translate-y-px"
                               }`}
                             >
@@ -714,16 +714,16 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: -20 }}
                   transition={syncSpring}
-                  className="absolute pointer-events-auto top-[20vh] left-1/2 -translate-x-1/2 w-full max-w-3xl h-[60vh] rounded-4xl border-4 border-black flex flex-col overflow-hidden shadow-[16px_16px_0px_0px_rgba(0,0,0,1)] bg-(--bg-surface) z-9999"
+                  className="absolute pointer-events-auto top-[20vh] left-1/2 -translate-x-1/2 w-full max-w-3xl h-[60vh] rounded-4xl border-4 border-(--border-main) flex flex-col overflow-hidden shadow-none bg-(--bg-surface) z-9999"
                 >
-                  <div className="border-b-4 border-black p-6 bg-(--bg-surface) flex items-center gap-4 shrink-0 relative z-20">
-                    <div className="w-12 h-12 bg-blue-500 text-white flex items-center justify-center border-4 border-black rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transform -rotate-3 shrink-0">
+                  <div className="border-b-4 border-(--border-main) p-6 bg-(--bg-surface) flex items-center gap-4 shrink-0 relative z-20">
+                    <div className="w-12 h-12 bg-blue-500 text-white flex items-center justify-center border-4 border-(--border-main) rounded-2xl shadow-none transform -rotate-3 shrink-0">
                       <Search className="w-6 h-6" />
                     </div>
                     <input
                       ref={inputRef}
                       type="text"
-                      className="flex-1 bg-transparent text-(--text-main) text-3xl font-expanded font-black focus:outline-none placeholder-(--text-dim) tracking-tight uppercase min-w-0"
+                      className="flex-1 bg-transparent text-(--text-main) text-3xl font-expanded font-black focus:outline-none placeholder-(--text-dim)  uppercase min-w-0"
                       placeholder="WHERE TO?"
                       value={query}
                       onChange={(e) => {
@@ -733,7 +733,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                     />
                     <button
                       onClick={() => setIsOmniboxOpen(false)}
-                      className="w-10 h-10 flex items-center justify-center bg-(--bg-main) border-2 border-(--border-dim) rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shrink-0"
+                      className="w-10 h-10 flex items-center justify-center bg-(--bg-main) border-2 border-(--border-dim) rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm hover:shadow-[4px_4px_0px_0px_var(--shadow-main)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shrink-0"
                     >
                       <X className="w-5 h-5" />
                     </button>
@@ -772,7 +772,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               damping: 35,
               mass: 0.8,
             }}
-            className="fixed pointer-events-auto border-2 md:border-4 border-black bg-(--bg-surface) overflow-hidden transform-gpu"
+            className="fixed pointer-events-auto border-2 md:border-4 border-(--border-main) bg-(--bg-surface) overflow-hidden transform-gpu"
           >
             {/* --- PILL LAYER --- */}
             <motion.div
@@ -806,15 +806,15 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                 onPanStart={handlePanStart}
                 onPan={handlePan}
                 onPanEnd={handlePanEnd}
-                className="border-b-4 border-black px-4 pb-4 bg-(--bg-surface) flex items-center gap-3 shrink-0 cursor-grab active:cursor-grabbing touch-none z-20"
+                className="border-b-4 border-(--border-main) px-4 pb-4 bg-(--bg-surface) flex items-center gap-3 shrink-0 cursor-grab active:cursor-grabbing touch-none z-20"
               >
-                <div className="w-10 h-10 bg-blue-500 text-white flex items-center justify-center border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] shrink-0 pointer-events-none">
+                <div className="w-10 h-10 bg-blue-500 text-white flex items-center justify-center border-2 border-(--border-main) rounded-xl shadow-none shrink-0 pointer-events-none">
                   <Search className="w-5 h-5" />
                 </div>
                 <input
                   ref={inputRef}
                   type="text"
-                  className="flex-1 bg-transparent text-(--text-main) text-xl font-expanded font-black focus:outline-none placeholder-(--text-dim) tracking-tight uppercase min-w-0"
+                  className="flex-1 bg-transparent text-(--text-main) text-xl font-expanded font-black focus:outline-none placeholder-(--text-dim)  uppercase min-w-0"
                   placeholder="WHERE TO?"
                   value={query}
                   onChange={(e) => {

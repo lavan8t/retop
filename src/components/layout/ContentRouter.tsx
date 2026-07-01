@@ -6,6 +6,7 @@ import { MarksPage } from "../../pages/marks";
 import { ProfilePage } from "../../pages/profile";
 import { SettingsPage } from "../../pages/settings";
 import { CoursePage } from "../../pages/course-page";
+import { CalendarPage } from "../../pages/calendar";
 
 export const ContentRouter = ({
   currentView,
@@ -31,6 +32,17 @@ export const ContentRouter = ({
   setCpSelectedSem,
   cpSelectedCourseId,
   setCpSelectedCourseId,
+  calSemesters,
+  setCalSemesters,
+  calSelectedSem,
+  marksSemesters,
+  setMarksSemesters,
+  marksSelectedSem,
+  setMarksSelectedSem,
+  marksSearchQuery,
+  isMarksModernView,
+  ttSemesters,
+  ttSelectedSem,
 }: any) => {
   if (!networkRef.current) return null;
 
@@ -46,6 +58,10 @@ export const ContentRouter = ({
           dayName={dayName}
           menuCategories={menu}
           onNavigate={handleLinkClick}
+          ttCourses={ttCourses}
+          use24HourTime={settings.use24HourTime ?? true}
+          calSemesters={calSemesters?.length ? calSemesters : ttSemesters}
+          calSelectedSem={calSelectedSem || ttSelectedSem}
         />
       );
     case "timetable":
@@ -56,12 +72,23 @@ export const ContentRouter = ({
           viewMode={ttViewMode}
           setViewMode={setTtViewMode}
           attendance={attendance}
+          use24HourTime={settings.use24HourTime ?? true}
         />
       );
     case "curriculum":
       return <CurriculumPage onBack={() => {}} network={networkRef.current} />;
     case "marks":
-      return <MarksPage onBack={() => {}} network={networkRef.current} />;
+      return (
+        <MarksPage
+          network={networkRef.current}
+          semesters={marksSemesters}
+          setSemesters={setMarksSemesters}
+          selectedSem={marksSelectedSem}
+          setSelectedSem={setMarksSelectedSem}
+          searchQuery={marksSearchQuery}
+          isModernView={isMarksModernView}
+        />
+      );
     case "profile":
       return <ProfilePage network={networkRef.current} />;
     case "settings":
@@ -80,6 +107,16 @@ export const ContentRouter = ({
           setSelectedSem={setCpSelectedSem}
           selectedOptionId={cpSelectedCourseId}
           setSelectedOptionId={setCpSelectedCourseId}
+        />
+      );
+
+    case "calendar":
+      return (
+        <CalendarPage
+          network={networkRef.current!}
+          semesters={calSemesters}
+          setSemesters={setCalSemesters}
+          selectedSem={calSelectedSem || (calSemesters[0]?.id ?? "")}
         />
       );
 

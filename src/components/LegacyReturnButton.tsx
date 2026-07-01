@@ -25,10 +25,10 @@ export const LegacyReturnButton: React.FC<LegacyReturnButtonProps> = ({
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       // "pointer-events-auto" re-enables clicking strictly for this button!
-      className="fixed bottom-8 right-8 z-99999 pointer-events-auto flex items-center justify-center gap-3 bg-yellow-400 text-black px-6 py-4 border-4 border-black rounded-3xl shadow-[6px_6px_0px_0px_#000] hover:shadow-[10px_10px_0px_0px_#000] cursor-pointer"
+      className="fixed bottom-8 right-8 z-[99999] pointer-events-auto flex items-center justify-center gap-3 bg-yellow-400 text-black px-6 py-4 border-4 border-(--border-main) rounded-3xl shadow-none hover:shadow-[4px_4px_0px_0px_var(--shadow-main)] cursor-pointer"
     >
       <CornerDownLeft className="w-6 h-6 stroke-3" />
-      <span className="font-expanded font-black text-2xl leading-none mt-1 tracking-tighter lowercase">
+      <span className="font-expanded font-black text-2xl leading-none mt-1  lowercase">
         re.
       </span>
     </motion.button>

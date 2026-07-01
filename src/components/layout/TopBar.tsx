@@ -30,6 +30,18 @@ interface TopBarProps {
   setCpSelectedSem: (semId: string) => void;
   setCpSelectedCourseId: (id: string) => void;
 
+  marksSemesters: { id: string; label: string }[];
+  marksSelectedSem: string;
+  setMarksSelectedSem: (id: string) => void;
+  marksSearchQuery: string;
+  setMarksSearchQuery: (query: string) => void;
+  isMarksModernView: boolean;
+  setIsMarksModernView: (view: boolean) => void;
+
+  calSemesters: { id: string; label: string }[];
+  calSelectedSem: string;
+  setCalSelectedSem: (id: string) => void;
+
   user: { name: string; regNo: string };
   showProfileMenu: boolean;
   setShowProfileMenu: (show: boolean) => void;
@@ -76,6 +88,16 @@ export const TopBar: React.FC<TopBarProps> = ({
   cpSelectedSem,
   setCpSelectedSem,
   setCpSelectedCourseId,
+  marksSemesters,
+  marksSelectedSem,
+  setMarksSelectedSem,
+  marksSearchQuery,
+  setMarksSearchQuery,
+  isMarksModernView,
+  setIsMarksModernView,
+  calSemesters,
+  calSelectedSem,
+  setCalSelectedSem,
   user,
   showProfileMenu,
   setShowProfileMenu,
@@ -89,8 +111,8 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   return (
     <>
-      <header className="h-16 md:h-18 bg-(--bg-main) border-b-2 md:border-b-4 border-(--border-main) sticky top-0 z-100 pl-4 md:pl-8 pr-0 flex items-center justify-between shadow-xl shrink-0 transition-all">
-        <div className="flex items-center h-full">
+      <header className="h-16 md:h-18 bg-transparent fixed w-full top-0 z-100 pl-4 md:pl-8 pr-0 flex items-center justify-between shrink-0 transition-all pointer-events-none">
+        <div className="flex items-center h-full pointer-events-auto">
           <div className="flex flex-col justify-center h-full gap-0.5">
             <div className="flex items-center gap-2 md:gap-3">
               <div
@@ -99,10 +121,10 @@ export const TopBar: React.FC<TopBarProps> = ({
                 }`}
                 onClick={() => setCurrentView("dashboard")}
               >
-                <span className="font-expanded font-black text-[2rem] md:text-[2.5rem] tracking-tighter italic lowercase leading-none text-(--text-main)">
+                <span className="font-expanded font-black text-[2rem] md:text-[2.5rem]  italic lowercase leading-none text-(--text-main)">
                   re
                 </span>
-                <div className="relative w-2 h-2 md:w-3 md:h-3 ml-0.5 mb-1 md:mb-1.5 bg-blue-500 rounded-full" />
+                <div className="relative w-2 h-2 md:w-3 md:h-3 ml-0.5 mb-1 md:mb-1.5 bg-(--accent-base) rounded-full" />
               </div>
 
               {currentView !== "dashboard" && (
@@ -114,7 +136,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                     setCurrentView("dashboard");
                   }}
                   title="Return to Dashboard"
-                  className="group/back w-8 h-8 md:w-10 md:h-10 ml-0 md:ml-1 flex items-center justify-center bg-(--bg-surface) border-2 border-(--border-dim) rounded-lg text-(--text-muted) hover:text-white hover:bg-blue-500 hover:border-black transition-all active:scale-90 shrink-0 cursor-pointer pointer-events-auto shadow-sm hover:shadow-[2px_2px_0px_0px_#000]"
+                  className="group/back w-8 h-8 md:w-10 md:h-10 ml-0 md:ml-1 flex items-center justify-center bg-(--bg-surface) border-2 border-(--border-dim) rounded-lg text-(--text-muted) hover:text-white hover:bg-(--accent-base) hover:border-(--border-main) transition-all active:scale-90 shrink-0 cursor-pointer pointer-events-auto shadow-sm hover:shadow-[4px_4px_0px_0px_var(--shadow-main)]"
                 >
                   <ArrowLeft className="w-4 h-4 md:w-5 md:h-5 group-hover/back:hidden" />
                   <Home className="w-4 h-4 md:w-5 md:h-5 hidden group-hover/back:block" />
@@ -125,7 +147,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                 <h1
                   onClick={() => setCurrentView("dashboard")}
                   title="Return to Dashboard"
-                  className="font-expanded font-black text-lg md:text-3xl text-(--text-main) tracking-tight uppercase truncate max-w-[40vw] sm:max-w-[30vw] leading-none mt-1 mb-0 ml-1 md:ml-2 pl-2 md:pl-3 border-l-2 md:border-l-4 border-(--border-dim) cursor-pointer hover:text-(--accent-hover) transition-colors pointer-events-auto"
+                  className="font-expanded font-black text-lg md:text-3xl text-(--text-main)  uppercase truncate max-w-[40vw] sm:max-w-[30vw] leading-none mt-1 mb-0 ml-1 md:ml-2 pl-2 md:pl-3 border-l-2 md:border-l-4 border-(--border-dim) cursor-pointer hover:text-(--accent-hover) transition-colors pointer-events-auto"
                 >
                   {getPageTitle(currentView, contentTitle)}
                 </h1>
@@ -143,14 +165,13 @@ export const TopBar: React.FC<TopBarProps> = ({
                   <button
                     key={idx}
                     onClick={() => handleLinkClick(link)}
-                    className={`flex items-center gap-2 px-3.5 py-1.5 border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_#000] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_#000] active:translate-y-0 active:shadow-none transition-all font-black font-expanded text-xs tracking-wide uppercase text-black ${dockColors[idx]} cursor-pointer`}
+                    className={`flex items-center gap-2 px-3.5 py-1.5 border-2 border-(--border-main) rounded-xl shadow-none hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_var(--shadow-main)] active:translate-y-0 active:shadow-none transition-all font-black font-expanded text-xs  uppercase text-black ${dockColors[idx]} cursor-pointer`}
                   >
                     <Icon className="w-4 h-4" />
                     <span>{link.title}</span>
                   </button>
                 );
               })}
-              <div className="w-1 h-8 bg-(--border-dim) rounded-full mx-2"></div>
             </div>
           )}
 
@@ -158,10 +179,10 @@ export const TopBar: React.FC<TopBarProps> = ({
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="flex items-center gap-1 md:gap-2 mr-1 md:mr-2"
+              className="flex items-center gap-1.5 md:gap-3 lg:gap-4 pr-0 pointer-events-auto"
             >
               {ttLoading && (
-                <RefreshCw className="w-4 h-4 text-cyan-400 animate-spin hidden sm:block" />
+                <RefreshCw className="w-4 h-4 text-(--accent-base) animate-spin hidden sm:block" />
               )}
               <SemesterDropdown
                 semesters={ttSemesters}
@@ -169,13 +190,13 @@ export const TopBar: React.FC<TopBarProps> = ({
                 onChange={loadTimetable}
               />
 
-              <div className="hidden sm:flex bg-zinc-900 border-2 border-black rounded-xl p-1 gap-1 shadow-[2px_2px_0px_0px_#000]">
+              <div className="hidden sm:flex bg-(--bg-highlight) border-2 border-(--border-main) rounded-xl p-1 gap-1 shadow-sm">
                 <button
                   onClick={() => setTtViewMode("grid")}
                   className={`p-1.5 rounded-lg transition-all border-2 ${
                     ttViewMode === "grid"
-                      ? "bg-cyan-400 text-black border-black shadow-[2px_2px_0px_0px_#000] -translate-y-px"
-                      : "border-transparent text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+                      ? "bg-(--accent-base) text-white border-(--border-main) shadow-none -translate-y-px"
+                      : "border-transparent text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-surface)"
                   }`}
                 >
                   <LayoutGrid className="w-4 h-4" />
@@ -184,8 +205,8 @@ export const TopBar: React.FC<TopBarProps> = ({
                   onClick={() => setTtViewMode("list")}
                   className={`p-1.5 rounded-lg transition-all border-2 ${
                     ttViewMode === "list"
-                      ? "bg-cyan-400 text-black border-black shadow-[2px_2px_0px_0px_#000] -translate-y-px"
-                      : "border-transparent text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+                      ? "bg-(--accent-base) text-white border-(--border-main) shadow-none -translate-y-px"
+                      : "border-transparent text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-surface)"
                   }`}
                 >
                   <List className="w-4 h-4" />
@@ -194,14 +215,48 @@ export const TopBar: React.FC<TopBarProps> = ({
                   onClick={() => setTtViewMode("week")}
                   className={`p-1.5 rounded-lg transition-all border-2 ${
                     ttViewMode === "week"
-                      ? "bg-cyan-400 text-black border-black shadow-[2px_2px_0px_0px_#000] -translate-y-px"
-                      : "border-transparent text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+                      ? "bg-(--accent-base) text-white border-(--border-main) shadow-none -translate-y-px"
+                      : "border-transparent text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-surface)"
                   }`}
                 >
                   <Calendar className="w-4 h-4" />
                 </button>
               </div>
               <div className="hidden sm:block w-0.5 h-8 bg-(--border-dim) mx-1"></div>
+            </motion.div>
+          )}
+
+          {currentView === "marks" && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="flex items-center gap-2 mr-1 md:mr-2"
+            >
+              <button
+                onClick={() => setIsMarksModernView(!isMarksModernView)}
+                className="hidden sm:block bg-(--bg-surface) border-2 border-(--border-dim) text-(--text-main) px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase  hover:bg-(--accent-base) hover:text-white transition-all cursor-pointer shadow-sm hover:shadow-[4px_4px_0px_0px_var(--shadow-main)] active:translate-y-px active:shadow-none"
+              >
+                {isMarksModernView ? "Legacy View" : "Modern View"}
+              </button>
+
+              <div className="relative group hidden sm:block">
+                <input
+                  type="text"
+                  placeholder="Search Marks"
+                  value={marksSearchQuery}
+                  onChange={(e) => setMarksSearchQuery(e.target.value)}
+                  className="bg-(--bg-main) border-2 border-(--border-dim) text-(--text-main) text-xs rounded-xl pl-8 pr-3 py-1.5 w-36 lg:w-48 focus:outline-none focus:border-(--accent-base) transition-all placeholder:text-(--text-muted) shadow-sm"
+                />
+                <Search className="w-3.5 h-3.5 text-(--text-muted) absolute left-2.5 top-2 group-focus-within:text-(--accent-base) transition-colors" />
+              </div>
+
+              <SemesterDropdown
+                semesters={marksSemesters}
+                selectedId={marksSelectedSem}
+                onChange={(id: string) => {
+                  setMarksSelectedSem(id);
+                }}
+              />
             </motion.div>
           )}
 
@@ -219,50 +274,56 @@ export const TopBar: React.FC<TopBarProps> = ({
                   setCpSelectedCourseId("");
                 }}
               />
-              <div className="hidden sm:block w-0.5 h-8 bg-(--border-dim) mx-1"></div>
+            </motion.div>
+          )}
+
+          {currentView === "calendar" && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="flex items-center gap-2 mr-1 md:mr-2"
+            >
+              <SemesterDropdown
+                semesters={calSemesters}
+                selectedId={calSelectedSem}
+                onChange={(id: string) => setCalSelectedSem(id)}
+              />
             </motion.div>
           )}
 
           {currentView !== "dashboard" && (
             <button
               onClick={() => setIsOmniboxOpen(true)}
-              className="hidden xl:flex shrink-0 items-center gap-2 px-3.5 py-1.5 mr-2 bg-zinc-900 border-2 border-black rounded-xl text-zinc-200 hover:text-cyan-400 shadow-[2px_2px_0px_0px_#000] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_#000] active:translate-y-0 active:shadow-none transition-all group cursor-pointer"
+              className="hidden xl:flex shrink-0 items-center gap-2 px-3.5 py-1.5 mr-2 bg-(--bg-highlight) border-2 border-(--border-main) rounded-xl text-(--text-main) hover:text-(--accent-base) shadow-none hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_var(--shadow-main)] active:translate-y-0 active:shadow-none transition-all group cursor-pointer"
             >
               <Search className="w-4 h-4 group-hover:rotate-12 transition-transform" />
-              <span className="font-expanded font-bold text-[10px] tracking-widest uppercase mt-0.5">
+              <span className="font-expanded font-bold text-[10px]  uppercase mt-0.5">
                 Search
               </span>
-              <kbd className="ml-1 font-mono bg-zinc-800 text-zinc-400 px-1.5 py-0.5 text-[9px] rounded-md border-2 border-zinc-700 group-hover:border-cyan-500 group-hover:text-cyan-400 transition-colors">
+              <kbd className="ml-1 font-mono bg-(--bg-surface) text-(--text-muted) px-1.5 py-0.5 text-[9px] rounded-md border border-(--border-dim) group-hover:border-(--accent-base) group-hover:text-(--accent-base) transition-colors">
                 /
               </kbd>
             </button>
           )}
 
-          <div className="relative h-full shrink-0 flex">
+          <div className="relative shrink-0 flex items-center justify-center mr-2 lg:mr-6">
             <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className="flex items-center h-full focus:outline-none group cursor-pointer gap-3"
+              className="flex items-center focus:outline-none group cursor-pointer transition-all hover:scale-105 active:scale-95"
             >
-              <div className="text-right hidden sm:block">
-                <div className="text-sm font-bold text-(--text-main) uppercase tracking-wider group-hover:text-(--accent-hover) transition-colors">
-                  {user.name !== "Student" ? user.name : user.regNo}
-                </div>
-                {user.name !== "Student" && (
-                  <div className="text-[10px] text-(--text-muted) uppercase tracking-widest font-bold -mt-0.5">
-                    {user.regNo}
-                  </div>
-                )}
-              </div>
-
-              <div className="h-full w-10 md:w-auto md:min-w-10 bg-(--bg-highlight) overflow-hidden shrink-0 border-l-2 md:border-l-4 border-(--border-main) group-hover:brightness-110 transition-all flex items-center justify-center">
-                {user.regNo !== "..." ? (
-                  <img
-                    src={`/vtop/users/image/?id=${user.regNo}`}
-                    className="w-full h-full object-contain"
-                    alt="Profile"
-                  />
-                ) : (
-                  <User className="w-5 h-5 md:w-8 md:h-8 text-(--text-dim)" />
+              <div className="w-10 h-10 md:w-12 md:h-12 relative flex items-center justify-center">
+                {!showProfileMenu && (
+                  <motion.div className="w-10 h-10 md:w-12 md:h-12 absolute inset-0 rounded-full overflow-hidden shrink-0 border-2 border-(--border-main) group-hover:border-(--accent-base) shadow-sm transition-all flex items-center justify-center bg-(--bg-highlight) z-[9999]">
+                    {user.regNo !== "..." ? (
+                      <img
+                        src={`/vtop/users/image/?id=${user.regNo}`}
+                        className="w-full h-full object-cover"
+                        alt="Profile"
+                      />
+                    ) : (
+                      <User className="w-5 h-5 md:w-6 md:h-6 text-(--text-dim)" />
+                    )}
+                  </motion.div>
                 )}
               </div>
             </button>

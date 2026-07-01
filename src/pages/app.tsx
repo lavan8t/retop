@@ -12,8 +12,7 @@ import {
 import { VTOPNetwork } from "../utils/network";
 import { scrapeMenu, scrapeUserProfile } from "../parsers/menu";
 import {
-  parseCGPA,
-  parseCredits,
+  parseAcademicStats,
   parseDigitalAssignments,
   parseCourseDetails,
 } from "../parsers/dashboard";
@@ -50,7 +49,8 @@ type ViewType =
   | "marks"
   | "profile"
   | "settings"
-  | "coursePage";
+  | "coursePage"
+  | "calendar";
 
 const getDestinationView = (link: QuickLink): ViewType | "content" => {
   const lowerTitle = link.title.toLowerCase();
@@ -85,12 +85,18 @@ const getDestinationView = (link: QuickLink): ViewType | "content" => {
     lowerUrl.includes("course")
   )
     return "coursePage";
+  if (
+    lowerTitle.includes("calendar") ||
+    lowerUrl.includes("processviewcalendar")
+  )
+    return "calendar";
 
   return "content";
 };
 
-const getViewFromHash = (): ViewType => {
-  const hash = window.location.hash.replace("#", "");
+// Using the Session Storage routing we built previously
+const getSavedView = (): ViewType => {
+  const saved = sessionStorage.getItem("vtop-retop-view");
   const validViews = [
     "dashboard",
     "content",
@@ -100,8 +106,11 @@ const getViewFromHash = (): ViewType => {
     "profile",
     "settings",
     "coursePage",
+    "calendar",
   ];
-  return validViews.includes(hash) ? (hash as ViewType) : "dashboard";
+  return validViews.includes(saved as ViewType)
+    ? (saved as ViewType)
+    : "dashboard";
 };
 
 const navigateLegacy = (title: string) => {
@@ -112,13 +121,27 @@ const navigateLegacy = (title: string) => {
   if (target) target.click();
   else console.warn("Legacy link not found for:", title);
 };
+import { ErrorBoundary } from "../components/ErrorBoundary";
 
 export function renderDashboard() {
   initializeContainer();
   const rootEl = getAppRoot();
-  if (rootEl && !rootEl.hasChildNodes()) {
-    const root = createRoot(rootEl);
-    root.render(<DashboardApp />);
+  if (rootEl) {
+    if ((rootEl as any)._reactRoot) {
+      (rootEl as any)._reactRoot.render(
+        <ErrorBoundary>
+          <DashboardApp />
+        </ErrorBoundary>,
+      );
+    } else {
+      const root = createRoot(rootEl);
+      (rootEl as any)._reactRoot = root;
+      root.render(
+        <ErrorBoundary>
+          <DashboardApp />
+        </ErrorBoundary>,
+      );
+    }
   }
 }
 
@@ -135,11 +158,17 @@ const DashboardApp = () => {
   });
 
   const [isPeeking, setIsPeeking] = useState(false);
-  const [currentView, _setCurrentView] = useState<ViewType>(getViewFromHash());
+  const [currentView, _setCurrentView] = useState<ViewType>(getSavedView());
   const [contentTitle, setContentTitle] = useState("");
   const [status, setStatus] = useState("Initializing...");
 
-  const [stats, setStats] = useState({ cgpa: "...", credits: "..." });
+  const [stats, setStats] = useState({
+    cgpa: "...",
+    credits: "...",
+    totalCredits: "...",
+    nonGraded: "...",
+    placement: "...",
+  });
   const [attendance, setAttendance] = useState<CourseSummary[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [upcoming, setUpcoming] = useState<UpcomingClass[]>([]);
@@ -156,6 +185,20 @@ const DashboardApp = () => {
   const [cpSelectedSem, setCpSelectedSem] = useState("");
   const [cpSelectedCourseId, setCpSelectedCourseId] = useState("");
 
+  // HOISTED CALENDAR STATE
+  const [calSemesters, setCalSemesters] = useState<
+    { id: string; label: string }[]
+  >([]);
+  const [calSelectedSem, setCalSelectedSem] = useState("");
+
+  // HOISTED MARKS STATE
+  const [marksSemesters, setMarksSemesters] = useState<
+    { id: string; label: string }[]
+  >([]);
+  const [marksSelectedSem, setMarksSelectedSem] = useState("");
+  const [marksSearchQuery, setMarksSearchQuery] = useState("");
+  const [isMarksModernView, setIsMarksModernView] = useState(true);
+
   const networkRef = useRef<VTOPNetwork | null>(null);
   const csrfRef = useRef<string>("");
   const authIdRef = useRef<string>("");
@@ -163,14 +206,20 @@ const DashboardApp = () => {
   const isOmniboxOpenRef = useRef(isOmniboxOpen);
   isOmniboxOpenRef.current = isOmniboxOpen;
 
+  const currentViewRef = useRef(currentView);
+  currentViewRef.current = currentView;
+
   const pinnedLinks = settings.pinnedLinks || [];
 
-  const statusColor =
-    status === "Online" || status === "Active" ? "bg-lime-400" : "bg-red-500";
-
   const setCurrentView = (view: ViewType) => {
-    if (window.location.hash !== `#${view}`) {
-      window.location.hash = view;
+    if (view !== currentView) {
+      _setCurrentView(view);
+      sessionStorage.setItem("vtop-retop-view", view);
+      window.history.pushState(
+        { view },
+        "",
+        window.location.pathname + window.location.search,
+      );
     }
   };
 
@@ -198,13 +247,30 @@ const DashboardApp = () => {
   };
 
   useEffect(() => {
-    if (!window.location.hash) {
-      window.history.replaceState(null, "", "#dashboard");
-      _setCurrentView("dashboard");
+    if (window.location.hash) {
+      window.history.replaceState(
+        null,
+        "",
+        window.location.pathname + window.location.search,
+      );
     }
-    const handleHashChange = () => _setCurrentView(getViewFromHash());
-    window.addEventListener("hashchange", handleHashChange);
-    return () => window.removeEventListener("hashchange", handleHashChange);
+
+    if (!window.history.state?.view) {
+      window.history.replaceState(
+        { view: getSavedView() },
+        "",
+        window.location.pathname + window.location.search,
+      );
+    }
+
+    const handlePopState = (e: PopStateEvent) => {
+      const view = e.state?.view || "dashboard";
+      _setCurrentView(view);
+      sessionStorage.setItem("vtop-retop-view", view);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
   useEffect(() => {
@@ -247,8 +313,10 @@ const DashboardApp = () => {
     }, 2000);
 
     const handleKeys = (e: KeyboardEvent) => {
-      const activeEl = document.activeElement as HTMLElement;
-      const targetEl = e.target as HTMLElement;
+      // Fix: Get target element resolving through shadow DOM
+      const targetEl = (
+        e.composedPath ? e.composedPath()[0] : e.target
+      ) as HTMLElement;
 
       const isInput = (el: HTMLElement | null) => {
         if (!el) return false;
@@ -261,11 +329,11 @@ const DashboardApp = () => {
         );
       };
 
-      if (isInput(activeEl) || isInput(targetEl)) return;
+      if (isInput(targetEl)) return;
       if (isOmniboxOpenRef.current) return;
       if (e.key === "Escape") return;
 
-      if (currentView !== "dashboard") {
+      if (currentViewRef.current !== "dashboard") {
         if (
           e.key === "/" ||
           (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey)
@@ -287,7 +355,7 @@ const DashboardApp = () => {
       window.removeEventListener("keydown", handleKeys);
       window.removeEventListener("vtop-restore-ui", restoreHandler);
     };
-  }, [currentView]);
+  }, []);
 
   useEffect(() => {
     setUIVisibility(isModernUI);
@@ -330,7 +398,7 @@ const DashboardApp = () => {
         networkRef.current.fetchFragment("get/upcoming/digital/assignments"),
       ]);
 
-      setStats({ cgpa: parseCGPA(eduHTML), credits: parseCredits(eduHTML) });
+      setStats(parseAcademicStats(eduHTML));
       setAttendance(parseCourseDetails(attHTML));
       setAssignments(parseDigitalAssignments(daHTML));
 
@@ -341,12 +409,11 @@ const DashboardApp = () => {
         const sems = parseSemesters(semHTML);
         if (sems.length > 0) {
           const semId = sems[0].id;
-
           setTtSemesters(sems);
-
           setTtSelectedSem(semId);
           setCpSelectedSem(semId);
-
+          setCalSemesters(sems.map(s => ({ id: s.id, name: s.label })));
+          setCalSelectedSem(semId);
           await loadTimetable(semId);
         }
       } catch (e) {
@@ -359,11 +426,25 @@ const DashboardApp = () => {
     }
   };
 
-  const loadTimetable = async (semId: string) => {
+  const loadTimetable = async (semId: string, forceFetch = false) => {
     if (!networkRef.current) return;
     setTtLoading(true);
     setTtSelectedSem(semId);
     try {
+      const today = new Date().toDateString();
+      const cacheKey = `vtop-tt-cache-${semId}`;
+      const cached = localStorage.getItem(cacheKey);
+
+      if (cached && !forceFetch) {
+        const parsedCache = JSON.parse(cached);
+        if (parsedCache.date === today && parsedCache.data) {
+          setTtCourses(parsedCache.data);
+          setUpcoming(getUpcomingClasses(parsedCache.data));
+          setTtLoading(false);
+          return;
+        }
+      }
+
       const url = "/vtop/processViewTimeTable";
       const body = new URLSearchParams();
       body.append("_csrf", csrfRef.current);
@@ -385,6 +466,12 @@ const DashboardApp = () => {
           !c.status.toLowerCase().includes("drop") &&
           !c.status.toLowerCase().includes("withdrawn"),
       );
+
+      localStorage.setItem(
+        cacheKey,
+        JSON.stringify({ date: today, data: parsed }),
+      );
+
       setTtCourses(parsed);
       setUpcoming(getUpcomingClasses(parsed));
     } catch (err) {
@@ -487,7 +574,7 @@ const DashboardApp = () => {
             <div className="flex flex-col h-full pointer-events-auto overflow-hidden">
               <TopBar
                 currentView={currentView}
-                contentTitle={""}
+                contentTitle={contentTitle}
                 status={status}
                 ttCourses={ttCourses}
                 ttLoading={ttLoading}
@@ -507,28 +594,18 @@ const DashboardApp = () => {
                 setIsOmniboxOpen={setIsOmniboxOpen}
                 setCurrentView={setCurrentView}
                 pinnedLinks={pinnedLinks}
+                marksSemesters={marksSemesters}
+                marksSelectedSem={marksSelectedSem}
+                setMarksSelectedSem={setMarksSelectedSem}
+                marksSearchQuery={marksSearchQuery}
+                setMarksSearchQuery={setMarksSearchQuery}
+                isMarksModernView={isMarksModernView}
+                setIsMarksModernView={setIsMarksModernView}
+                calSemesters={calSemesters}
+                calSelectedSem={calSelectedSem}
+                setCalSelectedSem={setCalSelectedSem}
               />
               <main className="flex-1 overflow-hidden relative">
-                <AnimatePresence>
-                  {showProfileMenu && (
-                    <>
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-40 bg-black/10 backdrop-blur-[2px]"
-                        onClick={() => setShowProfileMenu(false)}
-                      />
-                      <ProfileMenu
-                        userName={user.name}
-                        onNavigate={handleLinkClick}
-                        onLogout={handleLogout}
-                        onClose={() => setShowProfileMenu(false)}
-                      />
-                    </>
-                  )}
-                </AnimatePresence>
-
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={currentView}
@@ -554,17 +631,52 @@ const DashboardApp = () => {
                       ttLoading={ttLoading}
                       ttViewMode={ttViewMode}
                       setTtViewMode={setTtViewMode}
+                      ttSemesters={ttSemesters}
+                      ttSelectedSem={ttSelectedSem}
                       cpOptions={cpOptions}
                       setCpOptions={setCpOptions}
                       cpSelectedSem={cpSelectedSem}
                       cpSelectedCourseId={cpSelectedCourseId}
                       setCpSelectedCourseId={setCpSelectedCourseId}
+                      marksSemesters={marksSemesters}
+                      setMarksSemesters={setMarksSemesters}
+                      marksSelectedSem={marksSelectedSem}
+                      setMarksSelectedSem={setMarksSelectedSem}
+                      marksSearchQuery={marksSearchQuery}
+                      isMarksModernView={isMarksModernView}
+                      calSemesters={calSemesters}
+                      setCalSemesters={setCalSemesters}
+                      calSelectedSem={calSelectedSem}
                     />
                   </motion.div>
                 </AnimatePresence>
               </main>
 
-              {/* FIX: Moved BottomNav and FloatingViewToggle inside the motion.div wrapper */}
+              <AnimatePresence>
+                {showProfileMenu && (
+                  <>
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="fixed inset-0 z-9998 bg-black/10 backdrop-blur-[2px]"
+                      onClick={() => setShowProfileMenu(false)}
+                    />
+                    <ProfileMenu
+                      userName={user.name}
+                      userRegNo={user.regNo}
+                      onNavigate={handleLinkClick}
+                      onLogout={handleLogout}
+                      onLegacyToggle={() => {
+                        setIsPeeking(false);
+                        setIsModernUI(false);
+                      }}
+                      onClose={() => setShowProfileMenu(false)}
+                    />
+                  </>
+                )}
+              </AnimatePresence>
+
               <BottomNav
                 currentView={currentView}
                 setCurrentView={setCurrentView}

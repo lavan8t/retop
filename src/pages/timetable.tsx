@@ -12,6 +12,7 @@ interface TimetableContentViewProps {
   viewMode: "grid" | "list" | "week";
   setViewMode: (mode: "grid" | "list" | "week") => void;
   attendance: CourseSummary[];
+  use24HourTime: boolean;
 }
 
 export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
@@ -20,6 +21,7 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
   viewMode,
   setViewMode,
   attendance,
+  use24HourTime,
 }) => {
   useEffect(() => {
     if (window.innerWidth < 768 && viewMode === "grid") {
@@ -38,36 +40,38 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="flex flex-col items-center justify-center h-full border-4 border-dashed border-zinc-900 rounded-4xl bg-zinc-900/30 m-6"
+              className="flex flex-col items-center justify-center h-full p-8 text-center"
             >
-              <Layers className="w-16 h-16 text-zinc-800 mb-6 animate-pulse" />
-              <p className="text-zinc-500 font-bold text-xl uppercase tracking-widest text-center px-4">
-                No Courses Found
+              <Layers className="w-16 h-16 text-zinc-500 mb-4" />
+              <h2 className="text-xl font-black font-expanded text-zinc-400 uppercase">
+                No Timetable Found
+              </h2>
+              <p className="text-xs font-mono text-zinc-600 mt-2 max-w-sm">
+                If you have registered courses, please ensure VTOP is responding
+                and try selecting a different semester.
               </p>
             </motion.div>
-          ) : loading && courses.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-zinc-500 font-mono animate-pulse gap-4">
-              <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
-              <span className="text-sm font-bold tracking-widest uppercase text-center px-4">
-                Fetching Timetable...
+          ) : (
+            <div className="absolute inset-0 pb-[80px] lg:pb-0">
+              {viewMode === "grid" && (
+                <TimetableGrid courses={courses} attendance={attendance} use24HourTime={use24HourTime} />
+              )}
+              {viewMode === "list" && (
+                <TimetableList courses={courses} attendance={attendance} use24HourTime={use24HourTime} />
+              )}
+              {viewMode === "week" && (
+                <TimetableWeek courses={courses} attendance={attendance} use24HourTime={use24HourTime} />
+              )}
+            </div>
+          )}
+
+          {loading && (
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
+              <Loader2 className="w-12 h-12 text-(--accent-base) animate-spin mb-4" />
+              <span className="text-sm font-bold font-expanded text-white uppercase tracking-wider animate-pulse">
+                Parsing Grid...
               </span>
             </div>
-          ) : (
-            <motion.div
-              key={viewMode}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className="h-full w-full"
-            >
-              {viewMode === "grid" ? (
-                <TimetableGrid courses={courses} attendance={attendance} />
-              ) : viewMode === "list" ? (
-                <TimetableList courses={courses} attendance={attendance} />
-              ) : (
-                <TimetableWeek courses={courses} attendance={attendance} />
-              )}
-            </motion.div>
           )}
         </div>
       </div>

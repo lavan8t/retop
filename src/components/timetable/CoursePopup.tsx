@@ -56,21 +56,21 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
         ref={popupRef}
         onClick={(e) => e.stopPropagation()}
         style={{ top: adjustedPosition.y, left: adjustedPosition.x }}
-        className={`fixed z-50 w-72 bg-zinc-900 border-2 border-black rounded-2xl shadow-[8px_8px_0px_0px_#000] overflow-hidden transform transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] origin-top-left ${active ? "scale-100 opacity-100" : "scale-90 opacity-0"}`}
+        className={`fixed z-50 w-72 bg-zinc-900 border-2 border-(--border-main) rounded-2xl shadow-none overflow-hidden transform transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] origin-top-left ${active ? "scale-100 opacity-100" : "scale-90 opacity-0"}`}
       >
         <div
-          className={`${colors.bg} p-3 border-b-2 border-black relative overflow-hidden`}
+          className={`${colors.bg} p-3 border-b-2 border-(--border-main) relative overflow-hidden`}
         >
           <div className="relative z-10 flex justify-between items-start gap-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span
-                  className={`px-1.5 py-0.5 rounded border-2 border-black bg-white/30 text-[9px] font-black uppercase tracking-widest ${colors.text}`}
+                  className={`px-1.5 py-0.5 rounded border-2 border-(--border-main) bg-white/30 text-[9px] font-black uppercase  ${colors.text}`}
                 >
                   {course.code}
                 </span>
                 <span
-                  className={`text-[9px] font-bold uppercase tracking-wide opacity-80 ${colors.text}`}
+                  className={`text-[9px] font-bold uppercase  opacity-80 ${colors.text}`}
                 >
                   {course.type}
                 </span>
@@ -83,7 +83,7 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
             </div>
             <button
               onClick={onClose}
-              className={`p-1.5 bg-black/10 hover:bg-black/20 rounded-full transition-colors border-2 border-transparent hover:border-black shrink-0 ${colors.text}`}
+              className={`p-1.5 bg-black/10 hover:bg-black/20 rounded-full transition-colors border-2 border-transparent hover:border-(--border-main) shrink-0 ${colors.text}`}
             >
               <X className="w-3 h-3" />
             </button>
@@ -91,14 +91,14 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
         </div>
 
         <div className="p-3 space-y-2 bg-zinc-900">
-          <div className="flex items-center gap-3 p-2 bg-zinc-950 rounded-xl border-2 border-black">
+          <div className="flex items-center gap-3 p-2 bg-zinc-950 rounded-xl border-2 border-(--border-main)">
             <div
-              className={`w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center border-2 border-black ${colors.icon}`}
+              className={`w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center border-2 border-(--border-main) ${colors.icon}`}
             >
               <User className="w-4 h-4" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-0.5">
+              <p className="text-[9px] font-bold text-zinc-500 uppercase  mb-0.5">
                 Faculty
               </p>
               <p
@@ -111,7 +111,7 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            <div className="p-2 bg-zinc-950 rounded-xl border-2 border-black">
+            <div className="p-2 bg-zinc-950 rounded-xl border-2 border-(--border-main)">
               <div className="flex items-center gap-1.5 text-zinc-500 text-[9px] font-bold uppercase mb-1">
                 <MapPin className="w-3 h-3" /> Venue
               </div>
@@ -119,7 +119,7 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
                 {course.venue}
               </p>
             </div>
-            <div className="p-2 bg-zinc-950 rounded-xl border-2 border-black">
+            <div className="p-2 bg-zinc-950 rounded-xl border-2 border-(--border-main)">
               <div className="flex items-center gap-1.5 text-zinc-500 text-[9px] font-bold uppercase mb-1">
                 <GraduationCap className="w-3 h-3" /> Credits
               </div>
@@ -128,7 +128,7 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
               </p>
             </div>
 
-            <div className="p-2 bg-zinc-950 rounded-xl border-2 border-black">
+            <div className="p-2 bg-zinc-950 rounded-xl border-2 border-(--border-main)">
               <div className="flex items-center gap-1.5 text-zinc-500 text-[9px] font-bold uppercase mb-2">
                 <Clock className="w-3 h-3" /> Slots
               </div>
@@ -136,7 +136,7 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
                 {course.slot.split("+").map((s, i) => (
                   <span
                     key={i}
-                    className={`text-[9px] font-black px-1.5 py-0.5 rounded border-2 border-black ${colors.bg} ${colors.text}`}
+                    className={`text-[9px] font-black px-1.5 py-0.5 rounded border-2 border-(--border-main) ${colors.bg} ${colors.text}`}
                   >
                     {s}
                   </span>
@@ -144,7 +144,7 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
               </div>
             </div>
 
-            <div className="p-2 bg-zinc-950 rounded-xl border-2 border-black">
+            <div className="p-2 bg-zinc-950 rounded-xl border-2 border-(--border-main)">
               <div className="flex items-center gap-1.5 text-zinc-500 text-[9px] font-bold uppercase mb-2">
                 <PieChart className="w-3 h-3" /> Attendance
               </div>

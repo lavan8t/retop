@@ -12,6 +12,7 @@ export interface AppSettings {
   calendarSync: boolean;
   driveSync: boolean;
   pinnedLinks: QuickLink[];
+  use24HourTime: boolean;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -23,6 +24,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   googleLinked: false,
   calendarSync: false,
   driveSync: false,
+  use24HourTime: true,
   pinnedLinks: [
     { title: "Time Table", url: "studenttimetable", category: "Core" },
     { title: "Marks", url: "mark", category: "Core" },
@@ -34,57 +36,34 @@ const DEFAULT_SETTINGS: AppSettings = {
   ],
 };
 
-const STATIC_ACCENTS: Record<string, any> = {
-  blue: {
-    base: "#3b82f6",
-    hover: "#60a5fa",
-    active: "#2563eb",
-    tint: "#1e3a8a",
-  },
-  purple: {
-    base: "#a855f7",
-    hover: "#c084fc",
-    active: "#9333ea",
-    tint: "#581c87",
-  },
-  orange: {
-    base: "#f97316",
-    hover: "#fb923c",
-    active: "#ea580c",
-    tint: "#7c2d12",
-  },
-  lime: {
-    base: "#84cc16",
-    hover: "#a3e635",
-    active: "#65a30d",
-    tint: "#365314",
-  },
-  cyan: {
-    base: "#06b6d4",
-    hover: "#22d3ee",
-    active: "#0891b2",
-    tint: "#164e63",
-  },
+// Professional Material 3 Base Accents
+const MATERIAL_ACCENTS: Record<string, string> = {
+  blue: "#2563eb", // Professional Royal Blue
+  purple: "#6366f1", // Sleek Indigo
+  orange: "#ea580c", // Burnt Orange / Rust
+  lime: "#059669", // Mapped to Emerald Green for a professional look
+  cyan: "#0e7490", // Deep Slate Cyan
 };
 
 export const applyTheme = (settings: AppSettings) => {
   if (typeof document === "undefined") return;
 
-  const root = getAppRoot(); // Targeted to #vtop-remastered-root inside Shadow DOM
+  const root = getAppRoot();
   if (!root) return;
 
   root.setAttribute("data-theme", settings.themeMode);
 
+  let baseColor =
+    MATERIAL_ACCENTS[settings.accentColor] || MATERIAL_ACCENTS.blue;
+
   if (settings.randomAccentColor) {
-    // Palette generation logic...
-    return;
+    // Generate a professional muted random color
+    const hue = Math.floor(Math.random() * 360);
+    baseColor = `hsl(${hue}, 70%, 45%)`;
   }
 
-  const accent = STATIC_ACCENTS[settings.accentColor] || STATIC_ACCENTS.blue;
-  root.style.setProperty("--accent-base", accent.base);
-  root.style.setProperty("--accent-hover", accent.hover);
-  root.style.setProperty("--accent-active", accent.active);
-  root.style.setProperty("--accent-tint", accent.tint);
+  // Inject only the base color; CSS color-mix() does the heavy lifting
+  root.style.setProperty("--accent-base", baseColor);
 };
 
 export const resetDynamicThemeSeed = () => {

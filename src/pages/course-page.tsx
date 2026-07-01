@@ -43,7 +43,7 @@ const NeoCard = ({
   className?: string;
 }) => (
   <div
-    className={`bg-zinc-900 border-4 border-zinc-800 rounded-4xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] ${className}`}
+    className={`bg-zinc-900 border-4 border-zinc-800 rounded-4xl shadow-none ${className}`}
   >
     {children}
   </div>
@@ -256,17 +256,17 @@ export const CoursePage = ({
                   onClick={() => setIsCourseListOpen(!isCourseListOpen)}
                   className={`flex items-center justify-between p-5 w-full transition-all text-left group ${
                     isCourseListOpen
-                      ? "bg-cyan-400 text-black border-b-4 border-black"
+                      ? "bg-cyan-400 text-black border-b-4 border-(--border-main)"
                       : "bg-zinc-900 hover:bg-zinc-800 text-zinc-200"
                   }`}
                 >
                   <div className="flex flex-col min-w-0 pr-4">
                     <span
-                      className={`text-[10px] font-black tracking-widest uppercase mb-1 ${isCourseListOpen ? "text-black/60" : "text-zinc-500 group-hover:text-zinc-400"}`}
+                      className={`text-[10px] font-black  uppercase mb-1 ${isCourseListOpen ? "text-black/60" : "text-zinc-500 group-hover:text-zinc-400"}`}
                     >
                       Selected Subject
                     </span>
-                    <span className="font-bold text-sm truncate uppercase tracking-wide">
+                    <span className="font-bold text-sm truncate uppercase ">
                       {currentOption ? currentOption.code : "CHOOSE A SUBJECT"}
                     </span>
                     {currentOption && !isCourseListOpen && (
@@ -276,7 +276,7 @@ export const CoursePage = ({
                     )}
                   </div>
                   <div
-                    className={`p-2 rounded-xl transition-transform duration-300 border-2 ${isCourseListOpen ? "border-black/20 bg-black/10 rotate-180" : "border-zinc-800 bg-zinc-950 group-hover:border-zinc-700"}`}
+                    className={`p-2 rounded-xl transition-transform duration-300 border-2 ${isCourseListOpen ? "border-(--border-main)/20 bg-black/10 rotate-180" : "border-zinc-800 bg-zinc-950 group-hover:border-zinc-700"}`}
                   >
                     <ChevronDown className="w-4 h-4 shrink-0" />
                   </div>
@@ -290,7 +290,7 @@ export const CoursePage = ({
                       exit={{ height: 0, opacity: 0 }}
                       className="overflow-hidden bg-zinc-950"
                     >
-                      <div className="max-h-[40vh] overflow-y-auto custom-scrollbar p-2 flex flex-col gap-1 border-b-4 border-black">
+                      <div className="max-h-[40vh] overflow-y-auto custom-scrollbar p-2 flex flex-col gap-1 border-b-4 border-(--border-main)">
                         {currentSemOptions.map((opt) => (
                           <button
                             key={opt.classId}
@@ -337,18 +337,18 @@ export const CoursePage = ({
                     >
                       <div className="flex flex-col gap-4 font-bold text-zinc-300 border-t-2 border-zinc-800 pt-4">
                         <div className="flex justify-between items-center">
-                          <span className="text-xs text-zinc-500 tracking-widest uppercase">
+                          <span className="text-xs text-zinc-500  uppercase">
                             Credits
                           </span>
-                          <span className="bg-cyan-400 text-black border-2 border-black px-2 py-0.5 rounded-lg text-xs shadow-sm">
+                          <span className="bg-cyan-400 text-black border-2 border-(--border-main) px-2 py-0.5 rounded-lg text-xs shadow-sm">
                             {currentOption.credits}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-xs text-zinc-500 tracking-widest uppercase">
+                          <span className="text-xs text-zinc-500  uppercase">
                             Class Type
                           </span>
-                          <span className="bg-purple-400 text-black border-2 border-black px-2 py-0.5 rounded-lg text-xs shadow-sm">
+                          <span className="bg-purple-400 text-black border-2 border-(--border-main) px-2 py-0.5 rounded-lg text-xs shadow-sm">
                             {currentOption.type}
                           </span>
                         </div>
@@ -427,14 +427,14 @@ export const CoursePage = ({
                     onClick={() => setView(tab.id as any)}
                     className={`px-5 py-3 rounded-[1.25rem] font-black flex items-center gap-3 transition-all border-4 ${
                       view === tab.id
-                        ? `${tab.color} text-black border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -translate-y-1`
+                        ? `${tab.color} text-black border-(--border-main) shadow-none -translate-y-1`
                         : "bg-zinc-900 text-zinc-500 border-transparent hover:border-zinc-800 hover:text-zinc-200"
                     }`}
                   >
                     <tab.icon
                       className={`w-5 h-5 ${view === tab.id ? "text-black" : "text-zinc-500"}`}
                     />
-                    <span className="text-sm tracking-wide">{tab.label}</span>
+                    <span className="text-sm ">{tab.label}</span>
                   </button>
                 ))}
               </div>
@@ -443,7 +443,7 @@ export const CoursePage = ({
                 {loading ? (
                   <div className="h-full flex flex-col items-center justify-center border-4 border-dashed border-zinc-800 rounded-4xl bg-(--bg-main)">
                     <Layers className="w-12 h-12 text-cyan-400 animate-bounce mb-4" />
-                    <span className="text-zinc-500 font-bold uppercase tracking-widest animate-pulse">
+                    <span className="text-zinc-500 font-bold uppercase  animate-pulse">
                       Fetching Data...
                     </span>
                   </div>
@@ -488,10 +488,10 @@ export const CoursePage = ({
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-3 pl-4">
-                                  <span className="hidden sm:block px-2 py-1 bg-yellow-400 text-yellow-900 rounded-lg text-[10px] font-black uppercase tracking-wider border border-yellow-500 shadow-sm">
+                                  <span className="hidden sm:block px-2 py-1 bg-yellow-400 text-yellow-900 rounded-lg text-[10px] font-black uppercase  border border-yellow-500 shadow-sm">
                                     {mat.category}
                                   </span>
-                                  <button className="p-2.5 rounded-lg bg-zinc-900 border-2 border-zinc-800 text-zinc-400 group-hover:bg-black group-hover:text-white group-hover:border-black transition-all shadow-sm">
+                                  <button className="p-2.5 rounded-lg bg-zinc-900 border-2 border-zinc-800 text-zinc-400 group-hover:bg-black group-hover:text-white group-hover:border-(--border-main) transition-all shadow-sm">
                                     <Download className="w-4 h-4" />
                                   </button>
                                 </div>
@@ -500,7 +500,7 @@ export const CoursePage = ({
                             {filteredMaterials.length === 0 && (
                               <div className="flex flex-col items-center justify-center py-20 text-zinc-600">
                                 <Filter className="w-12 h-12 mb-4 opacity-20" />
-                                <span className="font-bold uppercase tracking-widest text-xs">
+                                <span className="font-bold uppercase  text-xs">
                                   No matching files
                                 </span>
                               </div>
@@ -522,7 +522,7 @@ export const CoursePage = ({
                         {data.outcomes.map((oc, i) => (
                           <div
                             key={i}
-                            className="flex gap-4 p-6 bg-zinc-900 border-4 border-zinc-800 rounded-4xl hover:border-purple-400 transition-colors shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] shrink-0"
+                            className="flex gap-4 p-6 bg-zinc-900 border-4 border-zinc-800 rounded-4xl hover:border-purple-400 transition-colors shadow-none shrink-0"
                           >
                             <span className="font-black text-3xl text-purple-400 select-none font-expanded">
                               #{oc.number || i + 1}
@@ -547,10 +547,10 @@ export const CoursePage = ({
                         {data.syllabus.map((mod, i) => (
                           <div
                             key={i}
-                            className="bg-zinc-900 border-4 border-zinc-800 rounded-4xl overflow-hidden shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] shrink-0"
+                            className="bg-zinc-900 border-4 border-zinc-800 rounded-4xl overflow-hidden shadow-none shrink-0"
                           >
                             <div className="bg-zinc-950 p-4 border-b-4 border-zinc-800 flex justify-between items-center">
-                              <span className="font-black text-orange-400 uppercase text-xs tracking-widest font-expanded">
+                              <span className="font-black text-orange-400 uppercase text-xs  font-expanded">
                                 Module {mod.number}
                               </span>
                               <span className="font-bold text-[10px] text-zinc-400 bg-zinc-900 px-2 py-1 rounded border-2 border-zinc-800 uppercase">

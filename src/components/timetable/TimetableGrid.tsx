@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import { TimetableCourse, CourseSummary } from "../../types/vtop";
-import { getGridPositions, DAYS } from "../../utils/timetable-slots";
-import { getCourseAcronym } from "../../utils/formatting";
+import { getGridPositions, DAYS, CAMPUS_SLOT_TIMINGS } from "../../utils/timetable-slots";
+import { getCourseAcronym, formatTimeStr } from "../../utils/formatting";
 import { CoursePopup } from "./CoursePopup";
 import { Icon } from "@iconify-icon/react";
 
@@ -18,9 +18,11 @@ const getAttendanceEmoji = (attendanceStr?: string) => {
 export const TimetableGrid = ({
   courses,
   attendance,
+  use24HourTime = true,
 }: {
   courses: TimetableCourse[];
   attendance: CourseSummary[];
+  use24HourTime?: boolean;
 }) => {
   const [selectedCourse, setSelectedCourse] = useState<{
     data: TimetableCourse;
@@ -40,23 +42,6 @@ export const TimetableGrid = ({
     return () => window.removeEventListener("click", handleDocumentClick);
   }, []);
 
-  const columns = [
-    { label: "8 - 8:50" },
-    { label: "9 - 9:50" },
-    { label: "10 - 10:50" },
-    { label: "11 - 11:50" },
-    { label: "12 - 12:50" },
-    { label: "12:30 - 1:20", sub: "LAB" },
-    { label: "LUNCH" },
-    { label: "2 - 2:50" },
-    { label: "3 - 3:50" },
-    { label: "4 - 4:50" },
-    { label: "5 - 5:50" },
-    { label: "6 - 6:50" },
-    { label: "6:30 - 7:20", sub: "LAB" },
-    { label: "7 - 7:50" },
-  ];
-
   // Logic for the 6 Days (Mon - Sat)
   const activeDays = useMemo(() => {
     return [0, 1, 2, 3, 4, 5].map((i) => DAYS[i]);
@@ -70,14 +55,14 @@ export const TimetableGrid = ({
       key="h-corner"
       className="sticky left-0 top-0 z-30 bg-zinc-950 border-b-2 border-r-2 border-zinc-900 flex items-center justify-center shadow-md w-full h-full"
     >
-      <span className="text-[11px] md:text-xs font-black text-zinc-600 tracking-wider">
+      <span className="text-[11px] md:text-xs font-black text-zinc-600 ">
         DAY
       </span>
     </div>,
   );
 
   // Headers
-  columns.forEach((col, i) => {
+  Array.from({ length: 14 }).forEach((_, i) => {
     if (i === 6) {
       gridCells.push(
         <div
@@ -87,14 +72,36 @@ export const TimetableGrid = ({
       );
       return;
     }
+    
+    const th = CAMPUS_SLOT_TIMINGS.Theory[i];
+    const lb = CAMPUS_SLOT_TIMINGS.Lab[i];
+    const isSame = th.start === lb.start && th.end === lb.end;
+    const thStr = th.start !== "-" ? formatTimeStr(`${th.start} - ${th.end}`, use24HourTime) : null;
+    const lbStr = lb.start !== "-" ? formatTimeStr(`${lb.start} - ${lb.end}`, use24HourTime) : null;
+
     gridCells.push(
       <div
         key={`h-${i}`}
-        className="sticky top-0 z-20 flex flex-col items-center justify-center bg-zinc-900 border-b-2 border-r-2 border-zinc-800 shadow-sm px-2 w-full h-full"
+        className="sticky top-0 z-20 flex flex-col items-center justify-center gap-0.5 bg-zinc-900 border-b-2 border-r-2 border-zinc-800 shadow-sm px-2 w-full h-full py-1"
       >
-        <span className="text-[11px] md:text-xs font-bold text-zinc-400 whitespace-nowrap">
-          {col.label}
-        </span>
+        {isSame && thStr ? (
+          <span className="text-[10px] md:text-xs font-bold text-zinc-400 whitespace-nowrap">
+            {thStr}
+          </span>
+        ) : (
+          <>
+            {thStr && (
+              <span className="text-[9px] md:text-[10px] font-bold text-zinc-400 whitespace-nowrap flex items-center gap-1">
+                <span className="text-[8px] bg-zinc-800 px-1 rounded text-zinc-500">T</span> {thStr}
+              </span>
+            )}
+            {lbStr && (
+              <span className="text-[9px] md:text-[10px] font-bold text-zinc-400 whitespace-nowrap flex items-center gap-1">
+                <span className="text-[8px] bg-purple-900/50 text-purple-400 px-1 rounded">L</span> {lbStr}
+              </span>
+            )}
+          </>
+        )}
       </div>,
     );
   });
@@ -109,13 +116,13 @@ export const TimetableGrid = ({
         key={`d-${dIdx}`}
         className="sticky left-0 z-20 flex items-center justify-center bg-zinc-950 border-b border-r-2 border-zinc-900 text-zinc-500 font-black font-expanded shadow-lg w-full h-full"
       >
-        <span className="-rotate-90 tracking-tighter text-sm md:text-base">
+        <span className="-rotate-90  text-sm md:text-base">
           {shortDay}
         </span>
       </div>,
     );
 
-    for (let colIdx = 0; colIdx < columns.length; colIdx++) {
+    for (let colIdx = 0; colIdx < 14; colIdx++) {
       if (colIdx === 6) {
         gridCells.push(
           <div
@@ -124,7 +131,7 @@ export const TimetableGrid = ({
           >
             <div className="h-full w-full flex items-center justify-center">
               <span
-                className="text-xs md:text-sm font-black text-zinc-600 tracking-[0.2em] uppercase opacity-70 whitespace-nowrap"
+                className="text-xs md:text-sm font-black text-zinc-600  uppercase opacity-70 whitespace-nowrap"
                 style={{
                   writingMode: "vertical-rl",
                   transform: "rotate(180deg)",
@@ -154,14 +161,14 @@ export const TimetableGrid = ({
 
         // --- Solid Neon Theme Colors (Home Screen Style) ---
         const colorClasses = isLab
-          ? "bg-purple-400 border-black hover:shadow-[4px_4px_0px_0px_#000]"
-          : "bg-cyan-400 border-black hover:shadow-[4px_4px_0px_0px_#000]";
+          ? "bg-purple-400 border-(--border-main) hover:shadow-[4px_4px_0px_0px_var(--shadow-main)]"
+          : "bg-cyan-400 border-(--border-main) hover:shadow-[4px_4px_0px_0px_var(--shadow-main)]";
 
         const titleColor = "text-black";
         const slotColor = "text-black/70";
 
         // Footer styling
-        const footerBg = "bg-white/30 border-black";
+        const footerBg = "bg-white/30 border-(--border-main)";
         const footerText = "text-black/80";
 
         gridCells.push(
@@ -188,7 +195,7 @@ export const TimetableGrid = ({
             >
               <div className="mb-auto w-full flex flex-col items-start p-2.5 md:p-3">
                 <div
-                  className={`text-base sm:text-lg md:text-lg font-black font-expanded leading-tight md:leading-snug tracking-tight w-full flex items-start justify-between gap-1 ${titleColor}`}
+                  className={`text-base sm:text-lg md:text-lg font-black font-expanded leading-tight md:leading-snug  w-full flex items-start justify-between gap-1 ${titleColor}`}
                 >
                   <span className="wrap-break-word pr-1">
                     {getCourseAcronym(cellContent.title)}
@@ -196,14 +203,14 @@ export const TimetableGrid = ({
                   <span className="shrink-0 text-sm">{emoji}</span>
                 </div>
                 <span
-                  className={`text-[9px] sm:text-[10px] md:text-[11px] font-bold mt-1 uppercase tracking-widest ${slotColor}`}
+                  className={`text-[9px] sm:text-[10px] md:text-[11px] font-bold mt-1 uppercase  ${slotColor}`}
                 >
                   {cellContent.slot}
                 </span>
               </div>
 
               <div
-                className={`flex items-center gap-1.5 w-full text-[8px] sm:text-[9px] md:text-[10px] uppercase font-black tracking-widest px-2.5 pt-1.5 pb-2 md:px-3 md:pt-2 md:pb-2 border-t-2 mt-auto ${footerBg} ${footerText}`}
+                className={`flex items-center gap-1.5 w-full text-[8px] sm:text-[9px] md:text-[10px] uppercase font-black  px-2.5 pt-1.5 pb-2 md:px-3 md:pt-2 md:pb-2 border-t-2 mt-auto ${footerBg} ${footerText}`}
               >
                 <Icon
                   icon="heroicons:map-pin-20-solid"

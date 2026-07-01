@@ -102,7 +102,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
         className="w-80 flex flex-col border-r-4 border-zinc-800 bg-zinc-900 shrink-0"
       >
         <div className="p-6 border-b-4 border-zinc-800 bg-zinc-950/30 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3 text-zinc-400 font-bold uppercase tracking-widest text-sm">
+          <div className="flex items-center gap-3 text-zinc-400 font-bold uppercase  text-sm">
             <BookOpen className="w-5 h-5 text-blue-500" />
             <span>Baskets</span>
           </div>
@@ -112,7 +112,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
         </div>
         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2">
           {loading ? (
-            <div className="p-8 text-center text-zinc-600 animate-pulse text-xs font-bold uppercase tracking-widest">
+            <div className="p-8 text-center text-zinc-600 animate-pulse text-xs font-bold uppercase ">
               Syncing...
             </div>
           ) : (
@@ -126,7 +126,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
                 className={`w-full text-left p-4 rounded-2xl border-2 transition-all duration-200 flex items-center justify-between group relative overflow-hidden ${selectedId === cat.id ? "bg-zinc-950 border-blue-500 text-zinc-200 shadow-[inset_6px_0px_0px_0px_#3b82f6]" : "bg-transparent border-transparent text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 hover:border-zinc-700"}`}
               >
                 <div className="min-w-0 z-10">
-                  <div className="text-sm font-bold truncate pr-2 font-expanded uppercase tracking-tight">
+                  <div className="text-sm font-bold truncate pr-2 font-expanded uppercase ">
                     {cat.title}
                   </div>
                   <div className="text-[10px] font-mono text-zinc-500 mt-1">
@@ -152,10 +152,10 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
       <div className="flex-1 flex flex-col min-w-0 bg-zinc-950">
         <div className="h-20 border-b-4 border-zinc-800 flex items-center justify-between px-8 bg-zinc-900 shrink-0 gap-6 shadow-xl z-20">
           <div className="flex flex-col min-w-0">
-            <h2 className="font-expanded font-black text-2xl text-zinc-200 uppercase tracking-tight truncate">
+            <h2 className="font-expanded font-black text-2xl text-zinc-200 uppercase  truncate">
               {selectedCategory?.title || "Curriculum"}
             </h2>
-            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-0.5">
+            <span className="text-[10px] font-bold text-zinc-500 uppercase  mt-0.5">
               {filteredCourses.length} COURSES FOUND
             </span>
           </div>
@@ -200,14 +200,14 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
           {loadingCourses ? (
             <div className="h-full flex flex-col items-center justify-center text-zinc-500 gap-4 animate-pulse">
               <Loader2 className="w-12 h-12 animate-spin text-blue-500" />
-              <span className="text-sm font-bold tracking-widest uppercase">
+              <span className="text-sm font-bold  uppercase">
                 Fetching Courses...
               </span>
             </div>
           ) : filteredCourses.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-zinc-500 border-4 border-dashed border-zinc-900 rounded-4xl bg-zinc-900/30">
               <Search className="w-16 h-16 mb-4 opacity-20" />
-              <span className="font-bold uppercase tracking-widest">
+              <span className="font-bold uppercase ">
                 No matching courses
               </span>
             </div>
@@ -219,7 +219,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
             >
               <table className="w-full text-left border-collapse table-fixed min-w-200">
                 <thead className="sticky top-0 bg-zinc-950 z-10 shadow-md">
-                  <tr className="text-blue-400 font-expanded font-bold text-sm uppercase tracking-wider border-b-2 border-zinc-800">
+                  <tr className="text-blue-400 font-expanded font-bold text-sm uppercase  border-b-2 border-zinc-800">
                     <th className="py-4 px-6 w-[15%]">Code</th>
                     <th className="py-4 px-4 w-[50%]">Course Title</th>
                     <th className="py-4 px-4 w-[20%] text-center">Type</th>

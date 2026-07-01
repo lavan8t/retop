@@ -1,11 +1,10 @@
 import React from "react";
-import { motion, Variants } from "framer-motion"; // <-- Imported Variants
-import { MapPin, Clock, ArrowRight } from "lucide-react";
+import { motion, Variants } from "framer-motion";
+import { MapPin, ArrowRight } from "lucide-react";
 import { CourseSummary, Assignment } from "../../types/vtop";
 import { UpcomingClass } from "../../utils/timetable-slots";
-import { getCourseAcronym } from "../../utils/formatting";
+import { formatTimeStr } from "../../utils/formatting";
 
-// <-- Explicitly typed as Variants
 const rowVariants: Variants = {
   hidden: { opacity: 0, y: 15, scale: 0.95 },
   show: {
@@ -19,65 +18,66 @@ const rowVariants: Variants = {
 export const AttendanceRow = ({ course }: { course: CourseSummary }) => {
   const val = parseFloat(course.attendance);
   const displayVal = isNaN(val) ? 0 : Math.round(val);
+  const textRef = React.useRef<HTMLDivElement>(null);
+  const [isOverflowing, setIsOverflowing] = React.useState(false);
 
-  // Bold Neo-Brutalist Badge Colors
-  let badgeBg = "bg-green-400";
-  let barColor = "bg-green-500";
+  React.useEffect(() => {
+    const checkOverflow = () => {
+      if (textRef.current) {
+        setIsOverflowing(textRef.current.scrollWidth > textRef.current.clientWidth + 5);
+      }
+    };
+    checkOverflow();
+    window.addEventListener("resize", checkOverflow);
+    return () => window.removeEventListener("resize", checkOverflow);
+  }, [course.name]);
+
+  let badgeBg = "bg-(--att-safe) text-white border-(--border-main)";
+  let barColor = "bg-(--att-safe)";
 
   if (isNaN(val)) {
-    badgeBg = "bg-zinc-300";
-    barColor = "bg-zinc-400";
+    badgeBg = "bg-(--bg-highlight) text-(--text-muted) border-(--border-dim)";
+    barColor = "bg-(--bg-highlight)";
   } else if (val < 75) {
-    badgeBg = "bg-red-400";
-    barColor = "bg-red-500";
+    badgeBg = "bg-(--att-danger) text-white border-(--border-main)";
+    barColor = "bg-(--att-danger)";
   } else if (val < 80) {
-    badgeBg = "bg-yellow-400";
-    barColor = "bg-yellow-500";
+    badgeBg = "bg-(--att-warn) text-black border-(--border-main)";
+    barColor = "bg-(--att-warn)";
   }
 
   return (
-    <motion.div
-      layout
-      variants={rowVariants}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.97 }}
-      className="relative flex items-center justify-between p-3.5 rounded-2xl border-2 border-black bg-(--bg-surface) shadow-[2px_2px_0px_0px_#000] hover:shadow-[4px_4px_0px_0px_#000] transition-shadow cursor-pointer group select-none overflow-hidden"
-    >
-      {/* Subtle background liquid fill */}
+    <div className="relative flex items-center justify-between p-2 rounded-xl bg-(--bg-surface) hover:bg-(--bg-highlight) transition-colors cursor-pointer group select-none overflow-hidden">
       <div
         className={`absolute top-0 left-0 h-full ${barColor} opacity-10 group-hover:opacity-20 transition-opacity duration-300`}
         style={{ width: `${displayVal}%` }}
       />
-
-      <div className="relative z-10 min-w-0 flex-1 pr-3">
-        <div className="flex items-center gap-2 mb-1">
-          <div className="text-sm font-black text-(--text-main) truncate group-hover:text-blue-500 transition-colors">
+      <div className="relative z-10 flex items-center gap-2 min-w-0 flex-1 pr-3">
+        <div className="flex-1 min-w-0 overflow-hidden" style={{ maskImage: isOverflowing ? "linear-gradient(to right, black 85%, transparent 100%)" : "none" }}>
+          <div 
+            ref={textRef}
+            className={`text-xs font-black text-(--text-main) transition-colors whitespace-nowrap inline-block ${isOverflowing ? 'group-hover:animate-[marquee-scroll_6s_ease-in-out_infinite]' : ''}`}
+          >
             {course.name}
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="text-[10px] font-bold font-mono text-(--text-muted) truncate uppercase bg-(--bg-highlight) px-1.5 py-0.5 rounded border border-(--border-dim)">
-            {course.code}
-          </div>
-          {course.type && (
-            <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded border border-(--border-dim) bg-(--bg-main) text-(--text-muted) leading-none shrink-0">
-              {course.type}
-            </span>
-          )}
-        </div>
+        {course.type && (
+          <span className="text-[9px] font-black uppercase px-1 py-0.5 rounded bg-(--bg-main) text-(--text-muted) leading-none shrink-0">
+            {course.type}
+          </span>
+        )}
       </div>
 
-      {/* The Chunky Neo-Brutalist Badge */}
       <div
-        className={`relative z-10 shrink-0 font-black font-expanded text-lg md:text-xl leading-none text-black px-3 py-1.5 rounded-xl border-2 border-black shadow-[2px_2px_0px_0px_#000] ${badgeBg}`}
+        className={`relative z-10 shrink-0 font-black font-expanded text-sm leading-none px-2 py-1 rounded-md border-2 ${badgeBg}`}
       >
         {isNaN(val) ? "--" : `${displayVal}%`}
       </div>
-    </motion.div>
+    </div>
   );
 };
 
-export const ScheduleRow = ({ item }: { item: UpcomingClass }) => {
+export const ScheduleRow = ({ item, onClick, use24HourTime = true }: { item: UpcomingClass, onClick?: (e: React.MouseEvent, item: UpcomingClass) => void, use24HourTime?: boolean }) => {
   const isLab = item.course?.type?.includes("Lab") || false;
   const isNow = item.status === "Now";
 
@@ -85,55 +85,38 @@ export const ScheduleRow = ({ item }: { item: UpcomingClass }) => {
     <motion.div
       layout
       variants={rowVariants}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.97 }}
-      className="flex p-0 rounded-2xl border-2 border-black bg-(--bg-surface) shadow-[2px_2px_0px_0px_#000] hover:shadow-[4px_4px_0px_0px_#000] transition-shadow group cursor-pointer select-none overflow-hidden"
+      onClick={(e) => onClick?.(e, item)}
+      className={`p-3 rounded-xl shadow-none cursor-pointer select-none overflow-hidden relative ${isNow ? "bg-(--accent-base) text-(--text-inverse)" : "bg-(--bg-surface) text-(--text-main)"}`}
     >
-      {/* Ticket-style Left Edge */}
-      <div
-        className={`w-20 shrink-0 flex flex-col items-center justify-center border-r-2 border-black p-2 ${isNow ? "bg-yellow-300" : "bg-(--bg-highlight)"}`}
-      >
-        <span
-          className={`text-sm font-black font-expanded leading-none ${isNow ? "text-black" : "text-(--text-main)"}`}
-        >
-          {item.time}
-        </span>
-        <span
-          className={`text-[9px] font-black uppercase mt-1.5 px-2 py-0.5 rounded-md border-2 leading-none ${
-            isNow
-              ? "bg-red-500 text-white border-black shadow-[2px_2px_0px_0px_#000] animate-pulse"
-              : "bg-(--bg-main) text-(--text-muted) border-(--border-dim)"
-          }`}
-        >
-          {item.status}
-        </span>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 min-w-0 flex flex-col justify-center p-3 relative">
-        <div className="flex items-center gap-2 mb-1.5">
+      <div className="flex-1 min-w-0 flex flex-col justify-center">
+        <div className="flex items-start gap-2 mb-1.5">
           <span
-            className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md border-2 border-black shadow-[2px_2px_0px_0px_#000] leading-none ${
-              isLab ? "bg-purple-300 text-black" : "bg-cyan-300 text-black"
+            className={`shrink-0 text-[10px] font-black uppercase px-2 py-0.5 rounded-md leading-none mt-0.5 ${
+              isNow 
+                ? "bg-(--text-main) text-(--bg-main) shadow-none" 
+                : isLab
+                  ? "bg-purple-500 text-white shadow-none"
+                  : "bg-(--text-main) text-(--bg-main) shadow-none"
             }`}
           >
             {item.course.slot}
           </span>
-          <span className="text-sm font-black text-(--text-main) truncate leading-none mt-0.5 group-hover:text-blue-500 transition-colors">
-            {getCourseAcronym(item.course.title)}
+          <span className={`text-sm font-black leading-tight flex-1 ${isNow ? "text-(--text-inverse)" : "text-(--text-main)"}`}>
+            {item.course.title}
           </span>
         </div>
-        <div className="flex items-center gap-3 text-[10px] font-bold font-mono text-(--text-muted) mt-0.5">
-          <span className="flex items-center gap-1.5 bg-(--bg-highlight) px-1.5 py-0.5 rounded border border-(--border-dim)">
-            <MapPin className="w-3 h-3 text-blue-400" />
+        
+        <div className={`flex flex-wrap items-center gap-3 text-[11px] font-bold font-mono mt-1 ${isNow ? "text-(--text-inverse)/90" : "text-(--text-muted)"}`}>
+          <span className="flex items-center gap-1.5 bg-black/10 px-1.5 py-0.5 rounded-md">
+             <span className="opacity-80">🕒</span>
+             {formatTimeStr(item.time, use24HourTime)}
+          </span>
+          <span className="flex items-center gap-1.5 bg-black/10 px-1.5 py-0.5 rounded-md">
+            <MapPin className="w-3 h-3" />
             {item.course.venue}
           </span>
         </div>
 
-        {/* Hover Arrow Indicator */}
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0 duration-300">
-          <ArrowRight className="w-4 h-4 text-blue-500" />
-        </div>
       </div>
     </motion.div>
   );
@@ -143,21 +126,19 @@ export const AssignmentRow = ({ assignment }: { assignment: Assignment }) => (
   <motion.div
     layout
     variants={rowVariants}
-    whileHover={{ scale: 1.02 }}
-    whileTap={{ scale: 0.97 }}
-    className="p-3.5 rounded-2xl border-2 border-black bg-(--bg-surface) shadow-[2px_2px_0px_0px_#000] hover:shadow-[4px_4px_0px_0px_#000] transition-shadow group cursor-pointer select-none"
+    className="p-3 rounded-xl bg-(--bg-surface) shadow-none cursor-pointer select-none relative"
   >
     <div className="flex justify-between items-start gap-3">
-      <div className="flex-1 min-w-0">
-        <div className="text-sm font-black text-(--text-main) leading-tight group-hover:text-blue-500 transition-colors line-clamp-2">
+      <div className="flex-1 min-w-0 pr-6">
+        <div className="text-sm font-black text-(--text-main) leading-tight transition-colors line-clamp-2">
           {assignment.title}
         </div>
-        <div className="text-[10px] font-bold font-mono text-(--text-muted) mt-2 truncate bg-(--bg-highlight) inline-block px-1.5 py-0.5 rounded border border-(--border-dim)">
+        <div className="text-[10px] font-bold font-mono text-(--bg-main) mt-2 truncate bg-(--text-main) inline-block px-2 py-1 rounded-md shadow-none">
           {assignment.course}
         </div>
       </div>
       <div className="shrink-0 flex flex-col items-end">
-        <span className="text-[10px] font-black font-mono uppercase text-black bg-blue-300 border-2 border-black px-2 py-1 rounded-lg shadow-[2px_2px_0px_0px_#000] leading-none group-hover:bg-blue-400 transition-colors">
+        <span className="text-[10px] font-black font-mono uppercase text-white bg-(--att-danger) px-2 py-1 rounded-md shadow-none leading-none">
           {assignment.dueDate}
         </span>
       </div>

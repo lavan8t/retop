@@ -9,6 +9,7 @@ export const TimetableList = ({
 }: {
   courses: TimetableCourse[];
   attendance: CourseSummary[];
+  use24HourTime?: boolean;
 }) => (
   <div className="h-full w-full bg-(--bg-main) flex flex-col">
     {/* MOBILE VIEW */}
@@ -24,15 +25,15 @@ export const TimetableList = ({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="bg-zinc-900 border-2 border-black rounded-2xl p-4 shadow-[4px_4px_0px_0px_#000] flex flex-col gap-3 shrink-0"
+            className="bg-zinc-900 border-2 border-(--border-main) rounded-2xl p-4 shadow-none flex flex-col gap-3 shrink-0"
           >
             <div className="flex justify-between items-start">
               <span
-                className={`px-2 py-1 rounded-lg border-2 border-black text-[10px] font-black uppercase ${isLab ? "bg-purple-400 text-black" : "bg-cyan-400 text-black"}`}
+                className={`px-2 py-1 rounded-lg border-2 border-(--border-main) text-[10px] font-black uppercase ${isLab ? "bg-purple-400 text-black" : "bg-cyan-400 text-black"}`}
               >
                 {c.code}
               </span>
-              <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">
+              <span className="text-[9px] font-bold text-zinc-500 uppercase ">
                 {c.type}
               </span>
             </div>
@@ -79,7 +80,7 @@ export const TimetableList = ({
     <div className="hidden md:block flex-1 overflow-auto custom-scrollbar pb-32 xl:pb-0">
       <table className="w-full text-left border-collapse table-fixed min-w-200">
         <thead className="sticky top-0 bg-(--bg-surface) z-10 shadow-md">
-          <tr className="text-(--text-main) font-expanded font-bold text-sm uppercase tracking-wider border-b-4 border-black">
+          <tr className="text-(--text-main) font-expanded font-bold text-sm uppercase  border-b-4 border-(--border-main)">
             <th className="py-4 px-6 w-[15%]">Code</th>
             <th className="py-4 px-4 w-[25%]">Course Title</th>
             <th className="py-4 px-4 w-[10%] text-center">Type</th>
@@ -117,7 +118,7 @@ export const TimetableList = ({
                 </td>
                 <td className="py-3 px-4 text-center">
                   <span
-                    className={`px-2 py-1 rounded text-[10px] font-bold uppercase border-2 border-black ${c.type.includes("Lab") ? "bg-purple-400 text-black" : "bg-cyan-400 text-black"}`}
+                    className={`px-2 py-1 rounded text-[10px] font-bold uppercase border-2 border-(--border-main) ${c.type.includes("Lab") ? "bg-purple-400 text-black" : "bg-cyan-400 text-black"}`}
                   >
                     {c.type.split(" ")[0]}
                   </span>

@@ -5,16 +5,34 @@ function stripTags(html: string): string {
   return doc.body.textContent || "";
 }
 
-export function parseCGPA(html: string) {
-  const text = stripTags(html);
-  const match = text.match(/CGPA\s*[:|-]?\s*([0-9.]+)/i);
-  return match ? match[1] : "N/A";
-}
-
-export function parseCredits(html: string) {
-  const text = stripTags(html);
-  const match = text.match(/Credits\s*[:|-]?\s*([\d.]+)/i);
-  return match ? match[1] : "N/A";
+export function parseAcademicStats(html: string) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  
+  const stats = {
+    cgpa: "...",
+    credits: "...",
+    totalCredits: "...",
+    nonGraded: "...",
+    placement: "...",
+  };
+  
+  const listItems = doc.querySelectorAll('li');
+  listItems.forEach(li => {
+    const text = li.textContent || '';
+    const spanVal = li.querySelector('.fontcolor3')?.textContent?.trim() || '';
+    if (text.includes('Total Credits Required')) stats.totalCredits = spanVal.replace(/\.0$/, '');
+    if (text.includes('Earned Credits')) stats.credits = spanVal.replace(/\.0$/, '');
+    if (text.includes('Current CGPA')) stats.cgpa = spanVal.replace(/\.0$/, '');
+    if (text.includes('Non-graded')) stats.nonGraded = spanVal.replace(/\.0$/, '');
+  });
+  
+  const placementTd = doc.querySelector('table td');
+  if (placementTd) {
+    stats.placement = placementTd.textContent?.trim() || "...";
+  }
+  
+  return stats;
 }
 
 export function parseProctorMessage(html: string) {

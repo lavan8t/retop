@@ -275,3 +275,22 @@ export interface DAUploadFormData {
   allowedExtensions: string[];
   maxSize?: string;
 }
+export interface CalendarMonthPreview {
+  label: string;
+  dateString: string;
+}
+
+export interface ClassGroup {
+  id: string;
+  label: string;
+}
+
+export interface CalendarEvent {
+  dayNumber: string;
+  info: string;
+  subInfo: string;
+  isHoliday: boolean;
+  isInstructional: boolean;
+  isExam: boolean;
+  dateObj: Date;
+}

@@ -18,6 +18,41 @@ import { TimetableCourse } from "../types/vtop";
 // 12: 18:30 (Lab Only)
 // 13: 19:00 (Theory Only)
 
+export const CAMPUS_SLOT_TIMINGS: Record<"Theory" | "Lab", { start: string; end: string }[]> = {
+  Theory: [
+    { start: "08:00", end: "08:50" },
+    { start: "09:00", end: "09:50" },
+    { start: "10:00", end: "10:50" },
+    { start: "11:00", end: "11:50" },
+    { start: "12:00", end: "12:50" },
+    { start: "-", end: "-" }, // 5: null (-)
+    { start: "13:00", end: "14:00" }, // 6: Lunch
+    { start: "14:00", end: "14:50" },
+    { start: "15:00", end: "15:50" },
+    { start: "16:00", end: "16:50" },
+    { start: "17:00", end: "17:50" },
+    { start: "18:00", end: "18:50" },
+    { start: "18:51", end: "19:00" },
+    { start: "19:01", end: "19:50" },
+  ],
+  Lab: [
+    { start: "08:00", end: "08:50" },
+    { start: "08:51", end: "09:40" },
+    { start: "09:51", end: "10:40" },
+    { start: "10:41", end: "11:30" },
+    { start: "11:40", end: "12:30" },
+    { start: "12:31", end: "13:20" },
+    { start: "13:00", end: "14:00" }, // 6: Lunch
+    { start: "14:00", end: "14:50" },
+    { start: "14:51", end: "15:40" },
+    { start: "15:51", end: "16:40" },
+    { start: "16:41", end: "17:30" },
+    { start: "17:40", end: "18:30" },
+    { start: "18:31", end: "19:20" },
+    { start: "-", end: "-" }, // 13: null (-)
+  ]
+};
+
 export const CAMPUS_SLOTS: Record<string, { Theory: string[]; Lab: string[] }> =
   {
     Monday: {

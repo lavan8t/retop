@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, Variants } from "framer-motion";
-import { LocationOn, ArrowForward } from '@nine-thirty-five/material-symbols-react/rounded';
+import { LocationOn, ArrowForward, Schedule } from '@nine-thirty-five/material-symbols-react/rounded';
 import { CourseSummary, Assignment, Event } from "../../types/vtop";
 import { UpcomingClass } from "../../utils/timetable-slots";
 import { formatTimeStr } from "../../utils/formatting";
@@ -112,7 +112,7 @@ export const ScheduleRow = ({ item, onClick, use24HourTime = true }: { item: Upc
         
         <div className={`flex flex-wrap items-center gap-3 text-[11px] font-bold font-mono mt-1 ${isNow ? "text-(--text-inverse)/90" : "text-(--text-muted)"}`}>
           <span className="flex items-center gap-1.5 bg-black/10 px-1.5 py-0.5 rounded-md">
-             <span className="opacity-80">🕒</span>
+             <Schedule className="w-3 h-3 opacity-80" />
              {formatTimeStr(item.time, use24HourTime)}
           </span>
           <span className="flex items-center gap-1.5 bg-black/10 px-1.5 py-0.5 rounded-md">

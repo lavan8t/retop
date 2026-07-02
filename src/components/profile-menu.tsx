@@ -216,8 +216,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
           title="Legacy View"
         >
           <span 
-            className="text-xs group-hover:scale-110 transition-transform tracking-wider"
-            style={{ fontFamily: "'Times New Roman', Times, serif", color: "#ffffff", fontWeight: "bold" }}
+            className="text-xs group-hover:scale-110 transition-transform tracking-wider !font-['Times_New_Roman',_Times,_serif] !font-bold !text-white"
           >
             VTOP
           </span>

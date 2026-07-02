@@ -7,13 +7,7 @@ import { getCourseAcronym, formatTimeStr } from "../../utils/formatting";
 import { CoursePopup } from "./CoursePopup";
 
 const getAttendanceEmoji = (attendanceStr?: string) => {
-  if (!attendanceStr) return "";
-  const val = parseFloat(attendanceStr);
-  if (isNaN(val)) return "";
-  if (val > 90) return "😎";
-  if (val > 80) return "😄";
-  if (val > 75) return "😐";
-  return "😭";
+  return "";
 };
 
 export const TimetableWeek = ({

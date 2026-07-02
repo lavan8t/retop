@@ -338,8 +338,15 @@ const DashboardApp = () => {
           (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey)
         ) {
           e.preventDefault();
+          setCurrentView("dashboard");
           isOmniboxOpenRef.current = true;
           setOmniboxInitial(e.key === "/" ? "" : e.key);
+          setIsOmniboxOpen(true);
+        }
+      } else {
+        if (e.key === "/") {
+          e.preventDefault();
+          isOmniboxOpenRef.current = true;
           setIsOmniboxOpen(true);
         }
       }

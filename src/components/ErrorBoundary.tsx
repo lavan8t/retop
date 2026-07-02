@@ -39,30 +39,32 @@ export class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-(--bg-main) p-6 text-center">
-          <div className="bg-red-500/10 border-2 border-red-500/20 rounded-3xl p-8 max-w-lg w-full flex flex-col items-center shadow-lg">
-            <AlertTriangle className="w-16 h-16 text-red-500 mb-6" />
-            <h1 className="text-2xl font-black font-expanded text-(--text-main) uppercase mb-2">
-              Something went wrong
-            </h1>
-            <p className="text-sm font-mono text-(--text-muted) mb-8">
-              An unexpected error occurred in the application.
-            </p>
+        <div className="flex flex-col min-h-screen bg-(--bg-main) relative overflow-hidden">
+          {/* Gradient red bottom to transparent up */}
+          <div className="absolute inset-0 bg-gradient-to-t from-red-500/20 via-transparent to-transparent pointer-events-none" />
 
-            <div className="w-full bg-black/40 rounded-xl p-4 text-left overflow-auto max-h-48 mb-8 border border-red-500/20">
-              <code className="text-xs text-red-400 font-mono whitespace-pre-wrap">
-                {this.state.error && this.state.error.toString()}
-                {"\n"}
-                {this.state.errorInfo?.componentStack}
-              </code>
+          {/* Error content at the bottom */}
+          <div className="mt-auto w-full flex flex-row items-center justify-between p-6 md:px-12 md:py-8 relative z-10">
+            <div className="flex items-center gap-4">
+              <AlertTriangle className="w-10 h-10 text-red-500 shrink-0" />
+              <div className="flex flex-col text-left">
+                <h1 className="text-xl md:text-2xl font-black font-expanded text-(--text-main) uppercase leading-none">
+                  Something went wrong
+                </h1>
+                <p className="text-xs md:text-sm font-mono text-red-400 mt-1 max-w-xl truncate">
+                  {this.state.error
+                    ? this.state.error.toString()
+                    : "An unexpected error occurred."}
+                </p>
+              </div>
             </div>
 
             <button
               onClick={this.handleReset}
-              className="flex items-center gap-2 bg-(--accent-base) text-(--text-inverse) px-6 py-3 rounded-full font-bold uppercase tracking-wider hover:bg-(--accent-hover) transition-colors"
+              className="flex items-center gap-2 bg-(--accent-base) text-(--text-inverse) px-6 py-3 rounded-full font-bold uppercase tracking-wider hover:bg-(--accent-hover) transition-colors shrink-0 shadow-lg"
             >
               <RefreshCw className="w-4 h-4" />
-              Reload Application
+              Reload
             </button>
           </div>
         </div>

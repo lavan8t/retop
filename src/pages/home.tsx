@@ -770,7 +770,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
       {/* CENTER PANE: Surface Level Unified Event CalendarMonth */}
       <div className="flex-none lg:flex-1 w-full flex flex-col gap-6 md:gap-8 overflow-hidden pt-1 pl-1 md:pl-0 min-h-0">
-        <div className="flex flex-col items-center mb-2 lg:mb-4 px-2 w-full relative z-50 pointer-events-auto pt-20 md:pt-24 lg:pt-28">
+        <div className="flex flex-col items-center mb-2 lg:mb-4 px-2 w-full relative z-[95] pointer-events-auto pt-20 md:pt-24 lg:pt-28">
           <div className="flex flex-col items-center w-full">
             {/* Month Header and Filter Chips in a 3-column grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 w-full items-center mb-6 px-1 pt-4 gap-4 md:gap-0">
@@ -1151,7 +1151,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
             className="flex items-center justify-between overflow-hidden relative z-10"
           >
-            <AttachMoney className="w-10 h-10 text-(--text-main) mix-blend-overlay opacity-80 shrink-0" />
+
             <div className="text-right">
               <div className="text-[10px] font-expanded font-bold uppercase text-(--text-muted)">
                 Credits

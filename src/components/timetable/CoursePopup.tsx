@@ -121,7 +121,7 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
             </div>
             <div className="p-2 bg-zinc-950 rounded-xl border-2 border-(--border-main)">
               <div className="flex items-center gap-1.5 text-zinc-500 text-[9px] font-bold uppercase mb-1">
-                <School className="w-3 h-3" /> Credits
+                Credits
               </div>
               <p className="text-zinc-200 font-black text-xs">
                 {course.credits}

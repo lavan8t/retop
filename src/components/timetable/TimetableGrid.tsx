@@ -6,13 +6,7 @@ import { CoursePopup } from "./CoursePopup";
 import { LocationOn } from '@nine-thirty-five/material-symbols-react/rounded';
 
 const getAttendanceEmoji = (attendanceStr?: string) => {
-  if (!attendanceStr) return "";
-  const val = parseFloat(attendanceStr);
-  if (isNaN(val)) return "";
-  if (val > 90) return "😎";
-  if (val > 80) return "😄";
-  if (val > 75) return "😐";
-  return "😭";
+  return "";
 };
 
 export const TimetableGrid = ({

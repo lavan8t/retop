@@ -137,7 +137,7 @@ export const TopBar: React.FC<TopBarProps> = ({
     <>
       {/* Top Fade Mask */}
       <div
-        className="fixed top-0 left-0 right-0 h-24 md:h-32 bg-linear-to-b from-(--bg-main) via-(--bg-main) to-transparent z-90 pointer-events-none"
+        className="fixed top-0 left-0 right-0 h-16 md:h-24 bg-linear-to-b from-(--bg-main) via-(--bg-main) to-transparent z-90 pointer-events-none"
         style={{
           maskImage: "linear-gradient(to bottom, black 40%, transparent 100%)",
           WebkitMaskImage:

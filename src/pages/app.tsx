@@ -479,9 +479,14 @@ const DashboardApp = () => {
             setShowProfileMenu={setShowProfileMenu}
             handleLinkClick={handleLinkClick}
             handleLogout={handleLogout}
+            isOmniboxOpen={isOmniboxOpen}
             setIsOmniboxOpen={setIsOmniboxOpen}
             setCurrentView={setCurrentView}
             pinnedLinks={pinnedLinks}
+            menuCategories={menu}
+            onTogglePin={handleTogglePin}
+            onNavigate={handleLinkClick}
+            initialQuery={omniboxInitial}
             marksSemesters={marksSemesters}
             marksSelectedSem={marksSelectedSem}
             setMarksSelectedSem={setMarksSelectedSem}

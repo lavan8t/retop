@@ -397,153 +397,91 @@ export const HomeView: React.FC<HomeViewProps> = ({
   return (
     <div className="h-full w-full flex flex-col lg:flex-row gap-6 py-0 pl-4 pr-0 md:py-0 md:pl-6 md:pr-0 lg:py-0 lg:px-8 overflow-y-auto lg:overflow-hidden bg-(--bg-main) max-w-425 mx-auto relative">
       <div className="hidden lg:flex w-full lg:w-[26%] xl:w-[22%] flex-col shrink-0 h-auto lg:h-full relative z-30 pt-20 md:pt-24 lg:pt-28 pb-4 md:pb-6 lg:pb-8 gap-4">
-        <Card
-          onMouseEnter={handleMenuEnter}
-          onMouseLeave={handleMenuLeave}
-          className="bg-(--bg-highlight) rounded-4xl flex flex-col overflow-hidden w-full shrink-0 relative z-30 h-[38vh]"
-        >
-          {/* Professional Search Header */}
-          <div className="bg-(--bg-surface) px-4 py-3 border-b-4 border-(--border-main) flex justify-between items-center shrink-0 z-10 gap-3">
-            <div className="w-9 h-9 bg-(--accent-base) text-(--text-inverse) flex items-center justify-center font-bold border-4 border-(--border-main) rounded-xl shadow-none shrink-0">
-              <Search className="w-4 h-4" />
-            </div>
-            <input
-              ref={inputRef}
-              type="text"
-              placeholder="WHERE TO?"
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setSelectedIndex(0);
-                setActiveMenu(null);
-              }}
-              className="bg-transparent text-lg font-expanded font-black text-(--text-main) focus:outline-none w-full placeholder-(--text-muted)  uppercase"
-            />
-          </div>
-
-          {/* List Content */}
+        <Card className="bg-(--bg-highlight) rounded-4xl flex flex-col overflow-hidden w-full shrink-0 relative z-30 h-[38vh]">
           <div className="flex-1 overflow-y-auto p-3 custom-scrollbar bg-(--bg-highlight) max-h-[60vh] lg:max-h-none">
-            {query ? (
-              flattenedLinks.length === 0 ? (
-                <div className="flex flex-col items-center justify-center p-8 text-(--text-dim)">
-                  <AlertCircle className="w-8 h-8 mb-3 opacity-50" />
-                  <span className="font-expanded text-sm uppercase  text-(--text-muted)">
-                    No Matches
-                  </span>
-                </div>
-              ) : (
-                <div className="space-y-1.5">
-                  {flattenedLinks.map((link, i) => {
-                    const isSelected = i === selectedIndex;
+            <div className="flex flex-col gap-3 pb-2">
+              <h3 className="font-black font-expanded text-sm uppercase text-(--text-muted) px-2 mt-2">
+                Recent
+              </h3>
+              {/* RECENT SECTION (Max 4, Pill Grid, No Headings) */}
+              {recentLinks.length > 0 && (
+                <div className="grid grid-cols-2 gap-2 mb-1">
+                  {recentLinks.slice(0, 4).map((link, i) => {
+                    const RecentIcon = getCategoryIcon(
+                      link.category || link.title,
+                    );
                     return (
                       <button
-                        key={i}
-                        id={`home-search-item-${i}`}
+                        key={`recent-${i}`}
                         onClick={() => handleNavigate(link)}
-                        onMouseEnter={() => setSelectedIndex(i)}
-                        className={`
-                          w-full text-left px-4 py-3 rounded-2xl text-xs font-bold transition-all duration-200 flex items-center gap-3 border-4
-                          ${
-                            isSelected
-                              ? "bg-(--accent-base) text-(--text-inverse) border-(--border-main) shadow-none -translate-y-px"
-                              : "bg-(--bg-surface) border-transparent text-(--text-muted) hover:border-(--border-dim) hover:text-(--text-main)"
-                          }
-                        `}
+                        title={link.title}
+                        className="flex items-center gap-2 p-1 pr-3 rounded-full border-4 bg-(--bg-surface) border-transparent text-(--text-main) hover:border-(--border-main) hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_0px_var(--shadow-main)] transition-all group overflow-hidden"
                       >
-                        <FileText
-                          className={`w-4 h-4 shrink-0 ${isSelected ? "opacity-100" : "opacity-50"}`}
-                        />
-                        <span className="flex-1 truncate">{link.title}</span>
-                        {isSelected && (
-                          <CornerDownRight className="w-4 h-4 shrink-0" />
-                        )}
+                        <div className="w-7 h-7 rounded-full bg-(--bg-highlight) flex items-center justify-center shrink-0 group-hover:bg-(--accent-base) transition-colors border border-(--border-dim) group-hover:border-transparent">
+                          <RecentIcon className="w-3.5 h-3.5 text-(--text-muted) group-hover:text-(--text-inverse)" />
+                        </div>
+                        <span className="text-[10px] font-bold truncate flex-1 text-left">
+                          {link.title}
+                        </span>
                       </button>
                     );
                   })}
                 </div>
-              )
-            ) : (
-              <div className="flex flex-col gap-3 pb-2">
-                {/* RECENT SECTION (Max 4, Pill Grid, No Headings) */}
-                {recentLinks.length > 0 && (
-                  <div className="grid grid-cols-2 gap-2 mb-1">
-                    {recentLinks.slice(0, 4).map((link, i) => {
-                      const RecentIcon = getCategoryIcon(
-                        link.category || link.title,
-                      );
-                      return (
-                        <button
-                          key={`recent-${i}`}
-                          onClick={() => handleNavigate(link)}
-                          title={link.title}
-                          className="flex items-center gap-2 p-1 pr-3 rounded-full border-4 bg-(--bg-surface) border-transparent text-(--text-main) hover:border-(--border-main) hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_0px_var(--shadow-main)] transition-all group overflow-hidden"
-                        >
-                          <div className="w-7 h-7 rounded-full bg-(--bg-highlight) flex items-center justify-center shrink-0 group-hover:bg-(--accent-base) transition-colors border border-(--border-dim) group-hover:border-transparent">
-                            <RecentIcon className="w-3.5 h-3.5 text-(--text-muted) group-hover:text-(--text-inverse)" />
-                          </div>
-                          <span className="text-[10px] font-bold truncate flex-1 text-left">
-                            {link.title}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
+              )}
 
-                {/* CATEGORIES SECTION (No Headings) */}
-                <div className="space-y-1.5">
-                  {menuCategories.map((cat, catIdx) => {
-                    const CatIcon = getCategoryIcon(cat.title);
-                    const isActive = activeMenu?.cat.title === cat.title;
+              {/* CATEGORIES SECTION (No Headings) */}
+              <div className="space-y-1.5">
+                {menuCategories.map((cat, catIdx) => {
+                  const CatIcon = getCategoryIcon(cat.title);
+                  const isActive = activeMenu?.cat.title === cat.title;
 
-                    return (
-                      <motion.button
-                        key={catIdx}
-                        whileTap={{ scale: 0.96 }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedIndex(0);
-                          setActiveMenu({
-                            cat,
-                            rect: e.currentTarget.getBoundingClientRect(),
-                          });
-                        }}
-                        onMouseEnter={(e) => {
-                          setSelectedIndex(0);
-                          setActiveMenu({
-                            cat,
-                            rect: e.currentTarget.getBoundingClientRect(),
-                          });
-                        }}
-                        className={`flex w-full items-center justify-between p-2 rounded-3xl border-4 transition-all duration-150 group 
+                  return (
+                    <motion.button
+                      key={catIdx}
+                      whileTap={{ scale: 0.96 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedIndex(0);
+                        setActiveMenu({
+                          cat,
+                          rect: e.currentTarget.getBoundingClientRect(),
+                        });
+                      }}
+                      onMouseEnter={(e) => {
+                        setSelectedIndex(0);
+                        setActiveMenu({
+                          cat,
+                          rect: e.currentTarget.getBoundingClientRect(),
+                        });
+                      }}
+                      className={`flex w-full items-center justify-between p-2 rounded-3xl border-4 transition-all duration-150 group 
                           ${
                             isActive
                               ? `bg-(--accent-base) border-(--border-main) shadow-none -translate-y-0.5 text-(--text-inverse)`
                               : `bg-(--bg-surface) border-transparent hover:shadow-[6px_6px_0px_0px_var(--shadow-main)] hover:-translate-y-0.5 text-(--text-main)`
                           }
                         `}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 flex items-center justify-center shrink-0">
-                            <CatIcon
-                              className={`w-5 h-5 transition-colors ${isActive ? "text-(--text-inverse)" : "text-(--text-muted) group-hover:text-(--accent-base)"}`}
-                            />
-                          </div>
-                          <span
-                            className={`font-expanded font-black text-[10px] uppercase  text-left mt-0.5 transition-colors ${isActive ? "text-(--text-inverse)" : "text-(--text-main) group-hover:text-(--accent-base)"}`}
-                          >
-                            {cat.title}
-                          </span>
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 flex items-center justify-center shrink-0">
+                          <CatIcon
+                            className={`w-5 h-5 transition-colors ${isActive ? "text-(--text-inverse)" : "text-(--text-muted) group-hover:text-(--accent-base)"}`}
+                          />
                         </div>
-                        <ChevronRight
-                          className={`w-3.5 h-3.5 transition-all ${isActive ? "opacity-100 translate-x-0 text-(--text-inverse)" : "opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 text-(--text-muted) group-hover:text-(--accent-base)"}`}
-                        />
-                      </motion.button>
-                    );
-                  })}
-                </div>
+                        <span
+                          className={`font-expanded font-black text-[10px] uppercase  text-left mt-0.5 transition-colors ${isActive ? "text-(--text-inverse)" : "text-(--text-main) group-hover:text-(--accent-base)"}`}
+                        >
+                          {cat.title}
+                        </span>
+                      </div>
+                      <ChevronRight
+                        className={`w-3.5 h-3.5 transition-all ${isActive ? "opacity-100 translate-x-0 text-(--text-inverse)" : "opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 text-(--text-muted) group-hover:text-(--accent-base)"}`}
+                      />
+                    </motion.button>
+                  );
+                })}
               </div>
-            )}
+            </div>
           </div>
         </Card>
 
@@ -750,7 +688,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
         {/* Surface level list (no card wrapper) */}
         <div
-          className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-4 pr-3 pb-32 pt-[150px] mt-[-120px] -mb-12 relative z-0 pointer-events-auto"
+          className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-4 pr-3 pb-32 pt-[150px] mt-[-120px] -mb-12 relative z-0 pointer-events-auto snap-y snap-proximity"
           style={{
             maskImage:
               "linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)",
@@ -837,7 +775,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             return (
               <div
                 key={dIdx}
-                className="mb-4 flex gap-3 relative"
+                className={`mb-4 flex gap-3 relative ${isToday ? "snap-center scroll-mt-[30vh]" : ""}`}
                 ref={isToday ? todayRef : null}
               >
                 {/* Date indicator on the left */}
@@ -897,11 +835,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     upcomingEvents.length > 0 && (
                       <div
                         ref={nowRef}
-                        className="flex items-center gap-2 my-1 relative -ml-6 scroll-mt-32"
+                        className="flex items-center gap-2 my-1 relative -ml-6 scroll-mt-[40vh] snap-center"
                       >
-                        <div className="w-4 h-px bg-(--accent-base)"></div>
-                        <div className="w-1.5 h-1.5 rounded-full bg-(--accent-base) shrink-0"></div>
-                        <div className="h-px flex-1 bg-linear-to-r from-(--accent-base) to-transparent opacity-50"></div>
+                        <div className="w-4 h-[3px] rounded-full bg-(--accent-base)"></div>
+                        <div className="w-2 h-2 rounded-full bg-(--accent-base) shrink-0"></div>
+                        <div className="h-[3px] rounded-full flex-1 bg-linear-to-r from-(--accent-base) to-transparent opacity-50"></div>
                       </div>
                     )}
                   {isToday &&
@@ -909,11 +847,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     upcomingEvents.length > 0 && (
                       <div
                         ref={nowRef}
-                        className="flex items-center gap-2 mb-1 relative -ml-6 scroll-mt-32"
+                        className="flex items-center gap-2 mb-1 relative -ml-6 scroll-mt-[40vh] snap-center"
                       >
-                        <div className="w-4 h-px bg-(--accent-base)"></div>
-                        <div className="w-1.5 h-1.5 rounded-full bg-(--accent-base) shrink-0"></div>
-                        <div className="h-px flex-1 bg-linear-to-r from-(--accent-base) to-transparent opacity-50"></div>
+                        <div className="w-4 h-[3px] rounded-full bg-(--accent-base)"></div>
+                        <div className="w-2 h-2 rounded-full bg-(--accent-base) shrink-0"></div>
+                        <div className="h-[3px] rounded-full flex-1 bg-linear-to-r from-(--accent-base) to-transparent opacity-50"></div>
                       </div>
                     )}
 

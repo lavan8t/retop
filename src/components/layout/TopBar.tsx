@@ -15,9 +15,11 @@ import {
   Semester,
   TimetableCourse,
   ClassGroup,
+  MenuCategory,
 } from "../../types/vtop";
 import { SemesterDropdown } from "../timetable/SemesterDropdown";
 import { ClassGroupDropdown } from "../timetable/ClassGroupDropdown";
+import { TopBarSearch } from "./TopBarSearch";
 import { getCategoryIcon } from "../../utils/icons";
 
 interface TopBarProps {
@@ -56,10 +58,15 @@ interface TopBarProps {
   setShowProfileMenu: (show: boolean) => void;
   handleLinkClick: (link: QuickLink) => void;
   handleLogout: () => void;
+  isOmniboxOpen: boolean;
   setIsOmniboxOpen: (open: boolean) => void;
   setCurrentView: (view: any) => void;
 
   pinnedLinks: QuickLink[];
+  menuCategories: MenuCategory[];
+  onTogglePin: (link: QuickLink) => void;
+  onNavigate: (link: QuickLink) => void;
+  initialQuery?: string;
 }
 
 const getPageTitle = (view: string, dynamicTitle?: string) => {
@@ -117,9 +124,14 @@ export const TopBar: React.FC<TopBarProps> = ({
   setShowProfileMenu,
   handleLinkClick,
   handleLogout,
+  isOmniboxOpen,
   setIsOmniboxOpen,
   setCurrentView,
   pinnedLinks,
+  menuCategories,
+  onTogglePin,
+  onNavigate,
+  initialQuery = "",
 }) => {
   const dockColors = ["bg-purple-400", "bg-cyan-400", "bg-lime-400"];
 
@@ -139,17 +151,16 @@ export const TopBar: React.FC<TopBarProps> = ({
         <div className="flex items-center h-full pointer-events-auto">
           <div className="flex flex-col justify-center h-full gap-0.5">
             <div className="flex items-center gap-2 md:gap-3">
-              <div
-                className={`relative items-baseline select-none cursor-pointer ${
-                  currentView !== "dashboard" ? "hidden md:flex" : "flex"
-                }`}
-                onClick={() => setCurrentView("dashboard")}
-              >
-                <span className="font-expanded font-black text-[2rem] md:text-[2.5rem]  italic lowercase leading-none text-(--text-main)">
-                  re
-                </span>
-                <div className="relative w-2 h-2 md:w-3 md:h-3 ml-0.5 mb-1 md:mb-1.5 bg-(--accent-base) rounded-full" />
-              </div>
+              <TopBarSearch
+                currentView={currentView}
+                isOmniboxOpen={isOmniboxOpen}
+                setIsOmniboxOpen={setIsOmniboxOpen}
+                menuCategories={menuCategories}
+                pinnedLinks={pinnedLinks}
+                onNavigate={onNavigate}
+                onTogglePin={onTogglePin}
+                initialQuery={initialQuery}
+              />
 
               {currentView !== "dashboard" && (
                 <motion.button
@@ -318,21 +329,6 @@ export const TopBar: React.FC<TopBarProps> = ({
                 onChange={(id: string) => setCalSelectedGroup(id)}
               />
             </motion.div>
-          )}
-
-          {currentView !== "dashboard" && (
-            <button
-              onClick={() => setIsOmniboxOpen(true)}
-              className="hidden xl:flex shrink-0 items-center gap-2 px-3.5 py-1.5 mr-2 bg-(--bg-highlight) border-2 border-(--border-main) rounded-xl text-(--text-main) hover:text-(--accent-base) shadow-none hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_var(--shadow-main)] active:translate-y-0 active:shadow-none transition-all group cursor-pointer"
-            >
-              <Search className="w-4 h-4 group-hover:rotate-12 transition-transform" />
-              <span className="font-expanded font-bold text-[10px]  uppercase mt-0.5">
-                Search
-              </span>
-              <kbd className="ml-1 font-mono bg-(--bg-surface) text-(--text-muted) px-1.5 py-0.5 text-[9px] rounded-md border border-(--border-dim) group-hover:border-(--accent-base) group-hover:text-(--accent-base) transition-colors">
-                /
-              </kbd>
-            </button>
           )}
 
           <div className="relative shrink-0 flex items-center justify-center mr-2 lg:mr-6">

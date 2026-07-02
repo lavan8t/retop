@@ -391,12 +391,24 @@ const DashboardApp = () => {
     setCurrentView(dest);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (confirm("Sign out?")) {
-      createHiddenForm("/vtop/logout", {
-        _csrf: csrfRef.current,
-        authorizedID: authIdRef.current,
-      }).submit();
+      try {
+        await fetch("/vtop/logout", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            _csrf: csrfRef.current,
+            authorizedID: authIdRef.current,
+          }),
+        });
+      } catch (e) {
+        console.error("Logout error", e);
+      } finally {
+        window.location.href = "/vtop/open/page";
+      }
     }
   };
 

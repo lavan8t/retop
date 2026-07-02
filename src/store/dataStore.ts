@@ -267,11 +267,18 @@ export const useDataStore = create<DataState>((set, get) => ({
   calSemesters: [],
   setCalSemesters: (calSemesters) => set({ calSemesters }),
   calSelectedSem: "",
-  setCalSelectedSem: (calSelectedSem) => set({ calSelectedSem }),
+  setCalSelectedSem: (calSelectedSem) =>
+    set({
+      calSelectedSem,
+      calGridData: [],
+      calAvailableMonths: [],
+      calClassGroups: [],
+      calSelectedGroup: "",
+    }),
 
   calClassGroups: [],
   calSelectedGroup: "",
-  setCalSelectedGroup: (id) => set({ calSelectedGroup: id }),
+  setCalSelectedGroup: (id) => set({ calSelectedGroup: id, calGridData: [] }),
   calAvailableMonths: [],
   calGridData: [],
   calLoadingInitial: true,
@@ -294,7 +301,7 @@ export const useDataStore = create<DataState>((set, get) => ({
             calSelectedGroup:
               parsed.data.groups.some((g: any) => g.id === get().calSelectedGroup)
                 ? get().calSelectedGroup
-                : "",
+                : parsed.data.groups.length > 0 ? parsed.data.groups[0].id : "",
             calLoadingMonths: false,
           });
           return;
@@ -328,7 +335,7 @@ export const useDataStore = create<DataState>((set, get) => ({
       const defaultGroup =
         groups.some((g) => g.id === get().calSelectedGroup)
           ? get().calSelectedGroup
-          : "";
+          : groups.length > 0 ? groups[0].id : "";
       set({
         calClassGroups: groups,
         calAvailableMonths: months,

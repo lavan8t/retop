@@ -173,14 +173,12 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                     className="flex flex-col relative"
                   >
                     {calGridData.map((data, mIdx) => (
-                      <div key={mIdx} className="flex flex-col pb-8">
-                        {/* Sticky Month Divider */}
-                        <div className="py-4 sticky top-0 z-10 flex flex-col items-start justify-center pointer-events-none">
-                          <h2 className="font-expanded font-black text-3xl md:text-5xl uppercase tracking-tighter m-0 text-(--text-main) opacity-20">
+                      <div key={mIdx} className="flex flex-col pb-8 pt-8">
+                        <div className="flex items-center justify-start pb-4 pointer-events-none sticky top-0 z-10 pt-4 bg-(--bg-main)/80 backdrop-blur-md">
+                          <h2 className="font-expanded font-black text-2xl md:text-4xl uppercase tracking-tighter m-0 text-(--text-main) opacity-30">
                             {data.month.label.replace(/\s*-\s*/, " ")}
                           </h2>
                         </div>
-
                         {/* Month Grid */}
                         <div className="grid grid-cols-7 auto-rows-[minmax(100px,auto)] md:auto-rows-[minmax(140px,auto)]">
                           {Array.from({ length: data.startOffset }).map(
@@ -249,11 +247,6 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                                     className={`font-black text-sm md:text-lg lg:text-xl font-expanded leading-none ${numberClass}`}
                                   >
                                     {day.dayNumber}
-                                    <span className="text-[8px] md:text-[10px] ml-1 uppercase text-(--text-muted) tracking-widest font-bold">
-                                      {new Date(day.dateObj).toLocaleDateString("en-US", {
-                                        weekday: "short",
-                                      })}
-                                    </span>
                                   </span>
                                 </div>
 
@@ -304,6 +297,20 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                 ) : null}
               </AnimatePresence>
             </div>
+          </div>
+
+          {/* Floating Bottom Weekdays */}
+          <div className="grid grid-cols-7 absolute bottom-0 left-0 right-0 z-30 pointer-events-none pb-4 bg-linear-to-t from-(--bg-main) to-transparent pt-8">
+            {WEEKDAYS.map((day, i) => (
+              <div
+                key={day}
+                className={`text-center font-expanded font-black text-xs md:text-sm uppercase tracking-widest drop-shadow-md ${
+                  i === 0 || i === 6 ? "text-red-500" : "text-(--text-main)"
+                }`}
+              >
+                {day}
+              </div>
+            ))}
           </div>
         </div>
       )}

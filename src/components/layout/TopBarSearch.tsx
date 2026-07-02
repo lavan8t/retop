@@ -45,7 +45,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const isExpanded = currentView === "dashboard" || isOmniboxOpen;
+  const isExpanded = isOmniboxOpen;
 
   useEffect(() => {
     if (isOmniboxOpen) {
@@ -134,42 +134,33 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
 
   return (
     <div className="relative flex items-center h-12 z-50">
-      <AnimatePresence initial={false} mode="wait">
-        {!isExpanded ? (
-          <motion.div
-            key="logo"
-            initial={{ opacity: 0, width: 0 }}
-            animate={{ opacity: 1, width: "auto" }}
-            exit={{ opacity: 0, width: 0 }}
-            transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className={`group relative flex items-baseline select-none cursor-pointer ${
-              currentView !== "dashboard" ? "hidden md:flex" : "flex"
-            }`}
-            onClick={() => setIsOmniboxOpen(true)}
-            title="Search ( / )"
-          >
-            <span className="font-expanded font-black text-[2rem] md:text-[2.5rem] italic lowercase leading-none text-(--text-main) group-hover:text-(--accent-hover) transition-colors">
-              re
-            </span>
-            <div className="relative w-2 h-2 md:w-3 md:h-3 ml-0.5 mb-1 md:mb-1.5 bg-(--accent-base) rounded-full flex items-center justify-center group-hover:scale-[2] transition-transform origin-bottom-left">
-              <Search
-                className="w-1.5 h-1.5 text-white opacity-0 group-hover:opacity-100 transition-opacity absolute"
-                strokeWidth={4}
-              />
-            </div>
-          </motion.div>
-        ) : (
+      {/* The logo is always visible */}
+      <div
+        className={`group relative flex items-baseline select-none cursor-pointer flex`}
+        onClick={() => setIsOmniboxOpen(true)}
+        title="Search ( / )"
+      >
+        <span className="font-expanded font-black text-[2rem] md:text-[2.5rem] italic lowercase leading-none text-(--text-main) group-hover:text-(--accent-hover) transition-colors z-20">
+          re
+        </span>
+        <div className="relative w-2 h-2 md:w-3 md:h-3 ml-0.5 mb-1 md:mb-1.5 bg-(--accent-base) rounded-full flex items-center justify-center group-hover:scale-[2] transition-transform origin-bottom-left z-20">
+          <Search
+            className="w-1.5 h-1.5 text-white opacity-0 group-hover:opacity-100 transition-opacity absolute"
+            strokeWidth={4}
+          />
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {isExpanded && (
           <motion.div
             key="search-box"
-            initial={{ opacity: 0, width: 0 }}
-            animate={{ opacity: 1, width: "min(400px, 60vw)" }}
-            exit={{ opacity: 0, width: 0 }}
+            initial={{ opacity: 0, width: 0, marginLeft: 0 }}
+            animate={{ opacity: 1, width: "min(400px, 60vw)", marginLeft: 16 }}
+            exit={{ opacity: 0, width: 0, marginLeft: 0 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className="relative flex items-center"
+            className="relative flex items-center h-full"
           >
-            <div className="w-9 h-9 bg-(--accent-base) text-(--text-inverse) flex items-center justify-center font-bold border-4 border-(--border-main) rounded-xl shadow-none shrink-0 absolute left-0 z-10">
-              <Search className="w-4 h-4" />
-            </div>
             <input
               ref={inputRef}
               type="text"
@@ -180,14 +171,13 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                 setSelectedIndex(0);
               }}
               onBlur={() => {
-                if (currentView !== "dashboard") {
-                  setTimeout(() => setIsOmniboxOpen(false), 200);
-                }
+                setTimeout(() => setIsOmniboxOpen(false), 200);
               }}
-              className="w-full bg-(--bg-surface) text-base md:text-lg font-expanded font-black text-(--text-main) border-4 border-(--border-main) rounded-2xl pl-11 pr-4 py-1.5 md:py-2 focus:outline-none placeholder-(--text-muted) uppercase shadow-[4px_4px_0px_0px_var(--shadow-main)]"
+              className="w-full bg-(--bg-surface) text-base md:text-lg font-expanded font-black text-(--text-main) border-4 border-(--border-main) rounded-2xl px-4 py-1.5 md:py-2 focus:outline-none placeholder-(--text-muted) uppercase shadow-[4px_4px_0px_0px_var(--shadow-main)] absolute left-0 origin-left"
             />
+
             {query && (
-              <div className="absolute top-full left-0 right-0 mt-3 bg-(--bg-surface) border-4 border-(--border-main) rounded-2xl shadow-[6px_6px_0px_0px_var(--shadow-main)] max-h-[60vh] overflow-y-auto custom-scrollbar flex flex-col p-2 z-[999]">
+              <div className="absolute top-[calc(100%+12px)] left-0 w-full bg-(--bg-surface) border-4 border-(--border-main) rounded-2xl shadow-[6px_6px_0px_0px_var(--shadow-main)] max-h-[60vh] overflow-y-auto custom-scrollbar flex flex-col p-2 z-[999]">
                 {flattenedLinks.length === 0 ? (
                   <div className="flex flex-col items-center justify-center p-6 text-(--text-dim)">
                     <AlertCircle className="w-8 h-8 mb-2 opacity-50" />

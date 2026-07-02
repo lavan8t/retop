@@ -151,16 +151,18 @@ export const TopBar: React.FC<TopBarProps> = ({
         <div className="flex items-center h-full pointer-events-auto">
           <div className="flex flex-col justify-center h-full gap-0.5">
             <div className="flex items-center gap-2 md:gap-3">
-              <TopBarSearch
-                currentView={currentView}
-                isOmniboxOpen={isOmniboxOpen}
-                setIsOmniboxOpen={setIsOmniboxOpen}
-                menuCategories={menuCategories}
-                pinnedLinks={pinnedLinks}
-                onNavigate={onNavigate}
-                onTogglePin={onTogglePin}
-                initialQuery={initialQuery}
-              />
+              {currentView !== "dashboard" && (
+                <TopBarSearch
+                  currentView={currentView}
+                  isOmniboxOpen={isOmniboxOpen}
+                  setIsOmniboxOpen={setIsOmniboxOpen}
+                  menuCategories={menuCategories}
+                  pinnedLinks={pinnedLinks}
+                  onNavigate={onNavigate}
+                  onTogglePin={onTogglePin}
+                  initialQuery={initialQuery}
+                />
+              )}
 
               {currentView !== "dashboard" && (
                 <motion.button

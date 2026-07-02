@@ -448,35 +448,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({
 
   return (
     <>
-      {/* NATIVE MOBILE BACKDROP */}
-      {!isDesktop && (
-        <motion.div
-          style={{
-            opacity: backdropOpacity,
-            pointerEvents: backdropPointer as any,
-          }}
-          onClick={() => setIsOmniboxOpen(false)}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-9998"
-        />
-      )}
-
       <div className="fixed inset-0 pointer-events-none z-9999">
-        {/* DESKTOP IMPLEMENTATION */}
-        {isDesktop && (
-          <>
-            <AnimatePresence>
-              {isOmniboxOpen && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  onClick={() => setIsOmniboxOpen(false)}
-                  className="fixed inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto"
-                />
-              )}
-            </AnimatePresence>
-          </>
-        )}
+
 
         {/* MOBILE IMPLEMENTATION */}
         {!isDesktop && (

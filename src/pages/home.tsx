@@ -400,87 +400,148 @@ export const HomeView: React.FC<HomeViewProps> = ({
         <Card className="bg-(--bg-highlight) rounded-4xl flex flex-col overflow-hidden w-full shrink-0 relative z-30 h-[38vh]">
           <div className="flex-1 overflow-y-auto p-3 custom-scrollbar bg-(--bg-highlight) max-h-[60vh] lg:max-h-none">
             <div className="flex flex-col gap-3 pb-2">
-              <h3 className="font-black font-expanded text-sm uppercase text-(--text-muted) px-2 mt-2">
-                Recent
-              </h3>
-              {/* RECENT SECTION (Max 4, Pill Grid, No Headings) */}
-              {recentLinks.length > 0 && (
-                <div className="grid grid-cols-2 gap-2 mb-1">
-                  {recentLinks.slice(0, 4).map((link, i) => {
-                    const RecentIcon = getCategoryIcon(
-                      link.category || link.title,
-                    );
-                    return (
-                      <button
-                        key={`recent-${i}`}
-                        onClick={() => handleNavigate(link)}
-                        title={link.title}
-                        className="flex items-center gap-2 p-1 pr-3 rounded-full border-4 bg-(--bg-surface) border-transparent text-(--text-main) hover:border-(--border-main) hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_0px_var(--shadow-main)] transition-all group overflow-hidden"
-                      >
-                        <div className="w-7 h-7 rounded-full bg-(--bg-highlight) flex items-center justify-center shrink-0 group-hover:bg-(--accent-base) transition-colors border border-(--border-dim) group-hover:border-transparent">
-                          <RecentIcon className="w-3.5 h-3.5 text-(--text-muted) group-hover:text-(--text-inverse)" />
-                        </div>
-                        <span className="text-[10px] font-bold truncate flex-1 text-left">
-                          {link.title}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+              {/* Unified Search Box and Logo */}
+              <div className="flex items-center gap-2 mb-1 bg-(--bg-surface) rounded-2xl p-1.5 border-4 border-(--border-main) shadow-none">
+                <span className="font-expanded font-black text-2xl italic lowercase leading-none text-(--text-main) px-2 shrink-0">
+                  re
+                </span>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  placeholder="WHERE TO?"
+                  value={query}
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                    setSelectedIndex(0);
+                  }}
+                  className="w-full bg-transparent text-sm md:text-base font-expanded font-black text-(--text-main) px-2 py-1 focus:outline-none placeholder-(--text-muted) uppercase min-w-0"
+                />
+              </div>
 
-              {/* CATEGORIES SECTION (No Headings) */}
-              <div className="space-y-1.5">
-                {menuCategories.map((cat, catIdx) => {
-                  const CatIcon = getCategoryIcon(cat.title);
-                  const isActive = activeMenu?.cat.title === cat.title;
+              {!query ? (
+                <>
+                  <h3 className="font-black font-expanded text-sm uppercase text-(--text-muted) px-2 mt-1">
+                    Recent
+                  </h3>
+                  {/* RECENT SECTION (Max 4, Pill Grid, No Headings) */}
+                  {recentLinks.length > 0 && (
+                    <div className="grid grid-cols-2 gap-2 mb-1">
+                      {recentLinks.slice(0, 4).map((link, i) => {
+                        const RecentIcon = getCategoryIcon(
+                          link.category || link.title,
+                        );
+                        return (
+                          <button
+                            key={`recent-${i}`}
+                            onClick={() => handleNavigate(link)}
+                            title={link.title}
+                            className="flex items-center gap-2 p-1 pr-3 rounded-full border-4 bg-(--bg-surface) border-transparent text-(--text-main) hover:border-(--border-main) hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_0px_var(--shadow-main)] transition-all group overflow-hidden"
+                          >
+                            <div className="w-7 h-7 rounded-full bg-(--bg-highlight) flex items-center justify-center shrink-0 group-hover:bg-(--accent-base) transition-colors border border-(--border-dim) group-hover:border-transparent">
+                              <RecentIcon className="w-3.5 h-3.5 text-(--text-muted) group-hover:text-(--text-inverse)" />
+                            </div>
+                            <span className="text-[10px] font-bold truncate flex-1 text-left">
+                              {link.title}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
 
-                  return (
-                    <motion.button
-                      key={catIdx}
-                      whileTap={{ scale: 0.96 }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedIndex(0);
-                        setActiveMenu({
-                          cat,
-                          rect: e.currentTarget.getBoundingClientRect(),
-                        });
-                      }}
-                      onMouseEnter={(e) => {
-                        setSelectedIndex(0);
-                        setActiveMenu({
-                          cat,
-                          rect: e.currentTarget.getBoundingClientRect(),
-                        });
-                      }}
-                      className={`flex w-full items-center justify-between p-2 rounded-3xl border-4 transition-all duration-150 group 
+                  {/* CATEGORIES SECTION (No Headings) */}
+                  <div className="space-y-1.5">
+                    {menuCategories.map((cat, catIdx) => {
+                      const CatIcon = getCategoryIcon(cat.title);
+                      const isActive = activeMenu?.cat.title === cat.title;
+
+                      return (
+                        <motion.button
+                          key={catIdx}
+                          whileTap={{ scale: 0.96 }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedIndex(0);
+                            setActiveMenu({
+                              cat,
+                              rect: e.currentTarget.getBoundingClientRect(),
+                            });
+                          }}
+                          onMouseEnter={(e) => {
+                            setSelectedIndex(0);
+                            setActiveMenu({
+                              cat,
+                              rect: e.currentTarget.getBoundingClientRect(),
+                            });
+                          }}
+                          className={`flex w-full items-center justify-between p-2 rounded-3xl border-4 transition-all duration-150 group 
                           ${
                             isActive
                               ? `bg-(--accent-base) border-(--border-main) shadow-none -translate-y-0.5 text-(--text-inverse)`
                               : `bg-(--bg-surface) border-transparent hover:shadow-[6px_6px_0px_0px_var(--shadow-main)] hover:-translate-y-0.5 text-(--text-main)`
                           }
                         `}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 flex items-center justify-center shrink-0">
-                          <CatIcon
-                            className={`w-5 h-5 transition-colors ${isActive ? "text-(--text-inverse)" : "text-(--text-muted) group-hover:text-(--accent-base)"}`}
-                          />
-                        </div>
-                        <span
-                          className={`font-expanded font-black text-[10px] uppercase  text-left mt-0.5 transition-colors ${isActive ? "text-(--text-inverse)" : "text-(--text-main) group-hover:text-(--accent-base)"}`}
                         >
-                          {cat.title}
-                        </span>
-                      </div>
-                      <ChevronRight
-                        className={`w-3.5 h-3.5 transition-all ${isActive ? "opacity-100 translate-x-0 text-(--text-inverse)" : "opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 text-(--text-muted) group-hover:text-(--accent-base)"}`}
-                      />
-                    </motion.button>
-                  );
-                })}
-              </div>
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 flex items-center justify-center shrink-0">
+                              <CatIcon
+                                className={`w-5 h-5 transition-colors ${isActive ? "text-(--text-inverse)" : "text-(--text-muted) group-hover:text-(--accent-base)"}`}
+                              />
+                            </div>
+                            <span
+                              className={`font-expanded font-black text-[10px] uppercase  text-left mt-0.5 transition-colors ${isActive ? "text-(--text-inverse)" : "text-(--text-main) group-hover:text-(--accent-base)"}`}
+                            >
+                              {cat.title}
+                            </span>
+                          </div>
+                          <ChevronRight
+                            className={`w-3.5 h-3.5 transition-all ${isActive ? "opacity-100 translate-x-0 text-(--text-inverse)" : "opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 text-(--text-muted) group-hover:text-(--accent-base)"}`}
+                          />
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col gap-1 mt-1">
+                  {flattenedLinks.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center p-6 text-(--text-dim)">
+                      <AlertCircle className="w-8 h-8 mb-2 opacity-50" />
+                      <span className="font-expanded text-sm uppercase text-(--text-muted)">
+                        No Matches
+                      </span>
+                    </div>
+                  ) : (
+                    flattenedLinks.map((link, i) => {
+                      const isSelected = i === selectedIndex;
+                      return (
+                        <button
+                          key={i}
+                          id={`home-search-item-${i}`}
+                          onClick={() => {
+                            handleNavigate(link);
+                            setQuery("");
+                          }}
+                          onMouseEnter={() => setSelectedIndex(i)}
+                          className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-3 border-4 ${
+                            isSelected
+                              ? "bg-(--accent-base) text-white border-(--border-main) shadow-none -translate-y-px"
+                              : "bg-transparent border-transparent text-(--text-muted)"
+                          }`}
+                        >
+                          <FileText
+                            className={`w-4 h-4 shrink-0 ${isSelected ? "opacity-100" : "opacity-50"}`}
+                          />
+                          <span className="flex-1 truncate">{link.title}</span>
+                          {isSelected && (
+                            <CornerDownRight className="w-4 h-4 shrink-0" />
+                          )}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </Card>

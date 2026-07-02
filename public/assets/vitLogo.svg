@@ -1,4 +1,4 @@
-export const vitLogoSvg = `<svg
+<svg
       width="147.73181mm"
       height="39.6875mm"
       viewBox="0 0 147.73181 39.6875"
@@ -322,4 +322,4 @@ export const vitLogoSvg = `<svg
           </g>
         </g>
       </g>
-    </svg>`;
+    </svg>

@@ -93,7 +93,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="h-full flex flex-row overflow-hidden bg-zinc-950 font-mono text-slate-200"
+      className="h-full flex flex-row overflow-hidden bg-zinc-950 font-mono text-slate-200 pt-20 md:pt-24 lg:pt-28"
     >
       <motion.div
         initial={{ x: -20, opacity: 0 }}

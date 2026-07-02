@@ -594,7 +594,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                   })
                 }
                 className={`flex w-full items-center justify-between p-2 rounded-3xl border-2 transition-all duration-150 group 
-                  ${isExpanded ? `bg-blue-400 border-(--border-main) shadow-none -translate-y-0.5 text-black` : `border-transparent hover:border-(--border-main) hover:-translate-y-0.5 text-(--text-main)`}
+                  ${isExpanded ? `bg-blue-400 border-(--border-main) shadow-none -translate-y-0.5 text-black` : `border-transparent hover:bg-blue-400 hover:border-(--border-main) hover:-translate-y-0.5 text-(--text-main) hover:text-black`}
                 `}
               >
                 <div className="flex items-center gap-3">

@@ -61,13 +61,13 @@ export function normalizeSemesterLabel(rawLabel: string): string {
 
   return (
     rawLabel
-      // 1. Decode HTML entities that VTOP sometimes returns in raw HTML
+      // Decode HTML entities that VTOP sometimes returns in raw HTML
       .replace(/&amp;/g, "&")
-      // 2. Strip " - VLR", "(VLR)", or " VLR" from the end of the string
+      // Strip " - VLR", "(VLR)", or " VLR" from the end of the string
       .replace(/\s*-\s*VLR\s*$/i, "")
       .replace(/\s*\(\s*VLR\s*\)\s*$/i, "")
       .replace(/\s*VLR\s*$/i, "")
-      // 3. Fix weird spacing VTOP sometimes adds
+      // Fix weird spacing VTOP sometimes adds
       .replace(/\s+/g, " ")
       .trim()
   );

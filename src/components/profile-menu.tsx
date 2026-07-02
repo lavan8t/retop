@@ -58,14 +58,14 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
       icon: Key,
       url: "user/changePassword",
       cat: "Settings",
-      hoverClass: "hover:bg-pink-400 hover:shadow-[4px_4px_0px_0px_var(--shadow-main)]",
+      hoverClass: "hover:bg-pink-400 hover:shadow-[6px_6px_0px_0px_var(--shadow-main)]",
     },
     {
       title: "Login ID",
       icon: UserCog,
       url: "user/updateLoginId",
       cat: "Settings",
-      hoverClass: "hover:bg-blue-400 hover:shadow-[4px_4px_0px_0px_var(--shadow-main)]",
+      hoverClass: "hover:bg-blue-400 hover:shadow-[6px_6px_0px_0px_var(--shadow-main)]",
     },
   ];
 
@@ -86,9 +86,9 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
     },
     exit: {
       opacity: 0,
-      scale: 0.5,
-      y: -10,
-      transition: { duration: 0.15, ease: "circIn" },
+      scale: 0.4,
+      y: -20,
+      transition: { type: "spring", stiffness: 1200, damping: 40 },
     },
   };
 
@@ -98,7 +98,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
       initial="hidden"
       animate="visible"
       exit="exit"
-      className="absolute right-2 top-2 md:right-4 md:top-4 w-64 bg-(--bg-surface) border-4 border-(--border-main) rounded-4xl shadow-[4px_4px_0px_0px_var(--border-main)] z-9999 overflow-hidden origin-top-right flex flex-col will-change-transform transform-gpu"
+      className="absolute right-2 top-2 md:right-4 md:top-4 w-64 bg-(--bg-surface) border-4 border-(--border-main) rounded-4xl shadow-[6px_6px_0px_0px_var(--shadow-main)] z-9999 overflow-hidden origin-top-right flex flex-col will-change-transform transform-gpu"
     >
       <div className="overflow-y-auto custom-scrollbar p-2 flex-1">
         {/* Profile Header */}
@@ -141,17 +141,15 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
                 });
                 onClose();
               }}
-              className="flex w-full items-center justify-between p-2 rounded-3xl border-2 transition-all duration-150 group bg-(--bg-surface) border-transparent hover:shadow-[3px_3px_0px_0px_var(--shadow-main)] hover:-translate-y-0.5 text-(--text-main)"
+              className="flex w-full items-center justify-between px-3 py-2 rounded-2xl border-4 transition-all duration-150 group border-transparent hover:bg-(--accent-base) hover:border-(--border-main) hover:shadow-none hover:-translate-y-px text-(--text-main) hover:text-(--text-inverse)"
             >
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 flex items-center justify-center shrink-0">
-                  <item.icon className="w-5 h-5 transition-colors text-(--text-muted) group-hover:text-(--accent-base)" />
-                </div>
-                <span className="font-expanded font-black text-[10px] uppercase text-left mt-0.5 transition-colors text-(--text-main) group-hover:text-(--accent-base)">
+                <item.icon className="w-4 h-4 transition-colors text-(--text-muted) group-hover:text-(--text-inverse) shrink-0" />
+                <span className="text-xs font-bold text-left transition-colors text-(--text-main) group-hover:text-(--text-inverse)">
                   {item.title}
                 </span>
               </div>
-              <ChevronRight className="w-3.5 h-3.5 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-(--text-muted) group-hover:text-(--accent-base)" />
+              <ChevronRight className="w-4 h-4 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-(--text-main) group-hover:text-(--text-inverse)" />
             </motion.button>
           ))}
         </div>
@@ -202,7 +200,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
             });
             onClose();
           }}
-          className="flex-1 flex items-center justify-center p-2.5 rounded-l-2xl rounded-r-md border-2 border-(--border-main) bg-(--bg-surface) text-(--text-main) hover:bg-blue-400 hover:text-black hover:border-(--border-main) hover:shadow-[4px_4px_0px_0px_var(--shadow-main)] hover:-translate-y-0.5 transition-all active:scale-95 group"
+          className="flex-1 flex items-center justify-center p-2.5 rounded-l-2xl rounded-r-md border-2 border-(--border-main) bg-(--bg-surface) text-(--text-main) hover:bg-blue-400 hover:text-black hover:border-(--border-main) hover:shadow-[6px_6px_0px_0px_var(--shadow-main)] hover:-translate-y-0.5 transition-all active:scale-95 group"
           title="Settings"
         >
           <Settings className="w-4 h-4 group-hover:rotate-45 transition-transform" />
@@ -213,7 +211,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
             onLegacyToggle();
             onClose();
           }}
-          className="flex-1 flex items-center justify-center p-2.5 rounded-md border-2 border-(--border-main) bg-(--bg-surface) text-(--text-main) hover:bg-yellow-400 hover:text-black hover:border-(--border-main) hover:shadow-[4px_4px_0px_0px_var(--shadow-main)] hover:-translate-y-0.5 transition-all active:scale-95 group"
+          className="flex-1 flex items-center justify-center p-2.5 rounded-md border-2 border-(--border-main) bg-(--bg-surface) text-(--text-main) hover:bg-yellow-400 hover:text-black hover:border-(--border-main) hover:shadow-[6px_6px_0px_0px_var(--shadow-main)] hover:-translate-y-0.5 transition-all active:scale-95 group"
           title="Legacy View"
         >
           <History className="w-4 h-4 group-hover:-rotate-45 transition-transform" />
@@ -221,7 +219,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
 
         <button
           onClick={onLogout}
-          className="flex-1 flex items-center justify-center p-2.5 rounded-r-2xl rounded-l-md border-2 border-(--border-main) bg-(--bg-surface) text-red-500 hover:text-white hover:bg-red-500 hover:border-(--border-main) hover:shadow-[4px_4px_0px_0px_var(--shadow-main)] hover:-translate-y-0.5 transition-all active:scale-95 group"
+          className="flex-1 flex items-center justify-center p-2.5 rounded-r-2xl rounded-l-md border-2 border-(--border-main) bg-(--bg-surface) text-red-500 hover:text-white hover:bg-red-500 hover:border-(--border-main) hover:shadow-[6px_6px_0px_0px_var(--shadow-main)] hover:-translate-y-0.5 transition-all active:scale-95 group"
           title="Log Out"
         >
           <LogOut className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />

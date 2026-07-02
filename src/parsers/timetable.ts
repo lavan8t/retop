@@ -28,7 +28,7 @@ export function parseTimetable(html: string): TimetableCourse[] {
 
   const courses: TimetableCourse[] = [];
 
-  // 1. Safely find the registered courses table by locating its unique column header.
+  // Safely find the registered courses table by locating its unique column header.
   // This absolutely guarantees we never accidentally parse the visual timetable grid.
   const headers = Array.from(doc.querySelectorAll("th"));
   const classGroupHeader = headers.find((th) =>
@@ -45,10 +45,10 @@ export function parseTimetable(html: string): TimetableCourse[] {
   rows.forEach((row) => {
     const cells = Array.from(row.querySelectorAll("td"));
 
-    // 2. Standard VTOP registered course rows always have exactly 12 columns.
+    // Standard VTOP registered course rows always have exactly 12 columns.
     if (cells.length !== 12) return;
 
-    // Helper to safely extract and heavily clean text content (fixes random newlines)
+    // Safely extract and clean text content
     const getText = (index: number) => {
       const raw = cells[index]?.textContent || "";
       return raw
@@ -82,7 +82,7 @@ export function parseTimetable(html: string): TimetableCourse[] {
       }
     }
 
-    // Col 3: Credits (e.g., "3 0 0 0 3.0" -> We want "3.0")
+    // Col 3: Credits
     const rawCredits = getText(3);
     const credits = rawCredits.split(" ").pop() || "0";
 

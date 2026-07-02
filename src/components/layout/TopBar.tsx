@@ -10,8 +10,14 @@ import {
   User,
   Search,
 } from "lucide-react";
-import { QuickLink, Semester, TimetableCourse } from "../../types/vtop";
+import {
+  QuickLink,
+  Semester,
+  TimetableCourse,
+  ClassGroup,
+} from "../../types/vtop";
 import { SemesterDropdown } from "../timetable/SemesterDropdown";
+import { ClassGroupDropdown } from "../timetable/ClassGroupDropdown";
 import { getCategoryIcon } from "../../utils/icons";
 
 interface TopBarProps {
@@ -41,6 +47,9 @@ interface TopBarProps {
   calSemesters: { id: string; label: string }[];
   calSelectedSem: string;
   setCalSelectedSem: (id: string) => void;
+  calClassGroups: ClassGroup[];
+  calSelectedGroup: string;
+  setCalSelectedGroup: (id: string) => void;
 
   user: { name: string; regNo: string };
   showProfileMenu: boolean;
@@ -69,6 +78,8 @@ const getPageTitle = (view: string, dynamicTitle?: string) => {
       return "SETTINGS";
     case "coursePage":
       return "COURSE PAGE";
+    case "calendar":
+      return "CALENDAR";
     case "content":
       return dynamicTitle || "CONTENT";
     default:
@@ -98,6 +109,9 @@ export const TopBar: React.FC<TopBarProps> = ({
   calSemesters,
   calSelectedSem,
   setCalSelectedSem,
+  calClassGroups,
+  calSelectedGroup,
+  setCalSelectedGroup,
   user,
   showProfileMenu,
   setShowProfileMenu,
@@ -111,7 +125,17 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   return (
     <>
-      <header className="h-16 md:h-18 bg-transparent fixed w-full top-0 z-100 pl-4 md:pl-8 pr-0 flex items-center justify-between shrink-0 transition-all pointer-events-none">
+      {/* Top Fade Mask */}
+      <div
+        className="fixed top-0 left-0 right-0 h-24 md:h-32 bg-gradient-to-b from-(--bg-main) via-(--bg-main) to-transparent z-[90] pointer-events-none"
+        style={{
+          maskImage: "linear-gradient(to bottom, black 40%, transparent 100%)",
+          WebkitMaskImage:
+            "linear-gradient(to bottom, black 40%, transparent 100%)",
+        }}
+      />
+
+      <header className="h-16 md:h-18 bg-transparent fixed w-full top-0 z-[100] pl-4 md:pl-8 pr-0 flex items-center justify-between shrink-0 transition-all pointer-events-none">
         <div className="flex items-center h-full pointer-events-auto">
           <div className="flex flex-col justify-center h-full gap-0.5">
             <div className="flex items-center gap-2 md:gap-3">
@@ -281,12 +305,17 @@ export const TopBar: React.FC<TopBarProps> = ({
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="flex items-center gap-2 mr-1 md:mr-2"
+              className="flex items-center gap-1.5 md:gap-3 lg:gap-4 pr-0 pointer-events-auto"
             >
               <SemesterDropdown
                 semesters={calSemesters}
                 selectedId={calSelectedSem}
                 onChange={(id: string) => setCalSelectedSem(id)}
+              />
+              <ClassGroupDropdown
+                groups={calClassGroups}
+                selectedId={calSelectedGroup}
+                onChange={(id: string) => setCalSelectedGroup(id)}
               />
             </motion.div>
           )}

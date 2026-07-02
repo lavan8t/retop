@@ -16,6 +16,7 @@ import {
   HeartPulse,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import Barcode from "react-barcode";
 
 interface ProfilePageProps {
   network: VTOPNetwork;
@@ -23,7 +24,7 @@ interface ProfilePageProps {
 
 const InfoRow = ({ label, value }: { label: string; value: string }) => (
   <div className="flex flex-col border-b-2 border-(--border-main)/10 py-1.5 last:border-0 hover:bg-(--bg-highlight) px-2 -mx-2 rounded transition-colors overflow-hidden">
-    <span className="text-[10px] font-black uppercase  text-(--text-muted) mb-0.5 truncate">
+    <span className="text-[10px] font-expanded font-black uppercase text-(--text-muted) tracking-wider mb-0.5 truncate">
       {label}
     </span>
     <span className="text-sm font-bold font-mono text-(--text-main) whitespace-normal wrap-break-word leading-tight">
@@ -38,25 +39,25 @@ const InfoRow = ({ label, value }: { label: string; value: string }) => (
 
 const AddressCard = ({ title, data }: { title: string; data: any }) => (
   <div className="bg-(--bg-highlight) p-3 rounded-xl border-2 border-(--border-main) h-full flex flex-col justify-center min-w-0">
-    <h4 className="text-[10px] font-black uppercase  text-(--text-muted) mb-2 flex items-center gap-2 border-b-2 border-(--border-main)/20 pb-1.5 shrink-0">
+    <h4 className="text-[10px] font-expanded font-black uppercase text-(--text-muted) tracking-wider mb-2 flex items-center gap-2 border-b-2 border-(--border-main)/20 pb-1.5 shrink-0">
       <MapPin className="w-3 h-3" /> {title}
     </h4>
     <div className="space-y-1 overflow-hidden">
-      <div className="text-sm font-black text-(--text-main) leading-tight wrap-break-word">
+      <div className="text-sm font-bold font-mono text-(--text-main) leading-tight wrap-break-word">
         {data.street}
       </div>
-      <div className="text-[10px] font-mono text-(--text-muted) truncate">
+      <div className="text-[10px] font-mono font-bold text-(--text-muted) truncate">
         {data.area}
       </div>
-      <div className="text-[10px] font-mono text-(--text-muted) truncate">
+      <div className="text-[10px] font-mono font-bold text-(--text-muted) truncate">
         {data.city}, {data.state}
       </div>
-      <div className="text-[10px] font-mono text-(--text-muted) truncate">
+      <div className="text-[10px] font-mono font-bold text-(--text-muted) truncate">
         {data.country} -{" "}
-        <span className="text-(--text-main) font-bold">{data.pincode}</span>
+        <span className="text-(--text-main) font-black">{data.pincode}</span>
       </div>
       {data.phone && (
-        <div className="text-[10px] font-bold flex items-center gap-2 mt-2 text-(--text-main) pt-2 border-t border-(--border-main)/20 shrink-0">
+        <div className="text-[10px] font-mono font-bold flex items-center gap-2 mt-2 text-(--text-main) pt-2 border-t border-(--border-main)/20 shrink-0">
           <Smartphone className="w-3 h-3" /> {data.phone}
         </div>
       )}
@@ -83,7 +84,7 @@ const BentoCard = ({
         <div className="p-1.5 bg-(--text-main) text-(--bg-main) rounded-lg shadow-sm">
           <Icon className="w-4 h-4" />
         </div>
-        <h3 className="font-expanded font-black text-lg uppercase  truncate">
+        <h3 className="font-expanded font-black text-lg uppercase truncate">
           {title}
         </h3>
       </div>
@@ -118,14 +119,14 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
         <div
           className={`absolute inset-0 backface-hidden bg-(--bg-surface) rounded-2xl border-2 border-zinc-400 flex flex-col overflow-hidden text-(--text-main) ${fontArial}`}
         >
-          {/* Header: Reduced pt-5 to pt-3, removed bottom margins */}
+          {/* Header */}
           <div className="flex flex-col items-center pt-3 px-3 shrink-0">
             <div className="w-47.5 mx-auto flex justify-center [&>svg]:w-full [&>svg]:h-[auto!important] [&>svg]:max-h-16.25">
               <VitLogo />
             </div>
 
             <h3
-              className={`text-[17px] font-extrabold scale-x-120 text-zinc-800 ${fontTimes}`}
+              className={`text-[17px] font-extrabold scale-x-120 text-(--text-main) ${fontTimes}`}
             >
               VELLORE CAMPUS
             </h3>
@@ -147,7 +148,7 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
 
           <div className={`flex flex-col items-center shrink-0 pb-1`}>
             <div
-              className={`font-bold text-[25px] ${fontArial} text-[#181d79]  leading-none text-center px-2`}
+              className={`font-bold text-[25px] ${fontArial} text-[#181d79] leading-none text-center px-2`}
             >
               {toTitleCase(data.basic.name)}
             </div>
@@ -158,9 +159,9 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
             </div>
           </div>
 
-          {/* Footer Banner: Reduced py-2.5 to py-1.5 */}
+          {/* Footer Banner */}
           <div
-            className={`text-[#ffffff] text-center py-1 font-bold text-[22px]  shrink-0 ${fontArial}`}
+            className={`text-[#ffffff] text-center py-1 font-bold text-[22px] shrink-0 ${fontArial}`}
             style={{
               backgroundColor: isHosteller ? "#181d79" : "#C41E3A",
             }}
@@ -169,8 +170,10 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
           </div>
         </div>
 
-        {/* BACK SIDE: Reduced global padding from p-5 to p-3 to reclaim space */}
-        <div className="absolute inset-0 backface-hidden transform-[rotateY(180deg)] bg-(--bg-surface) rounded-2xl border-2 border-zinc-400 flex flex-col p-3 text-(--text-main) text-[12px] leading-tight overflow-hidden">
+        {/* BACK SIDE */}
+        <div
+          className={`absolute inset-0 backface-hidden transform-[rotateY(180deg)] bg-(--bg-surface) rounded-2xl border-2 border-zinc-400 flex flex-col p-3 text-(--text-main) text-[12px] leading-tight overflow-hidden`}
+        >
           <div className="flex gap-1">
             <span className={`italic font-bold ${fontTimes}`}>App. No:</span>{" "}
             <span className={`font-bold ml-1 ${fontArial}`}>
@@ -187,7 +190,6 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
             </span>
           </div>
 
-          {/* Reduced all mt-3 section dividers to mt-1.5 */}
           <div className={`mt-1.5 italic font-bold ${fontTimes}`}>
             Official Address :
           </div>
@@ -231,7 +233,6 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
             </span>
           </div>
 
-          {/* Reduced mt-4 to mt-2 for signature block */}
           <div className="mt-2 flex justify-between text-[11px] italic items-end">
             <div className="text-center flex flex-col items-center">
               <span className="text-xl -mb-2 text-(--text-muted) italic font-['cursive']!"></span>
@@ -243,14 +244,22 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
             </div>
           </div>
 
-          {/* TEC-IT API Barcode & Footer: mt-auto naturally pushes this to the bottom */}
-          <div className="mt-auto flex flex-col items-center">
-            <img
-              src={`https://barcode.tec-it.com/barcode.ashx?data=${data.basic.regNo}&code=Code128`}
-              alt="Barcode"
-              className="w-[68%] h-auto mix-blend-multiply"
-            />
-            <div className={`font-bold text-[13px] ${fontTimes}`}>
+          {/* TEC-IT API Barcode Replaced with react-barcode */}
+          <div className="mt-auto flex flex-col items-center pb-1">
+            <div className="w-[85%] flex justify-center bg-white px-2 py-2 rounded-sm mix-blend-multiply opacity-90">
+              <Barcode
+                value={data.basic.regNo}
+                displayValue={true}
+                height={75}
+                width={2}
+                fontSize={16}
+                margin={0}
+                format="CODE128"
+                background="transparent"
+                lineColor="#000000"
+              />
+            </div>
+            <div className={`font-bold text-[13px] ${fontTimes} mt-1`}>
               Website : www.vit.ac.in
             </div>
           </div>
@@ -286,9 +295,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
 
   if (loading) {
     return (
-      <div className="h-full flex flex-col items-center justify-center text-zinc-500 gap-4 animate-pulse bg-zinc-50 dark:bg-zinc-900">
-        <Loader2 className="w-10 h-10 animate-spin text-(--text-main) dark:text-(--text-inverse)" />
-        <span className="text-xs font-bold  uppercase">
+      <div className="h-full flex flex-col items-center justify-center text-(--text-muted) gap-4 animate-pulse bg-(--bg-main)">
+        <Loader2 className="w-10 h-10 animate-spin text-(--text-main)" />
+        <span className="text-xs font-expanded font-black tracking-widest uppercase">
           Fetching Profile...
         </span>
       </div>
@@ -298,39 +307,35 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
   if (!data) return null;
 
   return (
-    <div className="h-full overflow-y-auto bg-(--bg-main) p-4 md:p-8 font-mono custom-scrollbar">
+    <div className="h-full overflow-y-auto bg-(--bg-main) p-4 md:p-8 pt-20 md:pt-24 lg:pt-28 font-mono custom-scrollbar">
       <div className="max-w-375 mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
         {/* LEFT COLUMN: ID CARD & ACADEMIC SPILLOVER */}
         <div className="lg:col-span-4 flex flex-col gap-6 md:gap-8 items-center lg:items-stretch">
           <DigitalIDCard data={data} />
 
-          <BentoCard
-            title="Academic Details"
-            icon={GraduationCap}
-            delay={0.1}
-          >
+          <BentoCard title="Academic Details" icon={GraduationCap} delay={0.1}>
             <div className="space-y-3">
               <div className="bg-(--bg-surface)/40 p-3 rounded-xl border-2 border-(--border-main)">
-                <div className="text-[10px] font-black uppercase  text-(--text-muted) mb-0.5">
+                <div className="text-[10px] font-expanded font-black uppercase text-(--text-muted) tracking-wider mb-0.5">
                   Program
                 </div>
-                <div className="text-base font-black leading-tight">
+                <div className="text-base font-black font-mono leading-tight">
                   {data.basic.program}
                 </div>
               </div>
               <div className="bg-(--bg-surface)/40 p-3 rounded-xl border-2 border-(--border-main)">
-                <div className="text-[10px] font-black uppercase  text-(--text-muted) mb-0.5">
+                <div className="text-[10px] font-expanded font-black uppercase text-(--text-muted) tracking-wider mb-0.5">
                   School
                 </div>
-                <div className="text-sm font-bold leading-tight">
+                <div className="text-sm font-bold font-mono leading-tight wrap-break-word">
                   {data.basic.school}
                 </div>
               </div>
               <div className="bg-(--bg-surface)/40 p-3 rounded-xl border-2 border-(--border-main)">
-                <div className="text-[10px] font-black uppercase  text-(--text-muted) mb-0.5">
+                <div className="text-[10px] font-expanded font-black uppercase text-(--text-muted) tracking-wider mb-0.5">
                   Institutional Email
                 </div>
-                <div className="text-sm font-bold leading-tight break-all">
+                <div className="text-sm font-bold font-mono leading-tight wrap-break-word">
                   {data.basic.email}
                 </div>
               </div>
@@ -355,10 +360,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
                     alt="Proctor"
                   />
                 ) : (
-                  <Shield
-                    color="#e5e5e5"
-                    className="w-12 h-12 text-[#e5e5e5]"
-                  />
+                  <Shield className="w-12 h-12 text-(--border-main)" />
                 )}
               </div>
 
@@ -366,21 +368,24 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
                 <h3 className="font-expanded font-black text-2xl uppercase leading-none mb-1 text-(--text-main)">
                   {data.proctor.name}
                 </h3>
-                <p className="text-xs font-bold text-(--text-muted) mb-4 ">
+                <p className="text-xs font-bold font-mono text-(--text-muted) mb-4">
                   {data.proctor.designation}
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="flex items-center gap-2 bg-(--bg-surface)/40 p-2 rounded-lg border-2 border-(--border-main) text-xs font-bold">
-                    <Smartphone className="w-4 h-4 shrink-0" />{" "}
+                  <div className="flex items-center gap-2 bg-(--bg-surface)/40 p-2 rounded-lg border-2 border-(--border-main) text-xs font-bold font-mono">
+                    <Smartphone className="w-4 h-4 shrink-0 text-(--accent-base)" />{" "}
                     {data.proctor.mobile}
                   </div>
-                  <div className="flex items-center gap-2 bg-(--bg-surface)/40 p-2 rounded-lg border-2 border-(--border-main) text-xs font-bold">
-                    <MapPin className="w-4 h-4 shrink-0" /> {data.proctor.cabin}
+                  <div className="flex items-center gap-2 bg-(--bg-surface)/40 p-2 rounded-lg border-2 border-(--border-main) text-xs font-bold font-mono">
+                    <MapPin className="w-4 h-4 shrink-0 text-(--accent-base)" />{" "}
+                    {data.proctor.cabin}
                   </div>
-                  <div className="flex items-center gap-2 bg-(--bg-surface)/40 p-2 rounded-lg border-2 border-(--border-main) text-xs font-bold sm:col-span-2">
-                    <Mail className="w-4 h-4 shrink-0" />{" "}
-                    <span className="truncate">{data.proctor.email}</span>
+                  <div className="flex items-center gap-2 bg-(--bg-surface)/40 p-2 rounded-lg border-2 border-(--border-main) text-xs font-bold font-mono sm:col-span-2">
+                    <Mail className="w-4 h-4 shrink-0 text-(--accent-base)" />{" "}
+                    <span className="truncate text-(--text-main)">
+                      {data.proctor.email}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -409,10 +414,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
                   value={data.family.father.income}
                 />
                 <div className="mt-4 p-2 bg-(--text-main) text-(--bg-main) rounded-lg border-2 border-(--border-main) text-center flex items-center justify-between px-4">
-                  <span className="text-[10px] font-bold uppercase  text-(--bg-main)/70">
+                  <span className="text-[10px] font-expanded font-black uppercase text-(--bg-main)/70 tracking-wider">
                     Local Guardian
                   </span>
-                  <span className="text-sm font-black">
+                  <span className="text-sm font-bold font-mono">
                     {data.family.guardian || "N/A"}
                   </span>
                 </div>
@@ -429,7 +434,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
               title="Personal"
               icon={HeartPulse}
               delay={0.4}
-              className="bg-cyan-300"
+              className="bg-(--card-cyan)"
             >
               <div className="bg-(--bg-surface) p-3 rounded-xl border-2 border-(--border-main) space-y-1">
                 <InfoRow label="DOB" value={data.personal.dob} />
@@ -449,11 +454,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
               </div>
             </BentoCard>
 
-            <BentoCard
-              title="Education"
-              icon={GraduationCap}
-              delay={0.4}
-            >
+            <BentoCard title="Education" icon={GraduationCap} delay={0.4}>
               <div className="bg-(--bg-surface) p-3 rounded-xl border-2 border-(--border-main) space-y-1 mb-4">
                 <InfoRow label="Degree" value={data.education.degree} />
                 <InfoRow
@@ -464,10 +465,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
                 <InfoRow label="Passing Year" value={data.education.year} />
               </div>
               <div className="bg-(--bg-surface) p-3 rounded-xl border-2 border-(--border-main) text-center">
-                <span className="text-[10px] font-black uppercase text-(--text-main)/50 block mb-1 ">
+                <span className="text-[10px] font-expanded font-black uppercase text-(--text-muted) tracking-wider block mb-1">
                   Previous Institution
                 </span>
-                <p className="text-xs font-bold leading-tight line-clamp-2">
+                <p className="text-xs font-bold font-mono leading-tight line-clamp-2 wrap-break-word text-(--text-main)">
                   {data.education.school}
                 </p>
               </div>
@@ -483,13 +484,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
             {data.hostel ? (
               <div className="flex flex-col sm:flex-row gap-6 items-center">
                 <div className="bg-(--text-main) p-6 rounded-2xl border-4 border-(--border-main) text-center flex flex-col justify-center w-full sm:w-auto min-w-35 shadow-inner shrink-0 rotate-1">
-                  <div className="text-[10px] uppercase font-black text-(--bg-main)/50  mb-1">
+                  <div className="text-[10px] uppercase font-expanded font-black text-(--bg-main)/50 tracking-wider mb-1">
                     Room No.
                   </div>
-                  <div className="text-5xl font-black text-(--bg-main)">
+                  <div className="text-5xl font-black font-mono text-(--bg-main)">
                     {data.hostel.room}
                   </div>
-                  <div className="text-[11px] font-bold text-(--bg-main) mt-2 bg-(--bg-surface)/10 py-1 rounded-md px-2 truncate max-w-full">
+                  <div className="text-[11px] font-bold font-mono text-(--bg-main) mt-2 bg-(--bg-surface)/10 py-1 rounded-md px-2 truncate max-w-full">
                     {data.hostel.block}
                   </div>
                 </div>
@@ -500,10 +501,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
                 </div>
               </div>
             ) : (
-              <div className="h-full w-full flex items-center justify-center p-8 bg-(--bg-surface) border-4 border-dashed border-(--border-main) rounded-2xl text-(--text-main)/40 font-black text-xl uppercase  text-center">
+              <div className="h-full w-full flex items-center justify-center p-8 bg-(--bg-surface) border-4 border-dashed border-(--border-main) rounded-2xl text-(--text-muted) font-black font-expanded text-xl tracking-wider uppercase text-center">
                 Registered As
                 <br />
-                Day Boarder
+                Day Scholar
               </div>
             )}
           </BentoCard>

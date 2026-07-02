@@ -17,23 +17,22 @@ export function scrapeMenu(doc: Document): MenuCategory[] {
   const categories: MenuCategory[] = [];
   const visitedUrls = new Set<string>();
 
-  const idMap: Record<string, string> = {
-    MG0001: "Academics",
-    MG0002: "Examinations",
-    MG0003: "Finance",
-    MG0004: "Events",
-    MG0015: "SAP/IR",
-    MG0005: "Services",
-    MG0009: "Hostels",
-    MG0008: "Feedback",
-    MG0010: "Library",
-    MG0011: "Placement",
-    MG0012: "Research",
-    MG0021: "Transport",
-  };
+  // Find all category headers dynamically
+  const categoryAnchors = doc.querySelectorAll("a.hmenuItem, a.hmenuitem");
 
-  const processContainer = (id: string, title: string) => {
-    const container = doc.getElementById(id);
+  categoryAnchors.forEach((categoryAnchor) => {
+    // Extract category title (e.g. "Academics")
+    let title = categoryAnchor.textContent?.trim() || "";
+    // Remove any extra whitespace
+    title = title.replace(/\s+/g, " ").trim();
+    if (!title || title === "☰") return;
+
+    // The links are in a container whose ID matches the anchor's href
+    const href = categoryAnchor.getAttribute("href");
+    if (!href || !href.startsWith("#")) return;
+    
+    const targetId = href.substring(1);
+    const container = doc.getElementById(targetId);
     if (!container) return;
 
     const links: QuickLink[] = [];
@@ -41,8 +40,7 @@ export function scrapeMenu(doc: Document): MenuCategory[] {
 
     anchors.forEach((a) => {
       let linkTitle = a.textContent?.trim() || "";
-      linkTitle = sanitizeMenuTitle(linkTitle); // Sanitize the name here
-
+      linkTitle = sanitizeMenuTitle(linkTitle);
       const url = a.getAttribute("data-url");
 
       if (linkTitle && url && !visitedUrls.has(url)) {
@@ -56,21 +54,18 @@ export function scrapeMenu(doc: Document): MenuCategory[] {
     });
 
     if (links.length > 0) {
-      categories.push({ id, title, links });
+      categories.push({ id: targetId, title, links });
     }
-  };
+  });
 
-  for (const [id, title] of Object.entries(idMap)) {
-    processContainer(id, title);
-  }
-
+  // Catch any links that weren't inside a known category
   const allLinks = doc.querySelectorAll("a[data-url]");
   const generalLinks: QuickLink[] = [];
 
   allLinks.forEach((a) => {
     const url = a.getAttribute("data-url");
     let linkTitle = a.textContent?.trim() || "Untitled Module";
-    linkTitle = sanitizeMenuTitle(linkTitle); // Sanitize catch-all links too
+    linkTitle = sanitizeMenuTitle(linkTitle);
 
     if (url && !visitedUrls.has(url)) {
       visitedUrls.add(url);

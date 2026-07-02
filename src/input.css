@@ -6,7 +6,8 @@
   font-weight: 1 1000;
   font-stretch: 25% 151%;
   font-display: swap;
-  src: url("chrome-extension://__MSG_@@extension_id__/dist/fonts/gsf.subset.woff2") format("woff2");
+  src: url("chrome-extension://__MSG_@@extension_id__/dist/fonts/gsf.subset.woff2")
+    format("woff2");
   unicode-range:
     U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
     U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
@@ -19,7 +20,8 @@
   font-weight: 1 1000;
   font-stretch: 25% 151%;
   font-display: swap;
-  src: url("chrome-extension://__MSG_@@extension_id__/dist/fonts/gsf.subset2.woff2") format("woff2");
+  src: url("chrome-extension://__MSG_@@extension_id__/dist/fonts/gsf.subset2.woff2")
+    format("woff2");
   unicode-range:
     U+0001-000C, U+000E-001F, U+007F-009F, U+20DD-20E0, U+20E2-20E4,
     U+2150-218F, U+2190, U+2192, U+2194-2199, U+21AF, U+21E6-21F0, U+21F3,
@@ -186,9 +188,14 @@
 /* --- 4. UTILITY OVERRIDES --- */
 @layer utilities {
   @keyframes marquee-scroll {
-    0%, 15% { transform: translateX(0); }
-    45%, 55% { transform: translateX(calc(-100% + 120px)); }
-    85%, 100% { transform: translateX(0); }
+    0%,
+    20% {
+      transform: translateX(0);
+    }
+    80%,
+    100% {
+      transform: translateX(var(--scroll-dist, -50px));
+    }
   }
   .marquee-on-hover {
     display: inline-block;
@@ -298,52 +305,94 @@
 }
 
 /* --- 5. SCROLLBARS --- */
-#vtop-remastered-root::-webkit-scrollbar {
-  width: 14px;
+@property --thumb-width {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 0%;
 }
-#vtop-remastered-root::-webkit-scrollbar-track {
-  background: transparent;
-  border-left: 2px solid transparent;
-}
-#vtop-remastered-root:hover::-webkit-scrollbar-track {
-  background: var(--bg-surface);
-  border-left-color: var(--border-dim);
-}
-#vtop-remastered-root::-webkit-scrollbar-thumb {
-  background-color: transparent;
-  border: 4px solid transparent;
-  background-clip: padding-box;
-  border-radius: 99px;
-}
-#vtop-remastered-root:hover::-webkit-scrollbar-thumb {
-  background-color: var(--accent-base);
-  border-color: var(--bg-surface);
-}
-#vtop-remastered-root::-webkit-scrollbar-thumb:hover {
-  background-color: var(--accent-hover);
+@property --scrollbar-alpha {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
 }
 
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+#vtop-remastered-root ::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
 }
-::-webkit-scrollbar-track {
-  background: transparent;
+#vtop-remastered-root ::-webkit-scrollbar-track,
+#vtop-remastered-root ::-webkit-scrollbar-corner {
+  background: transparent !important;
 }
-*:hover > ::-webkit-scrollbar-track,
-*:hover::-webkit-scrollbar-track {
-  background: var(--bg-surface);
+
+#vtop-remastered-root ::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background-color: transparent !important;
+  border: none;
+  background-repeat: no-repeat;
 }
-::-webkit-scrollbar-thumb {
-  background-color: transparent;
-  border-radius: 99px;
+
+#vtop-remastered-root ::-webkit-scrollbar-thumb:vertical {
+  background-image: linear-gradient(to right, 
+    color-mix(in srgb, var(--accent-base) calc(var(--scrollbar-alpha) * 100%), transparent),
+    color-mix(in srgb, var(--accent-base) calc(var(--scrollbar-alpha) * 100%), transparent)
+  );
+  background-size: var(--thumb-width) 100%;
+  background-position: right center;
 }
-*:hover > ::-webkit-scrollbar-thumb,
-*:hover::-webkit-scrollbar-thumb {
-  background-color: var(--accent-base);
+
+#vtop-remastered-root ::-webkit-scrollbar-thumb:horizontal {
+  background-image: linear-gradient(to bottom, 
+    color-mix(in srgb, var(--accent-base) calc(var(--scrollbar-alpha) * 100%), transparent),
+    color-mix(in srgb, var(--accent-base) calc(var(--scrollbar-alpha) * 100%), transparent)
+  );
+  background-size: 100% var(--thumb-width);
+  background-position: center bottom;
 }
-*:hover::-webkit-scrollbar-thumb:hover {
-  background-color: var(--accent-hover);
+
+@keyframes scrollbar-fade-in {
+  from {
+    --thumb-width: 0%;
+    --scrollbar-alpha: 0;
+  }
+  to {
+    --thumb-width: 100%;
+    --scrollbar-alpha: 1;
+  }
+}
+
+@keyframes scrollbar-fade-out {
+  from {
+    --thumb-width: 100%;
+    --scrollbar-alpha: 1;
+  }
+  to {
+    --thumb-width: 0%;
+    --scrollbar-alpha: 0;
+  }
+}
+
+/* Target only scrollable containers and use animation to prevent overriding transition-property */
+#vtop-remastered-root [class*="overflow-"],
+#vtop-remastered-root .custom-scrollbar {
+  --thumb-width: 0%;
+  --scrollbar-alpha: 0;
+  animation: scrollbar-fade-out 0.12s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+#vtop-remastered-root [class*="overflow-"]:hover,
+#vtop-remastered-root .custom-scrollbar:hover {
+  animation: scrollbar-fade-in 0.12s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+#vtop-remastered-root [class*="overflow-"]:hover::-webkit-scrollbar-thumb:vertical:hover,
+#vtop-remastered-root .custom-scrollbar:hover::-webkit-scrollbar-thumb:vertical:hover {
+  background-image: linear-gradient(to right, var(--accent-hover), var(--accent-hover));
+}
+
+#vtop-remastered-root [class*="overflow-"]:hover::-webkit-scrollbar-thumb:horizontal:hover,
+#vtop-remastered-root .custom-scrollbar:hover::-webkit-scrollbar-thumb:horizontal:hover {
+  background-image: linear-gradient(to bottom, var(--accent-hover), var(--accent-hover));
 }
 
 /* --- 6. EXTERNAL / GLOBAL COMPONENTS --- */
@@ -391,7 +440,7 @@
 
   /* The Neo-Brutalist Toggle Button (UNTOUCHED) */
   .vtop-toggle-btn {
-    @apply bg-yellow-400 text-black font-black font-expanded px-8 py-4 border-4 border-(--border-main) cursor-pointer shadow-none transition-all duration-200 uppercase ;
+    @apply bg-yellow-400 text-black font-black font-expanded px-8 py-4 border-4 border-(--border-main) cursor-pointer shadow-none transition-all duration-200 uppercase;
   }
 
   .vtop-toggle-btn:hover {
@@ -404,6 +453,10 @@
 }
 
 @keyframes profile-marquee {
-  0% { transform: translateX(20%); }
-  100% { transform: translateX(-100%); }
+  0% {
+    transform: translateX(20%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
 }

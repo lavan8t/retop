@@ -1,3 +1,5 @@
+export type ViewType = "dashboard" | "timetable" | "curriculum" | "marks" | "profile" | "settings" | "coursePage" | "calendar" | "content";
+
 export interface QuickLink {
   title: string;
   url: string;
@@ -25,6 +27,13 @@ export interface Assignment {
   title: string;
   course: string;
   dueDate: string;
+  status?: string;
+}
+export interface Event {
+  title: string;
+  category: string;
+  date: string;
+  organizer: string;
 }
 
 export interface TimetableCourse {

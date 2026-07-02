@@ -71,7 +71,7 @@ const getAuthId = () => {
   );
 };
 
-// CRITICAL FIX: Normalizes VL20252601 (from course page) to match VL2025261 (from topbar)
+// Normalizes VL20252601 (from course page) to match VL2025261 (from topbar)
 const isSameSem = (sem1: string, sem2: string) => {
   if (!sem1 || !sem2) return false;
   const normalize = (s: string) => s.replace(/0+([1-9])$/, "$1").toLowerCase();
@@ -106,7 +106,7 @@ export const CoursePage = ({
     setIsCourseListOpen(false);
   }, [selectedSem]);
 
-  // 1. Initial Dual-Fetch Logic hitting exact URLs from prompt
+  // Initial Dual-Fetch Logic hitting exact URLs
   useEffect(() => {
     if (cpOptions.length > 0) return;
 
@@ -139,7 +139,7 @@ export const CoursePage = ({
     };
   }, [network, cpOptions.length, setCpOptions]);
 
-  // 2. Fetch specific course details using exact API keys
+  // Fetch specific course details using exact API keys
   useEffect(() => {
     if (!selectedOptionId || !selectedSem || cpOptions.length === 0) return;
 
@@ -241,7 +241,7 @@ export const CoursePage = ({
 
   return (
     // STRICT WRAPPER: min-h-0 and overflow-hidden prevent the outer page from stretching
-    <div className="p-6 h-full flex flex-col bg-zinc-950 font-mono transition-colors text-zinc-200 overflow-hidden min-h-0">
+    <div className="p-6 pt-20 md:pt-24 lg:pt-28 h-full flex flex-col bg-zinc-950 font-mono transition-colors text-zinc-200 overflow-hidden min-h-0">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0 overflow-hidden">
         {/* === STATIC LEFT PANEL === */}
         <div className="lg:col-span-4 xl:col-span-3 h-full flex flex-col overflow-hidden min-h-0">

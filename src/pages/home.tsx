@@ -794,7 +794,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 monthData.days.forEach((calDay) => {
                   if (
                     calDay.dateObj &&
-                    calDay.dateObj.toDateString() === d.toDateString()
+                    new Date(calDay.dateObj).toDateString() === d.toDateString()
                   ) {
                     if (calDay.info || calDay.isHoliday) {
                       dayEvents.push({ type: "calendar", data: calDay });

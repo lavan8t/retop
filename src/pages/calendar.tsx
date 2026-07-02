@@ -142,30 +142,16 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
           </p>
         </div>
       ) : (
-        <div className="flex-1 flex flex-col min-h-0 w-full mt-[100px] mb-8 relative z-0">
+        <div className="flex-1 flex flex-col min-h-0 w-full relative z-0">
           {/* Grid Container */}
           <div
-            className="flex-1 flex flex-col bg-(--bg-card) border-4 border-(--border-main) rounded-3xl shadow-none overflow-hidden relative z-10"
+            className="flex-1 flex flex-col overflow-hidden relative z-10"
             style={{
               maskImage:
                 "linear-gradient(to bottom, black 85%, transparent 100%)",
             }}
           >
-            {/* Global Days Header */}
-            <div className="grid grid-cols-7 border-b-4 border-(--border-main) bg-(--bg-main) shrink-0 shadow-sm z-20">
-              {WEEKDAYS.map((day, i) => (
-                <div
-                  key={day}
-                  className={`py-3 text-center font-expanded font-black text-xs md:text-sm uppercase tracking-widest ${
-                    i === 0 || i === 6 ? "text-red-500" : "text-(--text-muted)"
-                  } border-r-4 border-(--border-main) last:border-r-0`}
-                >
-                  {day}
-                </div>
-              ))}
-            </div>
-
-            <div className="flex-1 overflow-y-auto custom-scrollbar bg-(--bg-main) relative pb-16">
+            <div className="flex-1 overflow-y-auto custom-scrollbar bg-(--bg-main) relative pb-24 pt-[110px]">
               <AnimatePresence mode="wait">
                 {calLoadingGrid ? (
                   <motion.div
@@ -184,34 +170,15 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={spring}
-                    className="flex flex-col"
+                    className="flex flex-col relative"
                   >
                     {calGridData.map((data, mIdx) => (
-                      <div
-                        key={mIdx}
-                        className="flex flex-col border-b-4 border-(--border-main) last:border-b-0"
-                      >
+                      <div key={mIdx} className="flex flex-col pb-8">
                         {/* Sticky Month Divider */}
-                        <div className="bg-(--bg-card) border-b-4 border-(--border-main) py-4 sticky top-0 z-10 flex flex-col items-center justify-center shadow-sm">
-                          <h2 className="font-expanded font-black text-xl md:text-2xl uppercase tracking-tight m-0 text-(--text-main)">
-                            {data.month.label}
+                        <div className="py-4 sticky top-0 z-10 flex flex-col items-start justify-center pointer-events-none">
+                          <h2 className="font-expanded font-black text-3xl md:text-5xl uppercase tracking-tighter m-0 text-(--text-main) opacity-20">
+                            {data.month.label.replace(/\s*-\s*/, " ")}
                           </h2>
-                          {mIdx === 0 && (
-                            <div className="flex items-center gap-4 mt-2">
-                              <div className="flex items-center gap-1.5">
-                                <div className="w-3 h-3 bg-red-500 border-2 border-(--border-main) rounded-sm shadow-sm"></div>
-                                <span className="text-[10px] font-bold text-(--text-muted) uppercase tracking-wider">
-                                  Holiday
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <div className="w-3 h-3 bg-yellow-400 border-2 border-(--border-main) rounded-sm shadow-sm"></div>
-                                <span className="text-[10px] font-bold text-(--text-muted) uppercase tracking-wider">
-                                  Exam
-                                </span>
-                              </div>
-                            </div>
-                          )}
                         </div>
 
                         {/* Month Grid */}
@@ -220,7 +187,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                             (_, i) => (
                               <div
                                 key={`empty-${i}`}
-                                className="border-r-4 border-b-4 border-(--border-main)/50 bg-(--bg-main) opacity-40 pointer-events-none"
+                                className="border-r border-b border-(--border-main)/10 bg-transparent opacity-0 pointer-events-none"
                               />
                             ),
                           )}
@@ -228,10 +195,12 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                           {data.days.map((day, idx) => {
                             const isToday =
                               new Date().toDateString() ===
-                              day.dateObj.toDateString();
+                              new Date(day.dateObj).toDateString();
 
-                            let bgClass = "bg-(--bg-card) hover:bg-(--bg-main)";
-                            let borderClass = "border-(--border-main)";
+                            let bgClass =
+                              "bg-(--bg-card) hover:bg-(--bg-highlight)";
+                            let borderClass =
+                              "border-(--border-main)/20 border-r border-b";
                             let textClass = "text-(--text-muted)";
                             let numberClass = "text-(--text-main)";
                             let accentBar = "";
@@ -241,56 +210,57 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                             }
                             if (day.isHoliday) {
                               bgClass =
-                                "bg-red-500 text-black hover:bg-red-400";
-                              borderClass = "border-red-600";
-                              textClass = "text-black/80";
-                              numberClass = "text-black";
-                              accentBar = "bg-red-900/20";
+                                "bg-red-500/10 text-red-500 hover:bg-red-500/20";
+                              borderClass =
+                                "border-red-500/20 border-r border-b";
+                              textClass = "text-red-500/80";
+                              numberClass = "text-red-500";
+                              accentBar = "bg-red-500/20";
                             } else if (day.isExam) {
                               bgClass =
-                                "bg-yellow-400 text-black hover:bg-yellow-300";
-                              borderClass = "border-yellow-500";
-                              textClass = "text-black/80";
-                              numberClass = "text-black";
-                              accentBar = "bg-yellow-900/20";
-                            } else if (isToday) {
-                              bgClass =
-                                "bg-(--accent-base) text-(--text-inverse) hover:brightness-110";
-                              borderClass = "border-(--border-main)";
-                              textClass = "text-(--text-inverse)/90";
-                              numberClass = "text-(--text-inverse)";
-                              accentBar = "bg-black/20";
+                                "bg-yellow-400/10 text-yellow-500 hover:bg-yellow-400/20";
+                              borderClass =
+                                "border-yellow-400/20 border-r border-b";
+                              textClass = "text-yellow-600";
+                              numberClass = "text-yellow-500";
+                              accentBar = "bg-yellow-400/30";
+                            }
+
+                            if (isToday) {
+                              bgClass +=
+                                " ring-2 ring-(--accent-base) ring-inset bg-(--accent-base)/10 z-10";
+                              numberClass = "text-(--accent-base)";
                             }
 
                             return (
                               <div
                                 key={idx}
-                                className={`p-2 md:p-3 border-r-4 border-b-4 transition-all duration-200 flex flex-col group relative overflow-hidden ${bgClass} ${borderClass}`}
+                                className={`relative p-2 md:p-3 flex flex-col transition-all group ${bgClass} ${borderClass}`}
                               >
+                                {/* Accent Bar */}
                                 {accentBar && (
                                   <div
-                                    className={`absolute top-0 left-0 right-0 h-2 ${accentBar}`}
+                                    className={`absolute top-0 left-0 right-0 h-1 md:h-1.5 ${accentBar}`}
                                   />
                                 )}
 
-                                <div className="flex justify-between items-start w-full relative z-10">
+                                <div className="flex justify-between items-start mb-1 md:mb-2 pt-1 md:pt-0">
                                   <span
-                                    className={`font-expanded font-black text-xl md:text-3xl leading-none ${numberClass} group-hover:scale-110 origin-top-left transition-transform`}
+                                    className={`font-black text-sm md:text-lg lg:text-xl font-expanded leading-none ${numberClass}`}
                                   >
                                     {day.dayNumber}
-                                  </span>
-
-                                  {isToday && (
-                                    <span className="hidden md:block text-[9px] font-black uppercase bg-black text-white px-2 py-1 rounded shadow-sm">
-                                      TODAY
+                                    <span className="text-[8px] md:text-[10px] ml-1 uppercase text-(--text-muted) tracking-widest font-bold">
+                                      {new Date(day.dateObj).toLocaleDateString("en-US", {
+                                        weekday: "short",
+                                      })}
                                     </span>
-                                  )}
+                                  </span>
                                 </div>
 
                                 {day.info && (
                                   <div className="mt-auto relative z-10 flex flex-col gap-1 pt-2">
                                     <p
-                                      className={`text-[10px] md:text-xs font-bold uppercase leading-tight line-clamp-2 md:line-clamp-3 ${textClass}`}
+                                      className={`text-[10px] md:text-xs font-bold uppercase leading-tight ${textClass} break-words`}
                                       title={day.info}
                                     >
                                       {day.info}
@@ -298,14 +268,14 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
 
                                     {day.subInfo && (
                                       <span
-                                        className={`inline-flex items-center gap-1 text-[9px] md:text-[10px] font-black px-1.5 py-0.5 rounded-md uppercase w-fit truncate ${
+                                        className={`inline-flex items-start gap-1 text-[9px] md:text-[10px] font-black px-1.5 py-1 rounded-md uppercase w-full ${
                                           day.isHoliday || day.isExam || isToday
                                             ? "bg-black/10 text-black"
                                             : "bg-(--bg-main) border border-(--border-main) text-(--text-muted)"
                                         }`}
                                       >
-                                        <Info className="w-3 h-3 shrink-0" />
-                                        <span className="truncate">
+                                        <Info className="w-3 h-3 shrink-0 mt-0.5" />
+                                        <span className="whitespace-normal break-words">
                                           {day.subInfo}
                                         </span>
                                       </span>
@@ -324,7 +294,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                           }).map((_, i) => (
                             <div
                               key={`fill-${i}`}
-                              className="border-r-4 border-b-4 border-(--border-main)/50 bg-(--bg-main) opacity-40 pointer-events-none"
+                              className="border-r border-b border-(--border-main)/10 bg-transparent opacity-0 pointer-events-none"
                             />
                           ))}
                         </div>

@@ -16,6 +16,7 @@ export function parseCalendarSemesters(
     .map((opt) => ({
       id: opt.value,
       label: normalizeSemesterLabel(opt.textContent || opt.value),
+      selected: opt.selected,
     }));
 }
 
@@ -28,9 +29,9 @@ export function parseCalendarGroupsAndMonths(html: string): {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, "text/html");
 
-  // 1. Extract Class Groups
+  // Extract Class Groups
   const groupSelect = doc.getElementById("classGroupId") as HTMLSelectElement;
-  const groups: ClassGroup[] = groupSelect
+  let groups: ClassGroup[] = groupSelect
     ? Array.from(groupSelect.options)
         .filter((opt) => opt.value)
         .map((opt) => ({
@@ -39,22 +40,46 @@ export function parseCalendarGroupsAndMonths(html: string): {
         }))
     : [];
 
-  // 2. Extract Month Buttons
-  const buttons = doc.querySelectorAll(
-    "button.btn-primary, button.btn-success, button.btn-info, button.btn-warning",
-  );
+  // Extract Month Buttons via DOM for automatic HTML entity decoding (e.g. &#39;)
+  const buttons = doc.querySelectorAll("[onclick*='processViewCalendar']");
   const months: CalendarMonthPreview[] = [];
+  const seen = new Set<string>();
 
   buttons.forEach((btn) => {
-    const label = btn.textContent?.trim() || "";
-    // Extract '01-May-2026' from onclick="javascript:processViewCalendar('01-May-2026')"
     const onclickAttr = btn.getAttribute("onclick") || "";
     const match = onclickAttr.match(/'([^']+)'/);
 
-    if (label && match && match[1]) {
-      months.push({ label, dateString: match[1] });
+    if (match && match[1]) {
+      const dateString = match[1];
+      if (!seen.has(dateString)) {
+        seen.add(dateString);
+        // Extract label from date string (e.g., "01-JUL-2026" -> "JUL 2026" or use textContent)
+        const textLabel = btn.textContent?.trim();
+        let label = textLabel;
+        if (!label || label.includes("javascript")) {
+          const parts = dateString.split("-");
+          label = parts.length === 3 ? `${parts[1]} ${parts[2]}` : dateString;
+        }
+        months.push({ label, dateString });
+      }
     }
   });
+
+  // Fallback if classGroupId is missing: find any select with COMB
+  if (!groups.length) {
+    const selects = Array.from(doc.querySelectorAll("select"));
+    const fallbackSelect = selects.find((s) =>
+      Array.from(s.options).some((o) => o.value === "COMB" || o.value === "E1"),
+    );
+    if (fallbackSelect) {
+      groups = Array.from(fallbackSelect.options)
+        .filter((opt) => opt.value)
+        .map((opt) => ({
+          id: opt.value,
+          label: opt.textContent?.trim() || opt.value,
+        }));
+    }
+  }
 
   return { groups, months };
 }
@@ -70,7 +95,9 @@ export function parseCalendarDays(
   const cleanHtml = html.replace(/<</g, "<");
   const doc = parser.parseFromString(cleanHtml, "text/html");
 
-  const cells = doc.querySelectorAll("table tbody td");
+  const cells = doc.querySelectorAll(
+    "table.calendar-table tbody td, table tbody td",
+  );
   const days: CalendarEvent[] = [];
 
   cells.forEach((cell) => {

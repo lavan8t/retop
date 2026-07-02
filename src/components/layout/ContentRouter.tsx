@@ -35,6 +35,7 @@ export const ContentRouter = ({
   calSemesters,
   setCalSemesters,
   calSelectedSem,
+  setCalSelectedSem,
   marksSemesters,
   setMarksSemesters,
   marksSelectedSem,
@@ -43,6 +44,7 @@ export const ContentRouter = ({
   isMarksModernView,
   ttSemesters,
   ttSelectedSem,
+  events,
 }: any) => {
   if (!networkRef.current) return null;
 
@@ -50,10 +52,11 @@ export const ContentRouter = ({
     case "dashboard":
       return (
         <HomeView
-          showProgress={settings.showSemesterProgress}
+          settings={settings}
           stats={stats}
           attendance={attendance}
           assignments={assignments}
+          events={events}
           upcoming={upcoming}
           dayName={dayName}
           menuCategories={menu}
@@ -111,14 +114,7 @@ export const ContentRouter = ({
       );
 
     case "calendar":
-      return (
-        <CalendarPage
-          network={networkRef.current!}
-          semesters={calSemesters}
-          setSemesters={setCalSemesters}
-          selectedSem={calSelectedSem || (calSemesters[0]?.id ?? "")}
-        />
-      );
+      return <CalendarPage network={networkRef.current!} />;
 
     case "content":
       return (

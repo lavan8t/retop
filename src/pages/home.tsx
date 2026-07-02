@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import { AppSettings } from "../utils/settings-store";
 import {
   GraduationCap,
   Coins,
-  ListTodo,
-  CalendarDays,
   Search,
   FileText,
   CornerDownRight,
@@ -30,15 +29,25 @@ import {
   Assignment,
   QuickLink,
   MenuCategory,
+  TimetableCourse,
+  Event,
 } from "../types/vtop";
-import { UpcomingClass, CAMPUS_SLOTS, CAMPUS_SLOT_TIMINGS } from "../utils/timetable-slots";
+import {
+  UpcomingClass,
+  CAMPUS_SLOTS,
+  CAMPUS_SLOT_TIMINGS,
+} from "../utils/timetable-slots";
 import { motion, AnimatePresence } from "framer-motion";
+import { useDataStore } from "../store/dataStore";
 
 // Extracted Component Imports
-import { SolidStatCard } from "../components/home/SolidStatCard";
-import { SolidProgressCard } from "../components/home/SolidProgressCard";
 import { ListCard } from "../components/home/ListCard";
-import { AttendanceRow, ScheduleRow, AssignmentRow } from "../components/home/HomeRows";
+import {
+  AttendanceRow,
+  ScheduleRow,
+  AssignmentRow,
+  EventRow,
+} from "../components/home/HomeRows";
 import { EmptyState } from "../components/home/EmptyState";
 import { CoursePopup } from "../components/timetable/CoursePopup";
 import { Card } from "../components/ui/Card";
@@ -61,10 +70,17 @@ const getCategoryIcon = (title: string) => {
 };
 
 interface HomeViewProps {
-  showProgress: boolean;
-  stats: { cgpa: string; credits: string; totalCredits?: string; nonGraded?: string; placement?: string; };
+  settings: AppSettings;
+  stats: {
+    cgpa: string;
+    credits: string;
+    totalCredits?: string;
+    nonGraded?: string;
+    placement?: string;
+  };
   attendance: CourseSummary[];
   assignments: Assignment[];
+  events: Event[];
   upcoming: UpcomingClass[];
   dayName: string;
   menuCategories: MenuCategory[];
@@ -76,10 +92,11 @@ interface HomeViewProps {
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
-  showProgress,
+  settings,
   stats,
   attendance,
   assignments,
+  events,
   upcoming,
   dayName,
   menuCategories,
@@ -93,14 +110,18 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [attSort, setAttSort] = useState<"asc" | "desc">("asc");
-  const [eventFilter, setEventFilter] = useState<"all" | "classes" | "assignments">("all");
+  const [eventFilter, setEventFilter] = useState<
+    "all" | "classes" | "assignments" | "events"
+  >("all");
+
+  const { calGridData } = useDataStore();
 
   const [selectedCourse, setSelectedCourse] = useState<{
     data: UpcomingClass;
     pos: { x: number; y: number };
   } | null>(null);
 
-  // --- NEW: Recent Links State & Handler ---
+  // Recent Links State & Handler
   const [recentLinks, setRecentLinks] = useState<QuickLink[]>(() => {
     try {
       return JSON.parse(localStorage.getItem("retop-recent-links") || "[]");
@@ -156,12 +177,22 @@ export const HomeView: React.FC<HomeViewProps> = ({
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
-      const isInput = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
-      
+      const isInput =
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable;
+
       // If typing an alphanumeric character and not already focused on an input field
-      if (!isInput && e.key.length === 1 && /[a-zA-Z0-9]/.test(e.key) && !e.ctrlKey && !e.altKey && !e.metaKey) {
+      if (
+        !isInput &&
+        e.key.length === 1 &&
+        /[a-zA-Z0-9]/.test(e.key) &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        !e.metaKey
+      ) {
         inputRef.current?.focus();
-        // Note: we intentionally do not preventDefault here so the character gets typed into the input
+        // Intentionally do not preventDefault here so the character gets typed into the input
       }
     };
     window.addEventListener("keydown", handleGlobalKeyDown);
@@ -180,7 +211,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const graded = parseFloat(stats.credits);
   const nonGraded = parseFloat(stats.nonGraded || "");
   const isLoaded = !isNaN(graded) && !isNaN(nonGraded);
-  const totalEarned = isLoaded ? (graded + nonGraded).toString().replace(/\.0$/, '') : "...";
+  const totalEarned = isLoaded
+    ? (graded + nonGraded).toString().replace(/\.0$/, "")
+    : "...";
 
   const flattenedLinks = useMemo(() => {
     if (!query) return [];
@@ -205,23 +238,39 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
   const getClassesForDate = (date: Date) => {
     const jsDay = date.getDay();
-    const dName = jsDay === 0 ? "Sunday" : ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"][jsDay - 1];
-    
+    const dName =
+      jsDay === 0
+        ? "Sunday"
+        : [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday",
+          ][jsDay - 1];
+
     if (!CAMPUS_SLOTS[dName]) return [];
     const dayConfig = CAMPUS_SLOTS[dName];
-    
-    const tempClasses: { course: any; startCol: number; endCol: number; type: "Theory" | "Lab" }[] = [];
+
+    const tempClasses: {
+      course: any;
+      startCol: number;
+      endCol: number;
+      type: "Theory" | "Lab";
+    }[] = [];
     ttCourses.forEach((course) => {
-      const slots = course.slot.split("+").map((s) => s.trim());
-      slots.forEach((slot) => {
+      const slots = course.slot.split("+").map((s: string) => s.trim());
+      slots.forEach((slot: string) => {
         let col = dayConfig.Theory.indexOf(slot);
         let type: "Theory" | "Lab" = "Theory";
-        
+
         if (col === -1) {
           col = dayConfig.Lab.indexOf(slot);
           type = "Lab";
         }
-        
+
         if (col !== -1 && CAMPUS_SLOT_TIMINGS[type][col]) {
           tempClasses.push({ course, startCol: col, endCol: col, type });
         }
@@ -231,25 +280,29 @@ export const HomeView: React.FC<HomeViewProps> = ({
     tempClasses.sort((a, b) => a.startCol - b.startCol);
 
     const mergedClasses: typeof tempClasses = [];
-    tempClasses.forEach(curr => {
+    tempClasses.forEach((curr) => {
       if (mergedClasses.length === 0) {
         mergedClasses.push(curr);
       } else {
         const last = mergedClasses[mergedClasses.length - 1];
-        if (curr.course.title === last.course.title && curr.type === last.type && curr.startCol === last.endCol + 1) {
-           last.endCol = curr.endCol;
+        if (
+          curr.course.title === last.course.title &&
+          curr.type === last.type &&
+          curr.startCol === last.endCol + 1
+        ) {
+          last.endCol = curr.endCol;
         } else {
-           mergedClasses.push(curr);
+          mergedClasses.push(curr);
         }
       }
     });
 
-    const dayClasses: UpcomingClass[] = mergedClasses.map(m => {
-       return {
-         course: m.course,
-         time: `${CAMPUS_SLOT_TIMINGS[m.type][m.startCol].start} - ${CAMPUS_SLOT_TIMINGS[m.type][m.endCol].end}`,
-         status: "Next"
-       };
+    const dayClasses: UpcomingClass[] = mergedClasses.map((m) => {
+      return {
+        course: m.course,
+        time: `${CAMPUS_SLOT_TIMINGS[m.type][m.startCol].start} - ${CAMPUS_SLOT_TIMINGS[m.type][m.endCol].end}`,
+        status: "Next",
+      };
     });
 
     return dayClasses;
@@ -268,17 +321,23 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
   const monthDisplay = useMemo(() => {
     if (calendarDays.length === 0) return { text: "", semName: "" };
-    const startM = calendarDays[0].toLocaleDateString('en-US', { month: 'long' });
-    const endM = calendarDays[calendarDays.length - 1].toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-    
+    const startM = calendarDays[0].toLocaleDateString("en-US", {
+      month: "long",
+    });
+    const endM = calendarDays[calendarDays.length - 1].toLocaleDateString(
+      "en-US",
+      { month: "long", year: "numeric" },
+    );
+
     let base = "";
-    if (startM === endM.split(' ')[0]) {
+    if (startM === endM.split(" ")[0]) {
       base = endM;
     } else {
       base = `${startM} - ${endM}`;
     }
 
-    const semName = calSemesters.find(s => s.id === calSelectedSem)?.label || "";
+    const semName =
+      calSemesters.find((s) => s.id === calSelectedSem)?.label || "";
     return { text: base, semName };
   }, [calendarDays, calSemesters, calSelectedSem]);
 
@@ -287,9 +346,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
   useEffect(() => {
     setTimeout(() => {
       if (nowRef.current) {
-        nowRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        nowRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
       } else if (todayRef.current) {
-        todayRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        todayRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     }, 300);
   }, [calendarDays]);
@@ -341,7 +400,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         <Card
           onMouseEnter={handleMenuEnter}
           onMouseLeave={handleMenuLeave}
-          className="bg-(--bg-highlight) rounded-4xl flex flex-col h-[50vh] lg:h-[55%] overflow-hidden min-h-0 w-full shrink-0 relative z-30"
+          className="bg-(--bg-highlight) rounded-4xl flex flex-col overflow-hidden w-full shrink-0 relative z-30 h-[38vh]"
         >
           {/* Professional Search Header */}
           <div className="bg-(--bg-surface) px-4 py-3 border-b-4 border-(--border-main) flex justify-between items-center shrink-0 z-10 gap-3">
@@ -363,7 +422,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
 
           {/* List Content */}
-          <div className="flex-1 overflow-y-auto p-3 custom-scrollbar bg-(--bg-highlight)">
+          <div className="flex-1 overflow-y-auto p-3 custom-scrollbar bg-(--bg-highlight) max-h-[60vh] lg:max-h-none">
             {query ? (
               flattenedLinks.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-8 text-(--text-dim)">
@@ -492,8 +551,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
         <div className="flex-1 overflow-visible flex flex-col min-h-0 pb-2">
           <ListCard
             title="Attendance"
-            bgClass="bg-yellow-400"
-            borderClass="border-yellow-500"
+            bgClass="bg-(--bg-surface)"
+            borderClass="border-(--border-main)"
             headerAction={
               <button
                 onClick={(e) => {
@@ -567,7 +626,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
           >
             {/* Category Title Header */}
             <div className="flex items-center gap-2 mb-2 pb-2 border-b-2 border-(--border-dim) px-1 shrink-0">
-               <span className="font-expanded font-black uppercase text-[11px] text-(--accent-base)">{activeMenu.cat.title}</span>
+              <span className="font-expanded font-black uppercase text-[11px] text-(--accent-base)">
+                {activeMenu.cat.title}
+              </span>
             </div>
 
             <div
@@ -609,17 +670,19 @@ export const HomeView: React.FC<HomeViewProps> = ({
       {/* CENTER PANE: Surface Level Unified Event Calendar */}
       <div className="flex-none lg:flex-1 w-full flex flex-col gap-6 md:gap-8 overflow-hidden pt-1 pl-1 md:pl-0 min-h-0">
         <div className="flex flex-col items-center mb-2 lg:mb-4 px-2 w-full relative z-20 pointer-events-auto pt-20 md:pt-24 lg:pt-28">
-          <div className="flex flex-col items-stretch">
+          <div className="flex flex-col items-center w-full">
             {/* Month Header */}
-            <div className="flex justify-between items-center mb-6 px-4">
-              <div className="text-[10px] md:text-xs font-black font-expanded uppercase text-(--text-main) tracking-[0.2em] pointer-events-none">
+            <div className="flex justify-between items-center w-full mb-6 px-1 pt-4">
+              <div className="text-base md:text-lg font-bold text-(--text-main) pointer-events-none text-left">
                 {monthDisplay.text}
               </div>
               {monthDisplay.semName && (
-                <div className="text-[9px] md:text-[10px] font-black font-expanded uppercase tracking-[0.2em] relative pointer-events-none text-right">
-                  <span className="text-(--text-muted) opacity-50">{monthDisplay.semName}</span>
-                  <span 
-                    className="absolute left-0 top-0 overflow-hidden whitespace-nowrap text-(--accent-base)" 
+                <div className="text-sm md:text-base font-bold relative pointer-events-none text-right">
+                  <span className="text-(--text-muted) opacity-50">
+                    {monthDisplay.semName}
+                  </span>
+                  <span
+                    className="absolute left-0 top-0 overflow-hidden whitespace-nowrap text-(--accent-base)"
                     style={{ width: `${progress}%` }}
                   >
                     {monthDisplay.semName}
@@ -628,10 +691,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
               )}
             </div>
 
-            <div className="flex items-center gap-0.5">
+            <div className="flex items-center justify-center gap-0.5 w-full mt-2">
               <button
-                onClick={(e) => { e.stopPropagation(); setEventFilter("all"); }}
-                className={`flex-1 px-4 py-1.5 text-[10px] md:text-xs font-bold uppercase transition-all duration-300 ${
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEventFilter("all");
+                }}
+                className={`px-5 py-1.5 text-xs font-bold transition-all duration-300 ${
                   eventFilter === "all"
                     ? "bg-(--text-main) text-(--bg-main) rounded-[20px] shadow-none"
                     : "bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-l-[20px] rounded-r-[6px] shadow-none"
@@ -640,8 +706,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 All
               </button>
               <button
-                onClick={(e) => { e.stopPropagation(); setEventFilter("classes"); }}
-                className={`flex-1 px-4 py-1.5 text-[10px] md:text-xs font-bold uppercase transition-all duration-300 ${
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEventFilter("classes");
+                }}
+                className={`px-5 py-1.5 text-xs font-bold transition-all duration-300 ${
                   eventFilter === "classes"
                     ? "bg-(--text-main) text-(--bg-main) rounded-[20px] shadow-none"
                     : "bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-[6px] shadow-none"
@@ -650,219 +719,350 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 Classes
               </button>
               <button
-                onClick={(e) => { e.stopPropagation(); setEventFilter("assignments"); }}
-                className={`flex-1 px-4 py-1.5 text-[10px] md:text-xs font-bold uppercase transition-all duration-300 ${
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEventFilter("assignments");
+                }}
+                className={`px-5 py-1.5 text-xs font-bold transition-all duration-300 ${
                   eventFilter === "assignments"
+                    ? "bg-(--text-main) text-(--bg-main) rounded-[20px] shadow-none"
+                    : "bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-[6px] shadow-none"
+                }`}
+              >
+                Tasks
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEventFilter("events");
+                }}
+                className={`px-5 py-1.5 text-xs font-bold transition-all duration-300 ${
+                  eventFilter === "events"
                     ? "bg-(--text-main) text-(--bg-main) rounded-[20px] shadow-none"
                     : "bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-l-[6px] rounded-r-[20px] shadow-none"
                 }`}
               >
-                Tasks
+                Events
               </button>
             </div>
           </div>
         </div>
 
         {/* Surface level list (no card wrapper) */}
-        <div 
+        <div
           className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-4 pr-3 pb-32 pt-[150px] mt-[-120px] -mb-12 relative z-0 pointer-events-auto"
-          style={{ maskImage: "linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)" }}
+          style={{
+            maskImage:
+              "linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)",
+          }}
         >
           {calendarDays.map((d, dIdx) => {
             const isToday = d.toDateString() === new Date().toDateString();
-            
+
             // Get classes for this specific date
             const classesForDay = getClassesForDate(d);
-            
-            // Map into the unified event structure expected by rendering
-            const dayEvents: Array<{ type: 'class'; data: UpcomingClass } | { type: 'assignment'; data: Assignment }> = [];
-            
+
+            const dayEvents: Array<
+              | { type: "class"; data: UpcomingClass }
+              | { type: "assignment"; data: Assignment }
+              | { type: "event"; data: Event }
+              | { type: "calendar"; data: any }
+            > = [];
+
             if (eventFilter === "all" || eventFilter === "classes") {
-               classesForDay.forEach(c => dayEvents.push({ type: 'class', data: c }));
+              classesForDay.forEach((c) =>
+                dayEvents.push({ type: "class", data: c }),
+              );
             }
             if (eventFilter === "all" || eventFilter === "assignments") {
-               // Assuming assignments don't have strict dates in this data model, we'll just show them today for now or map properly if they had dates
-               // Since they don't have strict dates in the mock, we only attach them to 'today'
-               if (isToday) {
-                 assignments.forEach(a => dayEvents.push({ type: 'assignment', data: a }));
-               }
+              // Assuming assignments don't have strict dates in this data model, we'll just show them today for now or map properly if they had dates
+              // Since they don't have strict dates in the mock, we only attach them to 'today'
+              if (isToday) {
+                assignments.forEach((a) =>
+                  dayEvents.push({ type: "assignment", data: a }),
+                );
+              }
             }
-            
+            if (eventFilter === "all" || eventFilter === "events") {
+              const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+              events
+                .filter((e) => e.date === dStr)
+                .forEach((e) => dayEvents.push({ type: "event", data: e }));
+
+              // Inject calendar events
+              calGridData.forEach((monthData) => {
+                monthData.days.forEach((calDay) => {
+                  if (
+                    calDay.dateObj &&
+                    calDay.dateObj.toDateString() === d.toDateString()
+                  ) {
+                    if (calDay.info || calDay.isHoliday) {
+                      dayEvents.push({ type: "calendar", data: calDay });
+                    }
+                  }
+                });
+              });
+            }
+
             if (dayEvents.length === 0) {
               return isToday ? <div key={dIdx} ref={todayRef} /> : null;
             }
 
             const currentHour = new Date().getHours();
-            
-            const eventsWithStatus = dayEvents.map(evt => {
+
+            const eventsWithStatus = dayEvents.map((evt) => {
               let isDone = false;
               if (isToday) {
-                if (evt.type === 'class') {
-                  const timeParts = evt.data.time.split('-');
-                  const endHour = timeParts.length > 1 ? parseInt(timeParts[1]) : parseInt(timeParts[0]);
+                if (evt.type === "class") {
+                  const timeParts = evt.data.time.split("-");
+                  const endHour =
+                    timeParts.length > 1
+                      ? parseInt(timeParts[1])
+                      : parseInt(timeParts[0]);
                   isDone = currentHour > endHour;
-                } else if (evt.type === 'assignment') {
+                } else if (evt.type === "assignment") {
                   isDone = evt.data.status === "submitted";
+                } else if (evt.type === "event" || evt.type === "calendar") {
+                  isDone = false;
                 }
-              } else if (d < new Date(new Date().setHours(0,0,0,0))) {
+              } else if (d < new Date(new Date().setHours(0, 0, 0, 0))) {
                 isDone = true;
               }
               return { ...evt, isDone };
             });
 
-            const doneEvents = eventsWithStatus.filter(e => e.isDone);
-            const upcomingEvents = eventsWithStatus.filter(e => !e.isDone);
+            const doneEvents = eventsWithStatus.filter((e) => e.isDone);
+            const upcomingEvents = eventsWithStatus.filter((e) => !e.isDone);
 
             return (
-              <div key={dIdx} className="mb-4 flex gap-3 relative" ref={isToday ? todayRef : null}>
+              <div
+                key={dIdx}
+                className="mb-4 flex gap-3 relative"
+                ref={isToday ? todayRef : null}
+              >
                 {/* Date indicator on the left */}
                 <div className="flex flex-col items-center shrink-0 w-12 pt-1 sticky top-4 h-fit z-10">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm mb-0.5 ${isToday ? 'bg-(--accent-base) text-(--text-inverse)' : 'text-(--text-main)'}`}>
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm mb-0.5 ${isToday ? "bg-(--accent-base) text-(--text-inverse)" : "text-(--text-main)"}`}
+                  >
                     {d.getDate()}
                   </div>
-                  <div className={`text-[9px] font-expanded font-bold uppercase ${isToday ? 'text-(--accent-base)' : 'text-(--text-muted)'}`}>
-                    {d.toLocaleDateString('en-US', { weekday: 'short' })}
+                  <div
+                    className={`text-[9px] font-expanded font-bold uppercase ${isToday ? "text-(--accent-base)" : "text-(--text-muted)"}`}
+                  >
+                    {d.toLocaleDateString("en-US", { weekday: "short" })}
                   </div>
                 </div>
 
                 {/* Events list on the right */}
                 <div className="flex flex-col gap-3 flex-1 min-w-0 pb-4 border-l-2 border-(--border-dim) pl-4">
                   {doneEvents.map((evt, i) => (
-                    <div key={`done-${i}`} className="opacity-50 grayscale-50 pointer-events-none transition-all">
-                      {evt.type === 'class' ? 
-                        <ScheduleRow 
-                           item={evt.data as UpcomingClass} 
-                           onClick={() => {}}
-                           use24HourTime={use24HourTime}
-                        /> : 
+                    <div
+                      key={`done-${i}`}
+                      className="opacity-50 grayscale-50 pointer-events-none transition-all"
+                    >
+                      {evt.type === "class" ? (
+                        <ScheduleRow
+                          item={evt.data as UpcomingClass}
+                          onClick={() => {}}
+                          use24HourTime={use24HourTime}
+                        />
+                      ) : evt.type === "assignment" ? (
                         <AssignmentRow assignment={evt.data as Assignment} />
-                      }
+                      ) : evt.type === "calendar" ? (
+                        <div
+                          className={`w-full text-left p-3 rounded-2xl flex items-center justify-between border-4 shadow-none mb-3 ${evt.data.isHoliday ? "bg-red-500/10 border-red-500/20" : "bg-(--bg-highlight) border-(--border-dim)"}`}
+                        >
+                          <div className="flex flex-col">
+                            <span
+                              className={`font-black uppercase text-xs ${evt.data.isHoliday ? "text-red-500" : "text-(--text-main)"}`}
+                            >
+                              {evt.data.info}
+                            </span>
+                            {evt.data.subInfo && (
+                              <span className="text-[10px] text-(--text-muted) font-bold">
+                                {evt.data.subInfo}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <EventRow event={evt.data as Event} />
+                      )}
                     </div>
                   ))}
 
-                  {isToday && doneEvents.length > 0 && upcomingEvents.length > 0 && (
-                    <div ref={nowRef} className="flex items-center gap-2 my-1 relative -ml-6 scroll-mt-32">
-                      <div className="w-4 h-px bg-(--accent-base)"></div>
-                      <div className="w-1.5 h-1.5 rounded-full bg-(--accent-base) shrink-0"></div>
-                      <div className="h-px flex-1 bg-linear-to-r from-(--accent-base) to-transparent opacity-50"></div>
-                      <span className="text-[8px] font-expanded font-black text-(--accent-base) uppercase absolute left-8 -top-3.5 bg-(--bg-main) px-1">Now</span>
-                    </div>
-                  )}
-                  {isToday && doneEvents.length === 0 && upcomingEvents.length > 0 && (
-                    <div ref={nowRef} className="flex items-center gap-2 mb-1 relative -ml-6 scroll-mt-32">
-                      <div className="w-4 h-px bg-(--accent-base)"></div>
-                      <div className="w-1.5 h-1.5 rounded-full bg-(--accent-base) shrink-0"></div>
-                      <div className="h-px flex-1 bg-linear-to-r from-(--accent-base) to-transparent opacity-50"></div>
-                      <span className="text-[8px] font-expanded font-black text-(--accent-base) uppercase absolute left-8 -top-3.5 bg-(--bg-main) px-1">Now</span>
-                    </div>
-                  )}
+                  {isToday &&
+                    doneEvents.length > 0 &&
+                    upcomingEvents.length > 0 && (
+                      <div
+                        ref={nowRef}
+                        className="flex items-center gap-2 my-1 relative -ml-6 scroll-mt-32"
+                      >
+                        <div className="w-4 h-px bg-(--accent-base)"></div>
+                        <div className="w-1.5 h-1.5 rounded-full bg-(--accent-base) shrink-0"></div>
+                        <div className="h-px flex-1 bg-linear-to-r from-(--accent-base) to-transparent opacity-50"></div>
+                      </div>
+                    )}
+                  {isToday &&
+                    doneEvents.length === 0 &&
+                    upcomingEvents.length > 0 && (
+                      <div
+                        ref={nowRef}
+                        className="flex items-center gap-2 mb-1 relative -ml-6 scroll-mt-32"
+                      >
+                        <div className="w-4 h-px bg-(--accent-base)"></div>
+                        <div className="w-1.5 h-1.5 rounded-full bg-(--accent-base) shrink-0"></div>
+                        <div className="h-px flex-1 bg-linear-to-r from-(--accent-base) to-transparent opacity-50"></div>
+                      </div>
+                    )}
 
                   {upcomingEvents.map((evt, i) => (
-                    <div key={`upcoming-${i}`}>
-                      {evt.type === 'class' ? 
-                        <ScheduleRow 
-                           item={evt.data as UpcomingClass} 
-                           onClick={(e, item) => {
-                             e.stopPropagation();
-                             setSelectedCourse({ data: item, pos: { x: e.clientX, y: e.clientY } });
-                           }}
-                           use24HourTime={use24HourTime}
-                        /> : 
+                    <div
+                      key={`upcoming-${i}`}
+                      className={isToday ? "opacity-100" : "opacity-80"}
+                    >
+                      {evt.type === "class" ? (
+                        <ScheduleRow
+                          item={evt.data as UpcomingClass}
+                          onClick={(e, item) => {
+                            e.stopPropagation();
+                            setSelectedCourse({
+                              data: item,
+                              pos: { x: e.clientX, y: e.clientY },
+                            });
+                          }}
+                          use24HourTime={use24HourTime}
+                        />
+                      ) : evt.type === "assignment" ? (
                         <AssignmentRow assignment={evt.data as Assignment} />
-                      }
+                      ) : evt.type === "calendar" ? (
+                        <div
+                          className={`w-full text-left p-3 rounded-2xl flex items-center justify-between border-4 shadow-none mb-3 ${evt.data.isHoliday ? "bg-red-500/10 border-red-500/20" : "bg-(--bg-highlight) border-(--border-dim)"}`}
+                        >
+                          <div className="flex flex-col">
+                            <span
+                              className={`font-black uppercase text-xs ${evt.data.isHoliday ? "text-red-500" : "text-(--text-main)"}`}
+                            >
+                              {evt.data.info}
+                            </span>
+                            {evt.data.subInfo && (
+                              <span className="text-[10px] text-(--text-muted) font-bold">
+                                {evt.data.subInfo}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <EventRow event={evt.data as Event} />
+                      )}
                     </div>
                   ))}
                 </div>
               </div>
-            )
+            );
           })}
         </div>
       </div>
 
       <div className="hidden lg:flex w-full lg:w-[24%] xl:w-[20%] flex-col shrink-0 h-auto lg:h-full relative z-30 pt-20 md:pt-24 lg:pt-28 pb-4 md:pb-6 lg:pb-8 pr-4 md:pr-6 lg:pr-0">
-        <Card 
+        <Card
           initial="rest"
           whileHover="hover"
           animate="rest"
-          className="shrink-0 h-auto bg-(--bg-highlight) rounded-4xl p-5 flex flex-col relative z-30 cursor-default overflow-hidden"
+          className="group shrink-0 h-auto bg-(--bg-highlight) rounded-4xl p-5 flex flex-col relative z-30 cursor-default overflow-hidden"
         >
-           {/* Persistent CGPA */}
-           <motion.div 
-             variants={{ rest: { y: 0 }, hover: { y: -4 } }}
-             transition={{ type: "spring", stiffness: 400, damping: 25 }}
-             className="flex flex-col relative z-10"
-           >
-             <div className="flex items-center justify-between">
-               <GraduationCap className="w-10 h-10 text-(--text-main) mix-blend-overlay opacity-80" />
-               <div className="text-right">
-                 <div className="text-[10px] font-expanded font-bold uppercase text-(--text-muted)">CGPA</div>
-                 <div className="text-3xl font-black font-expanded leading-none">{stats.cgpa}</div>
-               </div>
-             </div>
-             <div className="h-0.5 w-full bg-(--border-main) my-5"></div>
-           </motion.div>
+          {/* Persistent CGPA */}
+          <motion.div
+            variants={{ rest: { y: 0 }, hover: { y: -4 } }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            className="flex flex-col relative z-10"
+          >
+            <div className="flex items-center justify-between">
+              <GraduationCap className="w-10 h-10 text-(--text-main) mix-blend-overlay opacity-80" />
+              <div className="text-right">
+                <div className="text-[10px] font-expanded font-bold uppercase text-(--text-muted)">
+                  CGPA
+                </div>
+                <div
+                  className={`text-3xl font-black font-expanded leading-none transition-all duration-300 ${settings.blurCgpa ? "blur-md hover:blur-none" : ""}`}
+                >
+                  {stats.cgpa}
+                </div>
+              </div>
+            </div>
+            <div className="h-0.5 w-full bg-(--border-main) my-5"></div>
+          </motion.div>
 
-           {/* Resting Combined View */}
-           <motion.div 
-             variants={{ 
-               rest: { height: "auto", opacity: 1 }, 
-               hover: { height: 0, opacity: 0 } 
-             }}
-             transition={{ type: "spring", stiffness: 400, damping: 30 }}
-             className="flex items-center justify-between overflow-hidden relative z-10"
-           >
-             <Coins className="w-10 h-10 text-(--text-main) mix-blend-overlay opacity-80 shrink-0" />
-             <div className="text-right">
-               <div className="text-[10px] font-expanded font-bold uppercase text-(--text-muted)">Credits</div>
-               <div className="text-3xl font-black font-expanded leading-none whitespace-nowrap">
-                 {totalEarned} <span className="text-xl text-(--text-muted)">/ {stats.totalCredits || "..."}</span>
-               </div>
-             </div>
-           </motion.div>
+          {/* Resting Combined View */}
+          <motion.div
+            variants={{
+              rest: { height: "auto", opacity: 1 },
+              hover: { height: 0, opacity: 0 },
+            }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            className="flex items-center justify-between overflow-hidden relative z-10"
+          >
+            <Coins className="w-10 h-10 text-(--text-main) mix-blend-overlay opacity-80 shrink-0" />
+            <div className="text-right">
+              <div className="text-[10px] font-expanded font-bold uppercase text-(--text-muted)">
+                Credits
+              </div>
+              <div className="text-3xl font-black font-expanded leading-none whitespace-nowrap">
+                {totalEarned}{" "}
+                <span className="text-xl text-(--text-muted)">
+                  / {stats.totalCredits || "..."}
+                </span>
+              </div>
+            </div>
+          </motion.div>
 
-           {/* Expanded Split View */}
-           <motion.div
-             variants={{
-               rest: { height: 0, opacity: 0 },
-               hover: { height: "auto", opacity: 1 }
-             }}
-             transition={{ type: "spring", stiffness: 400, damping: 30 }}
-             className="flex flex-col overflow-hidden relative z-10"
-           >
-             <div className="flex flex-col items-center w-full pt-1">
-               <div className="text-[10px] font-expanded font-bold uppercase text-(--text-muted) mb-3">
-                 Credits
-               </div>
-               
-               <div className="flex flex-col items-center">
-                 <div className="flex items-center gap-2 text-3xl font-black font-expanded leading-none">
-                   <span>{stats.credits}</span>
-                   <span className="text-xl text-(--text-muted)">+</span>
-                   <span>{stats.nonGraded}</span>
-                 </div>
-                 
-                 <div className="h-1 w-full min-w-[120px] bg-(--border-main) rounded-full my-2.5"></div>
-                 
-                 <div className="text-3xl font-black font-expanded leading-none">
-                   {stats.totalCredits}
-                 </div>
-               </div>
-               
-               {stats.placement && (
-                 <div className={`mt-6 text-[10px] font-black uppercase tracking-widest text-center ${stats.placement.toLowerCase().includes('eligible') ? 'text-(--att-safe)' : 'text-(--att-danger)'}`}>
-                   {stats.placement}
-                 </div>
-               )}
-             </div>
-           </motion.div>
-         </Card>
+          {/* Expanded Split View */}
+          <motion.div
+            variants={{
+              rest: { height: 0, opacity: 0 },
+              hover: { height: "auto", opacity: 1 },
+            }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            className="flex flex-col overflow-hidden relative z-10"
+          >
+            <div className="flex flex-col items-center w-full pt-1">
+              <div className="text-[10px] font-expanded font-bold uppercase text-(--text-muted) mb-3">
+                Credits
+              </div>
+
+              <div className="flex flex-col items-center">
+                <div className="flex items-center gap-2 text-3xl font-black font-expanded leading-none">
+                  <span>{stats.credits}</span>
+                  <span className="text-xl text-(--text-muted)">+</span>
+                  <span>{stats.nonGraded}</span>
+                </div>
+
+                <div className="h-1 w-full min-w-[120px] bg-(--border-main) rounded-full my-2.5"></div>
+
+                <div className="text-3xl font-black font-expanded leading-none">
+                  {stats.totalCredits}
+                </div>
+              </div>
+
+              {stats.placement && (
+                <div
+                  className={`mt-6 text-[10px] font-black uppercase tracking-widest text-center ${stats.placement.toLowerCase().includes("eligible") ? "text-(--att-safe)" : "text-(--att-danger)"}`}
+                >
+                  {stats.placement}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </Card>
       </div>
 
       <CoursePopup
         course={selectedCourse?.data.course || null}
         position={selectedCourse?.pos || null}
         attendance={
-          attendance?.find((a) => a.code === selectedCourse?.data.course.code)?.attendance
+          attendance?.find((a) => a.code === selectedCourse?.data.course.code)
+            ?.attendance
         }
         onClose={() => setSelectedCourse(null)}
       />

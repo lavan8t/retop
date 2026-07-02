@@ -1,7 +1,7 @@
 import React from "react";
 import { motion, Variants } from "framer-motion";
 import { MapPin, ArrowRight } from "lucide-react";
-import { CourseSummary, Assignment } from "../../types/vtop";
+import { CourseSummary, Assignment, Event } from "../../types/vtop";
 import { UpcomingClass } from "../../utils/timetable-slots";
 import { formatTimeStr } from "../../utils/formatting";
 
@@ -24,7 +24,11 @@ export const AttendanceRow = ({ course }: { course: CourseSummary }) => {
   React.useEffect(() => {
     const checkOverflow = () => {
       if (textRef.current) {
-        setIsOverflowing(textRef.current.scrollWidth > textRef.current.clientWidth + 5);
+        const isOw = textRef.current.scrollWidth > textRef.current.clientWidth + 5;
+        setIsOverflowing(isOw);
+        if (isOw) {
+          textRef.current.style.setProperty('--scroll-dist', `-${textRef.current.scrollWidth - textRef.current.clientWidth}px`);
+        }
       }
     };
     checkOverflow();
@@ -56,7 +60,7 @@ export const AttendanceRow = ({ course }: { course: CourseSummary }) => {
         <div className="flex-1 min-w-0 overflow-hidden" style={{ maskImage: isOverflowing ? "linear-gradient(to right, black 85%, transparent 100%)" : "none" }}>
           <div 
             ref={textRef}
-            className={`text-xs font-black text-(--text-main) transition-colors whitespace-nowrap inline-block ${isOverflowing ? 'group-hover:animate-[marquee-scroll_6s_ease-in-out_infinite]' : ''}`}
+            className={`text-xs font-black text-(--text-main) transition-colors whitespace-nowrap inline-block ${isOverflowing ? 'group-hover:animate-[marquee-scroll_5s_linear_infinite]' : ''}`}
           >
             {course.name}
           </div>
@@ -141,6 +145,28 @@ export const AssignmentRow = ({ assignment }: { assignment: Assignment }) => (
         <span className="text-[10px] font-black font-mono uppercase text-white bg-(--att-danger) px-2 py-1 rounded-md shadow-none leading-none">
           {assignment.dueDate}
         </span>
+      </div>
+    </div>
+  </motion.div>
+);
+
+export const EventRow = ({ event }: { event: Event }) => (
+  <motion.div
+    layout
+    variants={rowVariants}
+    className="p-3 rounded-xl bg-(--bg-surface) shadow-none cursor-pointer select-none relative"
+  >
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-start justify-between gap-2">
+        <span className="text-sm font-black text-(--text-main) leading-tight">
+          {event.title}
+        </span>
+        <span className="shrink-0 text-[10px] font-black uppercase px-2 py-0.5 rounded-md leading-none bg-blue-500 text-white shadow-none">
+          {event.category}
+        </span>
+      </div>
+      <div className="text-[11px] font-bold text-(--text-muted) truncate">
+        {event.organizer}
       </div>
     </div>
   </motion.div>

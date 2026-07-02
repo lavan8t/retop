@@ -109,10 +109,7 @@ export class VTOPNetwork {
   }
 
   async getCurriculumDashboard(): Promise<string> {
-    return this.fetchFragment(
-      "academics/common/Curriculum",
-      "curriculum_dashboard_html",
-    );
+    return this.fetchFragment("academics/common/Curriculum");
   }
 
   async getCurriculumCategory(categoryId: string): Promise<string> {
@@ -167,10 +164,7 @@ export class VTOPNetwork {
   }
 
   async getMarksView(): Promise<string> {
-    return this.fetchFragment(
-      "examinations/StudentMarkView",
-      "marks_landing_html",
-    );
+    return this.fetchFragment("examinations/StudentMarkView");
   }
 
   async getStudentMarks(semesterSubId: string): Promise<string> {

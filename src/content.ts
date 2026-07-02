@@ -8,11 +8,160 @@ import {
 } from "./utils/bridge";
 import { asciiArt } from "./components/asciiArt";
 import { autoSolveCaptcha } from "./utils/captchaSolver";
-import { vitLogoSvg } from "./components/vitLogoSvg";
+
 
 const vtopContext = {
   csrf: "",
   authId: "",
+};
+
+// Apply theme immediately to prevent flashing, but strictly ignore /open/page
+try {
+  if (!window.location.pathname.includes("/open/page")) {
+    chrome.storage.local.get("retop-settings", (result) => {
+      const saved = result["retop-settings"];
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          const settings = data.state?.settings || data;
+          if (settings.themeMode) {
+            document.documentElement.setAttribute("data-theme", settings.themeMode);
+          }
+          const MATERIAL_ACCENTS: Record<string, string> = {
+            blue: "#2563eb", indigo: "#4f46e5", purple: "#9333ea",
+            pink: "#db2777", red: "#dc2626", orange: "#ea580c",
+            yellow: "#ca8a04", lime: "#65a30d", green: "#16a34a", cyan: "#0891b2"
+          };
+          let baseColor = MATERIAL_ACCENTS[settings.accentColor] || MATERIAL_ACCENTS.blue;
+          if (settings.randomAccentColor) {
+            const hue = Math.floor(Math.random() * 360);
+            baseColor = `hsl(${hue}, 70%, 45%)`;
+          }
+          document.documentElement.style.setProperty("--accent-base", baseColor);
+        } catch (err) {}
+      }
+    });
+  }
+} catch (e) {}
+
+const originalFetch = window.fetch;
+
+let isHandlingNetworkError = false;
+
+function showErrorSnackbar(message: string) {
+  const toast = document.createElement("div");
+  toast.className = "retop-error-toast";
+  toast.style.cssText = `
+    position: fixed; bottom: 20px; left: 20px; z-index: 9999999;
+    background: var(--bg-surface, #ffffff); color: var(--text-main, #000000);
+    padding: 12px 16px; border-radius: 12px;
+    border: 3px solid var(--border-main, #e5e7eb);
+    box-shadow: 4px 4px 0px 0px var(--shadow-main, #000000);
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'Google Sans Flex', system-ui, sans-serif !important;
+    animation: slideUp 0.3s ease forwards;
+  `;
+  toast.innerHTML = `
+    <div style="background: var(--bg-main, #fee2e2); color: var(--accent-base, #ef4444); border-radius: 8px; padding: 4px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+    </div>
+    <span style="font-size: 0.95rem; font-weight: 700; line-height: 1; letter-spacing: -0.02em;">${message}</span>
+  `;
+  
+  if (!document.getElementById("retop-snackbar-styles")) {
+    const style = document.createElement("style");
+    style.id = "retop-snackbar-styles";
+    style.textContent = `
+      @keyframes slideUp { from { transform: translateY(150%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+      @keyframes slideDown { from { transform: translateY(0); opacity: 1; } to { transform: translateY(150%); opacity: 0; } }
+    `;
+    document.head.appendChild(style);
+  }
+
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.style.animation = "slideDown 0.3s ease forwards";
+    setTimeout(() => toast.remove(), 300);
+  }, 5000);
+}
+
+async function handleNetworkError(status?: number) {
+  if (isHandlingNetworkError) return;
+  isHandlingNetworkError = true;
+  try {
+    const res = await originalFetch("https://clients3.google.com/generate_204", { cache: 'no-store' });
+    if (res.status !== 204 && res.status !== 0) {
+      throw new Error("No internet");
+    }
+    
+    if (status === 404) {
+      showErrorSnackbar("Something went wrong (404).");
+    } else if (status === 401 || status === 403) {
+      showErrorDialog("Session Expired", "Your VTOP session has expired. Please login again to continue.", "Return to Login", "/vtop/");
+    } else {
+      showErrorSnackbar("An unexpected network error occurred.");
+    }
+  } catch (err) {
+    showErrorDialog("No Internet", "No internet connection detected. Please check your network and try again.", "Retry", "reload");
+  } finally {
+    isHandlingNetworkError = false;
+  }
+}
+
+function showErrorDialog(title: string, message: string, btnText: string, btnAction: string) {
+  if (document.getElementById("retop-session-dialog")) return;
+  
+  const dialog = document.createElement("div");
+  dialog.id = "retop-session-dialog";
+  dialog.style.cssText = `
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px);
+    z-index: 999999999; display: flex; align-items: center; justify-content: center;
+    font-family: 'Google Sans Flex', system-ui, sans-serif !important;
+  `;
+
+  dialog.innerHTML = `
+    <div style="background: var(--bg-surface, #ffffff); border: 4px solid var(--border-main, #e5e7eb); border-radius: 24px; padding: 32px; max-width: 400px; width: 90%; box-shadow: 8px 8px 0px 0px var(--shadow-main, #000); text-align: center;">
+      <div style="width: 64px; height: 64px; background: var(--bg-main, #fee2e2); color: var(--accent-base, #ef4444); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; border: 3px solid var(--border-main, #e5e7eb);">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+      </div>
+      <h2 style="font-size: 20px; font-weight: 900; color: var(--text-main, #111827); margin: 0 0 12px; text-transform: uppercase; letter-spacing: 0.05em;">${title}</h2>
+      <p style="font-size: 14px; font-weight: 700; color: var(--text-muted, #6b7280); margin: 0 0 24px; line-height: 1.5;">
+        ${message}
+      </p>
+      <button onclick="if('${btnAction}'==='reload'){window.location.reload()}else{window.location.href='${btnAction}'}" style="background: var(--accent-base, #2563eb); color: #ffffff; border: 3px solid var(--border-main, #000); padding: 12px 24px; border-radius: 12px; font-weight: 900; font-size: 14px; cursor: pointer; width: 100%; text-transform: uppercase; box-shadow: 4px 4px 0px 0px var(--shadow-main, #000); transition: all 0.1s; transform: translateY(-2px);" onmousedown="this.style.transform='translateY(2px)'; this.style.boxShadow='0px 0px 0px 0px var(--shadow-main, #000)';" onmouseup="this.style.transform='translateY(-2px)'; this.style.boxShadow='4px 4px 0px 0px var(--shadow-main, #000)';">
+        ${btnText}
+      </button>
+    </div>
+  `;
+
+  document.body.appendChild(dialog);
+}
+
+window.fetch = async (...args) => {
+  try {
+    const response = await originalFetch(...args);
+    if (response.status === 404 || response.status === 401 || response.status === 403) {
+      handleNetworkError(response.status);
+    }
+    return response;
+  } catch (error) {
+    handleNetworkError();
+    throw error;
+  }
+};
+
+const originalXhrOpen = XMLHttpRequest.prototype.open;
+XMLHttpRequest.prototype.open = function(this: XMLHttpRequest, ...args: any[]) {
+  this.addEventListener("load", function() {
+    if (this.status === 404 || this.status === 401 || this.status === 403) {
+      handleNetworkError(this.status);
+    }
+  });
+  this.addEventListener("error", function() {
+    handleNetworkError();
+  });
+  return originalXhrOpen.apply(this, args as any);
 };
 
 const isPaused = () => {
@@ -405,23 +554,20 @@ const injectLoginTheme = () => {
   const header = document.getElementById("vtopOpenPageHeader");
 
   if (header) {
-    // 1. Inject the VitLogo Synchronously
-    const vitLogo = header.querySelector("img.VITEmblem");
-    if (vitLogo && !document.getElementById("retop-react-logo")) {
-      const wrapper = document.createElement("div");
-      wrapper.id = "retop-react-logo";
-      wrapper.className = "VITEmblem"; // Keep class for layout sizing
-      wrapper.innerHTML = vitLogoSvg;
-      vitLogo.replaceWith(wrapper);
+    // Inject the VitLogo Synchronously
+    const vitLogo = header.querySelector("img.VITEmblem") as HTMLImageElement;
+    if (vitLogo && vitLogo.id !== "retop-react-logo") {
+      vitLogo.id = "retop-react-logo";
+      vitLogo.src = chrome.runtime.getURL("dist/assets/vitLogo.svg");
     }
 
-    // 2. Remove the "VIT" text properly
+    // Remove the "VIT" text properly
     const vitText = header.querySelector(".VITLogoStyle");
     if (vitText) {
       vitText.remove();
     }
 
-    // 3. Transform the campus text to fit the new width
+    // Transform the campus text to fit the new width
     const navbarText = header.querySelector(".navbar-text");
     if (navbarText && !navbarText.classList.contains("retop-campus-text")) {
       navbarText.innerHTML = "VELLORE CAMPUS";
@@ -657,33 +803,42 @@ const injectLoginTheme = () => {
   applyFloatingLabel("username");
   applyFloatingLabel("password");
 
-  try {
-    const savedSettings = localStorage.getItem("retop-settings");
-    if (savedSettings) {
-      const settings = JSON.parse(savedSettings);
+  chrome.storage.local.get("retop-settings", (result) => {
+    try {
+      const savedSettings = result["retop-settings"] as string;
+      if (savedSettings) {
+        // Zustand persist wraps state in { state: { ... }, version: ... }
+        const parsed = JSON.parse(savedSettings);
+        const settings = parsed.state?.settings || parsed;
 
-      const MATERIAL_ACCENTS: Record<string, string> = {
-        blue: "#2563eb",
-        purple: "#6366f1",
-        orange: "#ea580c",
-        lime: "#059669",
-        cyan: "#0e7490",
-      };
+        const MATERIAL_ACCENTS: Record<string, string> = {
+          blue: "#2563eb",
+          indigo: "#4f46e5",
+          purple: "#9333ea",
+          pink: "#db2777",
+          red: "#dc2626",
+          orange: "#ea580c",
+          yellow: "#ca8a04",
+          lime: "#65a30d",
+          green: "#16a34a",
+          cyan: "#0891b2",
+        };
 
-      let baseColor =
-        MATERIAL_ACCENTS[settings.accentColor] || MATERIAL_ACCENTS.blue;
+        let baseColor =
+          MATERIAL_ACCENTS[settings.accentColor] || MATERIAL_ACCENTS.blue;
 
-      if (settings.randomAccentColor) {
-        const hue = Math.floor(Math.random() * 360);
-        baseColor = `hsl(${hue}, 70%, 45%)`;
+        if (settings.randomAccentColor) {
+          const hue = Math.floor(Math.random() * 360);
+          baseColor = `hsl(${hue}, 70%, 45%)`;
+        }
+
+        document.documentElement.style.setProperty("--accent-base", baseColor);
+        document.documentElement.setAttribute("data-theme", settings.themeMode);
       }
-
-      document.documentElement.style.setProperty("--accent-base", baseColor);
-      document.documentElement.setAttribute("data-theme", settings.themeMode);
+    } catch (err) {
+      console.warn("[retop] Failed to load theme settings for login page:", err);
     }
-  } catch (err) {
-    console.warn("[retop] Failed to load theme settings for login page:", err);
-  }
+  });
 };
 
 const enhanceLegacyLogin = () => {
@@ -694,13 +849,15 @@ const enhanceLegacyLogin = () => {
   // Save/Restore Username
   const usernameInput = document.getElementById("username") as HTMLInputElement;
   if (usernameInput) {
-    const savedUser = localStorage.getItem("retop-saved-username");
-    if (savedUser && !usernameInput.value) {
-      usernameInput.value = savedUser;
-    }
+    chrome.storage.local.get("retop-saved-username", (result) => {
+      const savedUser = result["retop-saved-username"] as string;
+      if (savedUser && !usernameInput.value) {
+        usernameInput.value = savedUser;
+      }
+    });
     usernameInput.addEventListener("blur", () => {
       if (usernameInput.value) {
-        localStorage.setItem("retop-saved-username", usernameInput.value);
+        chrome.storage.local.set({ "retop-saved-username": usernameInput.value });
       }
     });
   }
@@ -787,10 +944,10 @@ const enhanceLegacyLogin = () => {
         }
       };
 
-      // 1. Solve the initial load
+      // Solve the initial load
       await solve(captchaImg);
 
-      // 2. Attach observer to the wrapper block, not the image.
+      // Attach observer to the wrapper block, not the image.
       // VTOP uses innerHTML to replace the image, which destroys the old image node.
       const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {

@@ -87,7 +87,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({
       animate={{ opacity: 1 }}
       className="h-full flex flex-col bg-transparent font-mono text-(--text-main) overflow-hidden"
     >
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-6 pt-20 md:pt-24 lg:pt-28 space-y-6">
         {loading || fetchingMarks ? (
           <div className="flex flex-col items-center justify-center h-full text-(--text-muted) animate-pulse">
             <Loader2 className="w-12 h-12 mb-4 animate-spin text-(--accent-base)" />

@@ -4,7 +4,7 @@
   "description": "college portal made better.",
   "version": "0.3.0",
 
-  "permissions": [],
+  "permissions": ["storage"],
 
   "host_permissions": [
     "https://vtop.vit.ac.in/vtop/content/*",
@@ -31,8 +31,7 @@
         "dist/login.css",
         "dist/fonts/gsf.subset.woff2",
         "dist/fonts/gsf.subset2.woff2",
-        "/fonts/gsf.subset.woff2",
-        "/fonts/gsf.subset2.woff2"
+        "dist/assets/vitLogo.svg"
       ],
       "matches": ["https://vtop.vit.ac.in/*"]
     }

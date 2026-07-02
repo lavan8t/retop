@@ -1,18 +1,6 @@
 import React from "react";
 import { AppSettings, resetDynamicThemeSeed } from "../utils/settings-store";
-import {
-  Monitor,
-  Moon,
-  Sun,
-  Calendar,
-  HardDrive,
-  Check,
-  Palette,
-  Layout,
-  TrendingUp,
-  Zap,
-  Clock,
-} from "lucide-react";
+import { Check, Dices } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface SettingsPageProps {
@@ -23,44 +11,45 @@ interface SettingsPageProps {
   ) => void;
 }
 
-const NeoSection = ({ title, icon: Icon, children }: any) => (
-  <motion.section
-    variants={{
-      hidden: { opacity: 0, y: 20 },
-      show: { opacity: 1, y: 0 },
-    }}
-    className="space-y-4 md:space-y-6"
-  >
-    <div className="flex items-center gap-3 md:gap-4">
-      {/* Icon Container */}
-      <div className="p-2.5 md:p-3 bg-(--accent-base) border-2 md:border-4 border-(--border-main) shadow-[2px_2px_0px_0px_var(--border-main)] md:shadow-[4px_4px_0px_0px_var(--border-main)] rounded-xl">
-        <Icon className="w-5 h-5 md:w-6 md:h-6 text-white" />
-      </div>
-      {/* Title */}
-      <h2 className="text-xl md:text-3xl font-black font-expanded text-(--text-main) uppercase  drop-shadow-sm">
-        {title}
-      </h2>
-    </div>
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-      {children}
-    </div>
-  </motion.section>
+const SectionTitle = ({ children }: { children: React.ReactNode }) => (
+  <h2 className="text-xs md:text-sm font-expanded uppercase tracking-[0.2em] text-(--text-muted) mb-4 pb-4">
+    {children}
+  </h2>
 );
 
-const NeoCard = ({ children, className = "" }: any) => (
-  <div
-    className={`
-    bg-(--bg-surface) border-2 md:border-4 border-(--border-main) rounded-3xl md:rounded-4xl p-4 md:p-6 
-    shadow-[4px_4px_0px_0px_var(--border-main)] md:shadow-[8px_8px_0px_0px_var(--border-main)] hover:shadow-[6px_6px_0px_0px_var(--border-main)] md:hover:shadow-[12px_12px_0px_0px_var(--border-main)]
-    hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group
-    ${className}
-  `}
-  >
+const SettingsGroup = ({ children, isCard }: { children: React.ReactNode, isCard?: boolean }) => (
+  <div className={`flex flex-col ${isCard ? "bg-(--bg-surface) border border-(--border-dim) rounded-2xl shadow-sm" : ""}`}>
     {children}
   </div>
 );
 
-const DiamondToggle = ({
+const SettingsRow = ({
+  title,
+  description,
+  children,
+  className = "",
+}: {
+  title: string;
+  description?: string;
+  children?: React.ReactNode;
+  className?: string;
+}) => (
+  <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-4 md:py-5 border-b border-(--border-dim) last:border-0 ${className}`}>
+    <div className="flex-1 min-w-0 pr-4">
+      <h3 className="text-sm md:text-base font-bold text-(--text-main) truncate">
+        {title}
+      </h3>
+      {description && (
+        <p className="text-xs text-(--text-muted) mt-1 md:mt-0.5">
+          {description}
+        </p>
+      )}
+    </div>
+    {children && <div className="shrink-0">{children}</div>}
+  </div>
+);
+
+const RoundedSwitch = ({
   active,
   onToggle,
 }: {
@@ -69,22 +58,14 @@ const DiamondToggle = ({
 }) => (
   <button
     onClick={onToggle}
-    className={`
-      relative w-12 h-6 md:w-16 md:h-8 border-2 md:border-4 border-(--border-main) rounded-lg transition-colors duration-300 shrink-0
-      ${active ? "bg-(--accent-base)" : "bg-(--bg-highlight)"}
-    `}
+    className={`relative w-12 h-7 rounded-full transition-colors duration-300 shrink-0 border border-transparent ${
+      active ? "bg-(--accent-base)" : "bg-(--bg-highlight) border-(--border-dim)"
+    }`}
   >
-    {/* Track Line */}
-    <div className="absolute inset-x-1 md:inset-x-2 top-1/2 h-1 bg-black/20 -translate-y-1/2 rounded-full"></div>
-
-    {/* Rhombus Knob */}
     <div
-      className={`
-        absolute top-1/2 -translate-y-1/2 w-4 h-4 md:w-6 md:h-6 bg-white border-2 md:border-4 border-(--border-main) 
-        transform rotate-45 shadow-none
-        transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-        ${active ? "left-[calc(100%-20px)] md:left-[calc(100%-28px)] rotate-225" : "left-0 md:left-1 rotate-45"}
-      `}
+      className={`absolute top-[1px] left-[2px] w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300 ${
+        active ? "translate-x-[18px]" : "translate-x-0"
+      }`}
     />
   </button>
 );
@@ -94,349 +75,229 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   updateSetting,
 }) => {
   const COLORS = [
-    { id: "blue", hex: "#3b82f6", label: "Electric Blue" },
-    { id: "purple", hex: "#a855f7", label: "Cyber Purple" },
-    { id: "orange", hex: "#f97316", label: "Tiger Orange" },
-    { id: "lime", hex: "#84cc16", label: "Neon Lime" },
-    { id: "cyan", hex: "#06b6d4", label: "Future Cyan" },
+    { id: "blue", hex: "#3b82f6", label: "Blue" },
+    { id: "indigo", hex: "#6366f1", label: "Indigo" },
+    { id: "purple", hex: "#a855f7", label: "Purple" },
+    { id: "pink", hex: "#ec4899", label: "Pink" },
+    { id: "red", hex: "#ef4444", label: "Red" },
+    { id: "orange", hex: "#f97316", label: "Orange" },
+    { id: "yellow", hex: "#eab308", label: "Yellow" },
+    { id: "lime", hex: "#84cc16", label: "Lime" },
+    { id: "green", hex: "#22c55e", label: "Green" },
+    { id: "cyan", hex: "#06b6d4", label: "Cyan" },
   ];
 
   return (
-    <motion.div
-      initial="hidden"
-      animate="show"
-      variants={{
-        hidden: { opacity: 0 },
-        show: {
-          opacity: 1,
-          transition: { staggerChildren: 0.15 },
-        },
-      }}
-      className="h-full overflow-y-auto custom-scrollbar p-4 md:p-8 pb-32 md:pb-8 bg-(--bg-main) text-(--text-main)"
-    >
-      <div className="max-w-5xl mx-auto space-y-8 md:space-y-12">
-        {/* APPEARANCE */}
-        <NeoSection title="Aesthetics" icon={Palette}>
-          {/* Theme Mode */}
-          <NeoCard>
-            <div className="flex justify-between items-start mb-4 md:mb-6">
-              <div>
-                <h3 className="text-lg md:text-xl font-black font-expanded uppercase text-zinc-200 leading-tight">
-                  Interface Mode
-                </h3>
-                <p className="text-[10px] md:text-xs font-mono text-zinc-500 mt-1">
-                  Select your preferred brightness
-                </p>
-              </div>
-              <div className="p-1.5 md:p-2 bg-zinc-950 border-2 border-zinc-800 rounded-lg shrink-0 ml-2">
-                {settings.themeMode === "dark" ? (
-                  <Moon className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
-                ) : (
-                  <Sun className="w-4 h-4 md:w-5 md:h-5 text-yellow-500" />
-                )}
-              </div>
-            </div>
+    <>
+      <style>{`
+        ::view-transition-old(root),
+        ::view-transition-new(root) {
+          animation: none;
+          mix-blend-mode: normal;
+        }
+      `}</style>
 
-            <div className="flex flex-col sm:flex-row gap-2 md:gap-4">
-              <button
-                onClick={() => updateSetting("themeMode", "dark")}
-                className={`flex-1 py-2.5 md:py-4 rounded-xl border-2 md:border-4 font-bold uppercase  text-xs md:text-sm transition-all ${
-                  settings.themeMode === "dark"
-                    ? "bg-(--bg-highlight) border-(--accent-base) text-(--accent-base) shadow-[2px_2px_0px_0px_var(--accent-base)] md:shadow-[4px_4px_0px_0px_var(--accent-base)]"
-                    : "bg-(--bg-surface) border-(--border-dim) text-(--text-muted) hover:border-(--border-main)"
-                }`}
-              >
-                Dark
-              </button>
-              <button
-                onClick={() => updateSetting("themeMode", "light")}
-                className={`flex-1 py-2.5 md:py-4 rounded-xl border-2 md:border-4 font-bold uppercase  text-xs md:text-sm transition-all ${
-                  settings.themeMode === "light"
-                    ? "bg-white border-(--accent-base) text-black shadow-[2px_2px_0px_0px_var(--accent-base)] md:shadow-[4px_4px_0px_0px_var(--accent-base)]"
-                    : "bg-(--bg-surface) border-(--border-dim) text-(--text-muted) hover:border-(--border-main)"
-                }`}
-              >
-                Light
-              </button>
-              <button
-                onClick={() => updateSetting("themeMode", "amoled")}
-                className={`flex-1 py-2.5 md:py-4 rounded-xl border-2 md:border-4 font-bold uppercase  text-xs md:text-sm transition-all ${
-                  settings.themeMode === "amoled"
-                    ? "bg-black border-(--accent-base) text-(--accent-base) shadow-[2px_2px_0px_0px_var(--accent-base)] md:shadow-[4px_4px_0px_0px_var(--accent-base)]"
-                    : "bg-(--bg-surface) border-(--border-dim) text-(--text-muted) hover:border-(--border-main)"
-                }`}
-              >
-                AMOLED
-              </button>
-            </div>
-          </NeoCard>
-
-          {/* Accent Color */}
-          <NeoCard>
-            <div className="flex justify-between items-start mb-4 md:mb-6">
-              <div>
-                <h3 className="text-lg md:text-xl font-black font-expanded uppercase text-zinc-200 leading-tight">
-                  Accent Color
-                </h3>
-                <p className="text-[10px] md:text-xs font-mono text-zinc-500 mt-1">
-                  Personalize your experience
-                </p>
-              </div>
-              <div className="flex items-center gap-2 md:gap-3 shrink-0 ml-2">
-                <span className="text-[9px] md:text-xs font-bold text-zinc-400 uppercase ">
-                  Random
-                </span>
-                <DiamondToggle
-                  active={settings.randomAccentColor}
-                  onToggle={() => {
-                    if (!settings.randomAccentColor) {
-                      resetDynamicThemeSeed();
-                    }
-                    updateSetting(
-                      "randomAccentColor",
-                      !settings.randomAccentColor,
-                    );
-                  }}
-                />
-              </div>
-            </div>
-            <div
-              className={`flex flex-wrap justify-between gap-2 p-2 bg-zinc-950 rounded-xl border-2 border-zinc-800 transition-opacity ${settings.randomAccentColor ? "opacity-50 pointer-events-none" : "opacity-100"}`}
-            >
-              {COLORS.map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() =>
-                    !settings.randomAccentColor &&
-                    updateSetting("accentColor", c.id as any)
-                  }
-                  className={`w-10 h-10 md:w-12 md:h-12 rounded-lg border-2 md:border-4 flex items-center justify-center transition-all duration-300 transform shrink-0 ${
-                    settings.accentColor === c.id && !settings.randomAccentColor
-                      ? "scale-110 shadow-[2px_2px_0px_0px_rgba(255,255,255,0.2)] md:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)] border-white rotate-45"
-                      : "border-zinc-800 hover:scale-105 hover:border-zinc-600"
-                  }`}
-                  style={{ backgroundColor: c.hex }}
-                  title={c.label}
-                >
-                  {settings.accentColor === c.id &&
-                    !settings.randomAccentColor && (
-                      <Check className="w-5 h-5 md:w-6 md:h-6 text-white drop-shadow-md -rotate-45" />
-                    )}
-                </button>
-              ))}
-            </div>
-          </NeoCard>
-        </NeoSection>
-
-        {/* INTERFACE */}
-        <NeoSection title="Workspace" icon={Layout}>
-          <NeoCard className="md:col-span-2">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-              {/* Modern UI Toggle */}
-              <div className="flex items-center justify-between gap-4 group">
-                <div className="flex items-center gap-3 md:gap-4 min-w-0">
-                  <div className="w-10 h-10 md:w-14 md:h-14 shrink-0 bg-zinc-950 border-2 md:border-4 border-zinc-800 rounded-xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-300">
-                    <Monitor className="w-5 h-5 md:w-7 md:h-7 text-zinc-400 group-hover:text-blue-500 transition-colors" />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="font-bold text-zinc-200 text-sm md:text-lg font-expanded uppercase truncate">
-                      Default Modern UI
-                    </h3>
-                    <p className="text-[10px] md:text-xs font-mono text-zinc-500 truncate">
-                      Load retop view on login
-                    </p>
+      <motion.div
+        initial="hidden"
+        animate="show"
+        variants={{
+          hidden: { opacity: 0 },
+          show: {
+            opacity: 1,
+            transition: { staggerChildren: 0.1 },
+          },
+        }}
+        className="h-full overflow-y-auto custom-scrollbar p-4 md:p-8 pt-20 md:pt-24 lg:pt-28 pb-32 md:pb-12 bg-(--bg-main) text-(--text-main) relative"
+      >
+        <div className="max-w-3xl mx-auto space-y-10 md:space-y-12 relative z-10">
+          
+          <motion.div variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}>
+            <SectionTitle>Appearance</SectionTitle>
+            <SettingsGroup isCard>
+              <div className="flex flex-col items-center gap-8 py-8">
+                <div className="flex flex-col items-center gap-3">
+                  <h3 className="text-xs font-bold text-(--text-muted) uppercase tracking-[0.1em] pb-2">Theme</h3>
+                  <div className="flex bg-(--bg-highlight) p-1 rounded-xl border border-(--border-dim) min-w-[240px]">
+                    {["dark", "light", "amoled"].map((mode) => (
+                      <button
+                        key={mode}
+                        onClick={(e) => {
+                          const x = e.clientX;
+                          const y = e.clientY;
+                          if (!(document as any).startViewTransition) {
+                            updateSetting("themeMode", mode as any);
+                            return;
+                          }
+                          const transition = (document as any).startViewTransition(() => {
+                            updateSetting("themeMode", mode as any);
+                            // applyTheme is called in useEffect, but we force it here for synchronous DOM update during transition
+                            const root = document.getElementById("retop-root");
+                            if (root) root.setAttribute("data-theme", mode);
+                          });
+                          transition.ready.then(() => {
+                            const endRadius = Math.hypot(
+                              Math.max(x, innerWidth - x),
+                              Math.max(y, innerHeight - y)
+                            );
+                            document.documentElement.animate(
+                              {
+                                clipPath: [
+                                  `circle(0px at ${x}px ${y}px)`,
+                                  `circle(${endRadius}px at ${x}px ${y}px)`,
+                                ],
+                              },
+                              {
+                                duration: 500,
+                                easing: "ease-in-out",
+                                pseudoElement: "::view-transition-new(root)",
+                              }
+                            );
+                          });
+                        }}
+                        className={`flex-1 py-2 px-3 text-[11px] font-bold uppercase rounded-lg transition-all ${
+                          settings.themeMode === mode
+                            ? "bg-(--bg-surface) text-(--text-main) shadow-sm border border-(--border-dim)"
+                            : "text-(--text-muted) hover:text-(--text-main) border border-transparent"
+                        }`}
+                      >
+                        {mode}
+                      </button>
+                    ))}
                   </div>
                 </div>
-                <DiamondToggle
+
+                <div className="flex flex-col items-center gap-3 w-full max-w-[260px] md:max-w-[320px]">
+                  <h3 className="text-xs font-bold text-(--text-muted) uppercase tracking-[0.1em] pb-2">Accent</h3>
+                  <div className="flex flex-nowrap overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden gap-3 px-4 max-w-full pb-3 -mx-4 snap-x">
+                    <button
+                      onClick={() => {
+                        if (!settings.randomAccentColor) resetDynamicThemeSeed();
+                        updateSetting("randomAccentColor", true);
+                      }}
+                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 shrink-0 ${
+                        settings.randomAccentColor
+                          ? "ring-2 ring-offset-2 ring-offset-(--bg-surface) ring-white scale-110 bg-gradient-to-tr from-purple-500 via-pink-500 to-orange-500"
+                          : "hover:scale-110 ring-2 ring-transparent ring-offset-2 ring-offset-(--bg-surface) bg-(--bg-highlight) border border-(--border-dim)"
+                      }`}
+                      title="Random Accent"
+                    >
+                      {settings.randomAccentColor ? (
+                        <Check className="w-5 h-5 text-white" />
+                      ) : (
+                        <Dices className="w-5 h-5 text-(--text-muted)" />
+                      )}
+                    </button>
+                    {COLORS.map((c) => (
+                      <button
+                        key={c.id}
+                        onClick={() => {
+                          updateSetting("randomAccentColor", false);
+                          updateSetting("accentColor", c.id as any);
+                        }}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 shrink-0 ${
+                          settings.accentColor === c.id && !settings.randomAccentColor
+                            ? "ring-2 ring-offset-2 ring-offset-(--bg-surface) ring-white scale-110"
+                            : "hover:scale-110 ring-2 ring-transparent ring-offset-2 ring-offset-(--bg-surface)"
+                        }`}
+                        style={{ backgroundColor: c.hex }}
+                        title={c.label}
+                      >
+                        {settings.accentColor === c.id && !settings.randomAccentColor && (
+                          <Check className="w-5 h-5 text-white" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </SettingsGroup>
+          </motion.div>
+
+          <motion.div variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}>
+            <SectionTitle>Workspace</SectionTitle>
+            <SettingsGroup>
+              <SettingsRow title="Default Modern UI" description="Always load the modernized view on login.">
+                <RoundedSwitch
                   active={settings.defaultView === "modern"}
                   onToggle={() =>
-                    updateSetting(
-                      "defaultView",
-                      settings.defaultView === "modern" ? "legacy" : "modern",
-                    )
+                    updateSetting("defaultView", settings.defaultView === "modern" ? "legacy" : "modern")
                   }
                 />
-              </div>
-
-              {/* Vertical Divider for Desktop */}
-              <div className="hidden md:block absolute left-1/2 top-4 bottom-4 w-1 bg-zinc-800 rounded-full"></div>
-              {/* Horizontal Divider for Mobile */}
-              <div className="block md:hidden w-full h-0.5 bg-zinc-800 rounded-full"></div>
-
-              {/* Progress Toggle */}
-              <div className="flex items-center justify-between gap-4 group">
-                <div className="flex items-center gap-3 md:gap-4 min-w-0">
-                  <div className="w-10 h-10 md:w-14 md:h-14 shrink-0 bg-zinc-950 border-2 md:border-4 border-zinc-800 rounded-xl flex items-center justify-center group-hover:-rotate-6 transition-transform duration-300">
-                    <TrendingUp className="w-5 h-5 md:w-7 md:h-7 text-zinc-400 group-hover:text-lime-500 transition-colors" />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="font-bold text-zinc-200 text-sm md:text-lg font-expanded uppercase truncate">
-                      Semester Progress
-                    </h3>
-                    <p className="text-[10px] md:text-xs font-mono text-zinc-500 truncate">
-                      Replace CGPA with timeline
-                    </p>
-                  </div>
-                </div>
-                <DiamondToggle
-                  active={settings.showSemesterProgress}
-                  onToggle={() =>
-                    updateSetting(
-                      "showSemesterProgress",
-                      !settings.showSemesterProgress,
-                    )
-                  }
+              </SettingsRow>
+              <SettingsRow title="Blur CGPA" description="Hide your CGPA on the dashboard until you hover over it.">
+                <RoundedSwitch
+                  active={settings.blurCgpa}
+                  onToggle={() => updateSetting("blurCgpa", !settings.blurCgpa)}
                 />
-              </div>
-
-              {/* Time Format */}
-              <div className="flex items-center justify-between gap-4 group col-span-1 md:col-span-2 mt-2 pt-6 border-t-2 border-zinc-800">
-                <div className="flex items-center gap-3 md:gap-4 min-w-0">
-                  <div className="w-10 h-10 md:w-14 md:h-14 shrink-0 bg-zinc-950 border-2 md:border-4 border-zinc-800 rounded-xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-300">
-                    <Clock className="w-5 h-5 md:w-7 md:h-7 text-zinc-400 group-hover:text-amber-500 transition-colors" />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="font-bold text-zinc-200 text-sm md:text-lg font-expanded uppercase truncate">
-                      Railway Time Format
-                    </h3>
-                    <p className="text-[10px] md:text-xs font-mono text-zinc-500 truncate">
-                      Use 24-hour clock instead of 12-hour AM/PM
-                    </p>
-                  </div>
-                </div>
-                <DiamondToggle
+              </SettingsRow>
+              <SettingsRow title="24-Hour Time Format" description="Use railway time (e.g., 14:00) instead of AM/PM format.">
+                <RoundedSwitch
                   active={settings.use24HourTime}
-                  onToggle={() =>
-                    updateSetting(
-                      "use24HourTime",
-                      !settings.use24HourTime,
-                    )
-                  }
+                  onToggle={() => updateSetting("use24HourTime", !settings.use24HourTime)}
                 />
-              </div>
-            </div>
-          </NeoCard>
-        </NeoSection>
+              </SettingsRow>
+            </SettingsGroup>
+          </motion.div>
 
-        {/* CONNECTIVITY */}
-        <NeoSection title="Connectivity" icon={Zap}>
-          {/* Removed the conflicting gradient classes from NeoCard so it cleanly adapts to the theme */}
-          <NeoCard className="md:col-span-2">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 md:gap-6 mb-6 md:mb-8 border-b-2 md:border-b-4 border-zinc-800 pb-4 md:pb-6">
-              <div className="flex items-center gap-4 md:gap-5 w-full sm:w-auto">
-                <div className="w-14 h-14 md:w-20 md:h-20 bg-white rounded-2xl flex items-center justify-center shadow-none md:shadow-none border-2 md:border-4 border-zinc-200 shrink-0">
-                  <img
-                    src="https://www.google.com/favicon.ico"
-                    alt="Google"
-                    className="w-7 h-7 md:w-10 md:h-10"
-                  />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg md:text-2xl font-black font-expanded text-zinc-200 uppercase leading-tight">
-                    Google Account
-                  </h3>
-                  <p className="text-[10px] md:text-sm font-mono text-zinc-500 mt-1">
-                    {settings.googleLinked
-                      ? "Connected as Student"
-                      : "Not connected"}
-                  </p>
-                </div>
-              </div>
-
-              <button
-                onClick={() =>
-                  updateSetting("googleLinked", !settings.googleLinked)
-                }
-                className={`
-                  w-full sm:w-auto px-6 py-2.5 md:px-8 md:py-3 rounded-xl font-black font-expanded uppercase  text-xs md:text-sm transition-all border-2 md:border-4 shrink-0
-                  ${
-                    settings.googleLinked
-                      ? "bg-zinc-950 text-red-500 border-red-500 hover:bg-red-500 hover:text-white"
-                      : "bg-blue-500 text-white border-(--border-main) hover:bg-blue-400 shadow-none md:shadow-none active:translate-y-1 active:shadow-none"
-                  }
-                `}
+          <motion.div variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}>
+            <SectionTitle>Connectivity</SectionTitle>
+            <SettingsGroup>
+              <SettingsRow
+                title="Google Account"
+                description={settings.googleLinked ? "Connected to your student account." : "Not connected."}
               >
-                {settings.googleLinked ? "Disconnect" : "Connect Now"}
-              </button>
-            </div>
-
-            <div
-              className={`grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 transition-opacity duration-300 ${settings.googleLinked ? "opacity-100" : "opacity-40 pointer-events-none grayscale"}`}
-            >
-              {/* Calendar Sync */}
-              <div className="flex items-center justify-between p-3 md:p-4 bg-zinc-950 rounded-xl border-2 md:border-4 border-zinc-800 gap-4">
-                <div className="flex items-center gap-2 md:gap-3 min-w-0">
-                  <Calendar className="w-4 h-4 md:w-5 md:h-5 text-blue-500 shrink-0" />
-                  <span className="font-bold text-sm md:text-base text-zinc-300 font-expanded uppercase  truncate">
-                    Sync Timetable
-                  </span>
-                </div>
-                <DiamondToggle
-                  active={settings.calendarSync}
-                  onToggle={() =>
-                    updateSetting("calendarSync", !settings.calendarSync)
-                  }
-                />
+                <button
+                  onClick={() => updateSetting("googleLinked", !settings.googleLinked)}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold uppercase transition-colors ${
+                    settings.googleLinked
+                      ? "bg-red-500/10 text-red-500 hover:bg-red-500/20"
+                      : "bg-(--accent-base) text-(--text-inverse) hover:opacity-90"
+                  }`}
+                >
+                  {settings.googleLinked ? "Disconnect" : "Connect"}
+                </button>
+              </SettingsRow>
+              <div className={`transition-opacity duration-300 ${settings.googleLinked ? "opacity-100" : "opacity-40 pointer-events-none grayscale"}`}>
+                <SettingsRow title="Sync Timetable" description="Automatically sync classes with Google Calendar.">
+                  <RoundedSwitch
+                    active={settings.calendarSync}
+                    onToggle={() => updateSetting("calendarSync", !settings.calendarSync)}
+                  />
+                </SettingsRow>
+                <SettingsRow title="Backup to Drive" description="Save settings and offline data to Google Drive.">
+                  <RoundedSwitch
+                    active={settings.driveSync}
+                    onToggle={() => updateSetting("driveSync", !settings.driveSync)}
+                  />
+                </SettingsRow>
               </div>
+            </SettingsGroup>
+          </motion.div>
 
-              {/* Drive Sync */}
-              <div className="flex items-center justify-between p-3 md:p-4 bg-zinc-950 rounded-xl border-2 md:border-4 border-zinc-800 gap-4">
-                <div className="flex items-center gap-2 md:gap-3 min-w-0">
-                  <HardDrive className="w-4 h-4 md:w-5 text-green-500 shrink-0" />
-                  <span className="font-bold text-sm md:text-base text-zinc-300 font-expanded uppercase  truncate">
-                    Backup to Drive
-                  </span>
-                </div>
-                <DiamondToggle
-                  active={settings.driveSync}
-                  onToggle={() =>
-                    updateSetting("driveSync", !settings.driveSync)
-                  }
-                />
-              </div>
-            </div>
-          </NeoCard>
-        </NeoSection>
-
-        {/* SYSTEM */}
-        <NeoSection title="System" icon={HardDrive}>
-          <NeoCard className="md:col-span-2">
-             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 md:gap-6">
-                <div className="flex-1">
-                  <h3 className="text-lg md:text-2xl font-black font-expanded text-zinc-200 uppercase leading-tight">
-                    Timetable Cache
-                  </h3>
-                  <p className="text-[10px] md:text-sm font-mono text-zinc-500 mt-1">
-                    Clear the local cache to forcefully re-fetch the latest timetable from VTOP.
-                  </p>
-                </div>
+          <motion.div variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}>
+            <SectionTitle>System</SectionTitle>
+            <SettingsGroup>
+              <SettingsRow title="Clear Timetable Cache" description="Force fetch the latest schedule directly from VTOP.">
                 <button
                   onClick={() => {
                     const keys = [];
                     for (let i = 0; i < localStorage.length; i++) {
                       const key = localStorage.key(i);
-                      if (key && key.startsWith("vtop-tt-cache-")) {
-                        keys.push(key);
-                      }
+                      if (key && key.startsWith("vtop-tt-cache-")) keys.push(key);
                     }
-                    keys.forEach(k => localStorage.removeItem(k));
+                    keys.forEach((k) => localStorage.removeItem(k));
                     window.location.reload();
                   }}
-                  className="w-full sm:w-auto px-6 py-2.5 md:px-8 md:py-3 rounded-xl font-black font-expanded uppercase text-xs md:text-sm transition-all border-2 md:border-4 shrink-0 bg-zinc-950 text-red-500 border-red-500 hover:bg-red-500 hover:text-white"
+                  className="px-4 py-2 rounded-xl text-xs font-bold uppercase transition-colors bg-(--bg-highlight) text-(--text-main) border border-(--border-dim) hover:bg-(--border-dim)"
                 >
                   Clear Cache
                 </button>
-             </div>
-          </NeoCard>
-        </NeoSection>
+              </SettingsRow>
+            </SettingsGroup>
+          </motion.div>
 
-        {/* Footer */}
-        <div className="text-center pt-4 md:pt-8 pb-4">
-          <p className="text-zinc-600 font-mono text-[10px] uppercase ">
-            retop v0.2.0
-          </p>
         </div>
-      </div>
-    </motion.div>
+      </motion.div>
+    </>
   );
 };

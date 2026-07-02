@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  User,
   Loader2,
   ShieldCheck,
   ArrowRight,
@@ -17,8 +16,9 @@ import {
   getAppRoot,
   injectScriptFile,
 } from "../utils/bridge";
-import { useSettings } from "../utils/settings-store";
+import { useSettings, applyTheme } from "../utils/settings-store";
 import { autoSolveCaptcha } from "../utils/captchaSolver";
+import { useAppStore } from "../store/appStore";
 import { LegacyReturnButton } from "../components/LegacyReturnButton";
 
 const triggerStudentSetup = async (csrf: string) => {
@@ -83,9 +83,12 @@ const LoginPage = ({
   const [captchaSrc, setCaptchaSrc] = useState(initialCaptcha);
   const [showPassword, setShowPassword] = useState(false);
 
-  const [isModernUI, setIsModernUI] = useState(() => {
-    return sessionStorage.getItem("vtop-legacy-mode") !== "true";
-  });
+  const { isModernUI, setIsModernUI } = useAppStore();
+  const { settings } = useSettings();
+
+  useEffect(() => {
+    applyTheme(settings);
+  }, [settings]);
 
   const [formData, setFormData] = useState({
     username: "",

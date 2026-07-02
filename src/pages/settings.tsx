@@ -1,6 +1,6 @@
 import React from "react";
 import { AppSettings, resetDynamicThemeSeed } from "../utils/settings-store";
-import { Check, Dices } from "lucide-react";
+import { Check, Casino } from '@nine-thirty-five/material-symbols-react/outlined';
 import { motion } from "framer-motion";
 
 interface SettingsPageProps {
@@ -184,7 +184,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                       {settings.randomAccentColor ? (
                         <Check className="w-5 h-5 text-white" />
                       ) : (
-                        <Dices className="w-5 h-5 text-(--text-muted)" />
+                        <Casino className="w-5 h-5 text-(--text-muted)" />
                       )}
                     </button>
                     {COLORS.map((c) => (
@@ -258,7 +258,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 </button>
               </SettingsRow>
               <div className={`transition-opacity duration-300 ${settings.googleLinked ? "opacity-100" : "opacity-40 pointer-events-none grayscale"}`}>
-                <SettingsRow title="Sync Timetable" description="Automatically sync classes with Google Calendar.">
+                <SettingsRow title="Sync Timetable" description="Automatically sync classes with Google CalendarMonth.">
                   <RoundedSwitch
                     active={settings.calendarSync}
                     onToggle={() => updateSetting("calendarSync", !settings.calendarSync)}

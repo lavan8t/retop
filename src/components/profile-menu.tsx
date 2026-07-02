@@ -1,16 +1,16 @@
 import React from "react";
 import {
-  UserCircle,
+  AccountCircle,
   CreditCard,
-  SquareStack,
+  FilterNone,
   Key,
-  UserCog,
-  LogOut,
+  ManageAccounts,
+  Logout,
   Settings,
   ChevronRight,
-  PenTool,
+  DesignServices,
   History,
-} from "lucide-react";
+} from '@nine-thirty-five/material-symbols-react/outlined';
 import { QuickLink } from "../types/vtop";
 import { motion, Variants, Transition } from "framer-motion";
 
@@ -34,7 +34,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
   const mainItems = [
     {
       title: "Profile",
-      icon: UserCircle,
+      icon: AccountCircle,
       url: "studentsRecord/StudentProfileAllView",
       cat: "Profile",
     },
@@ -46,7 +46,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
     },
     {
       title: "Backup Codes",
-      icon: SquareStack,
+      icon: FilterNone,
       url: "user/backupCodes",
       cat: "Settings",
     },
@@ -62,7 +62,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
     },
     {
       title: "Login ID",
-      icon: UserCog,
+      icon: ManageAccounts,
       url: "user/updateLoginId",
       cat: "Settings",
       hoverClass: "hover:bg-blue-400 hover:shadow-[6px_6px_0px_0px_var(--shadow-main)]",
@@ -112,7 +112,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <UserCircle className="w-8 h-8 text-(--text-dim)" />
+                <AccountCircle className="w-8 h-8 text-(--text-dim)" />
               </div>
             )}
           </div>
@@ -158,7 +158,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
           className="pt-4 mt-2 border-t-2 border-(--border-dim) mb-1"
         >
           <div className="flex items-center gap-2 px-1.5 mb-2.5">
-            <PenTool className="w-3 h-3 text-(--text-dim)" />
+            <DesignServices className="w-3 h-3 text-(--text-dim)" />
             <span className="text-[9px] font-expanded font-black uppercase  text-(--text-dim)">
               Security
             </span>
@@ -211,10 +211,16 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
             onLegacyToggle();
             onClose();
           }}
-          className="flex-1 flex items-center justify-center p-2.5 rounded-md border-2 border-(--border-main) bg-(--bg-surface) text-(--text-main) hover:bg-yellow-400 hover:text-black hover:border-(--border-main) transition-all active:scale-95 group"
+          className="flex-1 flex items-center justify-center p-2.5 rounded-md border-2 border-(--border-main) text-white hover:brightness-110 hover:border-(--border-main) transition-all active:scale-95 group"
+          style={{ background: "linear-gradient(130deg, rgb(36, 85, 163) 23%, rgb(52, 151, 219) 52%, rgb(52, 142, 219) 58%, rgb(52, 131, 219) 65%, rgb(40, 116, 166) 74%)" }}
           title="Legacy View"
         >
-          <span className="font-serif font-black text-xs group-hover:scale-110 transition-transform tracking-wider">VTOP</span>
+          <span 
+            className="text-xs group-hover:scale-110 transition-transform tracking-wider"
+            style={{ fontFamily: "'Times New Roman', Times, serif", color: "#ffffff", fontWeight: "bold" }}
+          >
+            VTOP
+          </span>
         </button>
 
         <button
@@ -222,7 +228,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
           className="flex-1 flex items-center justify-center p-2.5 rounded-r-2xl rounded-l-md border-2 border-(--border-main) bg-(--bg-surface) text-red-500 hover:text-white hover:bg-red-500 hover:border-(--border-main) transition-all active:scale-95 group"
           title="Log Out"
         >
-          <LogOut className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+          <Logout className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
         </button>
       </div>
     </motion.div>

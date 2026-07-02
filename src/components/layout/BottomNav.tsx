@@ -16,13 +16,13 @@ import {
 import {
   Home,
   Search,
-  FileText,
-  CornerDownRight,
-  X,
-  AlertCircle,
-  ChevronDown,
+  Description,
+  SubdirectoryArrowRight,
+  Close,
+  Error,
+  KeyboardArrowDown,
   Pin,
-} from "lucide-react";
+} from '@nine-thirty-five/material-symbols-react/outlined';
 import { QuickLink, MenuCategory } from "../../types/vtop";
 import { getCategoryIcon } from "../../utils/icons";
 

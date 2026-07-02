@@ -29,7 +29,7 @@ export interface DataState {
   status: string;
   setStatus: (status: string) => void;
 
-  // User Profile
+  // Person Profile
   user: { name: string; regNo: string };
   setUser: (user: { name: string; regNo: string }) => void;
   fetchUserProfile: (network: VTOPNetwork) => Promise<void>;
@@ -232,7 +232,7 @@ export const useDataStore = create<DataState>((set, get) => ({
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          "X-Requested-With": "XMLHttpRequest",
+          "Close-Requested-With": "XMLHttpRequest",
         },
         body: body,
       });
@@ -312,7 +312,7 @@ export const useDataStore = create<DataState>((set, get) => ({
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          "X-Requested-With": "XMLHttpRequest",
+          "Close-Requested-With": "XMLHttpRequest",
         },
         body: body,
       });

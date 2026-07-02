@@ -22,7 +22,7 @@ export class VTOPNetwork {
       const response = await fetch("/vtop/get/new/captcha", {
         method: "GET",
         headers: {
-          "X-Requested-With": "XMLHttpRequest",
+          "Close-Requested-With": "XMLHttpRequest",
         },
       });
 
@@ -127,7 +127,7 @@ export class VTOPNetwork {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          "X-Requested-With": "XMLHttpRequest",
+          "Close-Requested-With": "XMLHttpRequest",
         },
         body: params,
       });
@@ -182,7 +182,7 @@ export class VTOPNetwork {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          "X-Requested-With": "XMLHttpRequest",
+          "Close-Requested-With": "XMLHttpRequest",
         },
         body: body,
       });
@@ -208,7 +208,7 @@ export class VTOPNetwork {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-            "X-Requested-With": "XMLHttpRequest",
+            "Close-Requested-With": "XMLHttpRequest",
           },
           body: body,
         },
@@ -240,7 +240,7 @@ export class VTOPNetwork {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          "X-Requested-With": "XMLHttpRequest",
+          "Close-Requested-With": "XMLHttpRequest",
         },
         body: body,
       });
@@ -305,7 +305,7 @@ export class VTOPNetwork {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-        "X-Requested-With": "XMLHttpRequest",
+        "Close-Requested-With": "XMLHttpRequest",
       },
       body: body,
     });
@@ -415,7 +415,7 @@ export class VTOPNetwork {
 
     const response = await fetch(path, {
       method: "POST",
-      headers: { "X-Requested-With": "XMLHttpRequest" },
+      headers: { "Close-Requested-With": "XMLHttpRequest" },
       body: formData,
     });
     return response.ok;
@@ -459,7 +459,7 @@ export class VTOPNetwork {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          "X-Requested-With": "XMLHttpRequest",
+          "Close-Requested-With": "XMLHttpRequest",
         },
         body: body,
       });

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { VTOPNetwork } from "../utils/network";
 import { parseMarksSemesters, parseStudentMarks } from "../parsers/marks";
 import { CourseMarks } from "../types/vtop";
-import { Loader2, AlertCircle, User } from "lucide-react";
+import { ProgressActivity, Error, Person } from '@nine-thirty-five/material-symbols-react/outlined';
 import { motion } from "framer-motion";
 
 interface MarksPageProps {
@@ -90,14 +90,14 @@ export const MarksPage: React.FC<MarksPageProps> = ({
       <div className="flex-1 overflow-y-auto custom-scrollbar p-6 pt-20 md:pt-24 lg:pt-28 space-y-6">
         {loading || fetchingMarks ? (
           <div className="flex flex-col items-center justify-center h-full text-(--text-muted) animate-pulse">
-            <Loader2 className="w-12 h-12 mb-4 animate-spin text-(--accent-base)" />
+            <ProgressActivity className="w-12 h-12 mb-4 animate-spin text-(--accent-base)" />
             <span className="text-sm font-bold  uppercase">
               {loading ? "Initializing..." : "Fetching Marks..."}
             </span>
           </div>
         ) : filteredMarks.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-(--text-muted) border-4 border-dashed border-(--border-dim) rounded-4xl bg-(--bg-surface)">
-            <AlertCircle className="w-16 h-16 mb-4 opacity-20" />
+            <Error className="w-16 h-16 mb-4 opacity-20" />
             <span className="text-base font-bold uppercase  mb-0">
               No Marks Found
             </span>
@@ -148,7 +148,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({
                         className="text-[10px] text-(--text-muted) font-mono flex items-center gap-1 justify-end bg-(--bg-main) px-2 py-1 rounded border border-(--border-dim)"
                         title="Faculty"
                       >
-                        <User className="w-3 h-3" /> {course.faculty || "N/A"}
+                        <Person className="w-3 h-3" /> {course.faculty || "N/A"}
                       </div>
                     </div>
                   </div>

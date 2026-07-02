@@ -22,7 +22,7 @@ try {
       const saved = result["retop-settings"];
       if (saved) {
         try {
-          const data = JSON.parse(saved);
+          const data = typeof saved === 'string' ? JSON.parse(saved) : saved;
           const settings = data.state?.settings || data;
           if (settings.themeMode) {
             document.documentElement.setAttribute("data-theme", settings.themeMode);
@@ -367,7 +367,7 @@ const injectLoginTheme = () => {
   link.href = chrome.runtime.getURL("dist/login.css");
   document.head.appendChild(link);
 
-  // Remove native User Icon Wrapper if it exists
+  // Remove native Person Icon Wrapper if it exists
   const userIconWrapper = document.getElementById("basic-addon1");
   if (userIconWrapper) {
     userIconWrapper.style.display = "none";

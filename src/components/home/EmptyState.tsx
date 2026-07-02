@@ -1,8 +1,8 @@
-import { Ghost } from "lucide-react";
+import { SentimentVeryDissatisfied } from '@nine-thirty-five/material-symbols-react/outlined';
 
 export const EmptyState = ({
   msg,
-  icon: Icon = Ghost,
+  icon: Icon = SentimentVeryDissatisfied,
 }: {
   msg: string;
   icon?: any;

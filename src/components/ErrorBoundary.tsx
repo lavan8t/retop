@@ -1,5 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
-import { AlertTriangle, RefreshCw } from "lucide-react";
+import { Warning, Autorenew } from '@nine-thirty-five/material-symbols-react/outlined';
 
 interface Props {
   children: ReactNode;
@@ -46,7 +46,7 @@ export class ErrorBoundary extends Component<Props, State> {
           {/* Error content at the bottom */}
           <div className="mt-auto w-full flex flex-row items-center justify-between p-6 md:px-12 md:py-8 relative z-10">
             <div className="flex items-center gap-4">
-              <AlertTriangle className="w-10 h-10 text-red-500 shrink-0" />
+              <Warning className="w-10 h-10 text-red-500 shrink-0" />
               <div className="flex flex-col text-left">
                 <h1 className="text-xl md:text-2xl font-black font-expanded text-(--text-main) uppercase leading-none">
                   Something went wrong
@@ -63,7 +63,7 @@ export class ErrorBoundary extends Component<Props, State> {
               onClick={this.handleReset}
               className="flex items-center gap-2 bg-(--accent-base) text-(--text-inverse) px-6 py-3 rounded-full font-bold uppercase tracking-wider hover:bg-(--accent-hover) transition-colors shrink-0 shadow-lg"
             >
-              <RefreshCw className="w-4 h-4" />
+              <Autorenew className="w-4 h-4" />
               Reload
             </button>
           </div>

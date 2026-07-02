@@ -4,17 +4,17 @@ import { parseStudentProfile } from "../parsers/profile";
 import { StudentProfile } from "../types/vtop";
 import { VitLogo } from "../components/VitLogo";
 import {
-  User,
-  Smartphone,
+  Person,
+  Mobile,
   Mail,
-  MapPin,
-  Loader2,
-  GraduationCap,
-  Briefcase,
-  Building,
+  LocationOn,
+  ProgressActivity,
+  School,
+  Work,
+  Domain,
   Shield,
-  HeartPulse,
-} from "lucide-react";
+  MonitorHeart,
+} from '@nine-thirty-five/material-symbols-react/outlined';
 import { motion } from "framer-motion";
 import Barcode from "react-barcode";
 
@@ -40,7 +40,7 @@ const InfoRow = ({ label, value }: { label: string; value: string }) => (
 const AddressCard = ({ title, data }: { title: string; data: any }) => (
   <div className="bg-(--bg-highlight) p-3 rounded-xl border-2 border-(--border-main) h-full flex flex-col justify-center min-w-0">
     <h4 className="text-[10px] font-expanded font-black uppercase text-(--text-muted) tracking-wider mb-2 flex items-center gap-2 border-b-2 border-(--border-main)/20 pb-1.5 shrink-0">
-      <MapPin className="w-3 h-3" /> {title}
+      <LocationOn className="w-3 h-3" /> {title}
     </h4>
     <div className="space-y-1 overflow-hidden">
       <div className="text-sm font-bold font-mono text-(--text-main) leading-tight wrap-break-word">
@@ -58,7 +58,7 @@ const AddressCard = ({ title, data }: { title: string; data: any }) => (
       </div>
       {data.phone && (
         <div className="text-[10px] font-mono font-bold flex items-center gap-2 mt-2 text-(--text-main) pt-2 border-t border-(--border-main)/20 shrink-0">
-          <Smartphone className="w-3 h-3" /> {data.phone}
+          <Mobile className="w-3 h-3" /> {data.phone}
         </div>
       )}
     </div>
@@ -141,7 +141,7 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
                   alt="Student"
                 />
               ) : (
-                <User className="w-20 h-20 text-zinc-300" />
+                <Person className="w-20 h-20 text-zinc-300" />
               )}
             </div>
           </div>
@@ -296,7 +296,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
   if (loading) {
     return (
       <div className="h-full flex flex-col items-center justify-center text-(--text-muted) gap-4 animate-pulse bg-(--bg-main)">
-        <Loader2 className="w-10 h-10 animate-spin text-(--text-main)" />
+        <ProgressActivity className="w-10 h-10 animate-spin text-(--text-main)" />
         <span className="text-xs font-expanded font-black tracking-widest uppercase">
           Fetching Profile...
         </span>
@@ -313,7 +313,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
         <div className="lg:col-span-4 flex flex-col gap-6 md:gap-8 items-center lg:items-stretch">
           <DigitalIDCard data={data} />
 
-          <BentoCard title="Academic Details" icon={GraduationCap} delay={0.1}>
+          <BentoCard title="Academic Details" icon={School} delay={0.1}>
             <div className="space-y-3">
               <div className="bg-(--bg-surface)/40 p-3 rounded-xl border-2 border-(--border-main)">
                 <div className="text-[10px] font-expanded font-black uppercase text-(--text-muted) tracking-wider mb-0.5">
@@ -374,11 +374,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="flex items-center gap-2 bg-(--bg-surface)/40 p-2 rounded-lg border-2 border-(--border-main) text-xs font-bold font-mono">
-                    <Smartphone className="w-4 h-4 shrink-0 text-(--accent-base)" />{" "}
+                    <Mobile className="w-4 h-4 shrink-0 text-(--accent-base)" />{" "}
                     {data.proctor.mobile}
                   </div>
                   <div className="flex items-center gap-2 bg-(--bg-surface)/40 p-2 rounded-lg border-2 border-(--border-main) text-xs font-bold font-mono">
-                    <MapPin className="w-4 h-4 shrink-0 text-(--accent-base)" />{" "}
+                    <LocationOn className="w-4 h-4 shrink-0 text-(--accent-base)" />{" "}
                     {data.proctor.cabin}
                   </div>
                   <div className="flex items-center gap-2 bg-(--bg-surface)/40 p-2 rounded-lg border-2 border-(--border-main) text-xs font-bold font-mono sm:col-span-2">
@@ -394,7 +394,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
 
           <BentoCard
             title="Guardian / Father"
-            icon={Briefcase}
+            icon={Work}
             delay={0.3}
             colSpan="md:col-span-2"
           >
@@ -432,7 +432,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
           <div className="grid grid-cols-1 gap-6 md:gap-8 md:col-span-2 md:grid-cols-2">
             <BentoCard
               title="Personal"
-              icon={HeartPulse}
+              icon={MonitorHeart}
               delay={0.4}
               className="bg-(--card-cyan)"
             >
@@ -454,7 +454,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
               </div>
             </BentoCard>
 
-            <BentoCard title="Education" icon={GraduationCap} delay={0.4}>
+            <BentoCard title="Education" icon={School} delay={0.4}>
               <div className="bg-(--bg-surface) p-3 rounded-xl border-2 border-(--border-main) space-y-1 mb-4">
                 <InfoRow label="Degree" value={data.education.degree} />
                 <InfoRow
@@ -477,7 +477,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
 
           <BentoCard
             title="Hostel Allocation"
-            icon={Building}
+            icon={Domain}
             delay={0.5}
             colSpan="md:col-span-2"
           >

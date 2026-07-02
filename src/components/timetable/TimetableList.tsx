@@ -1,5 +1,5 @@
 import { TimetableCourse, CourseSummary } from "../../types/vtop";
-import { User, Clock, PieChart } from "lucide-react";
+import { Person, Schedule, PieChart } from '@nine-thirty-five/material-symbols-react/outlined';
 import { Icon } from "@iconify-icon/react";
 import { motion } from "framer-motion";
 
@@ -44,7 +44,7 @@ export const TimetableList = ({
 
             <div className="grid grid-cols-2 gap-2 mt-1">
               <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-400 bg-zinc-950 p-2 rounded-xl border border-zinc-800">
-                <Clock className="w-3 h-3 text-blue-400" />
+                <Schedule className="w-3 h-3 text-blue-400" />
                 <span className="truncate">{c.slot}</span>
               </div>
               <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-400 bg-zinc-950 p-2 rounded-xl border border-zinc-800">
@@ -57,7 +57,7 @@ export const TimetableList = ({
                 <span className="truncate">{c.venue}</span>
               </div>
               <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-400 bg-zinc-950 p-2 rounded-xl border border-zinc-800">
-                <User className="w-3 h-3 text-emerald-400" />
+                <Person className="w-3 h-3 text-emerald-400" />
                 <span className="truncate">{c.faculty}</span>
               </div>
               <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-400 bg-zinc-950 p-2 rounded-xl border border-zinc-800">

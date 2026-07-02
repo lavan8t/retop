@@ -1,30 +1,30 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { AppSettings } from "../utils/settings-store";
 import {
-  GraduationCap,
-  Coins,
+  School,
+  AttachMoney,
   Search,
-  FileText,
-  CornerDownRight,
-  AlertCircle,
-  BookOpen,
-  FileSignature,
+  Description,
+  SubdirectoryArrowRight,
+  Error,
+  MenuBook,
+  HistoryEdu,
   Wallet,
-  PartyPopper,
+  Celebration,
   Globe,
-  Wrench,
-  Building,
-  MessageSquare,
-  Library,
-  Briefcase,
-  FlaskConical,
-  Bus,
+  Build,
+  Domain,
+  Chat,
+  LocalLibrary,
+  Work,
+  Science,
+  DirectionsBus,
   Layers,
   ChevronRight,
-  ArrowUpDown,
-  ArrowUpRight,
+  SwapVert,
+  NorthEast,
   Pin,
-} from "lucide-react";
+} from '@nine-thirty-five/material-symbols-react/outlined';
 import {
   CourseSummary,
   Assignment,
@@ -59,18 +59,18 @@ import { Card } from "../components/ui/Card";
 
 const getCategoryIcon = (title: string) => {
   const t = title.toLowerCase();
-  if (t.includes("academic")) return BookOpen;
-  if (t.includes("examination")) return FileSignature;
+  if (t.includes("academic")) return MenuBook;
+  if (t.includes("examination")) return HistoryEdu;
   if (t.includes("finance")) return Wallet;
-  if (t.includes("event")) return PartyPopper;
+  if (t.includes("event")) return Celebration;
   if (t.includes("sap") || t.includes("international")) return Globe;
-  if (t.includes("service")) return Wrench;
-  if (t.includes("hostel")) return Building;
-  if (t.includes("feedback")) return MessageSquare;
-  if (t.includes("library")) return Library;
-  if (t.includes("placement")) return Briefcase;
-  if (t.includes("research")) return FlaskConical;
-  if (t.includes("transport")) return Bus;
+  if (t.includes("service")) return Build;
+  if (t.includes("hostel")) return Domain;
+  if (t.includes("feedback")) return Chat;
+  if (t.includes("library")) return LocalLibrary;
+  if (t.includes("placement")) return Work;
+  if (t.includes("research")) return Science;
+  if (t.includes("transport")) return DirectionsBus;
   return Layers;
 };
 
@@ -457,17 +457,27 @@ export const HomeView: React.FC<HomeViewProps> = ({
               </div>
             </div>
 
-            <input
-              ref={inputRef}
-              type="text"
-              placeholder="Search"
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setSelectedIndex(0);
-              }}
-              className="w-full bg-transparent text-sm md:text-base font-bold text-(--text-main) pt-1 focus:outline-none placeholder-black/30 dark:placeholder-white/30 min-w-0 text-left pl-2"
-            />
+            <div className="relative flex-1 w-full min-w-0 flex items-center">
+              {query && flattenedLinks.length > 0 && flattenedLinks[0].title.toLowerCase().startsWith(query.toLowerCase()) && (
+                <div className="absolute left-2 top-0 bottom-0 flex items-center pt-1 pointer-events-none w-full overflow-hidden">
+                  <span className="text-sm md:text-base font-bold text-transparent whitespace-pre">{query}</span>
+                  <span className="text-sm md:text-base font-bold text-(--text-muted) opacity-50 whitespace-pre truncate">
+                    {flattenedLinks[0].title.slice(query.length)}
+                  </span>
+                </div>
+              )}
+              <input
+                ref={inputRef}
+                type="text"
+                placeholder="Search"
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setSelectedIndex(0);
+                }}
+                className="w-full bg-transparent text-sm md:text-base font-bold text-(--text-main) pt-1 focus:outline-none placeholder-black/30 dark:placeholder-white/30 min-w-0 text-left pl-2 relative z-10"
+              />
+            </div>
           </div>
 
           <div className="px-4 bg-(--bg-highlight)">
@@ -568,7 +578,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 <div className="flex flex-col gap-1 mt-1">
                   {flattenedLinks.length === 0 ? (
                     <div className="flex flex-col items-center justify-center p-6 text-(--text-dim)">
-                      <AlertCircle className="w-8 h-8 mb-2 opacity-50" />
+                      <Error className="w-8 h-8 mb-2 opacity-50" />
                       <span className="font-expanded text-sm uppercase text-(--text-muted)">
                         No Matches
                       </span>
@@ -603,15 +613,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
                                 : "bg-transparent border-transparent text-(--text-muted)"
                             }`}
                           >
-                            <FileText
+                            <Description
                               className={`w-4 h-4 shrink-0 ${isSelected ? "opacity-100" : "opacity-50"}`}
                             />
                             <div className="flex-1 min-w-0 pr-8 flex items-center h-4">
                               <MarqueeText text={link.title} />
                             </div>
-                            {isSelected && (
-                              <CornerDownRight className="w-4 h-4 shrink-0 relative z-10" />
-                            )}
                           </button>
                           {handleTogglePin && (
                             <div
@@ -624,8 +631,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
                                 }}
                                 className={`pointer-events-auto p-1.5 rounded-xl transition-all border-2 shrink-0 shadow-none ${
                                   isPinned
-                                    ? "bg-(--bg-highlight) text-(--text-main) border-(--border-main)"
-                                    : "bg-(--bg-surface) border-(--border-main) text-(--text-dim) hover:text-(--text-main) hover:border-(--accent-base)"
+                                    ? "bg-transparent text-(--text-main) border-transparent"
+                                    : "bg-transparent border-transparent text-(--text-dim) hover:text-(--text-main) hover:border-(--accent-base)"
                                 }`}
                               >
                                 <Pin
@@ -659,7 +666,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 className="flex items-center justify-center p-1.5 bg-transparent hover:bg-black/10 rounded-lg transition-colors text-(--text-main) active:scale-95"
                 title="Toggle Sort Order"
               >
-                <ArrowUpDown
+                <SwapVert
                   className={`w-4 h-4 transition-transform ${attSort === "asc" ? "rotate-180" : ""}`}
                 />
               </button>
@@ -754,9 +761,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     }`}
                   />
                   <span className="flex-1 truncate">{link.title}</span>
-                  {i === selectedIndex && (
-                    <CornerDownRight className="w-3 h-3 shrink-0 opacity-80" />
-                  )}
                 </button>
               ))}
             </div>
@@ -764,9 +768,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
         )}
       </AnimatePresence>
 
-      {/* CENTER PANE: Surface Level Unified Event Calendar */}
+      {/* CENTER PANE: Surface Level Unified Event CalendarMonth */}
       <div className="flex-none lg:flex-1 w-full flex flex-col gap-6 md:gap-8 overflow-hidden pt-1 pl-1 md:pl-0 min-h-0">
-        <div className="flex flex-col items-center mb-2 lg:mb-4 px-2 w-full relative z-20 pointer-events-auto pt-20 md:pt-24 lg:pt-28">
+        <div className="flex flex-col items-center mb-2 lg:mb-4 px-2 w-full relative z-50 pointer-events-auto pt-20 md:pt-24 lg:pt-28">
           <div className="flex flex-col items-center w-full">
             {/* Month Header and Filter Chips in a 3-column grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 w-full items-center mb-6 px-1 pt-4 gap-4 md:gap-0">
@@ -1123,7 +1127,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             className="flex flex-col relative z-10"
           >
             <div className="flex items-center justify-between">
-              <GraduationCap className="w-10 h-10 text-(--text-main) mix-blend-overlay opacity-80" />
+              <School className="w-10 h-10 text-(--text-main) mix-blend-overlay opacity-80" />
               <div className="text-right">
                 <div className="text-[10px] font-expanded font-bold uppercase text-(--text-muted)">
                   CGPA
@@ -1147,7 +1151,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
             className="flex items-center justify-between overflow-hidden relative z-10"
           >
-            <Coins className="w-10 h-10 text-(--text-main) mix-blend-overlay opacity-80 shrink-0" />
+            <AttachMoney className="w-10 h-10 text-(--text-main) mix-blend-overlay opacity-80 shrink-0" />
             <div className="text-right">
               <div className="text-[10px] font-expanded font-bold uppercase text-(--text-muted)">
                 Credits

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence, Transition } from "framer-motion";
-import { LayoutGrid, List, Calendar } from "lucide-react";
+import { GridView, List, CalendarMonth } from '@nine-thirty-five/material-symbols-react/outlined';
 
 interface FloatingViewToggleProps {
   viewMode: "grid" | "list" | "week";
@@ -69,7 +69,7 @@ export const FloatingViewToggle: React.FC<FloatingViewToggleProps> = ({
   };
 
   const Icon =
-    viewMode === "grid" ? LayoutGrid : viewMode === "list" ? List : Calendar;
+    viewMode === "grid" ? GridView : viewMode === "list" ? List : CalendarMonth;
 
   return (
     <AnimatePresence>

@@ -1,7 +1,7 @@
 import { TimetableCourse } from "../types/vtop";
 
 // --- CONFIG ---
-// We map standard VTOP slots to [DayIndex (0=Mon...6=Sun), ColumnIndex (0-13)]
+// We map standard VTOP slots to [DayIndex (0=Mon...6=LightMode), ColumnIndex (0-13)]
 // Columns:
 // 0: 08:00
 // 1: 09:00
@@ -329,8 +329,8 @@ export const getGridPositions = (
 
 export const getCorrectDayName = (date: Date) => {
   const jsDay = date.getDay();
-  // JS: 0=Sun, 1=Mon...6=Sat
-  // Our Array: 0=Mon, 5=Sat, 6=Sun
+  // JS: 0=LightMode, 1=Mon...6=Sat
+  // Our Array: 0=Mon, 5=Sat, 6=LightMode
   if (jsDay === 0) return "Sunday";
   return DAYS[jsDay - 1];
 };

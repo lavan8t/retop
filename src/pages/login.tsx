@@ -2,13 +2,13 @@ import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Loader2,
-  ShieldCheck,
-  ArrowRight,
-  Eye,
-  EyeOff,
-  RefreshCw,
-} from "lucide-react";
+  ProgressActivity,
+  VerifiedUser,
+  ArrowForward,
+  Visibility,
+  VisibilityOff,
+  Autorenew,
+} from '@nine-thirty-five/material-symbols-react/outlined';
 import {
   createHiddenForm,
   initializeContainer,
@@ -293,7 +293,7 @@ const LoginPage = ({
                 <motion.div className="bg-(--bg-highlight) border-4 border-(--border-main) rounded-4xl flex flex-col justify-center items-center h-full w-full shrink-0 relative z-30 shadow-none overflow-hidden">
                   <div className="relative z-10 text-center flex flex-col items-center">
                     <div className="w-24 h-24 bg-(--accent-base) text-(--text-inverse) rounded-3xl border-4 border-(--border-main) flex items-center justify-center shadow-none mb-8">
-                      <ShieldCheck className="w-12 h-12" />
+                      <VerifiedUser className="w-12 h-12" />
                     </div>
 
                     <div className="text-[8rem] font-expanded font-black leading-none text-(--text-main) lowercase [text-shadow:6px_6px_0px_var(--shadow-main)]">
@@ -358,9 +358,9 @@ const LoginPage = ({
                         className="absolute right-4 top-1/2 -translate-y-1/2 text-(--text-muted) hover:text-(--text-main) transition-colors p-1 bg-(--bg-surface) rounded-lg border-2 border-transparent hover:border-(--border-dim)"
                       >
                         {showPassword ? (
-                          <EyeOff className="w-5 h-5" />
+                          <VisibilityOff className="w-5 h-5" />
                         ) : (
-                          <Eye className="w-5 h-5" />
+                          <Visibility className="w-5 h-5" />
                         )}
                       </button>
                     </motion.div>
@@ -399,7 +399,7 @@ const LoginPage = ({
                             }}
                           />
                           <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <RefreshCw className="w-5 h-5 text-white" />
+                            <Autorenew className="w-5 h-5 text-white" />
                           </div>
                         </div>
                       </div>
@@ -411,10 +411,10 @@ const LoginPage = ({
                       className={`w-full border-4 border-(--border-main) rounded-2xl py-4 text-2xl font-expanded font-black uppercase flex items-center justify-center gap-3 transition-all duration-200 mt-2 ${isLoading ? "bg-(--bg-surface) text-(--text-muted) cursor-not-allowed" : "bg-(--accent-base) text-(--text-inverse) shadow-none hover:-translate-y-1 hover:shadow-[8px_8px_0px_0px_var(--shadow-main)] active:translate-y-1 active:shadow-none"}`}
                     >
                       {isLoading ? (
-                        <Loader2 className="animate-spin w-6 h-6" />
+                        <ProgressActivity className="animate-spin w-6 h-6" />
                       ) : (
                         <>
-                          Authorize <ArrowRight className="w-6 h-6" />
+                          Authorize <ArrowForward className="w-6 h-6" />
                         </>
                       )}
                     </button>

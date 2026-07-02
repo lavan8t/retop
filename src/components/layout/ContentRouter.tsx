@@ -1,4 +1,4 @@
-import { Loader2 } from "lucide-react";
+import { ProgressActivity } from '@nine-thirty-five/material-symbols-react/outlined';
 import { HomeView } from "../../pages/home";
 import { TimetableContentView } from "../../pages/timetable";
 import { CurriculumPage } from "../../pages/curriculum";
@@ -123,7 +123,7 @@ export const ContentRouter = ({
     case "content":
       return (
         <div className="flex flex-col items-center justify-center h-full text-(--text-muted) font-mono animate-pulse pointer-events-auto">
-          <Loader2 className="w-16 h-16 text-(--accent-base) animate-spin mb-4" />
+          <ProgressActivity className="w-16 h-16 text-(--accent-base) animate-spin mb-4" />
           <span className="text-xl font-bold font-expanded mb-0">
             LAUNCHING LEGACY SYSTEM...
           </span>

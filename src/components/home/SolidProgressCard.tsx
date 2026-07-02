@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp } from '@nine-thirty-five/material-symbols-react/outlined';
 import { Card } from "../ui/Card";
 
 export const SolidProgressCard = ({ progress }: { progress: number }) => (

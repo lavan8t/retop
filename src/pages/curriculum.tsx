@@ -6,14 +6,14 @@ import {
 } from "../parsers/curriculum";
 import { CurriculumCategory, CurriculumCourse } from "../types/vtop";
 import {
-  BookOpen,
-  CheckCircle2,
-  Loader2,
+  MenuBook,
+  CheckCircle,
+  ProgressActivity,
   Search,
   ChevronLeft,
   ChevronRight,
-  FileDown,
-} from "lucide-react";
+  Download,
+} from '@nine-thirty-five/material-symbols-react/outlined';
 import { motion } from "framer-motion";
 
 interface CurriculumPageProps {
@@ -103,7 +103,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
       >
         <div className="p-6 border-b-4 border-zinc-800 bg-zinc-950/30 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3 text-zinc-400 font-bold uppercase  text-sm">
-            <BookOpen className="w-5 h-5 text-blue-500" />
+            <MenuBook className="w-5 h-5 text-blue-500" />
             <span>Baskets</span>
           </div>
           <div className="text-xs bg-zinc-950 px-3 py-1 rounded-lg text-zinc-200 font-bold border-2 border-zinc-800">
@@ -134,7 +134,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
                   </div>
                 </div>
                 {cat.isCompleted && (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 z-10" />
+                  <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0 z-10" />
                 )}
                 {selectedId === cat.id && (
                   <div
@@ -199,7 +199,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
         <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
           {loadingCourses ? (
             <div className="h-full flex flex-col items-center justify-center text-zinc-500 gap-4 animate-pulse">
-              <Loader2 className="w-12 h-12 animate-spin text-blue-500" />
+              <ProgressActivity className="w-12 h-12 animate-spin text-blue-500" />
               <span className="text-sm font-bold  uppercase">
                 Fetching Courses...
               </span>
@@ -248,7 +248,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
                           <span className="font-bold truncate text-zinc-200 group-hover/link:text-zinc-100 group-hover/link:underline decoration-blue-500/50 underline-offset-4 decoration-2 transition-all">
                             {c.title}
                           </span>
-                          <FileDown className="w-4 h-4 opacity-0 group-hover/link:opacity-100 transition-opacity text-blue-500 shrink-0" />
+                          <Download className="w-4 h-4 opacity-0 group-hover/link:opacity-100 transition-opacity text-blue-500 shrink-0" />
                         </button>
                       </td>
                       <td className="py-3 px-4 text-center">

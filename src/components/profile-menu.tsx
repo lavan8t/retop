@@ -10,7 +10,7 @@ import {
   ChevronRight,
   DesignServices,
   History,
-} from '@nine-thirty-five/material-symbols-react/outlined';
+} from '@nine-thirty-five/material-symbols-react/rounded';
 import { QuickLink } from "../types/vtop";
 import { motion, Variants, Transition } from "framer-motion";
 

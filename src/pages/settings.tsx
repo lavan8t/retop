@@ -1,6 +1,6 @@
 import React from "react";
 import { AppSettings, resetDynamicThemeSeed } from "../utils/settings-store";
-import { Check, Casino } from '@nine-thirty-five/material-symbols-react/outlined';
+import { Check, Casino } from '@nine-thirty-five/material-symbols-react/rounded';
 import { motion } from "framer-motion";
 
 interface SettingsPageProps {

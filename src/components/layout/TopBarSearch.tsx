@@ -7,7 +7,7 @@ import {
   Pin,
   Error,
   Home,
-} from '@nine-thirty-five/material-symbols-react/outlined';
+} from '@nine-thirty-five/material-symbols-react/rounded';
 import { QuickLink, MenuCategory } from "../../types/vtop";
 import { MarqueeText } from "../common/MarqueeText";
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { VTOPNetwork } from "../utils/network";
 import { parseMarksSemesters, parseStudentMarks } from "../parsers/marks";
 import { CourseMarks } from "../types/vtop";
-import { ProgressActivity, Error, Person } from '@nine-thirty-five/material-symbols-react/outlined';
+import { ProgressActivity, Error, Person } from '@nine-thirty-five/material-symbols-react/rounded';
 import { motion } from "framer-motion";
 
 interface MarksPageProps {

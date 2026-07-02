@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, Variants } from "framer-motion";
-import { LocationOn, ArrowForward } from '@nine-thirty-five/material-symbols-react/outlined';
+import { LocationOn, ArrowForward } from '@nine-thirty-five/material-symbols-react/rounded';
 import { CourseSummary, Assignment, Event } from "../../types/vtop";
 import { UpcomingClass } from "../../utils/timetable-slots";
 import { formatTimeStr } from "../../utils/formatting";

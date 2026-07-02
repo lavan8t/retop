@@ -9,7 +9,7 @@ import {
   CalendarMonth,
   Person,
   Search,
-} from '@nine-thirty-five/material-symbols-react/outlined';
+} from '@nine-thirty-five/material-symbols-react/rounded';
 import {
   QuickLink,
   Semester,

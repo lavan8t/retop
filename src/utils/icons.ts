@@ -17,7 +17,7 @@ import {
   School,
   Person,
   Settings as SettingsIcon,
-} from '@nine-thirty-five/material-symbols-react/outlined';
+} from '@nine-thirty-five/material-symbols-react/rounded';
 
 export const getCategoryIcon = (title: string, url: string = "") => {
   const t = title.toLowerCase();

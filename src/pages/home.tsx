@@ -24,7 +24,7 @@ import {
   SwapVert,
   NorthEast,
   Pin,
-} from '@nine-thirty-five/material-symbols-react/outlined';
+} from '@nine-thirty-five/material-symbols-react/rounded';
 import {
   CourseSummary,
   Assignment,

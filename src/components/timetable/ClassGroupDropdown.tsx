@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ClassGroup } from "../../types/vtop";
-import { Group, KeyboardArrowDown } from '@nine-thirty-five/material-symbols-react/outlined';
+import { Group, KeyboardArrowDown } from '@nine-thirty-five/material-symbols-react/rounded';
 import { motion, AnimatePresence } from "framer-motion";
 
 export const formatShortGroupName = (label: string) => {

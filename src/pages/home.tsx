@@ -1139,7 +1139,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 </div>
               </div>
             </div>
-            <div className="h-0.5 w-full bg-(--border-main) my-5"></div>
           </motion.div>
 
           {/* Resting Combined View */}
@@ -1149,7 +1148,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               hover: { height: 0, opacity: 0 },
             }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className="flex items-center justify-between overflow-hidden relative z-10"
+            className="flex items-center justify-end overflow-hidden relative z-10"
           >
 
             <div className="text-right">

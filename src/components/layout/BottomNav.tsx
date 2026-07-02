@@ -22,7 +22,7 @@ import {
   Error,
   KeyboardArrowDown,
   Pin,
-} from '@nine-thirty-five/material-symbols-react/outlined';
+} from '@nine-thirty-five/material-symbols-react/rounded';
 import { QuickLink, MenuCategory } from "../../types/vtop";
 import { getCategoryIcon } from "../../utils/icons";
 

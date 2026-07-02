@@ -10,7 +10,7 @@ import {
   Person,
   Filter,
   KeyboardArrowDown,
-} from '@nine-thirty-five/material-symbols-react/outlined';
+} from '@nine-thirty-five/material-symbols-react/rounded';
 import { VTOPNetwork } from "../utils/network";
 import { parseCoursePage } from "../parsers/course-page";
 import {

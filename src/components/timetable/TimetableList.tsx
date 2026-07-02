@@ -1,6 +1,6 @@
 import { TimetableCourse, CourseSummary } from "../../types/vtop";
-import { Person, Schedule, PieChart } from '@nine-thirty-five/material-symbols-react/outlined';
-import { Icon } from "@iconify-icon/react";
+import { Person, Schedule, PieChart } from '@nine-thirty-five/material-symbols-react/rounded';
+import { LocationOn } from '@nine-thirty-five/material-symbols-react/rounded';
 import { motion } from "framer-motion";
 
 export const TimetableList = ({
@@ -48,12 +48,7 @@ export const TimetableList = ({
                 <span className="truncate">{c.slot}</span>
               </div>
               <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-400 bg-zinc-950 p-2 rounded-xl border border-zinc-800">
-                <Icon
-                  icon="heroicons:map-pin-20-solid"
-                  width="15"
-                  height="15"
-                  className="shrink-0 text-red-400"
-                />
+                <LocationOn size={15} className={"shrink-0 text-red-400"} />
                 <span className="truncate">{c.venue}</span>
               </div>
               <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-400 bg-zinc-950 p-2 rounded-xl border border-zinc-800">
@@ -130,12 +125,7 @@ export const TimetableList = ({
                   {c.slot}
                 </td>
                 <td className="py-3 px-4 flex items-center gap-1.5 text-xs font-bold text-zinc-400">
-                  <Icon
-                    icon="heroicons:map-pin-20-solid"
-                    width="15"
-                    height="15"
-                    className="shrink-0 text-zinc-600"
-                  />
+                  <LocationOn size={15} className={"shrink-0 text-zinc-600"} />
                   <span className="truncate">{c.venue}</span>
                 </td>
                 <td

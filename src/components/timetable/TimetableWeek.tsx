@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { TimetableCourse, CourseSummary } from "../../types/vtop";
 import { getGridPositions, DAYS } from "../../utils/timetable-slots";
-import { LocationOn, EventBusy } from '@nine-thirty-five/material-symbols-react/outlined';
+import { LocationOn, EventBusy } from '@nine-thirty-five/material-symbols-react/rounded';
 import { motion, AnimatePresence } from "framer-motion";
 import { getCourseAcronym, formatTimeStr } from "../../utils/formatting";
 import { CoursePopup } from "./CoursePopup";

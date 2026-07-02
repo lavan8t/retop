@@ -14,7 +14,7 @@ import {
   Domain,
   Shield,
   MonitorHeart,
-} from '@nine-thirty-five/material-symbols-react/outlined';
+} from '@nine-thirty-five/material-symbols-react/rounded';
 import { motion } from "framer-motion";
 import Barcode from "react-barcode";
 

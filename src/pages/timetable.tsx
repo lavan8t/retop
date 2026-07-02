@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { TimetableCourse, CourseSummary } from "../types/vtop";
-import { Layers, ProgressActivity } from '@nine-thirty-five/material-symbols-react/outlined';
+import { Layers, ProgressActivity } from '@nine-thirty-five/material-symbols-react/rounded';
 import { TimetableGrid } from "../components/timetable/TimetableGrid";
 import { TimetableList } from "../components/timetable/TimetableList";
 import { TimetableWeek } from "../components/timetable/TimetableWeek";

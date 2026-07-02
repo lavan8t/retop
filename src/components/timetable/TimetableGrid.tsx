@@ -3,7 +3,7 @@ import { TimetableCourse, CourseSummary } from "../../types/vtop";
 import { getGridPositions, DAYS, CAMPUS_SLOT_TIMINGS } from "../../utils/timetable-slots";
 import { getCourseAcronym, formatTimeStr } from "../../utils/formatting";
 import { CoursePopup } from "./CoursePopup";
-import { Icon } from "@iconify-icon/react";
+import { LocationOn } from '@nine-thirty-five/material-symbols-react/rounded';
 
 const getAttendanceEmoji = (attendanceStr?: string) => {
   if (!attendanceStr) return "";
@@ -225,12 +225,7 @@ export const TimetableGrid = ({
               <div
                 className={`flex items-center gap-1.5 w-full text-[8px] sm:text-[9px] md:text-[10px] uppercase font-black  px-2.5 pt-1.5 pb-2 md:px-3 md:pt-2 md:pb-2 border-t-2 mt-auto ${footerBg} ${footerText}`}
               >
-                <Icon
-                  icon="heroicons:map-pin-20-solid"
-                  width="15"
-                  height="15"
-                  className="shrink-0"
-                />
+                <LocationOn size={15} className={"shrink-0"} />
                 <span className="truncate">{cellContent.venue}</span>
               </div>
             </button>

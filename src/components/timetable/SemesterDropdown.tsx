@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Semester } from "../../types/vtop";
-import { CalendarMonth, KeyboardArrowDown } from '@nine-thirty-five/material-symbols-react/outlined';
+import { CalendarMonth, KeyboardArrowDown } from '@nine-thirty-five/material-symbols-react/rounded';
 import { motion, AnimatePresence } from "framer-motion";
 
 // SMART PARSER: Converts "Winter Semester 2025-26" -> "W'26"

@@ -7,6 +7,7 @@ import { ProfilePage } from "../../pages/profile";
 import { SettingsPage } from "../../pages/settings";
 import { CoursePage } from "../../pages/course-page";
 import { CalendarPage } from "../../pages/calendar";
+import { AttendancePage } from "../../pages/attendance";
 
 export const ContentRouter = ({
   currentView,
@@ -119,6 +120,9 @@ export const ContentRouter = ({
 
     case "calendar":
       return <CalendarPage network={networkRef.current!} />;
+
+    case "attendance":
+      return <AttendancePage network={networkRef.current!} />;
 
     case "content":
       return (

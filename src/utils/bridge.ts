@@ -18,14 +18,14 @@ function safeAppend(element: HTMLElement) {
 
 export function getAppRoot(): HTMLElement | null {
   return shadowRoot
-    ? (shadowRoot.getElementById("vtop-remastered-root") as HTMLElement)
+    ? (shadowRoot.getElementById("retop-root") as HTMLElement)
     : null;
 }
 
 export function injectGlobalFonts() {
-  if (!document.getElementById("vtop-remastered-fonts")) {
+  if (!document.getElementById("retop-fonts")) {
     const fontLink = document.createElement("link");
-    fontLink.id = "vtop-remastered-fonts";
+    fontLink.id = "retop-fonts";
     fontLink.rel = "stylesheet";
     fontLink.href =
       "https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,slnt,wdth,wght,GRAD,ROND@6..144,-10..0,25..151,1..1000,100,0..100&family=Anek+Tamil:wdth,wght@125,100..800&display=swap";
@@ -34,10 +34,10 @@ export function injectGlobalFonts() {
 }
 
 export function injectGlobalStyles() {
-  if (document.getElementById("vtop-remastered-global-css")) return;
+  if (document.getElementById("retop-global-css")) return;
 
   const link = document.createElement("link");
-  link.id = "vtop-remastered-global-css";
+  link.id = "retop-global-css";
   link.rel = "stylesheet";
   link.href = chrome.runtime.getURL("dist/style.css");
   safeAppend(link);
@@ -49,7 +49,7 @@ export function initializeContainer() {
   if (isInitialized) return;
 
   const host = document.createElement("div");
-  host.id = "vtop-remastered-host";
+  host.id = "retop-host";
 
   // Set default fixed positioning.
   host.style.cssText =
@@ -64,7 +64,7 @@ export function initializeContainer() {
   shadowRoot.appendChild(cssLink);
 
   const appRoot = document.createElement("div");
-  appRoot.id = "vtop-remastered-root";
+  appRoot.id = "retop-root";
   appRoot.style.cssText =
     "width: 100%; height: 100%; pointer-events: none; background: transparent;";
   shadowRoot.appendChild(appRoot);
@@ -73,16 +73,16 @@ export function initializeContainer() {
 }
 
 export function injectSplashScreen() {
-  if (document.getElementById("vtop-remastered-splash")) return;
+  if (document.getElementById("retop-splash")) return;
   const splash = document.createElement("div");
-  splash.id = "vtop-remastered-splash";
+  splash.id = "retop-splash";
 
   splash.innerHTML = `<div style="color:white; font-family:sans-serif;">Loading retop...</div>`;
   safeAppend(splash);
 }
 
 export function removeSplashScreen() {
-  const splash = document.getElementById("vtop-remastered-splash");
+  const splash = document.getElementById("retop-splash");
   if (splash) {
     splash.style.opacity = "0";
     setTimeout(() => splash.remove(), 500);
@@ -90,10 +90,8 @@ export function removeSplashScreen() {
 }
 
 export function setUIVisibility(visible: boolean) {
-  const host = document.getElementById("vtop-remastered-host");
-  const appRoot = shadowRoot
-    ? shadowRoot.getElementById("vtop-remastered-root")
-    : null;
+  const host = document.getElementById("retop-host");
+  const appRoot = shadowRoot ? shadowRoot.getElementById("retop-root") : null;
 
   if (visible) {
     document.body.classList.remove("show-legacy-ui");

@@ -25,7 +25,12 @@ try {
           const data = typeof saved === 'string' ? JSON.parse(saved) : saved;
           const settings = data.state?.settings || data;
           if (settings.themeMode) {
-            document.documentElement.setAttribute("data-theme", settings.themeMode);
+            let activeTheme = settings.themeMode;
+            if (activeTheme === "auto") {
+              const hour = new Date().getHours();
+              activeTheme = (hour >= 6 && hour < 18) ? "light" : "dark";
+            }
+            document.documentElement.setAttribute("data-theme", activeTheme);
           }
           const MATERIAL_ACCENTS: Record<string, string> = {
             blue: "#2563eb", indigo: "#4f46e5", purple: "#9333ea",
@@ -833,7 +838,12 @@ const injectLoginTheme = () => {
         }
 
         document.documentElement.style.setProperty("--accent-base", baseColor);
-        document.documentElement.setAttribute("data-theme", settings.themeMode);
+        let activeTheme = settings.themeMode;
+        if (activeTheme === "auto") {
+          const hour = new Date().getHours();
+          activeTheme = (hour >= 6 && hour < 18) ? "light" : "dark";
+        }
+        document.documentElement.setAttribute("data-theme", activeTheme);
       }
     } catch (err) {
       console.warn("[retop] Failed to load theme settings for login page:", err);

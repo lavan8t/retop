@@ -21,6 +21,7 @@ import { SemesterDropdown } from "../timetable/SemesterDropdown";
 import { ClassGroupDropdown } from "../timetable/ClassGroupDropdown";
 import { TopBarSearch } from "./TopBarSearch";
 import { getCategoryIcon } from "../../utils/icons";
+import { useDataStore } from "../../store/dataStore";
 
 interface TopBarProps {
   currentView: string;
@@ -87,6 +88,8 @@ const getPageTitle = (view: string, dynamicTitle?: string) => {
       return "COURSE PAGE";
     case "calendar":
       return "ACADEMICS CALENDAR";
+    case "attendance":
+      return "CLASS ATTENDANCE";
     case "content":
       return dynamicTitle || "CONTENT";
     default:
@@ -133,6 +136,8 @@ export const TopBar: React.FC<TopBarProps> = ({
   onNavigate,
   initialQuery = "",
 }) => {
+  const { attSelectedSem, setAttSelectedSem } = useDataStore();
+  
   return (
     <>
       {/* Top Fade Mask */}
@@ -331,6 +336,22 @@ export const TopBar: React.FC<TopBarProps> = ({
                   groups={calClassGroups}
                   selectedId={calSelectedGroup}
                   onChange={(id: string) => setCalSelectedGroup(id)}
+                />
+              </motion.div>
+            )}
+
+            {currentView === "attendance" && (
+              <motion.div
+                key="attendance-controls"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20, transition: { duration: 0.15 } }}
+                className="flex items-center gap-2 mr-1 md:mr-2"
+              >
+                <SemesterDropdown
+                  semesters={ttSemesters}
+                  selectedId={attSelectedSem}
+                  onChange={(sem: string) => setAttSelectedSem(sem)}
                 />
               </motion.div>
             )}

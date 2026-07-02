@@ -186,7 +186,8 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
             placeholder={pageTitle}
             value={query}
             onChange={(e) => {
-              setQuery(e.target.value);
+              const sanitized = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+              setQuery(sanitized);
               setSelectedIndex(0);
               if (!isExpanded) setIsOmniboxOpen(true);
             }}

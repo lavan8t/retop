@@ -1,5 +1,5 @@
 import React from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
   Home,
@@ -151,187 +151,188 @@ export const TopBar: React.FC<TopBarProps> = ({
         <div className="flex items-center h-full pointer-events-auto">
           <div className="flex flex-col justify-center h-full gap-0.5">
             <div className="flex items-center gap-2 md:gap-3">
-              {currentView !== "dashboard" && (
-                <TopBarSearch
-                  currentView={currentView}
-                  isOmniboxOpen={isOmniboxOpen}
-                  setIsOmniboxOpen={setIsOmniboxOpen}
-                  menuCategories={menuCategories}
-                  pinnedLinks={pinnedLinks}
-                  onNavigate={onNavigate}
-                  onTogglePin={onTogglePin}
-                  initialQuery={initialQuery}
-                />
-              )}
-
-              {currentView !== "dashboard" && (
-                <motion.button
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setCurrentView("dashboard");
-                  }}
-                  title="Return to Dashboard"
-                  className="group/back w-8 h-8 md:w-10 md:h-10 ml-0 md:ml-1 flex items-center justify-center bg-(--bg-surface) border-2 border-(--border-dim) rounded-lg text-(--text-muted) hover:text-white hover:bg-(--accent-base) hover:border-(--border-main) transition-all active:scale-90 shrink-0 cursor-pointer pointer-events-auto shadow-sm hover:shadow-[4px_4px_0px_0px_var(--shadow-main)]"
-                >
-                  <ArrowLeft className="w-4 h-4 md:w-5 md:h-5 group-hover/back:hidden" />
-                  <Home className="w-4 h-4 md:w-5 md:h-5 hidden group-hover/back:block" />
-                </motion.button>
-              )}
-
-              {currentView !== "dashboard" && (
-                <h1
-                  onClick={() => setCurrentView("dashboard")}
-                  title="Return to Dashboard"
-                  className="font-expanded font-black text-lg md:text-3xl text-(--text-main)  uppercase truncate max-w-[40vw] sm:max-w-[30vw] leading-none mt-1 mb-0 ml-1 md:ml-2 pl-2 md:pl-3 border-l-2 md:border-l-4 border-(--border-dim) cursor-pointer hover:text-(--accent-hover) transition-colors pointer-events-auto"
-                >
-                  {getPageTitle(currentView, contentTitle)}
-                </h1>
-              )}
+              <AnimatePresence mode="wait">
+                {currentView !== "dashboard" && (
+                  <motion.div
+                    key="topbar-search"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20, transition: { duration: 0.15 } }}
+                  >
+                    <TopBarSearch
+                      currentView={currentView}
+                      isOmniboxOpen={isOmniboxOpen}
+                      setIsOmniboxOpen={setIsOmniboxOpen}
+                      menuCategories={menuCategories}
+                      pinnedLinks={pinnedLinks}
+                      onNavigate={onNavigate}
+                      onTogglePin={onTogglePin}
+                      initialQuery={initialQuery}
+                      pageTitle={getPageTitle(currentView, contentTitle)}
+                      onBack={() => setCurrentView("dashboard")}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2 md:gap-4 h-full pointer-events-auto">
-          {currentView === "dashboard" && (
-            <div className="hidden xl:flex items-center gap-2.5">
-              {pinnedLinks.slice(0, 3).map((link, idx) => {
-                const Icon = getCategoryIcon(link.title, link.url);
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => handleLinkClick(link)}
-                    className={`flex items-center gap-2 px-3.5 py-1.5 border-2 border-(--border-main) rounded-xl shadow-none hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_var(--shadow-main)] active:translate-y-0 active:shadow-none transition-all font-black font-expanded text-xs  uppercase text-black ${dockColors[idx]} cursor-pointer`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span>{link.title}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {currentView === "timetable" && (
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="flex items-center gap-1.5 md:gap-3 lg:gap-4 pr-0 pointer-events-auto"
-            >
-              {ttLoading && (
-                <RefreshCw className="w-4 h-4 text-(--accent-base) animate-spin hidden sm:block" />
-              )}
-              <SemesterDropdown
-                semesters={ttSemesters}
-                selectedId={ttSelectedSem}
-                onChange={loadTimetable}
-              />
-
-              <div className="hidden sm:flex bg-(--bg-highlight) border-2 border-(--border-main) rounded-xl p-1 gap-1 shadow-sm">
-                <button
-                  onClick={() => setTtViewMode("grid")}
-                  className={`p-1.5 rounded-lg transition-all border-2 ${
-                    ttViewMode === "grid"
-                      ? "bg-(--accent-base) text-white border-(--border-main) shadow-none -translate-y-px"
-                      : "border-transparent text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-surface)"
-                  }`}
-                >
-                  <LayoutGrid className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setTtViewMode("list")}
-                  className={`p-1.5 rounded-lg transition-all border-2 ${
-                    ttViewMode === "list"
-                      ? "bg-(--accent-base) text-white border-(--border-main) shadow-none -translate-y-px"
-                      : "border-transparent text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-surface)"
-                  }`}
-                >
-                  <List className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setTtViewMode("week")}
-                  className={`p-1.5 rounded-lg transition-all border-2 ${
-                    ttViewMode === "week"
-                      ? "bg-(--accent-base) text-white border-(--border-main) shadow-none -translate-y-px"
-                      : "border-transparent text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-surface)"
-                  }`}
-                >
-                  <Calendar className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="hidden sm:block w-0.5 h-8 bg-(--border-dim) mx-1"></div>
-            </motion.div>
-          )}
-
-          {currentView === "marks" && (
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="flex items-center gap-2 mr-1 md:mr-2"
-            >
-              <button
-                onClick={() => setIsMarksModernView(!isMarksModernView)}
-                className="hidden sm:block bg-(--bg-surface) border-2 border-(--border-dim) text-(--text-main) px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase  hover:bg-(--accent-base) hover:text-white transition-all cursor-pointer shadow-sm hover:shadow-[4px_4px_0px_0px_var(--shadow-main)] active:translate-y-px active:shadow-none"
+          <AnimatePresence mode="wait">
+            {currentView === "dashboard" && (
+              <motion.div
+                key="dashboard-links"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20, transition: { duration: 0.15 } }}
+                className="hidden xl:flex items-center gap-2.5"
               >
-                {isMarksModernView ? "Legacy View" : "Modern View"}
-              </button>
+                {pinnedLinks.slice(0, 3).map((link, idx) => {
+                  const Icon = getCategoryIcon(link.title, link.url);
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => handleLinkClick(link)}
+                      className={`flex items-center gap-2 px-3.5 py-1.5 border-2 border-(--border-main) rounded-xl shadow-none hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_var(--shadow-main)] active:translate-y-0 active:shadow-none transition-all font-black font-expanded text-xs  uppercase text-black ${dockColors[idx]} cursor-pointer`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span>{link.title}</span>
+                    </button>
+                  );
+                })}
+              </motion.div>
+            )}
 
-              <div className="relative group hidden sm:block">
-                <input
-                  type="text"
-                  placeholder="Search Marks"
-                  value={marksSearchQuery}
-                  onChange={(e) => setMarksSearchQuery(e.target.value)}
-                  className="bg-(--bg-main) border-2 border-(--border-dim) text-(--text-main) text-xs rounded-xl pl-8 pr-3 py-1.5 w-36 lg:w-48 focus:outline-none focus:border-(--accent-base) transition-all placeholder:text-(--text-muted) shadow-sm"
+            {currentView === "timetable" && (
+              <motion.div
+                key="timetable-controls"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20, transition: { duration: 0.15 } }}
+                className="flex items-center gap-1.5 md:gap-3 lg:gap-4 pr-0 pointer-events-auto"
+              >
+                {ttLoading && (
+                  <RefreshCw className="w-4 h-4 text-(--accent-base) animate-spin hidden sm:block" />
+                )}
+                <SemesterDropdown
+                  semesters={ttSemesters}
+                  selectedId={ttSelectedSem}
+                  onChange={loadTimetable}
                 />
-                <Search className="w-3.5 h-3.5 text-(--text-muted) absolute left-2.5 top-2 group-focus-within:text-(--accent-base) transition-colors" />
-              </div>
 
-              <SemesterDropdown
-                semesters={marksSemesters}
-                selectedId={marksSelectedSem}
-                onChange={(id: string) => {
-                  setMarksSelectedSem(id);
-                }}
-              />
-            </motion.div>
-          )}
+                <div className="hidden sm:flex bg-(--bg-highlight) border-2 border-(--border-main) rounded-xl p-1 gap-1 shadow-sm">
+                  <button
+                    onClick={() => setTtViewMode("grid")}
+                    className={`p-1.5 rounded-lg transition-all border-2 ${
+                      ttViewMode === "grid"
+                        ? "bg-(--accent-base) text-white border-(--border-main) shadow-none -translate-y-px"
+                        : "border-transparent text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-surface)"
+                    }`}
+                  >
+                    <LayoutGrid className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setTtViewMode("list")}
+                    className={`p-1.5 rounded-lg transition-all border-2 ${
+                      ttViewMode === "list"
+                        ? "bg-(--accent-base) text-white border-(--border-main) shadow-none -translate-y-px"
+                        : "border-transparent text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-surface)"
+                    }`}
+                  >
+                    <List className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setTtViewMode("week")}
+                    className={`p-1.5 rounded-lg transition-all border-2 ${
+                      ttViewMode === "week"
+                        ? "bg-(--accent-base) text-white border-(--border-main) shadow-none -translate-y-px"
+                        : "border-transparent text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-surface)"
+                    }`}
+                  >
+                    <Calendar className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="hidden sm:block w-0.5 h-8 bg-(--border-dim) mx-1"></div>
+              </motion.div>
+            )}
 
-          {currentView === "coursePage" && (
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="flex items-center gap-2 mr-1 md:mr-2"
-            >
-              <SemesterDropdown
-                semesters={ttSemesters}
-                selectedId={cpSelectedSem}
-                onChange={(sem: string) => {
-                  setCpSelectedSem(sem);
-                  setCpSelectedCourseId("");
-                }}
-              />
-            </motion.div>
-          )}
+            {currentView === "marks" && (
+              <motion.div
+                key="marks-controls"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20, transition: { duration: 0.15 } }}
+                className="flex items-center gap-2 mr-1 md:mr-2"
+              >
+                <button
+                  onClick={() => setIsMarksModernView(!isMarksModernView)}
+                  className="hidden sm:block bg-(--bg-surface) border-2 border-(--border-dim) text-(--text-main) px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase  hover:bg-(--accent-base) hover:text-white transition-all cursor-pointer shadow-sm hover:shadow-[4px_4px_0px_0px_var(--shadow-main)] active:translate-y-px active:shadow-none"
+                >
+                  {isMarksModernView ? "Legacy View" : "Modern View"}
+                </button>
 
-          {currentView === "calendar" && (
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="flex items-center gap-1.5 md:gap-3 lg:gap-4 pr-0 pointer-events-auto"
-            >
-              <SemesterDropdown
-                semesters={calSemesters}
-                selectedId={calSelectedSem}
-                onChange={(id: string) => setCalSelectedSem(id)}
-              />
-              <ClassGroupDropdown
-                groups={calClassGroups}
-                selectedId={calSelectedGroup}
-                onChange={(id: string) => setCalSelectedGroup(id)}
-              />
-            </motion.div>
-          )}
+                <div className="relative group hidden sm:block">
+                  <input
+                    type="text"
+                    placeholder="Search Marks"
+                    value={marksSearchQuery}
+                    onChange={(e) => setMarksSearchQuery(e.target.value)}
+                    className="bg-(--bg-main) border-2 border-(--border-dim) text-(--text-main) text-xs rounded-xl pl-8 pr-3 py-1.5 w-36 lg:w-48 focus:outline-none focus:border-(--accent-base) transition-all placeholder:text-(--text-muted) shadow-sm"
+                  />
+                  <Search className="w-3.5 h-3.5 text-(--text-muted) absolute left-2.5 top-2 group-focus-within:text-(--accent-base) transition-colors" />
+                </div>
+
+                <SemesterDropdown
+                  semesters={marksSemesters}
+                  selectedId={marksSelectedSem}
+                  onChange={(id: string) => {
+                    setMarksSelectedSem(id);
+                  }}
+                />
+              </motion.div>
+            )}
+
+            {currentView === "coursePage" && (
+              <motion.div
+                key="coursePage-controls"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20, transition: { duration: 0.15 } }}
+                className="flex items-center gap-2 mr-1 md:mr-2"
+              >
+                <SemesterDropdown
+                  semesters={ttSemesters}
+                  selectedId={cpSelectedSem}
+                  onChange={(sem: string) => {
+                    setCpSelectedSem(sem);
+                    setCpSelectedCourseId("");
+                  }}
+                />
+              </motion.div>
+            )}
+
+            {currentView === "calendar" && (
+              <motion.div
+                key="calendar-controls"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20, transition: { duration: 0.15 } }}
+                className="flex items-center gap-1.5 md:gap-3 lg:gap-4 pr-0 pointer-events-auto"
+              >
+                <SemesterDropdown
+                  semesters={calSemesters}
+                  selectedId={calSelectedSem}
+                  onChange={(id: string) => setCalSelectedSem(id)}
+                />
+                <ClassGroupDropdown
+                  groups={calClassGroups}
+                  selectedId={calSelectedGroup}
+                  onChange={(id: string) => setCalSelectedGroup(id)}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <div className="relative shrink-0 flex items-center justify-center mr-2 lg:mr-6">
             <button

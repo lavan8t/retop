@@ -338,7 +338,6 @@ const DashboardApp = () => {
           (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey)
         ) {
           e.preventDefault();
-          setCurrentView("dashboard");
           isOmniboxOpenRef.current = true;
           setOmniboxInitial(e.key === "/" ? "" : e.key);
           setIsOmniboxOpen(true);
@@ -507,7 +506,6 @@ const DashboardApp = () => {
             calClassGroups={calClassGroups}
             calSelectedGroup={calSelectedGroup}
             setCalSelectedGroup={setCalSelectedGroup}
-            calGridData={calGridData}
           />
           <main className="flex-1 overflow-hidden relative">
             <AnimatePresence mode="wait">

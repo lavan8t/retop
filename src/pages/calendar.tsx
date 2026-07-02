@@ -143,6 +143,24 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
         </div>
       ) : (
         <div className="flex-1 flex flex-col min-h-0 w-full relative z-0">
+          {/* Fixed Top Weekdays (Opaque background + fade below) */}
+          <div className="w-full bg-(--bg-main) pt-[72px] md:pt-[84px] relative z-20 pb-1">
+            <div className="grid grid-cols-7 w-full">
+              {WEEKDAYS.map((day, i) => (
+                <div
+                  key={day}
+                  className={`text-center font-expanded font-black text-xs md:text-sm uppercase tracking-widest ${
+                    i === 0 || i === 6 ? "text-red-500" : "text-(--text-muted)"
+                  }`}
+                >
+                  {day}
+                </div>
+              ))}
+            </div>
+            {/* Fade below the weekdays to mask the grid as it scrolls up */}
+            <div className="absolute top-full left-0 right-0 h-6 bg-gradient-to-b from-(--bg-main) to-transparent pointer-events-none" />
+          </div>
+
           {/* Grid Container */}
           <div
             className="flex-1 flex flex-col overflow-hidden relative z-10"
@@ -151,7 +169,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                 "linear-gradient(to bottom, black 85%, transparent 100%)",
             }}
           >
-            <div className="flex-1 overflow-y-auto custom-scrollbar bg-(--bg-main) relative pb-24 pt-[110px]">
+            <div className="flex-1 overflow-y-auto custom-scrollbar bg-transparent relative pb-24 pt-4">
               <AnimatePresence mode="wait">
                 {calLoadingGrid ? (
                   <motion.div
@@ -173,9 +191,9 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                     className="flex flex-col relative"
                   >
                     {calGridData.map((data, mIdx) => (
-                      <div key={mIdx} className="flex flex-col pb-8 pt-8">
-                        <div className="flex items-center justify-start pb-4 pointer-events-none sticky top-0 z-10 pt-4 bg-(--bg-main)/80 backdrop-blur-md">
-                          <h2 className="font-expanded font-black text-2xl md:text-4xl uppercase tracking-tighter m-0 text-(--text-main) opacity-30">
+                      <div key={mIdx} className="flex flex-col pb-8 pt-4">
+                        <div className="flex items-center justify-start pb-1 pointer-events-none sticky top-0 z-10 pt-1 bg-(--bg-main)/90 backdrop-blur-md">
+                          <h2 className="font-expanded font-black text-2xl md:text-3xl uppercase tracking-tighter m-0 text-(--text-main) opacity-30">
                             {data.month.label.replace(/\s*-\s*/, " ")}
                           </h2>
                         </div>
@@ -297,20 +315,6 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                 ) : null}
               </AnimatePresence>
             </div>
-          </div>
-
-          {/* Floating Bottom Weekdays */}
-          <div className="grid grid-cols-7 absolute bottom-0 left-0 right-0 z-30 pointer-events-none pb-4 bg-linear-to-t from-(--bg-main) to-transparent pt-8">
-            {WEEKDAYS.map((day, i) => (
-              <div
-                key={day}
-                className={`text-center font-expanded font-black text-xs md:text-sm uppercase tracking-widest drop-shadow-md ${
-                  i === 0 || i === 6 ? "text-red-500" : "text-(--text-main)"
-                }`}
-              >
-                {day}
-              </div>
-            ))}
           </div>
         </div>
       )}

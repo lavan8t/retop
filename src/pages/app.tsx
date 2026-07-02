@@ -562,6 +562,8 @@ const DashboardApp = () => {
                   setCalSemesters={setCalSemesters}
                   calSelectedSem={calSelectedSem}
                   setCalSelectedSem={setCalSelectedSem}
+                  pinnedLinks={pinnedLinks}
+                  handleTogglePin={handleTogglePin}
                 />
               </motion.div>
             </AnimatePresence>

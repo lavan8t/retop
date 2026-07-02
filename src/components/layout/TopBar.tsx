@@ -86,7 +86,7 @@ const getPageTitle = (view: string, dynamicTitle?: string) => {
     case "coursePage":
       return "COURSE PAGE";
     case "calendar":
-      return "CALENDAR";
+      return "ACADEMICS CALENDAR";
     case "content":
       return dynamicTitle || "CONTENT";
     default:
@@ -133,13 +133,11 @@ export const TopBar: React.FC<TopBarProps> = ({
   onNavigate,
   initialQuery = "",
 }) => {
-  const dockColors = ["bg-purple-400", "bg-cyan-400", "bg-lime-400"];
-
   return (
     <>
       {/* Top Fade Mask */}
       <div
-        className="fixed top-0 left-0 right-0 h-24 md:h-32 bg-gradient-to-b from-(--bg-main) via-(--bg-main) to-transparent z-[90] pointer-events-none"
+        className="fixed top-0 left-0 right-0 h-24 md:h-32 bg-linear-to-b from-(--bg-main) via-(--bg-main) to-transparent z-90 pointer-events-none"
         style={{
           maskImage: "linear-gradient(to bottom, black 40%, transparent 100%)",
           WebkitMaskImage:
@@ -147,7 +145,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         }}
       />
 
-      <header className="h-16 md:h-18 bg-transparent fixed w-full top-0 z-[100] pl-4 md:pl-8 pr-0 flex items-center justify-between shrink-0 transition-all pointer-events-none">
+      <header className="h-16 md:h-18 bg-transparent fixed w-full top-0 z-100 pl-4 md:pl-8 pr-0 flex items-center justify-between shrink-0 transition-all pointer-events-none">
         <div className="flex items-center h-full pointer-events-auto">
           <div className="flex flex-col justify-center h-full gap-0.5">
             <div className="flex items-center gap-2 md:gap-3">
@@ -157,7 +155,11 @@ export const TopBar: React.FC<TopBarProps> = ({
                     key="topbar-search"
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20, transition: { duration: 0.15 } }}
+                    exit={{
+                      opacity: 0,
+                      x: -20,
+                      transition: { duration: 0.15 },
+                    }}
                   >
                     <TopBarSearch
                       currentView={currentView}
@@ -194,10 +196,10 @@ export const TopBar: React.FC<TopBarProps> = ({
                     <button
                       key={idx}
                       onClick={() => handleLinkClick(link)}
-                      className={`flex items-center gap-2 px-3.5 py-1.5 border-2 border-(--border-main) rounded-xl shadow-none hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_var(--shadow-main)] active:translate-y-0 active:shadow-none transition-all font-black font-expanded text-xs  uppercase text-black ${dockColors[idx]} cursor-pointer`}
+                      className="flex items-center gap-2 px-3.5 py-1.5 border-2 border-(--border-main) rounded-xl shadow-none hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_var(--shadow-main)] active:translate-y-0 active:shadow-none transition-all font-black font-expanded text-xs uppercase text-(--text-main) bg-(--bg-surface) cursor-pointer group hover:border-(--accent-base)"
                     >
-                      <Icon className="w-4 h-4" />
-                      <span>{link.title}</span>
+                      <Icon className="w-4 h-4 text-(--text-muted) transition-colors" />
+                      <span className="transition-colors">{link.title}</span>
                     </button>
                   );
                 })}

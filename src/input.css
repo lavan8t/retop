@@ -189,10 +189,10 @@
 @layer utilities {
   @keyframes marquee-scroll {
     0%,
-    20% {
+    15% {
       transform: translateX(0);
     }
-    80%,
+    85%,
     100% {
       transform: translateX(var(--scroll-dist, -50px));
     }
@@ -202,6 +202,9 @@
     white-space: nowrap;
   }
   .group:hover .marquee-on-hover.is-overflowing {
+    animation: marquee-scroll 6s ease-in-out infinite;
+  }
+  .animate-marquee-auto {
     animation: marquee-scroll 6s ease-in-out infinite;
   }
 

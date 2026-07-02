@@ -200,7 +200,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
             });
             onClose();
           }}
-          className="flex-1 flex items-center justify-center p-2.5 rounded-l-2xl rounded-r-md border-2 border-(--border-main) bg-(--bg-surface) text-(--text-main) hover:bg-blue-400 hover:text-black hover:border-(--border-main) hover:shadow-[6px_6px_0px_0px_var(--shadow-main)] hover:-translate-y-0.5 transition-all active:scale-95 group"
+          className="flex-1 flex items-center justify-center p-2.5 rounded-l-2xl rounded-r-md border-2 border-(--border-main) bg-(--bg-surface) text-(--text-main) hover:bg-blue-400 hover:text-black hover:border-(--border-main) transition-all active:scale-95 group"
           title="Settings"
         >
           <Settings className="w-4 h-4 group-hover:rotate-45 transition-transform" />
@@ -211,15 +211,15 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
             onLegacyToggle();
             onClose();
           }}
-          className="flex-1 flex items-center justify-center p-2.5 rounded-md border-2 border-(--border-main) bg-(--bg-surface) text-(--text-main) hover:bg-yellow-400 hover:text-black hover:border-(--border-main) hover:shadow-[6px_6px_0px_0px_var(--shadow-main)] hover:-translate-y-0.5 transition-all active:scale-95 group"
+          className="flex-1 flex items-center justify-center p-2.5 rounded-md border-2 border-(--border-main) bg-(--bg-surface) text-(--text-main) hover:bg-yellow-400 hover:text-black hover:border-(--border-main) transition-all active:scale-95 group"
           title="Legacy View"
         >
-          <History className="w-4 h-4 group-hover:-rotate-45 transition-transform" />
+          <span className="font-serif font-black text-xs group-hover:scale-110 transition-transform tracking-wider">VTOP</span>
         </button>
 
         <button
           onClick={onLogout}
-          className="flex-1 flex items-center justify-center p-2.5 rounded-r-2xl rounded-l-md border-2 border-(--border-main) bg-(--bg-surface) text-red-500 hover:text-white hover:bg-red-500 hover:border-(--border-main) hover:shadow-[6px_6px_0px_0px_var(--shadow-main)] hover:-translate-y-0.5 transition-all active:scale-95 group"
+          className="flex-1 flex items-center justify-center p-2.5 rounded-r-2xl rounded-l-md border-2 border-(--border-main) bg-(--bg-surface) text-red-500 hover:text-white hover:bg-red-500 hover:border-(--border-main) transition-all active:scale-95 group"
           title="Log Out"
         >
           <LogOut className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />

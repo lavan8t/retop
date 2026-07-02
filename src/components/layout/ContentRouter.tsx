@@ -45,6 +45,8 @@ export const ContentRouter = ({
   ttSemesters,
   ttSelectedSem,
   events,
+  pinnedLinks,
+  handleTogglePin,
 }: any) => {
   if (!networkRef.current) return null;
 
@@ -65,6 +67,8 @@ export const ContentRouter = ({
           use24HourTime={settings.use24HourTime ?? true}
           calSemesters={calSemesters?.length ? calSemesters : ttSemesters}
           calSelectedSem={calSelectedSem || ttSelectedSem}
+          pinnedLinks={pinnedLinks}
+          handleTogglePin={handleTogglePin}
         />
       );
     case "timetable":

@@ -192,8 +192,8 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                   >
                     {calGridData.map((data, mIdx) => (
                       <div key={mIdx} className="flex flex-col pb-8 pt-4">
-                        <div className="flex items-center justify-start pb-1 pointer-events-none sticky top-0 z-10 pt-1 bg-(--bg-main)/90 backdrop-blur-md">
-                          <h2 className="font-expanded font-black text-2xl md:text-3xl uppercase tracking-tighter m-0 text-(--text-main) opacity-30">
+                        <div className="flex items-center justify-start pb-4 pointer-events-none sticky top-0 z-10 pt-2 bg-gradient-to-b from-(--bg-main) via-(--bg-main)/90 to-transparent">
+                          <h2 className="font-expanded font-black text-2xl md:text-3xl uppercase tracking-tighter m-0 text-(--text-main) drop-shadow-sm px-2">
                             {data.month.label.replace(/\s*-\s*/, " ")}
                           </h2>
                         </div>
@@ -213,33 +213,27 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                               new Date().toDateString() ===
                               new Date(day.dateObj).toDateString();
 
-                            let bgClass =
-                              "bg-(--bg-card) hover:bg-(--bg-highlight)";
-                            let borderClass =
-                              "border-(--border-main)/20 border-r border-b";
+                            let innerBgClass = "";
+                            let bgClass = "bg-(--bg-card) hover:bg-(--bg-highlight)";
+                            let borderClass = "border-(--border-main)/20 border-r border-b";
                             let textClass = "text-(--text-muted)";
                             let numberClass = "text-(--text-main)";
-                            let accentBar = "";
 
                             if (day.isInstructional) {
                               textClass = "text-(--text-main)";
                             }
                             if (day.isHoliday) {
-                              bgClass =
-                                "bg-red-500/10 text-red-500 hover:bg-red-500/20";
-                              borderClass =
-                                "border-red-500/20 border-r border-b";
-                              textClass = "text-red-500/80";
+                              bgClass = "hover:bg-(--bg-highlight)";
+                              innerBgClass = "bg-red-500/15 group-hover:bg-red-500/25";
+                              borderClass = "border-red-500/10 border-r border-b";
+                              textClass = "text-red-600 dark:text-red-400 font-bold";
                               numberClass = "text-red-500";
-                              accentBar = "bg-red-500/20";
                             } else if (day.isExam) {
-                              bgClass =
-                                "bg-yellow-400/10 text-yellow-500 hover:bg-yellow-400/20";
-                              borderClass =
-                                "border-yellow-400/20 border-r border-b";
-                              textClass = "text-yellow-600";
-                              numberClass = "text-yellow-500";
-                              accentBar = "bg-yellow-400/30";
+                              bgClass = "hover:bg-(--bg-highlight)";
+                              innerBgClass = "bg-amber-500/15 group-hover:bg-amber-500/25";
+                              borderClass = "border-amber-500/10 border-r border-b";
+                              textClass = "text-amber-600 dark:text-amber-400 font-bold";
+                              numberClass = "text-amber-500";
                             }
 
                             if (isToday) {
@@ -253,14 +247,12 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                                 key={idx}
                                 className={`relative p-2 md:p-3 flex flex-col transition-all group ${bgClass} ${borderClass}`}
                               >
-                                {/* Accent Bar */}
-                                {accentBar && (
-                                  <div
-                                    className={`absolute top-0 left-0 right-0 h-1 md:h-1.5 ${accentBar}`}
-                                  />
+                                {/* Rounded Inner Background Fill */}
+                                {innerBgClass && (
+                                  <div className={`absolute inset-[2px] rounded-xl pointer-events-none transition-colors ${innerBgClass}`} />
                                 )}
 
-                                <div className="flex justify-between items-start mb-1 md:mb-2 pt-1 md:pt-0">
+                                <div className="flex justify-between items-start mb-1 md:mb-2 pt-1 md:pt-0 relative z-10">
                                   <span
                                     className={`font-black text-sm md:text-lg lg:text-xl font-expanded leading-none ${numberClass}`}
                                   >
@@ -311,6 +303,22 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                         </div>
                       </div>
                     ))}
+                  </motion.div>
+                ) : !calSelectedGroup ? (
+                  <motion.div
+                    key="no-group"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10"
+                  >
+                    <Info className="w-16 h-16 mb-6 text-(--accent-base) opacity-80" />
+                    <h3 className="text-2xl font-black font-expanded uppercase text-(--text-main) mb-2">
+                      Select a Class Group
+                    </h3>
+                    <p className="text-(--text-muted) max-w-sm">
+                      Please select your class group from the dropdown in the top bar to view the calendar schedule.
+                    </p>
                   </motion.div>
                 ) : null}
               </AnimatePresence>

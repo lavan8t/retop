@@ -22,10 +22,10 @@ let checkCaptcha: number;
 const initCaptcha = (key: string) => {
   if (!key) return;
 
-  let container = document.getElementById("vtop-remastered-captcha-container");
+  let container = document.getElementById("retop-captcha-container");
   if (!container) {
     container = document.createElement("div");
-    container.id = "vtop-remastered-captcha-container";
+    container.id = "retop-captcha-container";
     document.body.appendChild(container);
   }
 
@@ -35,14 +35,11 @@ const initCaptcha = (key: string) => {
       if (!container.hasAttribute("data-rendered")) {
         container.setAttribute("data-rendered", "true");
         try {
-          (window as any).grecaptcha.render(
-            "vtop-remastered-captcha-container",
-            {
-              sitekey: key,
-              callback: "onVtopCaptchaSuccess",
-              size: "invisible",
-            },
-          );
+          (window as any).grecaptcha.render("retop-captcha-container", {
+            sitekey: key,
+            callback: "onVtopCaptchaSuccess",
+            size: "invisible",
+          });
           console.log("ReCaptcha Rendered Successfully");
         } catch (err) {
           console.error("Captcha Render Failed:", err);

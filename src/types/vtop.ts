@@ -1,4 +1,4 @@
-export type ViewType = "dashboard" | "timetable" | "curriculum" | "marks" | "profile" | "settings" | "coursePage" | "calendar" | "content";
+export type ViewType = "dashboard" | "timetable" | "curriculum" | "marks" | "profile" | "settings" | "coursePage" | "calendar" | "attendance" | "content";
 
 export interface QuickLink {
   title: string;
@@ -302,4 +302,28 @@ export interface CalendarEvent {
   isInstructional: boolean;
   isExam: boolean;
   dateObj: Date;
+}
+export interface DetailedAttendanceCourse {
+  slNo: string;
+  courseCode: string;
+  courseTitle: string;
+  courseType: string;
+  classType: string;
+  classDetail: string; // e.g., VL2026270102310 - TAA1 - PRP124
+  faculty: string;
+  attended: number;
+  total: number;
+  percentage: number;
+  debarStatus: string;
+  // Payload for fetching detail
+  semesterSubId: string;
+  courseId: string;
+}
+
+export interface AttendanceRecord {
+  slNo: string;
+  date: string;
+  slot: string;
+  dayTime: string;
+  status: string; // "Present" | "Absent" | etc.
 }

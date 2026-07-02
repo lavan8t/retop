@@ -16,7 +16,10 @@ import {
   CalendarMonthPreview,
   CalendarEvent,
   ClassGroup,
+  DetailedAttendanceCourse,
+  AttendanceRecord,
 } from "../types/vtop";
+import { parseStudentAttendance, parseAttendanceDetail } from "../parsers/attendance";
 import { getUpcomingClasses, UpcomingClass } from "../utils/timetable-slots";
 import { parseEvents } from "../parsers/events";
 import {
@@ -98,6 +101,17 @@ export interface DataState {
 
   cpSelectedSem: string;
   setCpSelectedSem: (semId: string) => void;
+  
+  // Attendance Page State
+  attSelectedSem: string;
+  setAttSelectedSem: (semId: string) => void;
+  detailedAttendance: DetailedAttendanceCourse[];
+  attLoading: boolean;
+  fetchDetailedAttendance: (network: VTOPNetwork, semId: string) => Promise<void>;
+  
+  attendanceRecords: Record<string, AttendanceRecord[]>;
+  attRecordsLoading: boolean;
+  fetchAttendanceRecords: (network: VTOPNetwork, semId: string, courseId: string, classType: string) => Promise<void>;
 }
 
 export const useDataStore = create<DataState>((set, get) => ({
@@ -173,6 +187,7 @@ export const useDataStore = create<DataState>((set, get) => ({
             cpSelectedSem: semId,
             calSemesters: sems,
             calSelectedSem: semId,
+            attSelectedSem: semId,
           });
           await get().loadTimetable(network, csrf, authId, semId);
           await get().fetchCalendarMonthsAndGroups(network, semId);
@@ -277,8 +292,11 @@ export const useDataStore = create<DataState>((set, get) => ({
     }),
 
   calClassGroups: [],
-  calSelectedGroup: "",
-  setCalSelectedGroup: (id) => set({ calSelectedGroup: id, calGridData: [] }),
+  calSelectedGroup: localStorage.getItem("vtop-cal-selected-group") || "",
+  setCalSelectedGroup: (id) => {
+    localStorage.setItem("vtop-cal-selected-group", id);
+    set({ calSelectedGroup: id, calGridData: [] });
+  },
   calAvailableMonths: [],
   calGridData: [],
   calLoadingInitial: true,
@@ -395,4 +413,47 @@ export const useDataStore = create<DataState>((set, get) => ({
 
   cpSelectedSem: "",
   setCpSelectedSem: (semId) => set({ cpSelectedSem: semId }),
+
+  attSelectedSem: "",
+  setAttSelectedSem: (semId) => set({ attSelectedSem: semId, detailedAttendance: [] }),
+  detailedAttendance: [],
+  attLoading: false,
+  fetchDetailedAttendance: async (network, semId) => {
+    set({ attLoading: true });
+    try {
+      const html = await network.fetchFragment("processViewStudentAttendance", {
+        semesterSubId: semId,
+      });
+      const data = parseStudentAttendance(html);
+      set({ detailedAttendance: data, attLoading: false });
+    } catch (e) {
+      console.error("Failed to fetch detailed attendance:", e);
+      set({ attLoading: false });
+    }
+  },
+
+  attendanceRecords: {},
+  attRecordsLoading: false,
+  fetchAttendanceRecords: async (network, semId, courseId, classType) => {
+    const key = `${courseId}-${classType}`;
+    const cached = get().attendanceRecords[key];
+    if (cached) return;
+
+    set({ attRecordsLoading: true });
+    try {
+      const html = await network.fetchFragment("processViewAttendanceDetail", {
+        semesterSubId: semId,
+        courseId,
+        courseType: classType,
+      });
+      const data = parseAttendanceDetail(html);
+      set((state) => ({
+        attendanceRecords: { ...state.attendanceRecords, [key]: data },
+        attRecordsLoading: false,
+      }));
+    } catch (e) {
+      console.error("Failed to fetch attendance records:", e);
+      set({ attRecordsLoading: false });
+    }
+  },
 }));

@@ -655,6 +655,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         <div className="flex-1 overflow-visible flex flex-col min-h-0 pb-2">
           <ListCard
             title="Attendance"
+            onClickTitle={() => onNavigate({ title: "Class Attendance", url: "studentattendance", category: "Academics" })}
             bgClass="bg-(--bg-surface)"
             borderClass="border-(--border-main)"
             headerAction={
@@ -1148,7 +1149,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               hover: { height: 0, opacity: 0 },
             }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className="flex items-center justify-end overflow-hidden relative z-10"
+            className="flex items-center justify-end overflow-hidden relative z-10 mt-3"
           >
 
             <div className="text-right">

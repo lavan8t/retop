@@ -27,6 +27,7 @@ import {
   TimetableCourse,
   Semester,
   CoursePageOption,
+  ViewType,
 } from "../types/vtop";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -42,16 +43,7 @@ import {
 import { useSettings, applyTheme } from "../utils/settings-store";
 import { LegacyReturnButton } from "../components/LegacyReturnButton";
 
-type ViewType =
-  | "dashboard"
-  | "content"
-  | "timetable"
-  | "curriculum"
-  | "marks"
-  | "profile"
-  | "settings"
-  | "coursePage"
-  | "calendar";
+
 
 const getDestinationView = (link: QuickLink): ViewType | "content" => {
   const lowerTitle = link.title.toLowerCase();
@@ -92,6 +84,11 @@ const getDestinationView = (link: QuickLink): ViewType | "content" => {
     lowerUrl.includes("calendarpreview")
   )
     return "calendar";
+  if (
+    lowerTitle.includes("attendance") ||
+    lowerUrl.includes("studentattendance")
+  )
+    return "attendance";
 
   return "content";
 };
@@ -109,6 +106,7 @@ const getSavedView = (): ViewType => {
     "settings",
     "coursePage",
     "calendar",
+    "attendance",
   ];
   return validViews.includes(saved as ViewType)
     ? (saved as ViewType)

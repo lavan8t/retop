@@ -5,8 +5,7 @@ import {
   CalendarMonth as CalendarIcon,
   ChevronLeft,
   ChevronRight,
-  Info,
-} from '@nine-thirty-five/material-symbols-react/rounded';
+} from "@nine-thirty-five/material-symbols-react/rounded";
 import { VTOPNetwork } from "../utils/network";
 
 import {
@@ -111,8 +110,6 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
     calGridData.length,
   ]);
 
-
-
   return (
     <div className="h-full w-full flex flex-col bg-(--bg-main) font-mono text-(--text-main) overflow-hidden pb-8 px-4 md:px-8 max-w-425 mx-auto">
       {calLoadingMonths ? (
@@ -142,7 +139,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                 <div
                   key={day}
                   className={`text-center font-expanded font-black text-xs md:text-sm uppercase tracking-widest ${
-                    i === 0 || i === 6 ? "text-red-500" : "text-(--text-muted)"
+                    i === 0 ? "text-red-500" : "text-(--text-muted)"
                   }`}
                 >
                   {day}
@@ -184,18 +181,18 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                   >
                     {calGridData.map((data, mIdx) => (
                       <div key={mIdx} className="flex flex-col pb-8 pt-4">
-                        <div className="flex items-center justify-start pb-4 pointer-events-none sticky top-0 z-10 pt-2 bg-gradient-to-b from-(--bg-main) via-(--bg-main)/90 to-transparent">
+                        <div className="flex items-center justify-start pb-4 pointer-events-none sticky top-0 z-[50] pt-2">
                           <h2 className="font-expanded font-black text-2xl md:text-3xl uppercase tracking-tighter m-0 text-(--text-main) drop-shadow-sm px-2">
                             {data.month.label.replace(/\s*-\s*/, " ")}
                           </h2>
                         </div>
                         {/* Month Grid */}
-                        <div className="grid grid-cols-7 auto-rows-[minmax(100px,auto)] md:auto-rows-[minmax(140px,auto)]">
+                        <div className="grid grid-cols-7 gap-2 md:gap-3 auto-rows-[minmax(100px,auto)] md:auto-rows-[minmax(140px,auto)] p-2">
                           {Array.from({ length: data.startOffset }).map(
                             (_, i) => (
                               <div
                                 key={`empty-${i}`}
-                                className="border-r border-b border-(--border-main)/10 bg-transparent opacity-0 pointer-events-none"
+                                className="bg-transparent opacity-0 pointer-events-none"
                               />
                             ),
                           )}
@@ -206,8 +203,9 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                               new Date(day.dateObj).toDateString();
 
                             let innerBgClass = "";
-                            let bgClass = "bg-(--bg-card) hover:bg-(--bg-highlight)";
-                            let borderClass = "border-(--border-main)/20 border-r border-b";
+                            let bgClass =
+                              "bg-(--bg-highlight) hover:bg-(--border-dim)";
+                            let borderClass = "";
                             let textClass = "text-(--text-muted)";
                             let numberClass = "text-(--text-main)";
 
@@ -215,38 +213,38 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                               textClass = "text-(--text-main)";
                             }
                             if (day.isHoliday) {
-                              bgClass = "hover:bg-(--bg-highlight)";
-                              innerBgClass = "bg-red-500/15 group-hover:bg-red-500/25";
-                              borderClass = "border-red-500/10 border-r border-b";
-                              textClass = "text-red-600 dark:text-red-400 font-bold";
+                              bgClass = "bg-red-500/10 hover:bg-red-500/20";
+                              textClass =
+                                "text-red-600 dark:text-red-400 font-bold";
                               numberClass = "text-red-500";
                             } else if (day.isExam) {
-                              bgClass = "hover:bg-(--bg-highlight)";
-                              innerBgClass = "bg-amber-500/15 group-hover:bg-amber-500/25";
-                              borderClass = "border-amber-500/10 border-r border-b";
-                              textClass = "text-amber-600 dark:text-amber-400 font-bold";
+                              bgClass = "bg-amber-500/10 hover:bg-amber-500/20";
+                              textClass =
+                                "text-amber-600 dark:text-amber-400 font-bold";
                               numberClass = "text-amber-500";
                             }
 
                             if (isToday) {
-                              bgClass +=
-                                " ring-2 ring-(--accent-base) ring-inset bg-(--accent-base)/10 z-10";
-                              numberClass = "text-(--accent-base)";
+                              bgClass += " z-10 shadow-lg";
+                              numberClass =
+                                "text-(--text-inverse) bg-(--accent-base) w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center -ml-1 -mt-1";
                             }
 
                             return (
                               <div
                                 key={idx}
-                                className={`relative p-2 md:p-3 flex flex-col transition-all group ${bgClass} ${borderClass}`}
+                                className={`relative p-3 md:p-4 flex flex-col transition-all group rounded-3xl ${bgClass} ${borderClass}`}
                               >
                                 {/* Rounded Inner Background Fill */}
                                 {innerBgClass && (
-                                  <div className={`absolute inset-[2px] rounded-xl pointer-events-none transition-colors ${innerBgClass}`} />
+                                  <div
+                                    className={`absolute inset-[2px] rounded-xl pointer-events-none transition-colors ${innerBgClass}`}
+                                  />
                                 )}
 
                                 <div className="flex justify-between items-start mb-1 md:mb-2 pt-1 md:pt-0 relative z-10">
                                   <span
-                                    className={`font-black text-sm md:text-lg lg:text-xl font-expanded leading-none ${numberClass}`}
+                                    className={`font-black text-sm md:text-lg lg:text-xl font-expanded leading-none transition-transform duration-150 ease-in group-hover:scale-[1.15] origin-top-left ${numberClass}`}
                                   >
                                     {day.dayNumber}
                                   </span>
@@ -254,27 +252,21 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
 
                                 {day.info && (
                                   <div className="mt-auto relative z-10 flex flex-col gap-1 pt-2">
+                                    {day.subInfo && (
+                                      <span
+                                        className={`inline-flex items-center text-[9px] md:text-[10px] font-black px-2 py-1 rounded-full uppercase w-max max-w-full bg-(--text-main) text-(--bg-main)`}
+                                      >
+                                        <span className="whitespace-normal wrap-break-word truncate">
+                                          {day.subInfo.replace(/[()]/g, "")}
+                                        </span>
+                                      </span>
+                                    )}
                                     <p
                                       className={`text-[10px] md:text-xs font-bold uppercase leading-tight ${textClass} break-words`}
                                       title={day.info}
                                     >
                                       {day.info}
                                     </p>
-
-                                    {day.subInfo && (
-                                      <span
-                                        className={`inline-flex items-start gap-1 text-[9px] md:text-[10px] font-black px-1.5 py-1 rounded-md uppercase w-full ${
-                                          day.isHoliday || day.isExam || isToday
-                                            ? "bg-black/10 text-black"
-                                            : "bg-(--bg-main) border border-(--border-main) text-(--text-muted)"
-                                        }`}
-                                      >
-                                        <Info className="w-3 h-3 shrink-0 mt-0.5" />
-                                        <span className="whitespace-normal break-words">
-                                          {day.subInfo}
-                                        </span>
-                                      </span>
-                                    )}
                                   </div>
                                 )}
                               </div>
@@ -289,7 +281,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                           }).map((_, i) => (
                             <div
                               key={`fill-${i}`}
-                              className="border-r border-b border-(--border-main)/10 bg-transparent opacity-0 pointer-events-none"
+                              className="bg-transparent opacity-0 pointer-events-none"
                             />
                           ))}
                         </div>

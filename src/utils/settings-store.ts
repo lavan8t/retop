@@ -5,7 +5,7 @@ import { QuickLink } from "../types/vtop";
 
 export interface AppSettings {
   defaultView: "modern" | "legacy";
-  themeMode: "dark" | "light" | "amoled";
+  themeMode: "dark" | "light" | "amoled" | "auto";
   accentColor: "blue" | "purple" | "pink" | "red" | "orange" | "yellow" | "lime" | "green" | "cyan" | "indigo" | "random";
   randomAccentColor: boolean;
   blurCgpa: boolean;

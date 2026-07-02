@@ -7,6 +7,7 @@
     "build": "vite build"
   },
   "dependencies": {
+    "@material/web": "^2.4.1",
     "@nine-thirty-five/material-symbols-react": "^2.1.2",
     "framer-motion": "^12.34.0",
     "next": "16.1.6",

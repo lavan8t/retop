@@ -25,7 +25,12 @@ export const TimetableWeek = ({
   attendance: CourseSummary[];
   use24HourTime?: boolean;
 }) => {
-  const weekDays = DAYS.slice(0, 6); // Monday to Saturday
+  const activeDays = useMemo(() => {
+    const hasSaturday = courses.some((c) =>
+      getGridPositions(c.slot).some((p) => p.day === 5),
+    );
+    return hasSaturday ? DAYS.slice(0, 6) : DAYS.slice(0, 5);
+  }, [courses]);
   const [now, setNow] = useState(new Date());
 
   const currentDayIndex = Math.max(0, Math.min(5, now.getDay() - 1));
@@ -54,7 +59,7 @@ export const TimetableWeek = ({
 
   const schedule = useMemo(() => {
     const map: Record<number, Record<number, TimetableCourse>> = {};
-    weekDays.forEach((_, i) => (map[i] = {}));
+    activeDays.forEach((_, i) => (map[i] = {}));
 
     courses.forEach((course) => {
       const positions = getGridPositions(course.slot);
@@ -71,7 +76,7 @@ export const TimetableWeek = ({
       });
     });
     return map;
-  }, [courses, weekDays]);
+  }, [courses, activeDays]);
 
   const mobileActiveEvents = useMemo(() => {
     return Object.entries(schedule[selectedDay] || {})
@@ -87,7 +92,7 @@ export const TimetableWeek = ({
       {/* --- MOBILE VIEW (Tabbed) --- */}
       <div className="md:hidden flex flex-col h-full w-full">
         <div className="flex items-center justify-between p-2 bg-(--bg-surface) border-b-2 border-(--border-main) shrink-0 gap-1 overflow-x-auto custom-scrollbar">
-          {weekDays.map((day, i) => {
+          {activeDays.map((day, i) => {
             const isActive = selectedDay === i;
             return (
               <button
@@ -180,7 +185,7 @@ export const TimetableWeek = ({
 
       {/* --- DESKTOP VIEW (All days columns) --- */}
       <div className="hidden md:flex h-full w-full bg-zinc-900 divide-x-2 lg:divide-x-4 divide-black overflow-hidden border-t-2 border-(--border-main)">
-        {weekDays.map((day, i) => {
+        {activeDays.map((day, i) => {
           const dayEvents = Object.entries(schedule[i] || {})
             .map(([hourStr, course]) => ({
               hour: parseInt(hourStr),

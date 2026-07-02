@@ -44,8 +44,12 @@ export const TimetableGrid = ({
 
   // Logic for the 6 Days (Mon - Sat)
   const activeDays = useMemo(() => {
-    return [0, 1, 2, 3, 4, 5].map((i) => DAYS[i]);
-  }, []);
+    const hasSaturday = courses.some((c) =>
+      getGridPositions(c.slot).some((p) => p.day === 5),
+    );
+    const indices = hasSaturday ? [0, 1, 2, 3, 4, 5] : [0, 1, 2, 3, 4];
+    return indices.map((i) => DAYS[i]);
+  }, [courses]);
 
   const gridCells: React.ReactNode[] = [];
 
@@ -79,23 +83,32 @@ export const TimetableGrid = ({
     const thStr = th.start !== "-" ? formatTimeStr(`${th.start} - ${th.end}`, use24HourTime) : null;
     const lbStr = lb.start !== "-" ? formatTimeStr(`${lb.start} - ${lb.end}`, use24HourTime) : null;
 
+    let hasTheory = false;
+    let hasLab = false;
+    courses.forEach((c) => {
+      if (getGridPositions(c.slot).some((p) => p.col === i)) {
+        if (c.type.includes("Lab")) hasLab = true;
+        else hasTheory = true;
+      }
+    });
+
     gridCells.push(
       <div
         key={`h-${i}`}
         className="sticky top-0 z-20 flex flex-col items-center justify-center gap-0.5 bg-zinc-900 border-b-2 border-r-2 border-zinc-800 shadow-sm px-2 w-full h-full py-1"
       >
-        {isSame && thStr ? (
+        {isSame && thStr && (hasTheory || hasLab) ? (
           <span className="text-[10px] md:text-xs font-bold text-zinc-400 whitespace-nowrap">
             {thStr}
           </span>
         ) : (
           <>
-            {thStr && (
+            {thStr && hasTheory && (
               <span className="text-[9px] md:text-[10px] font-bold text-zinc-400 whitespace-nowrap flex items-center gap-1">
                 <span className="text-[8px] bg-zinc-800 px-1 rounded text-zinc-500">T</span> {thStr}
               </span>
             )}
-            {lbStr && (
+            {lbStr && hasLab && (
               <span className="text-[9px] md:text-[10px] font-bold text-zinc-400 whitespace-nowrap flex items-center gap-1">
                 <span className="text-[8px] bg-purple-900/50 text-purple-400 px-1 rounded">L</span> {lbStr}
               </span>

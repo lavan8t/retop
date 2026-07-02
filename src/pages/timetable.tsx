@@ -32,7 +32,7 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
 
   return (
     <>
-      <div className="flex-1 overflow-hidden relative h-full bg-(--bg-main) flex flex-col pt-20 md:pt-24 lg:pt-28">
+      <div className="flex-1 overflow-hidden relative h-full bg-(--bg-main) flex flex-col pt-16 md:pt-20 lg:pt-20">
         {/* --- MAIN CONTENT AREA --- */}
         {/* Added pb-32 lg:pb-0 to ensure the timetable has a safe scrolling area above the mobile dock & floating pill */}
         <div className="flex-1 min-h-0 relative lg:pb-0">

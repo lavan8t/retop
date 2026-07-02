@@ -292,8 +292,9 @@ export const useDataStore = create<DataState>((set, get) => ({
             calClassGroups: parsed.data.groups,
             calAvailableMonths: parsed.data.months,
             calSelectedGroup:
-              parsed.data.groups.find((g: any) => g.id === "COMB")?.id ||
-              (parsed.data.groups[0]?.id ?? ""),
+              parsed.data.groups.some((g: any) => g.id === get().calSelectedGroup)
+                ? get().calSelectedGroup
+                : "",
             calLoadingMonths: false,
           });
           return;
@@ -325,7 +326,9 @@ export const useDataStore = create<DataState>((set, get) => ({
       );
 
       const defaultGroup =
-        groups.find((g) => g.id === "COMB")?.id || (groups[0]?.id ?? "");
+        groups.some((g) => g.id === get().calSelectedGroup)
+          ? get().calSelectedGroup
+          : "";
       set({
         calClassGroups: groups,
         calAvailableMonths: months,

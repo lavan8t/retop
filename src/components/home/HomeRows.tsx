@@ -60,7 +60,7 @@ export const AttendanceRow = ({ course }: { course: CourseSummary }) => {
         <div className="flex-1 min-w-0 overflow-hidden" style={{ maskImage: isOverflowing ? "linear-gradient(to right, black 85%, transparent 100%)" : "none" }}>
           <div 
             ref={textRef}
-            className={`text-xs font-black text-(--text-main) transition-colors whitespace-nowrap inline-block ${isOverflowing ? 'group-hover:animate-[marquee-scroll_5s_linear_infinite]' : ''}`}
+            className={`text-xs font-black text-(--text-main) transition-colors whitespace-nowrap inline-block ${isOverflowing ? 'animate-marquee-auto' : ''}`}
           >
             {course.name}
           </div>

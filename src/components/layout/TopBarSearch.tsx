@@ -9,6 +9,7 @@ import {
   Home,
 } from "lucide-react";
 import { QuickLink, MenuCategory } from "../../types/vtop";
+import { MarqueeText } from "../common/MarqueeText";
 
 interface TopBarSearchProps {
   currentView: string;
@@ -72,16 +73,14 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
     const matches: { link: QuickLink; score: number }[] = [];
 
     const staticLinks: QuickLink[] = [
-      { id: "dashboard", title: "Dashboard", url: "/", category: "Navigation" },
+      { title: "Dashboard", url: "/", category: "Navigation" },
       {
-        id: "timetable",
         title: "Timetable",
         url: "/timetable",
         category: "Navigation",
       },
-      { id: "marks", title: "Marks", url: "/marks", category: "Navigation" },
+      { title: "Marks", url: "/marks", category: "Navigation" },
       {
-        id: "calendar",
         title: "Calendar",
         url: "/calendar",
         category: "Navigation",
@@ -146,8 +145,8 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
         className={`group flex items-center gap-4 transition-all cursor-text md:min-w-[420px] shadow-none pl-6 pr-5 h-14 md:h-16
           ${
             isSearchActive
-              ? "bg-(--bg-highlight) rounded-t-[1.5rem] md:rounded-t-[2rem] rounded-b-none border-4 border-b-0 border-(--accent-base)"
-              : "bg-transparent border-4 border-transparent"
+              ? "bg-(--bg-highlight) rounded-t-[1.5rem] md:rounded-t-[2rem] rounded-b-none border-2 border-b-0 border-(--border-main)"
+              : "bg-transparent border-2 border-transparent"
           }
         `}
       >
@@ -186,7 +185,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
           onBlur={() => {
             setTimeout(() => setIsOmniboxOpen(false), 200);
           }}
-          className="w-full bg-transparent text-lg md:text-xl font-bold text-(--text-main) pl-2 pt-1 focus:outline-none placeholder-(--text-muted) min-w-0 uppercase"
+          className={`w-full bg-transparent text-lg md:text-xl font-bold text-(--text-main) pt-1 focus:outline-none placeholder-(--text-muted) min-w-0 uppercase text-left pl-2`}
         />
       </div>
 
@@ -198,9 +197,12 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="absolute top-14 md:top-16 left-0 w-full bg-(--bg-highlight) border-4 border-t-0 border-(--accent-base) rounded-b-[1.5rem] md:rounded-b-[2rem] overflow-hidden z-[200] shadow-[8px_8px_0px_0px_var(--shadow-main)]"
+            className="absolute top-14 md:top-16 left-0 w-full bg-(--bg-highlight) border-2 border-t-0 border-(--border-main) rounded-b-[1.5rem] md:rounded-b-[2rem] overflow-hidden z-[200] shadow-[8px_8px_0px_0px_var(--shadow-main)]"
           >
-            <div className="p-3">
+            <div className="px-4">
+              <div className="w-full h-[2px] bg-(--border-main) rounded-full opacity-50" />
+            </div>
+            <div className="px-3 pb-3 pt-2">
               <div className="flex flex-col gap-1 max-h-[50vh] overflow-y-auto custom-scrollbar">
                 {flattenedLinks.length === 0 ? (
                   <div className="flex flex-col items-center justify-center p-6 text-(--text-dim)">
@@ -222,7 +224,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                     return (
                       <div
                         key={i}
-                        className="flex items-center gap-2 w-full mb-1"
+                        className="relative w-full mb-1 group"
                       >
                         <button
                           onClick={() => {
@@ -231,40 +233,43 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                             setQuery("");
                           }}
                           onMouseEnter={() => setSelectedIndex(i)}
-                          className={`flex-1 text-left px-3 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-3 border-4 ${
+                          className={`w-full text-left px-3 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-3 border-4 ${
                             isSelected
                               ? "bg-(--accent-base) text-(--text-inverse) border-(--border-main) shadow-none -translate-y-px"
                               : "bg-transparent border-transparent text-(--text-muted)"
                           }`}
                         >
-                          <span className="flex-1 truncate pl-1">
-                            {link.title}
-                          </span>
+                          <div className="flex-1 min-w-0 pr-8 flex items-center h-5">
+                            <MarqueeText text={link.title} />
+                          </div>
                           {isSelected && (
-                            <CornerDownRight className="w-5 h-5 shrink-0" />
+                            <CornerDownRight className="w-5 h-5 shrink-0 relative z-10" />
                           )}
                         </button>
-                        <button
-                          onClick={() => onTogglePin(link)}
-                          className={`p-2 rounded-xl transition-all border-4 shrink-0 ${
-                            isPinned
-                              ? "bg-(--bg-highlight) text-(--text-main) border-(--border-main) shadow-none"
-                              : "bg-transparent border-transparent text-(--text-dim) hover:text-(--text-main)"
-                          }`}
-                          title={
-                            isPinned ? "Unpin from Dock" : "Pin to Dock"
-                          }
-                        >
-                          <Pin
-                            className="w-5 h-5"
-                            fill={isPinned ? "currentColor" : "none"}
-                            style={{
-                              transform: isPinned
-                                ? "rotate(45deg)"
-                                : "none",
-                            }}
-                          />
-                        </button>
+                        
+                        <div className={`absolute right-1 top-1 bottom-1 w-12 pr-1 flex items-center justify-end rounded-r-xl transition-all pointer-events-none z-20 ${!isPinned ? "opacity-0 group-hover:opacity-100" : "opacity-100"}`}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onTogglePin(link); }}
+                            className={`pointer-events-auto p-1.5 rounded-xl transition-all border-2 shadow-none ${
+                              isPinned
+                                ? "bg-(--bg-highlight) text-(--text-main) border-(--border-main)"
+                                : "bg-(--bg-main) border-(--border-main) text-(--text-dim) hover:text-(--text-main) hover:border-(--accent-base)"
+                            }`}
+                            title={
+                              isPinned ? "Unpin from Dock" : "Pin to Dock"
+                            }
+                          >
+                            <Pin
+                              className="w-3.5 h-3.5"
+                              fill={isPinned ? "currentColor" : "none"}
+                              style={{
+                                transform: isPinned
+                                  ? "rotate(45deg)"
+                                  : "none",
+                              }}
+                            />
+                          </button>
+                        </div>
                       </div>
                     );
                   })

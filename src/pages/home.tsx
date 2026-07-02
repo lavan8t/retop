@@ -23,6 +23,7 @@ import {
   ChevronRight,
   ArrowUpDown,
   ArrowUpRight,
+  Pin,
 } from "lucide-react";
 import {
   CourseSummary,
@@ -48,6 +49,10 @@ import {
   AssignmentRow,
   EventRow,
 } from "../components/home/HomeRows";
+import { ClassGroupDropdown } from "../components/timetable/ClassGroupDropdown";
+import { SemesterDropdown } from "../components/timetable/SemesterDropdown";
+import { TopBarSearch } from "../components/layout/TopBarSearch";
+import { MarqueeText } from "../components/common/MarqueeText";
 import { EmptyState } from "../components/home/EmptyState";
 import { CoursePopup } from "../components/timetable/CoursePopup";
 import { Card } from "../components/ui/Card";
@@ -89,6 +94,8 @@ interface HomeViewProps {
   use24HourTime?: boolean;
   calSemesters?: { id: string; label: string }[];
   calSelectedSem?: string;
+  pinnedLinks?: QuickLink[];
+  handleTogglePin?: (link: QuickLink) => void;
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
@@ -105,6 +112,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
   use24HourTime = true,
   calSemesters = [],
   calSelectedSem = "",
+  pinnedLinks = [],
+  handleTogglePin,
 }) => {
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -113,6 +122,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const [eventFilter, setEventFilter] = useState<
     "all" | "classes" | "assignments" | "events"
   >("all");
+  const [daysToShow, setDaysToShow] = useState(15);
 
   const { calGridData } = useDataStore();
 
@@ -154,7 +164,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const handleMenuLeave = () => {
     closeTimeoutRef.current = setTimeout(() => {
       setActiveMenu(null);
-    }, 150);
+    }, 300);
   };
 
   useEffect(() => {
@@ -199,14 +209,34 @@ export const HomeView: React.FC<HomeViewProps> = ({
     return () => window.removeEventListener("keydown", handleGlobalKeyDown);
   }, []);
 
-  const progress = (() => {
-    const start = new Date("2026-01-05").getTime();
-    const end = new Date("2026-05-15").getTime();
+  const progressInfo = useMemo(() => {
+    let firstDay: Date | null = null;
+    let lastDay: Date | null = null;
+
+    for (const month of calGridData) {
+      for (const day of month.days) {
+        if (day.isInstructional && day.dateObj) {
+          const d = new Date(day.dateObj);
+          if (!firstDay || d < firstDay) firstDay = d;
+          if (!lastDay || d > lastDay) lastDay = d;
+        }
+      }
+    }
+
+    if (!firstDay || !lastDay) return { percentage: 0, lastDay: null };
+
+    const start = firstDay.getTime();
+    const end = lastDay.getTime();
     const now = new Date().getTime();
-    if (now < start) return 0;
-    if (now > end) return 100;
-    return Math.round(((now - start) / (end - start)) * 100);
-  })();
+
+    if (now < start) return { percentage: 0, lastDay };
+    if (now > end) return { percentage: 100, lastDay };
+    return {
+      percentage: Math.round(((now - start) / (end - start)) * 100),
+      lastDay,
+    };
+  }, [calGridData]);
+  const progress = progressInfo.percentage;
 
   const graded = parseFloat(stats.credits);
   const nonGraded = parseFloat(stats.nonGraded || "");
@@ -236,9 +266,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
     });
   }, [attendance, attSort]);
 
-  const getClassesForDate = (date: Date) => {
+  const getClassesForDate = (date: Date, calEvent: any = null) => {
+    if (calEvent && !calEvent.isInstructional) {
+      return [];
+    }
+
     const jsDay = date.getDay();
-    const dName =
+    let dName =
       jsDay === 0
         ? "Sunday"
         : [
@@ -250,6 +284,15 @@ export const HomeView: React.FC<HomeViewProps> = ({
             "Saturday",
             "Sunday",
           ][jsDay - 1];
+
+    if (calEvent && calEvent.info) {
+      const lowerInfo = calEvent.info.toLowerCase();
+      if (lowerInfo.includes("monday day order")) dName = "Monday";
+      else if (lowerInfo.includes("tuesday day order")) dName = "Tuesday";
+      else if (lowerInfo.includes("wednesday day order")) dName = "Wednesday";
+      else if (lowerInfo.includes("thursday day order")) dName = "Thursday";
+      else if (lowerInfo.includes("friday day order")) dName = "Friday";
+    }
 
     if (!CAMPUS_SLOTS[dName]) return [];
     const dayConfig = CAMPUS_SLOTS[dName];
@@ -311,13 +354,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const calendarDays = useMemo(() => {
     const days = [];
     const today = new Date();
-    for (let i = 0; i <= 10; i++) {
+    for (let i = 0; i < daysToShow; i++) {
       const d = new Date(today);
       d.setDate(today.getDate() + i);
       days.push(d);
     }
     return days;
-  }, []);
+  }, [daysToShow]);
 
   const monthDisplay = useMemo(() => {
     if (calendarDays.length === 0) return { text: "", semName: "" };
@@ -399,7 +442,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       <div className="hidden lg:flex w-full lg:w-[26%] xl:w-[22%] flex-col shrink-0 h-auto lg:h-full relative z-100 pt-6 md:pt-8 lg:pt-8 pb-4 md:pb-6 lg:pb-8 gap-4">
         <Card className="bg-(--bg-highlight) rounded-4xl flex flex-col overflow-hidden w-full shrink-0 relative z-30 h-[38vh]">
           {/* Unified Search Box and Logo - Styled like ListCard topbar */}
-          <div className="bg-(--bg-surface) px-5 py-3.5 border-b-4 border-(--border-main) flex items-center gap-3 shrink-0 z-10 group focus-within:border-b-(--accent-base) transition-colors">
+          <div className="bg-(--bg-surface) px-5 py-3.5 flex items-center gap-3 shrink-0 z-10 group transition-colors">
             <div className="relative flex items-center justify-center shrink-0 cursor-pointer">
               <div className="flex items-baseline">
                 <span className="font-expanded font-black text-2xl italic lowercase leading-none text-(--text-main) group-focus-within:text-(--accent-hover) transition-colors">
@@ -417,17 +460,21 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <input
               ref={inputRef}
               type="text"
-              placeholder="Search..."
+              placeholder="Search"
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);
                 setSelectedIndex(0);
               }}
-              className="w-full bg-transparent text-sm md:text-base font-bold text-(--text-main) pl-2 pt-1 focus:outline-none placeholder-black/30 dark:placeholder-white/30 min-w-0"
+              className="w-full bg-transparent text-sm md:text-base font-bold text-(--text-main) pt-1 focus:outline-none placeholder-black/30 dark:placeholder-white/30 min-w-0 text-left pl-2"
             />
           </div>
 
-          <div className="flex-1 overflow-y-auto p-3 custom-scrollbar bg-(--bg-highlight) max-h-[60vh] lg:max-h-none">
+          <div className="px-4 bg-(--bg-highlight)">
+            <div className="w-full h-0.5 bg-(--border-main) rounded-full opacity-50" />
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-3 pb-3 pt-2 custom-scrollbar bg-(--bg-highlight) max-h-[60vh] lg:max-h-none">
             <div className="flex flex-col gap-3 pb-2">
               {!query ? (
                 <>
@@ -461,7 +508,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   )}
 
                   {/* CATEGORIES SECTION (No Headings) */}
-                  <div className="space-y-1.5">
+                  <div
+                    className="space-y-1.5"
+                    onMouseLeave={handleMenuLeave}
+                    onMouseEnter={handleMenuEnter}
+                  >
                     {menuCategories.map((cat, catIdx) => {
                       const CatIcon = getCategoryIcon(cat.title);
                       const isActive = activeMenu?.cat.title === cat.title;
@@ -525,29 +576,65 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   ) : (
                     flattenedLinks.map((link, i) => {
                       const isSelected = i === selectedIndex;
+                      const linkDest = link.url.startsWith("/")
+                        ? link.url.slice(1) || "dashboard"
+                        : "content";
+                      const isPinned =
+                        linkDest !== "content" &&
+                        pinnedLinks.some(
+                          (p) =>
+                            (p.url.startsWith("/")
+                              ? p.url.slice(1) || "dashboard"
+                              : "content") === linkDest,
+                        );
+
                       return (
-                        <button
-                          key={i}
-                          id={`home-search-item-${i}`}
-                          onClick={() => {
-                            handleNavigate(link);
-                            setQuery("");
-                          }}
-                          onMouseEnter={() => setSelectedIndex(i)}
-                          className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-3 border-4 ${
-                            isSelected
-                              ? "bg-(--accent-base) text-white border-(--border-main) shadow-none -translate-y-px"
-                              : "bg-transparent border-transparent text-(--text-muted)"
-                          }`}
-                        >
-                          <FileText
-                            className={`w-4 h-4 shrink-0 ${isSelected ? "opacity-100" : "opacity-50"}`}
-                          />
-                          <span className="flex-1 truncate">{link.title}</span>
-                          {isSelected && (
-                            <CornerDownRight className="w-4 h-4 shrink-0" />
+                        <div key={i} className="relative w-full group mb-1">
+                          <button
+                            id={`home-search-item-${i}`}
+                            onClick={() => {
+                              handleNavigate(link);
+                              setQuery("");
+                            }}
+                            onMouseEnter={() => setSelectedIndex(i)}
+                            className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-3 border-4 ${
+                              isSelected
+                                ? "bg-(--accent-base) text-white border-(--border-main) shadow-none -translate-y-px"
+                                : "bg-transparent border-transparent text-(--text-muted)"
+                            }`}
+                          >
+                            <FileText
+                              className={`w-4 h-4 shrink-0 ${isSelected ? "opacity-100" : "opacity-50"}`}
+                            />
+                            <div className="flex-1 min-w-0 pr-8 flex items-center h-4">
+                              <MarqueeText text={link.title} />
+                            </div>
+                            {isSelected && (
+                              <CornerDownRight className="w-4 h-4 shrink-0 relative z-10" />
+                            )}
+                          </button>
+                          {handleTogglePin && (
+                            <div
+                              className={`absolute right-1 top-1 bottom-1 w-10 pr-1 flex items-center justify-end rounded-r-xl transition-all pointer-events-none z-20 ${!isPinned ? "opacity-0 group-hover:opacity-100" : "opacity-100"}`}
+                            >
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleTogglePin(link);
+                                }}
+                                className={`pointer-events-auto p-1.5 rounded-xl transition-all border-2 shrink-0 shadow-none ${
+                                  isPinned
+                                    ? "bg-(--bg-highlight) text-(--text-main) border-(--border-main)"
+                                    : "bg-(--bg-surface) border-(--border-main) text-(--text-dim) hover:text-(--text-main) hover:border-(--accent-base)"
+                                }`}
+                              >
+                                <Pin
+                                  className={`w-3.5 h-3.5 ${isPinned ? "fill-current" : ""}`}
+                                />
+                              </button>
+                            </div>
                           )}
-                        </button>
+                        </div>
                       );
                     })
                   )}
@@ -681,96 +768,119 @@ export const HomeView: React.FC<HomeViewProps> = ({
       <div className="flex-none lg:flex-1 w-full flex flex-col gap-6 md:gap-8 overflow-hidden pt-1 pl-1 md:pl-0 min-h-0">
         <div className="flex flex-col items-center mb-2 lg:mb-4 px-2 w-full relative z-20 pointer-events-auto pt-20 md:pt-24 lg:pt-28">
           <div className="flex flex-col items-center w-full">
-            {/* Month Header */}
-            <div className="flex justify-between items-center w-full mb-6 px-1 pt-4">
-              <div className="text-base md:text-lg font-bold text-(--text-main) pointer-events-none text-left">
+            {/* Month Header and Filter Chips in a 3-column grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 w-full items-center mb-6 px-1 pt-4 gap-4 md:gap-0">
+              <div className="text-base md:text-lg font-bold text-(--text-main) pointer-events-none text-left flex justify-start">
                 {monthDisplay.text}
               </div>
-              {monthDisplay.semName && (
-                <div className="text-sm md:text-base font-bold relative pointer-events-none text-right">
-                  <span className="text-(--text-muted) opacity-50">
-                    {monthDisplay.semName}
-                  </span>
-                  <span
-                    className="absolute left-0 top-0 overflow-hidden whitespace-nowrap text-(--accent-base)"
-                    style={{ width: `${progress}%` }}
-                  >
-                    {monthDisplay.semName}
-                  </span>
-                </div>
-              )}
-            </div>
 
-            <div className="flex items-center justify-center gap-0.5 w-full mt-2">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setEventFilter("all");
-                }}
-                className={`px-5 py-1.5 text-xs font-bold transition-all duration-300 ${
-                  eventFilter === "all"
-                    ? "bg-(--text-main) text-(--bg-main) rounded-[20px] shadow-none"
-                    : "bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-l-[20px] rounded-r-md shadow-none"
-                }`}
-              >
-                All
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setEventFilter("classes");
-                }}
-                className={`px-5 py-1.5 text-xs font-bold transition-all duration-300 ${
-                  eventFilter === "classes"
-                    ? "bg-(--text-main) text-(--bg-main) rounded-[20px] shadow-none"
-                    : "bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-md shadow-none"
-                }`}
-              >
-                Classes
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setEventFilter("assignments");
-                }}
-                className={`px-5 py-1.5 text-xs font-bold transition-all duration-300 ${
-                  eventFilter === "assignments"
-                    ? "bg-(--text-main) text-(--bg-main) rounded-[20px] shadow-none"
-                    : "bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-md shadow-none"
-                }`}
-              >
-                Tasks
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setEventFilter("events");
-                }}
-                className={`px-5 py-1.5 text-xs font-bold transition-all duration-300 ${
-                  eventFilter === "events"
-                    ? "bg-(--text-main) text-(--bg-main) rounded-[20px] shadow-none"
-                    : "bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-l-md rounded-r-[20px] shadow-none"
-                }`}
-              >
-                Events
-              </button>
+              {/* Filter Chips */}
+              <div className="flex items-center justify-center gap-0.5 shrink-0">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEventFilter("all");
+                  }}
+                  className={`px-3 md:px-5 py-1.5 text-xs font-bold transition-all duration-300 ${
+                    eventFilter === "all"
+                      ? "bg-(--text-main) text-(--bg-main) rounded-[20px] shadow-none"
+                      : "bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-l-[20px] rounded-r-md shadow-none"
+                  }`}
+                >
+                  All
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEventFilter("classes");
+                  }}
+                  className={`px-3 md:px-5 py-1.5 text-xs font-bold transition-all duration-300 ${
+                    eventFilter === "classes"
+                      ? "bg-(--text-main) text-(--bg-main) rounded-[20px] shadow-none"
+                      : "bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-md shadow-none"
+                  }`}
+                >
+                  Classes
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEventFilter("assignments");
+                  }}
+                  className={`px-3 md:px-5 py-1.5 text-xs font-bold transition-all duration-300 ${
+                    eventFilter === "assignments"
+                      ? "bg-(--text-main) text-(--bg-main) rounded-[20px] shadow-none"
+                      : "bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-md shadow-none"
+                  }`}
+                >
+                  Tasks
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEventFilter("events");
+                  }}
+                  className={`px-3 md:px-5 py-1.5 text-xs font-bold transition-all duration-300 ${
+                    eventFilter === "events"
+                      ? "bg-(--text-main) text-(--bg-main) rounded-[20px] shadow-none"
+                      : "bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-l-md rounded-r-[20px] shadow-none"
+                  }`}
+                >
+                  Events
+                </button>
+              </div>
+
+              {monthDisplay.semName ? (
+                <div className="flex justify-end items-center">
+                  <div
+                    className="text-sm md:text-base font-bold relative text-right group cursor-help"
+                    title={`Last Instructional Day: ${progressInfo.lastDay ? progressInfo.lastDay.toLocaleDateString() : "N/A"}\n${progress}% of semester over`}
+                  >
+                    <span className="text-(--text-muted) opacity-50 underline decoration-wavy decoration-(--border-dim) underline-offset-4">
+                      {monthDisplay.semName}
+                    </span>
+                    <span
+                      className="absolute left-0 top-0 overflow-hidden whitespace-nowrap text-(--text-main) underline decoration-wavy decoration-(--accent-base) underline-offset-4 pointer-events-none"
+                      style={{ width: `${progress}%` }}
+                    >
+                      {monthDisplay.semName}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div />
+              )}
             </div>
           </div>
         </div>
 
         {/* Surface level list (no card wrapper) */}
         <div
-          className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-4 pr-3 pb-32 pt-37.5 -mt-30 -mb-12 relative z-0 pointer-events-auto snap-y snap-proximity"
+          className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-4 pr-3 pb-32 pt-37.5 -mt-30 -mb-12 relative z-0 pointer-events-auto"
           style={{
             maskImage:
-              "linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)",
+              "linear-gradient(to bottom, transparent, black 5%, black 95%, transparent)",
           }}
         >
           {calendarDays.map((d, dIdx) => {
             const isToday = d.toDateString() === new Date().toDateString();
 
+            let calEvent: any = null;
+            for (const monthData of calGridData) {
+              for (const calDay of monthData.days) {
+                if (
+                  calDay.dateObj &&
+                  new Date(calDay.dateObj).toDateString() === d.toDateString()
+                ) {
+                  calEvent = calDay;
+                  break;
+                }
+              }
+              if (calEvent) break;
+            }
+
             // Get classes for this specific date
-            const classesForDay = getClassesForDate(d);
+            const classesForDay = getClassesForDate(d, calEvent);
 
             const dayEvents: Array<
               | { type: "class"; data: UpcomingClass }
@@ -778,6 +888,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
               | { type: "event"; data: Event }
               | { type: "calendar"; data: any }
             > = [];
+
+            if (eventFilter === "all" || eventFilter === "events") {
+              if (calEvent && (calEvent.info || calEvent.isHoliday)) {
+                dayEvents.push({ type: "calendar", data: calEvent });
+              }
+            }
 
             if (eventFilter === "all" || eventFilter === "classes") {
               classesForDay.forEach((c) =>
@@ -798,24 +914,37 @@ export const HomeView: React.FC<HomeViewProps> = ({
               events
                 .filter((e) => e.date === dStr)
                 .forEach((e) => dayEvents.push({ type: "event", data: e }));
-
-              // Inject calendar events
-              calGridData.forEach((monthData) => {
-                monthData.days.forEach((calDay) => {
-                  if (
-                    calDay.dateObj &&
-                    new Date(calDay.dateObj).toDateString() === d.toDateString()
-                  ) {
-                    if (calDay.info || calDay.isHoliday) {
-                      dayEvents.push({ type: "calendar", data: calDay });
-                    }
-                  }
-                });
-              });
             }
 
             if (dayEvents.length === 0) {
-              return isToday ? <div key={dIdx} ref={todayRef} /> : null;
+              if (isToday) {
+                return (
+                  <div
+                    key={dIdx}
+                    className={`mb-4 flex gap-3 relative scroll-mt-[30vh]`}
+                    ref={todayRef}
+                  >
+                    <div className="flex flex-col items-center shrink-0 w-12 pt-1 sticky top-4 h-fit z-10">
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm mb-0.5 bg-(--accent-base) text-(--text-inverse)`}
+                      >
+                        {d.getDate()}
+                      </div>
+                      <div
+                        className={`text-[9px] font-expanded font-bold uppercase text-(--accent-base)`}
+                      >
+                        {d.toLocaleDateString("en-US", { weekday: "short" })}
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0 pt-2 pb-6 flex items-center justify-center">
+                      <span className="text-sm font-bold text-(--text-muted)">
+                        No events for today
+                      </span>
+                    </div>
+                  </div>
+                );
+              }
+              return null;
             }
 
             const currentHour = new Date().getHours();
@@ -847,7 +976,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             return (
               <div
                 key={dIdx}
-                className={`mb-4 flex gap-3 relative ${isToday ? "snap-center scroll-mt-[30vh]" : ""}`}
+                className={`mb-4 flex gap-3 relative ${isToday ? "scroll-mt-[30vh]" : ""}`}
                 ref={isToday ? todayRef : null}
               >
                 {/* Date indicator on the left */}
@@ -858,7 +987,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     {d.getDate()}
                   </div>
                   <div
-                    className={`text-[9px] font-expanded font-bold uppercase ${isToday ? "text-(--accent-base)" : "text-(--text-muted)"}`}
+                    className={`text-[9px] font-expanded font-bold uppercase ${isToday ? "text-(--accent-base)" : "text-(--text-main)"}`}
                   >
                     {d.toLocaleDateString("en-US", { weekday: "short" })}
                   </div>
@@ -881,7 +1010,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         <AssignmentRow assignment={evt.data as Assignment} />
                       ) : evt.type === "calendar" ? (
                         <div
-                          className={`w-full text-left p-3 rounded-2xl flex items-center justify-between border-4 shadow-none mb-3 ${evt.data.isHoliday ? "bg-red-500/10 border-red-500/20" : "bg-(--bg-highlight) border-(--border-dim)"}`}
+                          className={`w-full text-left p-3 rounded-xl flex items-center justify-between border-2 shadow-none mb-3 ${evt.data.isHoliday ? "bg-red-500/10 border-red-500/20" : "bg-(--bg-surface) border-(--border-main)"}`}
                         >
                           <div className="flex flex-col">
                             <span
@@ -907,7 +1036,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     upcomingEvents.length > 0 && (
                       <div
                         ref={nowRef}
-                        className="flex items-center gap-2 my-1 relative -ml-6 scroll-mt-[40vh] snap-center"
+                        className="flex items-center gap-2 my-1 relative -ml-6 scroll-mt-[40vh]"
                       >
                         <div className="w-4 h-0.75 rounded-full bg-(--accent-base)"></div>
                         <div className="w-2 h-2 rounded-full bg-(--accent-base) shrink-0"></div>
@@ -919,7 +1048,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     upcomingEvents.length > 0 && (
                       <div
                         ref={nowRef}
-                        className="flex items-center gap-2 mb-1 relative -ml-6 scroll-mt-[40vh] snap-center"
+                        className="flex items-center gap-2 mb-1 relative -ml-6 scroll-mt-[40vh]"
                       >
                         <div className="w-4 h-0.75 rounded-full bg-(--accent-base)"></div>
                         <div className="w-2 h-2 rounded-full bg-(--accent-base) shrink-0"></div>
@@ -947,21 +1076,17 @@ export const HomeView: React.FC<HomeViewProps> = ({
                       ) : evt.type === "assignment" ? (
                         <AssignmentRow assignment={evt.data as Assignment} />
                       ) : evt.type === "calendar" ? (
-                        <div
-                          className={`w-full text-left p-3 rounded-2xl flex items-center justify-between border-4 shadow-none mb-3 ${evt.data.isHoliday ? "bg-red-500/10 border-red-500/20" : "bg-(--bg-highlight) border-(--border-dim)"}`}
-                        >
-                          <div className="flex flex-col">
-                            <span
-                              className={`font-black uppercase text-xs ${evt.data.isHoliday ? "text-red-500" : "text-(--text-main)"}`}
-                            >
-                              {evt.data.info}
+                        <div className="w-full text-left pb-3 flex flex-col">
+                          <span
+                            className={`font-black font-expanded uppercase text-base md:text-lg ${evt.data.isHoliday ? "text-red-500" : "text-(--text-main)"}`}
+                          >
+                            {evt.data.info}
+                          </span>
+                          {evt.data.subInfo && (
+                            <span className="text-xs text-(--text-muted) font-bold mt-1">
+                              {evt.data.subInfo}
                             </span>
-                            {evt.data.subInfo && (
-                              <span className="text-[10px] text-(--text-muted) font-bold">
-                                {evt.data.subInfo}
-                              </span>
-                            )}
-                          </div>
+                          )}
                         </div>
                       ) : (
                         <EventRow event={evt.data as Event} />
@@ -972,6 +1097,15 @@ export const HomeView: React.FC<HomeViewProps> = ({
               </div>
             );
           })}
+
+          <div className="w-full flex justify-center py-6 relative z-10">
+            <button
+              onClick={() => setDaysToShow((prev) => prev + 15)}
+              className="bg-(--bg-highlight) text-(--text-main) font-expanded font-bold text-sm uppercase px-8 py-3 rounded-full border-4 border-(--border-dim) hover:border-(--border-main) transition-all shadow-none cursor-pointer"
+            >
+              Load More
+            </button>
+          </div>
         </div>
       </div>
 

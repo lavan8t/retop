@@ -396,28 +396,39 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
   return (
     <div className="h-full w-full flex flex-col lg:flex-row gap-6 py-0 pl-4 pr-0 md:py-0 md:pl-6 md:pr-0 lg:py-0 lg:px-8 overflow-y-auto lg:overflow-hidden bg-(--bg-main) max-w-425 mx-auto relative">
-      <div className="hidden lg:flex w-full lg:w-[26%] xl:w-[22%] flex-col shrink-0 h-auto lg:h-full relative z-30 pt-20 md:pt-24 lg:pt-28 pb-4 md:pb-6 lg:pb-8 gap-4">
+      <div className="hidden lg:flex w-full lg:w-[26%] xl:w-[22%] flex-col shrink-0 h-auto lg:h-full relative z-100 pt-6 md:pt-8 lg:pt-8 pb-4 md:pb-6 lg:pb-8 gap-4">
         <Card className="bg-(--bg-highlight) rounded-4xl flex flex-col overflow-hidden w-full shrink-0 relative z-30 h-[38vh]">
-          <div className="flex-1 overflow-y-auto p-3 custom-scrollbar bg-(--bg-highlight) max-h-[60vh] lg:max-h-none">
-            <div className="flex flex-col gap-3 pb-2">
-              {/* Unified Search Box and Logo */}
-              <div className="flex items-center gap-2 mb-1 bg-(--bg-surface) rounded-2xl p-1.5 border-4 border-(--border-main) shadow-none">
-                <span className="font-expanded font-black text-2xl italic lowercase leading-none text-(--text-main) px-2 shrink-0">
+          {/* Unified Search Box and Logo - Styled like ListCard topbar */}
+          <div className="bg-(--bg-surface) px-5 py-3.5 border-b-4 border-(--border-main) flex items-center gap-3 shrink-0 z-10 group focus-within:border-b-(--accent-base) transition-colors">
+            <div className="relative flex items-center justify-center shrink-0 cursor-pointer">
+              <div className="flex items-baseline">
+                <span className="font-expanded font-black text-2xl italic lowercase leading-none text-(--text-main) group-focus-within:text-(--accent-hover) transition-colors">
                   re
                 </span>
-                <input
-                  ref={inputRef}
-                  type="text"
-                  placeholder="WHERE TO?"
-                  value={query}
-                  onChange={(e) => {
-                    setQuery(e.target.value);
-                    setSelectedIndex(0);
-                  }}
-                  className="w-full bg-transparent text-sm md:text-base font-expanded font-black text-(--text-main) px-2 py-1 focus:outline-none placeholder-(--text-muted) uppercase min-w-0"
-                />
+                <div className="relative w-1.5 h-1.5 ml-0.5 mb-1 bg-(--accent-base) rounded-full flex items-center justify-center group-focus-within:scale-[2.5] transition-transform origin-bottom-left">
+                  <Search
+                    className="w-1 h-1 text-white opacity-0 group-focus-within:opacity-100 transition-opacity absolute"
+                    strokeWidth={4}
+                  />
+                </div>
               </div>
+            </div>
 
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder="Search..."
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setSelectedIndex(0);
+              }}
+              className="w-full bg-transparent text-sm md:text-base font-bold text-(--text-main) pl-2 pt-1 focus:outline-none placeholder-black/30 dark:placeholder-white/30 min-w-0"
+            />
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-3 custom-scrollbar bg-(--bg-highlight) max-h-[60vh] lg:max-h-none">
+            <div className="flex flex-col gap-3 pb-2">
               {!query ? (
                 <>
                   <h3 className="font-black font-expanded text-sm uppercase text-(--text-muted) px-2 mt-1">
@@ -699,7 +710,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 className={`px-5 py-1.5 text-xs font-bold transition-all duration-300 ${
                   eventFilter === "all"
                     ? "bg-(--text-main) text-(--bg-main) rounded-[20px] shadow-none"
-                    : "bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-l-[20px] rounded-r-[6px] shadow-none"
+                    : "bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-l-[20px] rounded-r-md shadow-none"
                 }`}
               >
                 All
@@ -712,7 +723,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 className={`px-5 py-1.5 text-xs font-bold transition-all duration-300 ${
                   eventFilter === "classes"
                     ? "bg-(--text-main) text-(--bg-main) rounded-[20px] shadow-none"
-                    : "bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-[6px] shadow-none"
+                    : "bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-md shadow-none"
                 }`}
               >
                 Classes
@@ -725,7 +736,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 className={`px-5 py-1.5 text-xs font-bold transition-all duration-300 ${
                   eventFilter === "assignments"
                     ? "bg-(--text-main) text-(--bg-main) rounded-[20px] shadow-none"
-                    : "bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-[6px] shadow-none"
+                    : "bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-md shadow-none"
                 }`}
               >
                 Tasks
@@ -738,7 +749,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 className={`px-5 py-1.5 text-xs font-bold transition-all duration-300 ${
                   eventFilter === "events"
                     ? "bg-(--text-main) text-(--bg-main) rounded-[20px] shadow-none"
-                    : "bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-l-[6px] rounded-r-[20px] shadow-none"
+                    : "bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-l-md rounded-r-[20px] shadow-none"
                 }`}
               >
                 Events
@@ -749,7 +760,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
         {/* Surface level list (no card wrapper) */}
         <div
-          className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-4 pr-3 pb-32 pt-[150px] mt-[-120px] -mb-12 relative z-0 pointer-events-auto snap-y snap-proximity"
+          className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-4 pr-3 pb-32 pt-37.5 -mt-30 -mb-12 relative z-0 pointer-events-auto snap-y snap-proximity"
           style={{
             maskImage:
               "linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)",
@@ -898,9 +909,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         ref={nowRef}
                         className="flex items-center gap-2 my-1 relative -ml-6 scroll-mt-[40vh] snap-center"
                       >
-                        <div className="w-4 h-[3px] rounded-full bg-(--accent-base)"></div>
+                        <div className="w-4 h-0.75 rounded-full bg-(--accent-base)"></div>
                         <div className="w-2 h-2 rounded-full bg-(--accent-base) shrink-0"></div>
-                        <div className="h-[3px] rounded-full flex-1 bg-linear-to-r from-(--accent-base) to-transparent opacity-50"></div>
+                        <div className="h-0.75 rounded-full flex-1 bg-linear-to-r from-(--accent-base) to-transparent opacity-50"></div>
                       </div>
                     )}
                   {isToday &&
@@ -910,9 +921,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         ref={nowRef}
                         className="flex items-center gap-2 mb-1 relative -ml-6 scroll-mt-[40vh] snap-center"
                       >
-                        <div className="w-4 h-[3px] rounded-full bg-(--accent-base)"></div>
+                        <div className="w-4 h-0.75 rounded-full bg-(--accent-base)"></div>
                         <div className="w-2 h-2 rounded-full bg-(--accent-base) shrink-0"></div>
-                        <div className="h-[3px] rounded-full flex-1 bg-linear-to-r from-(--accent-base) to-transparent opacity-50"></div>
+                        <div className="h-0.75 rounded-full flex-1 bg-linear-to-r from-(--accent-base) to-transparent opacity-50"></div>
                       </div>
                     )}
 
@@ -1037,7 +1048,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   <span>{stats.nonGraded}</span>
                 </div>
 
-                <div className="h-1 w-full min-w-[120px] bg-(--border-main) rounded-full my-2.5"></div>
+                <div className="h-1 w-full min-w-30 bg-(--border-main) rounded-full my-2.5"></div>
 
                 <div className="text-3xl font-black font-expanded leading-none">
                   {stats.totalCredits}

@@ -6,6 +6,7 @@ import {
   CornerDownRight,
   Pin,
   AlertCircle,
+  Home,
 } from "lucide-react";
 import { QuickLink, MenuCategory } from "../../types/vtop";
 
@@ -18,6 +19,8 @@ interface TopBarSearchProps {
   onNavigate: (link: QuickLink) => void;
   onTogglePin: (link: QuickLink) => void;
   initialQuery?: string;
+  pageTitle?: string;
+  onBack?: () => void;
 }
 
 const getDestinationView = (link: QuickLink) => {
@@ -40,6 +43,8 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
   onNavigate,
   onTogglePin,
   initialQuery = "",
+  pageTitle = "Search",
+  onBack,
 }) => {
   const [query, setQuery] = useState(initialQuery);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -132,52 +137,71 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
     setIsOmniboxOpen,
   ]);
 
+  const isSearchActive = isExpanded && query;
+
   return (
-    <div className="relative flex items-center h-12 z-50">
-      {/* The logo is always visible */}
+    <div className="relative flex flex-col z-50">
+      {/* Unified Search Bar */}
       <div
-        className={`group relative flex items-baseline select-none cursor-pointer flex`}
-        onClick={() => setIsOmniboxOpen(true)}
-        title="Search ( / )"
+        className={`group flex items-center gap-4 transition-all cursor-text md:min-w-[420px] shadow-none pl-6 pr-5 h-14 md:h-16
+          ${
+            isSearchActive
+              ? "bg-(--bg-highlight) rounded-t-[1.5rem] md:rounded-t-[2rem] rounded-b-none border-4 border-b-0 border-(--accent-base)"
+              : "bg-transparent border-4 border-transparent"
+          }
+        `}
       >
-        <span className="font-expanded font-black text-[2rem] md:text-[2.5rem] italic lowercase leading-none text-(--text-main) group-hover:text-(--accent-hover) transition-colors z-20">
-          re
-        </span>
-        <div className="relative w-2 h-2 md:w-3 md:h-3 ml-0.5 mb-1 md:mb-1.5 bg-(--accent-base) rounded-full flex items-center justify-center group-hover:scale-[2] transition-transform origin-bottom-left z-20">
-          <Search
-            className="w-1.5 h-1.5 text-white opacity-0 group-hover:opacity-100 transition-opacity absolute"
-            strokeWidth={4}
-          />
-        </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onBack) onBack();
+          }}
+          title="Return to Dashboard"
+          className="relative flex items-center justify-center shrink-0 cursor-pointer hover:opacity-75 transition-opacity"
+        >
+          <div className="flex items-baseline">
+            <span className="font-expanded font-black text-2xl md:text-3xl italic lowercase leading-none text-(--text-main) group-focus-within:text-(--accent-hover) transition-colors">
+              re
+            </span>
+            <div className="relative w-1.5 h-1.5 md:w-2 md:h-2 ml-0.5 md:ml-1 mb-1 bg-(--accent-base) rounded-full flex items-center justify-center group-focus-within:scale-[2] transition-transform origin-bottom-left">
+              <Search
+                className="w-1 h-1 md:w-1.5 md:h-1.5 text-white opacity-0 group-focus-within:opacity-100 transition-opacity absolute"
+                strokeWidth={4}
+              />
+            </div>
+          </div>
+        </button>
+
+        <input
+          ref={inputRef}
+          type="text"
+          placeholder={pageTitle}
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setSelectedIndex(0);
+            if (!isExpanded) setIsOmniboxOpen(true);
+          }}
+          onFocus={() => setIsOmniboxOpen(true)}
+          onBlur={() => {
+            setTimeout(() => setIsOmniboxOpen(false), 200);
+          }}
+          className="w-full bg-transparent text-lg md:text-xl font-bold text-(--text-main) pl-2 pt-1 focus:outline-none placeholder-(--text-muted) min-w-0 uppercase"
+        />
       </div>
 
       <AnimatePresence>
-        {isExpanded && (
+        {isSearchActive && (
           <motion.div
-            key="search-box"
-            initial={{ opacity: 0, width: 0, marginLeft: 0 }}
-            animate={{ opacity: 1, width: "min(400px, 60vw)", marginLeft: 16 }}
-            exit={{ opacity: 0, width: 0, marginLeft: 0 }}
-            transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className="relative flex items-center h-full"
+            key="search-dropdown"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="absolute top-14 md:top-16 left-0 w-full bg-(--bg-highlight) border-4 border-t-0 border-(--accent-base) rounded-b-[1.5rem] md:rounded-b-[2rem] overflow-hidden z-[200] shadow-[8px_8px_0px_0px_var(--shadow-main)]"
           >
-            <input
-              ref={inputRef}
-              type="text"
-              placeholder="WHERE TO?"
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setSelectedIndex(0);
-              }}
-              onBlur={() => {
-                setTimeout(() => setIsOmniboxOpen(false), 200);
-              }}
-              className="w-full bg-(--bg-surface) text-base md:text-lg font-expanded font-black text-(--text-main) border-4 border-(--border-main) rounded-2xl px-4 py-1.5 md:py-2 focus:outline-none placeholder-(--text-muted) uppercase shadow-[4px_4px_0px_0px_var(--shadow-main)] absolute left-0 origin-left"
-            />
-
-            {query && (
-              <div className="absolute top-[calc(100%+12px)] left-0 w-full bg-(--bg-surface) border-4 border-(--border-main) rounded-2xl shadow-[6px_6px_0px_0px_var(--shadow-main)] max-h-[60vh] overflow-y-auto custom-scrollbar flex flex-col p-2 z-[999]">
+            <div className="p-3">
+              <div className="flex flex-col gap-1 max-h-[50vh] overflow-y-auto custom-scrollbar">
                 {flattenedLinks.length === 0 ? (
                   <div className="flex flex-col items-center justify-center p-6 text-(--text-dim)">
                     <AlertCircle className="w-8 h-8 mb-2 opacity-50" />
@@ -207,18 +231,17 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                             setQuery("");
                           }}
                           onMouseEnter={() => setSelectedIndex(i)}
-                          className={`flex-1 text-left px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-3 border-4 ${
+                          className={`flex-1 text-left px-3 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-3 border-4 ${
                             isSelected
-                              ? "bg-(--accent-base) text-white border-(--border-main) shadow-none -translate-y-px"
+                              ? "bg-(--accent-base) text-(--text-inverse) border-(--border-main) shadow-none -translate-y-px"
                               : "bg-transparent border-transparent text-(--text-muted)"
                           }`}
                         >
-                          <FileText
-                            className={`w-4 h-4 shrink-0 ${isSelected ? "opacity-100" : "opacity-50"}`}
-                          />
-                          <span className="flex-1 truncate">{link.title}</span>
+                          <span className="flex-1 truncate pl-1">
+                            {link.title}
+                          </span>
                           {isSelected && (
-                            <CornerDownRight className="w-4 h-4 shrink-0" />
+                            <CornerDownRight className="w-5 h-5 shrink-0" />
                           )}
                         </button>
                         <button
@@ -228,13 +251,17 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                               ? "bg-(--bg-highlight) text-(--text-main) border-(--border-main) shadow-none"
                               : "bg-transparent border-transparent text-(--text-dim) hover:text-(--text-main)"
                           }`}
-                          title={isPinned ? "Unpin from Dock" : "Pin to Dock"}
+                          title={
+                            isPinned ? "Unpin from Dock" : "Pin to Dock"
+                          }
                         >
                           <Pin
-                            className="w-4 h-4"
+                            className="w-5 h-5"
                             fill={isPinned ? "currentColor" : "none"}
                             style={{
-                              transform: isPinned ? "rotate(45deg)" : "none",
+                              transform: isPinned
+                                ? "rotate(45deg)"
+                                : "none",
                             }}
                           />
                         </button>
@@ -243,7 +270,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                   })
                 )}
               </div>
-            )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

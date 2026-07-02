@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { TimetableCourse, CourseSummary } from "../types/vtop";
-import { Layers, Loader2 } from "lucide-react";
+import { Layers, ProgressActivity } from '@nine-thirty-five/material-symbols-react/outlined';
 import { TimetableGrid } from "../components/timetable/TimetableGrid";
 import { TimetableList } from "../components/timetable/TimetableList";
 import { TimetableWeek } from "../components/timetable/TimetableWeek";
@@ -67,7 +67,7 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
 
           {loading && (
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
-              <Loader2 className="w-12 h-12 text-(--accent-base) animate-spin mb-4" />
+              <ProgressActivity className="w-12 h-12 text-(--accent-base) animate-spin mb-4" />
               <span className="text-sm font-bold font-expanded text-white uppercase tracking-wider animate-pulse">
                 Parsing Grid...
               </span>

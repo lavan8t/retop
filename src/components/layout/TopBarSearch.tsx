@@ -2,12 +2,12 @@ import React, { useState, useRef, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
-  FileText,
-  CornerDownRight,
+  Description,
+  SubdirectoryArrowRight,
   Pin,
-  AlertCircle,
+  Error,
   Home,
-} from "lucide-react";
+} from '@nine-thirty-five/material-symbols-react/outlined';
 import { QuickLink, MenuCategory } from "../../types/vtop";
 import { MarqueeText } from "../common/MarqueeText";
 
@@ -81,7 +81,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
       },
       { title: "Marks", url: "/marks", category: "Navigation" },
       {
-        title: "Calendar",
+        title: "CalendarMonth",
         url: "/calendar",
         category: "Navigation",
       },
@@ -171,22 +171,32 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
           </div>
         </button>
 
-        <input
-          ref={inputRef}
-          type="text"
-          placeholder={pageTitle}
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setSelectedIndex(0);
-            if (!isExpanded) setIsOmniboxOpen(true);
-          }}
-          onFocus={() => setIsOmniboxOpen(true)}
-          onBlur={() => {
-            setTimeout(() => setIsOmniboxOpen(false), 200);
-          }}
-          className={`w-full bg-transparent text-lg md:text-xl font-bold text-(--text-main) pt-1 focus:outline-none placeholder-(--text-muted) min-w-0 uppercase text-left pl-2`}
-        />
+        <div className="relative flex-1 w-full min-w-0 flex items-center">
+          {query && flattenedLinks.length > 0 && flattenedLinks[0].title.toLowerCase().startsWith(query.toLowerCase()) && (
+            <div className="absolute left-2 top-0 bottom-0 flex items-center pt-1 pointer-events-none w-full overflow-hidden">
+              <span className="text-lg md:text-xl font-bold text-transparent whitespace-pre uppercase">{query}</span>
+              <span className="text-lg md:text-xl font-bold text-(--text-muted) opacity-50 whitespace-pre uppercase truncate">
+                {flattenedLinks[0].title.slice(query.length)}
+              </span>
+            </div>
+          )}
+          <input
+            ref={inputRef}
+            type="text"
+            placeholder={pageTitle}
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setSelectedIndex(0);
+              if (!isExpanded) setIsOmniboxOpen(true);
+            }}
+            onFocus={() => setIsOmniboxOpen(true)}
+            onBlur={() => {
+              setTimeout(() => setIsOmniboxOpen(false), 200);
+            }}
+            className={`w-full bg-transparent text-lg md:text-xl font-bold text-(--text-main) pt-1 focus:outline-none placeholder-(--text-muted) min-w-0 uppercase text-left pl-2 relative z-10`}
+          />
+        </div>
       </div>
 
       <AnimatePresence>
@@ -206,7 +216,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
               <div className="flex flex-col gap-1 max-h-[50vh] overflow-y-auto custom-scrollbar">
                 {flattenedLinks.length === 0 ? (
                   <div className="flex flex-col items-center justify-center p-6 text-(--text-dim)">
-                    <AlertCircle className="w-8 h-8 mb-2 opacity-50" />
+                    <Error className="w-8 h-8 mb-2 opacity-50" />
                     <span className="font-expanded text-sm uppercase text-(--text-muted)">
                       No Matches
                     </span>
@@ -242,9 +252,6 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                           <div className="flex-1 min-w-0 pr-8 flex items-center h-5">
                             <MarqueeText text={link.title} />
                           </div>
-                          {isSelected && (
-                            <CornerDownRight className="w-5 h-5 shrink-0 relative z-10" />
-                          )}
                         </button>
                         
                         <div className={`absolute right-1 top-1 bottom-1 w-12 pr-1 flex items-center justify-end rounded-r-xl transition-all pointer-events-none z-20 ${!isPinned ? "opacity-0 group-hover:opacity-100" : "opacity-100"}`}>
@@ -252,8 +259,8 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                             onClick={(e) => { e.stopPropagation(); onTogglePin(link); }}
                             className={`pointer-events-auto p-1.5 rounded-xl transition-all border-2 shadow-none ${
                               isPinned
-                                ? "bg-(--bg-highlight) text-(--text-main) border-(--border-main)"
-                                : "bg-(--bg-main) border-(--border-main) text-(--text-dim) hover:text-(--text-main) hover:border-(--accent-base)"
+                                ? "bg-transparent text-(--text-main) border-transparent"
+                                : "bg-transparent border-transparent text-(--text-dim) hover:text-(--text-main) hover:border-(--accent-base)"
                             }`}
                             title={
                               isPinned ? "Unpin from Dock" : "Pin to Dock"

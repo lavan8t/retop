@@ -93,6 +93,6 @@ export function scrapeUserProfile(doc: Document) {
     doc.querySelector(".navbar-text.text-light.small.fw-bold")?.textContent ||
     "";
   const regNo = navText.split("(")[0].trim() || "Student";
-  const name = navText.split("-")[1]?.split(")")[0]?.trim() || "User";
+  const name = navText.split("-")[1]?.split(")")[0]?.trim() || "Person";
   return { name, regNo };
 }

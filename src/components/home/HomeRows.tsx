@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, Variants } from "framer-motion";
-import { MapPin, ArrowRight } from "lucide-react";
+import { LocationOn, ArrowForward } from '@nine-thirty-five/material-symbols-react/outlined';
 import { CourseSummary, Assignment, Event } from "../../types/vtop";
 import { UpcomingClass } from "../../utils/timetable-slots";
 import { formatTimeStr } from "../../utils/formatting";
@@ -116,7 +116,7 @@ export const ScheduleRow = ({ item, onClick, use24HourTime = true }: { item: Upc
              {formatTimeStr(item.time, use24HourTime)}
           </span>
           <span className="flex items-center gap-1.5 bg-black/10 px-1.5 py-0.5 rounded-md">
-            <MapPin className="w-3 h-3" />
+            <LocationOn className="w-3 h-3" />
             {item.course.venue}
           </span>
         </div>

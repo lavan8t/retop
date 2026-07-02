@@ -8,8 +8,8 @@
   },
   "dependencies": {
     "@iconify-icon/react": "^3.0.3",
+    "@nine-thirty-five/material-symbols-react": "^2.1.2",
     "framer-motion": "^12.34.0",
-    "lucide-react": "^0.563.0",
     "next": "16.1.6",
     "react": "^19.2.4",
     "react-barcode": "^1.6.1",

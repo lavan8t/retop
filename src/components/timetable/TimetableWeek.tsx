@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { TimetableCourse, CourseSummary } from "../../types/vtop";
 import { getGridPositions, DAYS } from "../../utils/timetable-slots";
-import { MapPin, CalendarOff } from "lucide-react";
+import { LocationOn, EventBusy } from '@nine-thirty-five/material-symbols-react/outlined';
 import { motion, AnimatePresence } from "framer-motion";
 import { getCourseAcronym, formatTimeStr } from "../../utils/formatting";
 import { CoursePopup } from "./CoursePopup";
@@ -117,7 +117,7 @@ export const TimetableWeek = ({
                 key="empty"
                 className="flex flex-col items-center justify-center h-full text-zinc-600 py-20"
               >
-                <CalendarOff className="w-12 h-12 opacity-50 mb-4" />
+                <EventBusy className="w-12 h-12 opacity-50 mb-4" />
                 <span className="font-expanded font-bold text-xs uppercase ">
                   No Classes Today
                 </span>
@@ -168,7 +168,7 @@ export const TimetableWeek = ({
                           <span className="shrink-0 ml-2">{emoji}</span>
                         </h4>
                         <div className="flex items-center gap-2 mt-3 text-[10px] font-bold text-zinc-300 bg-zinc-950 px-2 py-1 rounded-xl border border-zinc-800 w-fit">
-                          <MapPin className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                          <LocationOn className="w-3.5 h-3.5 text-red-500 shrink-0" />
                           <span className="truncate max-w-30">
                             {course.venue}
                           </span>
@@ -207,7 +207,7 @@ export const TimetableWeek = ({
               <div className="flex-1 overflow-y-auto custom-scrollbar p-2 lg:p-3 space-y-2 lg:space-y-3 pb-32">
                 {dayEvents.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-zinc-600 opacity-50">
-                    <CalendarOff className="w-8 h-8 mb-2" />
+                    <EventBusy className="w-8 h-8 mb-2" />
                     <span className="text-[10px] font-bold uppercase ">
                       Free
                     </span>

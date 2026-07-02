@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Semester } from "../../types/vtop";
-import { Calendar, ChevronDown } from "lucide-react";
+import { CalendarMonth, KeyboardArrowDown } from '@nine-thirty-five/material-symbols-react/outlined';
 import { motion, AnimatePresence } from "framer-motion";
 
 // SMART PARSER: Converts "Winter Semester 2025-26" -> "W'26"
@@ -41,11 +41,11 @@ export const SemesterDropdown = ({ semesters, selectedId, onChange }: any) => {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-1.5 md:gap-2 bg-(--bg-surface) border-2 border-(--border-main) px-2 md:px-3 py-1.5 rounded-lg md:rounded-xl text-(--text-main) font-bold shadow-none hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_var(--shadow-main)] transition-all active:translate-y-0 active:shadow-none text-[9px] sm:text-[10px] md:text-xs group"
       >
-        <Calendar className="w-3 h-3 md:w-3.5 md:h-3.5 text-(--accent-base) group-hover:text-(--accent-hover) transition-colors shrink-0" />
+        <CalendarMonth className="w-3 h-3 md:w-3.5 md:h-3.5 text-(--accent-base) group-hover:text-(--accent-hover) transition-colors shrink-0" />
         <span className="uppercase  truncate max-w-12.5 sm:max-w-20 md:max-w-30 font-expanded">
           {selected ? formatShortSemesterName(selected.label) : "Select Sem"}
         </span>
-        <ChevronDown
+        <KeyboardArrowDown
           className={`w-3 h-3 md:w-3.5 md:h-3.5 transition-transform duration-200 shrink-0 ${isOpen ? "rotate-180" : ""}`}
         />
       </button>

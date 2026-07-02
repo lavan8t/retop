@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { TimetableCourse } from "../../types/vtop";
-import { X, MapPin, User, Clock, GraduationCap, PieChart } from "lucide-react";
+import { Close, LocationOn, Person, Schedule, School, PieChart } from '@nine-thirty-five/material-symbols-react/outlined';
 
 interface CoursePopupProps {
   course: TimetableCourse | null;
@@ -85,7 +85,7 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
               onClick={onClose}
               className={`p-1.5 bg-black/10 hover:bg-black/20 rounded-full transition-colors border-2 border-transparent hover:border-(--border-main) shrink-0 ${colors.text}`}
             >
-              <X className="w-3 h-3" />
+              <Close className="w-3 h-3" />
             </button>
           </div>
         </div>
@@ -95,7 +95,7 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
             <div
               className={`w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center border-2 border-(--border-main) ${colors.icon}`}
             >
-              <User className="w-4 h-4" />
+              <Person className="w-4 h-4" />
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-[9px] font-bold text-zinc-500 uppercase  mb-0.5">
@@ -113,7 +113,7 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
           <div className="grid grid-cols-2 gap-2">
             <div className="p-2 bg-zinc-950 rounded-xl border-2 border-(--border-main)">
               <div className="flex items-center gap-1.5 text-zinc-500 text-[9px] font-bold uppercase mb-1">
-                <MapPin className="w-3 h-3" /> Venue
+                <LocationOn className="w-3 h-3" /> Venue
               </div>
               <p className="text-zinc-200 font-black text-xs truncate">
                 {course.venue}
@@ -121,7 +121,7 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
             </div>
             <div className="p-2 bg-zinc-950 rounded-xl border-2 border-(--border-main)">
               <div className="flex items-center gap-1.5 text-zinc-500 text-[9px] font-bold uppercase mb-1">
-                <GraduationCap className="w-3 h-3" /> Credits
+                <School className="w-3 h-3" /> Credits
               </div>
               <p className="text-zinc-200 font-black text-xs">
                 {course.credits}
@@ -130,7 +130,7 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
 
             <div className="p-2 bg-zinc-950 rounded-xl border-2 border-(--border-main)">
               <div className="flex items-center gap-1.5 text-zinc-500 text-[9px] font-bold uppercase mb-2">
-                <Clock className="w-3 h-3" /> Slots
+                <Schedule className="w-3 h-3" /> Slots
               </div>
               <div className="flex flex-wrap gap-1">
                 {course.slot.split("+").map((s, i) => (

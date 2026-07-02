@@ -3,14 +3,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
   Download,
-  BookOpen,
+  MenuBook,
   List,
   Layers,
-  FileText,
-  User,
+  Description,
+  Person,
   Filter,
-  ChevronDown,
-} from "lucide-react";
+  KeyboardArrowDown,
+} from '@nine-thirty-five/material-symbols-react/outlined';
 import { VTOPNetwork } from "../utils/network";
 import { parseCoursePage } from "../parsers/course-page";
 import {
@@ -168,7 +168,7 @@ export const CoursePage = ({
             headers: {
               "Content-Type":
                 "application/x-www-form-urlencoded; charset=UTF-8",
-              "X-Requested-With": "XMLHttpRequest",
+              "Close-Requested-With": "XMLHttpRequest",
             },
             body: body,
           },
@@ -278,7 +278,7 @@ export const CoursePage = ({
                   <div
                     className={`p-2 rounded-xl transition-transform duration-300 border-2 ${isCourseListOpen ? "border-(--border-main)/20 bg-black/10 rotate-180" : "border-zinc-800 bg-zinc-950 group-hover:border-zinc-700"}`}
                   >
-                    <ChevronDown className="w-4 h-4 shrink-0" />
+                    <KeyboardArrowDown className="w-4 h-4 shrink-0" />
                   </div>
                 </button>
 
@@ -418,7 +418,7 @@ export const CoursePage = ({
                   {
                     id: "syllabus",
                     label: "SYLLABUS",
-                    icon: BookOpen,
+                    icon: MenuBook,
                     color: "bg-orange-400",
                   },
                 ].map((tab) => (
@@ -470,7 +470,7 @@ export const CoursePage = ({
                               >
                                 <div className="flex items-center gap-4 min-w-0">
                                   <div className="w-12 h-12 flex items-center justify-center bg-zinc-900 border-2 border-zinc-800 rounded-xl text-zinc-500 group-hover:text-cyan-400 group-hover:border-cyan-400 transition-colors shrink-0">
-                                    <FileText className="w-6 h-6" />
+                                    <Description className="w-6 h-6" />
                                   </div>
                                   <div className="min-w-0">
                                     <h4 className="font-bold text-zinc-200 text-base group-hover:text-cyan-400 transition-colors truncate">
@@ -478,7 +478,7 @@ export const CoursePage = ({
                                     </h4>
                                     <div className="flex items-center gap-2 mt-1">
                                       <span className="text-[10px] font-bold text-zinc-500 uppercase flex items-center gap-1 bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800">
-                                        <User className="w-3 h-3" />{" "}
+                                        <Person className="w-3 h-3" />{" "}
                                         {mat.faculty}
                                       </span>
                                       <span className="text-[10px] font-mono text-zinc-600">

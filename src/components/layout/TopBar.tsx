@@ -3,13 +3,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
   Home,
-  RefreshCw,
-  LayoutGrid,
+  Autorenew,
+  GridView,
   List,
-  Calendar,
-  User,
+  CalendarMonth,
+  Person,
   Search,
-} from "lucide-react";
+} from '@nine-thirty-five/material-symbols-react/outlined';
 import {
   QuickLink,
   Semester,
@@ -215,7 +215,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                 className="flex items-center gap-1.5 md:gap-3 lg:gap-4 pr-0 pointer-events-auto"
               >
                 {ttLoading && (
-                  <RefreshCw className="w-4 h-4 text-(--accent-base) animate-spin hidden sm:block" />
+                  <Autorenew className="w-4 h-4 text-(--accent-base) animate-spin hidden sm:block" />
                 )}
                 <SemesterDropdown
                   semesters={ttSemesters}
@@ -232,7 +232,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                         : "border-transparent text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-surface)"
                     }`}
                   >
-                    <LayoutGrid className="w-4 h-4" />
+                    <GridView className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => setTtViewMode("list")}
@@ -252,7 +252,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                         : "border-transparent text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-surface)"
                     }`}
                   >
-                    <Calendar className="w-4 h-4" />
+                    <CalendarMonth className="w-4 h-4" />
                   </button>
                 </div>
                 <div className="hidden sm:block w-0.5 h-8 bg-(--border-dim) mx-1"></div>
@@ -351,7 +351,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                         alt="Profile"
                       />
                     ) : (
-                      <User className="w-5 h-5 md:w-6 md:h-6 text-(--text-dim)" />
+                      <Person className="w-5 h-5 md:w-6 md:h-6 text-(--text-dim)" />
                     )}
                   </motion.div>
                 )}

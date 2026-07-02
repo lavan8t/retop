@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Loader2,
-  Calendar as CalendarIcon,
+  ProgressActivity,
+  CalendarMonth as CalendarIcon,
   ChevronLeft,
   ChevronRight,
   Info,
-} from "lucide-react";
+} from '@nine-thirty-five/material-symbols-react/outlined';
 import { VTOPNetwork } from "../utils/network";
 
 import {
@@ -125,16 +125,16 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
     <div className="h-full w-full flex flex-col bg-(--bg-main) font-mono text-(--text-main) overflow-hidden pb-8 px-4 md:px-8 max-w-425 mx-auto">
       {calLoadingMonths ? (
         <div className="flex-1 flex flex-col items-center justify-center animate-pulse border-4 border-(--border-main) rounded-3xl bg-(--bg-card) shadow-none mt-[120px]">
-          <Loader2 className="w-16 h-16 mb-6 animate-spin text-(--accent-base)" />
+          <ProgressActivity className="w-16 h-16 mb-6 animate-spin text-(--accent-base)" />
           <span className="text-xl font-black uppercase font-expanded tracking-widest text-(--text-muted)">
-            Syncing Calendar...
+            Syncing CalendarMonth...
           </span>
         </div>
       ) : calAvailableMonths.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center border-4 border-(--border-main) rounded-3xl bg-(--bg-card) shadow-none mt-[120px]">
           <CalendarIcon className="w-20 h-20 mb-6 text-(--text-muted) opacity-50" />
           <span className="text-2xl font-black uppercase font-expanded text-(--text-main)">
-            No Calendar Data
+            No CalendarMonth Data
           </span>
           <p className="mt-2 text-(--text-muted) font-bold text-sm max-w-md text-center">
             The calendar grid for this semester could not be fetched or does not
@@ -179,7 +179,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                     exit={{ opacity: 0 }}
                     className="absolute inset-0 flex items-center justify-center bg-(--bg-main)/80 backdrop-blur-sm z-30"
                   >
-                    <Loader2 className="w-12 h-12 animate-spin text-(--accent-base)" />
+                    <ProgressActivity className="w-12 h-12 animate-spin text-(--accent-base)" />
                   </motion.div>
                 ) : calGridData.length > 0 ? (
                   <motion.div

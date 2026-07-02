@@ -111,15 +111,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
     calGridData.length,
   ]);
 
-  // Clear grid data when semester or group changes so it fetches again
-  useEffect(() => {
-    useDataStore.setState({ calGridData: [] });
-  }, [calSelectedSem, calSelectedGroup]);
 
-  // Clear months when semester changes
-  useEffect(() => {
-    useDataStore.setState({ calAvailableMonths: [], calClassGroups: [] });
-  }, [calSelectedSem]);
 
   return (
     <div className="h-full w-full flex flex-col bg-(--bg-main) font-mono text-(--text-main) overflow-hidden pb-8 px-4 md:px-8 max-w-425 mx-auto">
@@ -303,22 +295,6 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                         </div>
                       </div>
                     ))}
-                  </motion.div>
-                ) : !calSelectedGroup ? (
-                  <motion.div
-                    key="no-group"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10"
-                  >
-                    <Info className="w-16 h-16 mb-6 text-(--accent-base) opacity-80" />
-                    <h3 className="text-2xl font-black font-expanded uppercase text-(--text-main) mb-2">
-                      Select a Class Group
-                    </h3>
-                    <p className="text-(--text-muted) max-w-sm">
-                      Please select your class group from the dropdown in the top bar to view the calendar schedule.
-                    </p>
                   </motion.div>
                 ) : null}
               </AnimatePresence>

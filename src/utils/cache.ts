@@ -1,4 +1,4 @@
-const CACHE_PREFIX = "vtop_remastered_";
+const CACHE_PREFIX = "retop_";
 const CACHE_TTL = 24 * 60 * 60 * 1000;
 
 export const getCachedData = <T>(key: string): T | null => {

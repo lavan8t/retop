@@ -312,7 +312,7 @@ const LoginPage = ({
                       </span>
                     </div>
                     <p className="mt-8 font-expanded font-bold text-(--text-muted) uppercase text-sm">
-                      Student Portal Remastered
+                      Student Portal
                     </p>
                   </div>
                 </motion.div>

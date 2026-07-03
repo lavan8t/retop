@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { ClassGroup } from "../../types/vtop";
-import { Group, KeyboardArrowDown } from '@nine-thirty-five/material-symbols-react/rounded';
+import {
+  Group,
+  KeyboardArrowDown,
+} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { motion, AnimatePresence } from "framer-motion";
 
 export const formatShortGroupName = (label: string) => {
@@ -19,7 +22,8 @@ export const formatShortGroupName = (label: string) => {
 
 export const ClassGroupDropdown = ({ groups, selectedId, onChange }: any) => {
   const [isOpen, setIsOpen] = useState(false);
-  const selected = groups.find((g: ClassGroup) => g.id === selectedId) || groups[0];
+  const selected =
+    groups.find((g: ClassGroup) => g.id === selectedId) || groups[0];
 
   if (!groups || groups.length === 0) return null;
 

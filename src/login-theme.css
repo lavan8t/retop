@@ -450,8 +450,13 @@ body {
   box-shadow: none !important;
 }
 
-.btn-light:hover svg {
-  transform: scale(1.1);
+.btn-light:hover svg,
+.btn-light:hover i,
+.btn-light:hover img,
+.btn-light:hover span,
+.btn-light:hover * {
+  transform: none !important;
+  animation: none !important;
 }
 
 .form-control:focus {
@@ -469,6 +474,11 @@ body {
 }
 
 /* Eye Toggle Logic - Animated Stroke */
+#passwordIcon::before {
+  content: none !important;
+  display: none !important;
+}
+
 #passwordIcon .retop-eye-strike {
   stroke-dasharray: 29; /* length of the diagonal strike line */
   stroke-dashoffset: 29; /* default hidden (not struck) */

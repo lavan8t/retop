@@ -8,7 +8,7 @@ import {
   Visibility,
   VisibilityOff,
   Autorenew,
-} from '@nine-thirty-five/material-symbols-react/rounded';
+} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import {
   createHiddenForm,
   initializeContainer,
@@ -98,7 +98,11 @@ const LoginPage = ({
 
   const [mode, setMode] = useState<"IMAGE" | "GOOGLE" | "NONE">(initialMode);
   const [siteKey, setSiteKey] = useState<string>("");
-  const [errors, setErrors] = useState({ username: false, password: false, captcha: false });
+  const [errors, setErrors] = useState({
+    username: false,
+    password: false,
+    captcha: false,
+  });
 
   useEffect(() => {
     const initSession = async () => {
@@ -257,7 +261,10 @@ const LoginPage = ({
 
     if (newErrors.username || newErrors.password || newErrors.captcha) {
       setErrors(newErrors);
-      setTimeout(() => setErrors({ username: false, password: false, captcha: false }), 400);
+      setTimeout(
+        () => setErrors({ username: false, password: false, captcha: false }),
+        400,
+      );
       return;
     }
 
@@ -325,7 +332,13 @@ const LoginPage = ({
                   </div>
 
                   <div className="space-y-6">
-                    <motion.div animate={errors.username ? { x: [-10, 10, -8, 8, -5, 5, 0] } : {}} transition={{ duration: 0.4 }} className="relative group">
+                    <motion.div
+                      animate={
+                        errors.username ? { x: [-10, 10, -8, 8, -5, 5, 0] } : {}
+                      }
+                      transition={{ duration: 0.4 }}
+                      className="relative group"
+                    >
                       <label className="absolute -top-3 left-4 bg-(--bg-surface) border-2 border-(--border-main) px-2 py-0.5 text-[10px] font-expanded font-black uppercase z-10 rounded-lg shadow-none text-(--text-main) group-focus-within:bg-(--accent-base) group-focus-within:text-(--text-inverse) transition-colors">
                         Identity
                       </label>
@@ -339,7 +352,13 @@ const LoginPage = ({
                         className="w-full bg-(--bg-surface) border-4 border-(--border-main) rounded-2xl p-4 pl-5 font-expanded font-black text-xl outline-none focus:shadow-[4px_4px_0px_0px_var(--shadow-main)] focus:-translate-y-1 transition-all uppercase text-(--text-main) placeholder-(--text-muted)"
                       />
                     </motion.div>
-                    <motion.div animate={errors.password ? { x: [-10, 10, -8, 8, -5, 5, 0] } : {}} transition={{ duration: 0.4 }} className="relative group">
+                    <motion.div
+                      animate={
+                        errors.password ? { x: [-10, 10, -8, 8, -5, 5, 0] } : {}
+                      }
+                      transition={{ duration: 0.4 }}
+                      className="relative group"
+                    >
                       <label className="absolute -top-3 left-4 bg-(--bg-surface) border-2 border-(--border-main) px-2 py-0.5 text-[10px] font-expanded font-black uppercase z-10 rounded-lg shadow-none text-(--text-main) group-focus-within:bg-(--accent-base) group-focus-within:text-(--text-inverse) transition-colors">
                         Security
                       </label>
@@ -367,7 +386,15 @@ const LoginPage = ({
 
                     {mode === "IMAGE" && (
                       <div className="flex gap-4">
-                        <motion.div animate={errors.captcha ? { x: [-10, 10, -8, 8, -5, 5, 0] } : {}} transition={{ duration: 0.4 }} className="relative group flex-1">
+                        <motion.div
+                          animate={
+                            errors.captcha
+                              ? { x: [-10, 10, -8, 8, -5, 5, 0] }
+                              : {}
+                          }
+                          transition={{ duration: 0.4 }}
+                          className="relative group flex-1"
+                        >
                           <label className="absolute -top-3 left-4 bg-(--bg-surface) border-2 border-(--border-main) px-2 py-0.5 text-[10px] font-expanded font-black uppercase z-10 rounded-lg shadow-none text-(--text-main) group-focus-within:bg-(--accent-base) group-focus-within:text-(--text-inverse) transition-colors">
                             Verification
                           </label>

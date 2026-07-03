@@ -22,7 +22,7 @@ import {
   Error,
   KeyboardArrowDown,
   Pin,
-} from '@nine-thirty-five/material-symbols-react/rounded';
+} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { QuickLink, MenuCategory } from "../../types/vtop";
 import { getCategoryIcon } from "../../utils/icons";
 
@@ -449,8 +449,6 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   return (
     <>
       <div className="fixed inset-0 pointer-events-none z-9999">
-
-
         {/* MOBILE IMPLEMENTATION */}
         {!isDesktop && (
           <motion.nav

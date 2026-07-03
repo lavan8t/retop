@@ -4,9 +4,9 @@ import {
   Check,
   Casino,
   Close,
-} from "@nine-thirty-five/material-symbols-react/rounded";
+} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { motion, AnimatePresence } from "framer-motion";
-import "@nine-thirty-five/material-symbols-react/rounded";
+import "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { MaterialSwitch } from "../components/MaterialSwitch";
 
 interface SettingsPageProps {
@@ -164,61 +164,67 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             className="col-span-1 md:col-span-2 lg:col-span-4"
           >
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8 w-full">
-              <div className="flex flex-col gap-2">
-                <span className="text-sm font-bold text-(--text-muted)">
-                  Theme
-                </span>
-                <div className="flex items-center gap-0.5 shrink-0">
-                  {["light", "dark", "auto"].map((mode, idx, arr) => {
-                    const isActive =
-                      settings.themeMode === mode ||
-                      (mode === "dark" && settings.themeMode === "amoled");
-                    const isFirst = idx === 0;
-                    const isLast = idx === arr.length - 1;
-                    const rounding = isFirst
-                      ? "rounded-l-[20px] rounded-r-md"
-                      : isLast
-                        ? "rounded-l-md rounded-r-[20px]"
-                        : "rounded-md";
-                    const activeRounding = "rounded-[20px]";
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-2">
+                  <span className="text-sm font-bold text-(--text-muted)">
+                    Theme
+                  </span>
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    {["light", "dark", "auto"].map((mode, idx, arr) => {
+                      const isActive =
+                        settings.themeMode === mode ||
+                        (mode === "dark" && settings.themeMode === "amoled");
+                      const isFirst = idx === 0;
+                      const isLast = idx === arr.length - 1;
+                      const rounding = isFirst
+                        ? "rounded-l-[20px] rounded-r-md"
+                        : isLast
+                          ? "rounded-l-md rounded-r-[20px]"
+                          : "rounded-md";
+                      const activeRounding = "rounded-[20px]";
 
-                    return (
-                      <button
-                        key={mode}
-                        onClick={(e) => {
-                          let targetMode = mode;
-                          // If switching to dark and amoled was previously on, it will keep amoled off (reset to dark) or we can restore amoled.
-                          // Actually, standard behavior: selecting dark sets it to dark. Pure black is a separate modifier.
-                          if (mode === "light") targetMode = "light";
-                          handleThemeChange(e, targetMode as any);
-                        }}
-                        className={`px-4 py-2.5 text-xs font-bold font-expanded uppercase transition-all duration-300 ${
-                          isActive
-                            ? `bg-(--text-main) text-(--bg-main) shadow-none ${activeRounding}`
-                            : `bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) shadow-none ${rounding}`
-                        }`}
-                      >
-                        {mode}
-                      </button>
-                    );
-                  })}
+                      return (
+                        <button
+                          key={mode}
+                          onClick={(e) => {
+                            let targetMode = mode;
+                            if (mode === "light") targetMode = "light";
+                            handleThemeChange(e, targetMode as any);
+                          }}
+                          className={`px-4 py-2.5 text-xs font-bold font-expanded uppercase transition-all duration-300 ${
+                            isActive
+                              ? `bg-(--text-main) text-(--bg-main) shadow-none ${activeRounding}`
+                              : `bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) shadow-none ${rounding}`
+                          }`}
+                        >
+                          {mode}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex items-center justify-between gap-4 w-full lg:w-auto mt-2 lg:mt-0">
-                <span className="text-sm font-bold text-(--text-muted)">
-                  Use pure black
-                </span>
-                <MaterialSwitch
-                  selected={settings.themeMode === "amoled"}
-                  onChange={(checked) => {
-                    const e = {
-                      clientX: window.innerWidth / 2,
-                      clientY: window.innerHeight / 2,
-                    };
-                    handleThemeChange(e, checked ? "amoled" : "dark");
-                  }}
-                />
+                <div className="flex items-center justify-between gap-4 w-full">
+                  <span
+                    className={`text-sm font-bold ${settings.themeMode !== "dark" && settings.themeMode !== "amoled" ? "text-(--text-muted) opacity-50" : "text-(--text-muted)"}`}
+                  >
+                    Use pure black
+                  </span>
+                  <MaterialSwitch
+                    selected={settings.themeMode === "amoled"}
+                    disabled={
+                      settings.themeMode !== "dark" &&
+                      settings.themeMode !== "amoled"
+                    }
+                    onChange={(checked) => {
+                      const e = {
+                        clientX: window.innerWidth / 2,
+                        clientY: window.innerHeight / 2,
+                      };
+                      handleThemeChange(e, checked ? "amoled" : "dark");
+                    }}
+                  />
+                </div>
               </div>
 
               <div className="flex flex-col gap-2 w-full lg:w-auto">

@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Card } from "../ui/Card";
-import { NorthEast } from "@nine-thirty-five/material-symbols-react/rounded";
+import { NorthEast } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 
 export const ListCard = ({
   title,

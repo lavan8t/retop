@@ -1,4 +1,4 @@
-import { SentimentVeryDissatisfied } from '@nine-thirty-five/material-symbols-react/rounded';
+import { SentimentVeryDissatisfied } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 
 export const EmptyState = ({
   msg,

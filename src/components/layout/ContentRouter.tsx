@@ -1,4 +1,4 @@
-import { ProgressActivity } from '@nine-thirty-five/material-symbols-react/rounded';
+import { ProgressActivity } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { HomeView } from "../../pages/home";
 import { TimetableContentView } from "../../pages/timetable";
 import { CurriculumPage } from "../../pages/curriculum";

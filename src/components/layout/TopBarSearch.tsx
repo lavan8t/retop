@@ -1,13 +1,10 @@
 import React, { useState, useRef, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Search,
-  Description,
-  SubdirectoryArrowRight,
-  Pin,
+  Keep,
   Error,
-  Home,
-} from '@nine-thirty-five/material-symbols-react/rounded';
+  Search,
+} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { QuickLink, MenuCategory } from "../../types/vtop";
 import { MarqueeText } from "../common/MarqueeText";
 
@@ -99,10 +96,21 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
       },
     );
 
-    return matches
+    const sortedMatches = matches
       .sort((a, b) => b.score - a.score)
       .map((m) => m.link)
       .slice(0, 15);
+
+    const grouped = new Map<string, QuickLink[]>();
+    sortedMatches.forEach((link) => {
+      const cat = link.category || "Other";
+      if (!grouped.has(cat)) grouped.set(cat, []);
+      grouped.get(cat)!.push(link);
+    });
+
+    const finalLinks: QuickLink[] = [];
+    grouped.forEach((links) => finalLinks.push(...links));
+    return finalLinks;
   }, [query, menuCategories]);
 
   useEffect(() => {
@@ -142,12 +150,13 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
     <div className="relative flex flex-col z-50">
       {/* Unified Search Bar */}
       <div
-        className={`group flex items-center gap-4 transition-all cursor-text md:min-w-[420px] shadow-none pl-6 pr-5 h-14 md:h-16
+        className={`group flex items-center gap-4 transition-all duration-300 ease-out cursor-text md:min-w-[420px] pl-6 pr-5 h-14 md:h-16
           ${
-            isSearchActive
-              ? "bg-(--bg-highlight) rounded-t-[1.5rem] md:rounded-t-[2rem] rounded-b-none border-2 border-b-0 border-(--border-main)"
-              : "bg-transparent border-2 border-transparent"
+            isExpanded
+              ? `bg-(--bg-highlight) rounded-[1.5rem] md:rounded-[2rem] border-2 border-(--border-main) translate-x-2 translate-y-2 ${isSearchActive ? "shadow-[4px_0px_0px_0px_var(--shadow-main)]" : "shadow-[4px_4px_0px_0px_var(--shadow-main)]"}`
+              : "bg-transparent border-2 border-transparent translate-x-0 translate-y-0 shadow-none"
           }
+          ${isSearchActive ? "rounded-b-none border-b-0" : ""}
         `}
       >
         <button
@@ -172,21 +181,27 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
         </button>
 
         <div className="relative flex-1 w-full min-w-0 flex items-center">
-          {query && flattenedLinks.length > 0 && flattenedLinks[0].title.toLowerCase().startsWith(query.toLowerCase()) && (
-            <div className="absolute left-2 top-0 bottom-0 flex items-center pt-1 pointer-events-none w-full overflow-hidden">
-              <span className="text-lg md:text-xl font-bold text-transparent whitespace-pre uppercase">{query}</span>
-              <span className="text-lg md:text-xl font-bold text-(--text-muted) opacity-50 whitespace-pre uppercase truncate">
-                {flattenedLinks[0].title.slice(query.length)}
-              </span>
-            </div>
-          )}
+          {query &&
+            flattenedLinks.length > 0 &&
+            flattenedLinks[0].title
+              .toLowerCase()
+              .startsWith(query.toLowerCase()) && (
+              <div className="absolute left-2 top-0 bottom-0 flex items-center pt-1 pointer-events-none w-full overflow-hidden">
+                <span className="text-lg md:text-xl font-bold text-transparent whitespace-pre uppercase">
+                  {query}
+                </span>
+                <span className="text-lg md:text-xl font-bold text-(--text-muted) opacity-50 whitespace-pre uppercase truncate">
+                  {flattenedLinks[0].title.slice(query.length)}
+                </span>
+              </div>
+            )}
           <input
             ref={inputRef}
             type="text"
             placeholder={pageTitle}
             value={query}
             onChange={(e) => {
-              const sanitized = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+              const sanitized = e.target.value.replace(/[^a-zA-Z\s]/g, "");
               setQuery(sanitized);
               setSelectedIndex(0);
               if (!isExpanded) setIsOmniboxOpen(true);
@@ -208,7 +223,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="absolute top-14 md:top-16 left-0 w-full bg-(--bg-highlight) border-2 border-t-0 border-(--border-main) rounded-b-[1.5rem] md:rounded-b-[2rem] overflow-hidden z-[200] shadow-[8px_8px_0px_0px_var(--shadow-main)]"
+            className="absolute top-14 md:top-16 left-0 w-full bg-(--bg-highlight) border-2 border-t-0 border-(--border-main) rounded-b-[1.5rem] md:rounded-b-[2rem] overflow-hidden z-[200] shadow-[4px_4px_0px_0px_var(--shadow-main)] translate-x-2 translate-y-2"
           >
             <div className="px-4">
               <div className="w-full h-[2px] bg-(--border-main) rounded-full opacity-50" />
@@ -223,21 +238,30 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                     </span>
                   </div>
                 ) : (
-                  flattenedLinks.map((link, i) => {
-                    const isSelected = i === selectedIndex;
-                    const linkDest = getDestinationView(link);
-                    const isPinned =
-                      linkDest !== "content" &&
-                      pinnedLinks.some(
-                        (p) => getDestinationView(p) === linkDest,
-                      );
+                  (() => {
+                    let currentCategory = "";
+                    return flattenedLinks.map((link, i) => {
+                      const isSelected = i === selectedIndex;
+                      const linkDest = getDestinationView(link);
+                      const isPinned =
+                        linkDest !== "content" &&
+                        pinnedLinks.some(
+                          (p) => getDestinationView(p) === linkDest,
+                        );
+                      
+                      const category = link.category || "Other";
+                      const isNewCategory = category !== currentCategory;
+                      if (isNewCategory) currentCategory = category;
 
-                    return (
-                      <div
-                        key={i}
-                        className="relative w-full mb-1 group"
-                      >
-                        <button
+                      return (
+                        <React.Fragment key={i}>
+                          {isNewCategory && (
+                            <div className="px-3 pt-2 pb-1 text-[10px] font-expanded font-black text-(--text-muted) uppercase tracking-wider">
+                              {currentCategory}
+                            </div>
+                          )}
+                          <div className="relative w-full mb-1 group">
+                            <button
                           onClick={() => {
                             onNavigate(link);
                             setIsOmniboxOpen(false);
@@ -254,33 +278,34 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                             <MarqueeText text={link.title} />
                           </div>
                         </button>
-                        
-                        <div className={`absolute right-1 top-1 bottom-1 w-12 pr-1 flex items-center justify-end rounded-r-xl transition-all pointer-events-none z-20 ${!isPinned ? "opacity-0 group-hover:opacity-100" : "opacity-100"}`}>
+
+                        <div
+                          className={`absolute right-1 top-1 bottom-1 w-12 pr-1 flex items-center justify-end rounded-r-xl transition-all pointer-events-none z-20 ${!isPinned ? "opacity-50 group-hover:opacity-100" : "opacity-100"}`}
+                        >
                           <button
-                            onClick={(e) => { e.stopPropagation(); onTogglePin(link); }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onTogglePin(link);
+                            }}
                             className={`pointer-events-auto p-1.5 rounded-xl transition-all border-2 shadow-none ${
                               isPinned
                                 ? "bg-transparent text-(--text-main) border-transparent"
                                 : "bg-transparent border-transparent text-(--text-dim) hover:text-(--text-main) hover:border-(--accent-base)"
                             }`}
-                            title={
-                              isPinned ? "Unpin from Dock" : "Pin to Dock"
-                            }
+                            title={isPinned ? "Unpin from Dock" : "Pin to Dock"}
                           >
-                            <Pin
-                              className="w-3.5 h-3.5"
-                              fill={isPinned ? "currentColor" : "none"}
+                            <Keep
+                              className={`w-3.5 h-3.5 transition-opacity ${!isPinned ? "opacity-50 group-hover:opacity-100" : "opacity-100"}`}
                               style={{
-                                transform: isPinned
-                                  ? "rotate(45deg)"
-                                  : "none",
+                                transform: isPinned ? "rotate(45deg)" : "none",
                               }}
                             />
                           </button>
                         </div>
                       </div>
+                      </React.Fragment>
                     );
-                  })
+                  })})()
                 )}
               </div>
             </div>

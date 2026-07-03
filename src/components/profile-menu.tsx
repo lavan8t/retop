@@ -9,8 +9,7 @@ import {
   Settings,
   ChevronRight,
   DesignServices,
-  History,
-} from '@nine-thirty-five/material-symbols-react/rounded';
+} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { QuickLink } from "../types/vtop";
 import { motion, Variants, Transition } from "framer-motion";
 
@@ -58,14 +57,16 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
       icon: Key,
       url: "user/changePassword",
       cat: "Settings",
-      hoverClass: "hover:bg-pink-400 hover:shadow-[6px_6px_0px_0px_var(--shadow-main)]",
+      hoverClass:
+        "hover:bg-pink-400 hover:shadow-[6px_6px_0px_0px_var(--shadow-main)]",
     },
     {
       title: "Login ID",
       icon: ManageAccounts,
       url: "user/updateLoginId",
       cat: "Settings",
-      hoverClass: "hover:bg-blue-400 hover:shadow-[6px_6px_0px_0px_var(--shadow-main)]",
+      hoverClass:
+        "hover:bg-blue-400 hover:shadow-[6px_6px_0px_0px_var(--shadow-main)]",
     },
   ];
 
@@ -116,8 +117,13 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
               </div>
             )}
           </div>
-          <div className="w-full overflow-hidden relative" title={userName !== "Student" ? userName : userRegNo}>
-            <div className={`text-sm font-bold text-(--text-main) uppercase whitespace-nowrap inline-block ${(userName !== "Student" ? userName : userRegNo).length > 18 ? "animate-[profile-marquee_6s_linear_infinite]" : "w-full text-center"}`}>
+          <div
+            className="w-full overflow-hidden relative"
+            title={userName !== "Student" ? userName : userRegNo}
+          >
+            <div
+              className={`text-sm font-bold text-(--text-main) uppercase whitespace-nowrap inline-block ${(userName !== "Student" ? userName : userRegNo).length > 18 ? "animate-[profile-marquee_6s_linear_infinite]" : "w-full text-center"}`}
+            >
               {userName !== "Student" ? userName : userRegNo}
             </div>
           </div>
@@ -154,9 +160,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
           ))}
         </div>
 
-        <div
-          className="pt-4 mt-2 border-t-2 border-(--border-dim) mb-1"
-        >
+        <div className="pt-4 mt-2 border-t-2 border-(--border-dim) mb-1">
           <div className="flex items-center gap-2 px-1.5 mb-2.5">
             <DesignServices className="w-3 h-3 text-(--text-dim)" />
             <span className="text-[9px] font-expanded font-black uppercase  text-(--text-dim)">
@@ -188,9 +192,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
         </div>
       </div>
 
-      <div
-        className="p-2 flex gap-1.5 bg-(--bg-main) border-t-4 border-(--border-main) shrink-0"
-      >
+      <div className="p-2 flex gap-1.5 bg-(--bg-main) border-t-4 border-(--border-main) shrink-0">
         <button
           onClick={() => {
             onNavigate({
@@ -212,12 +214,13 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
             onClose();
           }}
           className="flex-1 flex items-center justify-center p-2.5 rounded-md border-2 border-(--border-main) text-white hover:brightness-110 hover:border-(--border-main) transition-all active:scale-95 group"
-          style={{ background: "linear-gradient(130deg, rgb(36, 85, 163) 23%, rgb(52, 151, 219) 52%, rgb(52, 142, 219) 58%, rgb(52, 131, 219) 65%, rgb(40, 116, 166) 74%)" }}
+          style={{
+            background:
+              "linear-gradient(130deg, rgb(36, 85, 163) 23%, rgb(52, 151, 219) 52%, rgb(52, 142, 219) 58%, rgb(52, 131, 219) 65%, rgb(40, 116, 166) 74%)",
+          }}
           title="Legacy View"
         >
-          <span 
-            className="text-xs group-hover:scale-110 transition-transform tracking-wider !font-['Times_New_Roman',_Times,_serif] !font-bold !text-white"
-          >
+          <span className="text-xs group-hover:scale-110 transition-transform tracking-wider !font-['Times_New_Roman',_Times,_serif] !font-bold !text-white">
             VTOP
           </span>
         </button>

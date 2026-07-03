@@ -14,7 +14,7 @@ import {
   Domain,
   Shield,
   MonitorHeart,
-} from '@nine-thirty-five/material-symbols-react/rounded';
+} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { motion } from "framer-motion";
 import Barcode from "react-barcode";
 
@@ -117,7 +117,7 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
       <div className="relative w-full h-full transition-transform duration-700 transform-3d group-hover:transform-[rotateY(180deg)] shadow-none rounded-2xl">
         {/* FRONT SIDE */}
         <div
-          className={`absolute inset-0 backface-hidden bg-(--bg-surface) rounded-2xl border-2 border-zinc-400 flex flex-col overflow-hidden text-(--text-main) ${fontArial}`}
+          className={`absolute inset-0 backface-hidden bg-white rounded-2xl border-2 border-zinc-400 flex flex-col overflow-hidden text-black ${fontArial}`}
         >
           {/* Header */}
           <div className="flex flex-col items-center pt-3 px-3 shrink-0">
@@ -126,7 +126,7 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
             </div>
 
             <h3
-              className={`text-[17px] font-extrabold scale-x-120 text-(--text-main) ${fontTimes}`}
+              className={`text-[17px] font-extrabold scale-x-120 text-black ${fontTimes}`}
             >
               VELLORE CAMPUS
             </h3>
@@ -153,7 +153,7 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
               {toTitleCase(data.basic.name)}
             </div>
             <div
-              className={`font-bold text-[18px] ${fontArial} text-(--text-main) mt-4`}
+              className={`font-bold text-[18px] ${fontArial} text-black mt-4`}
             >
               {data.basic.regNo}
             </div>
@@ -172,7 +172,7 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
 
         {/* BACK SIDE */}
         <div
-          className={`absolute inset-0 backface-hidden transform-[rotateY(180deg)] bg-(--bg-surface) rounded-2xl border-2 border-zinc-400 flex flex-col p-3 text-(--text-main) text-[12px] leading-tight overflow-hidden`}
+          className={`absolute inset-0 backface-hidden transform-[rotateY(180deg)] bg-white rounded-2xl border-2 border-zinc-400 flex flex-col p-3 text-black text-[12px] leading-tight overflow-hidden`}
         >
           <div className="flex gap-1">
             <span className={`italic font-bold ${fontTimes}`}>App. No:</span>{" "}
@@ -235,11 +235,11 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
 
           <div className="mt-2 flex justify-between text-[11px] italic items-end">
             <div className="text-center flex flex-col items-center">
-              <span className="text-xl -mb-2 text-(--text-muted) italic font-['cursive']!"></span>
+              <span className="text-xl -mb-2 text-zinc-500 italic font-['cursive']!"></span>
               <span className={fontTimes}> </span>
             </div>
             <div className="text-center flex flex-col items-center">
-              <span className="text-xl -mb-2 text-(--text-muted) italic font-['cursive']!"></span>
+              <span className="text-xl -mb-2 text-zinc-500 italic font-['cursive']!"></span>
               <span className={fontTimes}> </span>
             </div>
           </div>

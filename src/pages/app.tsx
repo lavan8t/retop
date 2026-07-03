@@ -60,10 +60,14 @@ const getDestinationView = (link: QuickLink): ViewType | "content" => {
     return "curriculum";
   if (
     lowerTitle.includes("mark") ||
-    lowerTitle.includes("grade") ||
     lowerUrl.includes("mark")
   )
     return "marks";
+  if (
+    lowerTitle.includes("grade") ||
+    lowerUrl.includes("grade")
+  )
+    return "grades";
   if (
     lowerTitle.includes("profile view") ||
     lowerTitle.includes("profile") ||
@@ -102,6 +106,7 @@ const getSavedView = (): ViewType => {
     "timetable",
     "curriculum",
     "marks",
+    "grades",
     "profile",
     "settings",
     "coursePage",
@@ -206,6 +211,10 @@ const DashboardApp = () => {
   const [marksSearchQuery, setMarksSearchQuery] = useState("");
   const [isMarksModernView, setIsMarksModernView] = useState(true);
 
+  // HOISTED GRADES STATE
+  const [gradesSemesters, setGradesSemesters] = useState<{ id: string; label: string }[]>([]);
+  const [gradesSelectedSem, setGradesSelectedSem] = useState("");
+
   const networkRef = useRef<VTOPNetwork | null>(null);
   const csrfRef = useRef<string>("");
   const authIdRef = useRef<string>("");
@@ -301,6 +310,14 @@ const DashboardApp = () => {
 
     const userProfile = scrapeUserProfile(document);
     setUser(userProfile);
+    
+    // Cache for offline mode
+    if (typeof chrome !== "undefined" && chrome.storage) {
+      chrome.storage.local.set({
+        "retop_lastAuthId": userProfile.regNo,
+        "retop_lastName": userProfile.name,
+      });
+    }
 
     fetchDashboardData(networkRef.current, csrf, authId).then(() =>
       setTimeout(() => removeSplashScreen(), 500),
@@ -363,7 +380,6 @@ const DashboardApp = () => {
     window.addEventListener("vtop-restore-ui", restoreHandler);
 
     const scrollHideTimeouts = new Map<HTMLElement, any>();
-    const scrollShowTimeouts = new Map<HTMLElement, any>();
     const handleScroll = (e: Event) => {
       const target = (e.composedPath ? e.composedPath()[0] : e.target) as HTMLElement;
       if (
@@ -373,12 +389,7 @@ const DashboardApp = () => {
           (typeof target.className === "string" && target.className.includes("overflow-")))
       ) {
         if (!target.hasAttribute("data-scrolling")) {
-          if (!scrollShowTimeouts.has(target)) {
-            scrollShowTimeouts.set(target, setTimeout(() => {
-              target.setAttribute("data-scrolling", "true");
-              scrollShowTimeouts.delete(target);
-            }, 100)); // slight delay to show
-          }
+          target.setAttribute("data-scrolling", "true");
         }
 
         const existingHideTimeout = scrollHideTimeouts.get(target);
@@ -386,10 +397,6 @@ const DashboardApp = () => {
         scrollHideTimeouts.set(target, setTimeout(() => {
           target.removeAttribute("data-scrolling");
           scrollHideTimeouts.delete(target);
-          if (scrollShowTimeouts.has(target)) {
-            clearTimeout(scrollShowTimeouts.get(target));
-            scrollShowTimeouts.delete(target);
-          }
         }, 3000));
       }
     };
@@ -553,6 +560,9 @@ const DashboardApp = () => {
             setMarksSearchQuery={setMarksSearchQuery}
             isMarksModernView={isMarksModernView}
             setIsMarksModernView={setIsMarksModernView}
+            gradesSemesters={gradesSemesters}
+            gradesSelectedSem={gradesSelectedSem}
+            setGradesSelectedSem={setGradesSelectedSem}
             calSemesters={calSemesters}
             calSelectedSem={calSelectedSem}
             setCalSelectedSem={setCalSelectedSem}
@@ -611,6 +621,10 @@ const DashboardApp = () => {
                   setMarksSelectedSem={setMarksSelectedSem}
                   marksSearchQuery={marksSearchQuery}
                   isMarksModernView={isMarksModernView}
+                  gradesSemesters={gradesSemesters}
+                  setGradesSemesters={setGradesSemesters}
+                  gradesSelectedSem={gradesSelectedSem}
+                  setGradesSelectedSem={setGradesSelectedSem}
                   calSemesters={calSemesters}
                   setCalSemesters={setCalSemesters}
                   calSelectedSem={calSelectedSem}

@@ -49,6 +49,10 @@ interface TopBarProps {
   isMarksModernView: boolean;
   setIsMarksModernView: (view: boolean) => void;
 
+  gradesSemesters: { id: string; label: string }[];
+  gradesSelectedSem: string;
+  setGradesSelectedSem: (id: string) => void;
+
   calSemesters: { id: string; label: string }[];
   calSelectedSem: string;
   setCalSelectedSem: (id: string) => void;
@@ -82,6 +86,8 @@ const getPageTitle = (view: string, dynamicTitle?: string) => {
       return "CURRICULUM";
     case "marks":
       return "MARKS";
+    case "grades":
+      return "GRADES";
     case "profile":
       return "STUDENT PROFILE";
     case "settings":
@@ -119,6 +125,9 @@ export const TopBar: React.FC<TopBarProps> = ({
   setMarksSearchQuery,
   isMarksModernView,
   setIsMarksModernView,
+  gradesSemesters,
+  gradesSelectedSem,
+  setGradesSelectedSem,
   calSemesters,
   calSelectedSem,
   setCalSelectedSem,
@@ -304,16 +313,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                   {isMarksModernView ? "Legacy View" : "Modern View"}
                 </button>
 
-                <div className="relative group hidden sm:block">
-                  <input
-                    type="text"
-                    placeholder="Search Marks"
-                    value={marksSearchQuery}
-                    onChange={(e) => setMarksSearchQuery(e.target.value)}
-                    className="bg-(--bg-main) border-2 border-(--border-dim) text-(--text-main) text-xs rounded-xl pl-8 pr-3 py-1.5 w-36 lg:w-48 focus:outline-none focus:border-(--accent-base) transition-all placeholder:text-(--text-muted) shadow-sm"
-                  />
-                  <Search className="w-3.5 h-3.5 text-(--text-muted) absolute left-2.5 top-2 group-focus-within:text-(--accent-base) transition-colors" />
-                </div>
+
 
                 <SemesterDropdown
                   semesters={marksSemesters}
@@ -321,6 +321,22 @@ export const TopBar: React.FC<TopBarProps> = ({
                   onChange={(id: string) => {
                     setMarksSelectedSem(id);
                   }}
+                />
+              </motion.div>
+            )}
+
+            {currentView === "grades" && (
+              <motion.div
+                key="grades-controls"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20, transition: { duration: 0.15 } }}
+                className="flex items-center gap-2 mr-1 md:mr-2 pointer-events-auto"
+              >
+                <SemesterDropdown
+                  semesters={gradesSemesters}
+                  selectedId={gradesSelectedSem}
+                  onChange={(id: string) => setGradesSelectedSem(id)}
                 />
               </motion.div>
             )}

@@ -63,7 +63,11 @@
     /* Auto-Calculated Interaction States using Material 3 Logic */
     --accent-hover: color-mix(in srgb, var(--md-sys-color-primary) 80%, white);
     --accent-active: color-mix(in srgb, var(--md-sys-color-primary) 80%, black);
-    --accent-tint: color-mix(in srgb, var(--md-sys-color-primary) 15%, transparent);
+    --accent-tint: color-mix(
+      in srgb,
+      var(--md-sys-color-primary) 15%,
+      transparent
+    );
 
     /* Professional Theme mapping to Material Sys Colors */
     --bg-main: var(--md-sys-color-background);
@@ -76,7 +80,11 @@
 
     --text-main: var(--md-sys-color-on-background);
     --text-muted: var(--md-sys-color-on-surface-variant);
-    --text-dim: color-mix(in srgb, var(--md-sys-color-on-surface-variant) 70%, transparent);
+    --text-dim: color-mix(
+      in srgb,
+      var(--md-sys-color-on-surface-variant) 70%,
+      transparent
+    );
 
     --text-inverse: var(--md-sys-color-on-primary);
     --shadow-main: rgba(0, 0, 0, 0.3);
@@ -160,7 +168,6 @@
 }
 
 #retop-root svg {
- 
 }
 
 #retop-root .font-expanded {
@@ -172,6 +179,27 @@
     "ROND" 100 !important;
   margin-bottom: 0 !important;
   line-height: 1 !important;
+}
+
+#retop-root .font-logo, #root .font-logo {
+  font-family: var(--font-expanded) !important;
+  font-variation-settings:
+    "wdth" 125,
+    "wght" 800,
+    "GRAD" 100,
+    "ROND" 100,
+    "slnt" -10 !important;
+  line-height: 1 !important;
+}
+
+#retop-root .font-squish, #root .font-squish,
+#retop-root .hover\:font-squish:hover, #root .hover\:font-squish:hover,
+#retop-root .group:hover .group-hover\:font-squish, #root .group:hover .group-hover\:font-squish {
+  font-variation-settings:
+    "wdth" 125,
+    "wght" 1,
+    "GRAD" 100,
+    "ROND" 100 !important;
 }
 
 /* --- 4. UTILITY OVERRIDES --- */
@@ -288,15 +316,10 @@
 }
 
 /* --- 5. SCROLLBARS --- */
-@property --thumb-width {
-  syntax: "<percentage>";
+@property --scrollbar-thumb-color {
+  syntax: "<color>";
   inherits: true;
-  initial-value: 0%;
-}
-@property --scrollbar-alpha {
-  syntax: "<number>";
-  inherits: true;
-  initial-value: 0;
+  initial-value: transparent;
 }
 
 #retop-root ::-webkit-scrollbar {
@@ -311,11 +334,13 @@
 #retop-root [class*="overflow-"],
 #retop-root .custom-scrollbar {
   --scrollbar-thumb-color: transparent;
+  transition: --scrollbar-thumb-color 0.4s ease-out;
 }
 
 #retop-root [class*="overflow-"][data-scrolling="true"],
 #retop-root .custom-scrollbar[data-scrolling="true"] {
   --scrollbar-thumb-color: var(--accent-base);
+  transition: --scrollbar-thumb-color 0.15s ease-in;
 }
 
 #retop-root [class*="overflow-"][data-scrolling="true"]:hover,
@@ -325,7 +350,7 @@
 
 #retop-root ::-webkit-scrollbar-thumb {
   border-radius: 9999px;
-  background-color: var(--scrollbar-thumb-color, transparent) !important;
+  background-color: var(--scrollbar-thumb-color) !important;
 }
 
 /* --- 6. EXTERNAL / GLOBAL COMPONENTS --- */

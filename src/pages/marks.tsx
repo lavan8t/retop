@@ -93,16 +93,16 @@ export const MarksPage: React.FC<MarksPageProps> = ({
     >
       <div className="flex-1 overflow-y-auto custom-scrollbar p-6 pt-20 md:pt-24 lg:pt-28 space-y-6">
         {loading || fetchingMarks ? (
-          <div className="flex flex-col items-center justify-center h-full text-(--text-muted) animate-pulse">
-            <ProgressActivity className="w-12 h-12 mb-4 animate-spin text-(--accent-base)" />
-            <span className="text-sm font-bold  uppercase">
+          <div className="flex flex-col items-center justify-center h-full text-(--text-muted) group min-h-64">
+            <ProgressActivity className="w-24 h-24 mb-6 animate-spin text-(--accent-base)" />
+            <span className="text-2xl font-bold font-expanded uppercase transition-all duration-300 group-hover:font-squish animate-pulse">
               {loading ? "Initializing..." : "Fetching Marks..."}
             </span>
           </div>
         ) : filteredMarks.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-(--text-muted) border-4 border-dashed border-(--border-dim) rounded-4xl bg-(--bg-surface)">
-            <Error className="w-16 h-16 mb-4 opacity-20" />
-            <span className="text-base font-bold uppercase  mb-0">
+          <div className="flex flex-col items-center justify-center h-full text-(--text-muted) rounded-4xl bg-(--bg-surface) group min-h-64">
+            <Error className="w-24 h-24 mb-6 text-(--accent-base)" />
+            <span className="text-3xl font-bold font-expanded uppercase transition-all duration-300 group-hover:font-squish">
               No Marks Found
             </span>
           </div>

@@ -3,7 +3,7 @@ import { normalizeSemesterLabel } from "../utils/formatting";
 
 export function parseCalendarSemesters(
   html: string,
-): { id: string; label: string }[] {
+): { id: string; label: string; selected?: boolean }[] {
   if (!html) return [];
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, "text/html");
@@ -12,12 +12,20 @@ export function parseCalendarSemesters(
   if (!select) return [];
 
   return Array.from(select.options)
-    .filter((opt) => opt.value)
-    .map((opt) => ({
-      id: opt.value,
-      label: normalizeSemesterLabel(opt.textContent || opt.value),
-      selected: opt.selected,
-    }));
+    .filter((opt) => {
+      const val = opt.getAttribute("value") || opt.value || opt.textContent?.trim() || "";
+      const text = opt.textContent?.trim() || "";
+      const isSelectPlaceholder = text.toLowerCase().includes("select") || text.toLowerCase().includes("choose") || val.toLowerCase().includes("select") || val.toLowerCase().includes("choose") || text === "-";
+      return val && val.trim() !== "" && !isSelectPlaceholder;
+    })
+    .map((opt) => {
+      const val = opt.getAttribute("value") || opt.value || opt.textContent?.trim() || "";
+      return {
+        id: val,
+        label: normalizeSemesterLabel(opt.textContent || val),
+        selected: opt.hasAttribute("selected") || opt.selected,
+      };
+    });
 }
 
 // Combined parser for Step 2: Extracts both the Class Groups and the Month Buttons

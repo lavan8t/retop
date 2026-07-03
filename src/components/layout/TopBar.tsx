@@ -9,7 +9,8 @@ import {
   CalendarMonth,
   Person,
   Search,
-} from '@nine-thirty-five/material-symbols-react/rounded';
+  Download,
+} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import {
   QuickLink,
   Semester,
@@ -22,6 +23,7 @@ import { ClassGroupDropdown } from "../timetable/ClassGroupDropdown";
 import { TopBarSearch } from "./TopBarSearch";
 import { getCategoryIcon } from "../../utils/icons";
 import { useDataStore } from "../../store/dataStore";
+import { downloadICalFile } from "../../utils/ical-export";
 
 interface TopBarProps {
   currentView: string;
@@ -100,6 +102,7 @@ const getPageTitle = (view: string, dynamicTitle?: string) => {
 export const TopBar: React.FC<TopBarProps> = ({
   currentView,
   contentTitle,
+  ttCourses,
   ttLoading,
   ttSemesters,
   ttSelectedSem,
@@ -136,8 +139,8 @@ export const TopBar: React.FC<TopBarProps> = ({
   onNavigate,
   initialQuery = "",
 }) => {
-  const { attSelectedSem, setAttSelectedSem } = useDataStore();
-  
+  const { attSelectedSem, setAttSelectedSem, calGridData } = useDataStore();
+
   return (
     <>
       {/* Top Fade Mask */}
@@ -228,39 +231,61 @@ export const TopBar: React.FC<TopBarProps> = ({
                   onChange={loadTimetable}
                 />
 
-                <div className="hidden sm:flex bg-(--bg-highlight) border-2 border-(--border-main) rounded-xl p-1 gap-1 shadow-sm">
+                <div className="hidden sm:flex bg-(--bg-highlight) rounded-full p-0.5 w-max border-2 border-(--border-main) shadow-[2px_2px_0px_0px_var(--shadow-main)]">
                   <button
                     onClick={() => setTtViewMode("grid")}
-                    className={`p-1.5 rounded-lg transition-all border-2 ${
+                    className={`px-3 py-1 text-xs font-bold transition-all duration-300 flex items-center gap-1.5 ${
                       ttViewMode === "grid"
-                        ? "bg-(--accent-base) text-white border-(--border-main) shadow-none -translate-y-px"
-                        : "border-transparent text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-surface)"
+                        ? "bg-(--text-main) text-(--bg-main) rounded-[20px]"
+                        : "bg-transparent text-(--text-muted) hover:text-(--text-main) rounded-l-[20px] rounded-r-md"
                     }`}
                   >
-                    <GridView className="w-4 h-4" />
+                    <GridView className="w-3.5 h-3.5" />
+                    <span>Grid</span>
                   </button>
                   <button
                     onClick={() => setTtViewMode("list")}
-                    className={`p-1.5 rounded-lg transition-all border-2 ${
+                    className={`px-3 py-1 text-xs font-bold transition-all duration-300 flex items-center gap-1.5 ${
                       ttViewMode === "list"
-                        ? "bg-(--accent-base) text-white border-(--border-main) shadow-none -translate-y-px"
-                        : "border-transparent text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-surface)"
+                        ? "bg-(--text-main) text-(--bg-main) rounded-[20px]"
+                        : "bg-transparent text-(--text-muted) hover:text-(--text-main) rounded-md"
                     }`}
                   >
-                    <List className="w-4 h-4" />
+                    <List className="w-3.5 h-3.5" />
+                    <span>List</span>
                   </button>
                   <button
                     onClick={() => setTtViewMode("week")}
-                    className={`p-1.5 rounded-lg transition-all border-2 ${
+                    className={`px-3 py-1 text-xs font-bold transition-all duration-300 flex items-center gap-1.5 ${
                       ttViewMode === "week"
-                        ? "bg-(--accent-base) text-white border-(--border-main) shadow-none -translate-y-px"
-                        : "border-transparent text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-surface)"
+                        ? "bg-(--text-main) text-(--bg-main) rounded-[20px]"
+                        : "bg-transparent text-(--text-muted) hover:text-(--text-main) rounded-l-md rounded-r-[20px]"
                     }`}
                   >
-                    <CalendarMonth className="w-4 h-4" />
+                    <CalendarMonth className="w-3.5 h-3.5" />
+                    <span>Week</span>
                   </button>
                 </div>
-                <div className="hidden sm:block w-0.5 h-8 bg-(--border-dim) mx-1"></div>
+
+                <button
+                  onClick={() => {
+                    const semLabel = ttSemesters.find((s) => s.id === ttSelectedSem)?.label || "";
+                    if (calGridData.length === 0) {
+                      alert("Please open the Academics Calendar page first to load calendar data, then come back here to export.");
+                      return;
+                    }
+                    downloadICalFile({
+                      courses: ttCourses,
+                      calGridData,
+                      semesterLabel: semLabel,
+                    });
+                  }}
+                  disabled={ttCourses.length === 0}
+                  title="Export timetable as iCal (.ics) file for Google Calendar"
+                  className="bg-(--bg-surface) border-2 border-(--border-main) text-(--text-main) p-1.5 rounded-xl shadow-[2px_2px_0px_0px_var(--shadow-main)] hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_var(--shadow-main)] active:translate-y-0 active:shadow-none transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <Download className="w-4 h-4" />
+                </button>
               </motion.div>
             )}
 

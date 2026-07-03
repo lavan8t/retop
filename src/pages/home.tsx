@@ -2,10 +2,8 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { AppSettings } from "../utils/settings-store";
 import {
   School,
-  AttachMoney,
   Search,
   Description,
-  SubdirectoryArrowRight,
   Error,
   MenuBook,
   HistoryEdu,
@@ -22,9 +20,8 @@ import {
   Layers,
   ChevronRight,
   SwapVert,
-  NorthEast,
-  Pin,
-} from '@nine-thirty-five/material-symbols-react/rounded';
+  Keep,
+} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import {
   CourseSummary,
   Assignment,
@@ -251,11 +248,22 @@ export const HomeView: React.FC<HomeViewProps> = ({
     const links: QuickLink[] = [];
     menuCategories.forEach((cat) => links.push(...cat.links));
 
-    return links.filter(
+    const matches = links.filter(
       (l) =>
         l.title.toLowerCase().includes(lowerQ) ||
         (l.category && l.category.toLowerCase().includes(lowerQ)),
     );
+
+    const grouped = new Map<string, QuickLink[]>();
+    matches.forEach((link) => {
+      const cat = link.category || "Other";
+      if (!grouped.has(cat)) grouped.set(cat, []);
+      grouped.get(cat)!.push(link);
+    });
+
+    const finalLinks: QuickLink[] = [];
+    grouped.forEach((groupLinks) => finalLinks.push(...groupLinks));
+    return finalLinks;
   }, [query, menuCategories]);
 
   const sortedAttendance = useMemo(() => {
@@ -267,10 +275,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
   }, [attendance, attSort]);
 
   const getClassesForDate = (date: Date, calEvent: any = null) => {
-    if (calEvent && !calEvent.isInstructional) {
-      return [];
-    }
-
     const jsDay = date.getDay();
     let dName =
       jsDay === 0
@@ -285,13 +289,21 @@ export const HomeView: React.FC<HomeViewProps> = ({
             "Sunday",
           ][jsDay - 1];
 
-    if (calEvent && calEvent.info) {
-      const lowerInfo = calEvent.info.toLowerCase();
-      if (lowerInfo.includes("monday day order")) dName = "Monday";
-      else if (lowerInfo.includes("tuesday day order")) dName = "Tuesday";
-      else if (lowerInfo.includes("wednesday day order")) dName = "Wednesday";
-      else if (lowerInfo.includes("thursday day order")) dName = "Thursday";
-      else if (lowerInfo.includes("friday day order")) dName = "Friday";
+    let hasOverride = false;
+    if (calEvent) {
+      const lowerInfo = (calEvent.info || "").toLowerCase();
+      const subInfo = (calEvent.subInfo || "").toLowerCase();
+      const combined = lowerInfo + " " + subInfo;
+      
+      if (combined.includes("monday day order")) { dName = "Monday"; hasOverride = true; }
+      else if (combined.includes("tuesday day order")) { dName = "Tuesday"; hasOverride = true; }
+      else if (combined.includes("wednesday day order")) { dName = "Wednesday"; hasOverride = true; }
+      else if (combined.includes("thursday day order")) { dName = "Thursday"; hasOverride = true; }
+      else if (combined.includes("friday day order")) { dName = "Friday"; hasOverride = true; }
+    }
+
+    if (calEvent && !calEvent.isInstructional && !hasOverride) {
+      return [];
     }
 
     if (!CAMPUS_SLOTS[dName]) return [];
@@ -386,14 +398,20 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
   const todayRef = useRef<HTMLDivElement>(null);
   const nowRef = useRef<HTMLDivElement>(null);
+  const initialScrollDone = useRef(false);
   useEffect(() => {
-    setTimeout(() => {
-      if (nowRef.current) {
-        nowRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
-      } else if (todayRef.current) {
-        todayRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (initialScrollDone.current) return;
+    const t = setTimeout(() => {
+      if (nowRef.current || todayRef.current) {
+        if (nowRef.current) {
+          nowRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+        } else if (todayRef.current) {
+          todayRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+        initialScrollDone.current = true;
       }
     }, 300);
+    return () => clearTimeout(t);
   }, [calendarDays]);
 
   // Handle auto-scroll for keyboard nav
@@ -458,14 +476,20 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </div>
 
             <div className="relative flex-1 w-full min-w-0 flex items-center">
-              {query && flattenedLinks.length > 0 && flattenedLinks[0].title.toLowerCase().startsWith(query.toLowerCase()) && (
-                <div className="absolute left-2 top-0 bottom-0 flex items-center pt-1 pointer-events-none w-full overflow-hidden">
-                  <span className="text-sm md:text-base font-bold text-transparent whitespace-pre">{query}</span>
-                  <span className="text-sm md:text-base font-bold text-(--text-muted) opacity-50 whitespace-pre truncate">
-                    {flattenedLinks[0].title.slice(query.length)}
-                  </span>
-                </div>
-              )}
+              {query &&
+                flattenedLinks.length > 0 &&
+                flattenedLinks[0].title
+                  .toLowerCase()
+                  .startsWith(query.toLowerCase()) && (
+                  <div className="absolute left-2 top-0 bottom-0 flex items-center pt-1 pointer-events-none w-full overflow-hidden">
+                    <span className="text-sm md:text-base font-bold text-transparent whitespace-pre">
+                      {query}
+                    </span>
+                    <span className="text-sm md:text-base font-bold text-(--text-muted) opacity-50 whitespace-pre truncate">
+                      {flattenedLinks[0].title.slice(query.length)}
+                    </span>
+                  </div>
+                )}
               <input
                 ref={inputRef}
                 type="text"
@@ -488,12 +512,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <div className="flex flex-col gap-3 pb-2">
               {!query ? (
                 <>
-                  <h3 className="font-black font-expanded text-sm uppercase text-(--text-muted) px-2 mt-1">
-                    Recent
-                  </h3>
                   {/* RECENT SECTION (Max 4, Pill Grid, No Headings) */}
                   {recentLinks.length > 0 && (
-                    <div className="grid grid-cols-2 gap-2 mb-1">
+                    <div className="grid grid-cols-2 gap-2 mb-1 mt-1">
                       {recentLinks.slice(0, 4).map((link, i) => {
                         const RecentIcon = getCategoryIcon(
                           link.category || link.title,
@@ -503,7 +524,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                             key={`recent-${i}`}
                             onClick={() => handleNavigate(link)}
                             title={link.title}
-                            className="flex items-center gap-2 p-1 pr-3 rounded-full border-4 bg-(--bg-surface) border-transparent text-(--text-main) hover:border-(--border-main) hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_0px_var(--shadow-main)] transition-all group overflow-hidden"
+                            className="flex items-center gap-2 p-1 pr-3 rounded-full border-2 bg-(--bg-surface) border-transparent text-(--text-main) hover:border-(--border-main) transition-all group overflow-hidden"
                           >
                             <div className="w-7 h-7 rounded-full bg-(--bg-highlight) flex items-center justify-center shrink-0 group-hover:bg-(--accent-base) transition-colors border border-(--border-dim) group-hover:border-transparent">
                               <RecentIcon className="w-3.5 h-3.5 text-(--text-muted) group-hover:text-(--text-inverse)" />
@@ -584,22 +605,34 @@ export const HomeView: React.FC<HomeViewProps> = ({
                       </span>
                     </div>
                   ) : (
-                    flattenedLinks.map((link, i) => {
-                      const isSelected = i === selectedIndex;
-                      const linkDest = link.url.startsWith("/")
-                        ? link.url.slice(1) || "dashboard"
-                        : "content";
-                      const isPinned =
-                        linkDest !== "content" &&
-                        pinnedLinks.some(
-                          (p) =>
-                            (p.url.startsWith("/")
-                              ? p.url.slice(1) || "dashboard"
-                              : "content") === linkDest,
-                        );
+                    (() => {
+                      let currentCategory = "";
+                      return flattenedLinks.map((link, i) => {
+                        const isSelected = i === selectedIndex;
+                        const linkDest = link.url.startsWith("/")
+                          ? link.url.slice(1) || "dashboard"
+                          : "content";
+                        const isPinned =
+                          linkDest !== "content" &&
+                          pinnedLinks.some(
+                            (p) =>
+                              (p.url.startsWith("/")
+                                ? p.url.slice(1) || "dashboard"
+                                : "content") === linkDest,
+                          );
 
-                      return (
-                        <div key={i} className="relative w-full group mb-1">
+                        const category = link.category || "Other";
+                        const isNewCategory = category !== currentCategory;
+                        if (isNewCategory) currentCategory = category;
+
+                        return (
+                          <React.Fragment key={i}>
+                            {isNewCategory && (
+                              <div className="px-3 pt-2 pb-1 text-[10px] font-expanded font-black text-(--text-muted) uppercase tracking-wider">
+                                {currentCategory}
+                              </div>
+                            )}
+                            <div className="relative w-full group mb-1">
                           <button
                             id={`home-search-item-${i}`}
                             onClick={() => {
@@ -622,7 +655,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                           </button>
                           {handleTogglePin && (
                             <div
-                              className={`absolute right-1 top-1 bottom-1 w-10 pr-1 flex items-center justify-end rounded-r-xl transition-all pointer-events-none z-20 ${!isPinned ? "opacity-0 group-hover:opacity-100" : "opacity-100"}`}
+                              className={`absolute right-1 top-1 bottom-1 w-10 pr-1 flex items-center justify-end rounded-r-xl transition-all pointer-events-none z-20 ${!isPinned ? "opacity-50 group-hover:opacity-100" : "opacity-100"}`}
                             >
                               <button
                                 onClick={(e) => {
@@ -635,16 +668,17 @@ export const HomeView: React.FC<HomeViewProps> = ({
                                     : "bg-transparent border-transparent text-(--text-dim) hover:text-(--text-main) hover:border-(--accent-base)"
                                 }`}
                               >
-                                <Pin
+                                <Keep
                                   className={`w-3.5 h-3.5 ${isPinned ? "fill-current" : ""}`}
                                 />
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })
-                  )}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                          </React.Fragment>
+                        );
+                      })})()
+                    )}
                 </div>
               )}
             </div>
@@ -655,7 +689,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
         <div className="flex-1 overflow-visible flex flex-col min-h-0 pb-2">
           <ListCard
             title="Attendance"
-            onClickTitle={() => onNavigate({ title: "Class Attendance", url: "studentattendance", category: "Academics" })}
+            onClickTitle={() =>
+              onNavigate({
+                title: "Class Attendance",
+                url: "studentattendance",
+                category: "Academics",
+              })
+            }
             bgClass="bg-(--bg-surface)"
             borderClass="border-(--border-main)"
             headerAction={
@@ -729,15 +769,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Category Title Header */}
-            <div className="flex items-center gap-2 mb-2 pb-2 border-b-2 border-(--border-dim) px-1 shrink-0">
-              <span className="font-expanded font-black uppercase text-[11px] text-(--accent-base)">
-                {activeMenu.cat.title}
-              </span>
-            </div>
-
             <div
-              className={`grid ${activeMenu.cat.links.length > 20 ? "grid-cols-3" : activeMenu.cat.links.length > 10 ? "grid-cols-2" : "grid-cols-1"} gap-1 overflow-y-auto custom-scrollbar`}
+              className={`grid ${activeMenu.cat.links.length > 20 ? "grid-cols-3" : activeMenu.cat.links.length > 10 ? "grid-cols-2" : "grid-cols-1"} gap-1 overflow-y-auto custom-scrollbar pt-2`}
             >
               {activeMenu.cat.links.map((link, i) => (
                 <button
@@ -754,13 +787,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
                       : "bg-transparent text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main)"
                   }`}
                 >
-                  <div
-                    className={`w-1.5 h-1.5 rounded-full transition-colors shrink-0 ${
-                      i === selectedIndex
-                        ? "bg-(--text-inverse)"
-                        : "bg-(--border-main) group-hover:bg-(--accent-base)"
-                    }`}
-                  />
                   <span className="flex-1 truncate">{link.title}</span>
                 </button>
               ))}
@@ -837,19 +863,36 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
               {monthDisplay.semName ? (
                 <div className="flex justify-end items-center">
-                  <div
-                    className="text-sm md:text-base font-bold relative text-right group cursor-help"
-                    title={`Last Instructional Day: ${progressInfo.lastDay ? progressInfo.lastDay.toLocaleDateString() : "N/A"}\n${progress}% of semester over`}
-                  >
-                    <span className="text-(--text-muted) opacity-50 underline decoration-wavy decoration-(--border-dim) underline-offset-4">
+                  <div className="text-sm md:text-base font-bold relative text-right group cursor-help">
+                    <span className="text-(--text-muted) opacity-50 underline decoration-solid decoration-[3px] decoration-(--border-dim) underline-offset-4">
                       {monthDisplay.semName}
                     </span>
                     <span
-                      className="absolute left-0 top-0 overflow-hidden whitespace-nowrap text-(--text-main) underline decoration-wavy decoration-(--accent-base) underline-offset-4 pointer-events-none"
+                      className="absolute left-0 top-0 overflow-hidden whitespace-nowrap text-(--text-main) underline decoration-solid decoration-[3px] decoration-(--accent-base) underline-offset-4 pointer-events-none"
                       style={{ width: `${progress}%` }}
                     >
                       {monthDisplay.semName}
                     </span>
+
+                    <div className="absolute top-full right-0 mt-3 p-3 min-w-[200px] bg-(--bg-highlight) border border-(--border-main) rounded-xl shadow-xl shadow-[var(--shadow-main)] opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-2 group-hover:translate-y-0 transition-all duration-200 z-50 text-left flex flex-col gap-1.5 pointer-events-none">
+                      <span className="text-[10px] text-(--text-muted) font-black uppercase tracking-widest">
+                        Progress Details
+                      </span>
+                      <span className="text-xs font-semibold text-(--text-main) flex justify-between items-center">
+                        Last Day:{" "}
+                        <span className="font-bold text-(--accent-base) ml-2">
+                          {progressInfo.lastDay
+                            ? progressInfo.lastDay.toLocaleDateString()
+                            : "N/A"}
+                        </span>
+                      </span>
+                      <span className="text-xs font-semibold text-(--text-main) flex justify-between items-center">
+                        Completed:{" "}
+                        <span className="font-bold text-(--accent-base) ml-2">
+                          {progress}%
+                        </span>
+                      </span>
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -1015,7 +1058,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         <AssignmentRow assignment={evt.data as Assignment} />
                       ) : evt.type === "calendar" ? (
                         <div
-                          className={`w-full text-left p-3 rounded-xl flex items-center justify-between border-2 shadow-none mb-3 ${evt.data.isHoliday ? "bg-red-500/10 border-red-500/20" : "bg-(--bg-surface) border-(--border-main)"}`}
+                          className={`w-full text-left p-3 rounded-xl flex items-center justify-between border-2 border-transparent hover:border-(--border-main) shadow-none mb-3 ${evt.data.isHoliday ? "bg-red-500/10" : "bg-(--bg-surface)"}`}
                         >
                           <div className="flex flex-col">
                             <span
@@ -1105,7 +1148,26 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
           <div className="w-full flex justify-center py-6 relative z-10">
             <button
-              onClick={() => setDaysToShow((prev) => prev + 15)}
+              onClick={() => {
+                setDaysToShow((prev) => {
+                  const today = new Date();
+                  const currentEndDate = new Date(today);
+                  currentEndDate.setDate(today.getDate() + prev - 1);
+                  
+                  const endOfMonth = new Date(currentEndDate.getFullYear(), currentEndDate.getMonth() + 1, 0);
+                  const daysLeftInMonth = Math.round((endOfMonth.getTime() - currentEndDate.getTime()) / (1000 * 60 * 60 * 24));
+                  
+                  let targetDate;
+                  if (daysLeftInMonth < 10) {
+                    targetDate = new Date(currentEndDate.getFullYear(), currentEndDate.getMonth() + 2, 0);
+                  } else {
+                    targetDate = endOfMonth;
+                  }
+                  
+                  const additionalDays = Math.round((targetDate.getTime() - currentEndDate.getTime()) / (1000 * 60 * 60 * 24));
+                  return prev + (additionalDays > 0 ? additionalDays : 30);
+                });
+              }}
               className="bg-(--bg-highlight) text-(--text-main) font-expanded font-bold text-sm uppercase px-8 py-3 rounded-full border-4 border-(--border-dim) hover:border-(--border-main) transition-all shadow-none cursor-pointer"
             >
               Load More
@@ -1151,7 +1213,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
             className="flex items-center justify-end overflow-hidden relative z-10 mt-3"
           >
-
             <div className="text-right">
               <div className="text-[10px] font-expanded font-bold uppercase text-(--text-muted)">
                 Credits

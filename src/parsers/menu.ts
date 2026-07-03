@@ -10,6 +10,10 @@ const sanitizeMenuTitle = (title: string): string => {
     return "Course Page";
   }
 
+  if (lowerTitle.includes("grade view") || lowerTitle.includes("grade history")) {
+    return "Grades & History";
+  }
+
   return title;
 };
 
@@ -44,12 +48,14 @@ export function scrapeMenu(doc: Document): MenuCategory[] {
       const url = a.getAttribute("data-url");
 
       if (linkTitle && url && !visitedUrls.has(url)) {
-        visitedUrls.add(url);
-        links.push({
-          title: linkTitle,
-          url: url,
-          category: title,
-        });
+        if (!links.find(l => l.title === linkTitle)) {
+          visitedUrls.add(url);
+          links.push({
+            title: linkTitle,
+            url: url,
+            category: title,
+          });
+        }
       }
     });
 

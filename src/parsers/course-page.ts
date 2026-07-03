@@ -17,8 +17,8 @@ export const parseCoursePage = (html: string): CoursePageData => {
     const optElements = select.querySelectorAll("option");
     optElements.forEach((opt) => {
       const val = opt.getAttribute("value");
-      if (val && val !== "") {
-        const text = opt.textContent?.trim() || "";
+      const text = opt.textContent?.trim() || "";
+      if (val && val !== "" && !text.toLowerCase().includes("select")) {
 
         // CRITICAL FIX: Extract exact API-required hidden data parameters
         const courseId = opt.getAttribute("data-courseid") || val;

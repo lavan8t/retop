@@ -50,21 +50,83 @@ const MATERIAL_ACCENTS: Record<string, string> = {
   cyan: "#0891b2",
 };
 
+import { argbFromHex, themeFromSourceColor, hexFromArgb } from "@material/material-color-utilities";
+
+// Convert an HSL string to Hex
+const hslToHex = (h: number, s: number, l: number) => {
+  l /= 100;
+  const a = s * Math.min(l, 1 - l) / 100;
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * color).toString(16).padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+};
+
 export const applyTheme = (settings: AppSettings) => {
   if (typeof document === "undefined") return;
   const root = getAppRoot();
   if (!root) return;
 
-  root.setAttribute("data-theme", settings.themeMode);
-  document.documentElement.setAttribute("data-theme", settings.themeMode);
+  let appliedTheme = settings.themeMode;
+  if (appliedTheme === "auto") {
+    const hour = new Date().getHours();
+    appliedTheme = (hour >= 18 || hour < 6) ? "dark" : "light";
+  }
+
+  root.setAttribute("data-theme", appliedTheme);
+  document.documentElement.setAttribute("data-theme", appliedTheme);
 
   let baseColor = MATERIAL_ACCENTS[settings.accentColor] || MATERIAL_ACCENTS.blue;
   if (settings.randomAccentColor) {
     const hue = Math.floor(Math.random() * 360);
-    baseColor = `hsl(${hue}, 70%, 45%)`;
+    baseColor = hslToHex(hue, 70, 45);
   }
-  root.style.setProperty("--accent-base", baseColor);
-  document.documentElement.style.setProperty("--accent-base", baseColor);
+
+  const isDark = appliedTheme === "dark" || appliedTheme === "amoled";
+  
+  // Generate Material Theme
+  const argb = argbFromHex(baseColor);
+  const theme = themeFromSourceColor(argb);
+  const scheme = isDark ? theme.schemes.dark : theme.schemes.light;
+
+  // Set the base variables
+  root.style.setProperty("--accent-base", hexFromArgb(scheme.primary));
+  document.documentElement.style.setProperty("--accent-base", hexFromArgb(scheme.primary));
+
+  // Set standard Material Design 3 variables
+  const sysColors = {
+    primary: hexFromArgb(scheme.primary),
+    "on-primary": hexFromArgb(scheme.onPrimary),
+    "primary-container": hexFromArgb(scheme.primaryContainer),
+    "on-primary-container": hexFromArgb(scheme.onPrimaryContainer),
+    secondary: hexFromArgb(scheme.secondary),
+    "on-secondary": hexFromArgb(scheme.onSecondary),
+    "secondary-container": hexFromArgb(scheme.secondaryContainer),
+    "on-secondary-container": hexFromArgb(scheme.onSecondaryContainer),
+    tertiary: hexFromArgb(scheme.tertiary),
+    "on-tertiary": hexFromArgb(scheme.onTertiary),
+    "tertiary-container": hexFromArgb(scheme.tertiaryContainer),
+    "on-tertiary-container": hexFromArgb(scheme.onTertiaryContainer),
+    error: hexFromArgb(scheme.error),
+    "on-error": hexFromArgb(scheme.onError),
+    "error-container": hexFromArgb(scheme.errorContainer),
+    "on-error-container": hexFromArgb(scheme.onErrorContainer),
+    background: hexFromArgb(scheme.background),
+    "on-background": hexFromArgb(scheme.onBackground),
+    surface: hexFromArgb(scheme.surface),
+    "on-surface": hexFromArgb(scheme.onSurface),
+    "surface-variant": hexFromArgb(scheme.surfaceVariant),
+    "on-surface-variant": hexFromArgb(scheme.onSurfaceVariant),
+    outline: hexFromArgb(scheme.outline),
+    "outline-variant": hexFromArgb(scheme.outlineVariant)
+  };
+
+  Object.entries(sysColors).forEach(([name, val]) => {
+    root.style.setProperty(`--md-sys-color-${name}`, val);
+    document.documentElement.style.setProperty(`--md-sys-color-${name}`, val);
+  });
 };
 
 export const resetDynamicThemeSeed = () => {

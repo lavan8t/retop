@@ -57,20 +57,19 @@ function showErrorSnackbar(message: string) {
   const toast = document.createElement("div");
   toast.className = "retop-error-toast";
   toast.style.cssText = `
-    position: fixed; bottom: 20px; left: 20px; z-index: 9999999;
-    background: var(--bg-surface, #ffffff); color: var(--text-main, #000000);
-    padding: 12px 16px; border-radius: 12px;
-    border: 3px solid var(--border-main, #e5e7eb);
-    box-shadow: 4px 4px 0px 0px var(--shadow-main, #000000);
-    display: flex; align-items: center; gap: 10px;
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999999;
+    display: flex; flex-direction: row; align-items: center; gap: 16px;
+    padding: 24px 48px; box-sizing: border-box; pointer-events: none;
+    background: linear-gradient(to top, var(--bg-main, #000) 40%, transparent); backdrop-filter: blur(2px);
     font-family: 'Google Sans Flex', system-ui, sans-serif !important;
     animation: slideUp 0.3s ease forwards;
   `;
   toast.innerHTML = `
-    <div style="background: var(--bg-main, #fee2e2); color: var(--accent-base, #ef4444); border-radius: 8px; padding: 4px;">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+    <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(239, 68, 68, 0.2), transparent, transparent); pointer-events: none; z-index: -1;"></div>
+    <span class="material-symbols-rounded" style="color: #ef4444; font-size: 32px; z-index: 1;">warning</span>
+    <div style="display: flex; flex-direction: column; text-align: left; z-index: 1;">
+      <p style="font-size: 15px; font-weight: 700; color: var(--text-main, #fff); margin: 0; letter-spacing: 0.02em;">${message}</p>
     </div>
-    <span style="font-size: 0.95rem; font-weight: 700; line-height: 1; letter-spacing: -0.02em;">${message}</span>
   `;
   
   if (!document.getElementById("retop-snackbar-styles")) {
@@ -94,10 +93,7 @@ async function handleNetworkError(status?: number) {
   if (isHandlingNetworkError) return;
   isHandlingNetworkError = true;
   try {
-    const res = await originalFetch("https://clients3.google.com/generate_204", { cache: 'no-store' });
-    if (res.status !== 204 && res.status !== 0) {
-      throw new Error("No internet");
-    }
+    await originalFetch("https://example.com", { mode: 'no-cors', cache: 'no-store' });
     
     if (status === 404) {
       showErrorSnackbar("Something went wrong (404).");
@@ -120,23 +116,29 @@ function showErrorDialog(title: string, message: string, btnText: string, btnAct
   dialog.id = "retop-session-dialog";
   dialog.style.cssText = `
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px);
-    z-index: 999999999; display: flex; align-items: center; justify-content: center;
+    z-index: 999999999; display: flex; flex-direction: column;
+    pointer-events: none;
     font-family: 'Google Sans Flex', system-ui, sans-serif !important;
   `;
 
   dialog.innerHTML = `
-    <div style="background: var(--bg-surface, #ffffff); border: 4px solid var(--border-main, #e5e7eb); border-radius: 24px; padding: 32px; max-width: 400px; width: 90%; box-shadow: 8px 8px 0px 0px var(--shadow-main, #000); text-align: center;">
-      <div style="width: 64px; height: 64px; background: var(--bg-main, #fee2e2); color: var(--accent-base, #ef4444); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; border: 3px solid var(--border-main, #e5e7eb);">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+    <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(239, 68, 68, 0.2), transparent, transparent); pointer-events: none;"></div>
+    
+    <div style="margin-top: auto; width: 100%; display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 24px 48px; box-sizing: border-box; pointer-events: auto; background: linear-gradient(to top, var(--bg-main, #000) 40%, transparent); backdrop-filter: blur(2px);">
+      
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <span class="material-symbols-rounded" style="color: #ef4444; font-size: 40px;">warning</span>
+        <div style="display: flex; flex-direction: column; text-align: left;">
+          <h1 style="font-size: 24px; font-weight: 900; color: var(--text-main, #fff); margin: 0; text-transform: uppercase; font-family: 'Google Sans Flex', sans-serif; line-height: 1;">${title}</h1>
+          <p style="font-size: 14px; font-family: monospace; color: #f87171; margin: 6px 0 0; max-width: 600px; white-space: pre-wrap;">${message}</p>
+        </div>
       </div>
-      <h2 style="font-size: 20px; font-weight: 900; color: var(--text-main, #111827); margin: 0 0 12px; text-transform: uppercase; letter-spacing: 0.05em;">${title}</h2>
-      <p style="font-size: 14px; font-weight: 700; color: var(--text-muted, #6b7280); margin: 0 0 24px; line-height: 1.5;">
-        ${message}
-      </p>
-      <button onclick="if('${btnAction}'==='reload'){window.location.reload()}else{window.location.href='${btnAction}'}" style="background: var(--accent-base, #2563eb); color: #ffffff; border: 3px solid var(--border-main, #000); padding: 12px 24px; border-radius: 12px; font-weight: 900; font-size: 14px; cursor: pointer; width: 100%; text-transform: uppercase; box-shadow: 4px 4px 0px 0px var(--shadow-main, #000); transition: all 0.1s; transform: translateY(-2px);" onmousedown="this.style.transform='translateY(2px)'; this.style.boxShadow='0px 0px 0px 0px var(--shadow-main, #000)';" onmouseup="this.style.transform='translateY(-2px)'; this.style.boxShadow='4px 4px 0px 0px var(--shadow-main, #000)';">
+      
+      <button onclick="if('${btnAction}'==='reload'){window.location.reload()}else{window.location.href='${btnAction}'}" style="display: flex; align-items: center; gap: 8px; background: var(--accent-base, #2563eb); color: var(--text-inverse, #ffffff); border: none; padding: 12px 24px; border-radius: 9999px; font-weight: 700; font-size: 14px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); transition: background 0.2s;" onmouseover="this.style.filter='brightness(1.2)'" onmouseout="this.style.filter='none'">
+        <span class="material-symbols-rounded" style="font-size: 18px;">autorenew</span>
         ${btnText}
       </button>
+      
     </div>
   `;
 
@@ -169,135 +171,29 @@ XMLHttpRequest.prototype.open = function(this: XMLHttpRequest, ...args: any[]) {
   return originalXhrOpen.apply(this, args as any);
 };
 
-const isPaused = () => {
-  const pausedUntil = localStorage.getItem("retop-paused-until");
-  return pausedUntil && Date.now() < parseInt(pausedUntil, 10);
-};
-
-function injectHaltWidget() {
-  if (document.getElementById("retop-halt-widget")) return;
-
-  const style = document.createElement("style");
-  style.textContent = `
-    #retop-halt-widget {
-      position: fixed;
-      bottom: 1rem;
-      left: 1rem;
-      z-index: 9999999;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      font-family: 'Google Sans Flex', system-ui, sans-serif !important;
-    }
-    .retop-halt-icon {
-      background: transparent;
-      color: var(--text-muted, #6c757d);
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      border: none;
-      transition: all 0.15s ease-out;
-    }
-    .retop-halt-icon:hover {
-      background: transparent;
-      color: var(--accent-base, #0d6efd);
-      transform: scale(1.1);
-      box-shadow: none;
-    }
-    .retop-halt-icon:active {
-      transform: scale(0.9);
-      box-shadow: none;
-    }
-    .retop-halt-callout {
-      position: absolute;
-      bottom: 50px;
-      left: 0;
-      background: var(--bg-main, #fff);
-      color: var(--text-main, #000);
-      padding: 12px;
-      border: 3px solid var(--border-main, #dee2e6);
-      box-shadow: 3px 3px 0px 0px var(--shadow-main, #000);
-      border-radius: 0.75rem;
-      width: max-content;
-      max-width: 250px;
-      opacity: 0;
-      pointer-events: none;
-      transform: translateY(10px);
-      transition: all 0.2s ease;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      text-align: left;
-    }
-    #retop-halt-widget:hover .retop-halt-callout {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    .retop-halt-callout strong {
-      font-size: 14px;
-      font-variation-settings: "wdth" 151, "wght" 800, "GRAD" 100, "ROND" 100 !important;
-      text-transform: uppercase;
-      letter-spacing: -0.02em;
-    }
-    .retop-halt-callout span {
-      font-size: 12px;
-      color: var(--text-muted, #6c757d);
-      font-weight: 500;
-    }
-    .retop-halt-paused .retop-halt-icon {
-      background: transparent;
-      color: var(--text-main, #000);
-      transform: scale(1.1);
-      box-shadow: none;
-    }
-    .retop-halt-paused .retop-halt-icon:hover {
-      background: transparent;
-      color: var(--accent-base, #0d6efd);
-    }
-  `;
-  document.head.appendChild(style);
-
-  const widget = document.createElement("div");
-  widget.id = "retop-halt-widget";
-  const paused = isPaused();
-  if (paused) widget.classList.add("retop-halt-paused");
-
-  widget.innerHTML = `
-    <div class="retop-halt-icon">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-    </div>
-    <div class="retop-halt-callout">
-      <strong>${paused ? "Resume retop" : "Halt retop"}</strong>
-      <span>${paused ? "Enable the extension again." : "Experiencing issues with the extension? Disable it for an hour."}</span>
-    </div>
-  `;
-
-  widget.addEventListener("click", () => {
-    if (paused) {
-      localStorage.removeItem("retop-paused-until");
-    } else {
-      localStorage.setItem("retop-paused-until", (Date.now() + 60 * 60 * 1000).toString());
-    }
-    window.location.reload();
-  });
-
-  document.body.appendChild(widget);
-}
-
 const init = async () => {
   console.log("[retop] Initializing...");
 
-  injectHaltWidget();
-  
-  if (isPaused()) {
+  const pausedResult = await new Promise((resolve) => {
+    chrome.storage.local.get("retop-paused-until", (res) => resolve(res["retop-paused-until"]));
+  });
+  if (pausedResult && Date.now() < parseInt(pausedResult as string, 10)) {
     console.log("[retop] Extension is currently halted. Falling back to native VTOP.");
     document.body.style.opacity = "1";
     document.body.classList.add("show-legacy-ui");
     return;
   }
+
+  // Also listen for settings trigger from the popup
+  chrome.runtime.onMessage.addListener((msg) => {
+    if (msg.action === "open_settings") {
+      const root = document.getElementById("retop-root");
+      if (root) {
+        // Find a way to navigate or fire custom event to open settings
+        window.dispatchEvent(new CustomEvent("retop-open-settings"));
+      }
+    }
+  });
 
   const path = window.location.pathname;
 
@@ -380,13 +276,14 @@ const injectLoginTheme = () => {
 
   const passIconWrapper = document.getElementById("basic-addon2");
   if (passIconWrapper) {
-    // Keep the id passwordIcon so the legacy toggleEye() function doesn't crash.
-    // Include both eye and eye-slash paths inside groups to toggle via CSS based on the FontAwesome classes VTOP adds.
-    passIconWrapper.innerHTML = `<svg id="passwordIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="fa fa-eye lucide lucide-eye" onclick="javascript:toggleEye();" style="cursor: pointer;">
-      <path class="retop-eye-base" d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/>
-      <circle class="retop-eye-pupil" cx="12" cy="12" r="3"/>
-      <path class="retop-eye-strike" d="m2 2 20 20"/>
-    </svg>`;
+    // Restore the SVG with the animated retop-eye-strike
+    passIconWrapper.innerHTML = `
+      <svg id="passwordIcon" class="fa fa-eye lucide lucide-eye" onclick="javascript:toggleEye();" style="cursor: pointer; width: 24px; height: 24px; stroke: currentColor; fill: none;" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+        <circle cx="12" cy="12" r="3" />
+        <line x1="2" y1="2" x2="22" y2="22" class="retop-eye-strike" />
+      </svg>
+    `;
   }
 
   // No custom lock icon injected anymore per user request.
@@ -410,11 +307,16 @@ const injectLoginTheme = () => {
         if (rawText.includes("home") || link.getAttribute("href")?.includes("/vtop/open/page")) {
           if (link.tagName.toLowerCase() === "input" || link.tagName.toLowerCase() === "div") {
             const newBtn = document.createElement("button");
-            newBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-house"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>`;
+            newBtn.innerHTML = `<span class="material-symbols-rounded" style="font-variation-settings: 'FILL' 1, 'wght' 700, 'GRAD' 0, 'opsz' 24;">home</span>`;
             newBtn.className = "retop-home-icon";
             newBtn.style.border = "none";
             newBtn.style.background = "transparent";
             newBtn.style.boxShadow = "none";
+            newBtn.style.color = "currentColor";
+            newBtn.style.display = "flex";
+            newBtn.style.alignItems = "center";
+            newBtn.style.justifyContent = "center";
+            
             if (link.id) newBtn.id = link.id;
             if (link.getAttribute("onclick")) {
               newBtn.setAttribute("onclick", link.getAttribute("onclick")!);
@@ -427,11 +329,15 @@ const injectLoginTheme = () => {
               link.parentNode.replaceChild(newBtn, link);
             }
           } else {
-            link.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-house"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>`;
+            link.innerHTML = `<span class="material-symbols-rounded" style="font-variation-settings: 'FILL' 1, 'wght' 700, 'GRAD' 0, 'opsz' 24;">home</span>`;
             link.className = "retop-home-icon"; // completely overwrite classes
             (link as HTMLElement).style.border = "none";
             (link as HTMLElement).style.background = "transparent";
             (link as HTMLElement).style.boxShadow = "none";
+            (link as HTMLElement).style.color = "currentColor";
+            (link as HTMLElement).style.display = "inline-flex";
+            (link as HTMLElement).style.alignItems = "center";
+            (link as HTMLElement).style.justifyContent = "center";
             
             if (link.parentNode && (link.parentNode as HTMLElement).classList?.contains("text-end")) {
               (link.parentNode as HTMLElement).classList.remove("text-end");
@@ -522,6 +428,69 @@ const injectLoginTheme = () => {
     });
   }
 
+  // Add wiggle validation for login fields
+  if (!document.getElementById("retop-wiggle-style")) {
+    const style = document.createElement("style");
+    style.id = "retop-wiggle-style";
+    style.textContent = `
+      @keyframes retop-wiggle {
+        0%, 100% { transform: translateX(0); }
+        20% { transform: translateX(-8px); }
+        40% { transform: translateX(8px); }
+        60% { transform: translateX(-4px); }
+        80% { transform: translateX(4px); }
+      }
+      .retop-wiggle {
+        animation: retop-wiggle 0.4s ease-in-out !important;
+        border-color: #ef4444 !important;
+        box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+      }
+    `;
+    document.head.appendChild(style);
+
+    document.addEventListener("click", (e) => {
+      const target = e.target as HTMLElement;
+      // Match the exact login button or any button that acts as login
+      if (target.closest("button") && target.closest("button")?.textContent?.trim().toLowerCase() === "login") {
+        const passwordInput = document.getElementById("password") as HTMLInputElement;
+        const usernameInput = document.getElementById("authorizedIDX") || document.getElementById("username") as HTMLInputElement;
+        const captchaInput = document.getElementById("captchaStr") as HTMLInputElement;
+        
+        let isInvalid = false;
+
+        // Check password
+        if (passwordInput && (!passwordInput.value || passwordInput.value.length < 8)) {
+          passwordInput.classList.remove("retop-wiggle");
+          void passwordInput.offsetWidth; // force reflow
+          passwordInput.classList.add("retop-wiggle");
+          isInvalid = true;
+        }
+
+        // Check username
+        if (usernameInput && !(usernameInput as HTMLInputElement).value) {
+          usernameInput.classList.remove("retop-wiggle");
+          void usernameInput.offsetWidth; // force reflow
+          usernameInput.classList.add("retop-wiggle");
+          isInvalid = true;
+        }
+        
+        // Check captcha
+        if (captchaInput && (!captchaInput.value || captchaInput.value.length !== 6)) {
+          captchaInput.classList.remove("retop-wiggle");
+          void captchaInput.offsetWidth; // force reflow
+          captchaInput.classList.add("retop-wiggle");
+          isInvalid = true;
+        }
+
+        if (isInvalid) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+        }
+      }
+    }, true);
+  }
+
   // Error Page Handling
   const errorSpan = document.querySelector("span.text-danger[role='alert']");
   if (errorSpan && errorSpan.textContent?.trim()) {
@@ -534,7 +503,7 @@ const injectLoginTheme = () => {
     toast.className = `retop-error-toast ${isCaptchaError ? "retop-warning-toast" : ""}`;
     toast.innerHTML = `
       <div style="display: flex; align-items: center; gap: 10px; white-space: nowrap;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+        <span class="material-symbols-rounded" style="font-variation-settings: 'FILL' 1, 'wght' 700, 'GRAD' 0, 'opsz' 20; font-size: 18px;">error</span>
         <span style="font-size: 0.95rem; font-weight: 700; line-height: 1;">${errorText}</span>
       </div>
     `;

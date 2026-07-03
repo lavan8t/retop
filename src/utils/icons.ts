@@ -17,7 +17,7 @@ import {
   School,
   Person,
   Settings as SettingsIcon,
-} from '@nine-thirty-five/material-symbols-react/rounded';
+} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 
 export const getCategoryIcon = (title: string, url: string = "") => {
   const t = title.toLowerCase();
@@ -34,7 +34,8 @@ export const getCategoryIcon = (title: string, url: string = "") => {
     return Layers;
   if (t.includes("curriculum")) return MenuBook;
   if (t.includes("mark") || t.includes("grade")) return School;
-  if (t.includes("profile") || u.includes("studentprofileallview")) return Person;
+  if (t.includes("profile") || u.includes("studentprofileallview"))
+    return Person;
   if (t.includes("setting") || u.includes("setting")) return SettingsIcon;
 
   // Categories

@@ -23,6 +23,10 @@
     }
   ],
 
+  "action": {
+    "default_popup": "dist/popup.html"
+  },
+
   "web_accessible_resources": [
     {
       "resources": [

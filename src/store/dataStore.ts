@@ -19,12 +19,16 @@ import {
   DetailedAttendanceCourse,
   AttendanceRecord,
 } from "../types/vtop";
-import { parseStudentAttendance, parseAttendanceDetail } from "../parsers/attendance";
+import {
+  parseStudentAttendance,
+  parseAttendanceDetail,
+} from "../parsers/attendance";
 import { getUpcomingClasses, UpcomingClass } from "../utils/timetable-slots";
 import { parseEvents } from "../parsers/events";
 import {
   parseCalendarDays,
   parseCalendarGroupsAndMonths,
+  parseCalendarSemesters,
 } from "../parsers/calendar";
 
 export interface DataState {
@@ -70,8 +74,10 @@ export interface DataState {
   ) => Promise<void>;
 
   // Cross-cutting states for selectors
-  calSemesters: { id: string; label: string }[];
-  setCalSemesters: (sems: { id: string; label: string }[]) => void;
+  calSemesters: { id: string; label: string; selected?: boolean }[];
+  setCalSemesters: (
+    sems: { id: string; label: string; selected?: boolean }[],
+  ) => void;
   calSelectedSem: string;
   setCalSelectedSem: (semId: string) => void;
 
@@ -101,17 +107,25 @@ export interface DataState {
 
   cpSelectedSem: string;
   setCpSelectedSem: (semId: string) => void;
-  
+
   // Attendance Page State
   attSelectedSem: string;
   setAttSelectedSem: (semId: string) => void;
   detailedAttendance: DetailedAttendanceCourse[];
   attLoading: boolean;
-  fetchDetailedAttendance: (network: VTOPNetwork, semId: string) => Promise<void>;
-  
+  fetchDetailedAttendance: (
+    network: VTOPNetwork,
+    semId: string,
+  ) => Promise<void>;
+
   attendanceRecords: Record<string, AttendanceRecord[]>;
   attRecordsLoading: boolean;
-  fetchAttendanceRecords: (network: VTOPNetwork, semId: string, courseId: string, classType: string) => Promise<void>;
+  fetchAttendanceRecords: (
+    network: VTOPNetwork,
+    semId: string,
+    courseId: string,
+    classType: string,
+  ) => Promise<void>;
 }
 
 export const useDataStore = create<DataState>((set, get) => ({
@@ -175,30 +189,47 @@ export const useDataStore = create<DataState>((set, get) => ({
       });
 
       try {
-        const semHTML = await network.fetchFragment(
-          "academics/common/StudentTimeTable",
-        );
+        const [semHTML, calHTML] = await Promise.all([
+          network.fetchFragment("academics/common/StudentTimeTable"),
+          network.fetchFragment("academics/common/CalendarPreview"),
+        ]);
+
         const sems = parseSemesters(semHTML);
-        if (sems.length > 0) {
-          const semId = sems[0].id;
+        const calSems = parseCalendarSemesters(calHTML);
+
+        if (sems.length > 0 || calSems.length > 0) {
+          const savedCalSem = localStorage.getItem("vtop-cal-selected-sem");
+          const calDefault =
+            savedCalSem && calSems.some((s) => s.id === savedCalSem)
+              ? savedCalSem
+              : calSems.find((s) => s.selected)?.id || calSems[0]?.id || "";
+
+          const ttDefault =
+            sems.find((s) => s.isLatest)?.id || sems[0]?.id || "";
+
           set({
             ttSemesters: sems,
-            ttSelectedSem: semId,
-            cpSelectedSem: semId,
-            calSemesters: sems,
-            calSelectedSem: semId,
-            attSelectedSem: semId,
+            ttSelectedSem: ttDefault,
+            cpSelectedSem: ttDefault,
+            calSemesters: calSems,
+            calSelectedSem: calDefault,
+            attSelectedSem: ttDefault,
           });
-          await get().loadTimetable(network, csrf, authId, semId);
-          await get().fetchCalendarMonthsAndGroups(network, semId);
-          const state = get();
-          if (state.calSelectedGroup && state.calAvailableMonths.length > 0) {
-            await get().fetchCalendarGrid(
-              network,
-              semId,
-              state.calSelectedGroup,
-              state.calAvailableMonths,
-            );
+
+          if (ttDefault) {
+            await get().loadTimetable(network, csrf, authId, ttDefault);
+          }
+          if (calDefault) {
+            await get().fetchCalendarMonthsAndGroups(network, calDefault);
+            const state = get();
+            if (state.calSelectedGroup && state.calAvailableMonths.length > 0) {
+              await get().fetchCalendarGrid(
+                network,
+                calDefault,
+                state.calSelectedGroup,
+                state.calAvailableMonths,
+              );
+            }
           }
         }
       } catch (e) {
@@ -282,14 +313,16 @@ export const useDataStore = create<DataState>((set, get) => ({
   calSemesters: [],
   setCalSemesters: (calSemesters) => set({ calSemesters }),
   calSelectedSem: "",
-  setCalSelectedSem: (calSelectedSem) =>
+  setCalSelectedSem: (calSelectedSem) => {
+    localStorage.setItem("vtop-cal-selected-sem", calSelectedSem);
     set({
       calSelectedSem,
       calGridData: [],
       calAvailableMonths: [],
       calClassGroups: [],
       calSelectedGroup: "",
-    }),
+    });
+  },
 
   calClassGroups: [],
   calSelectedGroup: localStorage.getItem("vtop-cal-selected-group") || "",
@@ -313,13 +346,23 @@ export const useDataStore = create<DataState>((set, get) => ({
       if (cached) {
         const parsed = JSON.parse(cached);
         if (parsed.date === today && parsed.data) {
+          const savedGroup = localStorage.getItem("vtop-cal-selected-group");
+          const defaultGroup = (savedGroup && parsed.data.groups.some(
+            (g: any) => g.id === savedGroup,
+          ))
+            ? savedGroup
+            : parsed.data.groups.length > 0
+              ? parsed.data.groups[0].id
+              : "";
+
+          if (defaultGroup) {
+            localStorage.setItem("vtop-cal-selected-group", defaultGroup);
+          }
+
           set({
             calClassGroups: parsed.data.groups,
             calAvailableMonths: parsed.data.months,
-            calSelectedGroup:
-              parsed.data.groups.some((g: any) => g.id === get().calSelectedGroup)
-                ? get().calSelectedGroup
-                : parsed.data.groups.length > 0 ? parsed.data.groups[0].id : "",
+            calSelectedGroup: defaultGroup,
             calLoadingMonths: false,
           });
           return;
@@ -350,10 +393,17 @@ export const useDataStore = create<DataState>((set, get) => ({
         JSON.stringify({ date: today, data: { groups, months } }),
       );
 
-      const defaultGroup =
-        groups.some((g) => g.id === get().calSelectedGroup)
-          ? get().calSelectedGroup
-          : groups.length > 0 ? groups[0].id : "";
+      const savedGroup = localStorage.getItem("vtop-cal-selected-group");
+      const defaultGroup = (savedGroup && groups.some((g) => g.id === savedGroup))
+        ? savedGroup
+        : groups.length > 0
+          ? groups[0].id
+          : "";
+
+      if (defaultGroup) {
+        localStorage.setItem("vtop-cal-selected-group", defaultGroup);
+      }
+
       set({
         calClassGroups: groups,
         calAvailableMonths: months,
@@ -415,7 +465,8 @@ export const useDataStore = create<DataState>((set, get) => ({
   setCpSelectedSem: (semId) => set({ cpSelectedSem: semId }),
 
   attSelectedSem: "",
-  setAttSelectedSem: (semId) => set({ attSelectedSem: semId, detailedAttendance: [] }),
+  setAttSelectedSem: (semId) =>
+    set({ attSelectedSem: semId, detailedAttendance: [] }),
   detailedAttendance: [],
   attLoading: false,
   fetchDetailedAttendance: async (network, semId) => {

@@ -198,16 +198,16 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
         </div>
         <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
           {loadingCourses ? (
-            <div className="h-full flex flex-col items-center justify-center text-zinc-500 gap-4 animate-pulse">
-              <ProgressActivity className="w-12 h-12 animate-spin text-blue-500" />
-              <span className="text-sm font-bold  uppercase">
+            <div className="h-full flex flex-col items-center justify-center text-zinc-500 gap-4 group min-h-64">
+              <ProgressActivity className="w-24 h-24 animate-spin text-(--accent-base)" />
+              <span className="text-2xl font-bold font-expanded uppercase transition-all duration-300 group-hover:font-squish animate-pulse">
                 Fetching Courses...
               </span>
             </div>
           ) : filteredCourses.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-zinc-500 border-4 border-dashed border-zinc-900 rounded-4xl bg-zinc-900/30">
-              <Search className="w-16 h-16 mb-4 opacity-20" />
-              <span className="font-bold uppercase ">No matching courses</span>
+            <div className="h-full flex flex-col items-center justify-center text-zinc-500 rounded-4xl bg-zinc-900/30 group min-h-64">
+              <Search className="w-24 h-24 mb-6 text-(--accent-base)" />
+              <span className="text-3xl font-bold font-expanded uppercase transition-all duration-300 group-hover:font-squish">No matching courses</span>
             </div>
           ) : (
             <motion.div

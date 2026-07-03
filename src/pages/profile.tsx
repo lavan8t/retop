@@ -501,10 +501,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
                 </div>
               </div>
             ) : (
-              <div className="h-full w-full flex items-center justify-center p-8 bg-(--bg-surface) border-4 border-dashed border-(--border-main) rounded-2xl text-(--text-muted) font-black font-expanded text-xl tracking-wider uppercase text-center">
-                Registered As
-                <br />
-                Day Scholar
+              <div className="h-full w-full flex flex-col items-center justify-center p-8 bg-(--bg-surface) rounded-2xl group min-h-64">
+                <LocationOn className="w-24 h-24 mb-6 text-(--accent-base)" />
+                <span className="text-2xl text-(--text-muted) font-black font-expanded tracking-wider uppercase text-center transition-all duration-300 group-hover:font-squish">
+                  Registered As<br />Day Scholar
+                </span>
               </div>
             )}
           </BentoCard>

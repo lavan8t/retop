@@ -4,8 +4,10 @@ import {
   Check,
   Casino,
   Close,
+  Language,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { motion, AnimatePresence } from "framer-motion";
+import { Icon } from "@iconify/react";
 import "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { MaterialSwitch } from "../components/MaterialSwitch";
 
@@ -22,36 +24,51 @@ const BentoBox = ({
   description,
   children,
   className = "",
+  contentClassName = "mt-auto self-start relative z-10 flex w-full",
   disabled = false,
 }: {
-  title: React.ReactNode;
+  title?: React.ReactNode;
   description?: React.ReactNode;
   children?: React.ReactNode;
   className?: string;
+  contentClassName?: string;
   disabled?: boolean;
 }) => (
   <motion.div
     variants={{
-      hidden: { opacity: 0, scale: 0.95 },
-      show: { opacity: 1, scale: 1 },
+      hidden: {
+        opacity: 0,
+        scale: 0.95,
+        boxShadow: "0px 0px 0px 0px var(--shadow-main)",
+      },
+      show: {
+        opacity: 1,
+        scale: 1,
+        boxShadow: "0px 0px 0px 0px var(--shadow-main)",
+      },
     }}
-    whileHover={{ y: -6 }}
+    whileHover={{
+      y: -6,
+      boxShadow: "6px 6px 0px 0px var(--shadow-main)",
+    }}
     transition={{ type: "spring", stiffness: 400, damping: 25 }}
-    className={`bg-(--bg-surface) rounded-[32px] p-6 lg:p-8 flex flex-col justify-between gap-6 overflow-hidden relative border-4 border-(--border-main) shadow-none hover:shadow-[6px_6px_0px_0px_var(--shadow-main)] transition-shadow duration-300 ${className} ${disabled ? "opacity-40 grayscale pointer-events-none" : ""}`}
+    className={`bg-(--bg-surface) rounded-[32px] p-6 lg:p-8 flex flex-col justify-between gap-6 overflow-hidden relative border-4 border-(--border-main) shadow-none ${className} ${disabled ? "opacity-40 grayscale pointer-events-none" : ""}`}
   >
-    <div className="flex flex-col gap-2 relative z-10">
-      <div className="font-expanded font-black text-xl text-(--text-main) leading-tight">
-        {title}
+    {(title || description) && (
+      <div className="flex flex-col gap-2 relative z-10">
+        {title && (
+          <div className="font-expanded font-black text-xl text-(--text-main) leading-tight">
+            {title}
+          </div>
+        )}
+        {description && (
+          <div className="text-sm font-bold text-(--text-muted) leading-snug">
+            {description}
+          </div>
+        )}
       </div>
-      {description && (
-        <div className="text-sm font-bold text-(--text-muted) leading-snug">
-          {description}
-        </div>
-      )}
-    </div>
-    <div className="mt-auto self-start relative z-10 flex w-full">
-      {children}
-    </div>
+    )}
+    <div className={contentClassName}>{children}</div>
   </motion.div>
 );
 
@@ -161,15 +178,15 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           {/* Appearance Box */}
           <BentoBox
             title="Appearance"
-            className="col-span-1 md:col-span-2 lg:col-span-4"
+            className="col-span-1 md:col-span-2 lg:col-span-1"
           >
-            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8 w-full">
-              <div className="flex flex-col gap-4">
+            <div className="flex flex-col items-start justify-between gap-8 w-full min-w-0">
+              <div className="flex flex-col gap-4 w-full min-w-0">
                 <div className="flex flex-col gap-2">
                   <span className="text-sm font-bold text-(--text-muted)">
                     Theme
                   </span>
-                  <div className="flex items-center gap-0.5 shrink-0">
+                  <div className="flex items-center gap-1 w-full shrink-0">
                     {["light", "dark", "auto"].map((mode, idx, arr) => {
                       const isActive =
                         settings.themeMode === mode ||
@@ -191,7 +208,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                             if (mode === "light") targetMode = "light";
                             handleThemeChange(e, targetMode as any);
                           }}
-                          className={`px-4 py-2.5 text-xs font-bold font-expanded uppercase transition-all duration-300 ${
+                          className={`flex-1 flex justify-center items-center px-4 py-2.5 text-xs font-bold font-expanded uppercase transition-all duration-300 ${
                             isActive
                               ? `bg-(--text-main) text-(--bg-main) shadow-none ${activeRounding}`
                               : `bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) shadow-none ${rounding}`
@@ -227,11 +244,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 </div>
               </div>
 
-              <div className="flex flex-col gap-2 w-full lg:w-auto">
+              <div className="flex flex-col gap-2 w-full min-w-0">
                 <span className="text-sm font-bold text-(--text-muted)">
                   Accent
                 </span>
-                <div className="flex flex-nowrap overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden gap-4 w-full lg:w-auto snap-x py-6 px-4 -mx-4 lg:mx-0">
+                <div className="flex flex-nowrap overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden gap-4 snap-x py-2 px-6 lg:px-8 -mx-6 lg:-mx-8 min-w-0">
                   <button
                     onClick={() => {
                       if (!settings.randomAccentColor) resetDynamicThemeSeed();
@@ -313,15 +330,86 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             description="Always load the modernized view on login"
             className="col-span-1"
           >
-            <MaterialSwitch
-              selected={settings.defaultView === "modern"}
-              onChange={() =>
-                updateSetting(
-                  "defaultView",
-                  settings.defaultView === "modern" ? "legacy" : "modern",
-                )
-              }
-            />
+            <div className="w-full flex justify-end">
+              <MaterialSwitch
+                selected={settings.defaultView === "modern"}
+                onChange={() =>
+                  updateSetting(
+                    "defaultView",
+                    settings.defaultView === "modern" ? "legacy" : "modern",
+                  )
+                }
+              />
+            </div>
+          </BentoBox>
+
+          {/* About Retop Section */}
+          <BentoBox
+            className="col-span-1 text-center"
+            contentClassName="relative z-10 flex flex-col justify-between w-full flex-1"
+          >
+            <div className="flex flex-col items-center gap-3 w-full">
+              <h2 className="text-5xl text-(--text-main) group-hover:font-squish transition-all duration-300 font-logo cursor-default tracking-tighter leading-none lowercase">
+                retop
+              </h2>
+              <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
+                <span className="bg-(--bg-highlight) text-(--text-main) px-3 py-1 rounded-full text-[10px] font-bold font-mono uppercase">
+                  v
+                  {typeof chrome !== "undefined" &&
+                  chrome.runtime &&
+                  chrome.runtime.getManifest
+                    ? chrome.runtime.getManifest().version
+                    : "dev"}
+                </span>
+                <span className="bg-(--bg-highlight) text-(--text-muted) px-3 py-1 rounded-full text-[10px] font-bold font-mono uppercase">
+                  {typeof __BUILD_NUMBER__ !== "undefined"
+                    ? __BUILD_NUMBER__
+                    : "unknown_build"}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-4 mt-2">
+              <a
+                href="https://github.com/lavan8t/retop"
+                target="_blank"
+                rel="noreferrer"
+                className="p-3.5 rounded-full transition-all bg-(--bg-highlight) text-(--text-main) hover:bg-(--text-main) hover:text-(--bg-main) hover:scale-105 active:scale-95 flex items-center justify-center shadow-none hover:shadow-lg"
+                title="GitHub"
+              >
+                <Icon icon="mdi:github" className="w-8 h-8" />
+              </a>
+              <a
+                href="https://getretop.web.app"
+                target="_blank"
+                rel="noreferrer"
+                className="p-3.5 rounded-full transition-all bg-(--bg-highlight) text-(--text-main) hover:bg-(--text-main) hover:text-(--bg-main) hover:scale-105 active:scale-95 flex items-center justify-center shadow-none hover:shadow-lg"
+                title="Website"
+              >
+                <Language className="w-8 h-8" />
+              </a>
+            </div>
+          </BentoBox>
+
+          <BentoBox
+            title="System Cache"
+            description="Force fetch the latest schedule from VTOP"
+            className="col-span-1 lg:col-span-1"
+          >
+            <button
+              onClick={() => {
+                const keys = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                  const key = localStorage.key(i);
+                  if (key && key.startsWith("vtop-tt-cache-")) keys.push(key);
+                }
+                keys.forEach((k) => localStorage.removeItem(k));
+                window.location.reload();
+              }}
+              className="w-full flex items-center justify-center px-5 py-2.5 rounded-full text-xs font-black font-expanded uppercase transition-all bg-(--bg-highlight) text-(--text-main) hover:bg-(--text-main) hover:text-(--bg-main)"
+            >
+              Clear Cache
+            </button>
           </BentoBox>
 
           <BentoBox
@@ -329,23 +417,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             description="Hide your CGPA on the dashboard until you point it"
             className="col-span-1"
           >
-            <MaterialSwitch
-              selected={settings.blurCgpa}
-              onChange={() => updateSetting("blurCgpa", !settings.blurCgpa)}
-            />
-          </BentoBox>
-
-          <BentoBox
-            title="24-Hour Time"
-            description="Use railway time format"
-            className="col-span-1"
-          >
-            <MaterialSwitch
-              selected={settings.use24HourTime}
-              onChange={() =>
-                updateSetting("use24HourTime", !settings.use24HourTime)
-              }
-            />
+            <div className="w-full flex justify-end">
+              <MaterialSwitch
+                selected={settings.blurCgpa}
+                onChange={() => updateSetting("blurCgpa", !settings.blurCgpa)}
+              />
+            </div>
           </BentoBox>
 
           <BentoBox
@@ -417,24 +494,18 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           </BentoBox>
 
           <BentoBox
-            title="System Cache"
-            description="Force fetch the latest schedule from VTOP"
+            title="24-Hour Time"
+            description="Use railway time format"
             className="col-span-1"
           >
-            <button
-              onClick={() => {
-                const keys = [];
-                for (let i = 0; i < localStorage.length; i++) {
-                  const key = localStorage.key(i);
-                  if (key && key.startsWith("vtop-tt-cache-")) keys.push(key);
+            <div className="w-full flex justify-end">
+              <MaterialSwitch
+                selected={settings.use24HourTime}
+                onChange={() =>
+                  updateSetting("use24HourTime", !settings.use24HourTime)
                 }
-                keys.forEach((k) => localStorage.removeItem(k));
-                window.location.reload();
-              }}
-              className="px-5 py-2.5 rounded-full text-xs font-black font-expanded uppercase transition-all bg-(--bg-highlight) text-(--text-main) hover:bg-(--text-main) hover:text-(--bg-main)"
-            >
-              Clear Cache
-            </button>
+              />
+            </div>
           </BentoBox>
         </div>
       </motion.div>

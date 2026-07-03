@@ -387,9 +387,9 @@ export const CoursePage = ({
               animate={{ opacity: 1, scale: 1 }}
               className="flex-1 flex flex-col items-center justify-center p-8 min-h-0"
             >
-              <div className="bg-zinc-900 p-12 rounded-4xl border-4 border-dashed border-zinc-800 text-center max-w-lg opacity-80 shadow-xl">
-                <Layers className="w-20 h-20 mx-auto mb-6 text-zinc-700" />
-                <h2 className="text-2xl font-black font-expanded mb-2 uppercase text-zinc-500">
+              <div className="bg-zinc-900 p-12 rounded-4xl text-center max-w-lg shadow-xl group min-h-64 flex flex-col justify-center">
+                <Layers className="w-24 h-24 mx-auto mb-6 text-(--accent-base)" />
+                <h2 className="text-3xl font-black font-expanded mb-2 uppercase text-zinc-500 transition-all duration-300 group-hover:font-squish">
                   Subject Needed
                 </h2>
                 <p className="font-bold text-zinc-600 text-sm">
@@ -441,9 +441,9 @@ export const CoursePage = ({
 
               <div className="flex-1 min-h-0 overflow-hidden">
                 {loading ? (
-                  <div className="h-full flex flex-col items-center justify-center border-4 border-dashed border-zinc-800 rounded-4xl bg-(--bg-main)">
-                    <Layers className="w-12 h-12 text-cyan-400 animate-bounce mb-4" />
-                    <span className="text-zinc-500 font-bold uppercase  animate-pulse">
+                  <div className="h-full flex flex-col items-center justify-center rounded-4xl bg-(--bg-main) group">
+                    <Layers className="w-24 h-24 text-(--accent-base) animate-bounce mb-6" />
+                    <span className="text-2xl text-zinc-500 font-bold font-expanded uppercase transition-all duration-300 group-hover:font-squish animate-pulse">
                       Fetching Data...
                     </span>
                   </div>

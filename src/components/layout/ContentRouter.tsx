@@ -3,6 +3,7 @@ import { HomeView } from "../../pages/home";
 import { TimetableContentView } from "../../pages/timetable";
 import { CurriculumPage } from "../../pages/curriculum";
 import { MarksPage } from "../../pages/marks";
+import { GradesPage } from "../../pages/grades";
 import { ProfilePage } from "../../pages/profile";
 import { SettingsPage } from "../../pages/settings";
 import { CoursePage } from "../../pages/course-page";
@@ -43,6 +44,10 @@ export const ContentRouter = ({
   setMarksSelectedSem,
   marksSearchQuery,
   isMarksModernView,
+  gradesSemesters,
+  setGradesSemesters,
+  gradesSelectedSem,
+  setGradesSelectedSem,
   ttSemesters,
   ttSelectedSem,
   events,
@@ -95,6 +100,16 @@ export const ContentRouter = ({
           setSelectedSem={setMarksSelectedSem}
           searchQuery={marksSearchQuery}
           isModernView={isMarksModernView}
+        />
+      );
+    case "grades":
+      return (
+        <GradesPage
+          network={networkRef.current}
+          semesters={gradesSemesters}
+          setSemesters={setGradesSemesters}
+          selectedSem={gradesSelectedSem}
+          setSelectedSem={setGradesSelectedSem}
         />
       );
     case "profile":

@@ -7,11 +7,13 @@ export function parseMarksSemesters(html: string): MarksSemester[] {
   const semesters: MarksSemester[] = [];
 
   options.forEach((opt) => {
-    const val = opt.getAttribute("value");
-    if (val && val !== "") {
+    const val = opt.getAttribute("value") || (opt as HTMLOptionElement).value || opt.textContent?.trim() || "";
+    const txt = opt.textContent?.trim() || "";
+    const isSelectPlaceholder = txt.toLowerCase().includes("select") || txt.toLowerCase().includes("choose") || val.toLowerCase().includes("select") || val.toLowerCase().includes("choose") || txt === "-";
+    if (val && val.trim() !== "" && !isSelectPlaceholder) {
       semesters.push({
         id: val,
-        name: opt.textContent?.trim() || val,
+        name: txt || val,
       });
     }
   });

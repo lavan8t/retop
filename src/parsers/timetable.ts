@@ -7,18 +7,22 @@ export function parseSemesters(html: string): Semester[] {
 
   const semesters: Semester[] = [];
   options.forEach((opt) => {
-    const val = (opt as HTMLOptionElement).value;
+    const val = opt.getAttribute("value") || (opt as HTMLOptionElement).value || opt.textContent?.trim() || "";
     const txt = opt.textContent?.trim() || "";
-    if (val && val !== "") {
+    const isSelectPlaceholder = txt.toLowerCase().includes("select") || txt.toLowerCase().includes("choose") || val.toLowerCase().includes("select") || val.toLowerCase().includes("choose") || txt === "-";
+    if (val && val.trim() !== "" && !isSelectPlaceholder) {
+      const isSelected = opt.hasAttribute("selected") || (opt as HTMLOptionElement).selected;
       semesters.push({
         id: val,
         label: txt,
-        isLatest: false,
+        isLatest: isSelected,
       });
     }
   });
 
-  if (semesters.length > 0) semesters[0].isLatest = true;
+  if (semesters.length > 0 && !semesters.some(s => s.isLatest)) {
+    semesters[0].isLatest = true;
+  }
   return semesters;
 }
 

@@ -67,7 +67,6 @@ const hslToHex = (h: number, s: number, l: number) => {
 export const applyTheme = (settings: AppSettings) => {
   if (typeof document === "undefined") return;
   const root = getAppRoot();
-  if (!root) return;
 
   let appliedTheme = settings.themeMode;
   if (appliedTheme === "auto") {
@@ -75,7 +74,7 @@ export const applyTheme = (settings: AppSettings) => {
     appliedTheme = (hour >= 18 || hour < 6) ? "dark" : "light";
   }
 
-  root.setAttribute("data-theme", appliedTheme);
+  if (root) root.setAttribute("data-theme", appliedTheme);
   document.documentElement.setAttribute("data-theme", appliedTheme);
 
   let baseColor = MATERIAL_ACCENTS[settings.accentColor] || MATERIAL_ACCENTS.blue;
@@ -92,7 +91,7 @@ export const applyTheme = (settings: AppSettings) => {
   const scheme = isDark ? theme.schemes.dark : theme.schemes.light;
 
   // Set the base variables
-  root.style.setProperty("--accent-base", hexFromArgb(scheme.primary));
+  if (root) root.style.setProperty("--accent-base", hexFromArgb(scheme.primary));
   document.documentElement.style.setProperty("--accent-base", hexFromArgb(scheme.primary));
 
   // Set standard Material Design 3 variables
@@ -124,7 +123,7 @@ export const applyTheme = (settings: AppSettings) => {
   };
 
   Object.entries(sysColors).forEach(([name, val]) => {
-    root.style.setProperty(`--md-sys-color-${name}`, val);
+    if (root) root.style.setProperty(`--md-sys-color-${name}`, val);
     document.documentElement.style.setProperty(`--md-sys-color-${name}`, val);
   });
 };

@@ -1,33 +1,37 @@
 const CACHE_PREFIX = "retop_";
 const CACHE_TTL = 24 * 60 * 60 * 1000;
 
-export const getCachedData = <T>(key: string): T | null => {
-  if (typeof localStorage === "undefined") return null;
+export const getCachedData = async <T>(key: string): Promise<T | null> => {
+  if (typeof chrome === "undefined" || !chrome.storage) return null;
 
   const cacheKey = CACHE_PREFIX + key;
-  const raw = localStorage.getItem(cacheKey);
 
-  if (!raw) return null;
+  return new Promise((resolve) => {
+    chrome.storage.local.get(cacheKey, (result) => {
+      const raw = result[cacheKey] as string;
+      if (!raw) return resolve(null);
 
-  try {
-    const { timestamp, data } = JSON.parse(raw);
-    const age = Date.now() - timestamp;
+      try {
+        const { timestamp, data } = JSON.parse(raw);
+        const age = Date.now() - timestamp;
 
-    if (age > CACHE_TTL) {
-      console.log(`[Cache] Expired: ${key}`);
-      localStorage.removeItem(cacheKey);
-      return null;
-    }
+        if (age > CACHE_TTL) {
+          console.log(`[Cache] Expired: ${key}`);
+          chrome.storage.local.remove(cacheKey);
+          return resolve(null);
+        }
 
-    return data as T;
-  } catch (e) {
-    console.warn("Cache parse failed", e);
-    return null;
-  }
+        resolve(data as T);
+      } catch (e) {
+        console.warn("Cache parse failed", e);
+        resolve(null);
+      }
+    });
+  });
 };
 
-export const setCachedData = (key: string, data: any) => {
-  if (typeof localStorage === "undefined") return;
+export const setCachedData = (key: string, data: any): void => {
+  if (typeof chrome === "undefined" || !chrome.storage) return;
 
   const cacheKey = CACHE_PREFIX + key;
   const payload = {
@@ -36,18 +40,21 @@ export const setCachedData = (key: string, data: any) => {
   };
 
   try {
-    localStorage.setItem(cacheKey, JSON.stringify(payload));
+    chrome.storage.local.set({ [cacheKey]: JSON.stringify(payload) });
   } catch (e) {
-    console.error("Cache write failed (Quota exceeded?)", e);
+    console.error("Cache write failed", e);
   }
 };
 
-export const clearCache = (keyPrefix?: string) => {
-  if (typeof localStorage === "undefined") return;
+export const clearCache = (keyPrefix?: string): void => {
+  if (typeof chrome === "undefined" || !chrome.storage) return;
 
-  Object.keys(localStorage).forEach((key) => {
-    if (key.startsWith(CACHE_PREFIX + (keyPrefix || ""))) {
-      localStorage.removeItem(key);
+  chrome.storage.local.get(null, (items) => {
+    const keysToRemove = Object.keys(items).filter((key) =>
+      key.startsWith(CACHE_PREFIX + (keyPrefix || "")),
+    );
+    if (keysToRemove.length > 0) {
+      chrome.storage.local.remove(keysToRemove);
     }
   });
 };

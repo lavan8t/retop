@@ -1,4 +1,4 @@
-export type ViewType = "dashboard" | "timetable" | "curriculum" | "marks" | "profile" | "settings" | "coursePage" | "calendar" | "attendance" | "content";
+export type ViewType = "dashboard" | "timetable" | "curriculum" | "marks" | "grades" | "profile" | "settings" | "coursePage" | "calendar" | "attendance" | "content";
 
 export interface QuickLink {
   title: string;
@@ -325,5 +325,111 @@ export interface AttendanceRecord {
   date: string;
   slot: string;
   dayTime: string;
-  status: string; // "Present" | "Absent" | etc.
+  status: string;
+}
+
+export interface GradesSemester {
+  id: string;
+  name: string;
+}
+
+export interface GradeCourse {
+  code: string;
+  title: string;
+  type: string;
+  credits: string; // "L P J C" wait, no, "3.0"
+  l: string;
+  p: string;
+  j: string;
+  c: string;
+  gradingType: string;
+  grandTotal: string;
+  grade: string;
+  courseId: string; // for view mark
+  notIncludedInGpa: boolean;
+  classStrength?: string;
+  gradingStrength?: string;
+  mean?: string;
+  sd?: string;
+  gradesRange?: {
+    S: string;
+    A: string;
+    B: string;
+    C: string;
+    D: string;
+    E: string;
+    F: string;
+  };
+  assessments?: GradeAssessment[];
+}
+
+export interface GradeAssessment {
+  title: string;
+  maxMark: string;
+  weightage: string;
+  status: string;
+  scoredMark: string;
+  weightageMark: string;
+}
+
+export interface GradesData {
+  gpa: string;
+  courses: GradeCourse[];
+}
+
+export interface GradeHistoryCourse {
+  slNo: string;
+  code: string;
+  title: string;
+  type: string;
+  credits: string;
+  grade: string;
+  examMonth: string;
+  resultDeclared: string;
+  courseDistribution: string;
+  details?: GradeHistoryCourseDetail[]; // the inner table rows
+}
+
+export interface GradeHistoryCourseDetail {
+  code: string;
+  title: string;
+  type: string;
+  credits: string;
+  grade: string;
+  examMonth: string;
+  resultDeclared: string;
+}
+
+export interface CGPADetails {
+  creditsRegistered: string;
+  creditsEarned: string;
+  cgpa: string;
+  s: string;
+  a: string;
+  b: string;
+  c: string;
+  d: string;
+  e: string;
+  f: string;
+  n: string;
+}
+
+export interface CurriculumDistribution {
+  title: string;
+  required: string;
+  earned: string;
+}
+
+export interface BasketDetails {
+  title: string;
+  distributionType: string;
+  required: string;
+  earned: string;
+}
+
+export interface GradeHistoryData {
+  courses: GradeHistoryCourse[];
+  cgpa: CGPADetails | null;
+  curriculum: CurriculumDistribution[];
+  baskets: BasketDetails[];
 }

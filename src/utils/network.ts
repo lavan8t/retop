@@ -48,7 +48,7 @@ export class VTOPNetwork {
     const userScopedKey = `${this.authorizedID}_${key}`;
 
     if (!forceRefresh) {
-      const cached = getCachedData<string>(userScopedKey);
+      const cached = await getCachedData<string>(userScopedKey);
       if (cached) {
         // Stale-while-revalidate: return cached but fetch latest in background to update cache
         fetcher().then(data => {
@@ -58,6 +58,7 @@ export class VTOPNetwork {
         }).catch(err => {
           console.error(`[VTOP Network] Background cache update failed for ${userScopedKey}`, err);
         });
+
         return cached;
       }
     }
@@ -190,6 +191,82 @@ export class VTOPNetwork {
       if (!response.ok) throw new Error(`Status ${response.status}`);
       return await response.text();
     });
+  }
+
+  async getGradesView(): Promise<string> {
+    return this.fetchFragment("examinations/examGradeView/StudentGradeView");
+  }
+
+  async getStudentGrades(semesterSubId: string): Promise<string> {
+    const cacheKey = `grades_data_${semesterSubId}`;
+
+    return this.fetchWithCache(cacheKey, async () => {
+      const url = "examinations/examGradeView/doStudentGradeView";
+      const body = new URLSearchParams();
+      body.append("_csrf", this.csrf);
+      body.append("authorizedID", this.authorizedID);
+      body.append("semesterSubId", semesterSubId);
+      body.append("x", new Date().toUTCString());
+
+      const response = await fetch(`/vtop/${url}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+          "Close-Requested-With": "XMLHttpRequest",
+        },
+        body: body,
+      });
+
+      if (!response.ok) throw new Error(`Status ${response.status}`);
+      return await response.text();
+    });
+  }
+
+  async getStudentGradeHistory(): Promise<string> {
+    const cacheKey = "grade_history_data";
+
+    return this.fetchWithCache(cacheKey, async () => {
+      const url = "examinations/examGradeView/StudentGradeHistory";
+      const body = new URLSearchParams();
+      body.append("_csrf", this.csrf);
+      body.append("authorizedID", this.authorizedID);
+      body.append("verifyMenu", "true");
+      body.append("x", new Date().toUTCString());
+
+      const response = await fetch(`/vtop/${url}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+          "Close-Requested-With": "XMLHttpRequest",
+        },
+        body: body,
+      });
+
+      if (!response.ok) throw new Error(`Status ${response.status}`);
+      return await response.text();
+    });
+  }
+
+  async getGradeDetails(semesterSubId: string, courseId: string): Promise<string> {
+    const url = "examinations/examGradeView/getGradeViewDetails";
+    const body = new URLSearchParams();
+    body.append("_csrf", this.csrf);
+    body.append("authorizedID", this.authorizedID);
+    body.append("semesterSubId", semesterSubId);
+    body.append("courseId", courseId);
+    body.append("x", new Date().toUTCString());
+
+    const response = await fetch(`/vtop/${url}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "Close-Requested-With": "XMLHttpRequest",
+      },
+      body: body,
+    });
+
+    if (!response.ok) throw new Error(`Status ${response.status}`);
+    return await response.text();
   }
 
   async getCoursePage(): Promise<string> {

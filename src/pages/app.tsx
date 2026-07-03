@@ -264,9 +264,20 @@ const DashboardApp = () => {
       sessionStorage.setItem("vtop-retop-view", view);
     };
 
+    const handleOpenSettings = () => {
+      setCurrentView("settings");
+      if (!isModernUI) {
+        setIsModernUI(true);
+      }
+    };
+
     window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, []);
+    window.addEventListener("retop-open-settings", handleOpenSettings);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("retop-open-settings", handleOpenSettings);
+    };
+  }, [isModernUI]);
 
   useEffect(() => {
     applyTheme(settings);
@@ -331,19 +342,17 @@ const DashboardApp = () => {
       if (e.key === "Escape") return;
 
       if (currentViewRef.current !== "dashboard") {
-        if (
-          e.key === "/" ||
-          (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey)
-        ) {
+        if (e.key === "/" || e.key === " ") {
           e.preventDefault();
           isOmniboxOpenRef.current = true;
-          setOmniboxInitial(e.key === "/" ? "" : e.key);
+          setOmniboxInitial("");
           setIsOmniboxOpen(true);
         }
       } else {
-        if (e.key === "/") {
+        if (e.key === "/" || e.key === " ") {
           e.preventDefault();
           isOmniboxOpenRef.current = true;
+          setOmniboxInitial("");
           setIsOmniboxOpen(true);
         }
       }
@@ -353,10 +362,44 @@ const DashboardApp = () => {
     const restoreHandler = () => setIsModernUI(true);
     window.addEventListener("vtop-restore-ui", restoreHandler);
 
+    const scrollHideTimeouts = new Map<HTMLElement, any>();
+    const scrollShowTimeouts = new Map<HTMLElement, any>();
+    const handleScroll = (e: Event) => {
+      const target = (e.composedPath ? e.composedPath()[0] : e.target) as HTMLElement;
+      if (
+        target &&
+        target.classList &&
+        (target.classList.contains("custom-scrollbar") ||
+          (typeof target.className === "string" && target.className.includes("overflow-")))
+      ) {
+        if (!target.hasAttribute("data-scrolling")) {
+          if (!scrollShowTimeouts.has(target)) {
+            scrollShowTimeouts.set(target, setTimeout(() => {
+              target.setAttribute("data-scrolling", "true");
+              scrollShowTimeouts.delete(target);
+            }, 100)); // slight delay to show
+          }
+        }
+
+        const existingHideTimeout = scrollHideTimeouts.get(target);
+        if (existingHideTimeout) clearTimeout(existingHideTimeout);
+        scrollHideTimeouts.set(target, setTimeout(() => {
+          target.removeAttribute("data-scrolling");
+          scrollHideTimeouts.delete(target);
+          if (scrollShowTimeouts.has(target)) {
+            clearTimeout(scrollShowTimeouts.get(target));
+            scrollShowTimeouts.delete(target);
+          }
+        }, 3000));
+      }
+    };
+    document.addEventListener("scroll", handleScroll, true);
+
     return () => {
       clearInterval(menuPoller);
       window.removeEventListener("keydown", handleKeys);
       window.removeEventListener("vtop-restore-ui", restoreHandler);
+      document.removeEventListener("scroll", handleScroll, true);
     };
   }, []);
 

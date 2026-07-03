@@ -13,7 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
-} from '@nine-thirty-five/material-symbols-react/rounded';
+} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { motion } from "framer-motion";
 
 interface CurriculumPageProps {
@@ -207,9 +207,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
           ) : filteredCourses.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-zinc-500 border-4 border-dashed border-zinc-900 rounded-4xl bg-zinc-900/30">
               <Search className="w-16 h-16 mb-4 opacity-20" />
-              <span className="font-bold uppercase ">
-                No matching courses
-              </span>
+              <span className="font-bold uppercase ">No matching courses</span>
             </div>
           ) : (
             <motion.div

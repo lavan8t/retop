@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useDataStore } from "../store/dataStore";
 import { VTOPNetwork } from "../utils/network";
 import { motion, AnimatePresence } from "framer-motion";
+import { MarqueeText } from "../components/common/MarqueeText";
 import {
   ProgressActivity,
   Warning,
@@ -13,13 +14,15 @@ import {
   Add,
   Remove,
   Refresh,
-} from "@nine-thirty-five/material-symbols-react/rounded";
+} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { DetailedAttendanceCourse } from "../types/vtop";
 
 const AttendanceCalculator = ({
   course,
+  historyLength,
 }: {
   course: DetailedAttendanceCourse;
+  historyLength: number | null;
 }) => {
   const [attendCount, setAttendCount] = useState(0);
   const [bunkCount, setBunkCount] = useState(0);
@@ -29,21 +32,60 @@ const AttendanceCalculator = ({
     setBunkCount(0);
   }, [course]);
 
-  const maxAttend = Math.max(0, course.total - course.attended);
-  const maxBunk = course.attended;
+  const isLab =
+    course.courseType.toLowerCase().includes("lab") ||
+    course.courseType.toLowerCase() === "ela";
+  const weight = isLab ? 2 : 1;
+
+  const present = course.attended;
+  const absent = course.total - course.attended;
+  const remainingClasses = Math.max(0, course.total - (present + absent));
+
+  console.log("CALCULATION_DEBUG:", {
+    course: course.courseCode,
+    isLab,
+    weight,
+    rawTotal: course.total,
+    rawAttended: course.attended,
+    rawPercentage: course.percentage,
+    present,
+    absent,
+    remainingClasses,
+  });
+
+  const maxAttend = remainingClasses;
+  const maxBunk = remainingClasses;
 
   const decreaseAttend = () => setAttendCount((a) => Math.max(0, a - 1));
   const increaseAttend = () =>
-    setAttendCount((a) => Math.min(maxAttend, a + 1));
-  const decreaseBunk = () => setBunkCount((b) => Math.max(0, b - 1));
-  const increaseBunk = () => setBunkCount((b) => Math.min(maxBunk, b + 1));
+    setAttendCount((a) => {
+      const newA = Math.min(maxAttend, a + 1);
+      if (newA + bunkCount > remainingClasses) {
+        setBunkCount(remainingClasses - newA);
+      }
+      return newA;
+    });
 
-  const attended = Math.max(
-    0,
-    Math.min(course.total, course.attended + attendCount - bunkCount),
-  );
-  const total = course.total;
-  const percentage = total === 0 ? 0 : Math.round((attended / total) * 100);
+  const decreaseBunk = () => setBunkCount((b) => Math.max(0, b - 1));
+  const increaseBunk = () =>
+    setBunkCount((b) => {
+      const newB = Math.min(maxBunk, b + 1);
+      if (newB + attendCount > remainingClasses) {
+        setAttendCount(remainingClasses - newB);
+      }
+      return newB;
+    });
+
+  // VTOP total is classes conducted so far. We just add the hypothetical sessions.
+  const projectedConducted = course.total + (attendCount + bunkCount) * weight;
+  const projectedAttended = course.attended + attendCount * weight;
+
+  const rawPercentage =
+    projectedConducted === 0
+      ? 0
+      : Math.round((projectedAttended / projectedConducted) * 100);
+  const isInvalid = rawPercentage > 100;
+  const percentage = isInvalid ? 100 : rawPercentage;
   const isDanger = percentage < 75;
 
   const handleReset = () => {
@@ -52,21 +94,28 @@ const AttendanceCalculator = ({
   };
 
   const calculateStatus = () => {
-    if (total === 0) return { status: "safe", text: "No classes held yet." };
-    const margin = Math.floor((attended - 0.75 * total) / 0.75);
+    if (isInvalid)
+      return { status: "danger", text: "Calculation error: classes exceeded" };
+    if (projectedConducted === 0)
+      return { status: "safe", text: "No classes held yet." };
+    const margin = Math.floor(
+      (projectedAttended - 0.75 * projectedConducted) / 0.75,
+    );
 
     if (margin > 0) {
       return {
         status: "safe",
-        text: `You can bunk ${margin} more class${margin > 1 ? "es" : ""}`,
+        text: `You can bunk ${margin} more class${margin > 1 ? "es" : ""} safely.`,
       };
     } else if (margin === 0) {
-      return { status: "warning", text: "You can't bunk any more classes" };
+      return { status: "warning", text: "You can't bunk any more classes." };
     } else {
-      const need = Math.ceil((0.75 * total - attended) / 0.25);
+      const need = Math.ceil(
+        (0.75 * projectedConducted - projectedAttended) / 0.25,
+      );
       return {
         status: "danger",
-        text: `You need to attend ${need} more class${need > 1 ? "es" : ""}`,
+        text: `You need to attend ${need} more class${need > 1 ? "es" : ""} to reach 75%.`,
       };
     }
   };
@@ -74,7 +123,7 @@ const AttendanceCalculator = ({
   const statusInfo = calculateStatus();
   const hasChanged = attendCount > 0 || bunkCount > 0;
 
-  const circleRadius = 60;
+  const circleRadius = 70; // 1.5x bigger visually in the SVG
   const circleCircumference = 2 * Math.PI * circleRadius;
   const strokeDashoffset =
     circleCircumference - (percentage / 100) * circleCircumference;
@@ -99,7 +148,7 @@ const AttendanceCalculator = ({
       </div>
 
       <div className="flex items-center justify-center pt-6 pb-6">
-        <div className="relative w-40 h-40 flex items-center justify-center">
+        <div className="relative w-56 h-56 flex items-center justify-center">
           <svg
             className="absolute inset-0 w-full h-full -rotate-90"
             viewBox="0 0 160 160"
@@ -107,34 +156,52 @@ const AttendanceCalculator = ({
             <circle
               cx="80"
               cy="80"
-              r="60"
+              r={circleRadius}
               className="stroke-(--bg-surface)"
-              strokeWidth="16"
+              strokeWidth="20"
               fill="none"
+              strokeLinecap="butt"
             />
             <circle
               cx="80"
               cy="80"
-              r="60"
-              className={`transition-all duration-500 ease-out ${isDanger ? "stroke-red-500" : "stroke-emerald-500"}`}
-              strokeWidth="16"
+              r={circleRadius}
+              className={`transition-all duration-500 ease-out ${isDanger || isInvalid ? "stroke-red-500" : "stroke-emerald-500"}`}
+              strokeWidth="20"
               fill="none"
-              strokeLinecap="round"
               strokeDasharray={circleCircumference}
               strokeDashoffset={strokeDashoffset}
             />
           </svg>
-          <div className="flex flex-col items-center z-10">
-            <span
-              className={`font-expanded font-black text-3xl leading-none ${isDanger ? "text-red-500" : "text-emerald-500"}`}
-            >
-              {percentage}%
-            </span>
+          <div className="flex flex-col items-center z-10 text-center">
+            {isInvalid ? (
+              <>
+                <Warning className="w-10 h-10 text-red-500 mb-2" />
+                <span className="font-expanded font-black text-sm leading-tight text-red-500 px-2 uppercase">
+                  Something went wrong
+                </span>
+              </>
+            ) : (
+              <span
+                className={`font-expanded font-black text-4xl leading-none ${isDanger ? "text-red-500" : "text-emerald-500"}`}
+              >
+                {percentage}%
+              </span>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="flex gap-3 justify-center">
+      <div className="flex items-center justify-center my-1">
+        <span className="text-xs font-bold text-(--text-muted) uppercase font-expanded">
+          Remaining Classes:{" "}
+          <span className="text-(--text-main) font-black text-sm ml-1">
+            {remainingClasses}
+          </span>
+        </span>
+      </div>
+
+      <div className="flex gap-3 justify-center mt-2">
         <div className="flex flex-col items-center bg-(--bg-surface) rounded-2xl p-2 w-32">
           <span className="text-[9px] font-black uppercase text-(--text-muted) mb-1.5">
             Attend
@@ -180,18 +247,8 @@ const AttendanceCalculator = ({
           </div>
         </div>
       </div>
-
-      <div className="flex items-center justify-center my-1">
-        <span className="text-xs font-bold text-(--text-muted) uppercase font-expanded">
-          Classes:{" "}
-          <span className="text-(--text-main) font-black text-sm ml-1">
-            {attended} / {total}
-          </span>
-        </span>
-      </div>
-
       <div
-        className={`text-center font-bold text-sm ${
+        className={`text-center font-bold text-sm mt-4 ${
           statusInfo.status === "safe"
             ? "text-emerald-500"
             : statusInfo.status === "warning"
@@ -216,39 +273,32 @@ const CourseCard = ({
   onClick: () => void;
   idx: number;
 }) => {
-  const isDanger = course.percentage < 75;
-  const textRef = useRef<HTMLDivElement>(null);
-  const [isOverflowing, setIsOverflowing] = useState(false);
+  const p = course.percentage;
 
-  useEffect(() => {
-    const checkOverflow = () => {
-      if (textRef.current) {
-        const isOw =
-          textRef.current.scrollWidth > textRef.current.clientWidth + 5;
-        setIsOverflowing(isOw);
-        if (isOw) {
-          textRef.current.style.setProperty(
-            "--scroll-dist",
-            `-${textRef.current.scrollWidth - textRef.current.clientWidth}px`,
-          );
-        }
-      }
-    };
-    checkOverflow();
-    window.addEventListener("resize", checkOverflow);
-    return () => window.removeEventListener("resize", checkOverflow);
-  }, [course.courseTitle]);
+  let badgeBg = "bg-(--att-safe) text-white border-(--border-main)";
+  let barColor = "bg-(--att-safe)";
+
+  if (isNaN(p)) {
+    badgeBg = "bg-(--bg-highlight) text-(--text-muted) border-(--border-dim)";
+    barColor = "bg-(--bg-highlight)";
+  } else if (p < 75) {
+    badgeBg = "bg-(--att-danger) text-white border-(--border-main)";
+    barColor = "bg-(--att-danger)";
+  } else if (p < 80) {
+    badgeBg = "bg-(--att-warn) text-black border-(--border-main)";
+    barColor = "bg-(--att-warn)";
+  }
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: idx * 0.05 }}
-      className={`relative flex items-center justify-between p-4 md:p-5 rounded-2xl overflow-hidden transition-all duration-300 cursor-pointer border-2 group select-none ${isSelected ? "bg-(--bg-surface) border-(--accent-base) -translate-y-1 shadow-[4px_4px_0px_0px_var(--shadow-main)]" : "bg-(--bg-surface) border-transparent hover:border-(--border-main) hover:shadow-[4px_4px_0px_0px_var(--shadow-main)] hover:-translate-y-1 hover:bg-(--bg-highlight)"}`}
+      className={`relative flex items-center justify-between p-4 md:p-5 rounded-2xl overflow-hidden transition-all duration-300 cursor-pointer border-4 group select-none ${isSelected ? "bg-(--bg-surface) border-(--accent-base) -translate-y-1 shadow-[4px_4px_0px_0px_var(--shadow-main)]" : "bg-(--bg-surface) border-(--border-main) hover:shadow-[4px_4px_0px_0px_var(--shadow-main)] hover:-translate-y-1 hover:bg-(--bg-highlight)"}`}
       onClick={onClick}
     >
       <div
-        className={`absolute top-0 left-0 h-full ${isDanger ? "bg-red-500" : "bg-emerald-500"} opacity-10 group-hover:opacity-20 transition-opacity duration-300`}
+        className={`absolute top-0 left-0 h-full ${barColor} opacity-10 group-hover:opacity-20 transition-opacity duration-300`}
         style={{ width: `${course.percentage}%` }}
       />
       <div className="relative z-10 flex items-center gap-4 min-w-0 flex-1 pr-4">
@@ -266,26 +316,15 @@ const CourseCard = ({
               </span>
             )}
           </div>
-          <div
-            className="flex-1 min-w-0 overflow-hidden"
-            style={{
-              maskImage: isOverflowing
-                ? "linear-gradient(to right, black 85%, transparent 100%)"
-                : "none",
-            }}
-          >
-            <div
-              ref={textRef}
-              className={`text-base md:text-lg font-black leading-tight font-expanded transition-colors whitespace-nowrap inline-block ${isOverflowing ? "animate-marquee-auto" : ""}`}
-            >
-              {course.courseTitle}
-            </div>
-          </div>
+          <MarqueeText
+            text={course.courseTitle}
+            className="text-base md:text-lg font-black leading-tight font-expanded transition-colors"
+          />
         </div>
       </div>
 
       <div
-        className={`relative z-10 shrink-0 font-black font-expanded text-lg md:text-xl leading-none px-4 py-2.5 rounded-xl border-2 ${isDanger ? "bg-red-500 text-white border-red-600" : "bg-emerald-500 text-white border-emerald-600"}`}
+        className={`relative z-10 shrink-0 font-black font-expanded text-lg md:text-xl leading-none px-4 py-2.5 rounded-xl border-2 ${badgeBg}`}
       >
         {course.percentage}%
       </div>
@@ -439,22 +478,25 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
                     {selectedCourseObj.classType}
                   </span>
                 </div>
-                <h2 className="text-2xl md:text-3xl font-black font-expanded leading-tight mb-5">
+                <h2 className="text-2xl md:text-3xl font-black font-expanded leading-tight mb-4">
                   {selectedCourseObj.courseTitle}
                 </h2>
-                <div className="flex flex-col gap-1 text-sm text-(--text-muted) font-bold">
-                  <div className="flex items-center gap-1.5">
-                    <School className="w-4 h-4" />
+                <div className="flex flex-col gap-4 mt-6 text-sm text-(--text-muted) font-bold">
+                  <div className="flex items-center gap-3">
+                    <School className="w-5 h-5" />
                     {selectedCourseObj.faculty}
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <CalendarMonth className="w-4 h-4" />
+                  <div className="flex items-center gap-3">
+                    <CalendarMonth className="w-5 h-5" />
                     {selectedCourseObj.classDetail}
                   </div>
                 </div>
               </div>
 
-              <AttendanceCalculator course={selectedCourseObj} />
+              <AttendanceCalculator
+                course={selectedCourseObj}
+                historyLength={records ? records.length : null}
+              />
 
               <div className="mb-24 flex flex-col gap-3">
                 <h4 className="text-sm font-black font-expanded uppercase tracking-widest text-(--text-main) mb-2">
@@ -474,11 +516,16 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
                       let formattedDate = rec.date;
                       if (rec.date) {
                         let dateObj = new Date(rec.date);
-                        if (isNaN(dateObj.getTime()) && rec.date.includes("-")) {
+                        if (
+                          isNaN(dateObj.getTime()) &&
+                          rec.date.includes("-")
+                        ) {
                           const parts = rec.date.split("-");
                           if (parts.length === 3) {
                             // handle DD-MM-YYYY by converting to MM DD YYYY
-                            dateObj = new Date(`${parts[1]} ${parts[0]} ${parts[2]}`);
+                            dateObj = new Date(
+                              `${parts[1]} ${parts[0]} ${parts[2]}`,
+                            );
                           }
                         }
                         if (!isNaN(dateObj.getTime())) {
@@ -494,8 +541,8 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
                           key={rIdx}
                           className="flex items-center justify-between px-4 py-3 bg-(--bg-surface) rounded-2xl shadow-sm"
                         >
-                          <div className="flex flex-col">
-                            <span className="text-sm font-bold font-expanded leading-none text-(--text-main) mb-2">
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm font-bold font-expanded leading-none text-(--text-main)">
                               {formattedDate}
                             </span>
                             <span className="text-[10px] font-black uppercase opacity-70 text-(--text-muted)">

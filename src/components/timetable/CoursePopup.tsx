@@ -1,6 +1,13 @@
 import React, { useEffect, useState, useRef } from "react";
 import { TimetableCourse } from "../../types/vtop";
-import { Close, LocationOn, Person, Schedule, School, PieChart } from '@nine-thirty-five/material-symbols-react/rounded';
+import {
+  Close,
+  LocationOn,
+  Person,
+  Schedule,
+  School,
+  PieChart,
+} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 
 interface CoursePopupProps {
   course: TimetableCourse | null;

@@ -5,7 +5,7 @@ import {
   CalendarMonth as CalendarIcon,
   ChevronLeft,
   ChevronRight,
-} from "@nine-thirty-five/material-symbols-react/rounded";
+} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { VTOPNetwork } from "../utils/network";
 
 import {
@@ -133,7 +133,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
       ) : (
         <div className="flex-1 flex flex-col min-h-0 w-full relative z-0">
           {/* Fixed Top Weekdays (Opaque background + fade below) */}
-          <div className="w-full bg-(--bg-main) pt-[72px] md:pt-[84px] relative z-20 pb-1">
+          <div className="w-full bg-(--bg-main) pt-18 md:pt-21 relative z-20 pb-1">
             <div className="grid grid-cols-7 w-full">
               {WEEKDAYS.map((day, i) => (
                 <div
@@ -151,13 +151,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
           </div>
 
           {/* Grid Container */}
-          <div
-            className="flex-1 flex flex-col overflow-hidden relative z-10"
-            style={{
-              maskImage:
-                "linear-gradient(to bottom, black 85%, transparent 100%)",
-            }}
-          >
+          <div className="flex-1 flex flex-col overflow-hidden relative z-10">
             <div className="flex-1 overflow-y-auto custom-scrollbar bg-transparent relative pb-24 pt-4">
               <AnimatePresence mode="wait">
                 {calLoadingGrid ? (

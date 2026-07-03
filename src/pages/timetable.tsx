@@ -1,6 +1,9 @@
 import React, { useEffect } from "react";
 import { TimetableCourse, CourseSummary } from "../types/vtop";
-import { Layers, ProgressActivity } from '@nine-thirty-five/material-symbols-react/rounded';
+import {
+  Layers,
+  ProgressActivity,
+} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { TimetableGrid } from "../components/timetable/TimetableGrid";
 import { TimetableList } from "../components/timetable/TimetableList";
 import { TimetableWeek } from "../components/timetable/TimetableWeek";
@@ -54,13 +57,25 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
           ) : (
             <div className="absolute inset-0 pb-[80px] lg:pb-0">
               {viewMode === "grid" && (
-                <TimetableGrid courses={courses} attendance={attendance} use24HourTime={use24HourTime} />
+                <TimetableGrid
+                  courses={courses}
+                  attendance={attendance}
+                  use24HourTime={use24HourTime}
+                />
               )}
               {viewMode === "list" && (
-                <TimetableList courses={courses} attendance={attendance} use24HourTime={use24HourTime} />
+                <TimetableList
+                  courses={courses}
+                  attendance={attendance}
+                  use24HourTime={use24HourTime}
+                />
               )}
               {viewMode === "week" && (
-                <TimetableWeek courses={courses} attendance={attendance} use24HourTime={use24HourTime} />
+                <TimetableWeek
+                  courses={courses}
+                  attendance={attendance}
+                  use24HourTime={use24HourTime}
+                />
               )}
             </div>
           )}

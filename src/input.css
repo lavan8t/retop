@@ -61,24 +61,24 @@
     --accent-base: #2563eb;
 
     /* Auto-Calculated Interaction States using Material 3 Logic */
-    --accent-hover: color-mix(in srgb, var(--accent-base) 80%, white);
-    --accent-active: color-mix(in srgb, var(--accent-base) 80%, black);
-    --accent-tint: color-mix(in srgb, var(--accent-base) 15%, transparent);
+    --accent-hover: color-mix(in srgb, var(--md-sys-color-primary) 80%, white);
+    --accent-active: color-mix(in srgb, var(--md-sys-color-primary) 80%, black);
+    --accent-tint: color-mix(in srgb, var(--md-sys-color-primary) 15%, transparent);
 
-    /* Professional Dark Theme (Material 3 Dynamic Tints) */
-    --bg-main: color-mix(in srgb, var(--accent-base) 3%, #09090b);
-    --bg-surface: color-mix(in srgb, var(--accent-base) 5%, #18181b);
-    --bg-highlight: color-mix(in srgb, var(--accent-base) 10%, #27272a);
+    /* Professional Theme mapping to Material Sys Colors */
+    --bg-main: var(--md-sys-color-background);
+    --bg-surface: var(--md-sys-color-surface);
+    --bg-highlight: var(--md-sys-color-surface-variant);
 
-    /* Maintained strong borders for Brutalist layout, but professionally tinted */
-    --border-main: color-mix(in srgb, var(--accent-base) 20%, #3f3f46);
-    --border-dim: color-mix(in srgb, var(--accent-base) 10%, #27272a);
+    /* Maintained strong borders for Brutalist layout */
+    --border-main: var(--md-sys-color-outline);
+    --border-dim: var(--md-sys-color-outline-variant);
 
-    --text-main: color-mix(in srgb, var(--accent-base) 10%, #f8fafc);
-    --text-muted: color-mix(in srgb, var(--accent-base) 10%, #94a3b8);
-    --text-dim: #64748b;
+    --text-main: var(--md-sys-color-on-background);
+    --text-muted: var(--md-sys-color-on-surface-variant);
+    --text-dim: color-mix(in srgb, var(--md-sys-color-on-surface-variant) 70%, transparent);
 
-    --text-inverse: var(--bg-main);
+    --text-inverse: var(--md-sys-color-on-primary);
     --shadow-main: rgba(0, 0, 0, 0.3);
 
     /* Card Colors - Professional deep tones mixed with the surface for stark Brutalist blocks */
@@ -89,15 +89,18 @@
     --card-red: color-mix(in srgb, #ef4444 40%, var(--bg-surface));
 
     /* Professional Attendance Status Colors */
-    --att-safe: #10b981;
-    --att-warn: #f59e0b;
-    --att-danger: #ef4444;
+    --att-safe: var(--md-sys-color-primary);
+    --att-warn: var(--md-sys-color-secondary);
+    --att-danger: var(--md-sys-color-error);
 
-    --att-text-safe: #34d399;
-    --att-text-warn: #fbbf24;
-    --att-text-danger: #f87171;
+    --att-text-safe: var(--md-sys-color-on-primary);
+    --att-text-warn: var(--md-sys-color-on-secondary);
+    --att-text-danger: var(--md-sys-color-on-error);
 
     /* Base Layout Specs */
+    --sidebar-width: 280px;
+    --sidebar-width-collapsed: 80px;
+
     background-color: transparent;
     color: var(--text-main);
     font-family: var(--font-sans);
@@ -129,10 +132,9 @@
 #retop-root[data-theme="amoled"] {
   --bg-main: #000000;
   --bg-surface: #000000;
-  --bg-highlight: color-mix(in srgb, var(--accent-base) 8%, #121212);
-
-  --border-main: color-mix(in srgb, var(--accent-base) 25%, #262626);
-  --border-dim: color-mix(in srgb, var(--accent-base) 12%, #171717);
+  --bg-highlight: #111111;
+  --border-main: #262626;
+  --border-dim: #171717;
 
   --text-main: #ffffff;
   --text-muted: #a3a3a3;
@@ -143,35 +145,22 @@
 }
 
 #retop-root[data-theme="light"] {
-  --bg-main: color-mix(in srgb, var(--accent-base) 2%, #f8fafc);
-  --bg-surface: #ffffff;
-  --bg-highlight: color-mix(in srgb, var(--accent-base) 6%, #f1f5f9);
-
-  --border-main: color-mix(in srgb, var(--accent-base) 15%, #e2e8f0);
-  --border-dim: color-mix(in srgb, var(--accent-base) 8%, #e2e8f0);
-
-  --text-main: color-mix(in srgb, var(--accent-base) 20%, #0f172a);
-  --text-muted: color-mix(in srgb, var(--accent-base) 15%, #475569);
-  --text-dim: #64748b;
-
-  --text-inverse: var(--bg-main);
-  --shadow-main: rgba(0, 0, 0, 0.3);
-
+  --shadow-main: rgba(0, 0, 0, 0.1);
   /* Lighter professional blocks for Light mode Brutalism */
   --card-cyan: #0891b2;
   --card-lime: #059669;
   --card-yellow: #d97706;
   --card-blue: #2563eb;
   --card-red: #dc2626;
-
-  --att-text-safe: #059669;
-  --att-text-warn: #d97706;
-  --att-text-danger: #dc2626;
 }
 
 /* --- 3. FONTS --- */
 #retop-root *:not(i) {
   font-family: var(--font-sans) !important;
+}
+
+#retop-root svg {
+ 
 }
 
 #retop-root .font-expanded {
@@ -187,25 +176,16 @@
 
 /* --- 4. UTILITY OVERRIDES --- */
 @layer utilities {
-  @keyframes marquee-scroll {
-    0%,
-    15% {
-      transform: translateX(0);
+  @keyframes marquee-infinite {
+    0% {
+      transform: translateX(0%);
     }
-    85%,
     100% {
-      transform: translateX(var(--scroll-dist, -50px));
+      transform: translateX(-50%);
     }
   }
-  .marquee-on-hover {
-    display: inline-block;
-    white-space: nowrap;
-  }
-  .group:hover .marquee-on-hover.is-overflowing {
-    animation: marquee-scroll 6s ease-in-out infinite;
-  }
-  .animate-marquee-auto {
-    animation: marquee-scroll 6s ease-in-out infinite;
+  .animate-marquee-infinite {
+    animation: marquee-infinite 12s linear infinite;
   }
 
   .bg-zinc-950 {
@@ -328,101 +308,24 @@
   background: transparent !important;
 }
 
-#retop-root ::-webkit-scrollbar-thumb {
-  border-radius: 9999px;
-  background-color: transparent !important;
-  border: none;
-  background-repeat: no-repeat;
-}
-
-#retop-root ::-webkit-scrollbar-thumb:vertical {
-  background-image: linear-gradient(
-    to right,
-    color-mix(
-      in srgb,
-      var(--accent-base) calc(var(--scrollbar-alpha) * 100%),
-      transparent
-    ),
-    color-mix(
-      in srgb,
-      var(--accent-base) calc(var(--scrollbar-alpha) * 100%),
-      transparent
-    )
-  );
-  background-size: var(--thumb-width) 100%;
-  background-position: right center;
-}
-
-#retop-root ::-webkit-scrollbar-thumb:horizontal {
-  background-image: linear-gradient(
-    to bottom,
-    color-mix(
-      in srgb,
-      var(--accent-base) calc(var(--scrollbar-alpha) * 100%),
-      transparent
-    ),
-    color-mix(
-      in srgb,
-      var(--accent-base) calc(var(--scrollbar-alpha) * 100%),
-      transparent
-    )
-  );
-  background-size: 100% var(--thumb-width);
-  background-position: center bottom;
-}
-
-@keyframes scrollbar-fade-in {
-  from {
-    --thumb-width: 0%;
-    --scrollbar-alpha: 0;
-  }
-  to {
-    --thumb-width: 100%;
-    --scrollbar-alpha: 1;
-  }
-}
-
-@keyframes scrollbar-fade-out {
-  from {
-    --thumb-width: 100%;
-    --scrollbar-alpha: 1;
-  }
-  to {
-    --thumb-width: 0%;
-    --scrollbar-alpha: 0;
-  }
-}
-
-/* Target only scrollable containers and use animation to prevent overriding transition-property */
 #retop-root [class*="overflow-"],
 #retop-root .custom-scrollbar {
-  --thumb-width: 0%;
-  --scrollbar-alpha: 0;
-  animation: scrollbar-fade-out 0.12s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  --scrollbar-thumb-color: transparent;
 }
 
-#retop-root [class*="overflow-"]:hover,
-#retop-root .custom-scrollbar:hover {
-  animation: scrollbar-fade-in 0.12s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+#retop-root [class*="overflow-"][data-scrolling="true"],
+#retop-root .custom-scrollbar[data-scrolling="true"] {
+  --scrollbar-thumb-color: var(--accent-base);
 }
 
-#retop-root [class*="overflow-"]:hover::-webkit-scrollbar-thumb:vertical:hover,
-#retop-root .custom-scrollbar:hover::-webkit-scrollbar-thumb:vertical:hover {
-  background-image: linear-gradient(
-    to right,
-    var(--accent-hover),
-    var(--accent-hover)
-  );
+#retop-root [class*="overflow-"][data-scrolling="true"]:hover,
+#retop-root .custom-scrollbar[data-scrolling="true"]:hover {
+  --scrollbar-thumb-color: var(--accent-hover);
 }
 
-#retop-root
-  [class*="overflow-"]:hover::-webkit-scrollbar-thumb:horizontal:hover,
-#retop-root .custom-scrollbar:hover::-webkit-scrollbar-thumb:horizontal:hover {
-  background-image: linear-gradient(
-    to bottom,
-    var(--accent-hover),
-    var(--accent-hover)
-  );
+#retop-root ::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background-color: var(--scrollbar-thumb-color, transparent) !important;
 }
 
 /* --- 6. EXTERNAL / GLOBAL COMPONENTS --- */

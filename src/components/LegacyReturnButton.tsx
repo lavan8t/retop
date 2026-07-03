@@ -1,5 +1,5 @@
 import React from "react";
-import { SubdirectoryArrowLeft } from '@nine-thirty-five/material-symbols-react/rounded';
+import { SubdirectoryArrowLeft } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { motion } from "framer-motion";
 
 interface LegacyReturnButtonProps {

@@ -1,5 +1,8 @@
-import React, { Component, ErrorInfo, ReactNode } from "react";
-import { Warning, Autorenew } from '@nine-thirty-five/material-symbols-react/rounded';
+import { Component, ErrorInfo, ReactNode } from "react";
+import {
+  Warning,
+  Autorenew,
+} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 
 interface Props {
   children: ReactNode;

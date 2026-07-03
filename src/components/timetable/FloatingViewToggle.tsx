@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence, Transition } from "framer-motion";
-import { GridView, List, CalendarMonth } from '@nine-thirty-five/material-symbols-react/rounded';
+import {
+  GridView,
+  List,
+  CalendarMonth,
+} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 
 interface FloatingViewToggleProps {
   viewMode: "grid" | "list" | "week";

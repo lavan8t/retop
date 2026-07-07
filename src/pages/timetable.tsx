@@ -4,6 +4,7 @@ import {
   Layers,
   ProgressActivity,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
+import { EmptyState } from "../components/EmptyState";
 import { TimetableGrid } from "../components/timetable/TimetableGrid";
 import { TimetableList } from "../components/timetable/TimetableList";
 import { TimetableWeek } from "../components/timetable/TimetableWeek";
@@ -43,16 +44,13 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="flex flex-col items-center justify-center h-full p-8 text-center"
+              className="h-full p-4"
             >
-              <Layers className="w-16 h-16 text-zinc-500 mb-4" />
-              <h2 className="text-xl font-black font-expanded text-zinc-400 uppercase">
-                No Timetable Found
-              </h2>
-              <p className="text-xs font-mono text-zinc-600 mt-2 max-w-sm">
-                If you have registered courses, please ensure VTOP is responding
-                and try selecting a different semester.
-              </p>
+              <EmptyState 
+                msg="No Timetable Found" 
+                subMsg="If you have registered courses, please ensure VTOP is responding and try selecting a different semester." 
+                icon={Layers}
+              />
             </motion.div>
           ) : (
             <div className="absolute inset-0 pb-[80px] lg:pb-0">
@@ -81,11 +79,13 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
           )}
 
           {loading && (
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
-              <ProgressActivity className="w-12 h-12 text-(--accent-base) animate-spin mb-4" />
-              <span className="text-sm font-bold font-expanded text-white uppercase tracking-wider animate-pulse">
-                Parsing Grid...
-              </span>
+            <div className="absolute inset-0 bg-(--bg-main) z-50 p-4">
+              <div className="w-full h-full border-4 border-(--border-dim) rounded-4xl bg-(--bg-surface) p-4 flex flex-col gap-4 animate-pulse">
+                <div className="h-12 w-full bg-(--bg-highlight) rounded-2xl" />
+                <div className="flex-1 grid grid-cols-7 gap-2">
+                   {[...Array(35)].map((_, i) => <div key={i} className="bg-(--bg-highlight) rounded-2xl" />)}
+                </div>
+              </div>
             </div>
           )}
         </div>

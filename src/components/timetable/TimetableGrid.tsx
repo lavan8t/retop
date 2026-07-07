@@ -215,7 +215,7 @@ export const TimetableGrid = ({
 
         // --- Styled according to theme ---
         const colorClasses =
-          "bg-(--bg-highlight) hover:bg-(--border-dim) border border-transparent hover:border-(--border-main)";
+          "bg-(--bg-highlight) hover:bg-(--border-dim)";
         const titleColor = "text-(--text-main)";
         const slotColor = "text-(--text-muted)";
         const footerText = "text-(--text-muted)";
@@ -238,10 +238,10 @@ export const TimetableGrid = ({
               }}
               className={`
                 w-full h-full rounded-2xl flex flex-col items-start justify-start text-left overflow-hidden
-                transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]
                 hover:-translate-y-0.5 group/cell
                 ${colorClasses}
               `}
+              style={{ transition: 'background-color 0.3s 0.075s, transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s cubic-bezier(0.34,1.56,0.64,1)' }}
             >
               <div className="mb-auto w-full flex flex-col items-start p-2.5 md:p-3 relative z-10">
                 <div
@@ -284,7 +284,7 @@ export const TimetableGrid = ({
             key={`c-${dIdx}-${colIdx}`}
             className="relative p-1 md:p-1.5 transition-colors bg-(--bg-main) w-full h-full flex items-center justify-center group/empty"
           >
-            <div className="w-full h-full rounded-2xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors border border-transparent hover:border-(--border-dim) flex items-center justify-center">
+            <div className="w-full h-full rounded-2xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors duration-300 delay-75 flex items-center justify-center">
               <span className="text-[10px] md:text-xs font-bold text-(--text-muted) opacity-0 group-hover/grid:opacity-50 group-hover/empty:opacity-100 transition-opacity duration-300 text-center flex flex-col pointer-events-none">
                 <span>{CAMPUS_SLOTS[day as string]?.Theory[colIdx]}</span>
                 {CAMPUS_SLOTS[day as string]?.Lab[colIdx] !== "-" &&

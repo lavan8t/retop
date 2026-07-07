@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { EmptyState } from "../components/EmptyState";
 import {
   ProgressActivity,
   CalendarMonth as CalendarIcon,
@@ -111,24 +112,22 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
   ]);
 
   return (
-    <div className="h-full w-full flex flex-col bg-(--bg-main) font-mono text-(--text-main) overflow-hidden pb-8 px-4 md:px-8 max-w-425 mx-auto">
+    <div className="h-full w-full flex flex-col bg-(--bg-main) font-mono text-(--text-main) overflow-hidden px-4 md:px-8 max-w-425 mx-auto">
       {calLoadingMonths ? (
-        <div className="flex-1 flex flex-col items-center justify-center animate-pulse border-4 border-(--border-main) rounded-3xl bg-(--bg-card) shadow-none mt-[120px]">
-          <ProgressActivity className="w-16 h-16 mb-6 animate-spin text-(--accent-base)" />
-          <span className="text-xl font-black uppercase font-expanded tracking-widest text-(--text-muted)">
-            Syncing CalendarMonth...
-          </span>
+        <div className="flex-1 flex flex-col pt-32 pb-8 px-2 animate-pulse min-h-0 h-full overflow-hidden">
+          <div className="flex-1 grid grid-cols-7 gap-2 md:gap-3 auto-rows-[minmax(100px,auto)] md:auto-rows-[minmax(140px,auto)]">
+            {[...Array(28)].map((_, i) => (
+              <div key={i} className="bg-(--bg-surface) rounded-3xl" />
+            ))}
+          </div>
         </div>
       ) : calAvailableMonths.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center border-4 border-(--border-main) rounded-3xl bg-(--bg-card) shadow-none mt-[120px]">
-          <CalendarIcon className="w-20 h-20 mb-6 text-(--text-muted) opacity-50" />
-          <span className="text-2xl font-black uppercase font-expanded text-(--text-main)">
-            No CalendarMonth Data
-          </span>
-          <p className="mt-2 text-(--text-muted) font-bold text-sm max-w-md text-center">
-            The calendar grid for this semester could not be fetched or does not
-            exist yet.
-          </p>
+        <div className="flex-1 flex flex-col items-center justify-center mt-20">
+          <EmptyState 
+            msg="No Calendar Data" 
+            subMsg="The calendar grid for this semester could not be fetched or does not exist yet." 
+            icon={CalendarIcon} 
+          />
         </div>
       ) : (
         <div className="flex-1 flex flex-col min-h-0 w-full relative z-0">
@@ -160,9 +159,11 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="absolute inset-0 flex items-center justify-center bg-(--bg-main)/80 backdrop-blur-sm z-30"
+                    className="absolute inset-0 z-30 pt-4"
                   >
-                    <ProgressActivity className="w-12 h-12 animate-spin text-(--accent-base)" />
+                    <div className="grid grid-cols-7 gap-2 md:gap-3 auto-rows-[minmax(100px,auto)] md:auto-rows-[minmax(140px,auto)] p-2">
+                       {[...Array(35)].map((_, i) => <div key={i} className="bg-(--bg-surface) rounded-3xl animate-pulse" />)}
+                    </div>
                   </motion.div>
                 ) : calGridData.length > 0 ? (
                   <motion.div
@@ -238,7 +239,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
 
                                 <div className="flex justify-between items-start mb-1 md:mb-2 pt-1 md:pt-0 relative z-10">
                                   <span
-                                    className={`font-black text-sm md:text-lg lg:text-xl font-expanded leading-none transition-transform duration-150 ease-in group-hover:scale-[1.15] origin-top-left ${numberClass}`}
+                                    className={`font-black text-sm md:text-lg lg:text-xl font-expanded leading-none transition-transform duration-300 ease-out group-hover:scale-[1.15] origin-top-left ${numberClass}`}
                                   >
                                     {day.dayNumber}
                                   </span>

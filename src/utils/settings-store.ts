@@ -140,23 +140,34 @@ interface SettingsStore {
 const chromeStorage: StateStorage = {
   getItem: async (name: string): Promise<string | null> => {
     return new Promise((resolve) => {
-      chrome.storage.local.get(name, (result) => {
-        resolve((result[name] as string) || null);
-      });
+      try {
+        chrome.storage.local.get(name, (result) => {
+          resolve((result?.[name] as string) || null);
+        });
+      } catch (e) {
+        console.warn("Storage get failed", e);
+        resolve(null);
+      }
     });
   },
   setItem: async (name: string, value: string): Promise<void> => {
     return new Promise((resolve) => {
-      chrome.storage.local.set({ [name]: value }, () => {
+      try {
+        chrome.storage.local.set({ [name]: value }, () => resolve());
+      } catch (e) {
+        console.warn("Storage set failed", e);
         resolve();
-      });
+      }
     });
   },
   removeItem: async (name: string): Promise<void> => {
     return new Promise((resolve) => {
-      chrome.storage.local.remove(name, () => {
+      try {
+        chrome.storage.local.remove(name, () => resolve());
+      } catch (e) {
+        console.warn("Storage remove failed", e);
         resolve();
-      });
+      }
     });
   },
 };
@@ -188,3 +199,32 @@ export const useSettingsStore = create<SettingsStore>()(
 export const useSettings = () => {
   return useSettingsStore();
 };
+
+if (typeof chrome !== "undefined" && chrome.storage) {
+  chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === "local" && changes["retop-settings"]) {
+      const newValue = changes["retop-settings"].newValue;
+      if (newValue) {
+        try {
+          let parsed;
+          if (typeof newValue === "string") {
+            parsed = JSON.parse(newValue);
+          } else {
+            parsed = newValue; // chrome.storage sometimes parses it automatically if set as object
+          }
+
+          if (parsed && parsed.state && parsed.state.settings) {
+            const currentSettings = useSettingsStore.getState().settings;
+            // Prevent infinite loops if this tab triggered the change
+            if (JSON.stringify(currentSettings) !== JSON.stringify(parsed.state.settings)) {
+              useSettingsStore.setState({ settings: parsed.state.settings });
+              applyTheme(parsed.state.settings);
+            }
+          }
+        } catch (e) {
+          console.error("Failed to sync settings cross-context", e);
+        }
+      }
+    }
+  });
+}

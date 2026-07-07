@@ -240,6 +240,7 @@ export interface SyllabusModule {
   number: string;
   title: string;
   topics: string;
+  blooms?: string;
 }
 
 export interface CoursePageData {
@@ -248,6 +249,7 @@ export interface CoursePageData {
   outcomes: CourseOutcome[];
   syllabus: SyllabusModule[];
   materials: CourseMaterial[];
+  books?: string[];
 }
 
 export interface Semester {

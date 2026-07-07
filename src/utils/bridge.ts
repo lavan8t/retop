@@ -23,20 +23,6 @@ export function getAppRoot(): HTMLElement | null {
 }
 
 export function injectGlobalFonts() {
-  if (!document.getElementById("retop-fonts")) {
-    const fontLink = document.createElement("link");
-    fontLink.id = "retop-fonts";
-    fontLink.rel = "stylesheet";
-    fontLink.href =
-      "https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,slnt,wdth,wght,GRAD,ROND@6..144,-10..0,25..151,1..1000,100,0..100&family=Anek+Tamil:wdth,wght@125,100..800&display=swap";
-    safeAppend(fontLink);
-    
-    const iconLink = document.createElement("link");
-    iconLink.id = "retop-icons";
-    iconLink.rel = "stylesheet";
-    iconLink.href = "https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200";
-    safeAppend(iconLink);
-  }
 }
 
 export function injectGlobalStyles() {

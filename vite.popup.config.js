@@ -13,8 +13,10 @@ export default defineConfig({
   },
   plugins: [react()],
   build: {
+    modulePreload: false,
     emptyOutDir: false,
     outDir: "dist",
+    chunkSizeWarningLimit: 3000,
     rollupOptions: {
       input: {
         popup: resolve(__dirname, "popup.html"),
@@ -23,6 +25,9 @@ export default defineConfig({
       output: {
         entryFileNames: "[name].js",
         assetFileNames: "assets/[name]-[hash].[ext]",
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'framer-motion', 'zustand']
+        }
       },
     },
   },

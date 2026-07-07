@@ -54,39 +54,11 @@ const originalFetch = window.fetch;
 let isHandlingNetworkError = false;
 
 function showErrorSnackbar(message: string) {
-  const toast = document.createElement("div");
-  toast.className = "retop-error-toast";
-  toast.style.cssText = `
-    position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999999;
-    display: flex; flex-direction: row; align-items: center; gap: 16px;
-    padding: 24px 48px; box-sizing: border-box; pointer-events: none;
-    background: linear-gradient(to top, var(--bg-main, #000) 40%, transparent); backdrop-filter: blur(2px);
-    font-family: 'Google Sans Flex', system-ui, sans-serif !important;
-    animation: slideUp 0.3s ease forwards;
-  `;
-  toast.innerHTML = `
-    <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(239, 68, 68, 0.2), transparent, transparent); pointer-events: none; z-index: -1;"></div>
-    <span class="material-symbols-rounded" style="color: #ef4444; font-size: 32px; z-index: 1;">warning</span>
-    <div style="display: flex; flex-direction: column; text-align: left; z-index: 1;">
-      <p style="font-size: 15px; font-weight: 700; color: var(--text-main, #fff); margin: 0; letter-spacing: 0.02em;">${message}</p>
-    </div>
-  `;
-  
-  if (!document.getElementById("retop-snackbar-styles")) {
-    const style = document.createElement("style");
-    style.id = "retop-snackbar-styles";
-    style.textContent = `
-      @keyframes slideUp { from { transform: translateY(150%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-      @keyframes slideDown { from { transform: translateY(0); opacity: 1; } to { transform: translateY(150%); opacity: 0; } }
-    `;
-    document.head.appendChild(style);
-  }
-
-  document.body.appendChild(toast);
-  setTimeout(() => {
-    toast.style.animation = "slideDown 0.3s ease forwards";
-    setTimeout(() => toast.remove(), 300);
-  }, 5000);
+  window.dispatchEvent(
+    new CustomEvent("retop-toast", {
+      detail: { message, type: "error" },
+    })
+  );
 }
 
 async function handleNetworkError(status?: number) {
@@ -499,24 +471,12 @@ const injectLoginTheme = () => {
 
     // Spawn a beautiful compact brutalist snackbar
     const isCaptchaError = errorText.toLowerCase().includes("captcha");
-    const toast = document.createElement("div");
-    toast.className = `retop-error-toast ${isCaptchaError ? "retop-warning-toast" : ""}`;
-    toast.innerHTML = `
-      <div style="display: flex; align-items: center; gap: 10px; white-space: nowrap;">
-        <span class="material-symbols-rounded" style="font-variation-settings: 'FILL' 1, 'wght' 700, 'GRAD' 0, 'opsz' 20; font-size: 18px;">error</span>
-        <span style="font-size: 0.95rem; font-weight: 700; line-height: 1;">${errorText}</span>
-      </div>
-    `;
-
-    document.body.appendChild(toast);
-
-    // Auto-dismiss after 5 seconds
-    setTimeout(() => {
-      if (toast.parentElement) {
-        toast.style.animation = "slideDownCenter 0.3s ease forwards";
-        setTimeout(() => toast.remove(), 300);
-      }
-    }, 5000);
+    
+    window.dispatchEvent(
+      new CustomEvent("retop-toast", {
+        detail: { message: errorText, type: isCaptchaError ? "warning" : "error" },
+      })
+    );
   }
 
   // Replace Native Footer and move to Right Side (Header)

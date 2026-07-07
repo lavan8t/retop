@@ -10,7 +10,7 @@ const sanitizeMenuTitle = (title: string): string => {
     return "Course Page";
   }
 
-  if (lowerTitle.includes("grade view") || lowerTitle.includes("grade history")) {
+  if (lowerTitle.includes("grade")) {
     return "Grades & History";
   }
 
@@ -100,5 +100,6 @@ export function scrapeUserProfile(doc: Document) {
     "";
   const regNo = navText.split("(")[0].trim() || "Student";
   const name = navText.split("-")[1]?.split(")")[0]?.trim() || "Person";
-  return { name, regNo };
+  const profileImgBase64 = doc.querySelector("img#retop-profile-image-mock")?.getAttribute("src") || undefined;
+  return { name, regNo, profileImgBase64 };
 }

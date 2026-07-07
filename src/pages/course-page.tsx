@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
+  Language,
   Download,
   MenuBook,
   List,
@@ -18,6 +19,7 @@ import {
   CoursePageOption,
   Semester,
   MenuCategory,
+  CourseMaterial,
 } from "../types/vtop";
 
 interface CoursePageProps {
@@ -31,6 +33,7 @@ interface CoursePageProps {
   setSelectedSem: (sem: string) => void;
   selectedOptionId: string;
   setSelectedOptionId: (id: string) => void;
+  searchTerm: string;
 }
 
 const spring = { type: "spring" as const, stiffness: 400, damping: 30 };
@@ -71,7 +74,6 @@ const getAuthId = () => {
   );
 };
 
-// Normalizes VL20252601 (from course page) to match VL2025261 (from topbar)
 const isSameSem = (sem1: string, sem2: string) => {
   if (!sem1 || !sem2) return false;
   const normalize = (s: string) => s.replace(/0+([1-9])$/, "$1").toLowerCase();
@@ -85,14 +87,10 @@ export const CoursePage = ({
   selectedSem,
   selectedOptionId,
   setSelectedOptionId,
+  searchTerm,
 }: CoursePageProps) => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<CoursePageData | null>(null);
-  const [view, setView] = useState<"materials" | "outcomes" | "syllabus">(
-    "materials",
-  );
-  const [searchTerm, setSearchTerm] = useState("");
-
   const [isCourseListOpen, setIsCourseListOpen] = useState(false);
 
   useEffect(() => {
@@ -106,7 +104,6 @@ export const CoursePage = ({
     setIsCourseListOpen(false);
   }, [selectedSem]);
 
-  // Initial Dual-Fetch Logic hitting exact URLs
   useEffect(() => {
     if (cpOptions.length > 0) return;
 
@@ -139,7 +136,6 @@ export const CoursePage = ({
     };
   }, [network, cpOptions.length, setCpOptions]);
 
-  // Fetch specific course details using exact API keys
   useEffect(() => {
     if (!selectedOptionId || !selectedSem || cpOptions.length === 0) return;
 
@@ -156,7 +152,7 @@ export const CoursePage = ({
         const body = new URLSearchParams();
         body.append("_csrf", getCsrf());
         body.append("authorizedID", getAuthId());
-        body.append("semester", opt.semester); // Send opt.semester (VL20252601) to server
+        body.append("semester", opt.semester);
         body.append("CourseId", opt.classId);
         body.append("CoursType", opt.type);
         body.append("x", new Date().toUTCString());
@@ -196,7 +192,18 @@ export const CoursePage = ({
     };
   }, [selectedOptionId, selectedSem, cpOptions]);
 
-  const handleDownload = (fileId: string) => {
+  const handleDownload = (fileId: string, facultyName: string, courseName: string) => {
+    try {
+      chrome.storage.local.set({
+        lastDownloadInfo: {
+          faculty: facultyName,
+          course: courseName,
+        },
+      });
+    } catch (e) {
+      console.error("Failed to set download info", e);
+    }
+
     const form = document.createElement("form");
     form.method = "POST";
     form.action = "/vtop/downloadCourseMaterialFacultyPdf";
@@ -225,9 +232,6 @@ export const CoursePage = ({
   };
 
   const currentOption = cpOptions.find((o) => o.classId === selectedOptionId);
-  const currentSemOptions = cpOptions.filter((o) =>
-    isSameSem(o.semester, selectedSem),
-  );
 
   const filteredMaterials =
     data?.materials.filter((m) => {
@@ -239,337 +243,162 @@ export const CoursePage = ({
       );
     }) || [];
 
+  const groupedMaterials = React.useMemo(() => {
+    if (!filteredMaterials) return {};
+    return filteredMaterials.reduce((acc, mat) => {
+      const fac = mat.faculty || "Unknown Faculty";
+      if (!acc[fac]) acc[fac] = [];
+      acc[fac].push(mat);
+      return acc;
+    }, {} as Record<string, CourseMaterial[]>);
+  }, [filteredMaterials]);
+
+  const formatFaculty = (facultyStr: string) => {
+    const parts = facultyStr.split(" - ").map(p => p.trim());
+    if (parts.length >= 3) {
+      return { name: parts[1], subs: [parts[0], ...parts.slice(2)] };
+    }
+    if (parts.length === 2) {
+      return { name: parts[1], subs: [parts[0]] };
+    }
+    return { name: facultyStr, subs: [] };
+  };
+
   return (
-    // STRICT WRAPPER: min-h-0 and overflow-hidden prevent the outer page from stretching
-    <div className="p-6 pt-20 md:pt-24 lg:pt-28 h-full flex flex-col bg-zinc-950 font-mono transition-colors text-zinc-200 overflow-hidden min-h-0">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0 overflow-hidden">
-        {/* === STATIC LEFT PANEL === */}
-        <div className="lg:col-span-4 xl:col-span-3 h-full flex flex-col overflow-hidden min-h-0">
-          <div className="h-full flex flex-col pr-2 min-h-0 pb-4 overflow-y-auto custom-scrollbar">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="shrink-0 mb-6"
-            >
-              <NeoCard className="p-0 overflow-hidden flex flex-col">
-                <button
-                  onClick={() => setIsCourseListOpen(!isCourseListOpen)}
-                  className={`flex items-center justify-between p-5 w-full transition-all text-left group ${
-                    isCourseListOpen
-                      ? "bg-cyan-400 text-black border-b-4 border-(--border-main)"
-                      : "bg-zinc-900 hover:bg-zinc-800 text-zinc-200"
-                  }`}
-                >
-                  <div className="flex flex-col min-w-0 pr-4">
-                    <span
-                      className={`text-[10px] font-black  uppercase mb-1 ${isCourseListOpen ? "text-black/60" : "text-zinc-500 group-hover:text-zinc-400"}`}
-                    >
-                      Selected Subject
-                    </span>
-                    <span className="font-bold text-sm truncate uppercase ">
-                      {currentOption ? currentOption.code : "CHOOSE A SUBJECT"}
-                    </span>
-                    {currentOption && !isCourseListOpen && (
-                      <span className="text-[10px] font-bold text-zinc-400 truncate mt-1">
-                        {currentOption.title}
-                      </span>
-                    )}
-                  </div>
-                  <div
-                    className={`p-2 rounded-xl transition-transform duration-300 border-2 ${isCourseListOpen ? "border-(--border-main)/20 bg-black/10 rotate-180" : "border-zinc-800 bg-zinc-950 group-hover:border-zinc-700"}`}
-                  >
-                    <KeyboardArrowDown className="w-4 h-4 shrink-0" />
-                  </div>
-                </button>
-
-                <AnimatePresence>
-                  {isCourseListOpen && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="overflow-hidden bg-zinc-950"
-                    >
-                      <div className="max-h-[40vh] overflow-y-auto custom-scrollbar p-2 flex flex-col gap-1 border-b-4 border-(--border-main)">
-                        {currentSemOptions.map((opt) => (
-                          <button
-                            key={opt.classId}
-                            onClick={() => {
-                              setSelectedOptionId(opt.classId);
-                              setIsCourseListOpen(false);
-                            }}
-                            className={`w-full text-left p-4 rounded-xl border-2 transition-all flex flex-col gap-1 ${
-                              opt.classId === selectedOptionId
-                                ? "bg-zinc-800 border-zinc-700 text-zinc-200 shadow-sm"
-                                : "border-transparent text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900 hover:border-zinc-800"
-                            }`}
-                          >
-                            <div className="flex justify-between items-center w-full">
-                              <span className="font-bold text-sm leading-none">
-                                {opt.code}
-                              </span>
-                              <span className="text-[9px] bg-zinc-900 border border-zinc-800 px-1.5 py-0.5 rounded">
-                                {opt.type}
-                              </span>
-                            </div>
-                            <span className="text-[10px] font-bold opacity-70 truncate w-full">
-                              {opt.title}
-                            </span>
-                          </button>
-                        ))}
-                        {currentSemOptions.length === 0 && (
-                          <div className="p-6 text-center text-xs font-bold text-zinc-600 uppercase">
-                            No subjects found
-                          </div>
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                <AnimatePresence>
-                  {!isCourseListOpen && currentOption && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="p-5 bg-zinc-900"
-                    >
-                      <div className="flex flex-col gap-4 font-bold text-zinc-300 border-t-2 border-zinc-800 pt-4">
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs text-zinc-500  uppercase">
-                            Credits
-                          </span>
-                          <span className="bg-cyan-400 text-black border-2 border-(--border-main) px-2 py-0.5 rounded-lg text-xs shadow-sm">
-                            {currentOption.credits}
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs text-zinc-500  uppercase">
-                            Class Type
-                          </span>
-                          <span className="bg-purple-400 text-black border-2 border-(--border-main) px-2 py-0.5 rounded-lg text-xs shadow-sm">
-                            {currentOption.type}
-                          </span>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </NeoCard>
-            </motion.div>
-
-            {/* Left Panel Search Box */}
-            {selectedOptionId && view === "materials" && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="relative w-full shrink-0"
-              >
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-                <input
-                  type="text"
-                  placeholder="Filter materials..."
-                  className="w-full pl-10 pr-4 py-4 border-4 border-zinc-800 rounded-4xl bg-zinc-900 text-sm font-bold text-zinc-200 focus:outline-none focus:border-cyan-400 focus:shadow-[4px_4px_0px_0px_var(--card-cyan)] transition-all placeholder:text-zinc-600 uppercase"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </motion.div>
-            )}
+    <div className="absolute inset-0 w-full h-full font-mono transition-colors bg-transparent text-(--text-main)">
+      <div className="h-full flex flex-col min-h-0">
+        {!selectedOptionId ? (
+          <div className="h-full flex flex-col items-center justify-center pt-24">
+            <span className="font-bold uppercase text-xs text-(--text-dim)">Select a course to view details</span>
           </div>
-        </div>
-
-        {/* === DYNAMIC RIGHT PANEL === */}
-        <div className="lg:col-span-8 xl:col-span-9 h-full flex flex-col min-w-0 min-h-0 overflow-hidden">
-          {!selectedOptionId ? (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="flex-1 flex flex-col items-center justify-center p-8 min-h-0"
-            >
-              <div className="bg-zinc-900 p-12 rounded-4xl text-center max-w-lg shadow-xl group min-h-64 flex flex-col justify-center">
-                <Layers className="w-24 h-24 mx-auto mb-6 text-(--accent-base)" />
-                <h2 className="text-3xl font-black font-expanded mb-2 uppercase text-zinc-500 transition-all duration-300 group-hover:font-squish">
-                  Subject Needed
-                </h2>
-                <p className="font-bold text-zinc-600 text-sm">
-                  Please select a subject from the left panel to view its
-                  details.
-                </p>
-              </div>
-            </motion.div>
-          ) : (
-            <>
-              {/* HORIZONTAL TABS */}
-              <div className="flex flex-wrap gap-3 mb-4 pb-4 pt-2">
-                {[
-                  {
-                    id: "materials",
-                    label: "MATERIALS",
-                    icon: Download,
-                    color: "bg-cyan-400",
-                  },
-                  {
-                    id: "outcomes",
-                    label: "OUTCOMES",
-                    icon: List,
-                    color: "bg-purple-400",
-                  },
-                  {
-                    id: "syllabus",
-                    label: "SYLLABUS",
-                    icon: MenuBook,
-                    color: "bg-orange-400",
-                  },
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setView(tab.id as any)}
-                    className={`px-5 py-3 rounded-[1.25rem] font-black flex items-center gap-3 transition-all border-4 ${
-                      view === tab.id
-                        ? `${tab.color} text-black border-(--border-main) shadow-none -translate-y-1`
-                        : "bg-zinc-900 text-zinc-500 border-transparent hover:border-zinc-800 hover:text-zinc-200"
-                    }`}
-                  >
-                    <tab.icon
-                      className={`w-5 h-5 ${view === tab.id ? "text-black" : "text-zinc-500"}`}
-                    />
-                    <span className="text-sm ">{tab.label}</span>
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex-1 min-h-0 overflow-hidden">
-                {loading ? (
-                  <div className="h-full flex flex-col items-center justify-center rounded-4xl bg-(--bg-main) group">
-                    <Layers className="w-24 h-24 text-(--accent-base) animate-bounce mb-6" />
-                    <span className="text-2xl text-zinc-500 font-bold font-expanded uppercase transition-all duration-300 group-hover:font-squish animate-pulse">
-                      Fetching Data...
-                    </span>
+        ) : loading ? (
+          <div className="h-full flex flex-col items-center justify-center group pt-24">
+            <Layers className="w-24 h-24 text-(--accent-base) animate-bounce mb-6" />
+            <span className="text-2xl text-(--text-dim) font-bold font-expanded uppercase transition-all duration-300 group-hover:font-squish animate-pulse">
+              Fetching Data...
+            </span>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-10 gap-8 flex-1 min-h-0 overflow-hidden pl-4 md:pl-8 lg:pl-12 pr-4 md:pr-8 lg:pr-12">
+            {/* === STATIC LEFT PANEL === */}
+            <div className="lg:col-span-4 xl:col-span-4 h-full flex flex-col overflow-y-auto custom-scrollbar pt-24 md:pt-32 pb-24 pr-4">
+              
+              {/* Outcomes */}
+              {data?.outcomes && data.outcomes.length > 0 && (
+                <div className="flex flex-col mb-16">
+                  <h3 className="font-black font-expanded text-(--text-dim) mb-16 uppercase tracking-widest text-sm text-center">Course Outcomes</h3>
+                  <div className="flex flex-col gap-6">
+                    {data.outcomes.map((oc, i) => (
+                      <div key={i} className="flex gap-4">
+                        <span className="font-black text-xl text-(--accent-base) select-none font-expanded">#{oc.number || i + 1}</span>
+                        <p className="text-sm md:text-base font-medium text-(--text-main) leading-relaxed pt-0.5">{oc.description}</p>
+                      </div>
+                    ))}
                   </div>
-                ) : (
-                  <AnimatePresence mode="wait">
-                    {view === "materials" && data && (
-                      <motion.div
-                        key="materials"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={spring}
-                        className="h-full flex flex-col overflow-hidden min-h-0"
-                      >
-                        <div className="flex-1 overflow-y-auto custom-scrollbar bg-zinc-900 border-4 border-zinc-800 rounded-4xl p-4 shadow-inner min-h-0 pr-4">
-                          <div className="space-y-3 pb-2">
-                            {filteredMaterials.map((mat) => (
-                              <motion.div
-                                layout
-                                key={mat.id}
-                                whileHover={{ scale: 1.005, x: 2 }}
-                                onClick={() => handleDownload(mat.downloadId)}
-                                className="group flex items-center justify-between p-4 rounded-xl cursor-pointer bg-zinc-950 border-2 border-zinc-800 hover:border-cyan-400 hover:bg-zinc-900 hover:shadow-md transition-all"
-                              >
-                                <div className="flex items-center gap-4 min-w-0">
-                                  <div className="w-12 h-12 flex items-center justify-center bg-zinc-900 border-2 border-zinc-800 rounded-xl text-zinc-500 group-hover:text-cyan-400 group-hover:border-cyan-400 transition-colors shrink-0">
-                                    <Description className="w-6 h-6" />
-                                  </div>
-                                  <div className="min-w-0">
-                                    <h4 className="font-bold text-zinc-200 text-base group-hover:text-cyan-400 transition-colors truncate">
-                                      {mat.title}
-                                    </h4>
-                                    <div className="flex items-center gap-2 mt-1">
-                                      <span className="text-[10px] font-bold text-zinc-500 uppercase flex items-center gap-1 bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800">
-                                        <Person className="w-3 h-3" />{" "}
-                                        {mat.faculty}
-                                      </span>
-                                      <span className="text-[10px] font-mono text-zinc-600">
-                                        {mat.uploadDate}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-3 pl-4">
-                                  <span className="hidden sm:block px-2 py-1 bg-yellow-400 text-yellow-900 rounded-lg text-[10px] font-black uppercase  border border-yellow-500 shadow-sm">
-                                    {mat.category}
-                                  </span>
-                                  <button className="p-2.5 rounded-lg bg-zinc-900 border-2 border-zinc-800 text-zinc-400 group-hover:bg-black group-hover:text-white group-hover:border-(--border-main) transition-all shadow-sm">
-                                    <Download className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              </motion.div>
+                </div>
+              )}
+              
+              {/* Syllabus */}
+              {data?.syllabus && data.syllabus.length > 0 && (
+                <div className="flex flex-col mb-16">
+                  <h3 className="font-black font-expanded text-(--text-dim) mb-16 uppercase tracking-widest text-sm text-center">Syllabus</h3>
+                  <div className="flex flex-col gap-8">
+                    {data.syllabus.map((mod, i) => {
+                      const rawTopics = mod.topics || "";
+                      const lines = rawTopics.split(/(?=\d+\s*-)/).filter(Boolean).map(l => l.replace(/^\d+\s*-\s*/, '').trim());
+                      const renderTopics = lines.length > 0 ? lines : [rawTopics];
+                      
+                      return (
+                        <div key={i} className="flex flex-col gap-5">
+                          <div className="flex items-center gap-4">
+                            <span className="font-black text-4xl text-(--accent-base)">{mod.number.replace(/\D/g, '') || (i + 1)}</span>
+                            <h4 className="font-bold text-base md:text-lg text-(--text-main) uppercase">{mod.title}</h4>
+                          </div>
+                          <ul className="flex flex-col gap-2 pl-2">
+                            {renderTopics.map((topic, j) => (
+                              <li key={j} className="text-sm md:text-base font-medium text-(--text-main) leading-relaxed">
+                                {topic}
+                              </li>
                             ))}
-                            {filteredMaterials.length === 0 && (
-                              <div className="flex flex-col items-center justify-center py-20 text-zinc-600">
-                                <Filter className="w-12 h-12 mb-4 opacity-20" />
-                                <span className="font-bold uppercase  text-xs">
-                                  No matching files
-                                </span>
-                              </div>
-                            )}
-                          </div>
+                          </ul>
                         </div>
-                      </motion.div>
-                    )}
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
-                    {view === "outcomes" && data && (
-                      <motion.div
-                        key="outcomes"
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        transition={spring}
-                        className="h-full overflow-y-auto custom-scrollbar space-y-4 pr-4 pb-4 min-h-0"
-                      >
-                        {data.outcomes.map((oc, i) => (
-                          <div
-                            key={i}
-                            className="flex gap-4 p-6 bg-zinc-900 border-4 border-zinc-800 rounded-4xl hover:border-purple-400 transition-colors shadow-none shrink-0"
-                          >
-                            <span className="font-black text-3xl text-purple-400 select-none font-expanded">
-                              #{oc.number || i + 1}
+              {/* Books */}
+              {data?.books && data.books.length > 0 && (
+                <div className="flex flex-col mb-16">
+                  <h3 className="font-black font-expanded text-(--text-dim) mb-16 uppercase tracking-widest text-sm text-center">Suggested Books</h3>
+                  <div className="flex flex-col gap-4">
+                    {data.books.map((book, i) => (
+                      <div key={i} className="flex items-start gap-4">
+                        <MenuBook className="w-5 h-5 text-(--accent-base) shrink-0 mt-0.5" />
+                        <p className="font-bold text-sm md:text-base text-(--text-main) leading-relaxed">{book}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            </div>
+
+            {/* === SCROLLABLE RIGHT PANEL === */}
+            <div className="lg:col-span-6 xl:col-span-6 h-full flex flex-col overflow-y-auto custom-scrollbar pt-24 md:pt-32 pb-24 pr-2 space-y-12">
+              {Object.entries(groupedMaterials).map(([facultyStr, mats]) => {
+                const fac = formatFaculty(facultyStr);
+                return (
+                  <div key={facultyStr} className="flex flex-col">
+                    <div className="flex flex-col gap-2 mb-4 border-b-2 border-(--border-dim) pb-4">
+                      <h3 className="text-xl md:text-2xl font-black font-expanded text-(--text-main) uppercase">{fac.name}</h3>
+                      {fac.subs.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {fac.subs.map((s, idx) => (
+                            <span key={idx} className="text-[10px] md:text-xs font-black text-(--bg-main) bg-(--text-main) px-2 py-1 rounded-md uppercase tracking-wider">
+                              {s}
                             </span>
-                            <p className="font-bold text-sm text-zinc-300 leading-relaxed pt-1 font-mono">
-                              {oc.description}
-                            </p>
-                          </div>
-                        ))}
-                      </motion.div>
-                    )}
-
-                    {view === "syllabus" && data && (
-                      <motion.div
-                        key="syllabus"
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        transition={spring}
-                        className="h-full overflow-y-auto custom-scrollbar space-y-6 pr-4 pb-4 min-h-0"
-                      >
-                        {data.syllabus.map((mod, i) => (
-                          <div
-                            key={i}
-                            className="bg-zinc-900 border-4 border-zinc-800 rounded-4xl overflow-hidden shadow-none shrink-0"
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      {mats.map(mat => {
+                        const isWebLink = (mat.category || "").toLowerCase().includes("web link");
+                        const Icon = isWebLink ? Language : Description;
+                        
+                        return (
+                          <div 
+                            key={mat.id}
+                            onClick={() => {
+                              const courseName = currentOption?.title || "Course";
+                              handleDownload(mat.id, fac.name, courseName);
+                            }}
+                            className="group flex items-center gap-4 py-3 px-3 rounded-2xl cursor-pointer bg-transparent hover:bg-(--bg-highlight) transition-colors border-none"
                           >
-                            <div className="bg-zinc-950 p-4 border-b-4 border-zinc-800 flex justify-between items-center">
-                              <span className="font-black text-orange-400 uppercase text-xs  font-expanded">
-                                Module {mod.number}
-                              </span>
-                              <span className="font-bold text-[10px] text-zinc-400 bg-zinc-900 px-2 py-1 rounded border-2 border-zinc-800 uppercase">
-                                {mod.title}
-                              </span>
+                            <div className="w-10 h-10 rounded-xl bg-(--bg-main) flex items-center justify-center text-(--accent-base) group-hover:text-(--bg-main) group-hover:bg-(--accent-base) transition-colors shrink-0">
+                              <Icon className="w-5 h-5" />
                             </div>
-                            <div className="p-6 text-sm font-medium text-zinc-400 leading-7 whitespace-pre-wrap font-mono">
-                              {mod.topics}
+                            <div className="min-w-0 flex-1 flex flex-col">
+                              <h4 className="font-bold text-(--text-main) text-sm md:text-base truncate group-hover:text-(--accent-base) transition-colors">{mat.title}</h4>
+                              <span className="text-[10px] font-bold text-(--text-dim) font-mono uppercase mt-0.5">{mat.uploadDate}</span>
                             </div>
                           </div>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                )}
-              </div>
-            </>
-          )}
-        </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+              {filteredMaterials.length === 0 && data && (
+                <div className="py-12 flex justify-center text-(--text-dim)">
+                  <span className="font-bold uppercase text-xs">No matching files</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

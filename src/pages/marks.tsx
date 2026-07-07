@@ -7,7 +7,8 @@ import {
   Error,
   Person,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
-import { motion } from "framer-motion";
+import { EmptyState } from "../components/EmptyState";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface MarksPageProps {
   network: VTOPNetwork;
@@ -93,19 +94,13 @@ export const MarksPage: React.FC<MarksPageProps> = ({
     >
       <div className="flex-1 overflow-y-auto custom-scrollbar p-6 pt-20 md:pt-24 lg:pt-28 space-y-6">
         {loading || fetchingMarks ? (
-          <div className="flex flex-col items-center justify-center h-full text-(--text-muted) group min-h-64">
-            <ProgressActivity className="w-24 h-24 mb-6 animate-spin text-(--accent-base)" />
-            <span className="text-2xl font-bold font-expanded uppercase transition-all duration-300 group-hover:font-squish animate-pulse">
-              {loading ? "Initializing..." : "Fetching Marks..."}
-            </span>
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 animate-pulse">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-(--bg-surface) border-4 border-(--border-dim) rounded-4xl h-64 w-full" />
+            ))}
           </div>
         ) : filteredMarks.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-(--text-muted) rounded-4xl bg-(--bg-surface) group min-h-64">
-            <Error className="w-24 h-24 mb-6 text-(--accent-base)" />
-            <span className="text-3xl font-bold font-expanded uppercase transition-all duration-300 group-hover:font-squish">
-              No Marks Found
-            </span>
-          </div>
+          <EmptyState msg="No Marks Found" icon={Error} />
         ) : (
           <motion.div
             className="grid grid-cols-1 xl:grid-cols-2 gap-6"

@@ -66,24 +66,44 @@ export const parseCoursePage = (html: string): CoursePageData => {
   let currentModNumber = "";
   let currentModTitle = "";
   let currentModTopics: string[] = [];
+  let currentModBlooms = "";
+
+  const books: string[] = [];
 
   syllabusRows.forEach((tr) => {
-    const tds = tr.querySelectorAll("td");
-    if (tds.length === 3) {
+    const cells = tr.querySelectorAll("td, th");
+    if (cells.length === 3) {
       if (currentModTitle) {
         syllabus.push({
           number: currentModNumber,
           title: currentModTitle,
           topics: currentModTopics.join("\n"),
+          blooms: currentModBlooms,
         });
       }
-      const headerText = tds[0].textContent?.trim() || "";
+      const headerText = cells[0].textContent?.trim() || "";
       const headerParts = headerText.split(" - ");
       currentModNumber = headerParts[0] || "";
       currentModTitle = headerParts[1] || headerText;
-      currentModTopics = [tds[1].textContent?.trim() || ""];
-    } else if (tds.length === 2) {
-      currentModTopics.push(tds[0].textContent?.trim() || "");
+      currentModTopics = [cells[1].textContent?.trim() || ""];
+      currentModBlooms = cells[2].textContent?.trim() || "";
+    } else if (cells.length === 2) {
+      const col1 = cells[0].textContent?.trim().toLowerCase() || "";
+      const col1Clean = col1.replace(/[^a-z0-9]/g, "");
+      if (col1Clean.includes("textbook") || col1Clean.includes("referencebook") || col1Clean.includes("recommended") || col1Clean.includes("reading")) {
+        const bookData = cells[1].textContent?.trim();
+        if (bookData) {
+          // split by numbers "1. ", "2. " or just add
+          const splitBooks = bookData.split(/\d+\.\s*/).map(b => b.trim()).filter(b => b.length > 3);
+          if (splitBooks.length > 0) {
+            books.push(...splitBooks);
+          } else {
+            books.push(bookData);
+          }
+        }
+      } else {
+        currentModTopics.push(cells[0].textContent?.trim() || "");
+      }
     }
   });
 
@@ -92,6 +112,7 @@ export const parseCoursePage = (html: string): CoursePageData => {
       number: currentModNumber,
       title: currentModTitle,
       topics: currentModTopics.join("\n"),
+      blooms: currentModBlooms,
     });
   }
 
@@ -139,11 +160,33 @@ export const parseCoursePage = (html: string): CoursePageData => {
     });
   }
 
+  const fallbackBookTables = doc.querySelectorAll("#collapseTextBook table, #collapseReferenceBooks table, #collapseReference table");
+  if (books.length === 0) {
+    fallbackBookTables.forEach(table => {
+      const rows = table.querySelectorAll("tbody tr");
+      rows.forEach(tr => {
+        const cells = tr.querySelectorAll("td, th");
+        if (cells.length >= 2) {
+          const bookText = cells[1].textContent?.trim();
+          if (bookText) {
+            const splitBooks = bookText.split(/\d+\.\s*/).map(b => b.trim()).filter(b => b.length > 3);
+            if (splitBooks.length > 0) books.push(...splitBooks);
+            else books.push(bookText);
+          }
+        } else if (cells.length === 1) {
+          const bookText = cells[0].textContent?.trim();
+          if (bookText) books.push(bookText);
+        }
+      });
+    });
+  }
+
   return {
     options,
     selectedCourseId: select?.getAttribute("value") || null,
     outcomes,
     syllabus,
     materials,
+    books,
   };
 };

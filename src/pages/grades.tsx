@@ -10,7 +10,9 @@ import {
   Analytics,
   School
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
+import { EmptyState } from "../components/EmptyState";
 import { motion, AnimatePresence } from "framer-motion";
+import { WhatIfGradeCalculator } from "../components/course-page/WhatIfGradeCalculator";
 
 interface GradesPageProps {
   network: VTOPNetwork;
@@ -169,19 +171,16 @@ export const GradesPage: React.FC<GradesPageProps> = ({
     >
       <div className="flex-1 overflow-y-auto custom-scrollbar p-6 pt-20 md:pt-24 lg:pt-28 space-y-12">
         {loading || fetchingGrades ? (
-          <div className="flex flex-col items-center justify-center h-64 text-(--text-muted) group">
-            <ProgressActivity className="w-24 h-24 mb-6 animate-spin text-(--accent-base)" />
-            <span className="text-2xl font-bold font-expanded uppercase transition-all duration-300 group-hover:font-squish animate-pulse">
-              {loading ? "Initializing..." : "Fetching Data..."}
-            </span>
+          <div className="flex flex-col gap-6 max-w-5xl mx-auto animate-pulse">
+            <div className="h-32 bg-(--bg-surface) border-4 border-(--border-dim) rounded-4xl w-full" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="h-40 bg-(--bg-surface) border-4 border-(--border-dim) rounded-4xl w-full" />
+              ))}
+            </div>
           </div>
         ) : !gradesData || gradesData.courses.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-(--text-muted) rounded-4xl bg-(--bg-surface) group">
-            <Error className="w-24 h-24 mb-6 text-(--accent-base)" />
-            <span className="text-3xl font-bold font-expanded uppercase transition-all duration-300 group-hover:font-squish">
-              No Semester Data Found
-            </span>
-          </div>
+          <EmptyState msg="No Semester Data Found" icon={Error} />
         ) : gradesData ? (
           <motion.div
             className="flex flex-col gap-6 max-w-5xl mx-auto"
@@ -310,8 +309,9 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                           className="overflow-hidden border-t-2 border-(--border-dim) bg-(--bg-highlight)"
                         >
                           {fetchingDetails && !course.assessments ? (
-                            <div className="p-6 flex justify-center">
-                              <ProgressActivity className="w-6 h-6 animate-spin text-(--accent-base)" />
+                            <div className="p-6 flex flex-col gap-4 animate-pulse">
+                              <div className="h-16 bg-(--bg-main) rounded-2xl border border-(--border-dim)" />
+                              <div className="h-24 bg-(--bg-main) rounded-2xl border border-(--border-dim)" />
                             </div>
                           ) : (
                             <div className="p-4 flex flex-col gap-4">
@@ -391,6 +391,14 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                                   </table>
                                 </div>
                               )}
+
+                              <WhatIfGradeCalculator
+                                network={network}
+                                courseCode={course.code}
+                                classId={course.courseId}
+                                selectedSem={selectedSem}
+                                isLatestSem={semesters.length > 0 && semesters[0].id === selectedSem}
+                              />
                             </div>
                           )}
                         </motion.div>

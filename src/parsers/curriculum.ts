@@ -106,6 +106,9 @@ export function parseCurriculumCategoryTable(html: string): CurriculumCourse[] {
         p: cells[codeIndex + 6]?.textContent?.trim() || "0",
         j: cells[codeIndex + 7]?.textContent?.trim() || "0",
         basket: "Core",
+        isCompleted: row.getAttribute("style")?.toLowerCase().includes("background") || 
+                     row.className.toLowerCase().includes("success") || 
+                     Array.from(cells).some(c => c.textContent?.toLowerCase().includes("completed"))
       });
     }
   });

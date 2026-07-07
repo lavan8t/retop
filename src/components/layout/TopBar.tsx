@@ -10,6 +10,8 @@ import {
   Person,
   Search,
   Download,
+  MenuBook,
+  KeyboardArrowDown,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import {
   QuickLink,
@@ -17,6 +19,7 @@ import {
   TimetableCourse,
   ClassGroup,
   MenuCategory,
+  CoursePageOption,
 } from "../../types/vtop";
 import { SemesterDropdown } from "../timetable/SemesterDropdown";
 import { ClassGroupDropdown } from "../timetable/ClassGroupDropdown";
@@ -39,7 +42,11 @@ interface TopBarProps {
 
   cpSelectedSem: string;
   setCpSelectedSem: (semId: string) => void;
+  cpSelectedCourseId: string;
   setCpSelectedCourseId: (id: string) => void;
+  cpOptions: CoursePageOption[];
+  cpSearchTerm: string;
+  setCpSearchTerm: (term: string) => void;
 
   marksSemesters: { id: string; label: string }[];
   marksSelectedSem: string;
@@ -60,7 +67,7 @@ interface TopBarProps {
   calSelectedGroup: string;
   setCalSelectedGroup: (id: string) => void;
 
-  user: { name: string; regNo: string };
+  user: { name: string; regNo: string; profileImgBase64?: string };
   showProfileMenu: boolean;
   setShowProfileMenu: (show: boolean) => void;
   handleLinkClick: (link: QuickLink) => void;
@@ -87,7 +94,7 @@ const getPageTitle = (view: string, dynamicTitle?: string) => {
     case "marks":
       return "MARKS";
     case "grades":
-      return "GRADES";
+      return "GRADES & HISTORY";
     case "profile":
       return "STUDENT PROFILE";
     case "settings":
@@ -117,7 +124,11 @@ export const TopBar: React.FC<TopBarProps> = ({
   loadTimetable,
   cpSelectedSem,
   setCpSelectedSem,
+  cpSelectedCourseId,
   setCpSelectedCourseId,
+  cpOptions,
+  cpSearchTerm,
+  setCpSearchTerm,
   marksSemesters,
   marksSelectedSem,
   setMarksSelectedSem,
@@ -148,7 +159,23 @@ export const TopBar: React.FC<TopBarProps> = ({
   onNavigate,
   initialQuery = "",
 }) => {
-  const { attSelectedSem, setAttSelectedSem, calGridData } = useDataStore();
+  const {
+    attSelectedSem,
+    setAttSelectedSem,
+    calGridData,
+    status,
+    calLoadingGrid,
+    calLoadingMonths,
+    attRecordsLoading,
+  } = useDataStore();
+
+  const isLoading =
+    status === "Syncing..." ||
+    status === "Initializing..." ||
+    ttLoading ||
+    calLoadingGrid ||
+    calLoadingMonths ||
+    attRecordsLoading;
 
   return (
     <>
@@ -189,6 +216,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                       initialQuery={initialQuery}
                       pageTitle={getPageTitle(currentView, contentTitle)}
                       onBack={() => setCurrentView("dashboard")}
+                      status={isLoading ? "loading" : "idle"}
                     />
                   </motion.div>
                 )}
@@ -278,9 +306,13 @@ export const TopBar: React.FC<TopBarProps> = ({
 
                 <button
                   onClick={() => {
-                    const semLabel = ttSemesters.find((s) => s.id === ttSelectedSem)?.label || "";
+                    const semLabel =
+                      ttSemesters.find((s) => s.id === ttSelectedSem)?.label ||
+                      "";
                     if (calGridData.length === 0) {
-                      alert("Please open the Academics Calendar page first to load calendar data, then come back here to export.");
+                      alert(
+                        "Please open the Academics Calendar page first to load calendar data, then come back here to export.",
+                      );
                       return;
                     }
                     downloadICalFile({
@@ -312,8 +344,6 @@ export const TopBar: React.FC<TopBarProps> = ({
                 >
                   {isMarksModernView ? "Legacy View" : "Modern View"}
                 </button>
-
-
 
                 <SemesterDropdown
                   semesters={marksSemesters}
@@ -349,6 +379,73 @@ export const TopBar: React.FC<TopBarProps> = ({
                 exit={{ opacity: 0, x: 20, transition: { duration: 0.15 } }}
                 className="flex items-center gap-2 mr-1 md:mr-2"
               >
+                {/* Course Page Search Bar */}
+                {cpSelectedCourseId && cpOptions.length > 0 && (
+                  <div className="relative z-50 hidden md:block w-32 lg:w-48 xl:w-64">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-(--text-muted)" />
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      className="w-full pl-8 pr-3 py-1.5 bg-(--bg-surface) border-2 border-(--border-main) rounded-lg md:rounded-xl text-[10px] md:text-xs font-bold text-(--text-main) focus:outline-none focus:border-(--accent-base) focus:shadow-[4px_4px_0px_0px_var(--shadow-main)] transition-all placeholder:text-(--text-dim) uppercase"
+                      value={cpSearchTerm}
+                      onChange={(e) => setCpSearchTerm(e.target.value)}
+                    />
+                  </div>
+                )}
+
+                {/* Course Dropdown */}
+                {cpOptions.length > 0 && (
+                  <div className="relative z-50 group/cp">
+                    <button className="flex items-center gap-1.5 md:gap-2 bg-(--bg-surface) border-2 border-(--border-main) px-2 md:px-3 py-1.5 rounded-lg md:rounded-xl text-(--text-main) font-bold shadow-none hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_var(--shadow-main)] transition-all active:translate-y-0 active:shadow-none text-[9px] sm:text-[10px] md:text-xs">
+                      <MenuBook className="w-3 h-3 md:w-3.5 md:h-3.5 text-(--accent-base) shrink-0" />
+                      <span className="uppercase truncate max-w-20 sm:max-w-30 md:max-w-40 font-expanded">
+                        {cpOptions.find((o) => o.classId === cpSelectedCourseId)
+                          ?.title || "Select Subject"}
+                      </span>
+                      <KeyboardArrowDown className="w-3 h-3 md:w-3.5 md:h-3.5 transition-transform duration-200 shrink-0 group-hover/cp:rotate-180" />
+                    </button>
+
+                    <div className="absolute top-full right-0 mt-2 w-64 md:w-80 bg-(--bg-surface) border-2 border-(--border-main) rounded-xl shadow-none overflow-hidden z-50 origin-top-right opacity-0 invisible group-hover/cp:opacity-100 group-hover/cp:visible transition-all duration-200">
+                      <div className="max-h-64 overflow-y-auto custom-scrollbar p-1.5 md:p-2 space-y-1">
+                        {cpOptions
+                          .filter(
+                            (o) =>
+                              o.semester
+                                .replace(/0+([1-9])$/, "$1")
+                                .toLowerCase() ===
+                              cpSelectedSem
+                                .replace(/0+([1-9])$/, "$1")
+                                .toLowerCase(),
+                          )
+                          .map((opt) => (
+                            <button
+                              key={opt.classId}
+                              onClick={() => {
+                                setCpSelectedCourseId(opt.classId);
+                                // hide dropdown by removing focus or similar if needed, handled by CSS hover for now
+                              }}
+                              className={`w-full text-left px-2.5 py-2 md:px-3 md:py-2.5 text-[10px] md:text-xs font-bold uppercase transition-all rounded-lg border-2 ${
+                                opt.classId === cpSelectedCourseId
+                                  ? "bg-(--accent-base) text-(--text-inverse) border-(--border-main)"
+                                  : "bg-transparent border-transparent text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main) hover:border-(--border-dim)"
+                              }`}
+                            >
+                              <div className="flex justify-between items-center gap-2">
+                                <span>{opt.code}</span>
+                                <span className="opacity-60 text-[8px] border border-current px-1 rounded">
+                                  {opt.type}
+                                </span>
+                              </div>
+                              <div className="truncate opacity-80 font-mono mt-0.5">
+                                {opt.title}
+                              </div>
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <SemesterDropdown
                   semesters={ttSemesters}
                   selectedId={cpSelectedSem}
@@ -398,7 +495,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             )}
           </AnimatePresence>
 
-          <div className="relative shrink-0 flex items-center justify-center mr-2 lg:mr-6">
+          <div className="relative shrink-0 flex items-center justify-center mr-2 lg:mr-4">
             <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
               className="flex items-center focus:outline-none group cursor-pointer transition-all hover:scale-105 active:scale-95"
@@ -408,7 +505,10 @@ export const TopBar: React.FC<TopBarProps> = ({
                   <motion.div className="w-10 h-10 md:w-12 md:h-12 absolute inset-0 rounded-full overflow-hidden shrink-0 border-2 border-(--border-main) group-hover:border-(--accent-base) shadow-sm transition-all flex items-center justify-center bg-(--bg-highlight) z-9999">
                     {user.regNo !== "..." ? (
                       <img
-                        src={`/vtop/users/image/?id=${user.regNo}`}
+                        src={
+                          user.profileImgBase64 ||
+                          `/vtop/users/image/?id=${user.regNo}`
+                        }
                         className="w-full h-full object-cover"
                         alt="Profile"
                       />

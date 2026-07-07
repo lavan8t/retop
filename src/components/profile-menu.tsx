@@ -147,7 +147,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
                 });
                 onClose();
               }}
-              className="flex w-full items-center justify-between px-3 py-2 rounded-2xl border-4 transition-all duration-150 group border-transparent hover:bg-(--accent-base) hover:border-(--border-main) hover:shadow-none hover:-translate-y-px text-(--text-main) hover:text-(--text-inverse)"
+              className="flex w-full items-center justify-between px-3 py-2 rounded-2xl border-4 transition-all duration-300 ease-out group border-transparent hover:bg-(--accent-base) hover:border-(--border-main) hover:shadow-none hover:-translate-y-px text-(--text-main) hover:text-(--text-inverse)"
             >
               <div className="flex items-center gap-3">
                 <item.icon className="w-4 h-4 transition-colors text-(--text-muted) group-hover:text-(--text-inverse) shrink-0" />
@@ -180,7 +180,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
                   });
                   onClose();
                 }}
-                className={`flex flex-col items-center justify-center py-2.5 rounded-xl border-2 border-(--border-dim) bg-(--bg-main) hover:border-(--border-main) hover:-translate-y-0.5 transition-all duration-150 group ${item.hoverClass}`}
+                className={`flex flex-col items-center justify-center py-2.5 rounded-xl border-2 border-(--border-dim) bg-(--bg-main) hover:border-(--border-main) hover:-translate-y-0.5 transition-all duration-300 ease-out group ${item.hoverClass}`}
               >
                 <item.icon className="w-4 h-4 mb-1 transition-transform group-hover:scale-110 text-(--text-main)" />
                 <span className="font-expanded font-black text-[8px] uppercase  text-center text-(--text-main)">

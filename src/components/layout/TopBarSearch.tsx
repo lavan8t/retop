@@ -4,6 +4,7 @@ import {
   Keep,
   Error,
   Search,
+  Autorenew,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { QuickLink, MenuCategory } from "../../types/vtop";
 import { MarqueeText } from "../common/MarqueeText";
@@ -19,6 +20,7 @@ interface TopBarSearchProps {
   initialQuery?: string;
   pageTitle?: string;
   onBack?: () => void;
+  status?: string;
 }
 
 const getDestinationView = (link: QuickLink) => {
@@ -43,6 +45,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
   initialQuery = "",
   pageTitle = "Search",
   onBack,
+  status,
 }) => {
   const [query, setQuery] = useState(initialQuery);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -70,18 +73,8 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
     const matches: { link: QuickLink; score: number }[] = [];
 
     const staticLinks: QuickLink[] = [
-      { title: "Dashboard", url: "/", category: "Navigation" },
-      {
-        title: "Timetable",
-        url: "/timetable",
-        category: "Navigation",
-      },
-      { title: "Marks", url: "/marks", category: "Navigation" },
-      {
-        title: "CalendarMonth",
-        url: "/calendar",
-        category: "Navigation",
-      },
+      { title: "Home", url: "/", category: "Navigation" },
+      { title: "Settings", url: "#settings", category: "Navigation" },
     ];
 
     [...staticLinks, ...menuCategories.flatMap((c) => c.links)].forEach(
@@ -150,11 +143,11 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
     <div className="relative flex flex-col z-50">
       {/* Unified Search Bar */}
       <div
-        className={`group flex items-center gap-4 transition-all duration-300 ease-out cursor-text md:min-w-[420px] pl-6 pr-5 h-14 md:h-16
+        className={`group flex items-center gap-3 transition-all duration-300 ease-out cursor-text md:min-w-[360px] pl-4 pr-3 h-12 md:h-14
           ${
             isExpanded
-              ? `bg-(--bg-highlight) rounded-[1.5rem] md:rounded-[2rem] border-2 border-(--border-main) translate-x-2 translate-y-2 ${isSearchActive ? "shadow-[4px_0px_0px_0px_var(--shadow-main)]" : "shadow-[4px_4px_0px_0px_var(--shadow-main)]"}`
-              : "bg-transparent border-2 border-transparent translate-x-0 translate-y-0 shadow-none"
+              ? `bg-(--bg-highlight) rounded-t-2xl border-2 border-(--border-main) ${isSearchActive ? "shadow-[4px_0px_0px_0px_var(--shadow-main)]" : "rounded-b-2xl shadow-[4px_4px_0px_0px_var(--shadow-main)]"}`
+              : "bg-transparent border-2 border-transparent shadow-none"
           }
           ${isSearchActive ? "rounded-b-none border-b-0" : ""}
         `}
@@ -171,11 +164,15 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
             <span className="font-expanded font-black text-2xl md:text-3xl italic lowercase leading-none text-(--text-main) group-focus-within:text-(--accent-hover) transition-colors">
               re
             </span>
-            <div className="relative w-1.5 h-1.5 md:w-2 md:h-2 ml-0.5 md:ml-1 mb-1 bg-(--accent-base) rounded-full flex items-center justify-center group-focus-within:scale-[2] transition-transform origin-bottom-left">
-              <Search
-                className="w-1 h-1 md:w-1.5 md:h-1.5 text-white opacity-0 group-focus-within:opacity-100 transition-opacity absolute"
-                strokeWidth={4}
-              />
+            <div className={`relative ml-0.5 md:ml-1 mb-1 flex items-center justify-center group-focus-within:scale-[2] transition-all origin-bottom-left ${status === 'loading' ? 'text-(--accent-base) w-3 h-3 md:w-4 md:h-4' : 'w-1.5 h-1.5 md:w-2 md:h-2 bg-(--accent-base) rounded-full'}`}>
+              {status === 'loading' ? (
+                <Autorenew className="w-full h-full animate-spin absolute bottom-0 left-0" style={{ transformOrigin: 'center' }} />
+              ) : (
+                <Search
+                  className="w-1 h-1 md:w-1.5 md:h-1.5 text-(--text-inverse) opacity-0 group-focus-within:opacity-100 transition-opacity absolute"
+                  strokeWidth={4}
+                />
+              )}
             </div>
           </div>
         </button>
@@ -223,7 +220,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="absolute top-14 md:top-16 left-0 w-full bg-(--bg-highlight) border-2 border-t-0 border-(--border-main) rounded-b-[1.5rem] md:rounded-b-[2rem] overflow-hidden z-[200] shadow-[4px_4px_0px_0px_var(--shadow-main)] translate-x-2 translate-y-2"
+            className="absolute top-12 md:top-14 left-0 w-full bg-(--bg-highlight) border-2 border-t-0 border-(--border-main) rounded-b-2xl overflow-hidden z-[200] shadow-[4px_4px_0px_0px_var(--shadow-main)]"
           >
             <div className="px-4">
               <div className="w-full h-[2px] bg-(--border-main) rounded-full opacity-50" />
@@ -256,7 +253,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                       return (
                         <React.Fragment key={i}>
                           {isNewCategory && (
-                            <div className="px-3 pt-2 pb-1 text-[10px] font-expanded font-black text-(--text-muted) uppercase tracking-wider">
+                            <div className="px-5 pt-4 pb-2 text-[11px] font-expanded font-black text-(--text-main) uppercase tracking-wider border-b border-(--border-dim) mb-2">
                               {currentCategory}
                             </div>
                           )}
@@ -290,7 +287,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                             className={`pointer-events-auto p-1.5 rounded-xl transition-all border-2 shadow-none ${
                               isPinned
                                 ? "bg-transparent text-(--text-main) border-transparent"
-                                : "bg-transparent border-transparent text-(--text-dim) hover:text-(--text-main) hover:border-(--accent-base)"
+                                : "bg-transparent border-transparent text-(--text-dim) hover:bg-black/30 hover:text-white"
                             }`}
                             title={isPinned ? "Unpin from Dock" : "Pin to Dock"}
                           >

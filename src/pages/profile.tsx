@@ -295,11 +295,19 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
 
   if (loading) {
     return (
-      <div className="h-full flex flex-col items-center justify-center text-(--text-muted) gap-4 animate-pulse bg-(--bg-main)">
-        <ProgressActivity className="w-10 h-10 animate-spin text-(--text-main)" />
-        <span className="text-xs font-expanded font-black tracking-widest uppercase">
-          Fetching Profile...
-        </span>
+      <div className="h-full overflow-y-auto bg-(--bg-main) p-4 md:p-8 pt-20 md:pt-24 lg:pt-28 custom-scrollbar">
+        <div className="max-w-375 mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 animate-pulse">
+          <div className="lg:col-span-4 flex flex-col gap-6 md:gap-8">
+            <div className="w-full max-w-74 mx-auto aspect-64/100 bg-(--bg-surface) rounded-2xl border-2 border-(--border-dim)" />
+            <div className="h-64 bg-(--bg-surface) rounded-3xl border-4 border-(--border-main)" />
+          </div>
+          <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 auto-rows-max">
+            <div className="md:col-span-2 h-48 bg-(--bg-surface) rounded-3xl border-4 border-(--border-main)" />
+            <div className="md:col-span-2 h-64 bg-(--bg-surface) rounded-3xl border-4 border-(--border-main)" />
+            <div className="h-48 bg-(--bg-surface) rounded-3xl border-4 border-(--border-main)" />
+            <div className="h-48 bg-(--bg-surface) rounded-3xl border-4 border-(--border-main)" />
+          </div>
+        </div>
       </div>
     );
   }

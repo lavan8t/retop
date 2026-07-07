@@ -39,7 +39,11 @@ export const SemesterDropdown = ({ semesters, selectedId, onChange }: any) => {
     semesters.find((s: Semester) => s.id === selectedId) || semesters[0];
 
   return (
-    <div className="relative z-50">
+    <div 
+      className="relative z-50"
+      onMouseEnter={() => setIsOpen(true)}
+      onMouseLeave={() => setIsOpen(false)}
+    >
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-1.5 md:gap-2 bg-(--bg-surface) border-2 border-(--border-main) px-2 md:px-3 py-1.5 rounded-lg md:rounded-xl text-(--text-main) font-bold shadow-none hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_var(--shadow-main)] transition-all active:translate-y-0 active:shadow-none text-[9px] sm:text-[10px] md:text-xs group"
@@ -56,10 +60,6 @@ export const SemesterDropdown = ({ semesters, selectedId, onChange }: any) => {
       <AnimatePresence>
         {isOpen && (
           <>
-            <div
-              className="fixed inset-0 z-40"
-              onClick={() => setIsOpen(false)}
-            />
             <motion.div
               initial={{ opacity: 0, y: -10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}

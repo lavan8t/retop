@@ -170,7 +170,7 @@ export const TimetableWeek = ({
                         : "L";
 
                     const colorClasses =
-                      "bg-(--bg-highlight) border-transparent hover:border-(--border-main)";
+                      "bg-(--bg-highlight) hover:bg-(--border-dim)";
 
                     return (
                       <motion.button
@@ -186,7 +186,8 @@ export const TimetableWeek = ({
                             position: { x: rect.left, y: rect.bottom + 10 },
                           });
                         }}
-                        className={`rounded-2xl p-4 shadow-none flex gap-4 w-full text-left active:scale-[0.98] transition-all cursor-pointer border-2 ${colorClasses}`}
+                        className={`rounded-2xl p-4 shadow-none flex gap-4 w-full text-left active:scale-[0.98] cursor-pointer ${colorClasses}`}
+                        style={{ transition: 'background-color 0.3s 0.075s, transform 0.3s, box-shadow 0.3s' }}
                       >
                         <div className="w-20 shrink-0 border-r-2 border-(--border-main) flex flex-col items-center justify-center p-1">
                           <span className="font-black font-expanded text-sm md:text-lg text-(--text-main) text-center whitespace-nowrap">
@@ -275,8 +276,8 @@ export const TimetableWeek = ({
                 ) : (
                   dayEvents.map(({ startHour, endHour, course }) => {
                     const isLab = course.type.includes("Lab");
-                    const colorClasses =
-                      "bg-(--bg-highlight) border-transparent hover:border-(--border-main)";
+                      const colorClasses =
+                        "bg-(--bg-highlight) hover:bg-(--border-dim)";
                     const attStr = attendance?.find(
                       (a) => a.code === course.code,
                     )?.attendance;
@@ -300,7 +301,8 @@ export const TimetableWeek = ({
                             position: { x: rect.left, y: rect.bottom + 10 },
                           });
                         }}
-                        className={`w-full text-left p-2.5 lg:p-3 rounded-xl border-2 hover:-translate-y-0.5 transition-all shadow-none hover:shadow-[4px_4px_0px_0px_var(--shadow-main)] flex flex-col gap-1.5 cursor-pointer ${colorClasses}`}
+                        className={`w-full text-left p-2.5 lg:p-3 rounded-xl hover:-translate-y-0.5 shadow-none hover:shadow-[4px_4px_0px_0px_var(--shadow-main)] flex flex-col gap-1.5 cursor-pointer ${colorClasses}`}
+                        style={{ transition: 'background-color 0.3s 0.075s, transform 0.3s, box-shadow 0.3s' }}
                       >
                         <div className="flex justify-between items-start w-full gap-1">
                           <span className="font-black text-xs lg:text-sm truncate pr-1 leading-none text-(--text-main)">

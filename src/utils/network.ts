@@ -1,8 +1,38 @@
-import { getCachedData, setCachedData } from "./cache";
+import { getCachedData, setCachedData, getCachedDataWithTimestamp } from "./cache";
+import { useAppStore } from "../store/appStore";
 
 export class VTOPNetwork {
   public csrf: string;
   public authorizedID: string;
+
+  private static nextAvailableTime = 0;
+
+  private async enforceRateLimit() {
+    const minDelay = 5000;
+    const maxDelay = 10000;
+    const randomDelay = Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
+
+    const now = Date.now();
+    let waitTime = 0;
+
+    if (now < VTOPNetwork.nextAvailableTime) {
+      waitTime = VTOPNetwork.nextAvailableTime - now;
+      VTOPNetwork.nextAvailableTime += randomDelay;
+    } else {
+      VTOPNetwork.nextAvailableTime = now + randomDelay;
+    }
+
+    if (waitTime > 0) {
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+  }
+
+  private async rateLimitedFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+    const urlStr = typeof input === "string" ? input : (input as any).url || input.toString();
+    useAppStore.getState().logNetworkRequest(urlStr);
+    await this.enforceRateLimit();
+    return fetch(input, init);
+  }
 
   constructor(csrf: string, authorizedID: string) {
     this.csrf = csrf;
@@ -19,7 +49,7 @@ export class VTOPNetwork {
    */
   async getNativeCaptcha(): Promise<{ captchaImage: string }> {
     try {
-      const response = await fetch("/vtop/get/new/captcha", {
+      const response = await this.rateLimitedFetch("/vtop/get/new/captcha", {
         method: "GET",
         headers: {
           "Close-Requested-With": "XMLHttpRequest",
@@ -44,37 +74,38 @@ export class VTOPNetwork {
     fetcher: () => Promise<string>,
     forceRefresh = false,
   ): Promise<string> {
-    // Automatically scope all cache keys to the current user to prevent data leaks on new logins
     const userScopedKey = `${this.authorizedID}_${key}`;
 
-    if (!forceRefresh) {
-      const cached = await getCachedData<string>(userScopedKey);
-      if (cached) {
-        // Stale-while-revalidate: return cached but fetch latest in background to update cache
-        fetcher().then(data => {
-          if (data && data.length > 50 && !data.includes("Invalid")) {
-            setCachedData(userScopedKey, data);
-          }
-        }).catch(err => {
-          console.error(`[VTOP Network] Background cache update failed for ${userScopedKey}`, err);
-        });
-
-        return cached;
+    const doFetchAndCache = async () => {
+      try {
+        useAppStore.getState().logNetworkRequest(key, userScopedKey);
+        const data = await fetcher();
+        if (data && data.length > 50 && !data.includes("Invalid")) {
+          setCachedData(userScopedKey, data);
+        }
+        return data;
+      } catch (err) {
+        throw err;
       }
+    };
+
+    const cachedInfo = await getCachedDataWithTimestamp<string>(userScopedKey);
+
+    if (cachedInfo && cachedInfo.data) {
+      const FIVE_DAYS_MS = 5 * 24 * 60 * 60 * 1000;
+      const age = Date.now() - (cachedInfo.timestamp || 0);
+
+      if (forceRefresh || age > FIVE_DAYS_MS) {
+        // Fetch in background, update cache silently
+        console.log(`[VTOP Network] BG Fetch Triggered: ${userScopedKey}`);
+        doFetchAndCache().catch(e => console.warn(`BG Fetch Failed: ${userScopedKey}`, e));
+      }
+
+      return cachedInfo.data;
     }
 
     console.log(`[VTOP Network] Fetching: ${userScopedKey}`);
-    try {
-      const data = await fetcher();
-
-      if (data && data.length > 50 && !data.includes("Invalid")) {
-        setCachedData(userScopedKey, data);
-      }
-      return data;
-    } catch (err) {
-      console.error(`[VTOP Network] Failed: ${userScopedKey}`, err);
-      throw err;
-    }
+    return await doFetchAndCache();
   }
 
   private async waitForLegacyLoad() {
@@ -110,7 +141,10 @@ export class VTOPNetwork {
   }
 
   async getCurriculumDashboard(): Promise<string> {
-    return this.fetchFragment("academics/common/Curriculum");
+    const cacheKey = "curriculum_dashboard";
+    return this.fetchWithCache(cacheKey, async () => {
+      return this.fetchFragment("academics/common/Curriculum");
+    });
   }
 
   async getCurriculumCategory(categoryId: string): Promise<string> {
@@ -124,7 +158,7 @@ export class VTOPNetwork {
       params.append("categoryId", categoryId);
       params.append("x", new Date().toUTCString());
 
-      const response = await fetch(`/vtop/${url}`, {
+      const response = await this.rateLimitedFetch(`/vtop/${url}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
@@ -179,7 +213,7 @@ export class VTOPNetwork {
       body.append("semesterSubId", semesterSubId);
       body.append("x", new Date().toUTCString());
 
-      const response = await fetch(`/vtop/${url}`, {
+      const response = await this.rateLimitedFetch(`/vtop/${url}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
@@ -208,7 +242,7 @@ export class VTOPNetwork {
       body.append("semesterSubId", semesterSubId);
       body.append("x", new Date().toUTCString());
 
-      const response = await fetch(`/vtop/${url}`, {
+      const response = await this.rateLimitedFetch(`/vtop/${url}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
@@ -233,7 +267,7 @@ export class VTOPNetwork {
       body.append("verifyMenu", "true");
       body.append("x", new Date().toUTCString());
 
-      const response = await fetch(`/vtop/${url}`, {
+      const response = await this.rateLimitedFetch(`/vtop/${url}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
@@ -256,7 +290,7 @@ export class VTOPNetwork {
     body.append("courseId", courseId);
     body.append("x", new Date().toUTCString());
 
-    const response = await fetch(`/vtop/${url}`, {
+    const response = await this.rateLimitedFetch(`/vtop/${url}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
@@ -279,7 +313,7 @@ export class VTOPNetwork {
       body.append("verifyMenu", "true");
       body.append("nocache", "@(new Date().getTime())");
 
-      const response = await fetch(
+      const response = await this.rateLimitedFetch(
         "/vtop/academics/common/CoursePageConsolidated",
         {
           method: "POST",
@@ -313,7 +347,7 @@ export class VTOPNetwork {
       body.append("CoursType", courseType);
       body.append("x", new Date().toUTCString());
 
-      const response = await fetch(`/vtop/${url}`, {
+      const response = await this.rateLimitedFetch(`/vtop/${url}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
@@ -378,7 +412,7 @@ export class VTOPNetwork {
       Object.entries(data).forEach(([key, value]) => body.append(key, value));
     }
 
-    const res = await fetch(url, {
+    const res = await this.rateLimitedFetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
@@ -490,7 +524,7 @@ export class VTOPNetwork {
         ? `https://vtop.vit.ac.in${action}`
         : `https://vtop.vit.ac.in/vtop/${action}`;
 
-    const response = await fetch(path, {
+    const response = await this.rateLimitedFetch(path, {
       method: "POST",
       headers: { "Close-Requested-With": "XMLHttpRequest" },
       body: formData,
@@ -532,7 +566,7 @@ export class VTOPNetwork {
     Object.entries(params).forEach(([key, value]) => body.append(key, value));
 
     try {
-      const response = await fetch(url, {
+      const response = await this.rateLimitedFetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",

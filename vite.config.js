@@ -16,11 +16,12 @@ export default defineConfig({
     emptyOutDir: true,
     outDir: "dist",
     cssCodeSplit: true,
-    chunkSizeWarningLimit: 1500,
+    chunkSizeWarningLimit: 3000,
     rollupOptions: {
       input: {
         content: resolve(__dirname, "src/content.ts"),
         injected: resolve(__dirname, "src/injected.ts"),
+        background: resolve(__dirname, "src/background.ts"),
         style: resolve(__dirname, "src/input.css"),
         login: resolve(__dirname, "src/login-theme.css"),
       },

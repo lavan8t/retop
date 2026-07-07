@@ -2,9 +2,10 @@ import { renderDashboard } from "./pages/app";
 import "./input.css";
 
 const initializeOfflineMode = () => {
-  chrome.storage.local.get(["retop_lastAuthId", "retop_lastName"], (res) => {
+  chrome.storage.local.get(["retop_lastAuthId", "retop_lastName", "retop_profileImage"], (res) => {
     const authId = res.retop_lastAuthId as string;
     const name = res.retop_lastName as string;
+    const profileImage = res.retop_profileImage as string;
 
     if (!authId) {
       document.body.innerHTML = `
@@ -28,15 +29,23 @@ const initializeOfflineMode = () => {
     // Mock the user profile header for scrapeUserProfile to read
     const header = document.createElement("div");
     header.className = "navbar-text text-light small fw-bold";
-    header.textContent = `${authId} - ${name || "Offline"} (OFFLINE CACHE)`;
+    header.textContent = `${authId} (Offline) - ${name || "Offline"} )`;
     document.body.appendChild(header);
 
+    if (profileImage) {
+      const img = document.createElement("img");
+      img.id = "retop-profile-image-mock";
+      img.src = profileImage;
+      img.style.display = "none";
+      document.body.appendChild(img);
+    }
+
     // Mock CSRF
-    const script = document.createElement("script");
-    script.innerHTML = `var csrfValue = "offline_csrf";`;
-    document.body.appendChild(script);
+    (window as any).csrfValue = "offline_csrf";
 
     // Render the dashboard using the existing bridge logic
+    (window as any).__RETOP_OFFLINE__ = true;
+    
     renderDashboard();
 
     // Add Offline Banner

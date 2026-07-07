@@ -34,6 +34,7 @@ export const ContentRouter = ({
   setCpSelectedSem,
   cpSelectedCourseId,
   setCpSelectedCourseId,
+  cpSearchTerm,
   calSemesters,
   setCalSemesters,
   calSelectedSem,
@@ -130,6 +131,7 @@ export const ContentRouter = ({
           setSelectedSem={setCpSelectedSem}
           selectedOptionId={cpSelectedCourseId}
           setSelectedOptionId={setCpSelectedCourseId}
+          searchTerm={cpSearchTerm}
         />
       );
 

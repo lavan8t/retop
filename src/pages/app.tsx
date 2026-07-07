@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import { useDataStore } from "../store/dataStore";
 import { ProfileMenu } from "../components/profile-menu";
+import { Toaster } from "../components/Toaster";
 import {
   initializeContainer,
   getAppRoot,
@@ -48,6 +49,10 @@ import { LegacyReturnButton } from "../components/LegacyReturnButton";
 const getDestinationView = (link: QuickLink): ViewType | "content" => {
   const lowerTitle = link.title.toLowerCase();
   const lowerUrl = link.url.toLowerCase();
+
+  if (lowerTitle === "home" || lowerTitle === "dashboard" || lowerUrl.includes("home")) {
+    return "dashboard";
+  }
 
   if (
     lowerTitle.includes("time table") ||
@@ -201,6 +206,7 @@ const DashboardApp = () => {
     "grid",
   );
   const [cpOptions, setCpOptions] = useState<CoursePageOption[]>([]);
+  const [cpSearchTerm, setCpSearchTerm] = useState("");
   const [cpSelectedCourseId, setCpSelectedCourseId] = useState("");
 
   // HOISTED MARKS STATE
@@ -274,9 +280,10 @@ const DashboardApp = () => {
     };
 
     const handleOpenSettings = () => {
-      setCurrentView("settings");
-      if (!isModernUI) {
-        setIsModernUI(true);
+      if ((window as any).__RETOP_OFFLINE__) {
+        setCurrentView("settings");
+      } else if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.getURL) {
+        window.open(chrome.runtime.getURL("dist/offline.html"), "_blank");
       }
     };
 
@@ -297,7 +304,7 @@ const DashboardApp = () => {
     const authId = authIdInput?.value;
     const htmlContent = document.documentElement.innerHTML;
     const csrfMatch = htmlContent.match(/csrfValue\s*=\s*"([^"]+)"/);
-    const csrf = csrfMatch ? csrfMatch[1] : "";
+    const csrf = (csrfMatch ? csrfMatch[1] : (window as any).csrfValue) || "";
 
     if (!authId || !csrf) {
       revealLegacyUI();
@@ -313,9 +320,12 @@ const DashboardApp = () => {
     
     // Cache for offline mode
     if (typeof chrome !== "undefined" && chrome.storage) {
-      chrome.storage.local.set({
-        "retop_lastAuthId": userProfile.regNo,
-        "retop_lastName": userProfile.name,
+      chrome.storage.local.get(["retop_profileImage"], (res) => {
+        chrome.storage.local.set({
+          "retop_lastAuthId": userProfile.regNo,
+          "retop_lastName": userProfile.name,
+          "retop_profileImage": userProfile.profileImgBase64 || res.retop_profileImage || "",
+        });
       });
     }
 
@@ -539,7 +549,11 @@ const DashboardApp = () => {
             }}
             cpSelectedSem={cpSelectedSem}
             setCpSelectedSem={setCpSelectedSem}
+            cpSelectedCourseId={cpSelectedCourseId}
             setCpSelectedCourseId={setCpSelectedCourseId}
+            cpOptions={cpOptions}
+            cpSearchTerm={cpSearchTerm}
+            setCpSearchTerm={setCpSearchTerm}
             user={user}
             showProfileMenu={showProfileMenu}
             setShowProfileMenu={setShowProfileMenu}
@@ -612,9 +626,11 @@ const DashboardApp = () => {
                   }}
                   cpOptions={cpOptions}
                   setCpOptions={setCpOptions}
+                  cpSemesters={ttSemesters}
                   cpSelectedSem={cpSelectedSem}
                   cpSelectedCourseId={cpSelectedCourseId}
                   setCpSelectedCourseId={setCpSelectedCourseId}
+                  cpSearchTerm={cpSearchTerm}
                   marksSemesters={marksSemesters}
                   setMarksSemesters={setMarksSemesters}
                   marksSelectedSem={marksSelectedSem}
@@ -682,6 +698,7 @@ const DashboardApp = () => {
           )}
         </div>
       </motion.div>
+      <Toaster />
 
       <AnimatePresence>
         {!isModernUI && (

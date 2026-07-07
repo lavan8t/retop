@@ -274,6 +274,16 @@ const LoginPage = ({
     else submitLogin();
   };
 
+  const openOfflineMode = () => {
+    if (
+      typeof chrome !== "undefined" &&
+      chrome.runtime &&
+      chrome.runtime.getURL
+    ) {
+      window.open(chrome.runtime.getURL("dist/offline.html"), "_blank");
+    }
+  };
+
   return (
     <>
       <AnimatePresence>
@@ -444,6 +454,13 @@ const LoginPage = ({
                           Authorize <ArrowForward className="w-6 h-6" />
                         </>
                       )}
+                    </button>
+
+                    <button
+                      onClick={openOfflineMode}
+                      className="w-full border-4 border-zinc-700 bg-zinc-800 rounded-2xl py-3 text-lg font-expanded font-black uppercase flex items-center justify-center gap-2 transition-all duration-200 text-zinc-300 hover:text-white hover:border-zinc-500 hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_var(--shadow-main)] active:translate-y-0 active:shadow-none mt-4"
+                    >
+                      Access Offline Cache
                     </button>
                   </div>
 

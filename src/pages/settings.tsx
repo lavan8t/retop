@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { AppSettings, resetDynamicThemeSeed } from "../utils/settings-store";
+import { clearCache } from "../utils/cache";
 import {
   Check,
   Casino,
@@ -8,7 +9,6 @@ import {
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { motion, AnimatePresence } from "framer-motion";
 import { Icon } from "@iconify/react";
-import "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { MaterialSwitch } from "../components/MaterialSwitch";
 
 interface SettingsPageProps {
@@ -391,26 +391,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             </div>
           </BentoBox>
 
-          <BentoBox
-            title="System Cache"
-            description="Force fetch the latest schedule from VTOP"
-            className="col-span-1 lg:col-span-1"
-          >
-            <button
-              onClick={() => {
-                const keys = [];
-                for (let i = 0; i < localStorage.length; i++) {
-                  const key = localStorage.key(i);
-                  if (key && key.startsWith("vtop-tt-cache-")) keys.push(key);
-                }
-                keys.forEach((k) => localStorage.removeItem(k));
-                window.location.reload();
-              }}
-              className="w-full flex items-center justify-center px-5 py-2.5 rounded-full text-xs font-black font-expanded uppercase transition-all bg-(--bg-highlight) text-(--text-main) hover:bg-(--text-main) hover:text-(--bg-main)"
-            >
-              Clear Cache
-            </button>
-          </BentoBox>
+
 
           <BentoBox
             title="Hide CGPA"
@@ -505,6 +486,24 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   updateSetting("use24HourTime", !settings.use24HourTime)
                 }
               />
+            </div>
+          </BentoBox>
+
+          <BentoBox
+            title="Data & Cache"
+            description="Clear locally cached academic data to force a fresh fetch on your next visit."
+            className="col-span-1 md:col-span-2"
+          >
+            <div className="w-full flex justify-end">
+              <button
+                onClick={() => {
+                  clearCache();
+                  window.location.reload();
+                }}
+                className="px-5 py-2.5 rounded-full text-xs font-black font-expanded uppercase transition-all bg-red-500/10 text-red-500 hover:bg-red-500/20 active:scale-95 cursor-pointer"
+              >
+                Clear Cache
+              </button>
             </div>
           </BentoBox>
         </div>

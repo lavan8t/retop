@@ -21,6 +21,7 @@ import {
   ChevronRight,
   SwapVert,
   Keep,
+  Autorenew,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import {
   CourseSummary,
@@ -50,7 +51,7 @@ import { ClassGroupDropdown } from "../components/timetable/ClassGroupDropdown";
 import { SemesterDropdown } from "../components/timetable/SemesterDropdown";
 import { TopBarSearch } from "../components/layout/TopBarSearch";
 import { MarqueeText } from "../components/common/MarqueeText";
-import { EmptyState } from "../components/home/EmptyState";
+import { EmptyState } from "../components/EmptyState";
 import { CoursePopup } from "../components/timetable/CoursePopup";
 import { Card } from "../components/ui/Card";
 
@@ -70,6 +71,300 @@ const getCategoryIcon = (title: string) => {
   if (t.includes("transport")) return DirectionsBus;
   return Layers;
 };
+
+const LazyCalendarDay = React.memo(({
+  d,
+  dIdx,
+  calGridData,
+  eventFilter,
+  assignments,
+  events,
+  getClassesForDate,
+  use24HourTime,
+  todayRef,
+  nowRef,
+  setSelectedCourse
+}: any) => {
+  const [inView, setInView] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState(100);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true);
+        } else {
+          setInView(false);
+          if (ref.current) {
+            const h = ref.current.getBoundingClientRect().height;
+            if (h > 0) setHeight(h);
+          }
+        }
+      },
+      { rootMargin: "1000px" }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  const isToday = d.toDateString() === new Date().toDateString();
+
+  if (!inView) {
+    return <div ref={ref} style={{ minHeight: height }} className={isToday ? "scroll-mt-[30vh]" : ""} />;
+  }
+
+  let calEvent: any = null;
+  for (const monthData of calGridData) {
+    for (const calDay of monthData.days) {
+      if (
+        calDay.dateObj &&
+        new Date(calDay.dateObj).toDateString() === d.toDateString()
+      ) {
+        calEvent = calDay;
+        break;
+      }
+    }
+    if (calEvent) break;
+  }
+
+  const classesForDay = getClassesForDate(d, calEvent);
+
+  const dayEvents: Array<
+    | { type: "class"; data: UpcomingClass }
+    | { type: "assignment"; data: Assignment }
+    | { type: "event"; data: Event }
+    | { type: "calendar"; data: any }
+  > = [];
+
+  if (eventFilter === "all" || eventFilter === "events") {
+    if (calEvent && (calEvent.info || calEvent.isHoliday)) {
+      dayEvents.push({ type: "calendar", data: calEvent });
+    }
+  }
+
+  if (eventFilter === "all" || eventFilter === "classes") {
+    classesForDay.forEach((c: any) =>
+      dayEvents.push({ type: "class", data: c }),
+    );
+  }
+  if (eventFilter === "all" || eventFilter === "assignments") {
+    if (isToday) {
+      assignments.forEach((a: any) =>
+        dayEvents.push({ type: "assignment", data: a }),
+      );
+    }
+  }
+  if (eventFilter === "all" || eventFilter === "events") {
+    const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    events
+      .filter((e: any) => e.date === dStr)
+      .forEach((e: any) => dayEvents.push({ type: "event", data: e }));
+  }
+
+  if (dayEvents.length === 0) {
+    if (isToday) {
+      return (
+        <div
+          ref={(el) => {
+            if (todayRef) todayRef.current = el;
+            ref.current = el;
+          }}
+          className={`mb-4 flex gap-3 relative scroll-mt-[30vh]`}
+        >
+          <div className="flex flex-col items-center shrink-0 w-12 pt-1 sticky top-4 h-fit z-10">
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm mb-0.5 bg-(--accent-base) text-(--text-inverse)`}
+            >
+              {d.getDate()}
+            </div>
+            <div
+              className={`text-[9px] font-expanded font-bold uppercase text-(--accent-base)`}
+            >
+              {d.toLocaleDateString("en-US", { weekday: "short" })}
+            </div>
+          </div>
+          <div className="flex-1 min-w-0 pt-2 pb-6 flex items-center justify-center">
+            <span className="text-sm font-bold text-(--text-muted)">
+              No events for today
+            </span>
+          </div>
+        </div>
+      );
+    }
+    return <div ref={ref} style={{ display: "none" }} />;
+  }
+
+  const currentHour = new Date().getHours();
+
+  const eventsWithStatus = dayEvents.map((evt) => {
+    let isDone = false;
+    if (isToday) {
+      if (evt.type === "class") {
+        const timeParts = evt.data.time.split("-");
+        const endHour =
+          timeParts.length > 1
+            ? parseInt(timeParts[1])
+            : parseInt(timeParts[0]);
+        isDone = currentHour > endHour;
+      } else if (evt.type === "assignment") {
+        isDone = evt.data.status === "submitted";
+      } else if (evt.type === "event" || evt.type === "calendar") {
+        isDone = false;
+      }
+    } else if (d < new Date(new Date().setHours(0, 0, 0, 0))) {
+      isDone = true;
+    }
+    return { ...evt, isDone };
+  });
+
+  const calendarEvents = eventsWithStatus.filter((e) => e.type === "calendar");
+  const otherEvents = eventsWithStatus.filter((e) => e.type !== "calendar");
+  const doneEvents = otherEvents.filter((e) => e.isDone);
+  const upcomingEvents = otherEvents.filter((e) => !e.isDone);
+
+  return (
+    <div
+      ref={(el) => {
+        if (isToday && todayRef) todayRef.current = el;
+        ref.current = el;
+      }}
+      className={`mb-4 flex gap-3 relative ${isToday ? "scroll-mt-[30vh]" : ""}`}
+    >
+      <div className="flex flex-col items-center shrink-0 w-12 pt-1 sticky top-4 h-fit z-10">
+        <div
+          className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm mb-0.5 ${isToday ? "bg-(--accent-base) text-(--text-inverse)" : "text-(--text-main)"}`}
+        >
+          {d.getDate()}
+        </div>
+        <div
+          className={`text-[9px] font-expanded font-bold uppercase ${isToday ? "text-(--accent-base)" : "text-(--text-main)"}`}
+        >
+          {d.toLocaleDateString("en-US", { weekday: "short" })}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-3 flex-1 min-w-0 pb-4 border-l-2 border-(--border-dim) pl-4">
+        {calendarEvents.map((evt: any, i: number) => (
+          <div
+            key={`cal-${i}`}
+            className="w-full text-left pb-2 flex flex-col opacity-100"
+          >
+            <span
+              className={`font-black font-expanded uppercase text-base md:text-lg ${evt.data.isHoliday ? "text-red-500" : "text-(--text-main)"}`}
+            >
+              {evt.data.info}
+            </span>
+            {evt.data.subInfo && (
+              <span className="text-xs text-(--text-muted) font-bold mt-1">
+                {evt.data.subInfo}
+              </span>
+            )}
+          </div>
+        ))}
+
+        {doneEvents.map((evt: any, i: number) => (
+          <div
+            key={`done-${i}`}
+            className="opacity-50 grayscale-50 pointer-events-none transition-all"
+          >
+            {evt.type === "class" ? (
+              <ScheduleRow
+                item={evt.data as UpcomingClass}
+                onClick={() => {}}
+                use24HourTime={use24HourTime}
+              />
+            ) : evt.type === "assignment" ? (
+              <AssignmentRow assignment={evt.data as Assignment} />
+            ) : evt.type === "calendar" ? (
+              <div
+                className={`w-full text-left p-3 rounded-xl flex items-center justify-between border-2 border-transparent hover:border-(--border-main) shadow-none mb-3 ${evt.data.isHoliday ? "bg-red-500/10" : "bg-(--bg-surface)"}`}
+              >
+                <div className="flex flex-col">
+                  <span
+                    className={`font-black uppercase text-xs ${evt.data.isHoliday ? "text-red-500" : "text-(--text-main)"}`}
+                  >
+                    {evt.data.info}
+                  </span>
+                  {evt.data.subInfo && (
+                    <span className="text-[10px] text-(--text-muted) font-bold">
+                      {evt.data.subInfo}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <EventRow event={evt.data as Event} />
+            )}
+          </div>
+        ))}
+
+        {isToday &&
+          doneEvents.length > 0 &&
+          upcomingEvents.length > 0 && (
+            <div
+              ref={nowRef}
+              className="flex items-center gap-2 my-1 relative -ml-6 scroll-mt-[40vh]"
+            >
+              <div className="w-4 h-0.75 rounded-full bg-(--accent-base)"></div>
+              <div className="w-2 h-2 rounded-full bg-(--accent-base) shrink-0"></div>
+              <div className="h-0.75 rounded-full flex-1 bg-linear-to-r from-(--accent-base) to-transparent opacity-50"></div>
+            </div>
+          )}
+        {isToday &&
+          doneEvents.length === 0 &&
+          upcomingEvents.length > 0 && (
+            <div
+              ref={nowRef}
+              className="flex items-center gap-2 mb-1 relative -ml-6 scroll-mt-[40vh]"
+            >
+              <div className="w-4 h-0.75 rounded-full bg-(--accent-base)"></div>
+              <div className="w-2 h-2 rounded-full bg-(--accent-base) shrink-0"></div>
+              <div className="h-0.75 rounded-full flex-1 bg-linear-to-r from-(--accent-base) to-transparent opacity-50"></div>
+            </div>
+          )}
+
+        {upcomingEvents.map((evt: any, i: number) => (
+          <div
+            key={`upcoming-${i}`}
+            className={isToday ? "opacity-100" : "opacity-80"}
+          >
+            {evt.type === "class" ? (
+              <ScheduleRow
+                item={evt.data as UpcomingClass}
+                onClick={(e, item) => {
+                  e.stopPropagation();
+                  setSelectedCourse({
+                    data: item,
+                    pos: { x: e.clientX, y: e.clientY },
+                  });
+                }}
+                use24HourTime={use24HourTime}
+              />
+            ) : evt.type === "assignment" ? (
+              <AssignmentRow assignment={evt.data as Assignment} />
+            ) : evt.type === "calendar" ? (
+              <div className="w-full text-left pb-3 flex flex-col">
+                <span
+                  className={`font-black font-expanded uppercase text-base md:text-lg ${evt.data.isHoliday ? "text-red-500" : "text-(--text-main)"}`}
+                >
+                  {evt.data.info}
+                </span>
+                {evt.data.subInfo && (
+                  <span className="text-xs text-(--text-muted) font-bold mt-1">
+                    {evt.data.subInfo}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <EventRow event={evt.data as Event} />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+});
 
 interface HomeViewProps {
   settings: AppSettings;
@@ -121,7 +416,16 @@ export const HomeView: React.FC<HomeViewProps> = ({
   >("all");
   const [daysToShow, setDaysToShow] = useState(15);
 
-  const { calGridData } = useDataStore();
+  const { 
+    calGridData, 
+    status,
+    ttLoading,
+    calLoadingGrid,
+    calLoadingMonths,
+    attRecordsLoading
+  } = useDataStore();
+
+  const isLoading = status === "Syncing..." || status === "Initializing..." || ttLoading || calLoadingGrid || calLoadingMonths || attRecordsLoading;
 
   const [selectedCourse, setSelectedCourse] = useState<{
     data: UpcomingClass;
@@ -267,12 +571,16 @@ export const HomeView: React.FC<HomeViewProps> = ({
   }, [query, menuCategories]);
 
   const sortedAttendance = useMemo(() => {
-    return [...attendance].sort((a, b) => {
+    const activeCourses = attendance.filter((a) => {
+      if (!ttCourses || ttCourses.length === 0) return true;
+      return ttCourses.some((tc) => tc.code === a.code);
+    });
+    return activeCourses.sort((a, b) => {
       const valA = parseFloat(a.attendance) || 0;
       const valB = parseFloat(b.attendance) || 0;
       return attSort === "asc" ? valA - valB : valB - valA;
     });
-  }, [attendance, attSort]);
+  }, [attendance, attSort, ttCourses]);
 
   const getClassesForDate = (date: Date, calEvent: any = null) => {
     const jsDay = date.getDay();
@@ -466,11 +774,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 <span className="font-expanded font-black text-2xl italic lowercase leading-none text-(--text-main) group-focus-within:text-(--accent-hover) transition-colors">
                   re
                 </span>
-                <div className="relative w-1.5 h-1.5 ml-0.5 mb-1 bg-(--accent-base) rounded-full flex items-center justify-center group-focus-within:scale-[2.5] transition-transform origin-bottom-left">
-                  <Search
-                    className="w-1 h-1 text-white opacity-0 group-focus-within:opacity-100 transition-opacity absolute"
-                    strokeWidth={4}
-                  />
+                <div className={`relative ml-0.5 mb-1 flex items-center justify-center group-focus-within:scale-[2.5] transition-all origin-bottom-left ${isLoading ? 'text-(--accent-base)' : 'w-1.5 h-1.5 bg-(--accent-base) rounded-full'}`}>
+                  {isLoading ? (
+                    <Autorenew className="w-3 h-3 animate-spin absolute bottom-0 left-0" style={{ transformOrigin: 'center' }} />
+                  ) : (
+                    <Search
+                      className="w-1 h-1 text-(--text-inverse) opacity-0 group-focus-within:opacity-100 transition-opacity absolute"
+                    />
+                  )}
                 </div>
               </div>
             </div>
@@ -567,7 +878,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                               rect: e.currentTarget.getBoundingClientRect(),
                             });
                           }}
-                          className={`flex w-full items-center justify-between p-2 rounded-3xl border-4 transition-all duration-150 group 
+                          className={`flex w-full items-center justify-between p-2 rounded-3xl border-4 transition-all duration-300 ease-out group 
                           ${
                             isActive
                               ? `bg-(--accent-base) border-(--border-main) shadow-none -translate-y-0.5 text-(--text-inverse)`
@@ -714,7 +1025,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             }
           >
             {sortedAttendance.length === 0 ? (
-              <EmptyState msg="No Registered Courses" />
+              <EmptyState msg="No Registered Courses" size="sm" />
             ) : (
               sortedAttendance.map((c, i) => (
                 <AttendanceRow key={i} course={c} />
@@ -862,33 +1173,39 @@ export const HomeView: React.FC<HomeViewProps> = ({
               </div>
 
               {monthDisplay.semName ? (
-                <div className="flex justify-end items-center">
-                  <div className="text-sm md:text-base font-bold relative text-right group cursor-help">
-                    <span className="text-(--text-muted) opacity-50 underline decoration-solid decoration-[3px] decoration-(--border-dim) underline-offset-4">
-                      {monthDisplay.semName}
-                    </span>
-                    <span
-                      className="absolute left-0 top-0 overflow-hidden whitespace-nowrap text-(--text-main) underline decoration-solid decoration-[3px] decoration-(--accent-base) underline-offset-4 pointer-events-none"
-                      style={{ width: `${progress}%` }}
-                    >
-                      {monthDisplay.semName}
-                    </span>
-
-                    <div className="absolute top-full right-0 mt-3 p-3 min-w-[200px] bg-(--bg-highlight) border border-(--border-main) rounded-xl shadow-xl shadow-[var(--shadow-main)] opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-2 group-hover:translate-y-0 transition-all duration-200 z-50 text-left flex flex-col gap-1.5 pointer-events-none">
-                      <span className="text-[10px] text-(--text-muted) font-black uppercase tracking-widest">
-                        Progress Details
-                      </span>
-                      <span className="text-xs font-semibold text-(--text-main) flex justify-between items-center">
-                        Last Day:{" "}
-                        <span className="font-bold text-(--accent-base) ml-2">
+                <div className="flex justify-end items-start h-8 relative z-20 pt-1">
+                  <style>{`
+                    .sem-text { font-variation-settings: "wdth" 151, "wght" 800; transition: font-variation-settings 300ms ease-out; }
+                    .sem-group:hover .sem-text { font-variation-settings: "wdth" 75, "wght" 1; }
+                  `}</style>
+                  <div className="flex flex-col items-end justify-start group sem-group relative">
+                    <div className="relative text-right flex flex-col w-full min-w-[120px]">
+                      <div className="relative text-sm md:text-base leading-none transition-all duration-300 ease-out font-expanded sem-text">
+                        <span className="text-(--text-muted) opacity-50 whitespace-nowrap">
+                          {monthDisplay.semName}
+                        </span>
+                        <span
+                          className="absolute left-0 top-0 overflow-hidden whitespace-nowrap text-(--text-main) pointer-events-none transition-all duration-300 ease-out"
+                          style={{ width: `${progress}%` }}
+                        >
+                          {monthDisplay.semName}
+                        </span>
+                      </div>
+                      <div className="w-full h-[3px] bg-(--border-dim) mt-1 relative transition-all duration-300 ease-out group-hover:h-[6px] rounded-full overflow-hidden">
+                         <div className="absolute left-0 top-0 h-full bg-(--accent-base) transition-all duration-300 ease-out" style={{ width: `${progress}%` }} />
+                      </div>
+                    </div>
+                    
+                    <div className="absolute top-full right-0 mt-1 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] opacity-0 -translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 flex flex-col items-end whitespace-nowrap">
+                      <span className="text-[10px] md:text-[11px] font-bold text-(--text-muted) flex items-center pt-1 drop-shadow-md">
+                        LAST:
+                        <span className="font-black text-(--accent-base) ml-1 mr-3">
                           {progressInfo.lastDay
                             ? progressInfo.lastDay.toLocaleDateString()
                             : "N/A"}
                         </span>
-                      </span>
-                      <span className="text-xs font-semibold text-(--text-main) flex justify-between items-center">
-                        Completed:{" "}
-                        <span className="font-bold text-(--accent-base) ml-2">
+                        DONE:
+                        <span className="font-black text-(--accent-base) ml-1">
                           {progress}%
                         </span>
                       </span>
@@ -910,241 +1227,22 @@ export const HomeView: React.FC<HomeViewProps> = ({
               "linear-gradient(to bottom, transparent, black 5%, black 95%, transparent)",
           }}
         >
-          {calendarDays.map((d, dIdx) => {
-            const isToday = d.toDateString() === new Date().toDateString();
-
-            let calEvent: any = null;
-            for (const monthData of calGridData) {
-              for (const calDay of monthData.days) {
-                if (
-                  calDay.dateObj &&
-                  new Date(calDay.dateObj).toDateString() === d.toDateString()
-                ) {
-                  calEvent = calDay;
-                  break;
-                }
-              }
-              if (calEvent) break;
-            }
-
-            // Get classes for this specific date
-            const classesForDay = getClassesForDate(d, calEvent);
-
-            const dayEvents: Array<
-              | { type: "class"; data: UpcomingClass }
-              | { type: "assignment"; data: Assignment }
-              | { type: "event"; data: Event }
-              | { type: "calendar"; data: any }
-            > = [];
-
-            if (eventFilter === "all" || eventFilter === "events") {
-              if (calEvent && (calEvent.info || calEvent.isHoliday)) {
-                dayEvents.push({ type: "calendar", data: calEvent });
-              }
-            }
-
-            if (eventFilter === "all" || eventFilter === "classes") {
-              classesForDay.forEach((c) =>
-                dayEvents.push({ type: "class", data: c }),
-              );
-            }
-            if (eventFilter === "all" || eventFilter === "assignments") {
-              // Assuming assignments don't have strict dates in this data model, we'll just show them today for now or map properly if they had dates
-              // Since they don't have strict dates in the mock, we only attach them to 'today'
-              if (isToday) {
-                assignments.forEach((a) =>
-                  dayEvents.push({ type: "assignment", data: a }),
-                );
-              }
-            }
-            if (eventFilter === "all" || eventFilter === "events") {
-              const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-              events
-                .filter((e) => e.date === dStr)
-                .forEach((e) => dayEvents.push({ type: "event", data: e }));
-            }
-
-            if (dayEvents.length === 0) {
-              if (isToday) {
-                return (
-                  <div
-                    key={dIdx}
-                    className={`mb-4 flex gap-3 relative scroll-mt-[30vh]`}
-                    ref={todayRef}
-                  >
-                    <div className="flex flex-col items-center shrink-0 w-12 pt-1 sticky top-4 h-fit z-10">
-                      <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm mb-0.5 bg-(--accent-base) text-(--text-inverse)`}
-                      >
-                        {d.getDate()}
-                      </div>
-                      <div
-                        className={`text-[9px] font-expanded font-bold uppercase text-(--accent-base)`}
-                      >
-                        {d.toLocaleDateString("en-US", { weekday: "short" })}
-                      </div>
-                    </div>
-                    <div className="flex-1 min-w-0 pt-2 pb-6 flex items-center justify-center">
-                      <span className="text-sm font-bold text-(--text-muted)">
-                        No events for today
-                      </span>
-                    </div>
-                  </div>
-                );
-              }
-              return null;
-            }
-
-            const currentHour = new Date().getHours();
-
-            const eventsWithStatus = dayEvents.map((evt) => {
-              let isDone = false;
-              if (isToday) {
-                if (evt.type === "class") {
-                  const timeParts = evt.data.time.split("-");
-                  const endHour =
-                    timeParts.length > 1
-                      ? parseInt(timeParts[1])
-                      : parseInt(timeParts[0]);
-                  isDone = currentHour > endHour;
-                } else if (evt.type === "assignment") {
-                  isDone = evt.data.status === "submitted";
-                } else if (evt.type === "event" || evt.type === "calendar") {
-                  isDone = false;
-                }
-              } else if (d < new Date(new Date().setHours(0, 0, 0, 0))) {
-                isDone = true;
-              }
-              return { ...evt, isDone };
-            });
-
-            const doneEvents = eventsWithStatus.filter((e) => e.isDone);
-            const upcomingEvents = eventsWithStatus.filter((e) => !e.isDone);
-
-            return (
-              <div
-                key={dIdx}
-                className={`mb-4 flex gap-3 relative ${isToday ? "scroll-mt-[30vh]" : ""}`}
-                ref={isToday ? todayRef : null}
-              >
-                {/* Date indicator on the left */}
-                <div className="flex flex-col items-center shrink-0 w-12 pt-1 sticky top-4 h-fit z-10">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm mb-0.5 ${isToday ? "bg-(--accent-base) text-(--text-inverse)" : "text-(--text-main)"}`}
-                  >
-                    {d.getDate()}
-                  </div>
-                  <div
-                    className={`text-[9px] font-expanded font-bold uppercase ${isToday ? "text-(--accent-base)" : "text-(--text-main)"}`}
-                  >
-                    {d.toLocaleDateString("en-US", { weekday: "short" })}
-                  </div>
-                </div>
-
-                {/* Events list on the right */}
-                <div className="flex flex-col gap-3 flex-1 min-w-0 pb-4 border-l-2 border-(--border-dim) pl-4">
-                  {doneEvents.map((evt, i) => (
-                    <div
-                      key={`done-${i}`}
-                      className="opacity-50 grayscale-50 pointer-events-none transition-all"
-                    >
-                      {evt.type === "class" ? (
-                        <ScheduleRow
-                          item={evt.data as UpcomingClass}
-                          onClick={() => {}}
-                          use24HourTime={use24HourTime}
-                        />
-                      ) : evt.type === "assignment" ? (
-                        <AssignmentRow assignment={evt.data as Assignment} />
-                      ) : evt.type === "calendar" ? (
-                        <div
-                          className={`w-full text-left p-3 rounded-xl flex items-center justify-between border-2 border-transparent hover:border-(--border-main) shadow-none mb-3 ${evt.data.isHoliday ? "bg-red-500/10" : "bg-(--bg-surface)"}`}
-                        >
-                          <div className="flex flex-col">
-                            <span
-                              className={`font-black uppercase text-xs ${evt.data.isHoliday ? "text-red-500" : "text-(--text-main)"}`}
-                            >
-                              {evt.data.info}
-                            </span>
-                            {evt.data.subInfo && (
-                              <span className="text-[10px] text-(--text-muted) font-bold">
-                                {evt.data.subInfo}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      ) : (
-                        <EventRow event={evt.data as Event} />
-                      )}
-                    </div>
-                  ))}
-
-                  {isToday &&
-                    doneEvents.length > 0 &&
-                    upcomingEvents.length > 0 && (
-                      <div
-                        ref={nowRef}
-                        className="flex items-center gap-2 my-1 relative -ml-6 scroll-mt-[40vh]"
-                      >
-                        <div className="w-4 h-0.75 rounded-full bg-(--accent-base)"></div>
-                        <div className="w-2 h-2 rounded-full bg-(--accent-base) shrink-0"></div>
-                        <div className="h-0.75 rounded-full flex-1 bg-linear-to-r from-(--accent-base) to-transparent opacity-50"></div>
-                      </div>
-                    )}
-                  {isToday &&
-                    doneEvents.length === 0 &&
-                    upcomingEvents.length > 0 && (
-                      <div
-                        ref={nowRef}
-                        className="flex items-center gap-2 mb-1 relative -ml-6 scroll-mt-[40vh]"
-                      >
-                        <div className="w-4 h-0.75 rounded-full bg-(--accent-base)"></div>
-                        <div className="w-2 h-2 rounded-full bg-(--accent-base) shrink-0"></div>
-                        <div className="h-0.75 rounded-full flex-1 bg-linear-to-r from-(--accent-base) to-transparent opacity-50"></div>
-                      </div>
-                    )}
-
-                  {upcomingEvents.map((evt, i) => (
-                    <div
-                      key={`upcoming-${i}`}
-                      className={isToday ? "opacity-100" : "opacity-80"}
-                    >
-                      {evt.type === "class" ? (
-                        <ScheduleRow
-                          item={evt.data as UpcomingClass}
-                          onClick={(e, item) => {
-                            e.stopPropagation();
-                            setSelectedCourse({
-                              data: item,
-                              pos: { x: e.clientX, y: e.clientY },
-                            });
-                          }}
-                          use24HourTime={use24HourTime}
-                        />
-                      ) : evt.type === "assignment" ? (
-                        <AssignmentRow assignment={evt.data as Assignment} />
-                      ) : evt.type === "calendar" ? (
-                        <div className="w-full text-left pb-3 flex flex-col">
-                          <span
-                            className={`font-black font-expanded uppercase text-base md:text-lg ${evt.data.isHoliday ? "text-red-500" : "text-(--text-main)"}`}
-                          >
-                            {evt.data.info}
-                          </span>
-                          {evt.data.subInfo && (
-                            <span className="text-xs text-(--text-muted) font-bold mt-1">
-                              {evt.data.subInfo}
-                            </span>
-                          )}
-                        </div>
-                      ) : (
-                        <EventRow event={evt.data as Event} />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+          {calendarDays.map((d, dIdx) => (
+            <LazyCalendarDay
+              key={dIdx}
+              d={d}
+              dIdx={dIdx}
+              calGridData={calGridData}
+              eventFilter={eventFilter}
+              assignments={assignments}
+              events={events}
+              getClassesForDate={getClassesForDate}
+              use24HourTime={use24HourTime}
+              todayRef={todayRef}
+              nowRef={nowRef}
+              setSelectedCourse={setSelectedCourse}
+            />
+          ))}
 
           <div className="w-full flex justify-center py-6 relative z-10">
             <button

@@ -1,8 +1,10 @@
 import { useEffect, useState, useRef } from "react";
 import { useDataStore } from "../store/dataStore";
 import { VTOPNetwork } from "../utils/network";
+import { EmptyState } from "../components/EmptyState";
 import { motion, AnimatePresence } from "framer-motion";
 import { MarqueeText } from "../components/common/MarqueeText";
+import { AttendanceMeter } from "../components/attendance/AttendanceMeter";
 import {
   ProgressActivity,
   Warning,
@@ -93,34 +95,6 @@ const AttendanceCalculator = ({
     setBunkCount(0);
   };
 
-  const calculateStatus = () => {
-    if (isInvalid)
-      return { status: "danger", text: "Calculation error: classes exceeded" };
-    if (projectedConducted === 0)
-      return { status: "safe", text: "No classes held yet." };
-    const margin = Math.floor(
-      (projectedAttended - 0.75 * projectedConducted) / 0.75,
-    );
-
-    if (margin > 0) {
-      return {
-        status: "safe",
-        text: `You can bunk ${margin} more class${margin > 1 ? "es" : ""} safely.`,
-      };
-    } else if (margin === 0) {
-      return { status: "warning", text: "You can't bunk any more classes." };
-    } else {
-      const need = Math.ceil(
-        (0.75 * projectedConducted - projectedAttended) / 0.25,
-      );
-      return {
-        status: "danger",
-        text: `You need to attend ${need} more class${need > 1 ? "es" : ""} to reach 75%.`,
-      };
-    }
-  };
-
-  const statusInfo = calculateStatus();
   const hasChanged = attendCount > 0 || bunkCount > 0;
 
   const circleRadius = 70; // 1.5x bigger visually in the SVG
@@ -247,17 +221,7 @@ const AttendanceCalculator = ({
           </div>
         </div>
       </div>
-      <div
-        className={`text-center font-bold text-sm mt-4 ${
-          statusInfo.status === "safe"
-            ? "text-emerald-500"
-            : statusInfo.status === "warning"
-              ? "text-amber-500"
-              : "text-red-500"
-        }`}
-      >
-        {statusInfo.text}
-      </div>
+
     </div>
   );
 };
@@ -387,12 +351,18 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
 
   if (attLoading) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-8 bg-(--bg-main) font-mono relative z-0">
-        <div className="flex flex-col items-center animate-pulse">
-          <ProgressActivity className="w-16 h-16 mb-6 animate-spin text-(--accent-base)" />
-          <span className="text-xl font-black uppercase font-expanded tracking-widest text-(--text-muted)">
-            Syncing Attendance...
-          </span>
+      <div className="h-full w-full bg-(--bg-main) overflow-hidden flex">
+        <div className="flex-1 flex w-full max-w-7xl mx-auto h-full">
+          <div className="w-full lg:w-1/2 flex flex-col px-4 md:px-6 lg:px-8 space-y-4 pt-25">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="h-24 bg-(--bg-surface) rounded-2xl animate-pulse" />
+            ))}
+          </div>
+          <div className="w-full lg:w-1/2 hidden lg:flex flex-col px-4 md:px-6 lg:px-8 space-y-6 pt-25 border-l-4 border-(--border-main)">
+             <div className="h-10 w-2/3 bg-(--bg-surface) rounded animate-pulse" />
+             <div className="h-64 w-full bg-(--bg-surface) rounded-3xl animate-pulse" />
+             <div className="h-24 w-full bg-(--bg-surface) rounded-3xl animate-pulse" />
+          </div>
         </div>
       </div>
     );
@@ -401,15 +371,11 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
   if (!detailedAttendance || detailedAttendance.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 bg-(--bg-main) font-mono relative z-0">
-        <div className="flex-1 flex flex-col items-center justify-center border-4 border-(--border-main) rounded-3xl bg-(--bg-card) p-10 max-w-lg w-full text-center">
-          <Warning className="w-20 h-20 mb-6 text-(--text-muted) opacity-50" />
-          <span className="text-2xl font-black uppercase font-expanded text-(--text-main)">
-            No Attendance Data
-          </span>
-          <p className="mt-2 text-(--text-muted) font-bold text-sm">
-            Attendance information is not available for the selected semester.
-          </p>
-        </div>
+        <EmptyState 
+          msg="No Attendance Data" 
+          subMsg="Attendance information is not available for the selected semester." 
+          icon={Warning}
+        />
       </div>
     );
   }
@@ -498,14 +464,20 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
                 historyLength={records ? records.length : null}
               />
 
+              <div className="mb-8">
+                <AttendanceMeter courseCode={selectedCourseObj.courseCode} />
+              </div>
+
               <div className="mb-24 flex flex-col gap-3">
                 <h4 className="text-sm font-black font-expanded uppercase tracking-widest text-(--text-main) mb-2">
                   History
                 </h4>
 
                 {attRecordsLoading && !records ? (
-                  <div className="flex justify-center p-8">
-                    <ProgressActivity className="w-8 h-8 animate-spin text-(--accent-base)" />
+                  <div className="flex flex-col gap-2">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="h-14 bg-(--bg-surface) rounded-2xl animate-pulse shadow-sm" />
+                    ))}
                   </div>
                 ) : records && records.length > 0 ? (
                   <div className="flex flex-col gap-2">
@@ -561,9 +533,12 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
                     })}
                   </div>
                 ) : (
-                  <div className="text-center p-6 text-(--text-muted) font-bold text-sm">
-                    No history records found for this class.
-                  </div>
+                  <EmptyState 
+                    msg="No Records Found" 
+                    subMsg="No history records found for this class." 
+                    icon={Warning}
+                    className="h-auto min-h-48"
+                  />
                 )}
               </div>
             </motion.div>

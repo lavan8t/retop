@@ -1,6 +1,8 @@
 import { DetailedAttendanceCourse, AttendanceRecord } from "../types/vtop";
 
-export function parseStudentAttendance(html: string): DetailedAttendanceCourse[] {
+export function parseStudentAttendance(
+  html: string,
+): DetailedAttendanceCourse[] {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, "text/html");
 
@@ -13,7 +15,7 @@ export function parseStudentAttendance(html: string): DetailedAttendanceCourse[]
 
     const slNo = cols[0]?.textContent?.trim() || "";
     // col[1] is Class Group e.g. "General (Semester)"
-    
+
     // col[2] is Course Detail e.g. "BCSE203E - Web Programming - Embedded Theory"
     const courseDetail = cols[2]?.textContent?.trim() || "";
     const splitCourse = courseDetail.split(" - ");
@@ -23,31 +25,31 @@ export function parseStudentAttendance(html: string): DetailedAttendanceCourse[]
 
     // col[3] is Class Detail e.g. "VL2026270102310 - TAA1 - PRP124"
     const classDetail = cols[3]?.textContent?.trim() || "";
-    
+
     // col[4] is Faculty Detail
     const faculty = cols[4]?.textContent?.trim() || "";
-    
+
     // col[5] is Attended Classes
     const attended = parseInt(cols[5]?.textContent?.trim() || "0", 10);
-    
+
     // col[6] is Total Classes
     const total = parseInt(cols[6]?.textContent?.trim() || "0", 10);
-    
+
     // col[7] is Attendance Percentage
     const percStr = cols[7]?.textContent?.trim().replace("%", "") || "0";
     const percentage = parseInt(percStr, 10);
-    
+
     // col[8] is Debar Status (usually "-")
     const debarStatus = cols[8]?.textContent?.trim() || "-";
-    
+
     // col[9] is Attendance Detail link which contains the javascript function call
-    // e.g. javascript: callStudentAttendanceDetailDisplay('VL20262701','22BCE1234','VL_BCSE203E_00001','ETH');
+    // e.g. javascript: callStudentAttendanceDetailDisplay('VL202627XX','2XBXX0000','VL_BCSE203E_00XXX','ETH');
     const aTag = cols[9]?.querySelector("a");
     const onclickStr = aTag?.getAttribute("onclick") || "";
     let semesterSubId = "";
     let courseId = "";
     let classType = ""; // This is the 4th parameter like 'ETH', 'ELA', 'TH', 'LO'
-    
+
     const match = onclickStr.match(/'([^']+)'/g);
     if (match && match.length >= 4) {
       semesterSubId = match[0].replace(/'/g, "");
@@ -81,7 +83,9 @@ export function parseAttendanceDetail(html: string): AttendanceRecord[] {
   const doc = parser.parseFromString(html, "text/html");
 
   const records: AttendanceRecord[] = [];
-  const rows = doc.querySelectorAll("#StudentAttendanceDetailDataTable tbody tr");
+  const rows = doc.querySelectorAll(
+    "#StudentAttendanceDetailDataTable tbody tr",
+  );
 
   rows.forEach((row) => {
     const cols = row.querySelectorAll("td");

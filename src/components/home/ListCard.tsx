@@ -23,13 +23,13 @@ export const ListCard = ({
     `}
   >
     <div
-      className={`${bgClass} px-5 py-3.5 border-b-4 border-(--border-main) flex justify-between items-center shrink-0 z-10 group/header relative ${onClickTitle ? "cursor-pointer hover:bg-(--border-main) transition-colors" : ""}`}
+      className={`${bgClass} px-5 py-3.5 border-b-4 border-(--border-main) flex justify-between items-center shrink-0 z-10 group/header relative ${onClickTitle ? "cursor-pointer" : ""}`}
       onClick={onClickTitle}
     >
-      <h3 className="font-expanded font-black text-lg text-(--text-main) uppercase flex items-center gap-2 m-0 leading-none">
+      <h3 className="font-expanded font-black text-lg text-(--text-main) uppercase flex items-center gap-1.5 m-0 leading-none">
         {title}
         {onClickTitle && (
-          <NorthEast className="w-5 h-5 opacity-0 -translate-x-2 translate-y-2 group-hover/header:opacity-100 group-hover/header:translate-x-0 group-hover/header:translate-y-0 transition-all duration-300" />
+          <NorthEast className="w-3.5 h-3.5 mb-2.5 opacity-0 group-hover/header:opacity-100 transition-opacity duration-fast" />
         )}
       </h3>
       <div className="flex items-center gap-2">

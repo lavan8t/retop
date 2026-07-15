@@ -26,7 +26,7 @@ export const LegacyReturnButton: React.FC<LegacyReturnButtonProps> = ({
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       // "pointer-events-auto" re-enables clicking strictly for this button!
-      className="fixed bottom-8 right-8 z-99999 pointer-events-auto flex items-center justify-center gap-2 bg-[var(--md-sys-color-primary-container)] text-[var(--md-sys-color-on-primary-container)] px-5 py-4 rounded-2xl shadow-md hover:shadow-lg transition-shadow cursor-pointer border border-transparent"
+      className="fixed bottom-8 right-8 z-99999 pointer-events-auto flex items-center justify-center gap-2 bg-(--md-sys-color-primary-container) text-(--md-sys-color-on-primary-container) px-5 py-4 rounded-2xl shadow-md hover:shadow-lg transition-shadow cursor-pointer border border-transparent"
     >
       <SubdirectoryArrowLeft className="w-6 h-6" />
       <span

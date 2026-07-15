@@ -448,7 +448,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
 
   return (
     <>
-      <div className="fixed inset-0 pointer-events-none z-[9999]">
+      <div className="fixed inset-0 pointer-events-none z-9999">
         {/* MOBILE IMPLEMENTATION */}
         {!isDesktop && (
           <motion.nav

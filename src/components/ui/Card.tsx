@@ -33,8 +33,8 @@ export const Card = ({
       transition={SPRING_SNAPPY}
       className={`
         border-4 ${borderClass} shadow-none transition-shadow duration-fast
-        hover:shadow-[var(--brutal-shadow-hover)]
-        ${isClickable ? "cursor-pointer active:shadow-[var(--brutal-shadow-active)]" : ""}
+        hover:shadow-(--brutal-shadow-hover)
+        ${isClickable ? "cursor-pointer active:shadow-(--brutal-shadow-active)" : ""}
         ${className}
       `}
       {...motionProps}

@@ -12,6 +12,7 @@ import {
   Download,
   MenuBook,
   KeyboardArrowDown,
+  Refresh,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import {
   QuickLink,
@@ -46,6 +47,8 @@ interface TopBarProps {
   onNavigate: (link: QuickLink) => void;
   initialQuery?: string;
   onTimetableSemChange?: (semId: string) => void;
+  onSync?: () => void;
+  network?: any; // Add network prop
 }
 
 const getPageTitle = (view: string, dynamicTitle?: string) => {
@@ -61,7 +64,7 @@ const getPageTitle = (view: string, dynamicTitle?: string) => {
     case "grades":
       return "GRADES & HISTORY";
     case "profile":
-      return "STUDENT PROFILE";
+      return "PROFILE";
     case "settings":
       return "SETTINGS";
     case "coursePage":
@@ -70,6 +73,8 @@ const getPageTitle = (view: string, dynamicTitle?: string) => {
       return "ACADEMICS CALENDAR";
     case "attendance":
       return "CLASS ATTENDANCE";
+    case "digitalAssignments":
+      return "DIGITAL ASSIGNMENTS";
     case "content":
       return dynamicTitle || "CONTENT";
     default:
@@ -93,6 +98,8 @@ export const TopBar: React.FC<TopBarProps> = ({
   onNavigate,
   initialQuery = "",
   onTimetableSemChange,
+  onSync,
+  network,
 }) => {
   const {
     ttViewMode, setTtViewMode,
@@ -121,11 +128,21 @@ export const TopBar: React.FC<TopBarProps> = ({
     calSelectedGroup,
     setCalSelectedGroup,
     user,
+    daSemesters,
+    daSelectedSem,
+    setDaSelectedSem,
+    fetchDACourses,
+    fetchDASemesters,
+    daLoading,
+    daCourses,
+    isSyncing,
+    lastSyncTime,
   } = useDataStore();
 
   const isLoading =
     status === "Syncing..." ||
     status === "Initializing..." ||
+    isSyncing ||
     ttLoading ||
     calLoadingGrid ||
     calLoadingMonths ||
@@ -170,6 +187,9 @@ export const TopBar: React.FC<TopBarProps> = ({
                     pageTitle={getPageTitle(currentView, contentTitle)}
                     onBack={() => setCurrentView("dashboard")}
                     status={isLoading ? "loading" : "idle"}
+                    onSync={onSync}
+                    isSyncing={isSyncing}
+                    lastSyncTime={lastSyncTime}
                   />
                 </motion.div>
               </AnimatePresence>
@@ -193,7 +213,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                     <button
                       key={idx}
                       onClick={() => handleLinkClick(link)}
-                      className="flex items-center gap-2 px-3.5 py-1.5 border-2 border-(--border-main) rounded-xl shadow-none hover:-translate-y-0.5 hover:shadow-[var(--brutal-shadow-hover)] active:translate-y-0 active:shadow-[var(--brutal-shadow-active)] transition-all font-black font-expanded text-xs uppercase text-(--text-main) bg-(--bg-surface) cursor-pointer group hover:border-(--accent-base)"
+                      className="flex items-center gap-2 px-3.5 py-1.5 border-2 border-(--border-main) rounded-xl shadow-none hover:-translate-y-0.5 hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) transition-all font-black font-expanded text-xs uppercase text-(--text-main) bg-(--bg-surface) cursor-pointer group hover:border-(--accent-base)"
                     >
                       <Icon className="w-4 h-4 text-(--text-muted) transition-colors" />
                       <span className="transition-colors">{link.title}</span>
@@ -212,7 +232,11 @@ export const TopBar: React.FC<TopBarProps> = ({
                 className="flex items-center gap-1.5 md:gap-3 lg:gap-4 pr-0 pointer-events-auto"
               >
                 {ttLoading && (
-                  <Autorenew className="w-4 h-4 text-(--accent-base) animate-spin hidden sm:block" />
+                  <motion.div
+                    animate={{ y: [0, -4, 0], scale: [1, 1.2, 1] }}
+                    transition={{ duration: 0.8, repeat: Infinity, ease: "easeInOut" }}
+                    className="w-2 h-2 bg-(--accent-base) rounded-full hidden sm:block"
+                  />
                 )}
                 <SemesterDropdown
                   semesters={ttSemesters}
@@ -220,7 +244,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                   onChange={(id: string) => onTimetableSemChange?.(id)}
                 />
 
-                <div className="hidden sm:flex bg-(--bg-highlight) rounded-full p-0.5 w-max border-2 border-(--border-main) shadow-[var(--brutal-shadow-sm)]">
+                <div className="hidden sm:flex bg-(--bg-highlight) rounded-full p-0.5 w-max border-2 border-(--border-main) shadow-(--brutal-shadow-sm)">
                   <button
                     onClick={() => setTtViewMode("grid")}
                     className={`px-3 py-1 text-xs font-bold transition-all duration-fast flex items-center gap-1.5 ${
@@ -275,7 +299,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                   }}
                   disabled={ttCourses.length === 0}
                   title="Export timetable as iCal (.ics) file for Google Calendar"
-                  className="bg-(--bg-surface) border-2 border-(--border-main) text-(--text-main) p-1.5 rounded-xl shadow-[var(--brutal-shadow-sm)] hover:-translate-y-0.5 hover:shadow-[var(--brutal-shadow-hover)] active:translate-y-0 active:shadow-[var(--brutal-shadow-active)] transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="bg-(--bg-surface) border-2 border-(--border-main) text-(--text-main) p-1.5 rounded-xl shadow-(--brutal-shadow-sm) hover:-translate-y-0.5 hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   <Download className="w-4 h-4" />
                 </button>
@@ -292,9 +316,10 @@ export const TopBar: React.FC<TopBarProps> = ({
               >
                 <button
                   onClick={() => setIsMarksModernView(!isMarksModernView)}
-                  className="hidden sm:block bg-(--bg-surface) border-2 border-(--border-dim) text-(--text-main) px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase  hover:bg-(--accent-base) hover:text-white transition-all cursor-pointer shadow-sm hover:shadow-[var(--brutal-shadow-hover)] active:translate-y-px active:shadow-[var(--brutal-shadow-active)]"
+                  className="hidden sm:flex items-center justify-center bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) w-8 h-8 rounded-xl transition-colors cursor-pointer"
+                  title={isMarksModernView ? "Switch to Legacy View" : "Switch to Modern View"}
                 >
-                  {isMarksModernView ? "Legacy View" : "Modern View"}
+                  {isMarksModernView ? <List className="w-4 h-4" /> : <GridView className="w-4 h-4" />}
                 </button>
 
                 <SemesterDropdown
@@ -338,7 +363,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                     <input
                       type="text"
                       placeholder="Search..."
-                      className="w-full pl-8 pr-3 py-1.5 bg-(--bg-surface) border-2 border-(--border-main) rounded-lg md:rounded-xl text-[10px] md:text-xs font-bold text-(--text-main) focus:outline-none focus:border-(--accent-base) focus:shadow-[var(--brutal-shadow-hover)] transition-all placeholder:text-(--text-dim) uppercase"
+                      className="w-full pl-8 pr-3 py-1.5 bg-(--bg-surface) border-2 border-(--border-main) rounded-lg md:rounded-xl text-[10px] md:text-xs font-bold text-(--text-main) focus:outline-none focus:border-(--accent-base) focus:shadow-(--brutal-shadow-hover) transition-all placeholder:text-(--text-dim) uppercase"
                       value={cpSearchTerm}
                       onChange={(e) => setCpSearchTerm(e.target.value)}
                     />
@@ -375,6 +400,44 @@ export const TopBar: React.FC<TopBarProps> = ({
                   selectedId={calSelectedGroup}
                   onChange={(id: string) => setCalSelectedGroup(id)}
                 />
+              </motion.div>
+            )}
+
+            {currentView === "digitalAssignments" && (
+              <motion.div
+                key="digitalAssignments-controls"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20, transition: { duration: 0.15 } }}
+                className="flex items-center gap-2 mr-1 md:mr-2 pointer-events-auto"
+              >
+                <SemesterDropdown
+                  semesters={daSemesters}
+                  selectedId={daSelectedSem}
+                  onChange={(id: string) => {
+                    setDaSelectedSem(id);
+                    if (network) {
+                      fetchDACourses(network, id);
+                    }
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    if (daSelectedSem) {
+                      if (network) {
+                        fetchDACourses(network, daSelectedSem, true);
+                      }
+                    } else {
+                      if (network) {
+                        fetchDASemesters(network, true);
+                      }
+                    }
+                  }}
+                  disabled={daLoading}
+                  className="p-1.5 md:p-2 bg-(--md-sys-color-surface-variant) border-2 border-(--md-sys-color-outline) hover:border-(--md-sys-color-on-surface) rounded-xl shadow-none hover:-translate-y-0.5 hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) transition-all disabled:opacity-50 text-(--md-sys-color-on-surface-variant)"
+                >
+                  <Refresh className={`w-4 h-4 md:w-5 md:h-5 ${daLoading && !daCourses?.length ? "animate-spin" : ""}`} />
+                </button>
               </motion.div>
             )}
 

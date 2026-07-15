@@ -23,7 +23,5 @@ chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
       suggest({ filename: `VIT/curriculum/${item.filename}` });
     });
     return true; // indicates that we will call suggest asynchronously
-  } else {
-    suggest({});
   }
 });

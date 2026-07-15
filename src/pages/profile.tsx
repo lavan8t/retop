@@ -18,80 +18,87 @@ import {
 import { motion } from "framer-motion";
 import Barcode from "react-barcode";
 
+const CopyableText = ({ text, children, className = "" }: { text: string, children?: React.ReactNode, className?: string }) => {
+  return (
+    <span 
+      className={`cursor-pointer hover:underline decoration-2 underline-offset-4 transition-all ${className}`}
+      onClick={(e) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(text);
+        window.dispatchEvent(new CustomEvent("retop-toast", { detail: { message: "Copied!", type: "info" } }));
+      }}
+      title="Click to copy"
+    >
+      {children || text}
+    </span>
+  );
+};
+
 interface ProfilePageProps {
   network: VTOPNetwork;
 }
 
-const InfoRow = ({ label, value }: { label: string; value: string }) => (
-  <div className="flex flex-col border-b-2 border-(--border-main)/10 py-1.5 last:border-0 hover:bg-(--bg-highlight) px-2 -mx-2 rounded transition-colors overflow-hidden">
-    <span className="text-[10px] font-expanded font-black uppercase text-(--text-muted) tracking-wider mb-0.5 truncate">
-      {label}
-    </span>
-    <span className="text-sm font-bold font-mono text-(--text-main) whitespace-normal wrap-break-word leading-tight">
-      {value && value !== "-" ? (
-        value
-      ) : (
-        <span className="text-(--text-dim)">-</span>
-      )}
-    </span>
-  </div>
-);
+const MarqueeText = ({ children, className = "" }: any) => {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const textRef = React.useRef<HTMLSpanElement>(null);
+  const [isOverflow, setIsOverflow] = React.useState(false);
 
-const AddressCard = ({ title, data }: { title: string; data: any }) => (
-  <div className="bg-(--bg-highlight) p-3 rounded-xl border-2 border-(--border-main) h-full flex flex-col justify-center min-w-0">
-    <h4 className="text-[10px] font-expanded font-black uppercase text-(--text-muted) tracking-wider mb-2 flex items-center gap-2 border-b-2 border-(--border-main)/20 pb-1.5 shrink-0">
-      <LocationOn className="w-3 h-3" /> {title}
-    </h4>
-    <div className="space-y-1 overflow-hidden">
-      <div className="text-sm font-bold font-mono text-(--text-main) leading-tight wrap-break-word">
-        {data.street}
-      </div>
-      <div className="text-[10px] font-mono font-bold text-(--text-muted) truncate">
-        {data.area}
-      </div>
-      <div className="text-[10px] font-mono font-bold text-(--text-muted) truncate">
-        {data.city}, {data.state}
-      </div>
-      <div className="text-[10px] font-mono font-bold text-(--text-muted) truncate">
-        {data.country} -{" "}
-        <span className="text-(--text-main) font-black">{data.pincode}</span>
-      </div>
-      {data.phone && (
-        <div className="text-[10px] font-mono font-bold flex items-center gap-2 mt-2 text-(--text-main) pt-2 border-t border-(--border-main)/20 shrink-0">
-          <Mobile className="w-3 h-3" /> {data.phone}
+  React.useEffect(() => {
+    const check = () => {
+      if (containerRef.current && textRef.current) {
+        setIsOverflow(textRef.current.scrollWidth > containerRef.current.clientWidth);
+      }
+    };
+    check();
+    setTimeout(check, 200);
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, [children]);
+
+  return (
+    <div ref={containerRef} className={`w-full overflow-hidden flex py-1.5 ${className}`}>
+      {!isOverflow ? (
+        <span ref={textRef} className="truncate whitespace-nowrap block w-full">{children}</span>
+      ) : (
+        <div className="flex shrink-0 w-fit items-center" style={{ animation: 'scrollX 15s linear infinite' }}>
+          <style>{`
+            @keyframes scrollX {
+              0% { transform: translateX(0); }
+              100% { transform: translateX(-50%); }
+            }
+          `}</style>
+          <div className="shrink-0 flex pr-16 whitespace-nowrap">{children}</div>
+          <div className="shrink-0 flex pr-16 whitespace-nowrap">{children}</div>
         </div>
       )}
     </div>
-  </div>
-);
+  );
+};
 
-const BentoCard = ({
-  title,
-  icon: Icon,
-  children,
-  delay,
-  colSpan = "md:col-span-1",
-  className = "bg-(--bg-surface)",
-}: any) => (
-  <motion.div
-    initial={{ y: 20, opacity: 0 }}
-    animate={{ y: 0, opacity: 1 }}
-    transition={{ delay }}
-    className={`border-4 border-(--border-main) text-(--text-main) rounded-3xl p-5 shadow-none hover:shadow-[4px_4px_0px_0px_var(--shadow-main)] hover:-translate-y-1 transition-all flex flex-col min-w-0 ${colSpan} ${className}`}
-  >
-    {title && (
-      <div className="flex items-center gap-3 mb-3 pb-2 border-b-4 border-(--border-main) shrink-0">
-        <div className="p-1.5 bg-(--text-main) text-(--bg-main) rounded-lg shadow-sm">
-          <Icon className="w-4 h-4" />
-        </div>
-        <h3 className="font-expanded font-black text-lg uppercase truncate">
-          {title}
-        </h3>
+const isValid = (val: string | null | undefined) => val && val !== "-" && val.trim() !== "" && val.toUpperCase() !== "N/A" && val.toUpperCase() !== "NA";
+
+const BentoBlock = ({ title, value, span = "col-span-1", children, className = "" }: any) => {
+  if (value !== undefined && !isValid(value)) return null;
+  
+  return (
+    <div 
+      className={`relative p-6 bg-(--bg-surface) text-(--text-main) hover:text-(--bg-main) rounded-[2rem] border-4 border-(--border-main) shadow-none hover:shadow-[var(--brutal-shadow-hover)] transition-all duration-fast ease-out group flex flex-col justify-between gap-4 overflow-hidden ${span} ${className}`}
+    >
+      <div className="absolute -inset-1 bg-(--accent-base) opacity-0 group-hover:opacity-100 transition-opacity duration-fast ease-out z-0"></div>
+      
+      <div className="relative z-10 flex flex-col justify-between h-full gap-4 w-full">
+         <div className="text-[10px] md:text-xs uppercase font-black font-expanded tracking-widest opacity-50 shrink-0 group-hover:opacity-80 transition-opacity duration-fast">{title}</div>
+         {value ? (
+             <div className="text-xl md:text-2xl lg:text-3xl font-black font-expanded leading-tight transition-all duration-fast group-hover:font-squish origin-left w-full py-1">
+               <MarqueeText>{value}</MarqueeText>
+             </div>
+         ) : (
+             <div className="transition-all duration-fast origin-left w-full h-full flex flex-col justify-end text-sm md:text-base font-black font-expanded gap-1 py-1">{children}</div>
+         )}
       </div>
-    )}
-    <div className="flex-1 min-w-0">{children}</div>
-  </motion.div>
-);
+    </div>
+  );
+};
 
 const toTitleCase = (str: string) => {
   if (!str) return "";
@@ -114,7 +121,7 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
   return (
     <div className="group w-full max-w-74 mx-auto aspect-64/100 perspective-[1000px] cursor-pointer shrink-0">
       {/* Container for 3D flip */}
-      <div className="relative w-full h-full transition-transform duration-700 transform-3d group-hover:transform-[rotateY(180deg)] shadow-none rounded-2xl">
+      <div className="relative w-full h-full transition-transform duration-normal transform-3d group-hover:transform-[rotateY(180deg)] shadow-none rounded-2xl">
         {/* FRONT SIDE */}
         <div
           className={`absolute inset-0 backface-hidden bg-white rounded-2xl border-2 border-zinc-400 flex flex-col overflow-hidden text-black ${fontArial}`}
@@ -296,16 +303,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
   if (loading) {
     return (
       <div className="h-full overflow-y-auto bg-(--bg-main) p-4 md:p-8 pt-20 md:pt-24 lg:pt-28 custom-scrollbar">
-        <div className="max-w-375 mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 animate-pulse">
-          <div className="lg:col-span-4 flex flex-col gap-6 md:gap-8">
-            <div className="w-full max-w-74 mx-auto aspect-64/100 bg-(--bg-surface) rounded-2xl border-2 border-(--border-dim)" />
-            <div className="h-64 bg-(--bg-surface) rounded-3xl border-4 border-(--border-main)" />
-          </div>
-          <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 auto-rows-max">
-            <div className="md:col-span-2 h-48 bg-(--bg-surface) rounded-3xl border-4 border-(--border-main)" />
-            <div className="md:col-span-2 h-64 bg-(--bg-surface) rounded-3xl border-4 border-(--border-main)" />
-            <div className="h-48 bg-(--bg-surface) rounded-3xl border-4 border-(--border-main)" />
-            <div className="h-48 bg-(--bg-surface) rounded-3xl border-4 border-(--border-main)" />
+        <div className="max-w-[1380px] mx-auto flex flex-col gap-12 md:gap-20 animate-pulse pb-20">
+          <div className="w-full max-w-74 mx-auto aspect-64/100 bg-(--bg-surface) rounded-2xl" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-4">
+             <div className="md:col-span-2 h-40 bg-(--bg-surface)" />
+             <div className="md:col-span-2 h-40 bg-(--bg-surface)" />
+             <div className="md:col-span-2 h-40 bg-(--bg-surface)" />
+             <div className="col-span-1 h-40 bg-(--bg-surface)" />
+             <div className="col-span-1 h-40 bg-(--bg-surface)" />
           </div>
         </div>
       </div>
@@ -315,208 +320,201 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
   if (!data) return null;
 
   return (
-    <div className="h-full overflow-y-auto bg-(--bg-main) p-4 md:p-8 pt-20 md:pt-24 lg:pt-28 font-mono custom-scrollbar">
-      <div className="max-w-375 mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
-        {/* LEFT COLUMN: ID CARD & ACADEMIC SPILLOVER */}
-        <div className="lg:col-span-4 flex flex-col gap-6 md:gap-8 items-center lg:items-stretch">
-          <DigitalIDCard data={data} />
+    <div className="h-full w-full overflow-y-auto bg-(--bg-main) p-4 md:p-8 pt-20 md:pt-24 lg:pt-28 font-mono custom-scrollbar">
+      <div className="max-w-[1380px] mx-auto flex flex-col pb-20">
+        
+        {/* BENTO GRID */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4 grid-flow-dense auto-rows-max">
 
-          <BentoCard title="Academic Details" icon={School} delay={0.1}>
-            <div className="space-y-3">
-              <div className="bg-(--bg-surface)/40 p-3 rounded-xl border-2 border-(--border-main)">
-                <div className="text-[10px] font-expanded font-black uppercase text-(--text-muted) tracking-wider mb-0.5">
-                  Program
+          <BentoBlock title="Program" value={data.basic.program} span="md:col-span-2 lg:col-span-4" />
+          <BentoBlock title="School" value={data.basic.school} span="md:col-span-2 lg:col-span-4" />
+          
+          {isValid(data.basic.email) && (
+             <BentoBlock title="Institutional Email" span="md:col-span-2 lg:col-span-4">
+                <div className="text-xl md:text-2xl lg:text-3xl font-black font-expanded leading-tight transition-all duration-fast group-hover:font-squish origin-left w-full py-1">
+                   <MarqueeText><CopyableText text={data.basic.email} /></MarqueeText>
                 </div>
-                <div className="text-base font-black font-mono leading-tight">
-                  {data.basic.program}
-                </div>
-              </div>
-              <div className="bg-(--bg-surface)/40 p-3 rounded-xl border-2 border-(--border-main)">
-                <div className="text-[10px] font-expanded font-black uppercase text-(--text-muted) tracking-wider mb-0.5">
-                  School
-                </div>
-                <div className="text-sm font-bold font-mono leading-tight wrap-break-word">
-                  {data.basic.school}
-                </div>
-              </div>
-              <div className="bg-(--bg-surface)/40 p-3 rounded-xl border-2 border-(--border-main)">
-                <div className="text-[10px] font-expanded font-black uppercase text-(--text-muted) tracking-wider mb-0.5">
-                  Institutional Email
-                </div>
-                <div className="text-sm font-bold font-mono leading-tight wrap-break-word">
-                  {data.basic.email}
-                </div>
-              </div>
-            </div>
-          </BentoCard>
-        </div>
-
-        {/* RIGHT COLUMN: REMAINING STUDENT DATA */}
-        <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 auto-rows-max">
-          <BentoCard
-            title="Proctor Profile"
-            icon={Shield}
-            delay={0.2}
-            colSpan="md:col-span-2"
-          >
-            <div className="flex flex-col md:flex-row gap-6 items-center md:items-stretch">
-              <div className="w-28 h-36 border-4 border-(--border-main) bg-(--bg-surface) rounded-xl overflow-hidden shadow-none -rotate-3 shrink-0 flex items-center justify-center">
-                {data.proctor.photoUrl ? (
-                  <img
-                    src={data.proctor.photoUrl}
-                    className="w-full h-full object-cover"
-                    alt="Proctor"
-                  />
-                ) : (
-                  <Shield className="w-12 h-12 text-(--border-main)" />
-                )}
-              </div>
-
-              <div className="flex-1 min-w-0 flex flex-col justify-center w-full">
-                <h3 className="font-expanded font-black text-2xl uppercase leading-none mb-1 text-(--text-main)">
-                  {data.proctor.name}
-                </h3>
-                <p className="text-xs font-bold font-mono text-(--text-muted) mb-4">
-                  {data.proctor.designation}
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="flex items-center gap-2 bg-(--bg-surface)/40 p-2 rounded-lg border-2 border-(--border-main) text-xs font-bold font-mono">
-                    <Mobile className="w-4 h-4 shrink-0 text-(--accent-base)" />{" "}
-                    {data.proctor.mobile}
-                  </div>
-                  <div className="flex items-center gap-2 bg-(--bg-surface)/40 p-2 rounded-lg border-2 border-(--border-main) text-xs font-bold font-mono">
-                    <LocationOn className="w-4 h-4 shrink-0 text-(--accent-base)" />{" "}
-                    {data.proctor.cabin}
-                  </div>
-                  <div className="flex items-center gap-2 bg-(--bg-surface)/40 p-2 rounded-lg border-2 border-(--border-main) text-xs font-bold font-mono sm:col-span-2">
-                    <Mail className="w-4 h-4 shrink-0 text-(--accent-base)" />{" "}
-                    <span className="truncate text-(--text-main)">
-                      {data.proctor.email}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </BentoCard>
-
-          <BentoCard
-            title="Guardian / Father"
-            icon={Work}
-            delay={0.3}
-            colSpan="md:col-span-2"
-          >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="bg-(--bg-surface) p-4 rounded-xl border-4 border-(--border-main) shadow-inner space-y-1">
-                <InfoRow label="Full Name" value={data.family.father.name} />
-                <InfoRow
-                  label="Qualification"
-                  value={data.family.father.qualification}
-                />
-                <InfoRow
-                  label="Occupation"
-                  value={data.family.father.occupation}
-                />
-                <InfoRow
-                  label="Annual Income"
-                  value={data.family.father.income}
-                />
-                <div className="mt-4 p-2 bg-(--text-main) text-(--bg-main) rounded-lg border-2 border-(--border-main) text-center flex items-center justify-between px-4">
-                  <span className="text-[10px] font-expanded font-black uppercase text-(--bg-main)/70 tracking-wider">
-                    Local Guardian
-                  </span>
-                  <span className="text-sm font-bold font-mono">
-                    {data.family.guardian || "N/A"}
-                  </span>
-                </div>
-              </div>
-              <AddressCard
-                title="Official Address"
-                data={data.family.father.address}
-              />
-            </div>
-          </BentoCard>
-
-          <div className="grid grid-cols-1 gap-6 md:gap-8 md:col-span-2 md:grid-cols-2">
-            <BentoCard
-              title="Personal"
-              icon={MonitorHeart}
-              delay={0.4}
-              className="bg-(--card-cyan)"
-            >
-              <div className="bg-(--bg-surface) p-3 rounded-xl border-2 border-(--border-main) space-y-1">
-                <InfoRow label="DOB" value={data.personal.dob} />
-                <InfoRow label="Gender" value={data.personal.gender} />
-                <InfoRow
-                  label="Language"
-                  value={data.personal.nativeLanguage}
-                />
-                <InfoRow
-                  label="Native State"
-                  value={data.personal.nativeState}
-                />
-                <InfoRow
-                  label="Nationality"
-                  value={data.personal.nationality}
-                />
-              </div>
-            </BentoCard>
-
-            <BentoCard title="Education" icon={School} delay={0.4}>
-              <div className="bg-(--bg-surface) p-3 rounded-xl border-2 border-(--border-main) space-y-1 mb-4">
-                <InfoRow label="Degree" value={data.education.degree} />
-                <InfoRow
-                  label="Qualification"
-                  value={data.education.qualification}
-                />
-                <InfoRow label="Board" value={data.education.board} />
-                <InfoRow label="Passing Year" value={data.education.year} />
-              </div>
-              <div className="bg-(--bg-surface) p-3 rounded-xl border-2 border-(--border-main) text-center">
-                <span className="text-[10px] font-expanded font-black uppercase text-(--text-muted) tracking-wider block mb-1">
-                  Previous Institution
-                </span>
-                <p className="text-xs font-bold font-mono leading-tight line-clamp-2 wrap-break-word text-(--text-main)">
-                  {data.education.school}
-                </p>
-              </div>
-            </BentoCard>
+             </BentoBlock>
+          )}
+          
+          {/* CENTERED ID CARD (Auto-placed to center via col-start) */}
+          <div className="md:col-span-2 lg:col-span-2 lg:col-start-2 lg:row-span-4 flex justify-center items-center w-full shrink-0 z-10 py-1 mb-8 -mx-2 md:mx-0">
+            <DigitalIDCard data={data} />
           </div>
 
-          <BentoCard
-            title="Hostel Allocation"
-            icon={Domain}
-            delay={0.5}
-            colSpan="md:col-span-2"
-          >
-            {data.hostel ? (
-              <div className="flex flex-col sm:flex-row gap-6 items-center">
-                <div className="bg-(--text-main) p-6 rounded-2xl border-4 border-(--border-main) text-center flex flex-col justify-center w-full sm:w-auto min-w-35 shadow-inner shrink-0 rotate-1">
-                  <div className="text-[10px] uppercase font-expanded font-black text-(--bg-main)/50 tracking-wider mb-1">
-                    Room No.
+          {/* SATELLITE BLOCKS (Backfilling left and right of ID card) */}
+          <BentoBlock title="Blood Group" value={data.personal.bloodGroup} />
+          <BentoBlock title="Date of Birth" value={data.personal.dob} />
+          <BentoBlock title="Gender" value={data.personal.gender} />
+          <BentoBlock title="Nationality" value={data.personal.nationality} />
+
+          {/* ROW 5+ (Below ID card) */}
+          
+          {(isValid(data.personal.mobile) || isValid(data.personal.email)) && (
+            <BentoBlock title="Personal Contact" span="md:col-span-2 lg:col-span-2">
+               {isValid(data.personal.mobile) && <div className="text-2xl md:text-3xl leading-tight"><CopyableText text={data.personal.mobile} /></div>}
+               {isValid(data.personal.email) && <div className="text-sm md:text-base opacity-70 normal-case lowercase mt-1"><MarqueeText><CopyableText text={data.personal.email} /></MarqueeText></div>}
+            </BentoBlock>
+          )}
+
+          {(isValid(data.personal.religion) || isValid(data.personal.community) || isValid(data.personal.caste)) && (
+            <BentoBlock title="Demographics" span="md:col-span-2 lg:col-span-2">
+               <div className="flex flex-col sm:flex-row gap-x-6 gap-y-2">
+                  {isValid(data.personal.religion) && <div><span className="opacity-50 text-[10px] block">Religion</span>{data.personal.religion}</div>}
+                  {isValid(data.personal.community) && <div><span className="opacity-50 text-[10px] block">Community</span>{data.personal.community}</div>}
+                  {isValid(data.personal.caste) && <div><span className="opacity-50 text-[10px] block">Caste</span>{data.personal.caste}</div>}
+               </div>
+            </BentoBlock>
+          )}
+          
+          {(isValid(data.personal.nativeLanguage) || isValid(data.personal.nativeState) || isValid(data.personal.physicallyChallenged)) && (
+            <BentoBlock title="Background" span="md:col-span-2 lg:col-span-2">
+               <div className="flex flex-col sm:flex-row gap-x-6 gap-y-2">
+                  {isValid(data.personal.nativeLanguage) && <div><span className="opacity-50 text-[10px] block">Language</span>{data.personal.nativeLanguage}</div>}
+                  {isValid(data.personal.nativeState) && <div><span className="opacity-50 text-[10px] block">State</span>{data.personal.nativeState}</div>}
+                  {isValid(data.personal.physicallyChallenged) && <div><span className="opacity-50 text-[10px] block">Accessibility Needs</span>{data.personal.physicallyChallenged}</div>}
+               </div>
+            </BentoBlock>
+          )}
+
+          {isValid(data.currentAddress.street) && (
+            <BentoBlock title="Current Address" span="md:col-span-2 lg:col-span-2">
+               <div className="text-lg md:text-xl leading-tight">{data.currentAddress.street}</div>
+               <div className="opacity-70 text-sm mt-2">{data.currentAddress.area}, {data.currentAddress.city}</div>
+               <div className="opacity-50 text-xs mt-1">{data.currentAddress.state}, {data.currentAddress.country} - {data.currentAddress.pincode}</div>
+               {isValid(data.currentAddress.phone) && <div className="mt-2 text-xl"><CopyableText text={data.currentAddress.phone} /></div>}
+            </BentoBlock>
+          )}
+          
+          {isValid(data.permanentAddress.street) && (
+            <BentoBlock title="Permanent Address" span="md:col-span-2 lg:col-span-2">
+               <div className="text-lg md:text-xl leading-tight">{data.permanentAddress.street}</div>
+               <div className="opacity-70 text-sm mt-2">{data.permanentAddress.area}, {data.permanentAddress.city}</div>
+               <div className="opacity-50 text-xs mt-1">{data.permanentAddress.state}, {data.permanentAddress.country} - {data.permanentAddress.pincode}</div>
+               {isValid(data.permanentAddress.phone) && <div className="mt-2 text-xl"><CopyableText text={data.permanentAddress.phone} /></div>}
+            </BentoBlock>
+          )}
+
+          {(isValid(data.proctor.name) || isValid(data.proctor.mobile)) && (
+            <div className="relative md:col-span-2 lg:col-span-4 bg-(--bg-surface) text-(--text-main) hover:text-(--bg-main) rounded-[2rem] border-4 border-(--border-main) shadow-none hover:shadow-[var(--brutal-shadow-hover)] transition-all duration-fast ease-out group flex overflow-hidden">
+               <div className="absolute -inset-1 bg-(--accent-base) opacity-0 group-hover:opacity-100 transition-opacity duration-fast ease-out z-0"></div>
+
+               {data.proctor.photoUrl && (
+                  <div className="relative z-10 w-[35%] lg:w-[20%] shrink-0 h-full">
+                     <img src={data.proctor.photoUrl} className="w-full h-full object-cover transition-all duration-fast" alt="Proctor" />
                   </div>
-                  <div className="text-5xl font-black font-mono text-(--bg-main)">
-                    {data.hostel.room}
+               )}
+               <div className="relative z-10 p-6 flex flex-col justify-between gap-4 flex-1 overflow-hidden w-full">
+                  <div className="text-[10px] md:text-xs uppercase font-black font-expanded tracking-widest opacity-50 shrink-0 group-hover:opacity-80 transition-opacity duration-fast">Proctor Information</div>
+                  <div className="transition-all duration-fast origin-left w-full flex flex-col md:flex-row justify-between text-sm md:text-base font-black font-expanded gap-6 md:gap-4 group-hover:scale-[1.01]">
+                     
+                     <div className="flex flex-col justify-end gap-1 flex-1 min-w-0">
+                        {isValid(data.proctor.name) && <div className="text-2xl md:text-3xl leading-tight"><MarqueeText>{data.proctor.name}</MarqueeText></div>}
+                        {isValid(data.proctor.designation) && <div className="opacity-70 mt-1"><MarqueeText>{data.proctor.designation}</MarqueeText></div>}
+                        {isValid(data.proctor.school) && <div className="opacity-50 text-[10px] md:text-xs mt-1"><MarqueeText>{data.proctor.school} • {data.proctor.dept}</MarqueeText></div>}
+                     </div>
+
+                     <div className="flex flex-col justify-end gap-1 md:text-right md:items-end shrink-0 md:max-w-[45%] min-w-0">
+                        {isValid(data.proctor.mobile) && <div className="text-2xl md:text-3xl leading-tight"><CopyableText text={data.proctor.mobile} /></div>}
+                        {isValid(data.proctor.email) && <div className="opacity-70 normal-case lowercase mt-1"><MarqueeText><CopyableText text={data.proctor.email} /></MarqueeText></div>}
+                        {isValid(data.proctor.cabin) && <div className="opacity-50 text-[10px] md:text-xs mt-1 py-1.5">Cabin: {data.proctor.cabin}</div>}
+                     </div>
+
                   </div>
-                  <div className="text-[11px] font-bold font-mono text-(--bg-main) mt-2 bg-(--bg-surface)/10 py-1 rounded-md px-2 truncate max-w-full">
-                    {data.hostel.block}
-                  </div>
+               </div>
+            </div>
+          )}
+
+          {data.hostel ? (
+             <BentoBlock title="Hostel Details" span="md:col-span-2 lg:col-span-4" className="border-2 border-(--border-main) shadow-[var(--brutal-shadow)]">
+                <div className="flex flex-col sm:flex-row gap-4 justify-between sm:items-end py-1">
+                   <div className="flex items-end gap-3 lg:gap-4">
+                      <span className="text-6xl md:text-7xl font-black font-expanded leading-tight">{data.hostel.room}</span>
+                      <span className="text-2xl md:text-3xl opacity-60 pb-1">{data.hostel.block}</span>
+                   </div>
+                   <div className="flex flex-col sm:items-end text-left sm:text-right">
+                      {isValid(data.hostel.mess) && <div className="text-xl md:text-2xl leading-tight">{data.hostel.mess}</div>}
+                      {isValid(data.hostel.bedType) && <div className="text-sm md:text-base opacity-60 mt-1 uppercase tracking-widest font-black font-expanded">{data.hostel.bedType} Bed</div>}
+                   </div>
                 </div>
-                <div className="flex-1 space-y-2 w-full bg-(--bg-surface) p-4 rounded-xl border-4 border-(--border-main)">
-                  <InfoRow label="Bed Type" value={data.hostel.bedType} />
-                  <InfoRow label="Mess Plan" value={data.hostel.mess} />
-                  <InfoRow label="Hostel App No" value={data.hostel.appNo} />
+             </BentoBlock>
+          ) : (
+             <BentoBlock title="Accommodation" value="Day Scholar" span="md:col-span-2 lg:col-span-4" className="!bg-(--bg-highlight) text-center items-center justify-center py-16" />
+          )}
+
+          {isValid(data.education.school) && (
+            <BentoBlock title="Previous Education" span="md:col-span-2 lg:col-span-2">
+               <div className="text-lg md:text-xl leading-tight"><MarqueeText>{data.education.school}</MarqueeText></div>
+               <div className="opacity-70 text-sm mt-2">{data.education.board} {isValid(data.education.medium) && `• Medium: ${data.education.medium}`}</div>
+               <div className="opacity-50 text-xs mt-1">Year: {data.education.year}-{data.education.month} • Reg: {data.education.regNo}</div>
+            </BentoBlock>
+          )}
+          {isValid(data.education.degree) && (
+            <BentoBlock title="Degree & Qual" span="md:col-span-2 lg:col-span-2">
+               <div className="text-xl leading-tight"><MarqueeText>{data.education.degree} - {data.education.branch}</MarqueeText></div>
+               <div className="opacity-70 mt-2"><MarqueeText>{data.education.qualification}</MarqueeText></div>
+               <div className="opacity-50 text-xs mt-1">Class: {data.education.classObtained}</div>
+               {data.education.breakInStudy === "Yes" && (
+                  <div className="text-red-500 text-xs mt-1">Break: {data.education.breakReason}</div>
+               )}
+            </BentoBlock>
+          )}
+
+          {isValid(data.family.father.name) && (
+            <>
+              <BentoBlock title="Father's Profile" span="md:col-span-2 lg:col-span-2">
+                 <div className="text-2xl md:text-3xl leading-tight"><MarqueeText>{data.family.father.name}</MarqueeText></div>
+                 <div className="opacity-70 text-sm mt-2">
+                    <MarqueeText>{[data.family.father.designation, data.family.father.organization].filter(isValid).join(" at ") || "No Work Info"}</MarqueeText>
+                 </div>
+                 <div className="opacity-50 text-xs mt-1"><MarqueeText>{data.family.father.qualification} • {data.family.father.occupation} {isValid(data.family.father.income) && `• Income: ${data.family.father.income}`}</MarqueeText></div>
+              </BentoBlock>
+              <BentoBlock title="Father's Contact" span="md:col-span-2 lg:col-span-2">
+                 {isValid(data.family.father.mobile) && <div className="text-2xl md:text-3xl leading-tight"><CopyableText text={data.family.father.mobile} /></div>}
+                 {isValid(data.family.father.email) && <div className="opacity-70 normal-case lowercase mt-2"><MarqueeText><CopyableText text={data.family.father.email} /></MarqueeText></div>}
+                 {isValid(data.family.father.address.city) && <div className="opacity-50 text-xs mt-1">{data.family.father.address.city}, {data.family.father.address.state}</div>}
+              </BentoBlock>
+            </>
+          )}
+
+          {isValid(data.family.mother.name) && (
+            <>
+              <BentoBlock title="Mother's Profile" span="md:col-span-2 lg:col-span-2">
+                 <div className="text-2xl md:text-3xl leading-tight"><MarqueeText>{data.family.mother.name}</MarqueeText></div>
+                 <div className="opacity-70 text-sm mt-2">
+                    <MarqueeText>{[data.family.mother.designation, data.family.mother.organization].filter(isValid).join(" at ") || "No Work Info"}</MarqueeText>
+                 </div>
+                 <div className="opacity-50 text-xs mt-1"><MarqueeText>{data.family.mother.qualification} • {data.family.mother.occupation} {isValid(data.family.mother.income) && `• Income: ${data.family.mother.income}`}</MarqueeText></div>
+              </BentoBlock>
+              <BentoBlock title="Mother's Contact" span="md:col-span-2 lg:col-span-2">
+                 {isValid(data.family.mother.mobile) && <div className="text-2xl md:text-3xl leading-tight"><CopyableText text={data.family.mother.mobile} /></div>}
+                 {isValid(data.family.mother.email) && <div className="opacity-70 normal-case lowercase mt-2"><MarqueeText><CopyableText text={data.family.mother.email} /></MarqueeText></div>}
+                 {isValid(data.family.mother.address.city) && <div className="opacity-50 text-xs mt-1">{data.family.mother.address.city}, {data.family.mother.address.state}</div>}
+              </BentoBlock>
+            </>
+          )}
+
+          <BentoBlock title="Family Extras" span="md:col-span-2 lg:col-span-4">
+             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
+                <div>
+                   <div className="opacity-50 text-[10px]">Siblings</div>
+                   <div className="mt-1">B: {data.family.brothers} • S: {data.family.sisters}</div>
                 </div>
-              </div>
-            ) : (
-              <div className="h-full w-full flex flex-col items-center justify-center p-8 bg-(--bg-surface) rounded-2xl group min-h-64">
-                <LocationOn className="w-24 h-24 mb-6 text-(--accent-base)" />
-                <span className="text-2xl text-(--text-muted) font-black font-expanded tracking-wider uppercase text-center transition-all duration-300 group-hover:font-squish">
-                  Registered As<br />Day Scholar
-                </span>
-              </div>
-            )}
-          </BentoCard>
+                <div>
+                   <div className="opacity-50 text-[10px]">VIT Relations</div>
+                   <div className="mt-1">Studying: {data.family.studyingInVit} • Studied: {data.family.studiedInVit}</div>
+                </div>
+                <div>
+                   <div className="opacity-50 text-[10px]">Local Guardian</div>
+                   <div className="mt-1 line-clamp-2">{data.family.guardian}</div>
+                </div>
+                <div>
+                   <div className="opacity-50 text-[10px]">Friend Mobile</div>
+                   <div className="mt-1"><CopyableText text={data.family.friendMobile} /></div>
+                </div>
+             </div>
+          </BentoBlock>
+
         </div>
       </div>
     </div>

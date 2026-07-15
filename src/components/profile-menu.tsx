@@ -58,7 +58,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
       url: "user/changePassword",
       cat: "Settings",
       hoverClass:
-        "hover:bg-pink-400 hover:shadow-[6px_6px_0px_0px_var(--shadow-main)]",
+        "hover:bg-pink-400 hover:shadow-[var(--brutal-shadow-lg)]",
     },
     {
       title: "Login ID",
@@ -66,7 +66,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
       url: "user/updateLoginId",
       cat: "Settings",
       hoverClass:
-        "hover:bg-blue-400 hover:shadow-[6px_6px_0px_0px_var(--shadow-main)]",
+        "hover:bg-blue-400 hover:shadow-[var(--brutal-shadow-lg)]",
     },
   ];
 
@@ -93,13 +93,23 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
     },
   };
 
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   return (
     <motion.div
       variants={menuVariants}
       initial="hidden"
       animate="visible"
       exit="exit"
-      className="absolute right-2 top-2 md:right-4 md:top-4 w-64 bg-(--bg-surface) border-4 border-(--border-main) rounded-4xl shadow-[6px_6px_0px_0px_var(--shadow-main)] z-9999 overflow-hidden origin-top-right flex flex-col will-change-transform transform-gpu"
+      className="absolute right-2 top-2 md:right-4 md:top-4 w-64 bg-(--bg-surface) border-4 border-(--border-main) rounded-4xl shadow-[var(--brutal-shadow-lg)] z-9999 overflow-hidden origin-top-right flex flex-col will-change-transform transform-gpu"
     >
       <div className="overflow-y-auto custom-scrollbar p-2 flex-1">
         {/* Profile Header */}
@@ -147,7 +157,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
                 });
                 onClose();
               }}
-              className="flex w-full items-center justify-between px-3 py-2 rounded-2xl border-4 transition-all duration-300 ease-out group border-transparent hover:bg-(--accent-base) hover:border-(--border-main) hover:shadow-none hover:-translate-y-px text-(--text-main) hover:text-(--text-inverse)"
+              className="flex w-full items-center justify-between px-3 py-2 rounded-2xl border-4 transition-all group border-transparent hover:bg-(--accent-base) hover:border-(--border-main) hover:shadow-none hover:-translate-y-px text-(--text-main) hover:text-(--text-inverse)"
             >
               <div className="flex items-center gap-3">
                 <item.icon className="w-4 h-4 transition-colors text-(--text-muted) group-hover:text-(--text-inverse) shrink-0" />
@@ -180,7 +190,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
                   });
                   onClose();
                 }}
-                className={`flex flex-col items-center justify-center py-2.5 rounded-xl border-2 border-(--border-dim) bg-(--bg-main) hover:border-(--border-main) hover:-translate-y-0.5 transition-all duration-300 ease-out group ${item.hoverClass}`}
+                className={`flex flex-col items-center justify-center py-2.5 rounded-xl border-2 border-(--border-dim) bg-(--bg-main) hover:border-(--border-main) hover:-translate-y-0.5 transition-all group ${item.hoverClass}`}
               >
                 <item.icon className="w-4 h-4 mb-1 transition-transform group-hover:scale-110 text-(--text-main)" />
                 <span className="font-expanded font-black text-[8px] uppercase  text-center text-(--text-main)">

@@ -5,9 +5,12 @@ import {
   Error,
   Search,
   Autorenew,
+  ChevronRight,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { QuickLink, MenuCategory } from "../../types/vtop";
 import { MarqueeText } from "../common/MarqueeText";
+import { useDataStore } from "../../store/dataStore";
+import { getCategoryIcon } from "../../utils/icons";
 
 interface TopBarSearchProps {
   currentView: string;
@@ -50,6 +53,18 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
   const [query, setQuery] = useState(initialQuery);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  
+  const [activeMenu, setActiveMenu] = useState<{ cat: MenuCategory; rect: DOMRect } | null>(null);
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleMenuEnter = () => {
+    if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+  };
+  const handleMenuLeave = () => {
+    closeTimeoutRef.current = setTimeout(() => {
+      setActiveMenu(null);
+    }, 300);
+  };
 
   const isExpanded = isOmniboxOpen;
 
@@ -62,23 +77,40 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
   }, [isOmniboxOpen]);
 
   useEffect(() => {
+    if (isExpanded && initialQuery) {
+      setQuery(initialQuery);
+    }
+  }, [isExpanded, initialQuery]);
+
+  useEffect(() => {
     if (!isExpanded) {
       setQuery("");
     }
   }, [isExpanded]);
 
   const flattenedLinks = useMemo(() => {
-    if (!query.trim()) return [];
-    const lowerQ = query.toLowerCase().trim();
-    const matches: { link: QuickLink; score: number }[] = [];
+    const staticLinks: QuickLink[] = [];
 
-    const staticLinks: QuickLink[] = [
-      { title: "Home", url: "/", category: "Navigation" },
-      { title: "Settings", url: "#settings", category: "Navigation" },
-    ];
+    if ((window as any).__RETOP_OFFLINE__) {
+      staticLinks.push(
+        { title: "Time Table", url: "academics/common/StudentTimeTable", category: "Academics" },
+        { title: "Academic Calendar", url: "academics/common/CalendarPreview", category: "Academics" },
+        { title: "Student Profile", url: "studentsRecord/StudentProfileAllView", category: "Profile" },
+        { title: "Marks View", url: "examinations/StudentMarkView", category: "Examinations" },
+        { title: "Grades View", url: "examinations/StudentGradeView", category: "Examinations" },
+        { title: "Attendance", url: "academics/common/StudentAttendance", category: "Academics" }
+      );
+    }
 
-    [...staticLinks, ...menuCategories.flatMap((c) => c.links)].forEach(
-      (link) => {
+    const allLinks = [...staticLinks, ...menuCategories.flatMap((c) => c.links)];
+    
+    let sortedMatches = allLinks;
+
+    if (query.trim()) {
+      const lowerQ = query.toLowerCase().trim();
+      const matches: { link: QuickLink; score: number }[] = [];
+
+      allLinks.forEach((link) => {
         const titleLower = link.title.toLowerCase();
         let score = 0;
         if (titleLower === lowerQ) score = 100;
@@ -86,13 +118,13 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
         else if (titleLower.includes(lowerQ)) score = 50;
         else if (fuzzyMatch(titleLower, lowerQ)) score = 10;
         if (score > 0) matches.push({ link, score });
-      },
-    );
+      });
 
-    const sortedMatches = matches
-      .sort((a, b) => b.score - a.score)
-      .map((m) => m.link)
-      .slice(0, 15);
+      sortedMatches = matches
+        .sort((a, b) => b.score - a.score)
+        .map((m) => m.link)
+        .slice(0, 15);
+    }
 
     const grouped = new Map<string, QuickLink[]>();
     sortedMatches.forEach((link) => {
@@ -107,17 +139,17 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
   }, [query, menuCategories]);
 
   useEffect(() => {
-    if (!isExpanded || !query) return;
+    if (!isExpanded) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowDown") {
+      if (query && e.key === "ArrowDown") {
         e.preventDefault();
         setSelectedIndex((prev) => (prev + 1) % flattenedLinks.length);
-      } else if (e.key === "ArrowUp") {
+      } else if (query && e.key === "ArrowUp") {
         e.preventDefault();
         setSelectedIndex(
           (prev) => (prev - 1 + flattenedLinks.length) % flattenedLinks.length,
         );
-      } else if (e.key === "Enter" && flattenedLinks[selectedIndex]) {
+      } else if (query && e.key === "Enter" && flattenedLinks[selectedIndex]) {
         e.preventDefault();
         onNavigate(flattenedLinks[selectedIndex]);
         setIsOmniboxOpen(false);
@@ -137,19 +169,24 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
     setIsOmniboxOpen,
   ]);
 
-  const isSearchActive = isExpanded && query;
+  const isSearchActive = isExpanded;
+
+  const menuVariants = {
+    hidden: { opacity: 0, scale: 0.4, y: -20 },
+    visible: { opacity: 1, scale: 1, y: 0, transition: { type: "spring", stiffness: 1200, damping: 40 } },
+    exit: { opacity: 0, scale: 0.4, y: -20, transition: { type: "spring", stiffness: 1200, damping: 40 } },
+  };
 
   return (
     <div className="relative flex flex-col z-50">
       {/* Unified Search Bar */}
       <div
-        className={`group flex items-center gap-3 transition-all duration-300 ease-out cursor-text md:min-w-[360px] pl-4 pr-3 h-12 md:h-14
+        className={`group flex items-center gap-3 transition-all duration-fast ease-out cursor-text md:min-w-[360px] pl-4 pr-3 h-12 md:h-14 rounded-[32px] relative z-[10000]
           ${
             isExpanded
-              ? `bg-(--bg-highlight) rounded-t-2xl border-2 border-(--border-main) ${isSearchActive ? "shadow-[4px_0px_0px_0px_var(--shadow-main)]" : "rounded-b-2xl shadow-[4px_4px_0px_0px_var(--shadow-main)]"}`
+              ? `bg-(--bg-surface) border-2 border-(--border-main) shadow-[var(--brutal-shadow-hover)] ${isSearchActive ? 'rounded-b-none border-b-0' : ''}`
               : "bg-transparent border-2 border-transparent shadow-none"
           }
-          ${isSearchActive ? "rounded-b-none border-b-0" : ""}
         `}
       >
         <button
@@ -164,7 +201,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
             <span className="font-expanded font-black text-2xl md:text-3xl italic lowercase leading-none text-(--text-main) group-focus-within:text-(--accent-hover) transition-colors">
               re
             </span>
-            <div className={`relative ml-0.5 md:ml-1 mb-1 flex items-center justify-center group-focus-within:scale-[2] transition-all origin-bottom-left ${status === 'loading' ? 'text-(--accent-base) w-3 h-3 md:w-4 md:h-4' : 'w-1.5 h-1.5 md:w-2 md:h-2 bg-(--accent-base) rounded-full'}`}>
+            <div className={`relative ml-0.5 md:ml-1 flex items-center justify-center group-focus-within:scale-[2] transition-all origin-bottom-left ${status === 'loading' ? 'text-(--accent-base) w-3 h-3 md:w-4 md:h-4' : 'w-1.5 h-1.5 md:w-2 md:h-2 bg-(--accent-base) rounded-full'}`}>
               {status === 'loading' ? (
                 <Autorenew className="w-full h-full animate-spin absolute bottom-0 left-0" style={{ transformOrigin: 'center' }} />
               ) : (
@@ -183,7 +220,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
             flattenedLinks[0].title
               .toLowerCase()
               .startsWith(query.toLowerCase()) && (
-              <div className="absolute left-2 top-0 bottom-0 flex items-center pt-1 pointer-events-none w-full overflow-hidden">
+              <div className="absolute left-2 top-0 bottom-0 flex items-center pointer-events-none w-full overflow-hidden">
                 <span className="text-lg md:text-xl font-bold text-transparent whitespace-pre uppercase">
                   {query}
                 </span>
@@ -199,6 +236,12 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
             value={query}
             onChange={(e) => {
               const sanitized = e.target.value.replace(/[^a-zA-Z\s]/g, "");
+              if (sanitized.toLowerCase() === "demo") {
+                useDataStore.getState().enableDemoMode();
+                setQuery("");
+                setIsOmniboxOpen(false);
+                return;
+              }
               setQuery(sanitized);
               setSelectedIndex(0);
               if (!isExpanded) setIsOmniboxOpen(true);
@@ -207,7 +250,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
             onBlur={() => {
               setTimeout(() => setIsOmniboxOpen(false), 200);
             }}
-            className={`w-full bg-transparent text-lg md:text-xl font-bold text-(--text-main) pt-1 focus:outline-none placeholder-(--text-muted) min-w-0 uppercase text-left pl-2 relative z-10`}
+            className={`w-full bg-transparent text-lg md:text-xl font-bold text-(--text-main) focus:outline-none placeholder-(--text-muted) min-w-0 uppercase text-left pl-2 relative z-10`}
           />
         </div>
       </div>
@@ -216,18 +259,46 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
         {isSearchActive && (
           <motion.div
             key="search-dropdown"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="absolute top-12 md:top-14 left-0 w-full bg-(--bg-highlight) border-2 border-t-0 border-(--border-main) rounded-b-2xl overflow-hidden z-[200] shadow-[4px_4px_0px_0px_var(--shadow-main)]"
+            variants={menuVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="absolute top-full left-0 w-full max-w-[calc(100vw-24px)] bg-(--bg-surface) border-2 border-t-0 border-(--border-main) rounded-[32px] rounded-t-none z-[10001] shadow-[var(--brutal-shadow-hover)] origin-top-left flex flex-col will-change-transform transform-gpu overflow-hidden"
           >
-            <div className="px-4">
-              <div className="w-full h-[2px] bg-(--border-main) rounded-full opacity-50" />
-            </div>
-            <div className="px-3 pb-3 pt-2">
-              <div className="flex flex-col gap-1 max-h-[50vh] overflow-y-auto custom-scrollbar">
-                {flattenedLinks.length === 0 ? (
+            <div className="p-2">
+              <div className="flex flex-col gap-1 max-h-[50vh] overflow-y-auto custom-scrollbar pb-1">
+                {!query ? (
+                  <div className="space-y-1" onMouseLeave={handleMenuLeave} onMouseEnter={handleMenuEnter}>
+                    {menuCategories.map((cat, catIdx) => {
+                      const CatIcon = getCategoryIcon(cat.title);
+                      const isActive = activeMenu?.cat.title === cat.title;
+                      return (
+                        <motion.button
+                          key={catIdx}
+                          whileTap={{ scale: 0.96 }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedIndex(0);
+                            setActiveMenu({ cat, rect: e.currentTarget.getBoundingClientRect() });
+                          }}
+                          onMouseEnter={(e) => {
+                            setSelectedIndex(0);
+                            setActiveMenu({ cat, rect: e.currentTarget.getBoundingClientRect() });
+                          }}
+                          className={`flex w-full items-center justify-between p-3 rounded-2xl transition-all duration-fast ease-out group ${isActive ? "bg-(--accent-base) text-(--text-inverse)" : "bg-transparent text-(--text-main) hover:bg-(--bg-highlight)"}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <CatIcon className={`w-5 h-5 transition-colors ${isActive ? "text-(--text-inverse)" : "text-(--text-muted) group-hover:text-(--accent-base)"}`} />
+                            <span className={`font-expanded font-black text-xs uppercase text-left transition-colors ${isActive ? "text-(--text-inverse)" : "text-(--text-main) group-hover:text-(--accent-base)"}`}>
+                              {cat.title}
+                            </span>
+                          </div>
+                          <ChevronRight className={`w-4 h-4 transition-all ${isActive ? "opacity-100 text-(--text-inverse)" : "opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 text-(--text-muted) group-hover:text-(--accent-base)"}`} />
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                ) : flattenedLinks.length === 0 ? (
                   <div className="flex flex-col items-center justify-center p-6 text-(--text-dim)">
                     <Error className="w-8 h-8 mb-2 opacity-50" />
                     <span className="font-expanded text-sm uppercase text-(--text-muted)">
@@ -238,14 +309,9 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                   (() => {
                     let currentCategory = "";
                     return flattenedLinks.map((link, i) => {
-                      const isSelected = i === selectedIndex;
+                      const isSelected = i === selectedIndex && query;
                       const linkDest = getDestinationView(link);
-                      const isPinned =
-                        linkDest !== "content" &&
-                        pinnedLinks.some(
-                          (p) => getDestinationView(p) === linkDest,
-                        );
-                      
+                      const isPinned = linkDest !== "content" && pinnedLinks.some((p) => getDestinationView(p) === linkDest);
                       const category = link.category || "Other";
                       const isNewCategory = category !== currentCategory;
                       if (isNewCategory) currentCategory = category;
@@ -253,58 +319,93 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                       return (
                         <React.Fragment key={i}>
                           {isNewCategory && (
-                            <div className="px-5 pt-4 pb-2 text-[11px] font-expanded font-black text-(--text-main) uppercase tracking-wider border-b border-(--border-dim) mb-2">
+                            <div className="px-3 pt-4 pb-2 text-[11px] font-expanded font-black text-(--text-main) uppercase tracking-wider border-b border-(--border-dim) mb-2">
                               {currentCategory}
                             </div>
                           )}
                           <div className="relative w-full mb-1 group">
                             <button
-                          onClick={() => {
-                            onNavigate(link);
-                            setIsOmniboxOpen(false);
-                            setQuery("");
-                          }}
-                          onMouseEnter={() => setSelectedIndex(i)}
-                          className={`w-full text-left px-3 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-3 border-4 ${
-                            isSelected
-                              ? "bg-(--accent-base) text-(--text-inverse) border-(--border-main) shadow-none -translate-y-px"
-                              : "bg-transparent border-transparent text-(--text-muted)"
-                          }`}
-                        >
-                          <div className="flex-1 min-w-0 pr-8 flex items-center h-5">
-                            <MarqueeText text={link.title} />
-                          </div>
-                        </button>
-
-                        <div
-                          className={`absolute right-1 top-1 bottom-1 w-12 pr-1 flex items-center justify-end rounded-r-xl transition-all pointer-events-none z-20 ${!isPinned ? "opacity-50 group-hover:opacity-100" : "opacity-100"}`}
-                        >
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onTogglePin(link);
-                            }}
-                            className={`pointer-events-auto p-1.5 rounded-xl transition-all border-2 shadow-none ${
-                              isPinned
-                                ? "bg-transparent text-(--text-main) border-transparent"
-                                : "bg-transparent border-transparent text-(--text-dim) hover:bg-black/30 hover:text-white"
-                            }`}
-                            title={isPinned ? "Unpin from Dock" : "Pin to Dock"}
-                          >
-                            <Keep
-                              className={`w-3.5 h-3.5 transition-opacity ${!isPinned ? "opacity-50 group-hover:opacity-100" : "opacity-100"}`}
-                              style={{
-                                transform: isPinned ? "rotate(45deg)" : "none",
+                              onClick={() => {
+                                onNavigate(link);
+                                setIsOmniboxOpen(false);
+                                setQuery("");
                               }}
-                            />
-                          </button>
-                        </div>
-                      </div>
-                      </React.Fragment>
-                    );
-                  })})()
+                              onMouseEnter={() => setSelectedIndex(i)}
+                              className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-3 border-4 ${
+                                isSelected ? "bg-(--accent-base) text-(--text-inverse) border-(--border-main) shadow-none -translate-y-px" : "bg-transparent border-transparent text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main)"
+                              }`}
+                            >
+                              <div className="flex-1 min-w-0 pr-8 flex items-center h-5">
+                                <MarqueeText text={link.title} />
+                              </div>
+                            </button>
+                            <div className={`absolute right-1 top-1 bottom-1 w-12 pr-1 flex items-center justify-end rounded-r-xl transition-all pointer-events-none z-20 ${!isPinned ? "opacity-50 group-hover:opacity-100" : "opacity-100"}`}>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onTogglePin(link);
+                                }}
+                                className={`pointer-events-auto p-1.5 rounded-xl transition-all border-2 shadow-none ${
+                                  isPinned ? "bg-transparent text-(--text-main) border-transparent" : "bg-transparent border-transparent text-(--text-dim) hover:bg-(--text-main) hover:text-(--bg-main)"
+                                }`}
+                                title={isPinned ? "Unpin from Dock" : "Pin to Dock"}
+                              >
+                                <Keep
+                                  className={`w-3.5 h-3.5 transition-opacity ${!isPinned ? "opacity-50 group-hover:opacity-100" : "opacity-100"} ${isPinned ? 'text-(--accent-base)' : ''}`}
+                                  style={{ transform: isPinned ? "rotate(45deg)" : "none" }}
+                                />
+                              </button>
+                            </div>
+                          </div>
+                        </React.Fragment>
+                      );
+                    });
+                  })()
                 )}
               </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {activeMenu && (
+          <motion.div
+            onMouseEnter={handleMenuEnter}
+            onMouseLeave={handleMenuLeave}
+            initial={{ opacity: 0, scaleX: 0.3, scaleY: 0.8, x: -20 }}
+            animate={{ opacity: 1, scaleX: 1, scaleY: 1, x: 0 }}
+            exit={{ opacity: 0, scaleX: 0.3, scaleY: 0.8, x: -20 }}
+            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+            className="absolute z-[10001] bg-(--bg-surface) border-4 border-(--border-main) rounded-2xl shadow-[var(--brutal-shadow-hover)] p-2 flex flex-col"
+            style={{
+              transformOrigin: "left center",
+              left: activeMenu.rect.right ? activeMenu.rect.right + 12 : 0,
+              top: activeMenu.rect.top ? activeMenu.rect.top : 0,
+              maxHeight: "calc(100vh - 40px)",
+              width: activeMenu.cat.links.length > 20 ? "600px" : activeMenu.cat.links.length > 10 ? "400px" : "220px",
+              maxWidth: "calc(100vw - 40px)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={`grid ${activeMenu.cat.links.length > 20 ? "grid-cols-3" : activeMenu.cat.links.length > 10 ? "grid-cols-2" : "grid-cols-1"} gap-1 overflow-y-auto custom-scrollbar pt-1`}>
+              {activeMenu.cat.links.map((link, i) => (
+                <button
+                  key={i}
+                  id={`home-popup-item-${i}`}
+                  onMouseEnter={() => setSelectedIndex(i)}
+                  onClick={() => {
+                    onNavigate(link);
+                    setActiveMenu(null);
+                    setIsOmniboxOpen(false);
+                  }}
+                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 group ${
+                    i === selectedIndex && !query ? "bg-(--accent-base) text-(--text-inverse)" : "bg-transparent text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main)"
+                  }`}
+                >
+                  <span className="flex-1 truncate">{link.title}</span>
+                </button>
+              ))}
             </div>
           </motion.div>
         )}

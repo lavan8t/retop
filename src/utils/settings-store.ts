@@ -34,7 +34,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     { title: "Time Table", url: "studenttimetable", category: "Core" },
     { title: "Marks", url: "mark", category: "Core" },
     {
-      title: "Student Profile",
+      title: "Profile",
       url: "studentprofileallview",
       category: "System",
     },
@@ -54,7 +54,7 @@ const MATERIAL_ACCENTS: Record<string, string> = {
   cyan: "#0891b2",
 };
 
-import { argbFromHex, themeFromSourceColor, hexFromArgb } from "@material/material-color-utilities";
+import { argbFromHex, hexFromArgb, Hct, SchemeVibrant, MaterialDynamicColors } from "@material/material-color-utilities";
 
 // Convert an HSL string to Hex
 const hslToHex = (h: number, s: number, l: number) => {
@@ -90,10 +90,11 @@ export const applyTheme = (settings: AppSettings) => {
   const isDark = appliedTheme === "dark" || appliedTheme === "amoled";
   
   // Generate Material Theme
-  const argb = argbFromHex(baseColor);
-  const theme = themeFromSourceColor(argb);
-  const scheme = isDark ? theme.schemes.dark : theme.schemes.light;
-
+  const hct = Hct.fromInt(argbFromHex(baseColor));
+  const scheme = isDark 
+    ? new SchemeVibrant(hct, true, 0.0) 
+    : new SchemeVibrant(hct, false, 0.0);
+  
   // Set the base variables
   if (root) root.style.setProperty("--accent-base", hexFromArgb(scheme.primary));
   document.documentElement.style.setProperty("--accent-base", hexFromArgb(scheme.primary));

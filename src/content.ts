@@ -4,8 +4,6 @@ import {
   injectGlobalStyles,
   injectGlobalFonts,
   initializeContainer,
-  injectSplashScreen,
-  removeSplashScreen,
 } from "./utils/bridge";
 import { asciiArt } from "./components/asciiArt";
 import { autoSolveCaptcha } from "./utils/captchaSolver";
@@ -62,6 +60,11 @@ try {
     }
   }
 } catch (e) {}
+
+// Inject Splash Screen instantly for authenticated pages so it does not appear late
+if (window.location.pathname.includes("/vtop/content/")) {
+  // Removed splash screen
+}
 
 const originalFetch = window.fetch;
 
@@ -120,7 +123,7 @@ function showErrorDialog(title: string, message: string, btnText: string, btnAct
         </div>
       </div>
       
-      <button onclick="if('${btnAction}'==='reload'){window.location.reload()}else{window.location.href='${btnAction}'}" style="display: flex; align-items: center; gap: 8px; background: var(--accent-base, #2563eb); color: var(--text-inverse, #ffffff); border: none; padding: 12px 24px; border-radius: 9999px; font-weight: 700; font-size: 14px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); transition: background 0.2s;" onmouseover="this.style.filter='brightness(1.2)'" onmouseout="this.style.filter='none'">
+      <button id="retop-error-action-btn" style="display: flex; align-items: center; gap: 8px; background: var(--accent-base, #2563eb); color: var(--text-inverse, #ffffff); border: none; padding: 12px 24px; border-radius: 9999px; font-weight: 700; font-size: 14px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); transition: background 0.2s;" onmouseover="this.style.filter='brightness(1.2)'" onmouseout="this.style.filter='none'">
         <span class="material-symbols-rounded" style="font-size: 18px;">autorenew</span>
         ${btnText}
       </button>
@@ -129,6 +132,14 @@ function showErrorDialog(title: string, message: string, btnText: string, btnAct
   `;
 
   document.body.appendChild(dialog);
+
+  const btn = document.getElementById("retop-error-action-btn");
+  if (btn) {
+    btn.addEventListener("click", () => {
+      if (btnAction === "reload") window.location.reload();
+      else window.location.href = btnAction;
+    });
+  }
 }
 
 window.fetch = async (...args) => {
@@ -160,9 +171,36 @@ XMLHttpRequest.prototype.open = function(this: XMLHttpRequest, ...args: any[]) {
 const init = async () => {
   console.log("[retop] Initializing...");
 
-  const pausedResult = await new Promise((resolve) => {
-    chrome.storage.local.get("retop-paused-until", (res) => resolve(res["retop-paused-until"]));
-  });
+  let pausedResult = null;
+  let settingsResult = null;
+  
+  try {
+    if (!chrome?.runtime?.id) throw new Error("Context invalidated");
+    [pausedResult, settingsResult] = await Promise.all([
+      new Promise((resolve) => {
+        chrome.storage.local.get("retop-paused-until", (res) => resolve(res["retop-paused-until"]));
+      }),
+      new Promise((resolve) => {
+        chrome.storage.local.get("retop-settings", (res) => resolve(res["retop-settings"]));
+      })
+    ]);
+  } catch (err) {
+    console.warn("[retop] Extension context invalidated or storage error. Falling back to native VTOP.");
+    document.body.style.opacity = "1";
+    document.body.classList.add("show-legacy-ui");
+    return;
+  }
+
+  if (settingsResult) {
+    try {
+      const data = typeof settingsResult === 'string' ? JSON.parse(settingsResult as string) : settingsResult;
+      const settings = data.state?.settings || data;
+      if (settings.defaultView === "legacy" && sessionStorage.getItem("vtop-legacy-mode") === null) {
+        sessionStorage.setItem("vtop-legacy-mode", "true");
+      }
+    } catch (e) {}
+  }
+
   if (pausedResult && Date.now() < parseInt(pausedResult as string, 10)) {
     console.log("[retop] Extension is currently halted. Falling back to native VTOP.");
     document.body.style.opacity = "1";
@@ -225,7 +263,6 @@ const init = async () => {
   // --- Authenticated Pages Only ---
   document.body.classList.remove("show-legacy-ui");
   injectGlobalStyles();
-  injectSplashScreen();
 
   await waitForTokens();
   initializeContainer();

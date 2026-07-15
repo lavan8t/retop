@@ -23,9 +23,9 @@ export const MaterialSwitch = ({
 
   let x = 6;
   if (selected) {
-    x = isActive && !disabled ? 18 : 20;
+    x = isActive && !disabled ? 21 : 23;
   } else {
-    x = isActive && !disabled ? 0 : isHovered && !disabled ? 2 : 6;
+    x = isActive && !disabled ? 0 : isHovered && !disabled ? 5 : 9;
   }
 
   return (
@@ -39,12 +39,12 @@ export const MaterialSwitch = ({
       onMouseDown={() => !disabled && setIsActive(true)}
       onMouseUp={() => !disabled && setIsActive(false)}
       onMouseOut={() => !disabled && setIsActive(false)}
-      className={`relative w-[52px] h-[32px] rounded-full border-2 transition-colors duration-fast ease-in flex items-center outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-(--accent-base) ${
+      className={`relative w-[52px] h-[32px] rounded-full border-2 transition-colors duration-fast ease-in flex items-center outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-(--md-sys-color-primary) ${
         disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
       } ${
         selected
-          ? "bg-(--accent-base) border-(--accent-base)"
-          : "bg-(--bg-surface) border-(--border-dim) hover:border-(--border-main)"
+          ? "bg-(--md-sys-color-primary) border-(--md-sys-color-primary)"
+          : "bg-(--md-sys-color-surface-variant) border-(--md-sys-color-outline) hover:border-(--md-sys-color-on-surface)"
       }`}
     >
       <motion.div
@@ -61,8 +61,8 @@ export const MaterialSwitch = ({
         }}
         className={`absolute rounded-full flex items-center justify-center shadow-sm overflow-hidden transition-colors duration-fast ${
           selected
-            ? "bg-(--bg-main) text-(--accent-base)"
-            : "bg-(--text-muted) text-(--bg-surface)"
+            ? "bg-(--md-sys-color-on-primary) text-(--md-sys-color-primary)"
+            : "bg-(--md-sys-color-on-surface-variant) text-(--md-sys-color-surface-variant)"
         }`}
       >
         <motion.div

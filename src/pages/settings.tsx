@@ -12,6 +12,8 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { SPRING_SNAPPY } from "../utils/motion";
 import { Icon } from "@iconify/react";
+import { ExportData } from "../components/settings/ExportData";
+import { SyncManager } from "../components/SyncManager";
 import { MaterialSwitch } from "../components/MaterialSwitch";
 import { useDataStore } from "../store/dataStore";
 
@@ -247,7 +249,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 <span className="text-sm font-bold text-(--text-muted)">
                   Accent
                 </span>
-                <div className="flex flex-nowrap overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden gap-4 snap-x py-2 px-6 lg:px-8 -mx-6 lg:-mx-8 min-w-0">
+                <div className="flex flex-nowrap overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden gap-4 snap-x py-2 px-6 lg:px-8 -mx-6 lg:-mx-8 min-w-0">
                   <button
                     onClick={() => {
                       if (!settings.randomAccentColor) resetDynamicThemeSeed();
@@ -255,7 +257,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     }}
                     className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-fast shrink-0 ${
                       settings.randomAccentColor
-                        ? "ring-4 ring-offset-4 ring-offset-(--bg-surface) ring-(--text-main) bg-gradient-to-tr from-purple-500 via-pink-500 to-orange-500"
+                        ? "ring-4 ring-offset-4 ring-offset-(--bg-surface) ring-(--text-main) bg-linear-to-tr from-purple-500 via-pink-500 to-orange-500"
                         : "ring-4 ring-transparent ring-offset-4 ring-offset-(--bg-surface) bg-(--bg-highlight) hover:ring-(--border-dim)"
                     }`}
                     title="Random Accent"
@@ -337,12 +339,15 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             <div className="w-full flex justify-end">
               <MaterialSwitch
                 selected={settings.defaultView === "modern"}
-                onChange={() =>
-                  updateSetting(
-                    "defaultView",
-                    settings.defaultView === "modern" ? "legacy" : "modern",
-                  )
-                }
+                onChange={() => {
+                  const newVal = settings.defaultView === "modern" ? "legacy" : "modern";
+                  updateSetting("defaultView", newVal);
+                  if (newVal === "legacy") {
+                    sessionStorage.setItem("vtop-legacy-mode", "true");
+                  } else {
+                    sessionStorage.setItem("vtop-legacy-mode", "false");
+                  }
+                }}
               />
             </div>
           </SettingsCard>
@@ -495,7 +500,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   onClick={() =>
                     updateSetting("googleLinked", !settings.googleLinked)
                   }
-                  className={`px-5 py-2.5 shrink-0 rounded-xl text-xs font-black font-expanded uppercase transition-all border-2 border-(--border-main) shadow-none hover:-translate-y-px hover:shadow-[var(--brutal-shadow-hover)] active:translate-y-0 active:shadow-[var(--brutal-shadow-active)] cursor-pointer ${
+                  className={`px-5 py-2.5 shrink-0 rounded-xl text-xs font-black font-expanded uppercase transition-all border-2 border-(--border-main) shadow-none hover:-translate-y-px hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) cursor-pointer ${
                     settings.googleLinked
                       ? "bg-(--bg-surface) text-(--text-main) hover:text-red-500 hover:bg-red-500/10"
                       : "bg-(--text-main) text-(--bg-main)"
@@ -560,18 +565,55 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
           <SettingsCard
             title="Data & Cache"
-            description="Clear locally cached academic data to force a fresh fetch on your next visit."
+            description="Clear locally cached academic data or proactively sync the latest data for offline access."
             className="col-span-1 md:col-span-2"
           >
-            <div className="w-full flex justify-end">
+            <div className="w-full flex flex-col sm:flex-row justify-end gap-3">
+              <button
+                id="sync-btn"
+                onClick={async () => {
+                  if (!network) {
+                    alert("Network instance not found.");
+                    return;
+                  }
+                  const btn = document.getElementById("sync-btn");
+                  if (btn) btn.innerText = "SYNCING...";
+                  try {
+                    await useDataStore.getState().fetchDashboardData(network, network.csrf, network.authorizedID);
+                    
+                    const gradesViewHTML = await network.getGradesView(true);
+                    const gradesSems = parseGradesSemesters(gradesViewHTML);
+                    if (gradesSems.length > 0) {
+                        await network.getStudentGrades(gradesSems[0].id, true);
+                    }
+                    await network.getStudentGradeHistory(true);
+
+                    const marksViewHTML = await network.getMarksView(true);
+                    const marksSems = parseMarksSemesters(marksViewHTML);
+                    if (marksSems.length > 0) {
+                        await network.getStudentMarks(marksSems[0].id, true);
+                    }
+
+                    if (btn) btn.innerText = "SYNC COMPLETE!";
+                    setTimeout(() => { if (btn) btn.innerText = "SYNC LATEST DATA"; }, 3000);
+                  } catch (e) {
+                    console.error(e);
+                    if (btn) btn.innerText = "SYNC FAILED!";
+                    setTimeout(() => { if (btn) btn.innerText = "SYNC LATEST DATA"; }, 3000);
+                  }
+                }}
+                className="px-5 py-2.5 rounded-xl text-xs font-black font-expanded uppercase transition-all border-2 border-(--border-main) shadow-none hover:-translate-y-px hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) cursor-pointer bg-(--accent-base) text-black"
+              >
+                Sync Latest Data
+              </button>
               <button
                 onClick={() => {
                   clearCache();
                   window.location.reload();
                 }}
-                className="px-5 py-2.5 rounded-xl text-xs font-black font-expanded uppercase transition-all border-2 border-(--border-main) shadow-none hover:-translate-y-px hover:shadow-[var(--brutal-shadow-hover)] active:translate-y-0 active:shadow-[var(--brutal-shadow-active)] cursor-pointer bg-(--bg-surface) text-red-500 hover:bg-red-500/10"
+                className="px-5 py-2.5 rounded-xl text-xs font-black font-expanded uppercase transition-all border-2 border-(--border-main) shadow-none hover:-translate-y-px hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) cursor-pointer bg-(--text-main) text-(--bg-main)"
               >
-                Clear Cache
+                Clear All Cache
               </button>
             </div>
           </SettingsCard>
@@ -579,7 +621,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           <SettingsCard
             title="Developer Options"
             description="Fill all VTOP types with dummy data for testing UI rendering across all pages."
-            className="col-span-1 md:col-span-2 lg:col-span-4 bg-[var(--accent-base)]/5 border-[var(--accent-base)]/20"
+            className="col-span-1 md:col-span-2 lg:col-span-4"
           >
             <div className="w-full flex flex-col md:flex-row justify-end gap-3">
               <button
@@ -642,7 +684,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     if (btn) btn.innerText = "ERROR!";
                   }
                 }}
-                className="px-5 py-2.5 rounded-xl text-xs font-black font-expanded uppercase transition-all border-2 border-(--border-main) shadow-none hover:-translate-y-px hover:shadow-[var(--brutal-shadow-hover)] active:translate-y-0 active:shadow-[var(--brutal-shadow-active)] cursor-pointer bg-(--bg-highlight) text-(--text-main)"
+                className="px-5 py-2.5 rounded-xl text-xs font-black font-expanded uppercase transition-all border-2 border-(--border-main) shadow-none hover:-translate-y-px hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) cursor-pointer bg-(--bg-surface) text-(--text-main)"
               >
                 Export Real Data As JSON
               </button>
@@ -651,12 +693,16 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   useDataStore.getState().enableDemoMode();
                   alert("Demo Mode Active: Dummy data injected.");
                 }}
-                className="px-5 py-2.5 rounded-xl text-xs font-black font-expanded uppercase transition-all border-2 border-(--border-main) shadow-none hover:-translate-y-px hover:shadow-[var(--brutal-shadow-hover)] active:translate-y-0 active:shadow-[var(--brutal-shadow-active)] cursor-pointer bg-(--text-main) text-(--bg-main)"
+                className="px-5 py-2.5 rounded-xl text-xs font-black font-expanded uppercase transition-all border-2 border-(--border-main) shadow-none hover:-translate-y-px hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) cursor-pointer bg-(--text-main) text-(--bg-main)"
               >
                 Fill Dummy Data
               </button>
             </div>
           </SettingsCard>
+        </div>
+
+        <div className="max-w-[1380px] mx-auto relative z-10 mt-8 mb-16">
+          <SyncManager />
         </div>
       </motion.div>
     </>

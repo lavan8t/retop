@@ -21,40 +21,72 @@ export const Toaster = () => {
   }, []);
 
   return (
-    <div className="fixed bottom-4 right-4 z-[9999999] flex flex-col items-end gap-2 pointer-events-none">
+    <div className="fixed inset-0 z-9999999 pointer-events-none flex flex-col justify-end">
       <AnimatePresence>
-        {toasts.map((toast) => (
+        {toasts.length > 0 && (
           <motion.div
-            key={toast.id}
-            initial={{ opacity: 0, y: 20, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            transition={SPRING_SNAPPY}
-            className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl pointer-events-auto border-2 ${
-              toast.type === "warning"
-                ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
-                : toast.type === "info"
-                ? "bg-(--bg-surface) text-(--text-main) border-(--border-main)"
-                : toast.type === "success"
-                ? "bg-green-500/10 text-green-500 border-green-500/20"
-                : "bg-red-500/10 text-red-500 border-red-500/20"
-            } backdrop-blur-md`}
-          >
-            <span
-              className="material-symbols-rounded"
-              style={{
-                fontVariationSettings: "'FILL' 1, 'wght' 700, 'GRAD' 0, 'opsz' 20",
-                fontSize: "18px",
-              }}
-            >
-              {toast.type === "info" ? "check_circle" : toast.type === "success" ? "check_circle" : "error"}
-            </span>
-            <span className="text-[0.95rem] font-bold leading-none">
-              {toast.message}
-            </span>
-          </motion.div>
-        ))}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="absolute inset-0 pointer-events-none bg-linear-to-t from-(--bg-main) via-(--bg-main)/80 to-transparent"
+          />
+        )}
       </AnimatePresence>
+
+      <div className="w-full flex flex-col gap-4 relative z-10 p-6 md:px-12 md:py-8 pointer-events-none">
+        <AnimatePresence>
+          {toasts.map((toast) => (
+            <motion.div
+              key={toast.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={SPRING_SNAPPY}
+              className="w-full flex flex-row items-center justify-between gap-4 pointer-events-auto"
+            >
+              <div className="flex items-center gap-4">
+                <span
+                  className={`material-symbols-rounded shrink-0 flex items-center justify-center text-4xl ${
+                    toast.type === "warning" ? "text-yellow-500" :
+                    toast.type === "info" ? "text-(--text-main)" :
+                    toast.type === "success" ? "text-green-500" : "text-red-500"
+                  }`}
+                  style={{ fontVariationSettings: "'FILL' 1, 'wght' 700, 'GRAD' 0, 'opsz' 20" }}
+                >
+                  {toast.type === "warning" ? "warning" : toast.type === "info" ? "info" : toast.type === "success" ? "check_circle" : "error"}
+                </span>
+                
+                <div className="flex flex-col text-left">
+                  <h1 className={`text-xl md:text-2xl font-black font-expanded uppercase leading-none ${
+                    toast.type === "warning" ? "text-yellow-500" :
+                    toast.type === "info" ? "text-(--text-main)" :
+                    toast.type === "success" ? "text-green-500" : "text-red-500"
+                  }`}>
+                    {toast.type === "warning" ? "Warning" :
+                     toast.type === "info" ? "Notice" :
+                     toast.type === "success" ? "Success" : "Something went wrong"}
+                  </h1>
+                  <p className={`text-xs md:text-sm font-mono mt-1 max-w-xl truncate ${
+                    toast.type === "warning" ? "text-yellow-400" :
+                    toast.type === "info" ? "text-(--text-muted)" :
+                    toast.type === "success" ? "text-green-400" : "text-red-400"
+                  }`}>
+                    {toast.message}
+                  </p>
+                </div>
+              </div>
+              
+              <button
+                onClick={() => removeToast(toast.id)}
+                className="flex items-center gap-2 bg-(--accent-base) text-(--text-inverse) px-6 py-3 rounded-full font-bold uppercase tracking-wider hover:bg-(--accent-hover) transition-colors shrink-0 shadow-lg"
+              >
+                Dismiss
+              </button>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
     </div>
   );
 };

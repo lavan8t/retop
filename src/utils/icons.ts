@@ -17,6 +17,7 @@ import {
   School,
   Person,
   Settings as SettingsIcon,
+  AppRegistration,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 
 export const getCategoryIcon = (title: string, url: string = "") => {
@@ -40,6 +41,7 @@ export const getCategoryIcon = (title: string, url: string = "") => {
 
   // Categories
   if (t.includes("academic")) return MenuBook;
+  if (t.includes("admission")) return AppRegistration;
   if (t.includes("examination")) return HistoryEdu;
   if (t.includes("finance")) return Wallet;
   if (t.includes("event")) return Celebration;

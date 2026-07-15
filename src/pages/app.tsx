@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import { useDataStore } from "../store/dataStore";
 import { ProfileMenu } from "../components/profile-menu";
-import { Toaster } from "../components/Toaster";
 import {
   initializeContainer,
   getAppRoot,
@@ -12,6 +11,7 @@ import {
   removeSplashScreen,
 } from "../utils/bridge";
 import { VTOPNetwork } from "../utils/network";
+import { getCachedData, setCachedData } from "../utils/cache";
 import { scrapeMenu, scrapeUserProfile } from "../parsers/menu";
 import {
   parseAcademicStats,
@@ -34,7 +34,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import { TopBar } from "../components/layout/TopBar";
 import { ContentRouter } from "../components/layout/ContentRouter";
-import { BottomNav } from "../components/layout/BottomNav";
+
 import { FloatingViewToggle } from "../components/timetable/FloatingViewToggle";
 import {
   getUpcomingClasses,
@@ -98,6 +98,13 @@ const getDestinationView = (link: QuickLink): ViewType | "content" => {
     lowerUrl.includes("studentattendance")
   )
     return "attendance";
+  if (
+    lowerTitle.includes("digital assignment") ||
+    lowerTitle.includes("digital assignment upload") ||
+    lowerTitle.includes("assignment") ||
+    lowerUrl.includes("studentda")
+  )
+    return "digitalAssignments";
 
   return "content";
 };
@@ -117,6 +124,7 @@ const getSavedView = (): ViewType => {
     "coursePage",
     "calendar",
     "attendance",
+    "digitalAssignments",
   ];
   return validViews.includes(saved as ViewType)
     ? (saved as ViewType)
@@ -161,6 +169,7 @@ const DashboardApp = () => {
   const [isOmniboxOpen, setIsOmniboxOpen] = useState(false);
   const [omniboxInitial, setOmniboxInitial] = useState("");
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const { settings, updateSetting } = useSettings();
 
   const {
@@ -202,6 +211,7 @@ const DashboardApp = () => {
     fetchUserProfile,
     fetchDashboardData,
     loadTimetable,
+    syncDashboard,
   } = useDataStore();
 
 
@@ -239,6 +249,12 @@ const DashboardApp = () => {
       updateSetting("pinnedLinks", [...pinnedLinks, link]);
     }
   };
+
+  useEffect(() => {
+    if (status !== "Initializing..." && status !== "Syncing...") {
+      setIsInitialLoad(false);
+    }
+  }, [status]);
 
   useEffect(() => {
     if (window.location.hash) {
@@ -313,57 +329,70 @@ const DashboardApp = () => {
       });
     }
 
-    fetchDashboardData(networkRef.current, csrf, authId).then(() =>
-      setTimeout(() => removeSplashScreen(), 500),
-    );
+    fetchDashboardData(networkRef.current, csrf, authId);
     fetchUserProfile(networkRef.current);
 
-    let attempts = 0;
-    const menuPoller = setInterval(() => {
-      attempts++;
-      const newMenu = scrapeMenu(document);
-      const count = newMenu.reduce((acc, cat) => acc + cat.links.length, 0);
-      setMenu((prev) =>
-        count > prev.reduce((acc, cat) => acc + cat.links.length, 0)
-          ? newMenu
-          : prev,
-      );
-      
-      if (count === 0 && attempts > 5) {
-        console.log("[retop] Menu items are unfetchable. Falling back to legacy UI.");
-        clearInterval(menuPoller);
-        revealLegacyUI();
-        setIsModernUI(false);
-        return;
-      }
+    let menuPoller: ReturnType<typeof setInterval> | undefined;
+    let feedbackPoller: ReturnType<typeof setInterval> | undefined;
 
-      if (count >= 102 || attempts > 15) clearInterval(menuPoller);
-    }, 2000);
-
-    const feedbackPoller = setInterval(() => {
-      try {
-        const bodyClone = document.body.cloneNode(true) as HTMLElement;
-        const sidebars = bodyClone.querySelectorAll("nav, .sidebar, #sidebar, [class*='menu'], .hmenu");
-        sidebars.forEach(s => s.remove());
-        
-        const mainText = bodyClone.textContent?.toLowerCase() || "";
-        const isFeedback = mainText.includes("faculty feedback") || 
-                           mainText.includes("student feedback") || 
-                           mainText.includes("course feedback") ||
-                           mainText.includes("mandatory feedback") ||
-                           mainText.includes("provide feedback");
-                           
-        if (isFeedback) {
-          const hasInputs = document.querySelectorAll("input[type='radio'], textarea, select").length > 0;
-          if (hasInputs) {
-            console.log("[retop] Mandatory feedback or blocking form detected in background. Triggering legacy UI.");
-            clearInterval(feedbackPoller);
-            revealLegacyUI();
-            setIsModernUI(false);
-          }
+    if ((window as any).__RETOP_OFFLINE__) {
+      getCachedData<MenuCategory[]>(`${authId}_vtop_menu`).then(cachedMenu => {
+        if (cachedMenu && cachedMenu.length > 0) {
+          setMenu(cachedMenu);
         }
-      } catch (e) {}
-    }, 3000);
+      });
+    } else {
+      let attempts = 0;
+      menuPoller = setInterval(() => {
+        attempts++;
+        const newMenu = scrapeMenu(document);
+        const count = newMenu.reduce((acc, cat) => acc + cat.links.length, 0);
+        
+        setMenu((prev) => {
+          const prevCount = prev.reduce((acc, cat) => acc + cat.links.length, 0);
+          if (count > prevCount) {
+            setCachedData(`${authId}_vtop_menu`, newMenu);
+            return newMenu;
+          }
+          return prev;
+        });
+        
+        if (count === 0 && attempts > 5) {
+          console.log("[retop] Menu items are unfetchable. Falling back to legacy UI.");
+          clearInterval(menuPoller);
+          revealLegacyUI();
+          setIsModernUI(false);
+          return;
+        }
+
+        if (count >= 102 || attempts > 15) clearInterval(menuPoller);
+      }, 2000);
+
+      feedbackPoller = setInterval(() => {
+        try {
+          const bodyClone = document.body.cloneNode(true) as HTMLElement;
+          const sidebars = bodyClone.querySelectorAll("nav, .sidebar, #sidebar, [class*='menu'], .hmenu");
+          sidebars.forEach(s => s.remove());
+          
+          const mainText = bodyClone.textContent?.toLowerCase() || "";
+          const isFeedback = mainText.includes("faculty feedback") || 
+                             mainText.includes("student feedback") || 
+                             mainText.includes("course feedback") ||
+                             mainText.includes("mandatory feedback") ||
+                             mainText.includes("provide feedback");
+                             
+          if (isFeedback) {
+            const hasInputs = document.querySelectorAll("input[type='radio'], textarea, select").length > 0;
+            if (hasInputs) {
+              console.log("[retop] Mandatory feedback or blocking form detected in background. Triggering legacy UI.");
+              clearInterval(feedbackPoller);
+              revealLegacyUI();
+              setIsModernUI(false);
+            }
+          }
+        } catch (e) {}
+      }, 3000);
+    }
 
     const handleKeys = (e: KeyboardEvent) => {
       // Get target element resolving through shadow DOM
@@ -383,7 +412,13 @@ const DashboardApp = () => {
       };
 
       if (isInput(targetEl)) return;
-      if (isOmniboxOpenRef.current) return;
+      if (isOmniboxOpenRef.current) {
+        if (e.key !== "Escape" && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+          e.preventDefault();
+          window.dispatchEvent(new CustomEvent("vtop-omnibox-type", { detail: e.key }));
+        }
+        return;
+      }
       if (e.key === "Escape") return;
 
       const hotkeySetting = settings.searchHotkey || "/";
@@ -401,7 +436,7 @@ const DashboardApp = () => {
       }
 
       if (shouldOpen) {
-        if (e.key === "/" || e.key === " ") e.preventDefault();
+        e.preventDefault();
         isOmniboxOpenRef.current = true;
         setOmniboxInitial(
           hotkeySetting === "instant" && e.key !== "/" && e.key !== " " ? e.key : ""
@@ -491,6 +526,7 @@ const DashboardApp = () => {
       } catch (e) {
         console.error("Logout error", e);
       } finally {
+        localStorage.removeItem("retop_lastAuthId");
         window.location.href = "/vtop/open/page";
       }
     }
@@ -572,6 +608,12 @@ const DashboardApp = () => {
                 loadTimetable(networkRef.current, csrfRef.current, authIdRef.current, semId, true).catch(console.warn);
               }
             }}
+            onSync={() => {
+              if (networkRef.current && csrfRef.current && authIdRef.current) {
+                syncDashboard(networkRef.current, csrfRef.current, authIdRef.current);
+              }
+            }}
+            network={networkRef.current}
           />
           <main className="flex-1 overflow-hidden relative">
             <AnimatePresence mode="wait">
@@ -622,20 +664,6 @@ const DashboardApp = () => {
               </>
             )}
           </AnimatePresence>
-
-          <BottomNav
-            currentView={currentView}
-            setCurrentView={setCurrentView}
-            pinnedLinks={pinnedLinks}
-            onNavigate={handleLinkClick}
-            getDestinationView={getDestinationView}
-            isOmniboxOpen={isOmniboxOpen}
-            setIsOmniboxOpen={setIsOmniboxOpen}
-            menuCategories={menu}
-            initialQuery={omniboxInitial}
-            onTogglePin={handleTogglePin}
-          />
-
           {currentView === "timetable" && !isOmniboxOpen && (
             <FloatingViewToggle
               viewMode={ttViewMode}
@@ -644,8 +672,7 @@ const DashboardApp = () => {
           )}
         </div>
       </motion.div>
-      <Toaster />
-
+      
       <AnimatePresence>
         {!isModernUI && (
           <LegacyReturnButton

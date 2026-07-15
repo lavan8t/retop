@@ -228,6 +228,7 @@ const LoginPage = ({
         );
 
         if (authMatch) {
+          localStorage.setItem("retop_lastAuthId", username);
           window.history.pushState({}, "", "/vtop/content");
           const evt = new CustomEvent("vtop-login-success", {
             detail: authMatch[1],
@@ -249,6 +250,7 @@ const LoginPage = ({
     if (mode === "GOOGLE" && gResponseToken)
       payload["gResponse"] = gResponseToken;
     else if (mode === "IMAGE" && captcha) payload["captchaStr"] = captcha;
+    localStorage.setItem("retop_lastAuthId", username);
     createHiddenForm("/vtop/login", payload).submit();
   };
 
@@ -359,7 +361,7 @@ const LoginPage = ({
                         onChange={(e) =>
                           handleInputChange("username", e.target.value)
                         }
-                        className="w-full bg-(--bg-surface) border-4 border-(--border-main) rounded-2xl p-4 pl-5 font-expanded font-black text-xl outline-none focus:shadow-[var(--brutal-shadow-hover)] focus:-translate-y-1 transition-all uppercase text-(--text-main) placeholder-(--text-muted)"
+                        className="w-full bg-(--bg-surface) border-4 border-(--border-main) rounded-2xl p-4 pl-5 font-expanded font-black text-xl outline-none focus:shadow-(--brutal-shadow-hover) focus:-translate-y-1 transition-all uppercase text-(--text-main) placeholder-(--text-muted)"
                       />
                     </motion.div>
                     <motion.div
@@ -379,7 +381,7 @@ const LoginPage = ({
                         onChange={(e) =>
                           handleInputChange("password", e.target.value)
                         }
-                        className="w-full bg-(--bg-surface) border-4 border-(--border-main) rounded-2xl p-4 pl-5 font-expanded font-black text-xl outline-none focus:shadow-[var(--brutal-shadow-hover)] focus:-translate-y-1 transition-all text-(--text-main) placeholder-(--text-muted) pr-12"
+                        className="w-full bg-(--bg-surface) border-4 border-(--border-main) rounded-2xl p-4 pl-5 font-expanded font-black text-xl outline-none focus:shadow-(--brutal-shadow-hover) focus:-translate-y-1 transition-all text-(--text-main) placeholder-(--text-muted) pr-12"
                       />
                       <button
                         type="button"
@@ -415,7 +417,7 @@ const LoginPage = ({
                             onChange={(e) =>
                               handleInputChange("captcha", e.target.value)
                             }
-                            className="w-full bg-(--bg-surface) border-4 border-(--border-main) rounded-2xl p-4 pl-5 font-expanded font-black text-xl outline-none uppercase focus:shadow-[var(--brutal-shadow-hover)] focus:-translate-y-1 transition-all text-(--text-main)"
+                            className="w-full bg-(--bg-surface) border-4 border-(--border-main) rounded-2xl p-4 pl-5 font-expanded font-black text-xl outline-none uppercase focus:shadow-(--brutal-shadow-hover) focus:-translate-y-1 transition-all text-(--text-main)"
                           />
                         </motion.div>
                         <div
@@ -445,10 +447,14 @@ const LoginPage = ({
                     <button
                       onClick={handleAuthorize}
                       disabled={isLoading}
-                      className={`w-full border-4 border-(--border-main) rounded-2xl py-4 text-2xl font-expanded font-black uppercase flex items-center justify-center gap-3 transition-all duration-fast mt-2 ${isLoading ? "bg-(--bg-surface) text-(--text-muted) cursor-not-allowed" : "bg-(--accent-base) text-(--text-inverse) shadow-none hover:-translate-y-1 hover:shadow-[var(--brutal-shadow-xl)] active:translate-y-1 active:shadow-[var(--brutal-shadow-active)]"}`}
+                      className={`w-full border-4 border-(--border-main) rounded-2xl py-4 text-2xl font-expanded font-black uppercase flex items-center justify-center gap-3 transition-all duration-fast mt-2 ${isLoading ? "bg-(--bg-surface) text-(--text-muted) cursor-not-allowed" : "bg-(--accent-base) text-(--text-inverse) shadow-none hover:-translate-y-1 hover:shadow-(--brutal-shadow-xl) active:translate-y-1 active:shadow-(--brutal-shadow-active)"}`}
                     >
                       {isLoading ? (
-                        <ProgressActivity className="animate-spin w-6 h-6" />
+                        <motion.div
+                          animate={{ y: [0, -4, 0], scale: [1, 1.2, 1] }}
+                          transition={{ duration: 0.8, repeat: Infinity, ease: "easeInOut" }}
+                          className="w-2.5 h-2.5 bg-(--text-muted) rounded-full"
+                        />
                       ) : (
                         <>
                           Authorize <ArrowForward className="w-6 h-6" />
@@ -458,7 +464,7 @@ const LoginPage = ({
 
                     <button
                       onClick={openOfflineMode}
-                      className="w-full border-4 border-zinc-700 bg-zinc-800 rounded-2xl py-3 text-lg font-expanded font-black uppercase flex items-center justify-center gap-2 transition-all duration-fast text-zinc-300 hover:text-white hover:border-zinc-500 hover:-translate-y-1 hover:shadow-[var(--brutal-shadow-hover)] active:translate-y-0 active:shadow-[var(--brutal-shadow-active)] mt-4"
+                      className="w-full border-4 border-zinc-700 bg-zinc-800 rounded-2xl py-3 text-lg font-expanded font-black uppercase flex items-center justify-center gap-2 transition-all duration-fast text-zinc-300 hover:text-white hover:border-zinc-500 hover:-translate-y-1 hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) mt-4"
                     >
                       Access Offline Cache
                     </button>

@@ -60,6 +60,19 @@
 
 /* --- 1. GLOBAL RESET & VARIABLES --- */
 @layer base {
+  #retop-root *, #retop-root ::before, #retop-root ::after {
+    border-width: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .popup-shadow {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  #retop-root *:hover {
+    --tw-translate-y: 0px !important;
+  }
+
   :host,
   #retop-root {
     /* Base Accent (Injected dynamically by JS, default shown here) */
@@ -75,13 +88,13 @@
     );
 
     /* Professional Theme mapping to Material Sys Colors */
-    --bg-main: var(--md-sys-color-background);
-    --bg-surface: var(--md-sys-color-surface);
-    --bg-highlight: var(--md-sys-color-surface-variant);
+    --bg-main: var(--md-sys-color-surface);
+    --bg-surface: var(--md-sys-color-surface-variant);
+    --bg-highlight: color-mix(in srgb, var(--md-sys-color-surface-variant) 80%, var(--md-sys-color-primary) 20%);
 
-    /* Maintained strong borders for Brutalist layout */
-    --border-main: var(--md-sys-color-outline);
-    --border-dim: var(--md-sys-color-outline-variant);
+    /* Removed borders for Brutalist layout as requested */
+    --border-main: transparent;
+    --border-dim: transparent;
 
     --text-main: var(--md-sys-color-on-background);
     --text-muted: var(--md-sys-color-on-surface-variant);
@@ -92,12 +105,23 @@
     );
 
     --text-inverse: var(--md-sys-color-on-primary);
-    --shadow-main: rgba(0, 0, 0, 0.3);
-    --brutal-shadow-sm: 2px 2px 0px 0px var(--shadow-main);
-    --brutal-shadow-hover: 4px 4px 0px 0px var(--shadow-main);
-    --brutal-shadow-lg: 6px 6px 0px 0px var(--shadow-main);
-    --brutal-shadow-xl: 8px 8px 0px 0px var(--shadow-main);
+    --shadow-main: transparent;
+    --brutal-shadow-sm: none;
+    --brutal-shadow-hover: none;
+    --brutal-shadow-lg: none;
+    --brutal-shadow-xl: none;
     --brutal-shadow-active: none;
+
+    /* Attendance Colors */
+    --attendance-green: #22c55e;
+    --attendance-green-bg: color-mix(in srgb, #22c55e 15%, transparent);
+    --attendance-green-text: color-mix(in srgb, #22c55e 40%, var(--text-main));
+    --attendance-blue: #3b82f6;
+    --attendance-blue-bg: color-mix(in srgb, #3b82f6 15%, transparent);
+    --attendance-blue-text: color-mix(in srgb, #3b82f6 40%, var(--text-main));
+    --attendance-red: #ef4444;
+    --attendance-red-bg: color-mix(in srgb, #ef4444 15%, transparent);
+    --attendance-red-text: color-mix(in srgb, #ef4444 40%, var(--text-main));
 
     /* Card Colors - Professional deep tones mixed with the surface for stark Brutalist blocks */
     --card-cyan: color-mix(in srgb, #06b6d4 40%, var(--bg-surface));
@@ -180,6 +204,11 @@
 
 #retop-root[data-theme="light"] {
   --shadow-main: rgba(0, 0, 0, 0.1);
+  /* Inject strong primary tint into the light theme background to make the accent pop */
+  --bg-main: color-mix(in srgb, var(--md-sys-color-surface) 90%, var(--md-sys-color-primary) 10%);
+  --bg-surface: color-mix(in srgb, var(--md-sys-color-surface-variant) 85%, var(--md-sys-color-primary) 15%);
+  --bg-highlight: color-mix(in srgb, var(--md-sys-color-surface-variant) 75%, var(--md-sys-color-primary) 25%);
+
   /* Lighter professional blocks for Light mode Brutalism */
   --card-cyan: #0891b2;
   --card-lime: #059669;
@@ -442,3 +471,17 @@
     transform: translateX(-100%);
   }
 }
+
+.empty-events-container:empty::after {
+  content: 'No events to show';
+  display: block;
+  text-align: center;
+  font-weight: 800;
+  font-family: var(--font-expanded);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-size: 1rem;
+  padding-top: 10rem;
+  opacity: 0.5;
+}
+

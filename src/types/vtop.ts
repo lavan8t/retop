@@ -70,10 +70,6 @@ export interface CurriculumCourse {
   basket: string;
 }
 
-export interface MarksSemester {
-  id: string;
-  name: string;
-}
 
 export interface AssessmentMark {
   title: string;
@@ -330,10 +326,6 @@ export interface AttendanceRecord {
   status: string;
 }
 
-export interface GradesSemester {
-  id: string;
-  name: string;
-}
 
 export interface GradeCourse {
   code: string;

@@ -41,7 +41,7 @@ export const AttendanceRow = ({ course }: { course: CourseSummary }) => {
   return (
     <div className="relative flex items-center justify-between p-2 rounded-xl bg-(--bg-surface) hover:bg-(--bg-highlight) transition-colors cursor-pointer group select-none overflow-hidden">
       <div
-        className={`absolute top-0 left-0 h-full ${barColor} opacity-10 group-hover:opacity-20 transition-opacity duration-300`}
+        className={`absolute top-0 left-0 h-full ${barColor} opacity-10 group-hover:opacity-20 transition-opacity duration-fast`}
         style={{ width: `${displayVal}%` }}
       />
       <div className="relative z-10 flex items-center gap-2 min-w-0 flex-1 pr-3">

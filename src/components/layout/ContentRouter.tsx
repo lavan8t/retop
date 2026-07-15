@@ -10,51 +10,23 @@ import { CoursePage } from "../../pages/course-page";
 import { CalendarPage } from "../../pages/calendar";
 import { AttendancePage } from "../../pages/attendance";
 
+import { useAppStore } from "../../store/appStore";
+import { useDataStore } from "../../store/dataStore";
+
 export const ContentRouter = ({
   currentView,
   networkRef,
   settings,
   updateSetting,
-  stats,
-  attendance,
-  assignments,
-  upcoming,
-  dayName,
   menu,
   handleLinkClick,
-  ttCourses,
-  ttLoading,
-  ttViewMode,
-  setTtViewMode,
-  cpOptions,
-  setCpOptions,
-  cpSemesters,
-  setCpSemesters,
-  cpSelectedSem,
-  setCpSelectedSem,
-  cpSelectedCourseId,
-  setCpSelectedCourseId,
-  cpSearchTerm,
-  calSemesters,
-  setCalSemesters,
-  calSelectedSem,
-  setCalSelectedSem,
-  marksSemesters,
-  setMarksSemesters,
-  marksSelectedSem,
-  setMarksSelectedSem,
-  marksSearchQuery,
-  isMarksModernView,
-  gradesSemesters,
-  setGradesSemesters,
-  gradesSelectedSem,
-  setGradesSelectedSem,
-  ttSemesters,
-  ttSelectedSem,
   events,
   pinnedLinks,
   handleTogglePin,
 }: any) => {
+  const appState = useAppStore();
+  const dataState = useDataStore();
+  
   if (!networkRef.current) return null;
 
   switch (currentView) {
@@ -62,18 +34,18 @@ export const ContentRouter = ({
       return (
         <HomeView
           settings={settings}
-          stats={stats}
-          attendance={attendance}
-          assignments={assignments}
+          stats={dataState.stats}
+          attendance={dataState.attendance}
+          assignments={dataState.assignments}
           events={events}
-          upcoming={upcoming}
-          dayName={dayName}
+          upcoming={dataState.upcoming}
+          dayName={"Today"}
           menuCategories={menu}
           onNavigate={handleLinkClick}
-          ttCourses={ttCourses}
+          ttCourses={dataState.ttCourses}
           use24HourTime={settings.use24HourTime ?? true}
-          calSemesters={calSemesters?.length ? calSemesters : ttSemesters}
-          calSelectedSem={calSelectedSem || ttSelectedSem}
+          calSemesters={dataState.calSemesters?.length ? dataState.calSemesters : dataState.ttSemesters}
+          calSelectedSem={dataState.calSelectedSem || dataState.ttSelectedSem}
           pinnedLinks={pinnedLinks}
           handleTogglePin={handleTogglePin}
         />
@@ -81,11 +53,11 @@ export const ContentRouter = ({
     case "timetable":
       return (
         <TimetableContentView
-          courses={ttCourses}
-          loading={ttLoading}
-          viewMode={ttViewMode}
-          setViewMode={setTtViewMode}
-          attendance={attendance}
+          courses={dataState.ttCourses}
+          loading={dataState.ttLoading}
+          viewMode={appState.ttViewMode}
+          setViewMode={appState.setTtViewMode}
+          attendance={dataState.attendance}
           use24HourTime={settings.use24HourTime ?? true}
         />
       );
@@ -95,43 +67,43 @@ export const ContentRouter = ({
       return (
         <MarksPage
           network={networkRef.current}
-          semesters={marksSemesters}
-          setSemesters={setMarksSemesters}
-          selectedSem={marksSelectedSem}
-          setSelectedSem={setMarksSelectedSem}
-          searchQuery={marksSearchQuery}
-          isModernView={isMarksModernView}
+          semesters={appState.marksSemesters}
+          setSemesters={appState.setMarksSemesters}
+          selectedSem={appState.marksSelectedSem}
+          setSelectedSem={appState.setMarksSelectedSem}
+          searchQuery={appState.marksSearchQuery}
+          isModernView={appState.isMarksModernView}
         />
       );
     case "grades":
       return (
         <GradesPage
           network={networkRef.current}
-          semesters={gradesSemesters}
-          setSemesters={setGradesSemesters}
-          selectedSem={gradesSelectedSem}
-          setSelectedSem={setGradesSelectedSem}
+          semesters={appState.gradesSemesters}
+          setSemesters={appState.setGradesSemesters}
+          selectedSem={appState.gradesSelectedSem}
+          setSelectedSem={appState.setGradesSelectedSem}
         />
       );
     case "profile":
       return <ProfilePage network={networkRef.current} />;
     case "settings":
-      return <SettingsPage settings={settings} updateSetting={updateSetting} />;
+      return <SettingsPage settings={settings} updateSetting={updateSetting} network={networkRef.current} />;
 
     case "coursePage":
       return (
         <CoursePage
           network={networkRef.current}
           menu={menu}
-          cpOptions={cpOptions}
-          setCpOptions={setCpOptions}
-          cpSemesters={cpSemesters}
-          setCpSemesters={setCpSemesters}
-          selectedSem={cpSelectedSem}
-          setSelectedSem={setCpSelectedSem}
-          selectedOptionId={cpSelectedCourseId}
-          setSelectedOptionId={setCpSelectedCourseId}
-          searchTerm={cpSearchTerm}
+          cpOptions={appState.cpOptions}
+          setCpOptions={appState.setCpOptions}
+          cpSemesters={dataState.ttSemesters}
+          setCpSemesters={() => {}}
+          selectedSem={dataState.cpSelectedSem}
+          setSelectedSem={dataState.setCpSelectedSem}
+          selectedOptionId={appState.cpSelectedCourseId}
+          setSelectedOptionId={appState.setCpSelectedCourseId}
+          searchTerm={appState.cpSearchTerm}
         />
       );
 

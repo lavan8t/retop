@@ -140,7 +140,7 @@ const AttendanceCalculator = ({
               cx="80"
               cy="80"
               r={circleRadius}
-              className={`transition-all duration-500 ease-out ${isDanger || isInvalid ? "stroke-red-500" : "stroke-emerald-500"}`}
+              className={`transition-all duration-normal ease-out ${isDanger || isInvalid ? "stroke-red-500" : "stroke-emerald-500"}`}
               strokeWidth="20"
               fill="none"
               strokeDasharray={circleCircumference}
@@ -258,11 +258,11 @@ const CourseCard = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: idx * 0.05 }}
-      className={`relative flex items-center justify-between p-4 md:p-5 rounded-2xl overflow-hidden transition-all duration-300 cursor-pointer border-4 group select-none ${isSelected ? "bg-(--bg-surface) border-(--accent-base) -translate-y-1 shadow-[4px_4px_0px_0px_var(--shadow-main)]" : "bg-(--bg-surface) border-(--border-main) hover:shadow-[4px_4px_0px_0px_var(--shadow-main)] hover:-translate-y-1 hover:bg-(--bg-highlight)"}`}
+      className={`relative flex items-center justify-between p-4 md:p-5 rounded-2xl overflow-hidden transition-all duration-fast cursor-pointer border-4 group select-none ${isSelected ? "bg-(--bg-surface) border-(--accent-base) -translate-y-1 shadow-[var(--brutal-shadow-hover)]" : "bg-(--bg-surface) border-(--border-main) hover:shadow-[var(--brutal-shadow-hover)] hover:-translate-y-1 hover:bg-(--bg-highlight)"}`}
       onClick={onClick}
     >
       <div
-        className={`absolute top-0 left-0 h-full ${barColor} opacity-10 group-hover:opacity-20 transition-opacity duration-300`}
+        className={`absolute top-0 left-0 h-full ${barColor} opacity-10 group-hover:opacity-20 transition-opacity duration-fast`}
         style={{ width: `${course.percentage}%` }}
       />
       <div className="relative z-10 flex items-center gap-4 min-w-0 flex-1 pr-4">

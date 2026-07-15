@@ -31,7 +31,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ msg, subMsg, icon: Icon 
   return (
   <div className={`flex flex-col items-center justify-center h-full w-full text-(--text-muted) rounded-4xl bg-(--bg-surface) group ${containerSizeClass} ${className}`}>
     <Icon className={`${iconSizeClass} text-(--accent-base) shrink-0`} />
-    <span className={`${textSizeClass} text-center font-bold font-expanded uppercase transition-all duration-300 group-hover:font-squish`}>
+    <span className={`${textSizeClass} text-center font-bold font-expanded uppercase transition-all duration-fast group-hover:font-squish`}>
       {msg}
     </span>
     {subMsg && (

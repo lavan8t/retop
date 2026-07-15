@@ -1,20 +1,23 @@
-import { GradesSemester, GradeCourse, GradeAssessment, GradesData } from "../types/vtop";
+import { Semester, GradeCourse, GradeAssessment, GradesData } from "../types/vtop";
 
-export function parseGradesSemesters(html: string): GradesSemester[] {
+export function parseGradesSemesters(html: string): Semester[] {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, "text/html");
 
   const select = doc.getElementById("semesterSubId") as HTMLSelectElement;
   if (!select) return [];
 
-  const semesters: GradesSemester[] = [];
+  const semesters: Semester[] = [];
   const options = select.querySelectorAll("option");
   options.forEach((opt) => {
     const val = opt.value;
     if (val) {
-      semesters.push({ id: val, name: opt.textContent?.trim() || "" });
+      semesters.push({ id: val, label: opt.textContent?.trim() || "", isLatest: false });
     }
   });
+  if (semesters.length > 0) {
+    semesters[0].isLatest = true;
+  }
 
   return semesters;
 }

@@ -9,6 +9,7 @@ import {
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { EmptyState } from "../components/EmptyState";
 import { motion, AnimatePresence } from "framer-motion";
+import { useDataStore } from "../store/dataStore";
 
 interface MarksPageProps {
   network: VTOPNetwork;
@@ -39,13 +40,19 @@ export const MarksPage: React.FC<MarksPageProps> = ({
         setLoading(false);
         return;
       }
+      if (useDataStore.getState().status === "Demo Mode Active") {
+        setSemesters([{ id: "demo", label: "Fall Semester 2026-27" }]);
+        setSelectedSem("demo");
+        setLoading(false);
+        return;
+      }
       try {
         const html = await network.getMarksView();
         const sems = parseMarksSemesters(html);
         const dropdownSems = sems.map((s) => ({
           id: s.id,
-          label: s.name,
-          isLatest: false,
+          label: s.label,
+          isLatest: s.isLatest,
         }));
         setSemesters(dropdownSems);
         if (sems.length > 0 && !selectedSem) {
@@ -65,9 +72,29 @@ export const MarksPage: React.FC<MarksPageProps> = ({
     const fetchMarks = async () => {
       setFetchingMarks(true);
       setMarksData([]);
+      
+      if (useDataStore.getState().status === "Demo Mode Active") {
+        setMarksData([
+          {
+            classId: "123",
+            code: "CSE1001",
+            title: "Problem Solving and Programming",
+            type: "TH",
+            credits: "3",
+            faculty: "Dr. Demo",
+            slot: "A1",
+            marks: [{ title: "CAT 1", max: "50", weightage: "15", status: "Attended", scored: "45", scoredWeightage: "13.5" }]
+          }
+        ]);
+        setFetchingMarks(false);
+        return;
+      }
+
       try {
         const html = await network.getStudentMarks(selectedSem);
-        setMarksData(parseStudentMarks(html));
+        const parsedMarks = parseStudentMarks(html);
+        console.log(`[DATA_CAPTURE] Marks (${selectedSem}):`, parsedMarks);
+        setMarksData(parsedMarks);
       } catch (e) {
         console.error(e);
       } finally {
@@ -78,12 +105,34 @@ export const MarksPage: React.FC<MarksPageProps> = ({
   }, [selectedSem, network]);
 
   const filteredMarks = useMemo(() => {
-    if (!searchQuery) return marksData;
-    return marksData.filter(
-      (c) =>
-        c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.code.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
+    let result = marksData;
+    if (searchQuery) {
+      result = marksData.filter(
+        (c) =>
+          c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          c.code.toLowerCase().includes(searchQuery.toLowerCase()),
+      );
+    }
+    
+    return [...result].sort((a, b) => {
+      const getBase = (code: string) => {
+         const lastChar = code.slice(-1);
+         if (lastChar === 'L' || lastChar === 'P') return code.slice(0, -1);
+         return code;
+      };
+      const baseA = getBase(a.code);
+      const baseB = getBase(b.code);
+      
+      if (baseA < baseB) return -1;
+      if (baseA > baseB) return 1;
+      
+      const lastA = a.code.slice(-1);
+      const lastB = b.code.slice(-1);
+      if (lastA === 'L' && lastB === 'P') return -1;
+      if (lastA === 'P' && lastB === 'L') return 1;
+      
+      return 0;
+    });
   }, [marksData, searchQuery]);
 
   return (
@@ -92,7 +141,8 @@ export const MarksPage: React.FC<MarksPageProps> = ({
       animate={{ opacity: 1 }}
       className="h-full flex flex-col bg-transparent font-mono text-(--text-main) overflow-hidden"
     >
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-6 pt-20 md:pt-24 lg:pt-28 space-y-6">
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-2 md:p-4 pt-16 md:pt-20 lg:pt-24 pb-32 md:pb-12">
+        <div className="max-w-[1380px] mx-auto space-y-6">
         {loading || fetchingMarks ? (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 animate-pulse">
             {[...Array(4)].map((_, i) => (
@@ -298,6 +348,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({
             ))}
           </motion.div>
         )}
+        </div>
       </div>
     </motion.div>
   );

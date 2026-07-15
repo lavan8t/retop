@@ -1,19 +1,18 @@
-import { MarksSemester, CourseMarks } from "../types/vtop";
+import { CourseMarks, AssessmentMark, Semester } from "../types/vtop";
 
-export function parseMarksSemesters(html: string): MarksSemester[] {
+export const parseMarksSemesters = (html: string): Semester[] => {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, "text/html");
   const options = doc.querySelectorAll("#semesterSubId option");
-  const semesters: MarksSemester[] = [];
+  const semesters: Semester[] = [];
 
   options.forEach((opt) => {
-    const val = opt.getAttribute("value") || (opt as HTMLOptionElement).value || opt.textContent?.trim() || "";
-    const txt = opt.textContent?.trim() || "";
-    const isSelectPlaceholder = txt.toLowerCase().includes("select") || txt.toLowerCase().includes("choose") || val.toLowerCase().includes("select") || val.toLowerCase().includes("choose") || txt === "-";
-    if (val && val.trim() !== "" && !isSelectPlaceholder) {
+    const val = opt.getAttribute("value");
+    if (val && val !== "") {
       semesters.push({
         id: val,
-        name: txt || val,
+        label: opt.textContent?.trim() || "",
+        isLatest: false
       });
     }
   });

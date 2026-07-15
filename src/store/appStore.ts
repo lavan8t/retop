@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { ViewType } from "../types/vtop";
+import { ViewType, CoursePageOption } from "../types/vtop";
 
 export type Toast = { id: string; message: string; type: 'error' | 'warning' | 'info' | 'success' };
 export type NetworkLog = { url: string; timestamp: number; key?: string };
@@ -16,6 +16,30 @@ type AppState = {
   addToast: (toast: Omit<Toast, 'id'>) => void;
   removeToast: (id: string) => void;
   logNetworkRequest: (url: string, key?: string) => void;
+
+  ttViewMode: "grid" | "list" | "week";
+  setTtViewMode: (val: "grid" | "list" | "week") => void;
+
+  cpOptions: CoursePageOption[];
+  setCpOptions: (val: CoursePageOption[]) => void;
+  cpSearchTerm: string;
+  setCpSearchTerm: (val: string) => void;
+  cpSelectedCourseId: string;
+  setCpSelectedCourseId: (val: string) => void;
+
+  marksSemesters: { id: string; label: string }[];
+  setMarksSemesters: (val: { id: string; label: string }[]) => void;
+  marksSelectedSem: string;
+  setMarksSelectedSem: (val: string) => void;
+  marksSearchQuery: string;
+  setMarksSearchQuery: (val: string) => void;
+  isMarksModernView: boolean;
+  setIsMarksModernView: (val: boolean) => void;
+
+  gradesSemesters: { id: string; label: string }[];
+  setGradesSemesters: (val: { id: string; label: string }[]) => void;
+  gradesSelectedSem: string;
+  setGradesSelectedSem: (val: string) => void;
 };
 
 export const useAppStore = create<AppState>((set) => ({
@@ -49,4 +73,28 @@ export const useAppStore = create<AppState>((set) => ({
     set((state) => ({
       networkLogs: [{ url, timestamp: Date.now(), key }, ...state.networkLogs].slice(0, 50),
     })),
+
+  ttViewMode: "grid",
+  setTtViewMode: (val) => set({ ttViewMode: val }),
+
+  cpOptions: [],
+  setCpOptions: (val) => set({ cpOptions: val }),
+  cpSearchTerm: "",
+  setCpSearchTerm: (val) => set({ cpSearchTerm: val }),
+  cpSelectedCourseId: "",
+  setCpSelectedCourseId: (val) => set({ cpSelectedCourseId: val }),
+
+  marksSemesters: [],
+  setMarksSemesters: (val) => set({ marksSemesters: val }),
+  marksSelectedSem: "",
+  setMarksSelectedSem: (val) => set({ marksSelectedSem: val }),
+  marksSearchQuery: "",
+  setMarksSearchQuery: (val) => set({ marksSearchQuery: val }),
+  isMarksModernView: true,
+  setIsMarksModernView: (val) => set({ isMarksModernView: val }),
+
+  gradesSemesters: [],
+  setGradesSemesters: (val) => set({ gradesSemesters: val }),
+  gradesSelectedSem: "",
+  setGradesSelectedSem: (val) => set({ gradesSelectedSem: val }),
 }));

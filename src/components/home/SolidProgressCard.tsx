@@ -7,7 +7,7 @@ export const SolidProgressCard = ({ progress }: { progress: number }) => (
     clickable
     className="bg-cyan-400 rounded-3xl p-5 relative overflow-hidden group flex flex-col h-full min-h-35 lg:min-h-0 select-none"
   >
-    <div className="absolute -right-4 -bottom-4 opacity-[0.15] group-hover:opacity-30 transition-all duration-500 group-hover:rotate-12 group-hover:scale-110 pointer-events-none">
+    <div className="absolute -right-4 -bottom-4 opacity-[0.15] group-hover:opacity-30 transition-all duration-normal group-hover:rotate-12 group-hover:scale-110 pointer-events-none">
       <TrendingUp className="w-28 h-28 text-(--text-main)" />
     </div>
 

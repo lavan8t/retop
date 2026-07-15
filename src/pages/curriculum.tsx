@@ -27,8 +27,14 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
   const [allCourses, setAllCourses] = useState<Record<string, CurriculumCourse[]>>({});
   const [loadingCourses, setLoadingCourses] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [hideCompleted, setHideCompleted] = useState(false);
+  const [hideCompleted, setHideCompleted] = useState(() => {
+    return localStorage.getItem('curriculum_hide_completed') === 'true';
+  });
   const [completedCourseCodes, setCompletedCourseCodes] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    localStorage.setItem('curriculum_hide_completed', hideCompleted.toString());
+  }, [hideCompleted]);
 
   useEffect(() => {
     loadDashboard();
@@ -135,71 +141,65 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
             placeholder="Search all courses..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-(--bg-surface) border border-(--border-dim) text-(--text-main) text-xs md:text-sm rounded-2xl pl-10 pr-4 py-2 w-48 md:w-64 focus:outline-none focus:border-(--accent-base) focus:ring-4 focus:ring-(--accent-base)/10 transition-all duration-300 placeholder:text-(--text-muted) shadow-sm"
+            className="bg-(--bg-surface) border border-(--border-dim) text-(--text-main) text-xs md:text-sm rounded-2xl pl-10 pr-4 py-2 w-48 md:w-64 focus:outline-none focus:border-(--accent-base) focus:ring-4 focus:ring-(--accent-base)/10 transition-all duration-fast placeholder:text-(--text-muted) shadow-sm"
           />
           <Search className="w-4 h-4 text-(--text-muted) absolute left-3.5 top-2.5 group-focus-within:text-(--accent-base) transition-colors" />
         </div>
       </div>
 
       <div className="w-full flex flex-col pt-20 md:pt-24 px-6 md:px-12 shrink-0 z-20 pointer-events-auto relative">
-        <div className="w-full overflow-x-auto custom-scrollbar pt-2 pb-8 flex items-center gap-3 snap-x snap-mandatory scroll-px-6 md:scroll-px-12">
+        <div className="w-full pt-2 pb-8 flex items-stretch gap-2 lg:gap-4 px-2 md:px-4">
           {!loading && (
-            <div className="snap-start shrink-0 flex flex-col justify-center px-6 py-3 bg-(--bg-surface) rounded-2xl border-2 border-(--border-dim) border-dashed items-center group hover:border-(--accent-base) transition-colors cursor-default">
-              <span className="text-[10px] font-black text-(--text-muted) uppercase tracking-wider group-hover:text-(--accent-base) transition-colors">Total Credits</span>
-              <span className="text-xl font-black font-expanded text-(--text-main) mt-0.5">{totalCredits}</span>
+            <div className="flex-[0.8] md:flex-[1.2] flex flex-col justify-center px-6 py-4 bg-(--bg-surface) rounded-3xl items-start cursor-default transition-all duration-fast">
+              <span className="text-[11px] font-black text-(--text-muted) uppercase tracking-normal leading-tight">Total<br/>Credits</span>
+              <span className="text-5xl md:text-6xl font-black font-expanded text-(--text-main) mt-1 mix-blend-luminosity opacity-90">{totalCredits}</span>
             </div>
           )}
           {loading ? (
-            <div className="animate-pulse flex gap-3">
-              {[...Array(8)].map((_, i) => (
+            <div className="animate-pulse flex gap-2 w-full">
+              {[...Array(6)].map((_, i) => (
                 <div
                   key={i}
-                  className="w-40 h-16 bg-(--bg-highlight) rounded-2xl"
+                  className="flex-1 h-24 bg-(--bg-highlight) rounded-3xl mx-1"
                 />
               ))}
             </div>
           ) : (
-            categories.map((cat, i) => (
+            categories.filter(cat => !(cat.maxCredits && parseFloat(cat.credits) >= parseFloat(cat.maxCredits))).map((cat, i) => (
               <motion.button
                 layout
                 key={cat.id}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 onClick={() => handleSelectCategory(cat)}
-                className={`snap-start shrink-0 text-left px-5 py-3 rounded-2xl transition-colors duration-300 flex flex-col group relative overflow-hidden cursor-pointer border ${
+                className={`transition-colors duration-fast overflow-hidden cursor-pointer flex group rounded-3xl mx-1 ${
                   selectedId === cat.id
-                    ? "bg-(--text-main) border-(--text-main) shadow-[4px_4px_0px_0px_var(--shadow-main)] -translate-y-1"
-                    : "bg-(--bg-surface) border-(--border-dim) hover:border-(--border-main) hover:shadow-[2px_2px_0px_0px_var(--shadow-main)] hover:-translate-y-0.5"
+                    ? "flex-[2.5] bg-(--text-main) items-center justify-between px-6 py-4 shadow-xl"
+                    : "flex-1 bg-(--bg-surface) hover:bg-(--accent-base) flex-col items-center justify-center px-3 py-4 hover:shadow-lg"
                 }`}
               >
-                <div className="flex items-center gap-3 relative z-10">
-                  <motion.div 
-                    layout
-                    transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                    className={`text-sm md:text-base font-black font-expanded uppercase ${selectedId === cat.id ? "text-(--bg-main) whitespace-normal min-w-[140px] max-w-[280px]" : "text-(--text-main) truncate max-w-[140px]"}`}
-                  >
-                    {cat.title}
-                  </motion.div>
-                  {cat.isCompleted && (
-                    <CheckCircle
-                      className={`w-4 h-4 ${selectedId === cat.id ? "text-(--bg-main)" : "text-emerald-500"}`}
-                    />
-                  )}
-                </div>
-                <div
-                  className={`text-[10px] md:text-xs font-mono mt-1 relative z-10 font-bold ${selectedId === cat.id ? "text-(--bg-main) opacity-80" : "text-(--text-muted)"}`}
-                >
-                  {cat.credits} / {cat.maxCredits} Cr
-                </div>
-
-                {selectedId === cat.id && (
-                  <div
-                    className="absolute bottom-0 left-0 h-1.5 bg-(--accent-base) transition-all duration-500"
-                    style={{
-                      width: `${(parseFloat(cat.credits) / parseFloat(cat.maxCredits)) * 100}%`,
-                    }}
-                  />
+                {selectedId === cat.id ? (
+                  <>
+                    <motion.div layout transition={{ type: "spring", stiffness: 400, damping: 30 }} className="text-sm md:text-base lg:text-lg font-black font-expanded uppercase leading-tight text-(--bg-main) text-left w-1/2 relative z-10">
+                      {cat.title}
+                    </motion.div>
+                    <div className="flex flex-col items-end shrink-0 relative z-10">
+                      <motion.div layout transition={{ type: "spring", stiffness: 400, damping: 30 }} className="text-5xl md:text-6xl font-black font-expanded text-(--bg-main) mix-blend-overlay opacity-90 leading-none">
+                        {cat.credits}
+                      </motion.div>
+                      <span className="text-[10px] md:text-[11px] font-black uppercase text-(--bg-main) mix-blend-overlay opacity-70 mt-1 tracking-widest">Credits</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <motion.div layout transition={{ type: "spring", stiffness: 400, damping: 30 }} className="text-xs md:text-sm font-black font-expanded uppercase leading-tight text-center text-(--text-main) group-hover:text-(--bg-main) relative z-10">
+                      {cat.title}
+                    </motion.div>
+                    <motion.div layout transition={{ type: "spring", stiffness: 400, damping: 30 }} className="text-2xl md:text-3xl font-black font-expanded mt-2 text-(--text-muted) group-hover:text-(--bg-main) mix-blend-luminosity opacity-80 group-hover:mix-blend-overlay relative z-10">
+                      {cat.credits}
+                    </motion.div>
+                  </>
                 )}
               </motion.button>
             ))
@@ -212,7 +212,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
               {[...Array(8)].map((_, i) => (
                 <div
                   key={i}
-                  className="h-16 w-full bg-(--bg-surface) rounded-3xl animate-pulse"
+                  className="h-20 w-full bg-(--bg-surface) animate-pulse rounded-3xl"
                 />
               ))}
             </div>

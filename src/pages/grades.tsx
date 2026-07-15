@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { VTOPNetwork } from "../utils/network";
 import { parseGradesSemesters, parseGrades, parseGradeDetails, parseGradeHistory } from "../parsers/grades";
+import { parseTimetable } from "../parsers/timetable";
 import { GradesData, GradeCourse, GradeHistoryData } from "../types/vtop";
 import {
   ProgressActivity,
@@ -13,6 +14,41 @@ import {
 import { EmptyState } from "../components/EmptyState";
 import { motion, AnimatePresence } from "framer-motion";
 import { WhatIfGradeCalculator } from "../components/course-page/WhatIfGradeCalculator";
+import { useDataStore } from "../store/dataStore";
+
+const GradeTicker = ({ currentGrade, gradeColorClass, onChange, availableGrades, readonly }: any) => {
+  const currentIndex = availableGrades.indexOf(currentGrade === "-" ? availableGrades[availableGrades.length-1] : currentGrade);
+  
+  const handleUp = () => {
+    if (readonly || !availableGrades.length) return;
+    const newIdx = currentIndex > 0 ? currentIndex - 1 : availableGrades.length - 1;
+    onChange(availableGrades[newIdx]);
+  };
+  
+  const handleDown = () => {
+    if (readonly || !availableGrades.length) return;
+    const newIdx = currentIndex < availableGrades.length - 1 ? currentIndex + 1 : 0;
+    onChange(availableGrades[newIdx]);
+  };
+
+  return (
+    <div className={`relative flex flex-col items-center justify-center gap-1 ${readonly ? '' : 'group/grade'}`}>
+      {!readonly && (
+        <button onClick={handleUp} className="text-(--text-muted) hover:text-(--text-main) transition-colors p-0.5 rounded-full hover:bg-(--bg-highlight) -mt-3 absolute -top-4 opacity-0 group-hover/grade:opacity-100 z-10">
+          <KeyboardArrowUp className="w-5 h-5" />
+        </button>
+      )}
+      <div className={`shrink-0 w-16 h-16 rounded-2xl flex items-center justify-center font-black text-4xl leading-none pt-1.5 ${gradeColorClass} shadow-none border-2 border-transparent transition-all`}>
+        {currentGrade}
+      </div>
+      {!readonly && (
+        <button onClick={handleDown} className="text-(--text-muted) hover:text-(--text-main) transition-colors p-0.5 rounded-full hover:bg-(--bg-highlight) -mb-3 absolute -bottom-4 opacity-0 group-hover/grade:opacity-100 z-10">
+          <KeyboardArrowDown className="w-5 h-5" />
+        </button>
+      )}
+    </div>
+  );
+};
 
 interface GradesPageProps {
   network: VTOPNetwork;
@@ -43,12 +79,25 @@ export const GradesPage: React.FC<GradesPageProps> = ({
         setLoading(false);
         return;
       }
+      
+      if (useDataStore.getState().status === "Demo Mode Active") {
+        setSemesters([{ id: "demo", label: "Fall Semester 2026-27" }]);
+        setSelectedSem("demo");
+        setLoading(false);
+        setHistoryData({
+           summary: { creditsRegistered: "160", creditsEarned: "160", cgpa: "9.85", sValues: "120", aValues: "30", bValues: "10", cValues: "0", dValues: "0", eValues: "0", fValues: "0", nValues: "0" },
+           courses: [{ code: "CSE1001", title: "Problem Solving and Programming", type: "TH", credit: "3", grade: "S", examMonth: "Dec-2025", resultDate: "Jan-2026", courseClass: "Programme Core" }]
+        });
+        return;
+      }
+
       try {
         const html = await network.getGradesView();
         const sems = parseGradesSemesters(html);
         const dropdownSems = sems.map((s) => ({
           id: s.id,
-          label: s.name,
+          label: s.label,
+          isLatest: s.isLatest,
         }));
         setSemesters(dropdownSems);
         if (dropdownSems.length > 0 && !selectedSem) {
@@ -62,9 +111,12 @@ export const GradesPage: React.FC<GradesPageProps> = ({
     };
     
     const fetchHistory = async () => {
+      if (useDataStore.getState().status === "Demo Mode Active") return;
       try {
         const html = await network.getStudentGradeHistory();
-        setHistoryData(parseGradeHistory(html));
+        const parsedHistory = parseGradeHistory(html);
+        console.log(`[DATA_CAPTURE] Grade History:`, parsedHistory);
+        setHistoryData(parsedHistory);
       } catch (e) {
         console.error(e);
       }
@@ -81,9 +133,74 @@ export const GradesPage: React.FC<GradesPageProps> = ({
       setGradesData(null);
       setExpandedCourseId(null);
       setPredictedGrades({});
+      
+      if (useDataStore.getState().status === "Demo Mode Active") {
+        setGradesData({
+          gpa: "9.50",
+          courses: [{ classId: "123", code: "CSE1001", title: "Problem Solving and Programming", type: "TH", credits: "3", faculty: "Dr. Demo", grade: "S", isPBL: false, ltpj: "3 0 0 0" }]
+        });
+        setFetchingGrades(false);
+        return;
+      }
+
       try {
         const html = await network.getStudentGrades(selectedSem);
-        setGradesData(parseGrades(html));
+        const parsedGrades = parseGrades(html);
+        console.log(`[DATA_CAPTURE] Grades (${selectedSem}):`, parsedGrades);
+
+        const isLatest = semesters.length > 0 && semesters[0].id === selectedSem;
+        if (isLatest) {
+          try {
+            const ttHtml = await network.fetchWithCache(`tt_${selectedSem}`, async () => {
+              const url = "/vtop/processViewTimeTable";
+              const body = new URLSearchParams();
+              body.append("_csrf", network.csrf);
+              body.append("authorizedID", network.authorizedID);
+              body.append("semesterSubId", selectedSem);
+              body.append("x", new Date().toUTCString());
+
+              const res = await fetch(url, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                  "Close-Requested-With": "XMLHttpRequest",
+                },
+                body: body,
+              });
+              return await res.text();
+            });
+            const ttCourses = parseTimetable(ttHtml).filter(
+              (c) =>
+                !c.status.toLowerCase().includes("drop") &&
+                !c.status.toLowerCase().includes("withdrawn")
+            );
+            
+            const existingCodes = new Set(parsedGrades.courses.map(c => c.code));
+            
+            for (const tc of ttCourses) {
+              if (!existingCodes.has(tc.code)) {
+                parsedGrades.courses.push({
+                  code: tc.code,
+                  title: tc.title,
+                  type: tc.type,
+                  credits: tc.credits,
+                  l: "-", p: "-", j: "-", c: tc.credits,
+                  gradingType: tc.category || "Ongoing",
+                  grandTotal: "-",
+                  grade: "-",
+                  courseId: tc.classId,
+                  notIncludedInGpa: tc.category?.toLowerCase().includes("non-graded") || tc.category?.toLowerCase().includes("ngcr"),
+                  assessments: []
+                });
+                existingCodes.add(tc.code);
+              }
+            }
+          } catch (e) {
+            console.error("Failed to augment with timetable courses", e);
+          }
+        }
+
+        setGradesData(parsedGrades);
       } catch (e) {
         console.error(e);
       } finally {
@@ -160,8 +277,35 @@ export const GradesPage: React.FC<GradesPageProps> = ({
     if (totalCredits === 0) return null;
     return (totalPoints / totalCredits).toFixed(2);
   };
+  const getPredictedCgpa = () => {
+    if (!historyData || !historyData.cgpa || !gradesData) return null;
+    const isCompletedSem = gradesData.gpa && gradesData.gpa !== "0.0" && gradesData.gpa !== "0";
+    if (isCompletedSem) return null;
+
+    let totalCreditsEarned = parseFloat(historyData.cgpa.creditsEarned || "0");
+    let currentCgpa = parseFloat(historyData.cgpa.cgpa || "0");
+    let totalPoints = totalCreditsEarned * currentCgpa;
+
+    const points: Record<string, number> = { S: 10, A: 9, B: 8, C: 7, D: 6, E: 5, F: 0, N: 0 };
+    let semCredits = 0;
+    let semPoints = 0;
+
+    gradesData.courses.forEach(c => {
+      if (c.notIncludedInGpa) return;
+      const credit = parseFloat(c.c || "0");
+      const g = predictedGrades[c.courseId] || c.grade;
+      if (points[g] !== undefined) {
+        semCredits += credit;
+        semPoints += credit * points[g];
+      }
+    });
+
+    if (semCredits === 0) return null;
+    return ((totalPoints + semPoints) / (totalCreditsEarned + semCredits)).toFixed(2);
+  };
   
   const predictedGpa = getPredictedGpa();
+  const predictedCgpa = getPredictedCgpa();
 
   return (
     <motion.div
@@ -172,10 +316,10 @@ export const GradesPage: React.FC<GradesPageProps> = ({
       <div className="flex-1 overflow-y-auto custom-scrollbar p-6 pt-20 md:pt-24 lg:pt-28 space-y-12">
         {loading || fetchingGrades ? (
           <div className="flex flex-col gap-6 max-w-5xl mx-auto animate-pulse">
-            <div className="h-32 bg-(--bg-surface) border-4 border-(--border-dim) rounded-4xl w-full" />
+            <div className="h-32 bg-(--bg-surface) rounded-4xl w-full" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {[...Array(6)].map((_, i) => (
-                <div key={i} className="h-40 bg-(--bg-surface) border-4 border-(--border-dim) rounded-4xl w-full" />
+                <div key={i} className="h-40 bg-(--bg-surface) rounded-4xl w-full" />
               ))}
             </div>
           </div>
@@ -197,19 +341,29 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                   hidden: { opacity: 0, y: -20 },
                   show: { opacity: 1, y: 0 },
                 }}
-                className="flex items-center justify-between bg-(--bg-surface) border-4 border-(--border-dim) rounded-4xl p-6 shadow-lg overflow-hidden relative"
+                className="flex items-center justify-between bg-(--bg-surface) rounded-4xl p-6 shadow-none border-2 border-(--border-main) overflow-hidden relative"
               >
                 <div className="absolute -right-10 -bottom-10 opacity-10 pointer-events-none">
                   <Analytics className="w-48 h-48 text-(--accent-base)" />
                 </div>
-                <div className="z-10">
-                  <h2 className="text-(--text-muted) font-bold uppercase text-sm mb-1 tracking-widest">Semester GPA</h2>
-                  <div className="text-5xl md:text-6xl font-black text-(--text-main) font-expanded drop-shadow-sm flex items-end gap-3">
-                    {gradesData.gpa && gradesData.gpa !== "0.0" && gradesData.gpa !== "0" ? gradesData.gpa : (predictedGpa || "0.00")}
-                    {(!gradesData.gpa || gradesData.gpa === "0.0" || gradesData.gpa === "0") && (
-                      <span className="text-xl text-(--text-muted) mb-2">(Predicted)</span>
-                    )}
+                <div className="z-10 w-full flex flex-col md:flex-row gap-6 md:gap-12">
+                  <div>
+                    <h2 className="text-(--text-muted) font-bold uppercase text-sm mb-1 tracking-widest">Semester GPA</h2>
+                    <div className="text-5xl md:text-6xl font-black text-(--text-main) font-expanded shadow-none flex items-end gap-3">
+                      {gradesData.gpa && gradesData.gpa !== "0.0" && gradesData.gpa !== "0" ? gradesData.gpa : (predictedGpa || "0.00")}
+                      {(!gradesData.gpa || gradesData.gpa === "0.0" || gradesData.gpa === "0") && (
+                        <span className="text-xl text-(--text-muted) mb-2">(Predicted)</span>
+                      )}
+                    </div>
                   </div>
+                  {predictedCgpa && (
+                    <div>
+                      <h2 className="text-(--text-muted) font-bold uppercase text-sm mb-1 tracking-widest">Predicted CGPA</h2>
+                      <div className="text-5xl md:text-6xl font-black text-(--text-main) font-expanded shadow-none flex items-end gap-3">
+                        {predictedCgpa}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -219,6 +373,8 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                 const isExpanded = expandedCourseId === course.courseId;
                 const currentGrade = predictedGrades[course.courseId] || course.grade || '-';
                 const gradeColorClass = getGradeColor(currentGrade);
+                const isLatest = semesters.length > 0 && semesters[0].id === selectedSem;
+                const isOfficiallyMarked = Boolean(course.grade && course.grade.trim() !== "" && course.grade !== "-");
 
                 return (
                   <motion.div
@@ -227,9 +383,9 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                       hidden: { opacity: 0, y: 20 },
                       show: { opacity: 1, y: 0 },
                     }}
-                    className={`bg-(--bg-surface) border-4 rounded-4xl overflow-hidden shadow-lg transition-all flex flex-col ${
-                      course.notIncludedInGpa ? 'border-(--border-dim) opacity-70 hover:opacity-100' : 'border-(--border-main) hover:border-(--accent-base)'
-                    }`}
+                    className={`bg-(--bg-surface) rounded-4xl overflow-hidden border-2 border-(--border-main) transition-all flex flex-col ${
+                      isExpanded ? "ring-4 ring-(--accent-base)" : ""
+                    } ${course.notIncludedInGpa ? 'opacity-70 hover:opacity-100' : ''}`}
                   >
                     <div className="p-5 flex flex-col gap-4 relative">
                       {course.notIncludedInGpa && (
@@ -240,35 +396,27 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                       
                       <div className="flex justify-between items-start gap-4">
                         <div className="flex-1 min-w-0 flex flex-col gap-3">
-                          <div>
+                          <div className="flex items-center gap-2">
                             <span className="bg-(--bg-highlight) text-(--text-muted) text-[10px] font-bold px-2 py-0.5 rounded font-mono uppercase">
                               {course.code}
+                            </span>
+                            <span className="bg-(--bg-highlight) text-(--text-muted) text-[10px] font-bold px-2 py-0.5 rounded font-mono uppercase shrink-0">
+                              {course.type}
                             </span>
                           </div>
                           <div className="flex items-start gap-3">
                             <h3 className="font-bold text-(--text-main) text-lg leading-tight font-expanded pr-4">
                               {course.title}
                             </h3>
-                            <span className="bg-(--bg-highlight) text-(--text-muted) text-[10px] font-bold px-2 py-0.5 rounded font-mono uppercase shrink-0">
-                              {course.type}
-                            </span>
                           </div>
                         </div>
-                        <div className="relative group/grade">
-                          <select 
-                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
-                            value={currentGrade}
-                            onChange={(e) => setPredictedGrades(prev => ({...prev, [course.courseId]: e.target.value}))}
-                          >
-                            <option value="-" disabled>-</option>
-                            {['S', 'A', 'B', 'C', 'D', 'E', 'F', 'N'].map(g => (
-                              <option key={g} value={g}>{g}</option>
-                            ))}
-                          </select>
-                          <div className={`shrink-0 w-16 h-16 rounded-2xl flex items-center justify-center font-black text-4xl leading-none pt-1.5 ${gradeColorClass} shadow-sm group-hover/grade:ring-4 ring-(--bg-highlight) transition-all`}>
-                            {currentGrade}
-                          </div>
-                        </div>
+                        <GradeTicker 
+                          currentGrade={currentGrade} 
+                          gradeColorClass={gradeColorClass}
+                          readonly={!isLatest || isOfficiallyMarked}
+                          onChange={(val: string) => setPredictedGrades(prev => ({...prev, [course.courseId]: val}))}
+                          availableGrades={course.notIncludedInGpa ? ['P', 'F'] : ['S', 'A', 'B', 'C', 'D', 'E', 'F', 'N']}
+                        />
                       </div>
 
                       <div className="flex items-center justify-between mt-auto">
@@ -292,7 +440,7 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                         {course.courseId && (
                           <button
                             onClick={() => handleToggleDetails(course)}
-                            className="bg-(--bg-highlight) hover:bg-(--accent-base) hover:text-white border-2 border-(--border-dim) text-(--text-main) w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-sm active:scale-95"
+                            className="bg-(--bg-highlight) hover:bg-(--accent-base) hover:text-white text-(--text-main) w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-none active:scale-95"
                           >
                             {isExpanded ? <KeyboardArrowUp className="w-5 h-5" /> : <KeyboardArrowDown className="w-5 h-5" />}
                           </button>
@@ -306,17 +454,17 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: "auto", opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
-                          className="overflow-hidden border-t-2 border-(--border-dim) bg-(--bg-highlight)"
+                          className="overflow-hidden bg-(--bg-highlight)"
                         >
                           {fetchingDetails && !course.assessments ? (
                             <div className="p-6 flex flex-col gap-4 animate-pulse">
-                              <div className="h-16 bg-(--bg-main) rounded-2xl border border-(--border-dim)" />
-                              <div className="h-24 bg-(--bg-main) rounded-2xl border border-(--border-dim)" />
+                              <div className="h-16 bg-(--bg-main) rounded-2xl" />
+                              <div className="h-24 bg-(--bg-main) rounded-2xl" />
                             </div>
                           ) : (
                             <div className="p-4 flex flex-col gap-4">
                               {course.classStrength && (
-                                <div className="grid grid-cols-4 gap-2 text-center bg-(--bg-main) p-3 rounded-2xl border border-(--border-dim)">
+                                <div className="grid grid-cols-4 gap-2 text-center bg-(--bg-main) p-3 rounded-2xl">
                                   <div className="flex flex-col">
                                     <span className="text-[9px] text-(--text-muted) uppercase font-bold">Class Str</span>
                                     <span className="text-xs font-bold text-(--text-main)">{course.classStrength}</span>
@@ -337,9 +485,9 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                               )}
 
                               {course.gradesRange && (
-                                <div className="bg-(--bg-main) border border-(--border-dim) rounded-2xl overflow-x-auto custom-scrollbar">
+                                <div className="bg-(--bg-main) rounded-2xl overflow-x-auto custom-scrollbar">
                                   <table className="w-full text-center text-[10px]">
-                                    <thead className="text-(--text-muted) border-b border-(--border-dim)">
+                                    <thead className="text-(--text-muted)">
                                       <tr>
                                         {Object.keys(course.gradesRange).map(k => <th key={k} className="p-2 font-bold">{k}</th>)}
                                       </tr>
@@ -354,39 +502,42 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                               )}
 
                               {course.assessments && course.assessments.length > 0 && (
-                                <div className="bg-(--bg-main) border border-(--border-dim) rounded-2xl overflow-hidden">
-                                  <table className="w-full text-left text-xs">
-                                    <thead className="bg-(--bg-highlight) text-[10px] text-(--text-muted) uppercase border-b border-(--border-dim)">
+                                <div className="bg-(--bg-main) rounded-xl overflow-hidden mt-2">
+                                  <table className="w-full text-left text-[11px]">
+                                    <thead className="bg-(--bg-highlight) text-[9px] text-(--text-muted) uppercase">
                                       <tr>
-                                        <th className="p-2 pl-4">Assessment</th>
-                                        <th className="p-2 text-center">Marks</th>
-                                        <th className="p-2 text-right pr-4">Weightage</th>
+                                        <th className="py-1.5 px-3">Assessment</th>
+                                        <th className="py-1.5 px-3 text-center">Marks</th>
+                                        <th className="py-1.5 px-3 text-right">Weightage</th>
                                       </tr>
                                     </thead>
                                     <tbody className="divide-y divide-(--border-dim)">
-                                      {course.assessments.map((asm, i) => (
-                                        <tr key={i} className="hover:bg-(--bg-highlight) transition-colors">
-                                          <td className="p-2 pl-4 font-bold text-(--text-main) truncate max-w-[120px]" title={asm.title}>
-                                            {asm.title}
-                                          </td>
-                                          {asm.status !== "Present" ? (
-                                            <td colSpan={2} className="p-2 text-center text-(--att-text-danger) text-[10px] uppercase font-bold">
-                                              {asm.status}
+                                      {course.assessments.map((asm, i) => {
+                                        const isTotal = asm.title.toLowerCase().includes("total");
+                                        return (
+                                          <tr key={i} className={`hover:bg-(--bg-highlight) transition-colors ${isTotal ? 'bg-(--bg-surface) border-t-2 border-(--border-main)' : ''}`}>
+                                            <td className={`py-1.5 px-3 truncate max-w-[120px] ${isTotal ? 'font-black uppercase text-xs text-(--text-main)' : 'font-bold text-(--text-main)'}`} title={asm.title}>
+                                              {asm.title}
                                             </td>
-                                          ) : (
-                                            <>
-                                              <td className="p-2 text-center font-mono">
-                                                <span className="text-(--text-main) font-bold">{asm.scoredMark}</span>
-                                                <span className="text-(--text-muted) text-[10px]">/{asm.maxMark}</span>
+                                            {asm.status !== "Present" && !isTotal ? (
+                                              <td colSpan={2} className="py-1.5 px-3 text-center text-(--att-text-danger) text-[9px] uppercase font-bold">
+                                                {asm.status}
                                               </td>
-                                              <td className="p-2 text-right pr-4 font-mono">
-                                                <span className="text-(--text-main) font-bold">{asm.weightageMark}</span>
-                                                <span className="text-(--text-muted) text-[10px]">/{asm.weightage}</span>
-                                              </td>
-                                            </>
-                                          )}
-                                        </tr>
-                                      ))}
+                                            ) : (
+                                              <>
+                                                <td className="py-1.5 px-3 text-center font-mono">
+                                                  <span className={`text-(--text-main) ${isTotal ? 'font-black text-sm' : 'font-bold'}`}>{asm.scoredMark}</span>
+                                                  <span className="text-(--text-muted) text-[9px] ml-0.5">/{asm.maxMark}</span>
+                                                </td>
+                                                <td className="py-1.5 px-3 text-right font-mono">
+                                                  <span className={`text-(--accent-base) ${isTotal ? 'font-black text-sm' : 'font-bold'}`}>{asm.weightageMark}</span>
+                                                  <span className="text-(--text-muted) text-[9px] ml-0.5">/{asm.weightage}</span>
+                                                </td>
+                                              </>
+                                            )}
+                                          </tr>
+                                        );
+                                      })}
                                     </tbody>
                                   </table>
                                 </div>
@@ -398,6 +549,16 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                                 classId={course.courseId}
                                 selectedSem={selectedSem}
                                 isLatestSem={semesters.length > 0 && semesters[0].id === selectedSem}
+                                onGradePredicted={(g) => {
+                                  setPredictedGrades(prev => {
+                                    if (g === null) {
+                                      const newPreds = { ...prev };
+                                      delete newPreds[course.courseId];
+                                      return newPreds;
+                                    }
+                                    return { ...prev, [course.courseId]: g };
+                                  });
+                                }}
                               />
                             </div>
                           )}
@@ -413,7 +574,7 @@ export const GradesPage: React.FC<GradesPageProps> = ({
 
         {historyData && historyData.courses.length > 0 && (
           <motion.div
-            className="flex flex-col gap-10 max-w-5xl mx-auto pt-16 border-t-[3px] border-(--border-dim)"
+            className="flex flex-col gap-10 max-w-5xl mx-auto pt-16"
             initial="hidden"
             animate="show"
             variants={{
@@ -429,9 +590,9 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                     CGPA Details
                   </h2>
                 </div>
-                <div className="overflow-x-auto custom-scrollbar border-4 border-(--border-dim) rounded-4xl bg-(--bg-surface) shadow-sm mb-12">
+                <div className="overflow-x-auto custom-scrollbar rounded-4xl bg-(--bg-surface) shadow-none border-2 border-(--border-main) mb-12">
                   <table className="w-full text-left text-sm min-w-[600px]">
-                    <thead className="bg-(--bg-highlight) text-[10px] font-bold text-(--text-muted) uppercase border-b-2 border-(--border-dim)">
+                    <thead className="bg-(--bg-highlight) text-[10px] font-bold text-(--text-muted) uppercase">
                       <tr>
                         <th className="p-4 pl-6 whitespace-nowrap">Credits Reg</th>
                         <th className="p-4 whitespace-nowrap">Credits Earned</th>
@@ -469,16 +630,16 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                     Curriculum Details
                   </h2>
                 </div>
-                <div className="overflow-x-auto custom-scrollbar border-4 border-(--border-dim) rounded-4xl bg-(--bg-surface) shadow-sm mb-12">
+                <div className="overflow-x-auto custom-scrollbar rounded-4xl bg-(--bg-surface) shadow-none border-2 border-(--border-main) mb-12">
                   <table className="w-full text-left text-sm min-w-[500px]">
-                    <thead className="bg-(--bg-highlight) text-[10px] font-bold text-(--text-muted) uppercase border-b-2 border-(--border-dim)">
+                    <thead className="bg-(--bg-highlight) text-[10px] font-bold text-(--text-muted) uppercase">
                       <tr>
                         <th className="p-4 pl-6">Curriculum Distribution Type</th>
                         <th className="p-4 text-center">Credits Required</th>
                         <th className="p-4 text-center pr-6">Credits Earned</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-(--border-dim) font-mono">
+                    <tbody className="font-mono">
                       {historyData.curriculum.map((item, idx) => (
                         <tr key={idx} className="hover:bg-(--bg-highlight) transition-colors group">
                           <td className="p-4 pl-6 font-bold text-(--text-main)">{item.title}</td>
@@ -500,9 +661,9 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                     Basket Details
                   </h2>
                 </div>
-                <div className="overflow-x-auto custom-scrollbar border-4 border-(--border-dim) rounded-4xl bg-(--bg-surface) shadow-sm mb-12">
+                <div className="overflow-x-auto custom-scrollbar rounded-4xl bg-(--bg-surface) shadow-none border-2 border-(--border-main) mb-12">
                   <table className="w-full text-left text-sm min-w-[600px]">
-                    <thead className="bg-(--bg-highlight) text-[10px] font-bold text-(--text-muted) uppercase border-b-2 border-(--border-dim)">
+                    <thead className="bg-(--bg-highlight) text-[10px] font-bold text-(--text-muted) uppercase">
                       <tr>
                         <th className="p-4 pl-6">Basket Title</th>
                         <th className="p-4 text-center">Type</th>
@@ -510,7 +671,7 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                         <th className="p-4 text-center pr-6">Credits Earned</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-(--border-dim) font-mono">
+                    <tbody className="font-mono">
                       {historyData.baskets.map((item, idx) => (
                         <tr key={idx} className="hover:bg-(--bg-highlight) transition-colors group">
                           <td className="p-4 pl-6 font-bold text-(--text-main)">{item.title}</td>
@@ -560,7 +721,7 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                               {parseFloat(course.credits || "0").toString()} <span className="text-[10px] uppercase font-bold text-(--text-muted) ml-1 hidden sm:inline">CR</span>
                             </td>
                             <td className="p-5 text-center">
-                              <span className={`inline-flex w-8 h-8 rounded-lg items-center justify-center font-black text-sm leading-none pt-[2px] shadow-sm mx-auto ${gradeColorClass}`}>
+                              <span className={`inline-flex w-8 h-8 rounded-lg items-center justify-center font-black text-sm leading-none pt-[2px] shadow-none mx-auto ${gradeColorClass}`}>
                                 {course.grade}
                               </span>
                             </td>

@@ -1,4 +1,5 @@
 import { renderDashboard } from "./pages/app";
+import { scrapeMenu } from "./parsers/menu";
 import {
   injectGlobalStyles,
   injectGlobalFonts,
@@ -16,36 +17,49 @@ const vtopContext = {
 };
 
 // Apply theme immediately to prevent flashing, but strictly ignore /open/page
+const applyThemeFromSettings = (saved: any) => {
+  try {
+    const data = typeof saved === 'string' ? JSON.parse(saved) : saved;
+    const settings = data.state?.settings || data;
+    if (settings.themeMode) {
+      let activeTheme = settings.themeMode;
+      if (activeTheme === "auto") {
+        const hour = new Date().getHours();
+        activeTheme = (hour >= 6 && hour < 18) ? "light" : "dark";
+      }
+      document.documentElement.setAttribute("data-theme", activeTheme);
+    }
+    const MATERIAL_ACCENTS: Record<string, string> = {
+      blue: "#2563eb", indigo: "#4f46e5", purple: "#9333ea",
+      pink: "#db2777", red: "#dc2626", orange: "#ea580c",
+      yellow: "#ca8a04", lime: "#65a30d", green: "#16a34a", cyan: "#0891b2"
+    };
+    let baseColor = MATERIAL_ACCENTS[settings.accentColor] || MATERIAL_ACCENTS.blue;
+    if (settings.randomAccentColor) {
+      const hue = Math.floor(Math.random() * 360);
+      baseColor = `hsl(${hue}, 70%, 45%)`;
+    }
+    document.documentElement.style.setProperty("--accent-base", baseColor);
+  } catch (err) {}
+};
+
 try {
   if (!window.location.pathname.includes("/open/page")) {
     chrome.storage.local.get("retop-settings", (result) => {
       const saved = result["retop-settings"];
       if (saved) {
-        try {
-          const data = typeof saved === 'string' ? JSON.parse(saved) : saved;
-          const settings = data.state?.settings || data;
-          if (settings.themeMode) {
-            let activeTheme = settings.themeMode;
-            if (activeTheme === "auto") {
-              const hour = new Date().getHours();
-              activeTheme = (hour >= 6 && hour < 18) ? "light" : "dark";
-            }
-            document.documentElement.setAttribute("data-theme", activeTheme);
-          }
-          const MATERIAL_ACCENTS: Record<string, string> = {
-            blue: "#2563eb", indigo: "#4f46e5", purple: "#9333ea",
-            pink: "#db2777", red: "#dc2626", orange: "#ea580c",
-            yellow: "#ca8a04", lime: "#65a30d", green: "#16a34a", cyan: "#0891b2"
-          };
-          let baseColor = MATERIAL_ACCENTS[settings.accentColor] || MATERIAL_ACCENTS.blue;
-          if (settings.randomAccentColor) {
-            const hue = Math.floor(Math.random() * 360);
-            baseColor = `hsl(${hue}, 70%, 45%)`;
-          }
-          document.documentElement.style.setProperty("--accent-base", baseColor);
-        } catch (err) {}
+        applyThemeFromSettings(saved);
       }
     });
+
+    if (chrome.storage && chrome.storage.onChanged) {
+      chrome.storage.onChanged.addListener((changes, namespace) => {
+        if (namespace === "local" && changes["retop-settings"]) {
+          const newValue = changes["retop-settings"].newValue;
+          if (newValue) applyThemeFromSettings(newValue);
+        }
+      });
+    }
   }
 } catch (e) {}
 
@@ -176,8 +190,29 @@ const init = async () => {
   document.body.style.visibility = "visible";
   document.body.classList.add("show-legacy-ui");
 
-  // Strictly ignore /vtop/open/page.
-  if (path.includes("/vtop/open/page")) {
+  const isRoleSelection = document.getElementById("stdForm") !== null || document.getElementById("empForm") !== null || (path.includes("/vtop/login") && document.getElementById("username") === null && document.getElementById("captchaBlock") === null);
+
+  if (path.includes("/vtop/open/page") || isRoleSelection) {
+    document.addEventListener("click", (e) => {
+      const target = e.target as HTMLElement;
+      const form = target.closest("form");
+      if (form && form.id) {
+        if (form.id === "stdForm") chrome.storage.local.set({ "retop-user-role": "student" });
+        if (form.id === "empForm") chrome.storage.local.set({ "retop-user-role": "employee" });
+        if (form.id === "parentForm") chrome.storage.local.set({ "retop-user-role": "parent" });
+        if (form.id === "alumniForm") chrome.storage.local.set({ "retop-user-role": "alumni" });
+      }
+    }, true);
+    return;
+  }
+
+  const roleResult = await new Promise((resolve) => {
+    chrome.storage.local.get("retop-user-role", (res) => resolve(res["retop-user-role"]));
+  });
+  const currentRole = roleResult || "student";
+
+  if (currentRole !== "student") {
+    console.log(`[retop] Active role is ${currentRole}. Extension disabled.`);
     return;
   }
 
@@ -196,7 +231,24 @@ const init = async () => {
   initializeContainer();
 
   if (vtopContext.authId && vtopContext.csrf) {
-    console.log("[retop] Session Active.");
+    console.log("[retop] Session Active. Verifying menu items...");
+
+    // Wait up to 5 seconds to ensure at least 1 menu item is fetchable
+    let menuCount = 0;
+    for (let i = 0; i < 50; i++) {
+      const newMenu = scrapeMenu(document);
+      menuCount = newMenu.reduce((acc, cat) => acc + cat.links.length, 0);
+      if (menuCount > 0) break;
+      await new Promise(r => setTimeout(r, 100));
+    }
+
+    if (menuCount === 0) {
+      console.log("[retop] No menu items fetchable. Falling back to native VTOP.");
+      document.body.classList.add("show-legacy-ui");
+      removeSplashScreen();
+      return; // Stop initialization of Retop UI completely
+    }
+
     renderDashboard();
   } else {
     document.body.classList.add("show-legacy-ui");

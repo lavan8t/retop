@@ -107,9 +107,8 @@ const Popup = () => {
                   key={mode}
                   onClick={() => {
                     updateSetting("themeMode", mode as any);
-                    setTimeout(reloadVtopTabs, 100);
                   }}
-                  className={`flex-1 flex justify-center items-center px-2 py-2.5 text-[10px] font-bold font-expanded uppercase transition-all duration-300 ${
+                  className={`flex-1 flex justify-center items-center px-2 py-2.5 text-[10px] font-bold font-expanded uppercase transition-all duration-fast ${
                     isActive
                       ? `bg-(--accent-base) text-white shadow-none ${activeRounding}`
                       : `bg-black/50 text-white/50 hover:bg-black/80 hover:text-white shadow-none ${rounding}`

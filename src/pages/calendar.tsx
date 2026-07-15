@@ -239,7 +239,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
 
                                 <div className="flex justify-between items-start mb-1 md:mb-2 pt-1 md:pt-0 relative z-10">
                                   <span
-                                    className={`font-black text-sm md:text-lg lg:text-xl font-expanded leading-none transition-transform duration-300 ease-out group-hover:scale-[1.15] origin-top-left ${numberClass}`}
+                                    className={`font-black text-sm md:text-lg lg:text-xl font-expanded leading-none transition-transform duration-fast ease-out group-hover:scale-[1.15] origin-top-left ${numberClass}`}
                                   >
                                     {day.dayNumber}
                                   </span>

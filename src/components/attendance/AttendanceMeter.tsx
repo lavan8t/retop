@@ -36,7 +36,7 @@ export const AttendanceMeter: React.FC<AttendanceMeterProps> = ({ courseCode }) 
         <span className={`text-center font-bold text-sm ${accentColor}`}>
           {copy}
         </span>
-        <KeyboardArrowDown className={`w-4 h-4 ${accentColor} transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
+        <KeyboardArrowDown className={`w-4 h-4 ${accentColor} transition-transform duration-fast ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
       {isOpen && (

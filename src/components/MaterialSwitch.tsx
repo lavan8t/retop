@@ -39,7 +39,7 @@ export const MaterialSwitch = ({
       onMouseDown={() => !disabled && setIsActive(true)}
       onMouseUp={() => !disabled && setIsActive(false)}
       onMouseOut={() => !disabled && setIsActive(false)}
-      className={`relative w-[52px] h-[32px] rounded-full border-2 transition-colors duration-300 ease-in flex items-center outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-(--accent-base) ${
+      className={`relative w-[52px] h-[32px] rounded-full border-2 transition-colors duration-fast ease-in flex items-center outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-(--accent-base) ${
         disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
       } ${
         selected
@@ -59,7 +59,7 @@ export const MaterialSwitch = ({
           stiffness: 500,
           damping: 30,
         }}
-        className={`absolute rounded-full flex items-center justify-center shadow-sm overflow-hidden transition-colors duration-300 ${
+        className={`absolute rounded-full flex items-center justify-center shadow-sm overflow-hidden transition-colors duration-fast ${
           selected
             ? "bg-(--bg-main) text-(--accent-base)"
             : "bg-(--text-muted) text-(--bg-surface)"

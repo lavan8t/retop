@@ -17,8 +17,9 @@ function safeAppend(element: HTMLElement) {
 }
 
 export function getAppRoot(): HTMLElement | null {
+  if ((window as any).__RETOP_OFFLINE__) return document.getElementById("retop-root");
   return shadowRoot
-    ? (shadowRoot.getElementById("retop-root") as HTMLElement)
+    ? (shadowRoot.querySelector("#retop-root") as HTMLElement)
     : null;
 }
 
@@ -39,6 +40,16 @@ export function injectGlobalStyles() {
 
 export function initializeContainer() {
   if (isInitialized) return;
+
+  if ((window as any).__RETOP_OFFLINE__) {
+    const root = document.getElementById("root") || document.body;
+    const appRoot = document.createElement("div");
+    appRoot.id = "retop-root";
+    appRoot.style.cssText = "width: 100%; height: 100%; pointer-events: auto; background: transparent;";
+    root.appendChild(appRoot);
+    isInitialized = true;
+    return;
+  }
 
   const host = document.createElement("div");
   host.id = "retop-host";

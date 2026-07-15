@@ -11,6 +11,7 @@ interface WhatIfGradeCalculatorProps {
   classId?: string;
   selectedSem: string;
   isLatestSem: boolean;
+  onGradePredicted?: (grade: string | null) => void;
 }
 
 export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
@@ -19,16 +20,18 @@ export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
   classId,
   selectedSem,
   isLatestSem,
+  onGradePredicted,
 }) => {
   const [marksData, setMarksData] = useState<CourseMarks[]>([]);
   const [loading, setLoading] = useState(true);
   const [hypotheticalFAT, setHypotheticalFAT] = useState<string>("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Check if current semester
-  if (!isLatestSem) return null;
-
   useEffect(() => {
+    if (!isLatestSem) {
+      setLoading(false);
+      return;
+    }
 
     let isMounted = true;
     const fetchMarks = async () => {
@@ -50,7 +53,7 @@ export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [network, selectedSem]);
+  }, [network, selectedSem, isLatestSem]);
 
   const courseMarks = useMemo(() => {
     return marksData.find(
@@ -65,19 +68,19 @@ export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
     a.title.toLowerCase().includes("fat")
   );
   
-  // If FAT is published with a valid score, do not show calculator
-  if (fatAssessment && fatAssessment.scoredPercentage !== "-" && parseFloat(fatAssessment.scoredPercentage) > 0) {
-    return null;
-  }
+  const hasFatScore = fatAssessment && fatAssessment.scoredPercentage !== "-" && parseFloat(fatAssessment.scoredPercentage) > 0;
 
   // Calculate Internal Marks
   let totalInternalScored = 0;
+  let totalInternalWeightage = 0;
   
   if (courseMarks) {
     courseMarks.assessments.forEach((a) => {
       if (!a.title.toLowerCase().includes("fat")) {
         const s = parseFloat(a.scoredPercentage) || 0;
+        const w = parseFloat(a.weightage) || 0;
         totalInternalScored += s;
+        totalInternalWeightage += w;
       }
     });
   }
@@ -107,30 +110,31 @@ export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
     else if (totalScore >= 50) gradeStr = "E";
   }
 
+  useEffect(() => {
+    if (!isLatestSem || hasFatScore) return;
+    
+    if (onGradePredicted) {
+      if (hypotheticalFAT === "" || totalInternalWeightage < 60) {
+        onGradePredicted(null);
+      } else {
+        onGradePredicted(gradeStr);
+      }
+    }
+  }, [hypotheticalFAT, gradeStr, onGradePredicted, isLatestSem, hasFatScore, totalInternalWeightage]);
+
+  if (!isLatestSem || hasFatScore) return null;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-zinc-900 border-4 border-zinc-800 rounded-4xl p-6 shadow-none flex flex-col gap-6 shrink-0"
+      className="bg-(--bg-highlight) rounded-4xl p-6 shadow-none flex flex-col gap-6 shrink-0 mt-4"
     >
-      <div className="flex items-center gap-3 border-b-4 border-zinc-800 pb-4">
-        <div className="w-10 h-10 rounded-xl bg-purple-500/10 border-2 border-purple-500/20 flex items-center justify-center text-purple-400">
-          <Calculate className="w-5 h-5" />
-        </div>
-        <div>
-          <h3 className="font-black text-zinc-200 text-lg uppercase font-expanded tracking-tight">
-            &quot;What-If&quot; Grade Calculator
-          </h3>
-          <p className="text-xs font-bold text-zinc-500 uppercase">
-            Project your final grade based on hypothetical FAT score
-          </p>
-        </div>
-      </div>
 
       {loading ? (
-        <div className="h-24 animate-pulse bg-zinc-950 rounded-2xl border-2 border-zinc-800"></div>
+        <div className="h-24 animate-pulse bg-(--bg-main) rounded-2xl"></div>
       ) : errorMsg || (!courseMarks && marksData.length > 0) ? (
-        <div className="p-4 rounded-2xl bg-red-500/10 border-2 border-red-500/20 flex items-start gap-3">
+        <div className="p-4 rounded-2xl bg-red-500/10 flex items-start gap-3">
           <Error className="w-5 h-5 text-red-400 shrink-0" />
           <p className="text-sm font-bold text-red-400/80">
             {errorMsg || "Internal marks not available for this course yet."}
@@ -139,7 +143,7 @@ export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
       ) : (
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="flex-1 flex flex-col gap-4">
-            <div className="bg-zinc-950 p-4 rounded-2xl border-2 border-zinc-800 flex justify-between items-center">
+            <div className="bg-(--bg-main) p-4 rounded-2xl flex justify-between items-center">
               <span className="text-sm font-bold text-zinc-400 uppercase">
                 Current Internal Marks
               </span>
@@ -148,36 +152,36 @@ export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
               </span>
             </div>
 
-            <div className="bg-zinc-950 p-4 rounded-2xl border-2 border-zinc-800 flex flex-col gap-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-bold text-zinc-400 uppercase">
-                  Hypothetical FAT Score
-                </span>
-                <span className="text-xs font-bold text-zinc-600 bg-zinc-900 px-2 py-1 rounded border border-zinc-800">
-                  Out of 100
+            {totalInternalWeightage >= 60 ? (
+              <div className="bg-(--bg-main) p-4 rounded-2xl flex flex-col gap-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-bold text-zinc-400 uppercase">
+                    Hypothetical FAT Score
+                  </span>
+                  <span className="text-xs font-bold text-zinc-600 bg-zinc-900 px-2 py-1 rounded border border-zinc-800">
+                    Out of 100
+                  </span>
+                </div>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  placeholder="Enter FAT Score (e.g. 75)"
+                  className="w-full bg-(--bg-surface) rounded-xl px-4 py-3 font-mono text-(--text-main) text-lg focus:outline-none focus:ring-2 focus:ring-(--accent-base) transition-all placeholder:text-zinc-600 placeholder:text-sm"
+                  value={hypotheticalFAT}
+                  onChange={(e) => setHypotheticalFAT(e.target.value)}
+                />
+              </div>
+            ) : (
+              <div className="bg-(--bg-main) p-4 rounded-2xl flex items-center justify-center text-center border-2 border-dashed border-zinc-700">
+                <span className="text-sm font-bold text-zinc-500 uppercase tracking-widest">
+                  Internals not finalized (Weightage: {totalInternalWeightage}/60)
                 </span>
               </div>
-              <input
-                type="number"
-                min="0"
-                max="100"
-                placeholder="Enter FAT Score (e.g. 75)"
-                className="w-full bg-zinc-900 border-2 border-zinc-800 rounded-xl px-4 py-3 font-mono text-zinc-200 text-lg focus:outline-none focus:border-purple-400 focus:shadow-[4px_4px_0px_0px_var(--card-purple)] transition-all placeholder:text-zinc-600 placeholder:text-sm"
-                value={hypotheticalFAT}
-                onChange={(e) => setHypotheticalFAT(e.target.value)}
-              />
-            </div>
+            )}
           </div>
-
-          <div className={`w-full lg:w-48 shrink-0 rounded-3xl border-4 p-5 flex flex-col items-center justify-center text-center transition-all duration-300 ${hypotheticalFAT === "" ? "bg-zinc-950 border-zinc-800" : isPass ? "bg-lime-400 border-lime-500 shadow-[6px_6px_0px_0px_rgba(0,0,0,0.3)]" : "bg-red-400 border-red-500 shadow-[6px_6px_0px_0px_rgba(0,0,0,0.3)]"}`}>
-            <span className={`text-xs font-black uppercase mb-1 ${hypotheticalFAT === "" ? "text-zinc-500" : "text-black/60"}`}>
-              Projected Grade
-            </span>
-            <span className={`text-5xl font-black font-expanded ${hypotheticalFAT === "" ? "text-zinc-700" : "text-black"}`}>
-              {hypotheticalFAT === "" ? "-" : gradeStr}
-            </span>
-            
-            {hypotheticalFAT !== "" && (
+          {totalInternalWeightage >= 60 && hypotheticalFAT !== "" && (
+            <div className={`w-full lg:w-48 shrink-0 rounded-3xl p-5 flex flex-col items-center justify-center text-center transition-all duration-fast ${isPass ? "bg-lime-400" : "bg-red-400"} shadow-none border-2 border-(--border-main)`}>
               <div className="mt-4 flex flex-col gap-1 w-full text-left">
                 <div className={`text-[10px] font-bold uppercase flex justify-between items-center ${isPassingFAT ? "text-black/70" : "text-black"}`}>
                   <span>FAT &gt;= 40</span>
@@ -188,8 +192,8 @@ export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
                   {isPassingTotal ? <CheckCircle className="w-3 h-3" /> : <Error className="w-3 h-3 text-red-900" />}
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
     </motion.div>

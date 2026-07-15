@@ -259,7 +259,7 @@ export const TimetableGrid = ({
                     {courseBadge}
                   </span>
                   <span
-                    className={`text-[9px] sm:text-[10px] md:text-[11px] font-bold uppercase opacity-0 group-hover/cell:opacity-100 transition-opacity duration-300 ${slotColor}`}
+                    className={`text-[9px] sm:text-[10px] md:text-[11px] font-bold uppercase opacity-0 group-hover/cell:opacity-100 transition-opacity duration-fast ${slotColor}`}
                   >
                     {cellContent.slot}
                   </span>
@@ -284,8 +284,8 @@ export const TimetableGrid = ({
             key={`c-${dIdx}-${colIdx}`}
             className="relative p-1 md:p-1.5 transition-colors bg-(--bg-main) w-full h-full flex items-center justify-center group/empty"
           >
-            <div className="w-full h-full rounded-2xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors duration-300 delay-75 flex items-center justify-center">
-              <span className="text-[10px] md:text-xs font-bold text-(--text-muted) opacity-0 group-hover/grid:opacity-50 group-hover/empty:opacity-100 transition-opacity duration-300 text-center flex flex-col pointer-events-none">
+            <div className="w-full h-full rounded-2xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors duration-fast delay-75 flex items-center justify-center">
+              <span className="text-[10px] md:text-xs font-bold text-(--text-muted) opacity-0 group-hover/grid:opacity-50 group-hover/empty:opacity-100 transition-opacity duration-fast text-center flex flex-col pointer-events-none">
                 <span>{CAMPUS_SLOTS[day as string]?.Theory[colIdx]}</span>
                 {CAMPUS_SLOTS[day as string]?.Lab[colIdx] !== "-" &&
                   CAMPUS_SLOTS[day as string]?.Lab[colIdx] !==

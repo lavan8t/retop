@@ -51,6 +51,11 @@
 @theme {
   --font-sans: "Google Sans Flex", system-ui, sans-serif;
   --font-expanded: "Google Sans Flex", system-ui, sans-serif;
+  
+  /* Unified Animation Timings */
+  --duration-fast: 300ms;
+  --duration-normal: 500ms;
+  --duration-slow: 700ms;
 }
 
 /* --- 1. GLOBAL RESET & VARIABLES --- */
@@ -88,6 +93,11 @@
 
     --text-inverse: var(--md-sys-color-on-primary);
     --shadow-main: rgba(0, 0, 0, 0.3);
+    --brutal-shadow-sm: 2px 2px 0px 0px var(--shadow-main);
+    --brutal-shadow-hover: 4px 4px 0px 0px var(--shadow-main);
+    --brutal-shadow-lg: 6px 6px 0px 0px var(--shadow-main);
+    --brutal-shadow-xl: 8px 8px 0px 0px var(--shadow-main);
+    --brutal-shadow-active: none;
 
     /* Card Colors - Professional deep tones mixed with the surface for stark Brutalist blocks */
     --card-cyan: color-mix(in srgb, #06b6d4 40%, var(--bg-surface));
@@ -134,6 +144,22 @@
     max-width: 100%;
     height: auto;
   }
+
+  /* Unify all card and hover shadow transitions to make them smooth and easy to manage globally */
+  #retop-root {
+    --duration-shadow: 100ms;
+  }
+
+  #retop-root [class*="hover:shadow"] {
+    transition-property: box-shadow, transform, background-color, border-color, color !important;
+    transition-duration: var(--duration-shadow) !important;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+
+  #retop-root [class*="hover:shadow"]:not([class*=" shadow-"]):not([class^="shadow-"]) {
+    /* Provide a default transparent shadow so hover animations don't pop instantly from 'none' */
+    box-shadow: 0 0 #0000;
+  }
 }
 
 /* --- 2. THEMES --- */
@@ -177,7 +203,6 @@
     "wght" 800,
     "GRAD" 100,
     "ROND" 100 !important;
-  margin-bottom: 0 !important;
   line-height: 1 !important;
 }
 
@@ -333,19 +358,18 @@
 
 #retop-root [class*="overflow-"],
 #retop-root .custom-scrollbar {
-  --scrollbar-thumb-color: transparent;
-  transition: --scrollbar-thumb-color 0.4s ease-out;
+  --scrollbar-thumb-color: var(--border-main);
+  transition: --scrollbar-thumb-color 0.15s ease-out;
 }
 
-#retop-root [class*="overflow-"][data-scrolling="true"],
-#retop-root .custom-scrollbar[data-scrolling="true"] {
+#retop-root [class*="overflow-"]:hover,
+#retop-root .custom-scrollbar:hover {
   --scrollbar-thumb-color: var(--accent-base);
-  transition: --scrollbar-thumb-color 0.15s ease-in;
 }
 
-#retop-root [class*="overflow-"][data-scrolling="true"]:hover,
-#retop-root .custom-scrollbar[data-scrolling="true"]:hover {
-  --scrollbar-thumb-color: var(--accent-hover);
+#retop-root [class*="overflow-"]:hover::-webkit-scrollbar-thumb:hover,
+#retop-root .custom-scrollbar:hover::-webkit-scrollbar-thumb:hover {
+  background-color: var(--accent-hover) !important;
 }
 
 #retop-root ::-webkit-scrollbar-thumb {

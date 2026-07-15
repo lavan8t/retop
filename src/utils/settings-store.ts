@@ -14,6 +14,8 @@ export interface AppSettings {
   driveSync: boolean;
   pinnedLinks: QuickLink[];
   use24HourTime: boolean;
+  animationScale: "1x" | "0.5x" | "0x";
+  searchHotkey: "/" | "space" | "instant";
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -26,6 +28,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   calendarSync: false,
   driveSync: false,
   use24HourTime: true,
+  animationScale: "1x",
+  searchHotkey: "/",
   pinnedLinks: [
     { title: "Time Table", url: "studenttimetable", category: "Core" },
     { title: "Marks", url: "mark", category: "Core" },

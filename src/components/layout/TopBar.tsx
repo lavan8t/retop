@@ -26,48 +26,12 @@ import { ClassGroupDropdown } from "../timetable/ClassGroupDropdown";
 import { TopBarSearch } from "./TopBarSearch";
 import { getCategoryIcon } from "../../utils/icons";
 import { useDataStore } from "../../store/dataStore";
+import { useAppStore } from "../../store/appStore";
 import { downloadICalFile } from "../../utils/ical-export";
 
 interface TopBarProps {
   currentView: string;
   contentTitle: string;
-  status: string;
-  ttCourses: TimetableCourse[];
-  ttLoading: boolean;
-  ttSemesters: Semester[];
-  ttSelectedSem: string;
-  ttViewMode: "grid" | "list" | "week";
-  setTtViewMode: (mode: "grid" | "list" | "week") => void;
-  loadTimetable: (semId: string) => void;
-
-  cpSelectedSem: string;
-  setCpSelectedSem: (semId: string) => void;
-  cpSelectedCourseId: string;
-  setCpSelectedCourseId: (id: string) => void;
-  cpOptions: CoursePageOption[];
-  cpSearchTerm: string;
-  setCpSearchTerm: (term: string) => void;
-
-  marksSemesters: { id: string; label: string }[];
-  marksSelectedSem: string;
-  setMarksSelectedSem: (id: string) => void;
-  marksSearchQuery: string;
-  setMarksSearchQuery: (query: string) => void;
-  isMarksModernView: boolean;
-  setIsMarksModernView: (view: boolean) => void;
-
-  gradesSemesters: { id: string; label: string }[];
-  gradesSelectedSem: string;
-  setGradesSelectedSem: (id: string) => void;
-
-  calSemesters: { id: string; label: string }[];
-  calSelectedSem: string;
-  setCalSelectedSem: (id: string) => void;
-  calClassGroups: ClassGroup[];
-  calSelectedGroup: string;
-  setCalSelectedGroup: (id: string) => void;
-
-  user: { name: string; regNo: string; profileImgBase64?: string };
   showProfileMenu: boolean;
   setShowProfileMenu: (show: boolean) => void;
   handleLinkClick: (link: QuickLink) => void;
@@ -81,6 +45,7 @@ interface TopBarProps {
   onTogglePin: (link: QuickLink) => void;
   onNavigate: (link: QuickLink) => void;
   initialQuery?: string;
+  onTimetableSemChange?: (semId: string) => void;
 }
 
 const getPageTitle = (view: string, dynamicTitle?: string) => {
@@ -115,37 +80,6 @@ const getPageTitle = (view: string, dynamicTitle?: string) => {
 export const TopBar: React.FC<TopBarProps> = ({
   currentView,
   contentTitle,
-  ttCourses,
-  ttLoading,
-  ttSemesters,
-  ttSelectedSem,
-  ttViewMode,
-  setTtViewMode,
-  loadTimetable,
-  cpSelectedSem,
-  setCpSelectedSem,
-  cpSelectedCourseId,
-  setCpSelectedCourseId,
-  cpOptions,
-  cpSearchTerm,
-  setCpSearchTerm,
-  marksSemesters,
-  marksSelectedSem,
-  setMarksSelectedSem,
-  marksSearchQuery,
-  setMarksSearchQuery,
-  isMarksModernView,
-  setIsMarksModernView,
-  gradesSemesters,
-  gradesSelectedSem,
-  setGradesSelectedSem,
-  calSemesters,
-  calSelectedSem,
-  setCalSelectedSem,
-  calClassGroups,
-  calSelectedGroup,
-  setCalSelectedGroup,
-  user,
   showProfileMenu,
   setShowProfileMenu,
   handleLinkClick,
@@ -158,7 +92,14 @@ export const TopBar: React.FC<TopBarProps> = ({
   onTogglePin,
   onNavigate,
   initialQuery = "",
+  onTimetableSemChange,
 }) => {
+  const {
+    ttViewMode, setTtViewMode,
+    cpSelectedCourseId, setCpSelectedCourseId, cpOptions, cpSearchTerm, setCpSearchTerm,
+    marksSemesters, marksSelectedSem, setMarksSelectedSem, marksSearchQuery, setMarksSearchQuery, isMarksModernView, setIsMarksModernView,
+    gradesSemesters, gradesSelectedSem, setGradesSelectedSem
+  } = useAppStore();
   const {
     attSelectedSem,
     setAttSelectedSem,
@@ -167,6 +108,19 @@ export const TopBar: React.FC<TopBarProps> = ({
     calLoadingGrid,
     calLoadingMonths,
     attRecordsLoading,
+    ttCourses,
+    ttLoading,
+    ttSemesters,
+    ttSelectedSem,
+    cpSelectedSem,
+    setCpSelectedSem,
+    calSemesters,
+    calSelectedSem,
+    setCalSelectedSem,
+    calClassGroups,
+    calSelectedGroup,
+    setCalSelectedGroup,
+    user,
   } = useDataStore();
 
   const isLoading =
@@ -194,32 +148,30 @@ export const TopBar: React.FC<TopBarProps> = ({
           <div className="flex flex-col justify-center h-full gap-0.5">
             <div className="flex items-center gap-2 md:gap-3">
               <AnimatePresence mode="wait">
-                {currentView !== "dashboard" && (
-                  <motion.div
-                    key="topbar-search"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{
-                      opacity: 0,
-                      x: -20,
-                      transition: { duration: 0.15 },
-                    }}
-                  >
-                    <TopBarSearch
-                      currentView={currentView}
-                      isOmniboxOpen={isOmniboxOpen}
-                      setIsOmniboxOpen={setIsOmniboxOpen}
-                      menuCategories={menuCategories}
-                      pinnedLinks={pinnedLinks}
-                      onNavigate={onNavigate}
-                      onTogglePin={onTogglePin}
-                      initialQuery={initialQuery}
-                      pageTitle={getPageTitle(currentView, contentTitle)}
-                      onBack={() => setCurrentView("dashboard")}
-                      status={isLoading ? "loading" : "idle"}
-                    />
-                  </motion.div>
-                )}
+                <motion.div
+                  key="topbar-search"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{
+                    opacity: 0,
+                    x: -20,
+                    transition: { duration: 0.15 },
+                  }}
+                >
+                  <TopBarSearch
+                    currentView={currentView}
+                    isOmniboxOpen={isOmniboxOpen}
+                    setIsOmniboxOpen={setIsOmniboxOpen}
+                    menuCategories={menuCategories}
+                    pinnedLinks={pinnedLinks}
+                    onNavigate={onNavigate}
+                    onTogglePin={onTogglePin}
+                    initialQuery={initialQuery}
+                    pageTitle={getPageTitle(currentView, contentTitle)}
+                    onBack={() => setCurrentView("dashboard")}
+                    status={isLoading ? "loading" : "idle"}
+                  />
+                </motion.div>
               </AnimatePresence>
             </div>
           </div>
@@ -241,7 +193,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                     <button
                       key={idx}
                       onClick={() => handleLinkClick(link)}
-                      className="flex items-center gap-2 px-3.5 py-1.5 border-2 border-(--border-main) rounded-xl shadow-none hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_var(--shadow-main)] active:translate-y-0 active:shadow-none transition-all font-black font-expanded text-xs uppercase text-(--text-main) bg-(--bg-surface) cursor-pointer group hover:border-(--accent-base)"
+                      className="flex items-center gap-2 px-3.5 py-1.5 border-2 border-(--border-main) rounded-xl shadow-none hover:-translate-y-0.5 hover:shadow-[var(--brutal-shadow-hover)] active:translate-y-0 active:shadow-[var(--brutal-shadow-active)] transition-all font-black font-expanded text-xs uppercase text-(--text-main) bg-(--bg-surface) cursor-pointer group hover:border-(--accent-base)"
                     >
                       <Icon className="w-4 h-4 text-(--text-muted) transition-colors" />
                       <span className="transition-colors">{link.title}</span>
@@ -265,13 +217,13 @@ export const TopBar: React.FC<TopBarProps> = ({
                 <SemesterDropdown
                   semesters={ttSemesters}
                   selectedId={ttSelectedSem}
-                  onChange={loadTimetable}
+                  onChange={(id: string) => onTimetableSemChange?.(id)}
                 />
 
-                <div className="hidden sm:flex bg-(--bg-highlight) rounded-full p-0.5 w-max border-2 border-(--border-main) shadow-[2px_2px_0px_0px_var(--shadow-main)]">
+                <div className="hidden sm:flex bg-(--bg-highlight) rounded-full p-0.5 w-max border-2 border-(--border-main) shadow-[var(--brutal-shadow-sm)]">
                   <button
                     onClick={() => setTtViewMode("grid")}
-                    className={`px-3 py-1 text-xs font-bold transition-all duration-300 flex items-center gap-1.5 ${
+                    className={`px-3 py-1 text-xs font-bold transition-all duration-fast flex items-center gap-1.5 ${
                       ttViewMode === "grid"
                         ? "bg-(--text-main) text-(--bg-main) rounded-[20px]"
                         : "bg-transparent text-(--text-muted) hover:text-(--text-main) rounded-l-[20px] rounded-r-md"
@@ -282,7 +234,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                   </button>
                   <button
                     onClick={() => setTtViewMode("list")}
-                    className={`px-3 py-1 text-xs font-bold transition-all duration-300 flex items-center gap-1.5 ${
+                    className={`px-3 py-1 text-xs font-bold transition-all duration-fast flex items-center gap-1.5 ${
                       ttViewMode === "list"
                         ? "bg-(--text-main) text-(--bg-main) rounded-[20px]"
                         : "bg-transparent text-(--text-muted) hover:text-(--text-main) rounded-md"
@@ -293,7 +245,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                   </button>
                   <button
                     onClick={() => setTtViewMode("week")}
-                    className={`px-3 py-1 text-xs font-bold transition-all duration-300 flex items-center gap-1.5 ${
+                    className={`px-3 py-1 text-xs font-bold transition-all duration-fast flex items-center gap-1.5 ${
                       ttViewMode === "week"
                         ? "bg-(--text-main) text-(--bg-main) rounded-[20px]"
                         : "bg-transparent text-(--text-muted) hover:text-(--text-main) rounded-l-md rounded-r-[20px]"
@@ -323,7 +275,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                   }}
                   disabled={ttCourses.length === 0}
                   title="Export timetable as iCal (.ics) file for Google Calendar"
-                  className="bg-(--bg-surface) border-2 border-(--border-main) text-(--text-main) p-1.5 rounded-xl shadow-[2px_2px_0px_0px_var(--shadow-main)] hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_var(--shadow-main)] active:translate-y-0 active:shadow-none transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="bg-(--bg-surface) border-2 border-(--border-main) text-(--text-main) p-1.5 rounded-xl shadow-[var(--brutal-shadow-sm)] hover:-translate-y-0.5 hover:shadow-[var(--brutal-shadow-hover)] active:translate-y-0 active:shadow-[var(--brutal-shadow-active)] transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   <Download className="w-4 h-4" />
                 </button>
@@ -340,7 +292,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               >
                 <button
                   onClick={() => setIsMarksModernView(!isMarksModernView)}
-                  className="hidden sm:block bg-(--bg-surface) border-2 border-(--border-dim) text-(--text-main) px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase  hover:bg-(--accent-base) hover:text-white transition-all cursor-pointer shadow-sm hover:shadow-[4px_4px_0px_0px_var(--shadow-main)] active:translate-y-px active:shadow-none"
+                  className="hidden sm:block bg-(--bg-surface) border-2 border-(--border-dim) text-(--text-main) px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase  hover:bg-(--accent-base) hover:text-white transition-all cursor-pointer shadow-sm hover:shadow-[var(--brutal-shadow-hover)] active:translate-y-px active:shadow-[var(--brutal-shadow-active)]"
                 >
                   {isMarksModernView ? "Legacy View" : "Modern View"}
                 </button>
@@ -386,65 +338,13 @@ export const TopBar: React.FC<TopBarProps> = ({
                     <input
                       type="text"
                       placeholder="Search..."
-                      className="w-full pl-8 pr-3 py-1.5 bg-(--bg-surface) border-2 border-(--border-main) rounded-lg md:rounded-xl text-[10px] md:text-xs font-bold text-(--text-main) focus:outline-none focus:border-(--accent-base) focus:shadow-[4px_4px_0px_0px_var(--shadow-main)] transition-all placeholder:text-(--text-dim) uppercase"
+                      className="w-full pl-8 pr-3 py-1.5 bg-(--bg-surface) border-2 border-(--border-main) rounded-lg md:rounded-xl text-[10px] md:text-xs font-bold text-(--text-main) focus:outline-none focus:border-(--accent-base) focus:shadow-[var(--brutal-shadow-hover)] transition-all placeholder:text-(--text-dim) uppercase"
                       value={cpSearchTerm}
                       onChange={(e) => setCpSearchTerm(e.target.value)}
                     />
                   </div>
                 )}
 
-                {/* Course Dropdown */}
-                {cpOptions.length > 0 && (
-                  <div className="relative z-50 group/cp">
-                    <button className="flex items-center gap-1.5 md:gap-2 bg-(--bg-surface) border-2 border-(--border-main) px-2 md:px-3 py-1.5 rounded-lg md:rounded-xl text-(--text-main) font-bold shadow-none hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_var(--shadow-main)] transition-all active:translate-y-0 active:shadow-none text-[9px] sm:text-[10px] md:text-xs">
-                      <MenuBook className="w-3 h-3 md:w-3.5 md:h-3.5 text-(--accent-base) shrink-0" />
-                      <span className="uppercase truncate max-w-20 sm:max-w-30 md:max-w-40 font-expanded">
-                        {cpOptions.find((o) => o.classId === cpSelectedCourseId)
-                          ?.title || "Select Subject"}
-                      </span>
-                      <KeyboardArrowDown className="w-3 h-3 md:w-3.5 md:h-3.5 transition-transform duration-200 shrink-0 group-hover/cp:rotate-180" />
-                    </button>
-
-                    <div className="absolute top-full right-0 mt-2 w-64 md:w-80 bg-(--bg-surface) border-2 border-(--border-main) rounded-xl shadow-none overflow-hidden z-50 origin-top-right opacity-0 invisible group-hover/cp:opacity-100 group-hover/cp:visible transition-all duration-200">
-                      <div className="max-h-64 overflow-y-auto custom-scrollbar p-1.5 md:p-2 space-y-1">
-                        {cpOptions
-                          .filter(
-                            (o) =>
-                              o.semester
-                                .replace(/0+([1-9])$/, "$1")
-                                .toLowerCase() ===
-                              cpSelectedSem
-                                .replace(/0+([1-9])$/, "$1")
-                                .toLowerCase(),
-                          )
-                          .map((opt) => (
-                            <button
-                              key={opt.classId}
-                              onClick={() => {
-                                setCpSelectedCourseId(opt.classId);
-                                // hide dropdown by removing focus or similar if needed, handled by CSS hover for now
-                              }}
-                              className={`w-full text-left px-2.5 py-2 md:px-3 md:py-2.5 text-[10px] md:text-xs font-bold uppercase transition-all rounded-lg border-2 ${
-                                opt.classId === cpSelectedCourseId
-                                  ? "bg-(--accent-base) text-(--text-inverse) border-(--border-main)"
-                                  : "bg-transparent border-transparent text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main) hover:border-(--border-dim)"
-                              }`}
-                            >
-                              <div className="flex justify-between items-center gap-2">
-                                <span>{opt.code}</span>
-                                <span className="opacity-60 text-[8px] border border-current px-1 rounded">
-                                  {opt.type}
-                                </span>
-                              </div>
-                              <div className="truncate opacity-80 font-mono mt-0.5">
-                                {opt.title}
-                              </div>
-                            </button>
-                          ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
 
                 <SemesterDropdown
                   semesters={ttSemesters}

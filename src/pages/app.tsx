@@ -170,6 +170,8 @@ const DashboardApp = () => {
     setIsPeeking,
     currentView,
     setCurrentView,
+    ttViewMode,
+    setTtViewMode
   } = useAppStore();
 
   const [contentTitle, setContentTitle] = useState("");
@@ -202,24 +204,6 @@ const DashboardApp = () => {
     loadTimetable,
   } = useDataStore();
 
-  const [ttViewMode, setTtViewMode] = useState<"grid" | "list" | "week">(
-    "grid",
-  );
-  const [cpOptions, setCpOptions] = useState<CoursePageOption[]>([]);
-  const [cpSearchTerm, setCpSearchTerm] = useState("");
-  const [cpSelectedCourseId, setCpSelectedCourseId] = useState("");
-
-  // HOISTED MARKS STATE
-  const [marksSemesters, setMarksSemesters] = useState<
-    { id: string; label: string }[]
-  >([]);
-  const [marksSelectedSem, setMarksSelectedSem] = useState("");
-  const [marksSearchQuery, setMarksSearchQuery] = useState("");
-  const [isMarksModernView, setIsMarksModernView] = useState(true);
-
-  // HOISTED GRADES STATE
-  const [gradesSemesters, setGradesSemesters] = useState<{ id: string; label: string }[]>([]);
-  const [gradesSelectedSem, setGradesSelectedSem] = useState("");
 
   const networkRef = useRef<VTOPNetwork | null>(null);
   const csrfRef = useRef<string>("");
@@ -344,8 +328,42 @@ const DashboardApp = () => {
           ? newMenu
           : prev,
       );
+      
+      if (count === 0 && attempts > 5) {
+        console.log("[retop] Menu items are unfetchable. Falling back to legacy UI.");
+        clearInterval(menuPoller);
+        revealLegacyUI();
+        setIsModernUI(false);
+        return;
+      }
+
       if (count >= 102 || attempts > 15) clearInterval(menuPoller);
     }, 2000);
+
+    const feedbackPoller = setInterval(() => {
+      try {
+        const bodyClone = document.body.cloneNode(true) as HTMLElement;
+        const sidebars = bodyClone.querySelectorAll("nav, .sidebar, #sidebar, [class*='menu'], .hmenu");
+        sidebars.forEach(s => s.remove());
+        
+        const mainText = bodyClone.textContent?.toLowerCase() || "";
+        const isFeedback = mainText.includes("faculty feedback") || 
+                           mainText.includes("student feedback") || 
+                           mainText.includes("course feedback") ||
+                           mainText.includes("mandatory feedback") ||
+                           mainText.includes("provide feedback");
+                           
+        if (isFeedback) {
+          const hasInputs = document.querySelectorAll("input[type='radio'], textarea, select").length > 0;
+          if (hasInputs) {
+            console.log("[retop] Mandatory feedback or blocking form detected in background. Triggering legacy UI.");
+            clearInterval(feedbackPoller);
+            revealLegacyUI();
+            setIsModernUI(false);
+          }
+        }
+      } catch (e) {}
+    }, 3000);
 
     const handleKeys = (e: KeyboardEvent) => {
       // Get target element resolving through shadow DOM
@@ -368,20 +386,27 @@ const DashboardApp = () => {
       if (isOmniboxOpenRef.current) return;
       if (e.key === "Escape") return;
 
-      if (currentViewRef.current !== "dashboard") {
-        if (e.key === "/" || e.key === " ") {
-          e.preventDefault();
-          isOmniboxOpenRef.current = true;
-          setOmniboxInitial("");
-          setIsOmniboxOpen(true);
+      const hotkeySetting = settings.searchHotkey || "/";
+      let shouldOpen = false;
+
+      if (hotkeySetting === "/") {
+        shouldOpen = e.key === "/";
+      } else if (hotkeySetting === "space") {
+        shouldOpen = e.key === " ";
+      } else if (hotkeySetting === "instant") {
+        // Any single character
+        if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+          shouldOpen = true;
         }
-      } else {
-        if (e.key === "/" || e.key === " ") {
-          e.preventDefault();
-          isOmniboxOpenRef.current = true;
-          setOmniboxInitial("");
-          setIsOmniboxOpen(true);
-        }
+      }
+
+      if (shouldOpen) {
+        if (e.key === "/" || e.key === " ") e.preventDefault();
+        isOmniboxOpenRef.current = true;
+        setOmniboxInitial(
+          hotkeySetting === "instant" && e.key !== "/" && e.key !== " " ? e.key : ""
+        );
+        setIsOmniboxOpen(true);
       }
     };
     window.addEventListener("keydown", handleKeys);
@@ -414,6 +439,7 @@ const DashboardApp = () => {
 
     return () => {
       clearInterval(menuPoller);
+      clearInterval(feedbackPoller);
       window.removeEventListener("keydown", handleKeys);
       window.removeEventListener("vtop-restore-ui", restoreHandler);
       document.removeEventListener("scroll", handleScroll, true);
@@ -529,32 +555,6 @@ const DashboardApp = () => {
           <TopBar
             currentView={currentView}
             contentTitle={contentTitle}
-            status={status}
-            ttCourses={ttCourses}
-            ttLoading={ttLoading}
-            ttSemesters={ttSemesters}
-            ttSelectedSem={ttSelectedSem}
-            ttViewMode={ttViewMode}
-            setTtViewMode={setTtViewMode}
-            loadTimetable={(semId: string, force?: boolean) => {
-              if (networkRef.current) {
-                loadTimetable(
-                  networkRef.current,
-                  csrfRef.current,
-                  authIdRef.current,
-                  semId,
-                  force,
-                );
-              }
-            }}
-            cpSelectedSem={cpSelectedSem}
-            setCpSelectedSem={setCpSelectedSem}
-            cpSelectedCourseId={cpSelectedCourseId}
-            setCpSelectedCourseId={setCpSelectedCourseId}
-            cpOptions={cpOptions}
-            cpSearchTerm={cpSearchTerm}
-            setCpSearchTerm={setCpSearchTerm}
-            user={user}
             showProfileMenu={showProfileMenu}
             setShowProfileMenu={setShowProfileMenu}
             handleLinkClick={handleLinkClick}
@@ -567,22 +567,11 @@ const DashboardApp = () => {
             onTogglePin={handleTogglePin}
             onNavigate={handleLinkClick}
             initialQuery={omniboxInitial}
-            marksSemesters={marksSemesters}
-            marksSelectedSem={marksSelectedSem}
-            setMarksSelectedSem={setMarksSelectedSem}
-            marksSearchQuery={marksSearchQuery}
-            setMarksSearchQuery={setMarksSearchQuery}
-            isMarksModernView={isMarksModernView}
-            setIsMarksModernView={setIsMarksModernView}
-            gradesSemesters={gradesSemesters}
-            gradesSelectedSem={gradesSelectedSem}
-            setGradesSelectedSem={setGradesSelectedSem}
-            calSemesters={calSemesters}
-            calSelectedSem={calSelectedSem}
-            setCalSelectedSem={setCalSelectedSem}
-            calClassGroups={calClassGroups}
-            calSelectedGroup={calSelectedGroup}
-            setCalSelectedGroup={setCalSelectedGroup}
+            onTimetableSemChange={(semId) => {
+              if (networkRef.current && csrfRef.current && authIdRef.current) {
+                loadTimetable(networkRef.current, csrfRef.current, authIdRef.current, semId, true).catch(console.warn);
+              }
+            }}
           />
           <main className="flex-1 overflow-hidden relative">
             <AnimatePresence mode="wait">
@@ -599,52 +588,9 @@ const DashboardApp = () => {
                   networkRef={networkRef}
                   settings={settings}
                   updateSetting={updateSetting}
-                  stats={stats}
-                  attendance={attendance}
-                  assignments={assignments}
-                  events={events}
-                  upcoming={upcoming}
-                  dayName={getCorrectDayName(new Date())}
                   menu={menu}
                   handleLinkClick={handleLinkClick}
-                  ttCourses={ttCourses}
-                  ttLoading={ttLoading}
-                  ttViewMode={ttViewMode}
-                  setTtViewMode={setTtViewMode}
-                  ttSemesters={ttSemesters}
-                  ttSelectedSem={ttSelectedSem}
-                  loadTimetable={(semId: string, force?: boolean) => {
-                    if (networkRef.current) {
-                      loadTimetable(
-                        networkRef.current,
-                        csrfRef.current,
-                        authIdRef.current,
-                        semId,
-                        force,
-                      );
-                    }
-                  }}
-                  cpOptions={cpOptions}
-                  setCpOptions={setCpOptions}
-                  cpSemesters={ttSemesters}
-                  cpSelectedSem={cpSelectedSem}
-                  cpSelectedCourseId={cpSelectedCourseId}
-                  setCpSelectedCourseId={setCpSelectedCourseId}
-                  cpSearchTerm={cpSearchTerm}
-                  marksSemesters={marksSemesters}
-                  setMarksSemesters={setMarksSemesters}
-                  marksSelectedSem={marksSelectedSem}
-                  setMarksSelectedSem={setMarksSelectedSem}
-                  marksSearchQuery={marksSearchQuery}
-                  isMarksModernView={isMarksModernView}
-                  gradesSemesters={gradesSemesters}
-                  setGradesSemesters={setGradesSemesters}
-                  gradesSelectedSem={gradesSelectedSem}
-                  setGradesSelectedSem={setGradesSelectedSem}
-                  calSemesters={calSemesters}
-                  setCalSemesters={setCalSemesters}
-                  calSelectedSem={calSelectedSem}
-                  setCalSelectedSem={setCalSelectedSem}
+                  events={events}
                   pinnedLinks={pinnedLinks}
                   handleTogglePin={handleTogglePin}
                 />
@@ -659,7 +605,7 @@ const DashboardApp = () => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="fixed inset-0 z-9998 bg-black/10 backdrop-blur-[2px]"
+                  className="fixed inset-0 z-9998 bg-black/10"
                   onClick={() => setShowProfileMenu(false)}
                 />
                 <ProfileMenu

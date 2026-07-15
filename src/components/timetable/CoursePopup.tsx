@@ -63,7 +63,7 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
         ref={popupRef}
         onClick={(e) => e.stopPropagation()}
         style={{ top: adjustedPosition.y, left: adjustedPosition.x }}
-        className={`fixed z-50 w-72 bg-zinc-900 border-2 border-(--border-main) rounded-2xl shadow-none overflow-hidden transform transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] origin-top-left ${active ? "scale-100 opacity-100" : "scale-90 opacity-0"}`}
+        className={`fixed z-50 w-72 bg-zinc-900 border-2 border-(--border-main) rounded-2xl shadow-none overflow-hidden transform transition-all duration-fast ease-[cubic-bezier(0.34,1.56,0.64,1)] origin-top-left ${active ? "scale-100 opacity-100" : "scale-90 opacity-0"}`}
       >
         <div
           className={`${colors.bg} p-3 border-b-2 border-(--border-main) relative overflow-hidden`}

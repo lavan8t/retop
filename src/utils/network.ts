@@ -5,25 +5,47 @@ export class VTOPNetwork {
   public csrf: string;
   public authorizedID: string;
 
-  private static nextAvailableTime = 0;
+  private static requestTimestamps: number[] = [];
 
   private async enforceRateLimit() {
-    const minDelay = 5000;
-    const maxDelay = 10000;
-    const randomDelay = Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
+    const MIN_COOLDOWN = 1000; // 1s minimum between requests
+    const MAX_REQUESTS = 5;
+    const WINDOW_MS = 60000; // 1 minute
 
     const now = Date.now();
-    let waitTime = 0;
+    let projectedTime = now;
 
-    if (now < VTOPNetwork.nextAvailableTime) {
-      waitTime = VTOPNetwork.nextAvailableTime - now;
-      VTOPNetwork.nextAvailableTime += randomDelay;
-    } else {
-      VTOPNetwork.nextAvailableTime = now + randomDelay;
+    // Keep only timestamps within the rolling window (or in the future)
+    VTOPNetwork.requestTimestamps = VTOPNetwork.requestTimestamps.filter(
+      (t) => now - t < WINDOW_MS
+    );
+
+    // 1. Enforce minimum cooldown of 1s
+    const lastProjectedTime =
+      VTOPNetwork.requestTimestamps.length > 0
+        ? VTOPNetwork.requestTimestamps[VTOPNetwork.requestTimestamps.length - 1]
+        : 0;
+
+    if (projectedTime - lastProjectedTime < MIN_COOLDOWN) {
+      projectedTime = lastProjectedTime + MIN_COOLDOWN;
     }
 
+    // 2. Enforce max requests per minute window
+    if (VTOPNetwork.requestTimestamps.length >= MAX_REQUESTS) {
+      const oldestRelevantRequest =
+        VTOPNetwork.requestTimestamps[
+          VTOPNetwork.requestTimestamps.length - MAX_REQUESTS
+        ];
+      if (projectedTime - oldestRelevantRequest < WINDOW_MS) {
+        projectedTime = oldestRelevantRequest + WINDOW_MS;
+      }
+    }
+
+    VTOPNetwork.requestTimestamps.push(projectedTime);
+
+    const waitTime = projectedTime - now;
     if (waitTime > 0) {
-      await new Promise(resolve => setTimeout(resolve, waitTime));
+      await new Promise((resolve) => setTimeout(resolve, waitTime));
     }
   }
 

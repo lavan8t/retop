@@ -128,7 +128,7 @@ export const TimetableWeek = ({
               <button
                 key={`tab-${i}`}
                 onClick={() => setSelectedDay(i)}
-                className={`flex-1 min-w-9.5 py-2 rounded-lg text-xs font-black font-expanded uppercase transition-all duration-200 border-2 ${
+                className={`flex-1 min-w-9.5 py-2 rounded-lg text-xs font-black font-expanded uppercase transition-all duration-fast border-2 ${
                   isActive
                     ? "bg-purple-400 text-black border-(--border-main) shadow-none -translate-y-px"
                     : "bg-transparent text-zinc-500 border-transparent hover:text-zinc-300"
@@ -301,7 +301,7 @@ export const TimetableWeek = ({
                             position: { x: rect.left, y: rect.bottom + 10 },
                           });
                         }}
-                        className={`w-full text-left p-2.5 lg:p-3 rounded-xl hover:-translate-y-0.5 shadow-none hover:shadow-[4px_4px_0px_0px_var(--shadow-main)] flex flex-col gap-1.5 cursor-pointer ${colorClasses}`}
+                        className={`w-full text-left p-2.5 lg:p-3 rounded-xl hover:-translate-y-0.5 shadow-none hover:shadow-[var(--brutal-shadow-hover)] flex flex-col gap-1.5 cursor-pointer ${colorClasses}`}
                         style={{ transition: 'background-color 0.3s 0.075s, transform 0.3s, box-shadow 0.3s' }}
                       >
                         <div className="flex justify-between items-start w-full gap-1">

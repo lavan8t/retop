@@ -1,5 +1,6 @@
 import { motion, MotionProps } from "framer-motion";
 import { ReactNode } from "react";
+import { SPRING_SNAPPY, HOVER_LIFT, TAP_PRESS } from "../../utils/motion";
 
 interface CardProps extends MotionProps {
   children: ReactNode;
@@ -27,13 +28,13 @@ export const Card = ({
     <motion.div
       layout={layout}
       onClick={onClick}
-      whileHover={{ y: -6 }}
-      whileTap={isClickable ? { scale: 0.95, y: 0 } : {}}
-      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+      whileHover={HOVER_LIFT}
+      whileTap={isClickable ? TAP_PRESS : {}}
+      transition={SPRING_SNAPPY}
       className={`
-        border-4 ${borderClass} shadow-none transition-shadow duration-300
-        hover:shadow-[6px_6px_0px_0px_var(--shadow-main)]
-        ${isClickable ? "cursor-pointer active:shadow-[4px_4px_0px_0px_var(--shadow-main)]" : ""}
+        border-4 ${borderClass} shadow-none transition-shadow duration-fast
+        hover:shadow-[var(--brutal-shadow-hover)]
+        ${isClickable ? "cursor-pointer active:shadow-[var(--brutal-shadow-active)]" : ""}
         ${className}
       `}
       {...motionProps}

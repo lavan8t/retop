@@ -36,12 +36,17 @@ export const createAttendanceSlice: StateCreator<DataState, [], [], AttendanceSl
   fetchDetailedAttendance: async (network, semId) => {
     set({ attLoading: true });
     try {
-      const html = await network.fetchFragment("processViewStudentAttendance", {
-        semesterSubId: semId,
+      const html = await network.fetchWithCache(`attendance_detailed_${semId}`, async () => {
+        return await network.fetchFragment("processViewStudentAttendance", {
+          semesterSubId: semId,
+        });
       });
       const data = parseStudentAttendance(html);
       set({ detailedAttendance: data, attLoading: false });
     } catch (e) {
+      if (e instanceof Error && e.message === "OFFLINE_CACHE_MISS") {
+         set({ status: "Offline - Not Synced" });
+      }
       console.error("Failed to fetch detailed attendance:", e);
       set({ attLoading: false });
     }
@@ -51,15 +56,14 @@ export const createAttendanceSlice: StateCreator<DataState, [], [], AttendanceSl
   attRecordsLoading: false,
   fetchAttendanceRecords: async (network, semId, courseId, classType) => {
     const key = `${courseId}-${classType}`;
-    const cached = get().attendanceRecords[key];
-    if (cached) return;
-
     set({ attRecordsLoading: true });
     try {
-      const html = await network.fetchFragment("processViewAttendanceDetail", {
-        semesterSubId: semId,
-        courseId,
-        courseType: classType,
+      const html = await network.fetchWithCache(`attendance_records_${semId}_${courseId}_${classType}`, async () => {
+        return await network.fetchFragment("processViewAttendanceDetail", {
+          semesterSubId: semId,
+          courseId,
+          courseType: classType,
+        });
       });
       const data = parseAttendanceDetail(html);
       set((state) => ({

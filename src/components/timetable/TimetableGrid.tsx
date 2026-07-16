@@ -61,8 +61,8 @@ export const TimetableGrid = ({
       <span className="text-[11px] md:text-xs font-black text-(--text-muted)">
         DAY
       </span>
-      <div className="absolute top-0 bottom-0 left-full w-4 md:w-6 bg-gradient-to-r from-(--bg-main) to-transparent pointer-events-none" />
-      <div className="absolute top-full left-0 right-0 h-4 md:h-6 bg-gradient-to-b from-(--bg-main) to-transparent pointer-events-none" />
+      <div className="absolute top-0 bottom-0 left-full w-4 md:w-6 bg-linear-to-r from-(--bg-main) to-transparent pointer-events-none" />
+      <div className="absolute top-full left-0 right-0 h-4 md:h-6 bg-linear-to-b from-(--bg-main) to-transparent pointer-events-none" />
     </div>,
   );
 
@@ -74,7 +74,7 @@ export const TimetableGrid = ({
           key={`h-${i}`}
           className="sticky top-0 z-20 flex flex-col items-center justify-center bg-(--bg-main) w-full h-full"
         >
-          <div className="absolute top-full left-0 right-0 h-4 md:h-6 bg-gradient-to-b from-(--bg-main) to-transparent pointer-events-none" />
+          <div className="absolute top-full left-0 right-0 h-4 md:h-6 bg-linear-to-b from-(--bg-main) to-transparent pointer-events-none" />
         </div>,
       );
       return;
@@ -106,7 +106,7 @@ export const TimetableGrid = ({
         key={`h-${i}`}
         className="sticky top-0 z-20 flex flex-col items-center justify-center gap-0.5 bg-(--bg-main) px-2 w-full h-full py-1"
       >
-        <div className="absolute top-full left-0 right-0 h-4 md:h-6 bg-gradient-to-b from-(--bg-main) to-transparent pointer-events-none" />
+        <div className="absolute top-full left-0 right-0 h-4 md:h-6 bg-linear-to-b from-(--bg-main) to-transparent pointer-events-none" />
         {isSame && thStr && (hasTheory || hasLab) ? (
           <span className="text-[10px] md:text-xs font-bold text-(--text-muted) whitespace-nowrap">
             {thStr}
@@ -146,7 +146,7 @@ export const TimetableGrid = ({
         className="sticky left-0 z-20 flex items-center justify-center bg-(--bg-main) text-(--text-muted) font-black font-expanded w-full h-full"
       >
         <span className="-rotate-90 text-sm md:text-base">{shortDay}</span>
-        <div className="absolute top-0 bottom-0 left-full w-4 md:w-6 bg-gradient-to-r from-(--bg-main) to-transparent pointer-events-none" />
+        <div className="absolute top-0 bottom-0 left-full w-4 md:w-6 bg-linear-to-r from-(--bg-main) to-transparent pointer-events-none" />
       </div>,
     );
 

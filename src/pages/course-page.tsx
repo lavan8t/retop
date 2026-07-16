@@ -105,6 +105,7 @@ export const CoursePage = ({
   const [courseGrade, setCourseGrade] = useState<any>(null);
   const [upcomingClasses, setUpcomingClasses] = useState<UpcomingClassDetail[] | null>(null);
   const [isCourseSelectorOpen, setIsCourseSelectorOpen] = useState(false);
+  const [materialSort, setMaterialSort] = useState<"date" | "module">("date");
 
   const { ttCourses, attendance, assignments, ttSelectedSem, calGridData } = useDataStore();
 
@@ -282,7 +283,23 @@ export const CoursePage = ({
       acc[fac].push(mat);
       return acc;
     }, {} as Record<string, CourseMaterial[]>);
-  }, [filteredMaterials]);
+    
+    // Sort each group
+    Object.keys(grouped).forEach(fac => {
+      grouped[fac].sort((a, b) => {
+        if (materialSort === "module") {
+          const modA = a.module ? parseInt(a.module) : 999;
+          const modB = b.module ? parseInt(b.module) : 999;
+          if (modA !== modB) return modA - modB;
+        }
+        // Fallback to date sorting
+        const dateA = new Date(a.uploadDate).getTime() || 0;
+        const dateB = new Date(b.uploadDate).getTime() || 0;
+        return dateB - dateA;
+      });
+    });
+    return grouped;
+  }, [filteredMaterials, materialSort]);
 
   const formatFaculty = (facultyStr: string) => {
     const parts = facultyStr.split(" - ").map(p => p.trim());
@@ -454,7 +471,7 @@ export const CoursePage = ({
                                         {opt.type}
                                       </span>
                                     </div>
-                                    <div className="font-bold font-expanded mt-0.5 w-full text-sm leading-tight break-words">
+                                    <div className="font-bold font-expanded mt-0.5 w-full text-sm leading-tight wrap-break-word">
                                       {opt.title}
                                     </div>
                                   </button>
@@ -638,7 +655,16 @@ export const CoursePage = ({
                 return (
                   <div key={facultyStr} className="flex flex-col">
                     <div className="flex flex-col gap-2 mb-4 border-b-2 border-(--border-dim) pb-4">
-                      <h3 className="text-xl md:text-2xl font-black font-expanded text-(--text-main) uppercase">{fac.name}</h3>
+                      <div className="flex justify-between items-start gap-4">
+                        <h3 className="text-xl md:text-2xl font-black font-expanded text-(--text-main) uppercase">{fac.name}</h3>
+                        <button
+                          onClick={() => setMaterialSort(s => s === "date" ? "module" : "date")}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-(--bg-highlight) hover:bg-(--border-dim) transition-colors text-xs font-bold font-expanded uppercase text-(--text-main) shrink-0"
+                        >
+                          <Filter className="w-3.5 h-3.5" />
+                          Sort by {materialSort}
+                        </button>
+                      </div>
                       {fac.subs.length > 0 && (
                         <div className="flex flex-wrap gap-2 mt-1">
                           {fac.subs.map((s, idx) => (
@@ -667,8 +693,17 @@ export const CoursePage = ({
                               <Icon className="w-5 h-5" />
                             </div>
                             <div className="min-w-0 flex-1 flex flex-col">
-                              <h4 className="font-bold text-(--text-main) text-sm md:text-base truncate group-hover:text-(--accent-base) transition-colors">{mat.title}</h4>
-                              <span className="text-[10px] font-bold text-(--text-dim) font-mono uppercase mt-0.5">{mat.uploadDate}</span>
+                              <div className="flex items-center gap-2">
+                                {mat.module !== undefined && mat.module !== "" && (
+                                  <span className="shrink-0 text-[9px] font-black font-expanded px-1.5 py-0.5 rounded-md bg-(--bg-main) text-(--text-muted) uppercase">
+                                    MOD {mat.module}
+                                  </span>
+                                )}
+                                <h4 className="font-bold text-(--text-main) text-sm md:text-base truncate group-hover:text-(--accent-base) transition-colors">{mat.title}</h4>
+                              </div>
+                              <span className="text-[10px] font-bold text-(--text-dim) font-mono uppercase mt-0.5">
+                                {mat.uploadDate} • {mat.category}
+                              </span>
                             </div>
                           </div>
                         )

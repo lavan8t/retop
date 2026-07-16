@@ -125,7 +125,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
 
   return (
     <div className="h-full w-full overflow-y-auto custom-scrollbar bg-(--bg-main) relative">
-      <div className="fixed top-3.5 md:top-4 right-[4.5rem] md:right-[5.5rem] z-[101] pointer-events-auto flex items-center gap-3">
+      <div className="fixed top-3.5 md:top-4 right-18 md:right-22 z-101 pointer-events-auto flex items-center gap-3">
         <div className="flex items-center gap-2 px-2 hidden sm:flex">
           <span className="text-[10px] md:text-xs font-black text-(--text-muted) uppercase tracking-wider">
             Hide Done

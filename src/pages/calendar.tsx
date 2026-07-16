@@ -146,7 +146,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
               ))}
             </div>
             {/* Fade below the weekdays to mask the grid as it scrolls up */}
-            <div className="absolute top-full left-0 right-0 h-6 bg-gradient-to-b from-(--bg-main) to-transparent pointer-events-none" />
+            <div className="absolute top-full left-0 right-0 h-6 bg-linear-to-b from-(--bg-main) to-transparent pointer-events-none" />
           </div>
 
           {/* Grid Container */}
@@ -176,7 +176,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                   >
                     {calGridData.map((data, mIdx) => (
                       <div key={mIdx} className="flex flex-col pb-8 pt-4">
-                        <div className="flex items-center justify-start pb-4 pointer-events-none sticky top-0 z-[50] pt-2">
+                        <div className="flex items-center justify-start pb-4 pointer-events-none sticky top-0 z-50 pt-2">
                           <h2 className="font-expanded font-black text-2xl md:text-3xl uppercase tracking-tighter m-0 text-(--text-main) drop-shadow-sm px-2">
                             {data.month.label.replace(/\s*-\s*/, " ")}
                           </h2>
@@ -208,15 +208,13 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                               textClass = "text-(--text-main)";
                             }
                             if (day.isHoliday) {
-                              bgClass = "bg-red-500/10 hover:bg-red-500/20";
-                              textClass =
-                                "text-red-600 dark:text-red-400 font-bold";
-                              numberClass = "text-red-500";
+                              bgClass = "bg-red-500/20 hover:bg-red-500/30";
+                              textClass = "text-red-600 dark:text-red-400 font-black";
+                              numberClass = "text-red-600 dark:text-red-400 font-black";
                             } else if (day.isExam) {
-                              bgClass = "bg-amber-500/10 hover:bg-amber-500/20";
-                              textClass =
-                                "text-amber-600 dark:text-amber-400 font-bold";
-                              numberClass = "text-amber-500";
+                              bgClass = "bg-(--accent-base)/20 hover:bg-(--accent-base)/30";
+                              textClass = "text-(--accent-base) font-black";
+                              numberClass = "text-(--accent-base) font-black";
                             }
 
                             if (isToday) {
@@ -257,7 +255,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                                       </span>
                                     )}
                                     <p
-                                      className={`text-[10px] md:text-xs font-bold uppercase leading-tight ${textClass} break-words`}
+                                      className={`text-[10px] md:text-xs font-bold uppercase leading-tight ${textClass} wrap-break-word`}
                                       title={day.info}
                                     >
                                       {day.info}

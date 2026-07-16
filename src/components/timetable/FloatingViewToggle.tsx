@@ -88,7 +88,7 @@ export const FloatingViewToggle: React.FC<FloatingViewToggleProps> = ({
         >
           <button
             onClick={cycleView}
-            className="p-3 bg-cyan-400 text-black border-2 border-(--border-main) rounded-2xl shadow-none active:translate-y-px active:shadow-[var(--brutal-shadow-hover)] transition-all"
+            className="p-3 bg-(--md-sys-color-primary-container) text-(--md-sys-color-on-primary-container) border-2 border-(--md-sys-color-outline) rounded-2xl shadow-none active:translate-y-px active:shadow-(--brutal-shadow-hover) transition-all"
             title={`Current View: ${viewMode}`}
           >
             <Icon className="w-5 h-5" />

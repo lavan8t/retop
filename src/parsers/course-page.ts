@@ -135,10 +135,18 @@ export const parseCoursePage = (html: string): CoursePageData => {
             materialSpans.length > 0
               ? materialSpans[0].textContent?.trim() || ""
               : tds[2].textContent?.trim() || "";
-          const category =
-            materialSpans.length >= 3
-              ? materialSpans[2].textContent?.replace(/[()]/g, "").trim() || ""
-              : "Document";
+          let category = "Document";
+          let moduleNum = "";
+          if (materialSpans.length >= 3) {
+            const rawCat = materialSpans[2].textContent?.trim() || "";
+            const match = rawCat.match(/^(\d+)\s*\(([^)]+)\)$/);
+            if (match) {
+              moduleNum = match[1];
+              category = match[2].trim();
+            } else {
+              category = rawCat.replace(/[()]/g, "").trim();
+            }
+          }
 
           const facSpans = tds[3].querySelectorAll("span");
           const faculty =
@@ -154,6 +162,7 @@ export const parseCoursePage = (html: string): CoursePageData => {
             faculty,
             uploadDate,
             downloadId,
+            module: moduleNum,
           });
         }
       }

@@ -57,7 +57,8 @@ export const createTimetableSlice: StateCreator<DataState, [], [], TimetableSlic
           });
           return await res.text();
         },
-        forceFetch
+        forceFetch,
+        (get().ttSemesters.length > 0 && semId !== get().ttSemesters[0].id) ? Infinity : undefined
       );
 
       if (html.includes("data not available")) {
@@ -82,6 +83,9 @@ export const createTimetableSlice: StateCreator<DataState, [], [], TimetableSlic
         set({ ttCourses: [], upcoming: [], ttLoading: false });
       }
     } catch (e) {
+      if (e instanceof Error && e.message === "OFFLINE_CACHE_MISS") {
+         set({ status: "Offline - Not Synced" });
+      }
       console.warn("Timetable load failed:", e);
       set({ ttCourses: [], upcoming: [], ttLoading: false });
     }

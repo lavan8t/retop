@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   AccountCircle,
   CreditCard,
@@ -9,9 +9,11 @@ import {
   Settings,
   ChevronRight,
   DesignServices,
+  Warning,
+  SwapHoriz,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { QuickLink } from "../types/vtop";
-import { motion, Variants, Transition } from "framer-motion";
+import { motion, Variants, Transition, AnimatePresence } from "framer-motion";
 
 interface ProfileMenuProps {
   userName: string;
@@ -30,6 +32,8 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
   onLegacyToggle,
   onClose,
 }) => {
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+
   const mainItems = [
     {
       title: "Profile",
@@ -58,7 +62,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
       url: "user/changePassword",
       cat: "Settings",
       hoverClass:
-        "hover:bg-pink-400 hover:shadow-[var(--brutal-shadow-lg)]",
+        "hover:bg-(--accent-base) hover:text-white hover:border-(--accent-base)",
     },
     {
       title: "Login ID",
@@ -66,7 +70,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
       url: "user/updateLoginId",
       cat: "Settings",
       hoverClass:
-        "hover:bg-blue-400 hover:shadow-[var(--brutal-shadow-lg)]",
+        "hover:bg-(--accent-base) hover:text-white hover:border-(--accent-base)",
     },
   ];
 
@@ -109,7 +113,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
       initial="hidden"
       animate="visible"
       exit="exit"
-      className="absolute right-2 top-2 md:right-4 md:top-4 w-64 bg-(--bg-surface) border-4 border-(--border-main) rounded-4xl shadow-[var(--brutal-shadow-lg)] z-9999 overflow-hidden origin-top-right flex flex-col will-change-transform transform-gpu"
+      className="absolute right-2 top-2 md:right-4 md:top-4 w-64 bg-(--bg-surface) rounded-[32px] shadow-[var(--brutal-shadow-lg)] z-[9999] overflow-hidden origin-top-right flex flex-col will-change-transform transform-gpu popup-shadow"
     >
       <div className="overflow-y-auto custom-scrollbar p-2 flex-1">
         {/* Profile Header */}
@@ -190,10 +194,10 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
                   });
                   onClose();
                 }}
-                className={`flex flex-col items-center justify-center py-2.5 rounded-xl border-2 border-(--border-dim) bg-(--bg-main) hover:border-(--border-main) hover:-translate-y-0.5 transition-all group ${item.hoverClass}`}
+                className={`flex flex-col items-center justify-center py-2.5 rounded-xl border-2 border-transparent bg-(--bg-highlight) hover:-translate-y-0.5 transition-all group ${item.hoverClass}`}
               >
-                <item.icon className="w-4 h-4 mb-1 transition-transform group-hover:scale-110 text-(--text-main)" />
-                <span className="font-expanded font-black text-[8px] uppercase  text-center text-(--text-main)">
+                <item.icon className="w-4 h-4 mb-1 transition-transform group-hover:scale-110 text-inherit" />
+                <span className="font-expanded font-black text-[8px] uppercase text-center text-inherit">
                   {item.title}
                 </span>
               </motion.button>
@@ -202,7 +206,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
         </div>
       </div>
 
-      <div className="p-2 flex gap-1.5 bg-(--bg-main) border-t-4 border-(--border-main) shrink-0">
+      <div className="p-2 flex gap-1.5 bg-(--bg-main) border-t-2 border-(--border-dim) shrink-0">
         <button
           onClick={() => {
             onNavigate({
@@ -212,7 +216,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
             });
             onClose();
           }}
-          className="flex-1 flex items-center justify-center p-2.5 rounded-l-2xl rounded-r-md border-2 border-(--border-main) bg-(--bg-surface) text-(--text-main) hover:bg-blue-400 hover:text-black hover:border-(--border-main) transition-all active:scale-95 group"
+          className="flex-1 flex items-center justify-center p-2.5 rounded-tl-md rounded-tr-[4px] rounded-bl-[24px] rounded-br-[4px] bg-(--bg-highlight) text-(--text-main) hover:bg-(--accent-base) hover:text-white transition-colors active:scale-95 group"
           title="Settings"
         >
           <Settings className="w-4 h-4 group-hover:rotate-45 transition-transform" />
@@ -223,26 +227,59 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
             onLegacyToggle();
             onClose();
           }}
-          className="flex-1 flex items-center justify-center p-2.5 rounded-md border-2 border-(--border-main) text-white hover:brightness-110 hover:border-(--border-main) transition-all active:scale-95 group"
+          className="flex-1 flex items-center justify-center p-2.5 rounded-md text-white hover:brightness-110 transition-all active:scale-95 group"
           style={{
             background:
-              "linear-gradient(130deg, rgb(36, 85, 163) 23%, rgb(52, 151, 219) 52%, rgb(52, 142, 219) 58%, rgb(52, 131, 219) 65%, rgb(40, 116, 166) 74%)",
+              "linear-gradient(130deg, var(--accent-hover) 23%, var(--accent-base) 52%, var(--md-sys-color-primary) 58%, var(--accent-base) 65%, var(--accent-active) 74%)",
           }}
           title="Legacy View"
         >
-          <span className="text-xs group-hover:scale-110 transition-transform tracking-wider !font-['Times_New_Roman',_Times,_serif] !font-bold !text-white">
-            VTOP
+          <span className="text-md group-hover:scale-110 transition-transform font-['Times_New_Roman',Times,serif]! font-bold! text-white!">
+            VIT
           </span>
         </button>
 
         <button
-          onClick={onLogout}
-          className="flex-1 flex items-center justify-center p-2.5 rounded-r-2xl rounded-l-md border-2 border-(--border-main) bg-(--bg-surface) text-red-500 hover:text-white hover:bg-red-500 hover:border-(--border-main) transition-all active:scale-95 group"
+          onClick={() => setShowLogoutDialog(true)}
+          className="flex-1 flex items-center justify-center p-2.5 rounded-tr-md rounded-tl-[4px] rounded-br-[24px] rounded-bl-[4px] bg-(--bg-highlight) text-red-500 hover:text-white hover:bg-red-500 transition-colors active:scale-95 group"
           title="Log Out"
         >
           <Logout className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
         </button>
       </div>
+
+      <AnimatePresence>
+        {showLogoutDialog && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-50 bg-(--bg-main)/95 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center rounded-4xl"
+          >
+            <Warning className="w-12 h-12 text-red-500 mb-3" />
+            <h3 className="text-xl font-black font-expanded text-(--text-main) uppercase mb-1">
+              Log Out?
+            </h3>
+            <p className="text-xs font-bold text-(--text-muted) mb-6">
+              Are you sure you want to exit?
+            </p>
+            <div className="flex gap-2 w-full max-w-50">
+              <button
+                onClick={() => setShowLogoutDialog(false)}
+                className="flex-1 py-2.5 bg-(--bg-highlight) text-(--text-main) font-bold rounded-xl hover:bg-(--border-dim) transition-colors text-sm cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={onLogout}
+                className="flex-1 py-2.5 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 transition-colors text-sm cursor-pointer"
+              >
+                Confirm
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

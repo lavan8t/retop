@@ -258,7 +258,7 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
             animate={{ opacity: 1, scaleX: 1, scaleY: 1, x: 0 }}
             exit={{ opacity: 0, scaleX: 0.3, scaleY: 0.8, x: -20 }}
             transition={{ type: "spring", stiffness: 500, damping: 30 }}
-            className={`fixed z-200 bg-(--bg-surface) border-4 border-(--border-main) rounded-2xl shadow-[var(--brutal-shadow-hover)] p-3 flex flex-col`}
+            className={`fixed z-200 bg-(--bg-surface) border-4 border-(--border-main) rounded-2xl shadow-(--brutal-shadow-hover) p-3 flex flex-col`}
             style={{
               transformOrigin: "left center",
               left: Math.min(

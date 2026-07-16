@@ -62,7 +62,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const [eventFilter, setEventFilter] = useState<
     "all" | "classes" | "assignments" | "events"
   >("all");
-  const [daysToShow, setDaysToShow] = useState(15);
 
   const { calGridData } = useDataStore();
 
@@ -103,13 +102,20 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const calendarDays = useMemo(() => {
     const days = [];
     const today = new Date();
-    for (let i = 0; i < daysToShow; i++) {
+    today.setHours(0, 0, 0, 0); // ensure accurate date comparisons
+
+    // Calculate end of the current month
+    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    const diffTime = endOfMonth.getTime() - today.getTime();
+    const totalDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // Include today
+
+    for (let i = 0; i < totalDays; i++) {
       const d = new Date(today);
       d.setDate(today.getDate() + i);
       days.push(d);
     }
     return days;
-  }, [daysToShow]);
+  }, []);
 
   const monthDisplay = useMemo(() => {
     if (calendarDays.length === 0) return { text: "", semName: "" };
@@ -164,7 +170,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
       {/* CENTER PANE: Surface Level Unified Event CalendarMonth */}
       <div className="flex-none lg:flex-1 w-full flex flex-col gap-6 md:gap-8 overflow-hidden pt-1 pl-1 md:pl-0 min-h-0">
-        <div className="flex flex-col items-center mb-2 lg:mb-4 px-2 w-full relative z-[95] pointer-events-auto pt-20 md:pt-24 lg:pt-28">
+        <div className="flex flex-col items-center mb-2 lg:mb-4 px-2 w-full relative z-95 pointer-events-auto pt-20 md:pt-24 lg:pt-28">
           <div className="flex flex-col items-center w-full">
             {/* Month Header and Filter Chips in a 3-column grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 w-full items-center mb-6 px-1 pt-4 gap-4 md:gap-0">
@@ -245,18 +251,19 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     style={{ "--progress": `${progress}%` } as any}
                   >
                     <div className="relative text-right flex flex-col w-full min-w-[120px]">
-                      <div className="relative text-sm md:text-base leading-none transition-all duration-fast ease-out font-expanded sem-text">
-                        <span className="text-(--text-main) group-hover:text-(--text-muted) group-hover:opacity-50 whitespace-nowrap transition-all duration-fast">
+                      <div className="relative text-sm md:text-base leading-none transition-all duration-normal ease-out font-expanded sem-text">
+                        <span className="text-(--text-main) group-hover:text-(--text-muted) group-hover:opacity-50 whitespace-nowrap transition-all duration-normal">
                           {monthDisplay.semName}
                         </span>
                         <span
-                          className="absolute left-0 top-0 overflow-hidden whitespace-nowrap text-(--text-main) pointer-events-none transition-[width,opacity] duration-normal ease-out opacity-0 group-hover:opacity-100 w-0 group-hover:w-[var(--progress)]"
+                          className="absolute left-0 top-0 overflow-hidden whitespace-nowrap text-(--text-main) pointer-events-none transition-all duration-normal ease-out opacity-0 group-hover:opacity-100 origin-left scale-x-0 group-hover:scale-x-100"
+                          style={{ width: "var(--progress)" } as any}
                         >
                           {monthDisplay.semName}
                         </span>
                       </div>
-                      <div className="w-full bg-(--border-dim) mt-1 relative transition-all duration-normal ease-out h-[0px] opacity-0 group-hover:h-[6px] group-hover:opacity-100 rounded-full overflow-hidden">
-                         <div className="absolute left-0 top-0 h-full bg-(--accent-base) transition-[width] duration-normal ease-out w-0 group-hover:w-[var(--progress)]" />
+                      <div className="w-full bg-(--border-dim) mt-1 relative transition-all duration-normal ease-out opacity-0 group-hover:opacity-100 h-0 group-hover:h-1.5 rounded-full overflow-hidden">
+                         <div className="absolute left-0 top-0 h-full bg-(--accent-base) transition-transform duration-normal ease-out origin-left scale-x-0 group-hover:scale-x-100" style={{ width: "var(--progress)" } as any} />
                       </div>
                     </div>
                     
@@ -283,7 +290,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
         {/* Surface level list (no card wrapper) */}
         <div
-          className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-4 pr-3 pb-32 pt-37.5 -mt-30 -mb-12 relative z-0 pointer-events-auto"
+          className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-4 pr-3 pb-32 pt-37.5 -mt-30 -mb-12 relative z-0 pointer-events-auto empty-events-container"
           style={{
             maskImage:
               "linear-gradient(to bottom, transparent, black 5%, black 95%, transparent)",
@@ -303,6 +310,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               todayRef={todayRef}
               nowRef={nowRef}
               setSelectedCourse={setSelectedCourse}
+              onNavigate={onNavigate}
             />
           ))}
 

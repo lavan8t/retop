@@ -33,7 +33,7 @@ export const createProfileSlice: StateCreator<DataState, [], [], ProfileSlice> =
         const regNo = profile.basic.regNo || get().user.regNo;
         let profileImgBase64 = get().user.profileImgBase64;
         
-        if (regNo !== "...") {
+        if (regNo !== "..." && !profileImgBase64) {
           try {
             const imgRes = await fetch(`/vtop/users/image/?id=${regNo}`);
             const blob = await imgRes.blob();

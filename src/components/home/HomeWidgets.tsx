@@ -23,12 +23,17 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
   stats,
   onNavigate,
 }) => {
-  const graded = parseFloat(stats.credits);
-  const nonGraded = parseFloat(stats.nonGraded || "");
-  const isLoaded = !isNaN(graded) && !isNaN(nonGraded);
-  const totalEarned = isLoaded
-    ? (graded + nonGraded).toString().replace(/\.0$/, "")
+  const totalEarnedStr = stats.credits || "...";
+  const totalEarnedNum = parseFloat(stats.credits);
+  const nonGradedNum = parseFloat(stats.nonGraded || "");
+  const isLoaded = !isNaN(totalEarnedNum) && !isNaN(nonGradedNum);
+
+  const gradedStr = isLoaded
+    ? (totalEarnedNum - nonGradedNum).toString().replace(/\.0$/, "")
     : "...";
+  const nonGradedStr = isLoaded
+    ? nonGradedNum.toString().replace(/\.0$/, "")
+    : stats.nonGraded || "0";
 
   return (
     <div className="hidden lg:flex w-full lg:w-[24%] xl:w-[20%] flex-col shrink-0 h-auto lg:h-full relative z-30 pt-20 md:pt-24 lg:pt-28 pb-4 md:pb-6 lg:pb-8 pr-4 md:pr-6 lg:pr-0">
@@ -37,8 +42,14 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
         whileHover="hover"
         whileTap={{ scale: 0.98 }}
         animate="rest"
-        onClick={() => onNavigate({ title: "Grades View", url: "examinations/StudentGradeView", category: "Examinations" })}
-        className="group shrink-0 h-auto bg-(--bg-highlight) rounded-4xl p-5 flex flex-col relative z-30 cursor-pointer overflow-hidden shadow-none border-2 border-transparent hover:border-(--border-main) transition-colors"
+        onClick={() =>
+          onNavigate({
+            title: "Grades View",
+            url: "examinations/StudentGradeView",
+            category: "Examinations",
+          })
+        }
+        className="group shrink-0 h-auto bg-(--bg-highlight) rounded-4xl p-5 flex flex-col relative z-30 cursor-pointer overflow-hidden border-2 border-(--border-main) shadow-(--brutal-shadow-sm) hover:-translate-y-1 hover:shadow-(--brutal-shadow-hover) hover:bg-(--bg-surface) transition-all"
       >
         {/* Persistent CGPA */}
         <motion.div
@@ -75,7 +86,7 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
               Credits
             </div>
             <div className="text-3xl font-black font-expanded leading-none whitespace-nowrap">
-              {totalEarned}{" "}
+              {totalEarnedStr}{" "}
               <span className="text-xl text-(--text-muted)">
                 / {stats.totalCredits || "..."}
               </span>
@@ -99,9 +110,9 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
 
             <div className="flex flex-col items-center">
               <div className="flex items-center gap-2 text-3xl font-black font-expanded leading-none">
-                <span>{stats.credits}</span>
+                <span>{gradedStr}</span>
                 <span className="text-xl text-(--text-muted)">+</span>
-                <span>{stats.nonGraded}</span>
+                <span>{nonGradedStr}</span>
               </div>
 
               <div className="h-1 w-full min-w-30 bg-(--border-main) rounded-full my-2.5"></div>
@@ -113,7 +124,7 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
 
             {stats.placement && (
               <div
-                className={`mt-6 text-[10px] font-black uppercase tracking-widest text-center ${stats.placement.toLowerCase().includes("eligible") ? "text-(--att-safe)" : "text-(--att-danger)"}`}
+                className={`mt-6 text-[10px] font-black uppercase text-center ${stats.placement.toLowerCase().includes("eligible") ? "text-(--att-safe)" : "text-(--att-danger)"}`}
               >
                 {stats.placement}
               </div>

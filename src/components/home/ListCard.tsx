@@ -43,7 +43,10 @@ export const ListCard = ({
     </div>
 
     <motion.div
-      variants={{ show: { transition: { staggerChildren: 0.08 } } }}
+      variants={{
+        hidden: { opacity: 0 },
+        show: { opacity: 1, transition: { duration: 0.2 } }
+      }}
       initial="hidden"
       animate="show"
       className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar bg-(--bg-highlight)"

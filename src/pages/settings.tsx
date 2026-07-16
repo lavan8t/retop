@@ -12,9 +12,11 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { SPRING_SNAPPY } from "../utils/motion";
 import { Icon } from "@iconify/react";
-import { ExportData } from "../components/settings/ExportData";
+
 import { SyncManager } from "../components/SyncManager";
+import { SegmentedControl } from "../components/ui/SegmentedControl";
 import { MaterialSwitch } from "../components/MaterialSwitch";
+import { Tooltip } from "../components/ui/Tooltip";
 import { useDataStore } from "../store/dataStore";
 
 interface SettingsPageProps {
@@ -54,7 +56,6 @@ const SettingsCard = ({
         boxShadow: "0px 0px 0px 0px var(--shadow-main)",
       },
       hover: {
-        y: -2,
         boxShadow: "var(--brutal-shadow-hover)",
       }
     }}
@@ -96,6 +97,10 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     { id: "lime", hex: "#84cc16", label: "Lime" },
     { id: "green", hex: "#22c55e", label: "Green" },
     { id: "cyan", hex: "#06b6d4", label: "Cyan" },
+    { id: "neon-green", hex: "#39ff14", label: "Neon Green" },
+    { id: "neon-yellow", hex: "#eaff00", label: "Neon Yellow" },
+    { id: "neon-orange", hex: "#ff6700", label: "Neon Orange" },
+    { id: "neon-red", hex: "#ff073a", label: "Neon Red" },
   ];
 
   const handleThemeChange = (
@@ -195,30 +200,21 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   <span className="text-sm font-bold text-(--text-muted)">
                     Color Scheme
                   </span>
-                  <div className="flex bg-(--bg-highlight) rounded-lg p-1 w-full gap-1">
-                    {["light", "dark", "auto"].map((mode) => {
-                      const isActive =
-                        settings.themeMode === mode ||
-                        (mode === "dark" && settings.themeMode === "amoled");
-
-                      return (
-                        <button
-                          key={mode}
-                          onClick={(e) => {
-                            let targetMode = mode;
-                            if (mode === "light") targetMode = "light";
-                            handleThemeChange(e, targetMode as any);
-                          }}
-                          className={`flex-1 py-1.5 text-xs font-bold font-expanded uppercase transition-all rounded-md ${
-                            isActive
-                              ? "bg-(--text-main) text-(--bg-main) shadow-none"
-                              : "text-(--text-muted) hover:text-(--text-main)"
-                          }`}
-                        >
-                          {mode}
-                        </button>
-                      );
-                    })}
+                  <div className="flex bg-transparent rounded-full border-2 border-(--border-main) shadow-(--brutal-shadow-sm) w-full max-w-md items-center">
+                    <SegmentedControl
+                      options={[
+                        { label: <span className="uppercase">light</span>, value: "light" },
+                        { label: <span className="uppercase">dark</span>, value: "dark" },
+                        { label: <span className="uppercase">auto</span>, value: "auto" },
+                      ]}
+                      value={settings.themeMode === "amoled" ? "dark" : settings.themeMode}
+                      onChange={(val, e) => {
+                        let targetMode = val;
+                        if (val === "light") targetMode = "light";
+                        handleThemeChange(e as any, targetMode as any);
+                      }}
+                      className="w-full flex-1 *:flex-1"
+                    />
                   </div>
                 </div>
 
@@ -250,24 +246,26 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   Accent
                 </span>
                 <div className="flex flex-nowrap overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden gap-4 snap-x py-2 px-6 lg:px-8 -mx-6 lg:-mx-8 min-w-0">
-                  <button
-                    onClick={() => {
-                      if (!settings.randomAccentColor) resetDynamicThemeSeed();
-                      updateSetting("randomAccentColor", true);
-                    }}
-                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-fast shrink-0 ${
-                      settings.randomAccentColor
-                        ? "ring-4 ring-offset-4 ring-offset-(--bg-surface) ring-(--text-main) bg-linear-to-tr from-purple-500 via-pink-500 to-orange-500"
-                        : "ring-4 ring-transparent ring-offset-4 ring-offset-(--bg-surface) bg-(--bg-highlight) hover:ring-(--border-dim)"
-                    }`}
-                    title="Random Accent"
-                  >
-                    {settings.randomAccentColor ? (
-                      <Check className="w-4 h-4 text-white" />
-                    ) : (
-                      <Casino className="w-4 h-4 text-(--text-muted)" />
-                    )}
-                  </button>
+                  <Tooltip text="Random Accent">
+                    <button
+                      onClick={() => {
+                        if (!settings.randomAccentColor) resetDynamicThemeSeed();
+                        updateSetting("randomAccentColor", true);
+                      }}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-fast shrink-0 ${
+                        settings.randomAccentColor
+                          ? "ring-[3px] ring-inset ring-(--text-main) bg-linear-to-tr from-purple-500 via-pink-500 to-orange-500"
+                          : "ring-[3px] ring-inset ring-transparent bg-(--bg-highlight) hover:ring-(--border-dim)"
+                      }`}
+                      title="Random Accent"
+                    >
+                      {settings.randomAccentColor ? (
+                        <Check className="w-4 h-4 text-content-inverse" />
+                      ) : (
+                        <Casino className="w-4 h-4 text-(--text-muted)" />
+                      )}
+                    </button>
+                  </Tooltip>
                   {COLORS.map((c) => (
                     <button
                       key={c.id}
@@ -303,15 +301,15 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                       className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-fast shrink-0 ${
                         settings.accentColor === c.id &&
                         !settings.randomAccentColor
-                          ? "ring-4 ring-offset-4 ring-offset-(--bg-surface) ring-(--text-main)"
-                          : "ring-4 ring-transparent ring-offset-4 ring-offset-(--bg-surface) hover:ring-(--border-dim)"
+                          ? "ring-[3px] ring-inset ring-(--text-main)"
+                          : "ring-[3px] ring-inset ring-transparent hover:ring-(--border-dim)"
                       }`}
                       style={{ backgroundColor: c.hex }}
                       title={c.label}
                     >
                       {settings.accentColor === c.id &&
                         !settings.randomAccentColor && (
-                          <Check className="w-6 h-6 text-white" />
+                          <Check className="w-6 h-6 text-content-inverse" />
                         )}
                     </button>
                   ))}
@@ -390,24 +388,26 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-4 mt-2">
-              <a
-                href="https://github.com/lavan8t/retop"
-                target="_blank"
-                rel="noreferrer"
-                className="p-3.5 rounded-full transition-all bg-(--bg-highlight) text-(--text-main) hover:bg-(--text-main) hover:text-(--bg-main) hover:scale-105 active:scale-95 flex items-center justify-center shadow-none hover:shadow-lg"
-                title="GitHub"
-              >
-                <Icon icon="mdi:github" className="w-8 h-8" />
-              </a>
-              <a
-                href="https://getretop.web.app"
-                target="_blank"
-                rel="noreferrer"
-                className="p-3.5 rounded-full transition-all bg-(--bg-highlight) text-(--text-main) hover:bg-(--text-main) hover:text-(--bg-main) hover:scale-105 active:scale-95 flex items-center justify-center shadow-none hover:shadow-lg"
-                title="Website"
-              >
-                <Language className="w-8 h-8" />
-              </a>
+              <Tooltip text="GitHub">
+                <a
+                  href="https://github.com/lavan8t/retop"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="p-3.5 rounded-full transition-all bg-(--bg-highlight) text-(--text-main) hover:bg-(--text-main) hover:text-(--bg-main) hover:scale-105 active:scale-95 flex items-center justify-center shadow-none hover:shadow-lg"
+                >
+                  <Icon icon="mdi:github" className="w-8 h-8" />
+                </a>
+              </Tooltip>
+              <Tooltip text="Website">
+                <a
+                  href="https://getretop.web.app"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="p-3.5 rounded-full transition-all bg-(--bg-highlight) text-(--text-main) hover:bg-(--text-main) hover:text-(--bg-main) hover:scale-105 active:scale-95 flex items-center justify-center shadow-none hover:shadow-lg"
+                >
+                  <Language className="w-8 h-8" />
+                </a>
+              </Tooltip>
             </div>
           </SettingsCard>
 
@@ -432,53 +432,22 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             className="col-span-1"
           >
             <div className="flex flex-col gap-2 w-full">
-              <div className="flex bg-(--bg-highlight) rounded-lg p-1 w-full gap-1">
-                {(["1x", "0.5x", "0x"] as const).map((scale) => {
-                  const isActive = settings.animationScale === scale;
-                  return (
-                    <button
-                      key={scale}
-                      onClick={() => updateSetting("animationScale", scale)}
-                      className={`flex-1 py-1.5 text-xs font-bold font-expanded uppercase transition-all rounded-md ${
-                        isActive
-                          ? "bg-(--text-main) text-(--bg-main) shadow-none"
-                          : "text-(--text-muted) hover:text-(--text-main)"
-                      }`}
-                    >
-                      {scale === "0x" ? "Off" : scale}
-                    </button>
-                  );
-                })}
+              <div className="flex bg-transparent rounded-full border-2 border-(--border-main) shadow-(--brutal-shadow-sm) w-full items-center">
+                <SegmentedControl
+                  options={[
+                    { label: <span className="uppercase">1x</span>, value: "1x" },
+                    { label: <span className="uppercase">0.5x</span>, value: "0.5x" },
+                    { label: <span className="uppercase">off</span>, value: "0x" },
+                  ]}
+                  value={settings.animationScale || "1x"}
+                  onChange={(val) => updateSetting("animationScale", val as any)}
+                  className="w-full flex-1 *:flex-1"
+                />
               </div>
             </div>
           </SettingsCard>
 
-          <SettingsCard
-            title="Search Hotkey"
-            description="Choose how to open search"
-            className="col-span-1"
-          >
-            <div className="flex flex-col gap-2 w-full">
-              <div className="flex bg-(--bg-highlight) rounded-lg p-1 w-full gap-1">
-                {(["/", "space", "instant"] as const).map((key) => {
-                  const isActive = (settings.searchHotkey || "/") === key;
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => updateSetting("searchHotkey", key)}
-                      className={`flex-1 py-1.5 text-[10px] sm:text-xs font-bold font-expanded uppercase transition-all rounded-md ${
-                        isActive
-                          ? "bg-(--text-main) text-(--bg-main) shadow-none"
-                          : "text-(--text-muted) hover:text-(--text-main)"
-                      }`}
-                    >
-                      {key === "instant" ? "Any" : key === "space" ? "Space" : key}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </SettingsCard>
+
 
           <SettingsCard
             title="Cloud & Sync"
@@ -500,9 +469,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   onClick={() =>
                     updateSetting("googleLinked", !settings.googleLinked)
                   }
-                  className={`px-5 py-2.5 shrink-0 rounded-xl text-xs font-black font-expanded uppercase transition-all border-2 border-(--border-main) shadow-none hover:-translate-y-px hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) cursor-pointer ${
+                  className={`px-5 py-2.5 shrink-0 rounded-xl text-xs font-black font-expanded uppercase transition-all border-2 border-(--border-main) shadow-none hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) cursor-pointer ${
                     settings.googleLinked
-                      ? "bg-(--bg-surface) text-(--text-main) hover:text-red-500 hover:bg-red-500/10"
+                      ? "bg-(--bg-surface) text-(--text-main) hover:text-att-danger hover:bg-red-500/10"
                       : "bg-(--text-main) text-(--bg-main)"
                   }`}
                 >
@@ -563,60 +532,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             </div>
           </SettingsCard>
 
-          <SettingsCard
-            title="Data & Cache"
-            description="Clear locally cached academic data or proactively sync the latest data for offline access."
-            className="col-span-1 md:col-span-2"
-          >
-            <div className="w-full flex flex-col sm:flex-row justify-end gap-3">
-              <button
-                id="sync-btn"
-                onClick={async () => {
-                  if (!network) {
-                    alert("Network instance not found.");
-                    return;
-                  }
-                  const btn = document.getElementById("sync-btn");
-                  if (btn) btn.innerText = "SYNCING...";
-                  try {
-                    await useDataStore.getState().fetchDashboardData(network, network.csrf, network.authorizedID);
-                    
-                    const gradesViewHTML = await network.getGradesView(true);
-                    const gradesSems = parseGradesSemesters(gradesViewHTML);
-                    if (gradesSems.length > 0) {
-                        await network.getStudentGrades(gradesSems[0].id, true);
-                    }
-                    await network.getStudentGradeHistory(true);
 
-                    const marksViewHTML = await network.getMarksView(true);
-                    const marksSems = parseMarksSemesters(marksViewHTML);
-                    if (marksSems.length > 0) {
-                        await network.getStudentMarks(marksSems[0].id, true);
-                    }
-
-                    if (btn) btn.innerText = "SYNC COMPLETE!";
-                    setTimeout(() => { if (btn) btn.innerText = "SYNC LATEST DATA"; }, 3000);
-                  } catch (e) {
-                    console.error(e);
-                    if (btn) btn.innerText = "SYNC FAILED!";
-                    setTimeout(() => { if (btn) btn.innerText = "SYNC LATEST DATA"; }, 3000);
-                  }
-                }}
-                className="px-5 py-2.5 rounded-xl text-xs font-black font-expanded uppercase transition-all border-2 border-(--border-main) shadow-none hover:-translate-y-px hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) cursor-pointer bg-(--accent-base) text-black"
-              >
-                Sync Latest Data
-              </button>
-              <button
-                onClick={() => {
-                  clearCache();
-                  window.location.reload();
-                }}
-                className="px-5 py-2.5 rounded-xl text-xs font-black font-expanded uppercase transition-all border-2 border-(--border-main) shadow-none hover:-translate-y-px hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) cursor-pointer bg-(--text-main) text-(--bg-main)"
-              >
-                Clear All Cache
-              </button>
-            </div>
-          </SettingsCard>
 
           <SettingsCard
             title="Developer Options"
@@ -684,7 +600,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     if (btn) btn.innerText = "ERROR!";
                   }
                 }}
-                className="px-5 py-2.5 rounded-xl text-xs font-black font-expanded uppercase transition-all border-2 border-(--border-main) shadow-none hover:-translate-y-px hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) cursor-pointer bg-(--bg-surface) text-(--text-main)"
+                className="px-5 py-2.5 rounded-xl text-xs font-black font-expanded uppercase transition-all border-2 border-(--border-main) shadow-none hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) cursor-pointer bg-(--bg-surface) text-(--text-main)"
               >
                 Export Real Data As JSON
               </button>
@@ -693,7 +609,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   useDataStore.getState().enableDemoMode();
                   alert("Demo Mode Active: Dummy data injected.");
                 }}
-                className="px-5 py-2.5 rounded-xl text-xs font-black font-expanded uppercase transition-all border-2 border-(--border-main) shadow-none hover:-translate-y-px hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) cursor-pointer bg-(--text-main) text-(--bg-main)"
+                className="px-5 py-2.5 rounded-xl text-xs font-black font-expanded uppercase transition-all border-2 border-(--border-main) shadow-none hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) cursor-pointer bg-(--text-main) text-(--bg-main)"
               >
                 Fill Dummy Data
               </button>
@@ -701,8 +617,65 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           </SettingsCard>
         </div>
 
-        <div className="max-w-[1380px] mx-auto relative z-10 mt-8 mb-16">
-          <SyncManager />
+        <div className="max-w-[1380px] mx-auto relative z-10 mt-8 mb-16 clear-both">
+          <SettingsCard
+            title="Data, Cache & Sync"
+            description="Manage your local offline data and synchronize the latest academic records from VTOP."
+            className="w-full"
+          >
+            <div className="flex flex-col gap-6">
+              <div className="w-full flex flex-col sm:flex-row justify-end gap-3 border-b-2 border-(--border-dim) pb-6">
+                <button
+                  id="sync-btn"
+                  onClick={async () => {
+                    if (!network) {
+                      alert("Network instance not found.");
+                      return;
+                    }
+                    const btn = document.getElementById("sync-btn");
+                    if (btn) btn.innerText = "SYNCING...";
+                    try {
+                      await useDataStore.getState().fetchDashboardData(network, network.csrf, network.authorizedID);
+                      
+                      const gradesViewHTML = await network.getGradesView(true);
+                      const gradesSems = parseGradesSemesters(gradesViewHTML);
+                      if (gradesSems.length > 0) {
+                          await network.getStudentGrades(gradesSems[0].id, true);
+                      }
+                      await network.getStudentGradeHistory(true);
+
+                      const marksViewHTML = await network.getMarksView(true);
+                      const marksSems = parseMarksSemesters(marksViewHTML);
+                      if (marksSems.length > 0) {
+                          await network.getStudentMarks(marksSems[0].id, true);
+                      }
+
+                      if (btn) btn.innerText = "SYNC COMPLETE!";
+                      setTimeout(() => { if (btn) btn.innerText = "SYNC LATEST DATA"; }, 3000);
+                    } catch (e) {
+                      console.error(e);
+                      if (btn) btn.innerText = "SYNC FAILED!";
+                      setTimeout(() => { if (btn) btn.innerText = "SYNC LATEST DATA"; }, 3000);
+                    }
+                  }}
+                  className="px-5 py-2.5 rounded-xl text-xs font-black font-expanded uppercase transition-all border-2 border-(--border-main) shadow-none hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) cursor-pointer bg-(--accent-base) text-black"
+                >
+                  Sync Latest Data
+                </button>
+                <button
+                  onClick={() => {
+                    clearCache();
+                    window.location.reload();
+                  }}
+                  className="px-5 py-2.5 rounded-xl text-xs font-black font-expanded uppercase transition-all border-2 border-(--border-main) shadow-none hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) cursor-pointer bg-(--text-main) text-(--bg-main)"
+                >
+                  Clear All Cache
+                </button>
+              </div>
+
+              <SyncManager />
+            </div>
+          </SettingsCard>
         </div>
       </motion.div>
     </>

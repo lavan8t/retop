@@ -156,8 +156,8 @@ const AttendanceCalculator = ({
           <div className="flex flex-col items-center z-10 text-center">
             {isInvalid ? (
               <>
-                <Warning className="w-10 h-10 text-red-500 mb-2" />
-                <span className="font-expanded font-black text-sm leading-tight text-red-500 px-2 uppercase">
+                <Warning className="w-10 h-10 text-att-danger mb-2" />
+                <span className="font-expanded font-black text-sm leading-tight text-att-danger px-2 uppercase">
                   Something went wrong
                 </span>
               </>
@@ -253,10 +253,10 @@ const CourseCard = ({
     barColor = "bg-(--bg-highlight)";
   } else if (p <= 75) {
     badgeBg = "bg-(--attendance-red) text-(--bg-main)";
-    barColor = "bg-(--attendance-red)";
+    barColor = "bg-(--attendance-red-bg)";
   } else if (p < 90) {
     badgeBg = "bg-(--attendance-blue) text-(--bg-main)";
-    barColor = "bg-(--attendance-blue)";
+    barColor = "bg-(--attendance-blue-bg)";
   }
 
   return (
@@ -268,7 +268,7 @@ const CourseCard = ({
       onClick={onClick}
     >
       <div
-        className={`absolute top-0 left-0 h-full ${barColor} opacity-10 group-hover:opacity-20 transition-opacity duration-fast`}
+        className={`absolute top-0 left-0 h-full ${barColor} transition-all duration-fast`}
         style={{ width: `${course.percentage}%` }}
       />
       <div className="relative z-10 flex items-center gap-4 min-w-0 flex-1 pr-4">
@@ -281,7 +281,7 @@ const CourseCard = ({
               {course.classType}
             </span>
             {course.debarStatus !== "-" && (
-              <span className="px-2 py-1 bg-red-500 text-(--bg-main) text-[10px] font-black uppercase rounded-full shadow-sm whitespace-nowrap">
+              <span className="px-2 py-1 bg-att-danger text-(--bg-main) text-[10px] font-black uppercase rounded-full shadow-sm whitespace-nowrap">
                 Debarred
               </span>
             )}
@@ -539,9 +539,9 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
                             </span>
                           </div>
                           {isPresent ? (
-                            <Check className="w-6 h-6 shrink-0 text-emerald-500" />
+                            <Check className="w-6 h-6 shrink-0 text-att-safe" />
                           ) : (
-                            <Close className="w-6 h-6 shrink-0 text-red-500" />
+                            <Close className="w-6 h-6 shrink-0 text-att-danger" />
                           )}
                         </div>
                       );

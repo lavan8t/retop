@@ -33,6 +33,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 
 import { TopBar } from "../components/layout/TopBar";
+import { TopBarSearch } from "../components/layout/TopBarSearch";
 import { ContentRouter } from "../components/layout/ContentRouter";
 
 import { FloatingViewToggle } from "../components/timetable/FloatingViewToggle";
@@ -43,7 +44,7 @@ import {
 } from "../utils/timetable-slots";
 import { useSettings, applyTheme } from "../utils/settings-store";
 import { LegacyReturnButton } from "../components/LegacyReturnButton";
-
+import { SnackbarManager } from "../components/ui/Snackbar";
 
 
 const getDestinationView = (link: QuickLink): ViewType | "content" => {
@@ -139,7 +140,6 @@ const navigateLegacy = (title: string) => {
   if (target) target.click();
   else console.warn("Legacy link not found for:", title);
 };
-import { ErrorBoundary } from "../components/ErrorBoundary";
 import { useAppStore } from "../store/appStore";
 
 export function renderDashboard() {
@@ -148,17 +148,13 @@ export function renderDashboard() {
   if (rootEl) {
     if ((rootEl as any)._reactRoot) {
       (rootEl as any)._reactRoot.render(
-        <ErrorBoundary>
           <DashboardApp />
-        </ErrorBoundary>,
       );
     } else {
       const root = createRoot(rootEl);
       (rootEl as any)._reactRoot = root;
       root.render(
-        <ErrorBoundary>
           <DashboardApp />
-        </ErrorBoundary>,
       );
     }
   }
@@ -421,26 +417,12 @@ const DashboardApp = () => {
       }
       if (e.key === "Escape") return;
 
-      const hotkeySetting = settings.searchHotkey || "/";
-      let shouldOpen = false;
-
-      if (hotkeySetting === "/") {
-        shouldOpen = e.key === "/";
-      } else if (hotkeySetting === "space") {
-        shouldOpen = e.key === " ";
-      } else if (hotkeySetting === "instant") {
-        // Any single character
-        if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-          shouldOpen = true;
-        }
-      }
+      const shouldOpen = e.key === " ";
 
       if (shouldOpen) {
         e.preventDefault();
         isOmniboxOpenRef.current = true;
-        setOmniboxInitial(
-          hotkeySetting === "instant" && e.key !== "/" && e.key !== " " ? e.key : ""
-        );
+        setOmniboxInitial("");
         setIsOmniboxOpen(true);
       }
     };
@@ -511,24 +493,22 @@ const DashboardApp = () => {
   };
 
   const handleLogout = async () => {
-    if (confirm("Sign out?")) {
-      try {
-        await fetch("/vtop/logout", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: new URLSearchParams({
-            _csrf: csrfRef.current,
-            authorizedID: authIdRef.current,
-          }),
-        });
-      } catch (e) {
-        console.error("Logout error", e);
-      } finally {
-        localStorage.removeItem("retop_lastAuthId");
-        window.location.href = "/vtop/open/page";
-      }
+    try {
+      await fetch("/vtop/logout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          _csrf: csrfRef.current,
+          authorizedID: authIdRef.current,
+        }),
+      });
+    } catch (e) {
+      console.error("Logout error", e);
+    } finally {
+      localStorage.removeItem("retop_lastAuthId");
+      window.location.href = "/vtop/open/page";
     }
   };
 
@@ -565,13 +545,13 @@ const DashboardApp = () => {
         animate={{
           y: isModernUI
             ? isPeeking
-              ? "15%"
+              ? "-15%"
               : "0%"
             : isPeeking
               ? "65%"
               : "100%",
           scale: isModernUI ? (isPeeking ? 0.96 : 1) : isPeeking ? 0.96 : 0.9,
-          rotateX: isModernUI ? (isPeeking ? 4 : 0) : isPeeking ? 4 : 10,
+          rotateX: isModernUI ? (isPeeking ? -4 : 0) : isPeeking ? 4 : 10,
           opacity: isModernUI ? 1 : isPeeking ? 1 : 0,
           borderRadius: isPeeking ? "2rem" : "0rem",
         }}
@@ -647,18 +627,21 @@ const DashboardApp = () => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="fixed inset-0 z-9998 bg-black/10"
+                  className="fixed inset-0 z-9998 bg-transparent"
                   onClick={() => setShowProfileMenu(false)}
                 />
                 <ProfileMenu
                   userName={user.name}
                   userRegNo={user.regNo}
+                  userProfileImg={user.profileImgBase64}
                   onNavigate={handleLinkClick}
                   onLogout={handleLogout}
                   onLegacyToggle={() => {
                     setIsPeeking(false);
                     setIsModernUI(false);
                   }}
+                  onLegacyHover={() => setIsPeeking(true)}
+                  onLegacyLeave={() => setIsPeeking(false)}
                   onClose={() => setShowProfileMenu(false)}
                 />
               </>
@@ -670,6 +653,7 @@ const DashboardApp = () => {
               setViewMode={setTtViewMode}
             />
           )}
+          <SnackbarManager />
         </div>
       </motion.div>
       
@@ -683,6 +667,41 @@ const DashboardApp = () => {
             onMouseEnter={() => setIsPeeking(true)}
             onMouseLeave={() => setIsPeeking(false)}
           />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {!isModernUI && isOmniboxOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            className="fixed top-24 left-1/2 -translate-x-1/2 z-99999 w-[600px] max-w-[90vw] pointer-events-auto flex flex-col"
+          >
+            {/* Backdrop to close when clicked outside */}
+            <div 
+              className="fixed inset-0 z-[-1] bg-black/40 backdrop-blur-sm"
+              onClick={() => setIsOmniboxOpen(false)}
+            />
+            <div className="bg-(--bg-surface) rounded-[32px] shadow-2xl border-2 border-(--border-main) flex flex-col p-2 h-auto relative">
+              <TopBarSearch
+                currentView={currentView}
+                isOmniboxOpen={isOmniboxOpen}
+                setIsOmniboxOpen={setIsOmniboxOpen}
+                menuCategories={menu}
+                pinnedLinks={pinnedLinks}
+                onNavigate={(link) => {
+                  handleLinkClick(link);
+                  setIsModernUI(true);
+                  setIsPeeking(false);
+                }}
+                onTogglePin={handleTogglePin}
+                initialQuery={omniboxInitial}
+                pageTitle="Search Retop..."
+              />
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </>

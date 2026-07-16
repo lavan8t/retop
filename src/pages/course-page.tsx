@@ -22,6 +22,7 @@ import {
   CourseMaterial,
 } from "../types/vtop";
 import { useDataStore } from "../store/dataStore";
+import { useCoursePageData } from "../hooks/useCoursePage";
 import { parseStudentMarks } from "../parsers/marks";
 import { parseGrades } from "../parsers/grades";
 import { getGridPositions, getCorrectDayName, CAMPUS_SLOT_TIMINGS } from "../utils/timetable-slots";
@@ -55,7 +56,7 @@ const NeoCard = ({
   className?: string;
 }) => (
   <div
-    className={`bg-zinc-900 border-4 border-zinc-800 rounded-4xl shadow-none ${className}`}
+    className={`bg-surface border-4 border-border-default rounded-4xl shadow-none ${className}`}
   >
     {children}
   </div>
@@ -98,307 +99,42 @@ export const CoursePage = ({
   setSelectedOptionId,
   searchTerm,
 }: CoursePageProps) => {
-  const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<CoursePageData | null>(null);
-  const [isCourseListOpen, setIsCourseListOpen] = useState(false);
-  const [courseMarks, setCourseMarks] = useState<any>(null);
-  const [courseGrade, setCourseGrade] = useState<any>(null);
-  const [upcomingClasses, setUpcomingClasses] = useState<UpcomingClassDetail[] | null>(null);
   const [isCourseSelectorOpen, setIsCourseSelectorOpen] = useState(false);
   const [materialSort, setMaterialSort] = useState<"date" | "module">("date");
 
-  const { ttCourses, attendance, assignments, ttSelectedSem, calGridData } = useDataStore();
-
-  useEffect(() => {
-    if (!selectedOptionId) {
-      setData(null);
-      setIsCourseListOpen(true);
+  const formatFaculty = (raw: string) => {
+    let name = raw;
+    let subs: string[] = [];
+    const parts = raw.split("-").map(p => p.trim()).filter(Boolean);
+    if (parts.length > 1) {
+      name = parts[0];
+      subs = parts.slice(1);
     }
-  }, [selectedOptionId]);
-
-  useEffect(() => {
-    if (!selectedSem || cpOptions.length === 0) return;
-    
-    const normalize = (s: string) => s.replace(/0+([1-9])$/, "$1").toLowerCase();
-    
-    const coursesInSem = cpOptions.filter(
-      (o) => normalize(o.semester) === normalize(selectedSem)
-    );
-    
-    const isCurrentValid = coursesInSem.some(c => c.classId === selectedOptionId);
-    
-    if (!isCurrentValid && coursesInSem.length > 0) {
-      setSelectedOptionId(coursesInSem[0].classId);
-    }
-  }, [selectedSem, cpOptions, selectedOptionId, setSelectedOptionId]);
-
-  useEffect(() => {
-    setIsCourseListOpen(false);
-  }, [selectedSem]);
-
-  useEffect(() => {
-    if (cpOptions.length > 0) return;
-
-    let isMounted = true;
-    const fetchOptions = async () => {
-      try {
-        let html = await network.fetchFragment(
-          "academics/common/CoursePageConsolidated",
-        );
-        let parsed = parseCoursePage(html);
-
-        if (parsed.options.length === 0) {
-          html = await network.fetchFragment(
-            "academics/CoursePageConsolidated/CoursePage",
-          );
-          parsed = parseCoursePage(html);
-        }
-
-        if (!isMounted) return;
-        if (parsed.options.length > 0) {
-          setCpOptions(parsed.options);
-        }
-      } catch (err) {
-        console.error("Failed to load course options:", err);
-      }
-    };
-    fetchOptions();
-    return () => {
-      isMounted = false;
-    };
-  }, [network, cpOptions.length, setCpOptions]);
-
-  useEffect(() => {
-    if (!selectedOptionId || !selectedSem || cpOptions.length === 0) return;
-
-    const opt = cpOptions.find(
-      (o) =>
-        o.classId === selectedOptionId && isSameSem(o.semester, selectedSem),
-    );
-    if (!opt) return;
-
-    let isMounted = true;
-    const fetchDetails = async () => {
-      setLoading(true);
-      try {
-        const body = new URLSearchParams();
-        body.append("_csrf", getCsrf());
-        body.append("authorizedID", getAuthId());
-        body.append("semester", opt.semester);
-        body.append("CourseId", opt.classId);
-        body.append("CoursType", opt.type);
-        body.append("x", new Date().toUTCString());
-
-        const res = await fetch(
-          "/vtop/academics/CoursePageConsolidated/getCourseDetail",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type":
-                "application/x-www-form-urlencoded; charset=UTF-8",
-              "Close-Requested-With": "XMLHttpRequest",
-            },
-            body: body,
-          },
-        );
-
-        const html = await res.text();
-        if (!isMounted) return;
-
-        const parsedDetails = parseCoursePage(html);
-        setData({
-          ...parsedDetails,
-          options: cpOptions,
-          selectedCourseId: selectedOptionId,
-        });
-      } catch (error) {
-        console.error("Failed to fetch details", error);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    fetchDetails();
-    return () => {
-      isMounted = false;
-    };
-  }, [selectedOptionId, selectedSem, cpOptions]);
-
-  const handleDownload = (fileId: string, facultyName: string, courseName: string) => {
-    try {
-      chrome.storage.local.set({
-        lastDownloadInfo: {
-          faculty: facultyName,
-          course: courseName,
-        },
-      });
-    } catch (e) {
-      console.error("Failed to set download info", e);
-    }
-
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = "/vtop/downloadCourseMaterialFacultyPdf";
-
-    const csrfInput = document.createElement("input");
-    csrfInput.type = "hidden";
-    csrfInput.name = "_csrf";
-    csrfInput.value = getCsrf();
-
-    const authInput = document.createElement("input");
-    authInput.type = "hidden";
-    authInput.name = "authorizedID";
-    authInput.value = getAuthId();
-
-    const fileInput = document.createElement("input");
-    fileInput.type = "hidden";
-    fileInput.name = "fileId";
-    fileInput.value = fileId;
-
-    form.appendChild(csrfInput);
-    form.appendChild(authInput);
-    form.appendChild(fileInput);
-    document.body.appendChild(form);
-    form.submit();
-    document.body.removeChild(form);
+    return { name, subs };
   };
-
-  const currentOption = cpOptions.find((o) => o.classId === selectedOptionId);
-
-  const filteredMaterials =
-    data?.materials.filter((m) => {
-      const term = searchTerm.toLowerCase();
-      return (
-        m.title.toLowerCase().includes(term) ||
-        m.faculty.toLowerCase().includes(term) ||
-        m.category.toLowerCase().includes(term)
-      );
-    }) || [];
-
-  const groupedMaterials = React.useMemo(() => {
-    if (!filteredMaterials) return {};
-    return filteredMaterials.reduce((acc, mat) => {
-      const fac = mat.faculty || "Unknown Faculty";
-      if (!acc[fac]) acc[fac] = [];
-      acc[fac].push(mat);
-      return acc;
-    }, {} as Record<string, CourseMaterial[]>);
-    
-    // Sort each group
-    Object.keys(grouped).forEach(fac => {
-      grouped[fac].sort((a, b) => {
-        if (materialSort === "module") {
-          const modA = a.module ? parseInt(a.module) : 999;
-          const modB = b.module ? parseInt(b.module) : 999;
-          if (modA !== modB) return modA - modB;
-        }
-        // Fallback to date sorting
-        const dateA = new Date(a.uploadDate).getTime() || 0;
-        const dateB = new Date(b.uploadDate).getTime() || 0;
-        return dateB - dateA;
-      });
-    });
-    return grouped;
-  }, [filteredMaterials, materialSort]);
-
-  const formatFaculty = (facultyStr: string) => {
-    const parts = facultyStr.split(" - ").map(p => p.trim());
-    if (parts.length >= 3) {
-      return { name: parts[1], subs: [parts[0], ...parts.slice(2)] };
-    }
-    if (parts.length === 2) {
-      return { name: parts[1], subs: [parts[0]] };
-    }
-    return { name: facultyStr, subs: [] };
-  };
-
-  useEffect(() => {
-    if (!currentOption) {
-      setCourseMarks(null);
-      return;
-    }
-    let isMounted = true;
-    const fetchMarksAndGrades = async () => {
-      try {
-        const marksHtml = await network.getStudentMarks(selectedSem);
-        if (!isMounted) return;
-        const parsedMarks = parseStudentMarks(marksHtml);
-        const marks = parsedMarks.find((m) => m.code.toLowerCase() === currentOption.code.trim().toLowerCase() || m.classNumber === currentOption.classId);
-        if (marks) setCourseMarks(marks);
-      } catch (err) {
-        console.warn("Failed to fetch marks", err);
-      }
-
-      try {
-        const gradesHtml = await network.getStudentGrades(selectedSem);
-        if (!isMounted) return;
-        const parsedGrades = parseGrades(gradesHtml);
-        const grade = parsedGrades.courses.find((m) => m.code.toLowerCase() === currentOption.code.trim().toLowerCase());
-        if (grade) setCourseGrade(grade);
-      } catch (err) {
-        console.warn("Failed to fetch grades", err);
-      }
-    };
-    fetchMarksAndGrades();
-    return () => { isMounted = false; };
-  }, [network, selectedSem, currentOption]);
-
-  useEffect(() => {
-    if (!currentOption || !ttSelectedSem || !isSameSem(selectedSem, ttSelectedSem) || !calGridData || calGridData.length === 0) {
-      setUpcomingClasses(null);
-      return;
-    }
-    const ttCourse = ttCourses.find(c => c.classId === currentOption.classId);
-    if (!ttCourse) {
-      setUpcomingClasses(null);
-      return;
-    }
-
-    const positions = getGridPositions(ttCourse.slot);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    let upcoming: UpcomingClassDetail[] = [];
-    
-    calGridData.forEach(monthData => {
-      monthData.days.forEach(day => {
-        const d = new Date(day.dateObj);
-        if (d >= today) {
-          let dayName = getCorrectDayName(d);
-          let hasOverride = false;
-          
-          const lowerInfo = (day.info || "").toLowerCase();
-          const subInfo = (day.subInfo || "").toLowerCase();
-          const combined = lowerInfo + " " + subInfo;
-          
-          if (combined.includes("monday day order")) { dayName = "Monday"; hasOverride = true; }
-          else if (combined.includes("tuesday day order")) { dayName = "Tuesday"; hasOverride = true; }
-          else if (combined.includes("wednesday day order")) { dayName = "Wednesday"; hasOverride = true; }
-          else if (combined.includes("thursday day order")) { dayName = "Thursday"; hasOverride = true; }
-          else if (combined.includes("friday day order")) { dayName = "Friday"; hasOverride = true; }
-
-          if (day.isInstructional || hasOverride) {
-            const dayIdx = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].indexOf(dayName);
-            const cols = positions.filter(p => p.day === dayIdx).map(p => p.col);
-            if (cols.length > 0) {
-              const type = ttCourse.type === 'Lab' ? 'Lab' : 'Theory';
-              const timings = CAMPUS_SLOT_TIMINGS[type as keyof typeof CAMPUS_SLOT_TIMINGS];
-              const slots = cols.map(c => timings[c]).filter(Boolean);
-              if (slots.length > 0) {
-                upcoming.push({ date: d, slots });
-              }
-            }
-          }
-        }
-      });
-    });
-    setUpcomingClasses(upcoming);
-  }, [currentOption, selectedSem, ttSelectedSem, ttCourses, calGridData]);
-
-  const isCurrentSem = isSameSem(selectedSem, ttSelectedSem);
-  const courseTimetable = isCurrentSem ? ttCourses.find(c => c.classId === currentOption?.classId) : null;
-  const courseAttendance = attendance.find(a => currentOption && a.code.includes(currentOption.code.trim()));
-  const courseAssignments = assignments.filter(a => currentOption && (a.course.includes(currentOption.code.trim()) || a.course.includes(currentOption.title.trim())));
+  const {
+    loading,
+    data,
+    courseMarks,
+    courseGrade,
+    upcomingClasses,
+    currentOption,
+    groupedMaterials,
+    filteredMaterials,
+    courseTimetable,
+    courseAttendance,
+    courseAssignments,
+    handleDownload
+  } = useCoursePageData(
+    network,
+    cpOptions,
+    setCpOptions,
+    selectedSem,
+    selectedOptionId,
+    setSelectedOptionId,
+    searchTerm,
+    materialSort
+  );
 
   return (
     <div className="absolute inset-0 w-full h-full font-mono transition-colors bg-transparent text-(--text-main)">
@@ -506,7 +242,7 @@ export const CoursePage = ({
                       {courseAttendance && (
                         <div className="flex flex-col gap-1 bg-(--bg-surface) p-4 rounded-2xl border-none">
                           <span className="text-xs font-bold text-(--text-dim) uppercase tracking-widest">Attendance</span>
-                          <span className={`text-sm md:text-base font-black ${parseFloat(courseAttendance.attendance) < 75 ? 'text-red-500' : 'text-(--text-main)'}`}>
+                          <span className={`text-sm md:text-base font-black ${parseFloat(courseAttendance.attendance) < 75 ? 'text-att-danger' : 'text-(--text-main)'}`}>
                             {courseAttendance.attendance}% <span className="font-bold opacity-50">({courseAttendance.attended}/{courseAttendance.total})</span>
                           </span>
                         </div>

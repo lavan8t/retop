@@ -16,37 +16,27 @@ import { motion, AnimatePresence } from "framer-motion";
 import { OfflineNotSynced } from "../components/ui/OfflineNotSynced";
 import { WhatIfGradeCalculator } from "../components/course-page/WhatIfGradeCalculator";
 import { useDataStore } from "../store/dataStore";
+import { Tooltip } from "../components/ui/Tooltip";
 
 const GradeTicker = ({ currentGrade, gradeColorClass, onChange, availableGrades, readonly }: any) => {
   const currentIndex = availableGrades.indexOf(currentGrade === "-" ? availableGrades[availableGrades.length-1] : currentGrade);
   
-  const handleUp = () => {
-    if (readonly || !availableGrades.length) return;
-    const newIdx = currentIndex > 0 ? currentIndex - 1 : availableGrades.length - 1;
-    onChange(availableGrades[newIdx]);
-  };
-  
-  const handleDown = () => {
+  const handleNext = () => {
     if (readonly || !availableGrades.length) return;
     const newIdx = currentIndex < availableGrades.length - 1 ? currentIndex + 1 : 0;
     onChange(availableGrades[newIdx]);
   };
 
   return (
-    <div className={`relative flex flex-col items-center justify-center gap-1 ${readonly ? '' : 'group/grade'}`}>
-      {!readonly && (
-        <button onClick={handleUp} className="text-(--text-muted) hover:text-(--text-main) transition-colors p-0.5 rounded-full hover:bg-(--bg-highlight) -mt-3 absolute -top-4 opacity-0 group-hover/grade:opacity-100 z-10">
-          <KeyboardArrowUp className="w-5 h-5" />
-        </button>
-      )}
-      <div className={`shrink-0 w-16 h-16 rounded-2xl flex items-center justify-center font-black text-4xl leading-none pt-1.5 ${gradeColorClass} shadow-none border-2 border-transparent transition-all`}>
-        {currentGrade}
-      </div>
-      {!readonly && (
-        <button onClick={handleDown} className="text-(--text-muted) hover:text-(--text-main) transition-colors p-0.5 rounded-full hover:bg-(--bg-highlight) -mb-3 absolute -bottom-4 opacity-0 group-hover/grade:opacity-100 z-10">
-          <KeyboardArrowDown className="w-5 h-5" />
-        </button>
-      )}
+    <div className="relative flex flex-col items-center justify-center gap-1">
+      <Tooltip text={!readonly ? "Click to change grade" : ""}>
+        <div 
+          onClick={!readonly ? handleNext : undefined}
+          className={`shrink-0 w-16 h-16 rounded-2xl flex items-center justify-center font-black text-4xl leading-none pt-1.5 ${gradeColorClass} shadow-none border-2 border-transparent transition-all ${!readonly ? 'cursor-pointer select-none active:scale-95 hover:bg-(--bg-surface) hover:ring-2 hover:ring-(--border-main)' : ''}`}
+        >
+          {currentGrade}
+        </div>
+      </Tooltip>
     </div>
   );
 };
@@ -87,8 +77,10 @@ export const GradesPage: React.FC<GradesPageProps> = ({
         setSelectedSem("demo");
         setLoading(false);
         setHistoryData({
-           summary: { creditsRegistered: "160", creditsEarned: "160", cgpa: "9.85", sValues: "120", aValues: "30", bValues: "10", cValues: "0", dValues: "0", eValues: "0", fValues: "0", nValues: "0" },
-           courses: [{ code: "CSE1001", title: "Problem Solving and Programming", type: "TH", credit: "3", grade: "S", examMonth: "Dec-2025", resultDate: "Jan-2026", courseClass: "Programme Core" }]
+           cgpa: { creditsRegistered: "160", creditsEarned: "160", cgpa: "9.85", s: "120", a: "30", b: "10", c: "0", d: "0", e: "0", f: "0", n: "0" },
+           courses: [{ code: "CSE1001", title: "Problem Solving and Programming", type: "TH", credits: "3", grade: "S", examMonth: "Dec-2025", resultDeclared: "Jan-2026", courseDistribution: "Programme Core", slNo: "1" }],
+           curriculum: [],
+           baskets: []
         });
         return;
       }
@@ -105,8 +97,8 @@ export const GradesPage: React.FC<GradesPageProps> = ({
         if (dropdownSems.length > 0 && !selectedSem) {
           setSelectedSem(dropdownSems[0].id);
         }
-      } catch (e) {
-        if (e instanceof Error && e.message === "OFFLINE_CACHE_MISS") {
+      } catch (e: any) {
+        if (e && e.message === "OFFLINE_CACHE_MISS") {
           setOfflineMiss(true);
         }
         console.error(e);
@@ -122,8 +114,8 @@ export const GradesPage: React.FC<GradesPageProps> = ({
         const parsedHistory = parseGradeHistory(html);
         console.log(`[DATA_CAPTURE] Grade History:`, parsedHistory);
         setHistoryData(parsedHistory);
-      } catch (e) {
-        if (e instanceof Error && e.message === "OFFLINE_CACHE_MISS") {
+      } catch (e: any) {
+        if (e && e.message === "OFFLINE_CACHE_MISS") {
           setOfflineMiss(true);
         }
         console.error(e);
@@ -145,7 +137,7 @@ export const GradesPage: React.FC<GradesPageProps> = ({
       if (useDataStore.getState().status === "Demo Mode Active") {
         setGradesData({
           gpa: "9.50",
-          courses: [{ classId: "123", code: "CSE1001", title: "Problem Solving and Programming", type: "TH", credits: "3", faculty: "Dr. Demo", grade: "S", isPBL: false, ltpj: "3 0 0 0" }]
+          courses: [{ courseId: "123", code: "CSE1001", title: "Problem Solving and Programming", type: "TH", credits: "3", l: "3", p: "0", j: "0", c: "3", gradingType: "Programme Core", grandTotal: "95", grade: "S", notIncludedInGpa: false }]
         });
         setFetchingGrades(false);
         return;
@@ -211,8 +203,8 @@ export const GradesPage: React.FC<GradesPageProps> = ({
 
         setGradesData(parsedGrades);
         setOfflineMiss(false);
-      } catch (e) {
-        if (e instanceof Error && e.message === "OFFLINE_CACHE_MISS") {
+      } catch (e: any) {
+        if (e && e.message === "OFFLINE_CACHE_MISS") {
           setOfflineMiss(true);
         }
         console.error(e);
@@ -260,17 +252,7 @@ export const GradesPage: React.FC<GradesPageProps> = ({
   };
 
   const getGradeColor = (grade: string) => {
-    switch(grade) {
-      case 'S': return 'text-(--bg-main) bg-purple-500';
-      case 'A': return 'text-(--bg-main) bg-emerald-500';
-      case 'B': return 'text-(--bg-main) bg-blue-500';
-      case 'C': return 'text-(--bg-main) bg-cyan-500';
-      case 'D': return 'text-(--bg-main) bg-amber-500';
-      case 'E': return 'text-(--bg-main) bg-orange-500';
-      case 'F':
-      case 'N': return 'text-(--bg-main) bg-red-500';
-      default: return 'text-(--text-muted) bg-(--bg-highlight)';
-    }
+    return 'text-(--text-main) bg-(--bg-highlight)';
   };
 
   const getPredictedGpa = () => {

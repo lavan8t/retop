@@ -250,7 +250,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
                             className={`px-2 py-0.5 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-wider ${
                               c.type.includes("L") || c.type.includes("P")
                                 ? "bg-purple-500/10 text-purple-500"
-                                : "bg-blue-500/10 text-blue-500"
+                                : "bg-blue-500/10 text-accent"
                             }`}
                           >
                             {c.type}
@@ -258,7 +258,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
                         </span>
                       </div>
                       {c.isCompleted && (
-                        <div className="text-[10px] font-bold text-emerald-500 flex items-center gap-1 mt-1.5 uppercase">
+                        <div className="text-[10px] font-bold text-att-safe flex items-center gap-1 mt-1.5 uppercase">
                           <CheckCircle className="w-3 h-3" /> Completed
                         </div>
                       )}

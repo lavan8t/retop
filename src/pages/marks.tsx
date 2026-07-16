@@ -61,7 +61,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({
           setSelectedSem(sems[0].id);
         }
       } catch (e) {
-        if (e instanceof Error && e.message === "OFFLINE_CACHE_MISS") {
+        if (e instanceof globalThis.Error && e.message === "OFFLINE_CACHE_MISS") {
           setOfflineMiss(true);
         }
         console.error(e);
@@ -81,14 +81,14 @@ export const MarksPage: React.FC<MarksPageProps> = ({
       if (useDataStore.getState().status === "Demo Mode Active") {
         setMarksData([
           {
-            classId: "123",
+            classNumber: "123",
             code: "CSE1001",
             title: "Problem Solving and Programming",
             type: "TH",
             credits: "3",
             faculty: "Dr. Demo",
             slot: "A1",
-            marks: [{ title: "CAT 1", max: "50", weightage: "15", status: "Attended", scored: "45", scoredWeightage: "13.5" }]
+            assessments: [{ title: "CAT 1", maxMark: "50", weightage: "15", status: "Attended", scoredMark: "45", scoredPercentage: "13.5" }]
           }
         ]);
         setFetchingMarks(false);
@@ -103,7 +103,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({
         setMarksData(parsedMarks);
         setOfflineMiss(false);
       } catch (e) {
-        if (e instanceof Error && e.message === "OFFLINE_CACHE_MISS") {
+        if (e instanceof globalThis.Error && e.message === "OFFLINE_CACHE_MISS") {
           setOfflineMiss(true);
         }
         console.error(e);
@@ -288,7 +288,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({
                                     colSpan={2}
                                     className="p-3 text-center border-l border-(--border-dim)"
                                   >
-                                    <span className="bg-red-500 text-(--bg-main) font-black uppercase text-[10px] px-3 py-1 rounded-full">
+                                    <span className="bg-att-danger text-(--bg-main) font-black uppercase text-[10px] px-3 py-1 rounded-full">
                                       Absent
                                     </span>
                                   </td>

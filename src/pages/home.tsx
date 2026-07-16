@@ -10,13 +10,19 @@ import {
 } from "../types/vtop";
 import { UpcomingClass } from "../utils/timetable-slots";
 import { useDataStore } from "../store/dataStore";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Extracted Component Imports
-import { CoursePopup } from "../components/timetable/CoursePopup";
+import { AttendanceRow } from "../components/home/HomeRows";
 import { LazyCalendarDay } from "../components/home/LazyCalendarDay";
 import { QuickLinksMenu } from "../components/home/QuickLinksMenu";
+import { SegmentedControl } from "../components/ui/SegmentedControl";
+import { EmptyState } from "../components/EmptyState";
+import { SPRING_SNAPPY } from "../utils/motion";
 import { HomeWidgets } from "../components/home/HomeWidgets";
 import { getClassesForDate } from "../utils/timetable-helpers";
+
+export type EventFilterType = "all" | "classes" | "assignments" | "events";
 
 interface HomeViewProps {
   settings: AppSettings;
@@ -64,11 +70,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
   >("all");
 
   const { calGridData } = useDataStore();
-
-  const [selectedCourse, setSelectedCourse] = useState<{
-    data: UpcomingClass;
-    pos: { x: number; y: number };
-  } | null>(null);
 
   const progressInfo = useMemo(() => {
     let firstDay: Date | null = null;
@@ -139,8 +140,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
     return { text: base, semName };
   }, [calendarDays, calSemesters, calSelectedSem]);
 
-  const todayRef = useRef<HTMLDivElement>(null);
-  const nowRef = useRef<HTMLDivElement>(null);
+  const todayRef = useRef<HTMLDivElement | null>(null);
+  const nowRef = useRef<HTMLDivElement | null>(null);
   const initialScrollDone = useRef(false);
   useEffect(() => {
     if (initialScrollDone.current) return;
@@ -184,61 +185,17 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 {monthDisplay.text}
               </button>
 
-              {/* Filter Chips */}
-              <div className="flex items-center justify-center gap-0.5 shrink-0">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setEventFilter("all");
-                  }}
-                  className={`px-3 md:px-5 py-1.5 text-xs font-bold transition-all duration-fast ${
-                    eventFilter === "all"
-                      ? "bg-(--text-main) text-(--bg-main) rounded-[20px] shadow-none"
-                      : "bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-l-[20px] rounded-r-md shadow-none"
-                  }`}
-                >
-                  All
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setEventFilter("classes");
-                  }}
-                  className={`px-3 md:px-5 py-1.5 text-xs font-bold transition-all duration-fast ${
-                    eventFilter === "classes"
-                      ? "bg-(--text-main) text-(--bg-main) rounded-[20px] shadow-none"
-                      : "bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-md shadow-none"
-                  }`}
-                >
-                  Classes
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setEventFilter("assignments");
-                  }}
-                  className={`px-3 md:px-5 py-1.5 text-xs font-bold transition-all duration-fast ${
-                    eventFilter === "assignments"
-                      ? "bg-(--text-main) text-(--bg-main) rounded-[20px] shadow-none"
-                      : "bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-md shadow-none"
-                  }`}
-                >
-                  Tasks
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setEventFilter("events");
-                  }}
-                  className={`px-3 md:px-5 py-1.5 text-xs font-bold transition-all duration-fast ${
-                    eventFilter === "events"
-                      ? "bg-(--text-main) text-(--bg-main) rounded-[20px] shadow-none"
-                      : "bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-l-md rounded-r-[20px] shadow-none"
-                  }`}
-                >
-                  Events
-                </button>
-              </div>
+              <SegmentedControl
+                options={[
+                  { label: "All", value: "all" },
+                  { label: "Classes", value: "classes" },
+                  { label: "Tasks", value: "assignments" },
+                  { label: "Events", value: "events" },
+                ]}
+                value={eventFilter}
+                onChange={setEventFilter}
+                className="justify-center"
+              />
 
               {monthDisplay.semName ? (
                 <div className="flex justify-end items-start h-8 relative z-20 pt-1">
@@ -246,40 +203,54 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     .sem-text { font-variation-settings: "wdth" 151, "wght" 800; transition: font-variation-settings 300ms ease-out; }
                     .sem-group:hover .sem-text { font-variation-settings: "wdth" 75, "wght" 1; }
                   `}</style>
-                  <div 
-                    className="flex flex-col items-end justify-start group sem-group relative"
-                    style={{ "--progress": `${progress}%` } as any}
+                  <motion.div 
+                    initial="rest"
+                    whileHover="hover"
+                    animate="rest"
+                    className="flex flex-col items-end justify-start relative group sem-group"
                   >
+                    <motion.div 
+                      variants={{ rest: { opacity: 0, y: 8 }, hover: { opacity: 1, y: 0 } }}
+                      transition={SPRING_SNAPPY}
+                      className="absolute bottom-full right-0 mb-1 pointer-events-none flex justify-end items-center whitespace-nowrap"
+                    >
+                      <span className="font-black text-(--accent-base) text-right text-[10px] md:text-[11px] drop-shadow-md uppercase tracking-wide">
+                        {progress}% Completed
+                      </span>
+                    </motion.div>
+
                     <div className="relative text-right flex flex-col w-full min-w-[120px]">
-                      <div className="relative text-sm md:text-base leading-none transition-all duration-normal ease-out font-expanded sem-text">
-                        <span className="text-(--text-main) group-hover:text-(--text-muted) group-hover:opacity-50 whitespace-nowrap transition-all duration-normal">
-                          {monthDisplay.semName}
-                        </span>
-                        <span
-                          className="absolute left-0 top-0 overflow-hidden whitespace-nowrap text-(--text-main) pointer-events-none transition-all duration-normal ease-out opacity-0 group-hover:opacity-100 origin-left scale-x-0 group-hover:scale-x-100"
-                          style={{ width: "var(--progress)" } as any}
+                      <div className="relative text-sm md:text-base leading-none font-expanded sem-text">
+                        <motion.span 
+                          variants={{ rest: { opacity: 1 }, hover: { opacity: 0.5 } }}
+                          transition={SPRING_SNAPPY}
+                          className="text-(--text-main) whitespace-nowrap inline-block"
                         >
                           {monthDisplay.semName}
-                        </span>
-                      </div>
-                      <div className="w-full bg-(--border-dim) mt-1 relative transition-all duration-normal ease-out opacity-0 group-hover:opacity-100 h-0 group-hover:h-1.5 rounded-full overflow-hidden">
-                         <div className="absolute left-0 top-0 h-full bg-(--accent-base) transition-transform duration-normal ease-out origin-left scale-x-0 group-hover:scale-x-100" style={{ width: "var(--progress)" } as any} />
+                        </motion.span>
+                        <motion.span
+                          variants={{ rest: { opacity: 0, scaleX: 0 }, hover: { opacity: 1, scaleX: 1 } }}
+                          transition={SPRING_SNAPPY}
+                          className="absolute left-0 top-0 overflow-hidden whitespace-nowrap text-(--text-main) pointer-events-none origin-left"
+                          style={{ width: `${progress}%` } as any}
+                        >
+                          {monthDisplay.semName}
+                        </motion.span>
                       </div>
                     </div>
                     
-                    <div className="absolute top-full left-0 right-0 mt-1 transition-all duration-normal ease-out opacity-0 -translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 flex justify-between items-center whitespace-nowrap">
-                      <span className="text-[10px] md:text-[11px] font-bold flex items-center justify-between w-full pt-1 drop-shadow-md">
-                        <span className="font-black text-(--accent-base) text-left">
-                          {progress}%
-                        </span>
-                        <span className="font-black text-(--accent-base) text-right">
-                          {progressInfo.lastDay
-                            ? progressInfo.lastDay.toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" })
-                            : "N/A"}
-                        </span>
+                    <motion.div 
+                      variants={{ rest: { opacity: 0, y: -8 }, hover: { opacity: 1, y: 0 } }}
+                      transition={SPRING_SNAPPY}
+                      className="absolute top-full right-0 mt-1 pointer-events-none flex justify-end items-center whitespace-nowrap"
+                    >
+                      <span className="font-black text-(--accent-base) text-right text-[10px] md:text-[11px] drop-shadow-md uppercase tracking-wide">
+                        {progressInfo.lastDay
+                          ? `${Math.max(0, Math.ceil((progressInfo.lastDay.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} days more`
+                          : "N/A"}
                       </span>
-                    </div>
-                  </div>
+                    </motion.div>
+                  </motion.div>
                 </div>
               ) : (
                 <div />
@@ -288,12 +259,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
         </div>
 
-        {/* Surface level list (no card wrapper) */}
         <div
           className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-4 pr-3 pb-32 pt-37.5 -mt-30 -mb-12 relative z-0 pointer-events-auto empty-events-container"
           style={{
             maskImage:
-              "linear-gradient(to bottom, transparent, black 5%, black 95%, transparent)",
+              "linear-gradient(to bottom, transparent, black 5%, black 15%)",
           }}
         >
           {calendarDays.map((d, dIdx) => (
@@ -309,7 +279,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
               use24HourTime={use24HourTime}
               todayRef={todayRef}
               nowRef={nowRef}
-              setSelectedCourse={setSelectedCourse}
               onNavigate={onNavigate}
             />
           ))}
@@ -318,16 +287,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
       </div>
 
       <HomeWidgets settings={settings} stats={stats} onNavigate={onNavigate} />
-
-      <CoursePopup
-        course={selectedCourse?.data.course || null}
-        position={selectedCourse?.pos || null}
-        attendance={
-          attendance?.find((a) => a.code === selectedCourse?.data.course.code)
-            ?.attendance
-        }
-        onClose={() => setSelectedCourse(null)}
-      />
     </div>
   );
 };

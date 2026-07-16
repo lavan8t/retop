@@ -12,9 +12,9 @@ interface LazyCalendarDayProps {
   events: Event[];
   getClassesForDate: (d: Date, calEvent: any) => UpcomingClass[];
   use24HourTime: boolean;
-  todayRef: React.RefObject<HTMLDivElement>;
   nowRef: React.RefObject<HTMLDivElement>;
   setSelectedCourse: (course: { data: UpcomingClass; pos: { x: number; y: number } } | null) => void;
+  onNavigate?: (link: any) => void;
 }
 
 export const LazyCalendarDay = React.memo(({
@@ -28,7 +28,8 @@ export const LazyCalendarDay = React.memo(({
   use24HourTime,
   todayRef,
   nowRef,
-  setSelectedCourse
+  setSelectedCourse,
+  onNavigate
 }: LazyCalendarDayProps) => {
   const isToday = d.toDateString() === new Date().toDateString();
 
@@ -55,10 +56,8 @@ export const LazyCalendarDay = React.memo(({
     | { type: "calendar"; data: any }
   > = [];
 
-  if (eventFilter === "all" || eventFilter === "events") {
-    if (calEvent && (calEvent.info || calEvent.isHoliday)) {
-      dayEvents.push({ type: "calendar", data: calEvent });
-    }
+  if (calEvent && (calEvent.info || calEvent.isHoliday)) {
+    dayEvents.push({ type: "calendar", data: calEvent });
   }
 
   if (eventFilter === "all" || eventFilter === "classes") {
@@ -79,34 +78,7 @@ export const LazyCalendarDay = React.memo(({
       .filter((e: any) => e.date === dStr)
       .forEach((e: any) => dayEvents.push({ type: "event", data: e }));
   }
-
   if (dayEvents.length === 0) {
-    if (isToday) {
-      return (
-        <div
-          ref={todayRef}
-          className={`mb-4 flex gap-3 relative scroll-mt-[30vh]`}
-        >
-          <div className="flex flex-col items-center shrink-0 w-12 pt-1 sticky top-4 h-fit z-10">
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm mb-0.5 bg-(--accent-base) text-(--text-inverse)`}
-            >
-              {d.getDate()}
-            </div>
-            <div
-              className={`text-[9px] font-expanded font-bold uppercase text-(--accent-base)`}
-            >
-              {d.toLocaleDateString("en-US", { weekday: "short" })}
-            </div>
-          </div>
-          <div className="flex-1 min-w-0 pt-2 pb-6 flex items-center justify-center">
-            <span className="text-sm font-bold text-(--text-muted)">
-              No events for today
-            </span>
-          </div>
-        </div>
-      );
-    }
     return null;
   }
 
@@ -187,7 +159,10 @@ export const LazyCalendarDay = React.memo(({
                 use24HourTime={use24HourTime}
               />
             ) : evt.type === "assignment" ? (
-              <AssignmentRow assignment={evt.data as Assignment} />
+              <AssignmentRow 
+                assignment={evt.data as Assignment} 
+                onClick={() => onNavigate && onNavigate({ title: "Digital Assignments", url: "examinations/StudentDA", category: "Examinations" })}
+              />
             ) : evt.type === "calendar" ? (
               <div
                 className={`w-full text-left p-3 rounded-xl flex items-center justify-between border-2 border-transparent hover:border-(--border-main) shadow-none mb-3 ${evt.data.isHoliday ? "bg-red-500/10" : "bg-(--bg-surface)"}`}
@@ -254,7 +229,10 @@ export const LazyCalendarDay = React.memo(({
                 use24HourTime={use24HourTime}
               />
             ) : evt.type === "assignment" ? (
-              <AssignmentRow assignment={evt.data as Assignment} />
+              <AssignmentRow 
+                assignment={evt.data as Assignment} 
+                onClick={() => onNavigate && onNavigate({ title: "Digital Assignments", url: "examinations/StudentDA", category: "Examinations" })}
+              />
             ) : evt.type === "calendar" ? (
               <div className="w-full text-left pb-3 flex flex-col">
                 <span

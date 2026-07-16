@@ -14,6 +14,10 @@ const sanitizeMenuTitle = (title: string): string => {
     return "Grades & History";
   }
 
+  if (lowerTitle === "student profile") {
+    return "Profile";
+  }
+
   return title;
 };
 

@@ -11,12 +11,10 @@ import { formatTimeStr } from "../../utils/formatting";
 import { MarqueeText } from "../common/MarqueeText";
 
 const rowVariants: Variants = {
-  hidden: { opacity: 0, y: 15, scale: 0.95 },
+  hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: { type: "spring", stiffness: 400, damping: 30 },
+    transition: { duration: 0.2 },
   },
 };
 
@@ -24,24 +22,24 @@ export const AttendanceRow = ({ course }: { course: CourseSummary }) => {
   const val = parseFloat(course.attendance);
   const displayVal = isNaN(val) ? 0 : Math.round(val);
 
-  let badgeBg = "bg-(--att-safe) text-(--text-inverse) border-(--border-main)";
-  let barColor = "bg-(--att-safe)";
+  let badgeBg = "bg-(--attendance-green) text-(--bg-main)";
+  let barColor = "bg-(--attendance-green)";
 
   if (isNaN(val)) {
-    badgeBg = "bg-(--bg-highlight) text-(--text-muted) border-(--border-dim)";
+    badgeBg = "bg-(--bg-highlight) text-(--text-muted)";
     barColor = "bg-(--bg-highlight)";
-  } else if (val < 75) {
-    badgeBg = "bg-(--att-danger) text-(--text-inverse) border-(--border-main)";
-    barColor = "bg-(--att-danger)";
-  } else if (val < 80) {
-    badgeBg = "bg-(--att-warn) text-(--text-inverse) border-(--border-main)";
-    barColor = "bg-(--att-warn)";
+  } else if (val <= 75) {
+    badgeBg = "bg-(--attendance-red) text-(--bg-main)";
+    barColor = "bg-(--attendance-red)";
+  } else if (val < 90) {
+    badgeBg = "bg-(--attendance-blue) text-(--bg-main)";
+    barColor = "bg-(--attendance-blue)";
   }
 
   return (
-    <div className="relative flex items-center justify-between p-2 rounded-xl bg-(--bg-surface) hover:bg-(--bg-highlight) transition-colors cursor-pointer group select-none overflow-hidden">
+    <div className="relative flex items-center justify-between p-2 rounded-xl bg-(--bg-surface) hover:bg-(--bg-highlight) transition-colors cursor-pointer group/row select-none overflow-hidden">
       <div
-        className={`absolute top-0 left-0 h-full ${barColor} opacity-10 group-hover:opacity-20 transition-opacity duration-fast`}
+        className={`absolute top-0 left-0 h-full ${barColor} opacity-10 group-hover/row:opacity-20 transition-opacity duration-fast`}
         style={{ width: `${displayVal}%` }}
       />
       <div className="relative z-10 flex items-center gap-2 min-w-0 flex-1 pr-3">
@@ -57,7 +55,7 @@ export const AttendanceRow = ({ course }: { course: CourseSummary }) => {
       </div>
 
       <div
-        className={`relative z-10 shrink-0 font-black font-expanded text-sm leading-none px-2 py-1 rounded-md border-2 ${badgeBg}`}
+        className={`relative z-10 shrink-0 font-black font-expanded text-sm leading-none px-2 py-1 rounded-md ${badgeBg}`}
       >
         {isNaN(val) ? "--" : `${displayVal}%`}
       </div>
@@ -91,7 +89,7 @@ export const ScheduleRow = ({
               isNow
                 ? "bg-(--text-main) text-(--bg-main) shadow-none"
                 : isLab
-                  ? "bg-purple-500 text-white shadow-none"
+                  ? "bg-purple-500 text-(--bg-main) shadow-none"
                   : "bg-(--text-main) text-(--bg-main) shadow-none"
             }`}
           >
@@ -121,10 +119,17 @@ export const ScheduleRow = ({
   );
 };
 
-export const AssignmentRow = ({ assignment }: { assignment: Assignment }) => (
+export const AssignmentRow = ({
+  assignment,
+  onClick,
+}: {
+  assignment: Assignment;
+  onClick?: () => void;
+}) => (
   <motion.div
     layout
     variants={rowVariants}
+    onClick={onClick}
     className="p-3 rounded-xl bg-(--bg-surface) shadow-none cursor-pointer select-none relative border-2 border-transparent hover:border-(--border-main)"
   >
     <div className="flex justify-between items-start gap-3">
@@ -137,7 +142,7 @@ export const AssignmentRow = ({ assignment }: { assignment: Assignment }) => (
         </div>
       </div>
       <div className="shrink-0 flex flex-col items-end">
-        <span className="text-[10px] font-black font-mono uppercase text-white bg-(--att-danger) px-2 py-1 rounded-md shadow-none leading-none">
+        <span className="text-[10px] font-black font-mono uppercase text-(--bg-main) bg-(--att-danger) px-2 py-1 rounded-md shadow-none leading-none">
           {assignment.dueDate}
         </span>
       </div>
@@ -156,7 +161,7 @@ export const EventRow = ({ event }: { event: Event }) => (
         <span className="text-sm font-black text-(--text-main) leading-tight">
           {event.title}
         </span>
-        <span className="shrink-0 text-[10px] font-black uppercase px-2 py-0.5 rounded-md leading-none bg-blue-500 text-white shadow-none">
+        <span className="shrink-0 text-[10px] font-black uppercase px-2 py-0.5 rounded-md leading-none bg-blue-500 text-(--bg-main) shadow-none">
           {event.category}
         </span>
       </div>

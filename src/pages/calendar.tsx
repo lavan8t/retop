@@ -44,6 +44,9 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
     fetchCalendarGrid,
   } = useDataStore();
 
+  const todayRef = React.useRef<HTMLDivElement>(null);
+  const initialScrollDone = React.useRef(false);
+
   // Fetch Semesters
   useEffect(() => {
     if (calSemesters.length > 0) return;
@@ -111,6 +114,17 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
     calGridData.length,
   ]);
 
+  useEffect(() => {
+    if (calGridData.length === 0 || initialScrollDone.current) return;
+    const t = setTimeout(() => {
+      if (todayRef.current) {
+        todayRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+        initialScrollDone.current = true;
+      }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [calGridData]);
+
   return (
     <div className="h-full w-full flex flex-col bg-(--bg-main) font-mono text-(--text-main) overflow-hidden px-4 md:px-8 max-w-425 mx-auto">
       {calLoadingMonths ? (
@@ -138,7 +152,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                 <div
                   key={day}
                   className={`text-center font-expanded font-black text-xs md:text-sm uppercase tracking-widest ${
-                    i === 0 ? "text-red-500" : "text-(--text-muted)"
+                    i === 0 ? "text-att-danger" : "text-(--text-muted)"
                   }`}
                 >
                   {day}
@@ -209,8 +223,8 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                             }
                             if (day.isHoliday) {
                               bgClass = "bg-red-500/20 hover:bg-red-500/30";
-                              textClass = "text-red-600 dark:text-red-400 font-black";
-                              numberClass = "text-red-600 dark:text-red-400 font-black";
+                              textClass = "text-att-danger dark:text-red-400 font-black";
+                              numberClass = "text-att-danger dark:text-red-400 font-black";
                             } else if (day.isExam) {
                               bgClass = "bg-(--accent-base)/20 hover:bg-(--accent-base)/30";
                               textClass = "text-(--accent-base) font-black";
@@ -226,6 +240,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                             return (
                               <div
                                 key={idx}
+                                ref={isToday ? todayRef : null}
                                 className={`relative p-3 md:p-4 flex flex-col transition-all group rounded-3xl ${bgClass} ${borderClass}`}
                               >
                                 {/* Rounded Inner Background Fill */}

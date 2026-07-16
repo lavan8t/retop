@@ -438,7 +438,7 @@ const LoginPage = ({
                             }}
                           />
                           <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Autorenew className="w-5 h-5 text-white" />
+                            <Autorenew className="w-5 h-5 text-content-inverse" />
                           </div>
                         </div>
                       </div>
@@ -464,7 +464,7 @@ const LoginPage = ({
 
                     <button
                       onClick={openOfflineMode}
-                      className="w-full border-4 border-zinc-700 bg-zinc-800 rounded-2xl py-3 text-lg font-expanded font-black uppercase flex items-center justify-center gap-2 transition-all duration-fast text-zinc-300 hover:text-white hover:border-zinc-500 hover:-translate-y-1 hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) mt-4"
+                      className="w-full border-4 border-border-dim bg-highlight rounded-2xl py-3 text-lg font-expanded font-black uppercase flex items-center justify-center gap-2 transition-all duration-fast text-content hover:text-white hover:border-border-dim hover:-translate-y-1 hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) mt-4"
                     >
                       Access Offline Cache
                     </button>

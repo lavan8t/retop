@@ -13,6 +13,7 @@ import {
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { EmptyState } from "../components/EmptyState";
 import { motion, AnimatePresence } from "framer-motion";
+import { OfflineNotSynced } from "../components/ui/OfflineNotSynced";
 import { WhatIfGradeCalculator } from "../components/course-page/WhatIfGradeCalculator";
 import { useDataStore } from "../store/dataStore";
 
@@ -72,6 +73,7 @@ export const GradesPage: React.FC<GradesPageProps> = ({
   const [expandedCourseId, setExpandedCourseId] = useState<string | null>(null);
   const [fetchingDetails, setFetchingDetails] = useState(false);
   const [predictedGrades, setPredictedGrades] = useState<Record<string, string>>({});
+  const [offlineMiss, setOfflineMiss] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -104,6 +106,9 @@ export const GradesPage: React.FC<GradesPageProps> = ({
           setSelectedSem(dropdownSems[0].id);
         }
       } catch (e) {
+        if (e instanceof Error && e.message === "OFFLINE_CACHE_MISS") {
+          setOfflineMiss(true);
+        }
         console.error(e);
       } finally {
         setLoading(false);
@@ -118,6 +123,9 @@ export const GradesPage: React.FC<GradesPageProps> = ({
         console.log(`[DATA_CAPTURE] Grade History:`, parsedHistory);
         setHistoryData(parsedHistory);
       } catch (e) {
+        if (e instanceof Error && e.message === "OFFLINE_CACHE_MISS") {
+          setOfflineMiss(true);
+        }
         console.error(e);
       }
     };
@@ -144,11 +152,12 @@ export const GradesPage: React.FC<GradesPageProps> = ({
       }
 
       try {
-        const html = await network.getStudentGrades(selectedSem);
+        const isPastSemester = semesters.length > 0 && semesters[0].id !== selectedSem;
+        const html = await network.getStudentGrades(selectedSem, false, isPastSemester);
         const parsedGrades = parseGrades(html);
         console.log(`[DATA_CAPTURE] Grades (${selectedSem}):`, parsedGrades);
 
-        const isLatest = semesters.length > 0 && semesters[0].id === selectedSem;
+        const isLatest = !isPastSemester;
         if (isLatest) {
           try {
             const ttHtml = await network.fetchWithCache(`tt_${selectedSem}`, async () => {
@@ -201,7 +210,11 @@ export const GradesPage: React.FC<GradesPageProps> = ({
         }
 
         setGradesData(parsedGrades);
+        setOfflineMiss(false);
       } catch (e) {
+        if (e instanceof Error && e.message === "OFFLINE_CACHE_MISS") {
+          setOfflineMiss(true);
+        }
         console.error(e);
       } finally {
         setFetchingGrades(false);
@@ -248,14 +261,14 @@ export const GradesPage: React.FC<GradesPageProps> = ({
 
   const getGradeColor = (grade: string) => {
     switch(grade) {
-      case 'S': return 'text-white bg-purple-500';
-      case 'A': return 'text-white bg-emerald-500';
-      case 'B': return 'text-white bg-blue-500';
-      case 'C': return 'text-white bg-cyan-500';
-      case 'D': return 'text-white bg-amber-500';
-      case 'E': return 'text-white bg-orange-500';
+      case 'S': return 'text-(--bg-main) bg-purple-500';
+      case 'A': return 'text-(--bg-main) bg-emerald-500';
+      case 'B': return 'text-(--bg-main) bg-blue-500';
+      case 'C': return 'text-(--bg-main) bg-cyan-500';
+      case 'D': return 'text-(--bg-main) bg-amber-500';
+      case 'E': return 'text-(--bg-main) bg-orange-500';
       case 'F':
-      case 'N': return 'text-white bg-red-500';
+      case 'N': return 'text-(--bg-main) bg-red-500';
       default: return 'text-(--text-muted) bg-(--bg-highlight)';
     }
   };
@@ -306,6 +319,14 @@ export const GradesPage: React.FC<GradesPageProps> = ({
   
   const predictedGpa = getPredictedGpa();
   const predictedCgpa = getPredictedCgpa();
+
+  if (offlineMiss) {
+    return (
+      <div className="h-full pt-16 md:pt-20 lg:pt-24 pb-32 md:pb-12">
+        <OfflineNotSynced />
+      </div>
+    );
+  }
 
   return (
     <motion.div

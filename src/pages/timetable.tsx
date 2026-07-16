@@ -8,7 +8,9 @@ import { EmptyState } from "../components/EmptyState";
 import { TimetableGrid } from "../components/timetable/TimetableGrid";
 import { TimetableList } from "../components/timetable/TimetableList";
 import { TimetableWeek } from "../components/timetable/TimetableWeek";
+import { OfflineNotSynced } from "../components/ui/OfflineNotSynced";
 import { motion } from "framer-motion";
+import { useDataStore } from "../store/dataStore";
 
 interface TimetableContentViewProps {
   courses: TimetableCourse[];
@@ -33,6 +35,16 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const status = useDataStore((s) => s.status);
+
+  if (status === "Offline - Not Synced") {
+    return (
+      <div className="h-full pt-16 md:pt-20 lg:pt-24 pb-32 md:pb-12">
+        <OfflineNotSynced />
+      </div>
+    );
+  }
 
   return (
     <>

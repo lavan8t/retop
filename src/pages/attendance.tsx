@@ -3,6 +3,7 @@ import { useDataStore } from "../store/dataStore";
 import { VTOPNetwork } from "../utils/network";
 import { EmptyState } from "../components/EmptyState";
 import { motion, AnimatePresence } from "framer-motion";
+import { OfflineNotSynced } from "../components/ui/OfflineNotSynced";
 import { MarqueeText } from "../components/common/MarqueeText";
 import { AttendanceMeter } from "../components/attendance/AttendanceMeter";
 import {
@@ -88,7 +89,11 @@ const AttendanceCalculator = ({
       : Math.round((projectedAttended / projectedConducted) * 100);
   const isInvalid = rawPercentage > 100;
   const percentage = isInvalid ? 100 : rawPercentage;
-  const isDanger = percentage < 75;
+  
+  let ringColor = "stroke-(--attendance-green)";
+  if (isInvalid) ringColor = "stroke-(--attendance-red)";
+  else if (percentage <= 75) ringColor = "stroke-(--attendance-red)";
+  else if (percentage < 90) ringColor = "stroke-(--attendance-blue)";
 
   const handleReset = () => {
     setAttendCount(0);
@@ -132,7 +137,7 @@ const AttendanceCalculator = ({
               cy="80"
               r={circleRadius}
               className="stroke-(--bg-surface)"
-              strokeWidth="20"
+              strokeWidth="12"
               fill="none"
               strokeLinecap="butt"
             />
@@ -140,11 +145,12 @@ const AttendanceCalculator = ({
               cx="80"
               cy="80"
               r={circleRadius}
-              className={`transition-all duration-normal ease-out ${isDanger || isInvalid ? "stroke-red-500" : "stroke-emerald-500"}`}
-              strokeWidth="20"
+              className={`transition-all duration-normal ease-out ${ringColor}`}
+              strokeWidth="12"
               fill="none"
               strokeDasharray={circleCircumference}
               strokeDashoffset={strokeDashoffset}
+              strokeLinecap="round"
             />
           </svg>
           <div className="flex flex-col items-center z-10 text-center">
@@ -157,7 +163,7 @@ const AttendanceCalculator = ({
               </>
             ) : (
               <span
-                className={`font-expanded font-black text-4xl leading-none ${isDanger ? "text-red-500" : "text-emerald-500"}`}
+                className={`font-expanded font-black text-4xl leading-none ${ringColor.replace("stroke-", "text-")}`}
               >
                 {percentage}%
               </span>
@@ -239,18 +245,18 @@ const CourseCard = ({
 }) => {
   const p = course.percentage;
 
-  let badgeBg = "bg-(--att-safe) text-white border-(--border-main)";
-  let barColor = "bg-(--att-safe)";
+  let badgeBg = "bg-(--attendance-green) text-(--bg-main)";
+  let barColor = "bg-(--attendance-green)";
 
   if (isNaN(p)) {
-    badgeBg = "bg-(--bg-highlight) text-(--text-muted) border-(--border-dim)";
+    badgeBg = "bg-(--bg-highlight) text-(--text-muted)";
     barColor = "bg-(--bg-highlight)";
-  } else if (p < 75) {
-    badgeBg = "bg-(--att-danger) text-white border-(--border-main)";
-    barColor = "bg-(--att-danger)";
-  } else if (p < 80) {
-    badgeBg = "bg-(--att-warn) text-black border-(--border-main)";
-    barColor = "bg-(--att-warn)";
+  } else if (p <= 75) {
+    badgeBg = "bg-(--attendance-red) text-(--bg-main)";
+    barColor = "bg-(--attendance-red)";
+  } else if (p < 90) {
+    badgeBg = "bg-(--attendance-blue) text-(--bg-main)";
+    barColor = "bg-(--attendance-blue)";
   }
 
   return (
@@ -258,7 +264,7 @@ const CourseCard = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: idx * 0.05 }}
-      className={`relative flex items-center justify-between p-4 md:p-5 rounded-2xl overflow-hidden transition-all duration-fast cursor-pointer border-4 group select-none ${isSelected ? "bg-(--bg-surface) border-(--accent-base) -translate-y-1 shadow-[var(--brutal-shadow-hover)]" : "bg-(--bg-surface) border-(--border-main) hover:shadow-[var(--brutal-shadow-hover)] hover:-translate-y-1 hover:bg-(--bg-highlight)"}`}
+      className={`relative flex items-center justify-between p-4 md:p-5 rounded-2xl overflow-hidden transition-all duration-fast cursor-pointer group select-none ${isSelected ? "bg-(--bg-highlight) -translate-y-1 shadow-(--brutal-shadow-hover)" : "bg-(--bg-surface) hover:shadow-(--brutal-shadow-hover) hover:-translate-y-1 hover:bg-(--bg-highlight)"}`}
       onClick={onClick}
     >
       <div
@@ -275,7 +281,7 @@ const CourseCard = ({
               {course.classType}
             </span>
             {course.debarStatus !== "-" && (
-              <span className="px-2 py-1 bg-red-500 text-white text-[10px] font-black uppercase rounded-full shadow-sm whitespace-nowrap">
+              <span className="px-2 py-1 bg-red-500 text-(--bg-main) text-[10px] font-black uppercase rounded-full shadow-sm whitespace-nowrap">
                 Debarred
               </span>
             )}
@@ -288,7 +294,7 @@ const CourseCard = ({
       </div>
 
       <div
-        className={`relative z-10 shrink-0 font-black font-expanded text-lg md:text-xl leading-none px-4 py-2.5 rounded-xl border-2 ${badgeBg}`}
+        className={`relative z-10 shrink-0 font-black font-expanded text-lg md:text-xl leading-none px-4 py-2.5 rounded-xl ${badgeBg}`}
       >
         {course.percentage}%
       </div>
@@ -305,6 +311,7 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
     attendanceRecords,
     attRecordsLoading,
     fetchAttendanceRecords,
+    status
   } = useDataStore();
 
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
@@ -368,6 +375,14 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
     );
   }
 
+  if (status === "Offline - Not Synced") {
+    return (
+      <div className="h-full pt-16 md:pt-20 lg:pt-24 pb-32 md:pb-12">
+        <OfflineNotSynced />
+      </div>
+    );
+  }
+
   if (!detailedAttendance || detailedAttendance.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 bg-(--bg-main) font-mono relative z-0">
@@ -421,7 +436,7 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
-              className={`w-full lg:w-1/2 shrink-0 bg-(--bg-main) lg:bg-transparent lg:border-l-4 border-(--border-main) overflow-y-auto custom-scrollbar px-4 md:px-6 lg:px-8 flex flex-col ${!selectedCourse ? "hidden lg:flex" : "flex absolute inset-0 lg:static z-20"}`}
+              className={`w-full lg:w-1/2 shrink-0 bg-(--bg-main) lg:bg-transparent overflow-y-auto custom-scrollbar px-4 md:px-6 lg:px-8 flex flex-col ${!selectedCourse ? "hidden lg:flex" : "flex absolute inset-0 lg:static z-20"}`}
             >
               <div className="w-full h-21 md:h-25 shrink-0 hidden lg:block" />
               {/* Mobile Back Button */}

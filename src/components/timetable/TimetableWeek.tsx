@@ -301,7 +301,7 @@ export const TimetableWeek = ({
                             position: { x: rect.left, y: rect.bottom + 10 },
                           });
                         }}
-                        className={`w-full text-left p-2.5 lg:p-3 rounded-xl hover:-translate-y-0.5 shadow-none hover:shadow-[var(--brutal-shadow-hover)] flex flex-col gap-1.5 cursor-pointer ${colorClasses}`}
+                        className={`w-full text-left p-2.5 lg:p-3 rounded-xl hover:-translate-y-0.5 shadow-none hover:shadow-(--brutal-shadow-hover) flex flex-col gap-1.5 cursor-pointer ${colorClasses}`}
                         style={{ transition: 'background-color 0.3s 0.075s, transform 0.3s, box-shadow 0.3s' }}
                       >
                         <div className="flex justify-between items-start w-full gap-1">

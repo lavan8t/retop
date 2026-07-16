@@ -1,4 +1,4 @@
-export type ViewType = "dashboard" | "timetable" | "curriculum" | "marks" | "grades" | "profile" | "settings" | "coursePage" | "calendar" | "attendance" | "content";
+export type ViewType = "dashboard" | "timetable" | "curriculum" | "marks" | "grades" | "profile" | "settings" | "coursePage" | "calendar" | "attendance" | "digitalAssignments" | "content";
 
 export interface QuickLink {
   title: string;
@@ -225,6 +225,7 @@ export interface CourseMaterial {
   faculty: string;
   uploadDate: string;
   downloadId: string;
+  module?: string;
 }
 
 export interface CourseOutcome {

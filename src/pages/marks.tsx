@@ -10,6 +10,7 @@ import {
 import { EmptyState } from "../components/EmptyState";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDataStore } from "../store/dataStore";
+import { OfflineNotSynced } from "../components/ui/OfflineNotSynced";
 
 interface MarksPageProps {
   network: VTOPNetwork;
@@ -33,6 +34,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({
   const [loading, setLoading] = useState(true);
   const [marksData, setMarksData] = useState<CourseMarks[]>([]);
   const [fetchingMarks, setFetchingMarks] = useState(false);
+  const [offlineMiss, setOfflineMiss] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -59,6 +61,9 @@ export const MarksPage: React.FC<MarksPageProps> = ({
           setSelectedSem(sems[0].id);
         }
       } catch (e) {
+        if (e instanceof Error && e.message === "OFFLINE_CACHE_MISS") {
+          setOfflineMiss(true);
+        }
         console.error(e);
       } finally {
         setLoading(false);
@@ -91,11 +96,16 @@ export const MarksPage: React.FC<MarksPageProps> = ({
       }
 
       try {
-        const html = await network.getStudentMarks(selectedSem);
+        const isPastSemester = semesters.length > 0 && selectedSem !== semesters[0].id;
+        const html = await network.getStudentMarks(selectedSem, false, isPastSemester);
         const parsedMarks = parseStudentMarks(html);
         console.log(`[DATA_CAPTURE] Marks (${selectedSem}):`, parsedMarks);
         setMarksData(parsedMarks);
+        setOfflineMiss(false);
       } catch (e) {
+        if (e instanceof Error && e.message === "OFFLINE_CACHE_MISS") {
+          setOfflineMiss(true);
+        }
         console.error(e);
       } finally {
         setFetchingMarks(false);
@@ -135,6 +145,14 @@ export const MarksPage: React.FC<MarksPageProps> = ({
     });
   }, [marksData, searchQuery]);
 
+  if (offlineMiss) {
+    return (
+      <div className="h-full pt-16 md:pt-20 lg:pt-24 pb-32 md:pb-12">
+        <OfflineNotSynced />
+      </div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -153,7 +171,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({
           <EmptyState msg="No Marks Found" icon={Error} />
         ) : (
           <motion.div
-            className="grid grid-cols-1 xl:grid-cols-2 gap-6"
+            className="columns-1 xl:columns-2 gap-6"
             initial="hidden"
             animate="show"
             variants={{
@@ -168,21 +186,21 @@ export const MarksPage: React.FC<MarksPageProps> = ({
                   hidden: { opacity: 0, y: 20 },
                   show: { opacity: 1, y: 0 },
                 }}
-                className="bg-(--bg-surface) border-4 border-(--border-dim) rounded-4xl overflow-hidden shadow-lg hover:border-(--accent-base) transition-colors group flex flex-col"
+                className="bg-(--bg-surface) rounded-4xl overflow-hidden group flex flex-col break-inside-avoid mb-6"
               >
-                <div className="px-6 py-4 border-b-2 border-(--border-dim) bg-(--bg-highlight) flex flex-col gap-1 shrink-0 transition-colors">
+                <div className="px-6 py-4 bg-(--bg-highlight) flex flex-col gap-1 shrink-0 transition-colors">
                   <div className="flex justify-between items-start gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="bg-(--bg-surface) text-(--accent-base) border border-(--border-main) text-[10px] font-bold px-2 py-0.5 rounded font-mono uppercase">
+                        <span className="bg-(--text-main) text-(--bg-main) text-[10px] font-bold px-3 py-1 rounded-full font-mono uppercase">
                           {course.code}
                         </span>
                         <span
-                          className={`text-[10px] font-bold border px-2 py-0.5 rounded 
+                          className={`text-[10px] font-bold px-3 py-1 rounded-full 
                             ${
                               course.type.includes("Lab")
-                                ? "bg-purple-500/10 text-purple-400 border-purple-500/20"
-                                : "bg-(--bg-main) text-(--text-muted) border-(--border-dim)"
+                                ? "bg-purple-500 text-(--bg-main)"
+                                : "bg-(--text-main) text-(--bg-main)"
                             }`}
                         >
                           {course.type}
@@ -194,7 +212,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({
                     </div>
                     <div className="text-right shrink-0 pt-1">
                       <div
-                        className="text-[10px] text-(--text-muted) font-mono flex items-center gap-1 justify-end bg-(--bg-main) px-2 py-1 rounded border border-(--border-dim)"
+                        className="text-[10px] text-(--text-muted) font-mono flex items-center gap-1 justify-end bg-(--bg-main) px-3 py-1 rounded-full"
                         title="Faculty"
                       >
                         <Person className="w-3 h-3" /> {course.faculty || "N/A"}
@@ -270,7 +288,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({
                                     colSpan={2}
                                     className="p-3 text-center border-l border-(--border-dim)"
                                   >
-                                    <span className="text-(--att-text-danger) font-black  uppercase text-[10px] bg-red-500/10 px-3 py-1 rounded">
+                                    <span className="bg-red-500 text-(--bg-main) font-black uppercase text-[10px] px-3 py-1 rounded-full">
                                       Absent
                                     </span>
                                   </td>

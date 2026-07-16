@@ -7,9 +7,11 @@ export class VTOPNetwork {
 
   private static requestTimestamps: number[] = [];
 
+  private inFlightRequests: Map<string, Promise<string>> = new Map();
+
   private async enforceRateLimit() {
-    const MIN_COOLDOWN = 1000; // 1s minimum between requests
-    const MAX_REQUESTS = 5;
+    const MIN_COOLDOWN = 500; // 0.5s minimum between requests
+    const MAX_REQUESTS = 60; // 60 requests per minute
     const WINDOW_MS = 60000; // 1 minute
 
     const now = Date.now();
@@ -95,8 +97,10 @@ export class VTOPNetwork {
     key: string,
     fetcher: () => Promise<string>,
     forceRefresh = false,
+    customExpiryMs?: number,
   ): Promise<string> {
-    const userScopedKey = `${this.authorizedID}_${key}`;
+    const stableId = localStorage.getItem("retop_lastAuthId") || this.authorizedID;
+    const userScopedKey = `${stableId}_${key}`;
 
     const doFetchAndCache = async () => {
       try {
@@ -108,26 +112,46 @@ export class VTOPNetwork {
         return data;
       } catch (err) {
         throw err;
+      } finally {
+        this.inFlightRequests.delete(userScopedKey);
       }
     };
 
     const cachedInfo = await getCachedDataWithTimestamp<string>(userScopedKey);
 
     if (cachedInfo && cachedInfo.data) {
-      const FIVE_DAYS_MS = 5 * 24 * 60 * 60 * 1000;
+      let EXPIRY_MS = customExpiryMs !== undefined ? customExpiryMs : (5 * 24 * 60 * 60 * 1000);
+      
+      if (customExpiryMs === undefined) {
+        if (key.includes("tt_") || key.includes("cal_") || key.includes("timetable") || key.includes("calendar")) {
+          EXPIRY_MS = 5 * 24 * 60 * 60 * 1000; // 5 days
+        } else if (key.includes("menu")) {
+          EXPIRY_MS = 2 * 24 * 60 * 60 * 1000; // 2 days
+        } else {
+          EXPIRY_MS = 1 * 24 * 60 * 60 * 1000; // 1 day default for others
+        }
+      }
+
       const age = Date.now() - (cachedInfo.timestamp || 0);
 
-      if (forceRefresh || age > FIVE_DAYS_MS) {
-        // Fetch in background, update cache silently
-        console.log(`[VTOP Network] BG Fetch Triggered: ${userScopedKey}`);
-        doFetchAndCache().catch(e => console.warn(`BG Fetch Failed: ${userScopedKey}`, e));
+      const isOffline = (window as any).__RETOP_OFFLINE__;
+
+      if (!isOffline && (forceRefresh || age > EXPIRY_MS)) {
+        if (!this.inFlightRequests.has(userScopedKey)) {
+          console.log(`[VTOP Network] BG Fetch Triggered: ${userScopedKey}`);
+          const promise = doFetchAndCache();
+          this.inFlightRequests.set(userScopedKey, promise);
+          promise.catch(e => console.warn(`BG Fetch Failed: ${userScopedKey}`, e));
+        }
       }
 
       return cachedInfo.data;
     }
 
     console.log(`[VTOP Network] Fetching: ${userScopedKey}`);
-    return await doFetchAndCache();
+    const promise = doFetchAndCache();
+    this.inFlightRequests.set(userScopedKey, promise);
+    return promise;
   }
 
   private async waitForLegacyLoad() {
@@ -220,11 +244,42 @@ export class VTOPNetwork {
     setTimeout(() => form.remove(), 1000);
   }
 
-  async getMarksView(): Promise<string> {
+  async getDASemesters(forceRefresh = false): Promise<string> {
+    return this.fetchWithCache("da_semesters", async () => {
+      return this.fetchFragment("examinations/StudentDA", {
+        verifyMenu: "true",
+        nocache: `@(${new Date().getTime()})`
+      });
+    }, forceRefresh);
+  }
+
+  async getTimetable(semesterSubId: string, forceRefresh = false, isPastSemester = false): Promise<string> {
+    const cacheKey = `tt_sem_${semesterSubId}`;
+    return this.fetchWithCache(cacheKey, async () => {
+      const url = "academics/common/StudentTimeTable";
+      const body = new URLSearchParams();
+      body.append("semesterSubId", semesterSubId);
+      body.append("authorizedID", this.authorizedID);
+      body.append("x", new Date().toUTCString());
+
+      const response = await this.rateLimitedFetch(`/vtop/${url}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        },
+        body: body,
+      });
+
+      if (!response.ok) throw new Error(`Status ${response.status}`);
+      return await response.text();
+    }, forceRefresh, isPastSemester ? Infinity : undefined);
+  }
+
+  async getMarksView(forceRefresh = false): Promise<string> {
     return this.fetchFragment("examinations/StudentMarkView");
   }
 
-  async getStudentMarks(semesterSubId: string): Promise<string> {
+  async getStudentMarks(semesterSubId: string, forceRefresh = false, isPastSemester = false): Promise<string> {
     const cacheKey = `marks_data_${semesterSubId}`;
 
     return this.fetchWithCache(cacheKey, async () => {
@@ -246,14 +301,139 @@ export class VTOPNetwork {
 
       if (!response.ok) throw new Error(`Status ${response.status}`);
       return await response.text();
-    });
+    }, forceRefresh, isPastSemester ? Infinity : undefined);
   }
 
-  async getGradesView(): Promise<string> {
+  async getDACourses(semesterSubId: string, forceRefresh = false, isPastSemester = false): Promise<string> {
+    const cacheKey = `da_courses_${semesterSubId}`;
+    return this.fetchWithCache(cacheKey, async () => {
+      // First update the session's active semester
+      const sessionBody = new URLSearchParams();
+      sessionBody.append("_csrf", this.csrf);
+      sessionBody.append("authorizedID", this.authorizedID);
+      sessionBody.append("semesterSubId", semesterSubId);
+      
+      await this.rateLimitedFetch(`/vtop/examinations/StudentDA`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        },
+        body: sessionBody,
+      });
+
+      // Then fetch the courses for the active semester
+      const url = "examinations/doDigitalAssignment";
+      const body = new URLSearchParams();
+      body.append("_csrf", this.csrf);
+      body.append("authorizedID", this.authorizedID);
+      body.append("semesterSubId", semesterSubId);
+      
+      const response = await this.rateLimitedFetch(`/vtop/${url}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        },
+        body: body,
+      });
+
+      if (!response.ok) throw new Error(`Status ${response.status}`);
+      return await response.text();
+    }, forceRefresh, isPastSemester ? Infinity : undefined);
+  }
+
+  async getDAForCourse(classId: string, forceRefresh = false, isPastSemester = false): Promise<string> {
+    const cacheKey = `da_class_${classId}`;
+    return this.fetchWithCache(cacheKey, async () => {
+      const url = "examinations/processDigitalAssignment";
+      const body = new URLSearchParams();
+      body.append("_csrf", this.csrf);
+      body.append("authorizedID", this.authorizedID);
+      body.append("classId", classId);
+      body.append("x", new Date().toUTCString());
+      
+      const response = await this.rateLimitedFetch(`/vtop/${url}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        },
+        body: body,
+      });
+
+      if (!response.ok) throw new Error(`Status ${response.status}`);
+      return await response.text();
+    }, forceRefresh, isPastSemester ? Infinity : undefined);
+  }
+
+  async getDAUploadView(classId: string, code: string): Promise<string> {
+    const url = "examinations/processDigitalAssignmentUpload";
+    const body = new URLSearchParams();
+    body.append("_csrf", this.csrf);
+    body.append("authorizedID", this.authorizedID);
+    body.append("classId", classId);
+    body.append("mode", code);
+    body.append("x", new Date().toUTCString());
+    
+    const response = await this.rateLimitedFetch(`/vtop/${url}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+      },
+      body: body,
+    });
+    if (!response.ok) throw new Error(`Status ${response.status}`);
+    return await response.text();
+  }
+
+  async uploadStudentDA(classId: string, code: string, title: string, file: File): Promise<string> {
+    const url = "examinations/doDAssignmentUploadMethod";
+    const formData = new FormData();
+    formData.append("_csrf", this.csrf);
+    formData.append("authorizedID", this.authorizedID);
+    formData.append("classId", classId);
+    formData.append("code", code);
+    formData.append("mCode", code);
+    formData.append("opt", title);
+    formData.append("studDaUpload", file);
+    
+    const response = await this.rateLimitedFetch(`/vtop/${url}`, {
+      method: "POST",
+      body: formData, // Browser automatically sets multipart/form-data boundary
+    });
+    if (!response.ok) throw new Error(`Status ${response.status}`);
+    return await response.text();
+  }
+
+  downloadStudentDA(classId: string, code: string): void {
+    let form = document.getElementById("downloadStudentDAForm") as HTMLFormElement;
+    if (!form) {
+      form = document.createElement("form");
+      form.id = "downloadStudentDAForm";
+      form.method = "post";
+      form.action = "/vtop/examinations/downloadSTudentDA/";
+      
+      form.innerHTML = `
+        <input type="hidden" name="_csrf" value="${this.csrf}"/>
+        <input type="hidden" name="_csrf" value="${this.csrf}" />
+        <input type="hidden" name="authorizedID" id="authorizedID" value="${this.authorizedID}" />
+        <input type="hidden" name="code1" id="code1" />
+        <input type="hidden" name="classId1" id="classId1" />
+      `;
+      document.body.appendChild(form);
+    }
+    
+    // Exact mimic of VTOP's downloadStudentDAFn
+    (document.getElementById("code1") as HTMLInputElement).value = code;
+    (document.getElementById("classId1") as HTMLInputElement).value = classId;
+    (document.getElementById("authorizedID") as HTMLInputElement).value = this.authorizedID;
+    
+    form.submit();
+  }
+
+  async getGradesView(forceRefresh = false): Promise<string> {
     return this.fetchFragment("examinations/examGradeView/StudentGradeView");
   }
 
-  async getStudentGrades(semesterSubId: string): Promise<string> {
+  async getStudentGrades(semesterSubId: string, forceRefresh = false, isPastSemester = false): Promise<string> {
     const cacheKey = `grades_data_${semesterSubId}`;
 
     return this.fetchWithCache(cacheKey, async () => {

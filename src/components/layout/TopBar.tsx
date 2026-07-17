@@ -13,6 +13,7 @@ import {
   MenuBook,
   KeyboardArrowDown,
   Refresh,
+  Star,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import {
   QuickLink,
@@ -21,14 +22,17 @@ import {
   ClassGroup,
   MenuCategory,
   CoursePageOption,
+  CourseSummary,
 } from "../../types/vtop";
 import { SemesterDropdown } from "../timetable/SemesterDropdown";
 import { ClassGroupDropdown } from "../timetable/ClassGroupDropdown";
 import { TopBarSearch } from "./TopBarSearch";
+import { SegmentedControl } from "../ui/SegmentedControl";
 import { getCategoryIcon } from "../../utils/icons";
 import { useDataStore } from "../../store/dataStore";
 import { useAppStore } from "../../store/appStore";
 import { downloadICalFile } from "../../utils/ical-export";
+import { Tooltip } from "../ui/Tooltip";
 
 interface TopBarProps {
   currentView: string;
@@ -101,6 +105,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   onSync,
   network,
 }) => {
+  const [isStarOpen, setIsStarOpen] = React.useState(false);
   const {
     ttViewMode, setTtViewMode,
     cpSelectedCourseId, setCpSelectedCourseId, cpOptions, cpSearchTerm, setCpSearchTerm,
@@ -148,6 +153,30 @@ export const TopBar: React.FC<TopBarProps> = ({
     calLoadingMonths ||
     attRecordsLoading;
 
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input field
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      // Check if key is a number between 1 and 9
+      const num = parseInt(e.key);
+      if (!isNaN(num) && num > 0 && num <= Math.min(pinnedLinks.length, 9)) {
+        e.preventDefault();
+        handleLinkClick(pinnedLinks[num - 1]);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [currentView, pinnedLinks, handleLinkClick]);
+
   return (
     <>
       {/* Top Fade Mask */}
@@ -160,7 +189,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         }}
       />
 
-      <header className="h-16 md:h-18 bg-transparent fixed w-full top-0 z-100 pl-4 md:pl-8 pr-0 flex items-center justify-between shrink-0 transition-all pointer-events-none">
+      <header className="h-16 md:h-18 bg-transparent fixed w-full top-0 z-100 px-4 md:px-8 flex items-center justify-between shrink-0 transition-all pointer-events-none">
         <div className="flex items-center h-full pointer-events-auto">
           <div className="flex flex-col justify-center h-full gap-0.5">
             <div className="flex items-center gap-2 md:gap-3">
@@ -199,29 +228,54 @@ export const TopBar: React.FC<TopBarProps> = ({
 
         <div className="flex items-center gap-2 md:gap-4 h-full pointer-events-auto">
           <AnimatePresence mode="wait">
-            {currentView === "dashboard" && (
+            {pinnedLinks.length > 0 && (
               <motion.div
                 key="dashboard-links"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20, transition: { duration: 0.15 } }}
-                className="hidden xl:flex items-center gap-2.5"
+                className="hidden xl:flex items-center gap-2.5 relative"
               >
-                {pinnedLinks.slice(0, 3).map((link, idx) => {
-                  const Icon = getCategoryIcon(link.title, link.url);
-                  return (
-                    <button
-                      key={idx}
-                      onClick={() => handleLinkClick(link)}
-                      className="flex items-center gap-2 px-3.5 py-1.5 border-2 border-(--border-main) rounded-xl shadow-none hover:-translate-y-0.5 hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) transition-all font-black font-expanded text-xs uppercase text-(--text-main) bg-(--bg-surface) cursor-pointer group hover:border-(--accent-base)"
-                    >
-                      <Icon className="w-4 h-4 text-(--text-muted) transition-colors" />
-                      <span className="transition-colors">{link.title}</span>
-                    </button>
-                  );
-                })}
+                {isStarOpen && (
+                  <div 
+                    className="fixed inset-0 z-[998]"
+                    onClick={() => setIsStarOpen(false)}
+                  />
+                )}
+                <div 
+                  className="flex items-center justify-center w-11 h-11 rounded-[14px] bg-transparent text-(--text-muted) border-0 cursor-pointer hover:text-(--text-main) transition-colors shadow-none z-[999]"
+                  onClick={() => setIsStarOpen(!isStarOpen)}
+                >
+                  <Star className="w-6 h-6" />
+                </div>
+                
+                <div className={`absolute top-full right-0 mt-3 transition-all duration-200 flex flex-col gap-1.5 bg-(--bg-surface) border-2 border-(--border-dim) rounded-[24px] p-2 popup-shadow min-w-56 z-[999] ${isStarOpen ? 'opacity-100 pointer-events-auto translate-y-0' : 'opacity-0 pointer-events-none translate-y-2'}`}>
+                  {pinnedLinks.slice(0, 9).map((link, idx) => {
+                    const Icon = getCategoryIcon(link.title, link.url);
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => {
+                          handleLinkClick(link);
+                          setIsStarOpen(false);
+                        }}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-[16px] bg-transparent hover:bg-(--bg-highlight) transition-colors text-left group/item border-2 border-transparent hover:border-(--border-dim)"
+                      >
+                        <div className="w-6 h-6 rounded-md bg-(--bg-main) flex items-center justify-center text-[10px] font-black font-mono text-(--text-muted) transition-colors border-2 border-(--border-dim) shrink-0 group-hover/item:border-(--border-main) group-hover/item:text-(--text-main)">
+                          {idx + 1}
+                        </div>
+                        <div className="flex-1 flex items-center gap-2 min-w-0">
+                          <Icon className="w-4 h-4 text-(--text-muted) group-hover/item:text-(--text-main) transition-colors shrink-0" />
+                          <span className="text-xs font-bold text-(--text-main) truncate uppercase">{link.title}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </motion.div>
             )}
+          </AnimatePresence>
+          <AnimatePresence mode="wait">
 
             {currentView === "timetable" && (
               <motion.div
@@ -244,40 +298,40 @@ export const TopBar: React.FC<TopBarProps> = ({
                   onChange={(id: string) => onTimetableSemChange?.(id)}
                 />
 
-                <div className="hidden sm:flex bg-(--bg-highlight) rounded-full p-0.5 w-max border-2 border-(--border-main) shadow-(--brutal-shadow-sm)">
-                  <button
-                    onClick={() => setTtViewMode("grid")}
-                    className={`px-3 py-1 text-xs font-bold transition-all duration-fast flex items-center gap-1.5 ${
-                      ttViewMode === "grid"
-                        ? "bg-(--text-main) text-(--bg-main) rounded-[20px]"
-                        : "bg-transparent text-(--text-muted) hover:text-(--text-main) rounded-l-[20px] rounded-r-md"
-                    }`}
-                  >
-                    <GridView className="w-3.5 h-3.5" />
-                    <span>Grid</span>
-                  </button>
-                  <button
-                    onClick={() => setTtViewMode("list")}
-                    className={`px-3 py-1 text-xs font-bold transition-all duration-fast flex items-center gap-1.5 ${
-                      ttViewMode === "list"
-                        ? "bg-(--text-main) text-(--bg-main) rounded-[20px]"
-                        : "bg-transparent text-(--text-muted) hover:text-(--text-main) rounded-md"
-                    }`}
-                  >
-                    <List className="w-3.5 h-3.5" />
-                    <span>List</span>
-                  </button>
-                  <button
-                    onClick={() => setTtViewMode("week")}
-                    className={`px-3 py-1 text-xs font-bold transition-all duration-fast flex items-center gap-1.5 ${
-                      ttViewMode === "week"
-                        ? "bg-(--text-main) text-(--bg-main) rounded-[20px]"
-                        : "bg-transparent text-(--text-muted) hover:text-(--text-main) rounded-l-md rounded-r-[20px]"
-                    }`}
-                  >
-                    <CalendarMonth className="w-3.5 h-3.5" />
-                    <span>Week</span>
-                  </button>
+                <div className="hidden sm:flex bg-transparent rounded-full border-2 border-(--border-main) shadow-(--brutal-shadow-sm) items-center">
+                  <SegmentedControl
+                    options={[
+                      {
+                        label: (
+                          <div className="flex items-center gap-1.5">
+                            <GridView className="w-3.5 h-3.5" />
+                            <span>Grid</span>
+                          </div>
+                        ),
+                        value: "grid",
+                      },
+                      {
+                        label: (
+                          <div className="flex items-center gap-1.5">
+                            <List className="w-3.5 h-3.5" />
+                            <span>List</span>
+                          </div>
+                        ),
+                        value: "list",
+                      },
+                      {
+                        label: (
+                          <div className="flex items-center gap-1.5">
+                            <CalendarMonth className="w-3.5 h-3.5" />
+                            <span>Week</span>
+                          </div>
+                        ),
+                        value: "week",
+                      },
+                    ]}
+                    value={ttViewMode}
+                    onChange={(val) => setTtViewMode(val as any)}
+                  />
                 </div>
 
                 <button
@@ -298,10 +352,11 @@ export const TopBar: React.FC<TopBarProps> = ({
                     });
                   }}
                   disabled={ttCourses.length === 0}
-                  title="Export timetable as iCal (.ics) file for Google Calendar"
                   className="bg-(--bg-surface) border-2 border-(--border-main) text-(--text-main) p-1.5 rounded-xl shadow-(--brutal-shadow-sm) hover:-translate-y-0.5 hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                 >
-                  <Download className="w-4 h-4" />
+                  <Tooltip text="Export timetable as iCal (.ics) file for Google Calendar">
+                    <Download className="w-4 h-4" />
+                  </Tooltip>
                 </button>
               </motion.div>
             )}
@@ -317,9 +372,10 @@ export const TopBar: React.FC<TopBarProps> = ({
                 <button
                   onClick={() => setIsMarksModernView(!isMarksModernView)}
                   className="hidden sm:flex items-center justify-center bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) w-8 h-8 rounded-xl transition-colors cursor-pointer"
-                  title={isMarksModernView ? "Switch to Legacy View" : "Switch to Modern View"}
                 >
-                  {isMarksModernView ? <List className="w-4 h-4" /> : <GridView className="w-4 h-4" />}
+                  <Tooltip text={isMarksModernView ? "Switch to Legacy View" : "Switch to Modern View"}>
+                    {isMarksModernView ? <List className="w-4 h-4" /> : <GridView className="w-4 h-4" />}
+                  </Tooltip>
                 </button>
 
                 <SemesterDropdown
@@ -458,7 +514,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             )}
           </AnimatePresence>
 
-          <div className="relative shrink-0 flex items-center justify-center mr-2 lg:mr-4">
+          <div className="relative shrink-0 flex items-center justify-center pointer-events-auto">
             <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
               className="flex items-center focus:outline-none group cursor-pointer transition-all hover:scale-105 active:scale-95"

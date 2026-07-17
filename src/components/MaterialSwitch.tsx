@@ -17,7 +17,6 @@ export const MaterialSwitch = ({
   const [isHovered, setIsHovered] = useState(false);
   const [isActive, setIsActive] = useState(false);
 
-  // M3 Expressive Switch
   const thumbSize =
     isActive && !disabled ? 28 : selected || isHovered ? 24 : 16;
 

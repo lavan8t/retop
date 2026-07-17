@@ -23,6 +23,7 @@ import { AttendanceRow } from "./HomeRows";
 import { EmptyState } from "../EmptyState";
 import { getCategoryIcon } from "../../utils/icons";
 import { useDataStore } from "../../store/dataStore";
+import { Tooltip } from "../ui/Tooltip";
 
 interface QuickLinksMenuProps {
   menuCategories: MenuCategory[];
@@ -105,6 +106,8 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
+      if (e.defaultPrevented) return;
+      
       const isInput =
         target.tagName === "INPUT" ||
         target.tagName === "TEXTAREA" ||
@@ -163,6 +166,13 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
     });
   }, [attendance, attSort, ttCourses]);
 
+  const overallAttendance = useMemo(() => {
+    const valid = attendance.filter((a) => !isNaN(parseFloat(a.attendance)));
+    if (valid.length === 0) return "--";
+    const sum = valid.reduce((acc, a) => acc + parseFloat(a.attendance), 0);
+    return Math.round(sum / valid.length) + "%";
+  }, [attendance]);
+
   // Handle auto-scroll for keyboard nav
   useEffect(() => {
     if (query) {
@@ -211,40 +221,49 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
 
         {/* Attendance Compact Box */}
         <div className="flex-1 overflow-visible flex flex-col min-h-0 pb-2">
-          <ListCard
-            title="Attendance"
-            onClickTitle={() =>
+          <Card
+            onClick={() =>
               onNavigate({
                 title: "Class Attendance",
                 url: "studentattendance",
                 category: "Academics",
               })
             }
-            bgClass="bg-(--bg-surface)"
-            borderClass="border-(--border-main)"
-            headerAction={
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setAttSort((prev) => (prev === "asc" ? "desc" : "asc"));
-                }}
-                className="flex items-center justify-center p-1.5 bg-transparent hover:bg-black/10 rounded-lg transition-colors text-(--text-main) active:scale-95"
-                title="Toggle Sort Order"
-              >
-                <SwapVert
-                  className={`w-4 h-4 transition-transform ${attSort === "asc" ? "rotate-180" : ""}`}
-                />
-              </button>
-            }
+            className="group shrink-0 bg-(--bg-highlight) rounded-4xl flex flex-col relative z-30 cursor-pointer overflow-hidden border-2 border-transparent hover:border-(--border-main) transition-all h-full"
           >
-            {sortedAttendance.length === 0 ? (
-              <EmptyState msg="No Registered Courses" size="sm" />
-            ) : (
-              sortedAttendance.map((c, i) => (
-                <AttendanceRow key={i} course={c} />
-              ))
-            )}
-          </ListCard>
+            <div className="px-5 py-3 border-b-2 border-(--border-main) flex justify-between items-center shrink-0">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-expanded font-bold uppercase text-(--text-muted) mb-1">Attendance</span>
+                <span className="text-3xl font-black font-expanded leading-none text-(--text-main)">
+                  {overallAttendance}
+                </span>
+              </div>
+              
+              <Tooltip text="Toggle Sort Order">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setAttSort((prev) => (prev === "asc" ? "desc" : "asc"));
+                  }}
+                  className="flex items-center justify-center p-2 bg-transparent hover:bg-black/10 rounded-full transition-colors text-(--text-muted) active:scale-95"
+                >
+                  <SwapVert
+                    className={`w-5 h-5 transition-transform ${attSort === "asc" ? "rotate-180" : ""}`}
+                  />
+                </button>
+              </Tooltip>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
+              {sortedAttendance.length === 0 ? (
+                <EmptyState msg="No Registered Courses" size="sm" />
+              ) : (
+                sortedAttendance.map((c, i) => (
+                  <AttendanceRow key={i} course={c} />
+                ))
+              )}
+            </div>
+          </Card>
         </div>
       </div>
 
@@ -258,7 +277,7 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
             animate={{ opacity: 1, scaleX: 1, scaleY: 1, x: 0 }}
             exit={{ opacity: 0, scaleX: 0.3, scaleY: 0.8, x: -20 }}
             transition={{ type: "spring", stiffness: 500, damping: 30 }}
-            className={`fixed z-200 bg-(--bg-surface) border-4 border-(--border-main) rounded-2xl shadow-(--brutal-shadow-hover) p-3 flex flex-col`}
+            className={`fixed z-200 bg-(--bg-surface) border-0 rounded-2xl popup-shadow p-3 flex flex-col`}
             style={{
               transformOrigin: "left center",
               left: Math.min(

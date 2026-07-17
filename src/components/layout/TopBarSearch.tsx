@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 import {
   Keep,
   Error,
@@ -8,11 +8,13 @@ import {
   ChevronRight,
   Home,
   Sync,
+  Star,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { QuickLink, MenuCategory } from "../../types/vtop";
 import { MarqueeText } from "../common/MarqueeText";
 import { useDataStore } from "../../store/dataStore";
 import { getCategoryIcon } from "../../utils/icons";
+import { Tooltip } from "../ui/Tooltip";
 
 interface TopBarSearchProps {
   currentView: string;
@@ -98,8 +100,15 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
   useEffect(() => {
     if (!isExpanded) {
       setQuery("");
+      setActiveMenu(null);
     }
   }, [isExpanded]);
+
+  useEffect(() => {
+    if (query) {
+      setActiveMenu(null);
+    }
+  }, [query]);
 
   useEffect(() => {
     const handleOmniboxType = (e: any) => {
@@ -225,8 +234,8 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
 
   const isSearchActive = isExpanded;
 
-  const menuVariants = {
-    hidden: { opacity: 0, scale: 0.4, y: -20 },
+  const menuVariants: Variants = {
+    hidden: { opacity: 0, scale: 0.9, y: -10 },
     visible: {
       opacity: 1,
       scale: 1,
@@ -235,8 +244,8 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
     },
     exit: {
       opacity: 0,
-      scale: 0.4,
-      y: -20,
+      scale: 0.9,
+      y: -10,
       transition: { type: "spring", stiffness: 1200, damping: 40 },
     },
   };
@@ -245,13 +254,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
     <div className="relative flex flex-col z-50">
       {/* Unified Search Bar */}
       <div
-        className={`group flex items-center gap-3 transition-all duration-fast ease-out cursor-text md:min-w-[360px] pl-4 pr-3 h-12 md:h-14 rounded-[32px] relative z-10000
-          ${
-            isExpanded
-              ? `bg-(--bg-surface) border-2 border-(--border-main) shadow-(--brutal-shadow-hover) ${isSearchActive ? "rounded-b-none border-b-transparent" : ""}`
-              : "bg-transparent border-2 border-transparent shadow-none"
-          }
-        `}
+        className={`group flex items-center gap-3 transition-all duration-fast ease-out cursor-text md:min-w-[360px] pl-4 pr-3 h-12 md:h-14 rounded-[32px] relative z-10000 bg-transparent border-2 border-transparent shadow-none`}
       >
         <div
           className="relative"
@@ -266,34 +269,35 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
             );
           }}
         >
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (onBack) onBack();
-            }}
-            title="Return to Dashboard"
-            className="relative flex items-center justify-center shrink-0 cursor-pointer hover:opacity-75 transition-opacity"
-          >
-            <div className="flex items-end pb-1">
-              <span className="font-expanded font-black text-2xl md:text-3xl italic lowercase leading-none text-(--text-main) group-focus-within:text-(--accent-hover) transition-colors">
-                re
-              </span>
-              <motion.div
-                animate={status === "loading" ? { scale: [1, 2, 1] } : {}}
-                transition={{
-                  duration: 0.8,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-                className={`relative ml-0.5 md:ml-1 mb-0.5 md:mb-0.75 flex items-center justify-center transition-all origin-bottom-left w-1 h-1 md:w-1.5 md:h-1.5 bg-(--accent-base) rounded-full ${status === "loading" ? "" : "group-focus-within:scale-[2]"}`}
-              >
-                <Search
-                  className={`w-0.5 h-0.5 md:w-1 md:h-1 text-(--text-inverse) transition-opacity absolute ${status === "loading" ? "opacity-0" : "opacity-0 group-focus-within:opacity-100"}`}
-                  strokeWidth={4}
-                />
-              </motion.div>
-            </div>
-          </button>
+          <Tooltip text="Return to Dashboard">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onBack) onBack();
+              }}
+              className="relative flex items-center justify-center shrink-0 cursor-pointer hover:opacity-75 transition-opacity"
+            >
+              <div className="flex items-end pb-1">
+                <span className="font-expanded font-black text-2xl md:text-3xl italic lowercase leading-none text-(--text-main) group-focus-within:text-(--accent-hover) transition-colors">
+                  re
+                </span>
+                <motion.div
+                  animate={status === "loading" ? { scale: [1, 2, 1] } : {}}
+                  transition={{
+                    duration: 0.8,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                  className={`relative ml-[-1px] md:ml-[-3px] mb-0.5 md:mb-0.75 flex items-center justify-center transition-all origin-bottom-left w-1 h-1 md:w-1.5 md:h-1.5 bg-(--accent-base) rounded-full ${status === "loading" ? "" : "group-focus-within:scale-[2]"}`}
+                >
+                  <Search
+                    className={`w-0.5 h-0.5 md:w-1 md:h-1 text-(--text-inverse) transition-opacity absolute ${status === "loading" ? "opacity-0" : "opacity-0 group-focus-within:opacity-100"}`}
+                    strokeWidth={4}
+                  />
+                </motion.div>
+              </div>
+            </button>
+          </Tooltip>
 
           {/* Logo hover dropdown */}
           <AnimatePresence>
@@ -396,9 +400,9 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="absolute top-full left-0 w-full max-w-[calc(100vw-24px)] bg-(--bg-surface) border-2 border-t-0 border-(--border-main) rounded-[32px] rounded-t-none z-10001 origin-top-left flex flex-col will-change-transform transform-gpu overflow-hidden popup-shadow"
+            className="absolute top-full mt-2 left-0 w-full max-w-[calc(100vw-24px)] bg-(--bg-surface) border-0 rounded-[32px] z-10001 origin-top-left flex flex-col will-change-transform transform-gpu overflow-hidden popup-shadow p-2"
           >
-            <div className="p-2">
+            <div className="p-1">
               <div className="flex flex-col gap-1 max-h-[50vh] overflow-y-auto custom-scrollbar pr-1.5">
                 {!query ? (
                   <div
@@ -410,17 +414,8 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                       const CatIcon = getCategoryIcon(cat.title);
                       const isActive = activeMenu?.cat.title === cat.title;
                       return (
-                        <motion.button
+                        <div
                           key={catIdx}
-                          whileTap={{ scale: 0.96 }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedIndex(0);
-                            setActiveMenu({
-                              cat,
-                              rect: e.currentTarget.getBoundingClientRect(),
-                            });
-                          }}
                           onMouseEnter={(e) => {
                             setSelectedIndex(0);
                             setActiveMenu({
@@ -443,7 +438,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                           <ChevronRight
                             className={`w-4 h-4 transition-all ${isActive ? "opacity-100 text-(--text-inverse)" : "opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 text-(--text-muted) group-hover:text-(--accent-base)"}`}
                           />
-                        </motion.button>
+                        </div>
                       );
                     })}
                   </div>
@@ -497,29 +492,24 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                             <div
                               className={`absolute right-1 top-1 bottom-1 w-12 pr-1 flex items-center justify-end rounded-r-xl transition-all pointer-events-none z-20 ${!isPinned ? "opacity-50 group-hover:opacity-100" : "opacity-100"}`}
                             >
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onTogglePin(link);
-                                }}
-                                className={`pointer-events-auto p-1.5 rounded-xl transition-all border-2 shadow-none ${
-                                  isPinned
-                                    ? "bg-transparent text-(--text-main) border-transparent"
-                                    : "bg-transparent border-transparent text-(--text-dim) hover:bg-(--text-main) hover:text-(--bg-main)"
-                                }`}
-                                title={
-                                  isPinned ? "Unpin from Dock" : "Pin to Dock"
-                                }
-                              >
-                                <Keep
-                                  className={`w-3.5 h-3.5 transition-opacity ${!isPinned ? "opacity-50 group-hover:opacity-100" : "opacity-100"} ${isPinned ? "text-(--accent-base)" : ""}`}
-                                  style={{
-                                    transform: isPinned
-                                      ? "rotate(45deg)"
-                                      : "none",
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onTogglePin(link);
                                   }}
-                                />
-                              </button>
+                                  className={`pointer-events-auto p-1.5 rounded-xl transition-all border-2 shadow-none hover:bg-(--bg-highlight) ${
+                                    isPinned
+                                      ? "bg-transparent text-(--accent-base) border-transparent"
+                                      : "bg-transparent border-transparent text-(--text-muted) hover:text-(--text-main)"
+                                  }`}
+                                  title={
+                                    isPinned ? "Unpin from Dock" : "Pin to Dock"
+                                  }
+                                >
+                                  <Star
+                                    className={`w-4 h-4 transition-transform ${isPinned ? "scale-110" : "scale-100 opacity-50 group-hover:opacity-100"}`}
+                                  />
+                                </button>
                             </div>
                           </div>
                         </React.Fragment>
@@ -527,6 +517,9 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                     });
                   })()
                 )}
+              </div>
+              <div className="w-full text-center py-2 px-3 text-[10px] font-bold text-(--text-muted) border-t-2 border-(--border-dim) bg-(--bg-surface) shrink-0 mt-1">
+                Hold Shift and press Enter to launch that page in VTOP
               </div>
             </div>
           </motion.div>

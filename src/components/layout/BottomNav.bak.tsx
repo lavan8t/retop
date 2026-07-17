@@ -211,14 +211,14 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       title: "Home",
       fullTitle: "Home",
       icon: Home,
-      color: "bg-yellow-400",
+      color: "bg-card-yellow",
       onClick: () => setCurrentView("dashboard"),
       isActive: currentView === "dashboard" && !isOmniboxOpen,
     });
     const colors = [
       "bg-purple-400",
-      "bg-cyan-400",
-      "bg-lime-400",
+      "bg-card-cyan",
+      "bg-card-lime",
       "bg-pink-400",
     ];
     pinnedLinks.slice(0, 4).forEach((link, idx) => {
@@ -395,7 +395,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             } ${
               link.isActive
                 ? `${link.color} text-black border-(--border-main) ${activeShadowClass}`
-                : "text-zinc-400 hover:text-zinc-200 border-transparent bg-transparent hover:bg-zinc-800"
+                : "text-content-muted hover:text-content border-transparent bg-transparent hover:bg-highlight"
             }`}
             whileTap={{ scale: 0.96 }}
           >

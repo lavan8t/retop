@@ -6,7 +6,7 @@ import { QuickLink } from "../types/vtop";
 export interface AppSettings {
   defaultView: "modern" | "legacy";
   themeMode: "dark" | "light" | "amoled" | "auto";
-  accentColor: "blue" | "purple" | "pink" | "red" | "orange" | "yellow" | "lime" | "green" | "cyan" | "indigo" | "random";
+  accentColor: "blue" | "purple" | "pink" | "red" | "orange" | "yellow" | "lime" | "green" | "cyan" | "indigo" | "random" | "neon-green" | "neon-yellow" | "neon-orange" | "neon-red";
   randomAccentColor: boolean;
   blurCgpa: boolean;
   googleLinked: boolean;
@@ -52,6 +52,10 @@ const MATERIAL_ACCENTS: Record<string, string> = {
   lime: "#65a30d",
   green: "#16a34a",
   cyan: "#0891b2",
+  "neon-green": "#39ff14",
+  "neon-yellow": "#eaff00",
+  "neon-orange": "#ff6700",
+  "neon-red": "#ff073a",
 };
 
 import { argbFromHex, hexFromArgb, Hct, SchemeVibrant, MaterialDynamicColors } from "@material/material-color-utilities";
@@ -89,7 +93,7 @@ export const applyTheme = (settings: AppSettings) => {
 
   const isDark = appliedTheme === "dark" || appliedTheme === "amoled";
   
-  // Generate Material Theme
+  // Initialize Material Theme
   const hct = Hct.fromInt(argbFromHex(baseColor));
   const scheme = isDark 
     ? new SchemeVibrant(hct, true, 0.0) 

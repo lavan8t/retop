@@ -1,20 +1,32 @@
 import { create } from "zustand";
 import { ViewType, CoursePageOption } from "../types/vtop";
 
-export type Toast = { id: string; message: string; type: 'error' | 'warning' | 'info' | 'success' };
+export type SnackbarAction = {
+  label: string;
+  onClick: () => void;
+};
+
+export type SnackbarData = {
+  id: string;
+  message: string;
+  icon?: React.ElementType;
+  action?: SnackbarAction;
+  type?: 'default' | 'error' | 'success';
+};
+
 export type NetworkLog = { url: string; timestamp: number; key?: string };
 
 type AppState = {
   isModernUI: boolean;
   isPeeking: boolean;
   currentView: ViewType;
-  toasts: Toast[];
+  snackbars: SnackbarData[];
   networkLogs: NetworkLog[];
   setIsModernUI: (val: boolean) => void;
   setIsPeeking: (val: boolean) => void;
   setCurrentView: (val: ViewType) => void;
-  addToast: (toast: Omit<Toast, 'id'>) => void;
-  removeToast: (id: string) => void;
+  addSnackbar: (snackbar: Omit<SnackbarData, 'id'>) => void;
+  removeSnackbar: (id: string) => void;
   logNetworkRequest: (url: string, key?: string) => void;
 
   ttViewMode: "grid" | "list" | "week";
@@ -46,7 +58,7 @@ export const useAppStore = create<AppState>((set) => ({
   isModernUI: sessionStorage.getItem("vtop-legacy-mode") !== "true",
   isPeeking: false,
   currentView: (sessionStorage.getItem("vtop-retop-view") as ViewType) || "dashboard",
-  toasts: [],
+  snackbars: [],
   networkLogs: [],
   setIsModernUI: (val) => set({ isModernUI: val }),
   setIsPeeking: (val) => set({ isPeeking: val }),
@@ -61,13 +73,13 @@ export const useAppStore = create<AppState>((set) => ({
       );
     }
   },
-  addToast: (toast) =>
+  addSnackbar: (snackbar) =>
     set((state) => ({
-      toasts: [...state.toasts, { ...toast, id: Math.random().toString(36).substr(2, 9) }],
+      snackbars: [...state.snackbars, { ...snackbar, id: Math.random().toString(36).substr(2, 9) }],
     })),
-  removeToast: (id) =>
+  removeSnackbar: (id) =>
     set((state) => ({
-      toasts: state.toasts.filter((t) => t.id !== id),
+      snackbars: state.snackbars.filter((s) => s.id !== id),
     })),
   logNetworkRequest: (url, key) =>
     set((state) => ({

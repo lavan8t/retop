@@ -61,7 +61,7 @@ const encryptData = async (data: string): Promise<{ ciphertext: ArrayBuffer, iv:
 
 const decryptData = async (ciphertext: ArrayBuffer, iv: Uint8Array): Promise<string> => {
   const key = await getEncryptionKey();
-  const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ciphertext);
+  const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv as BufferSource }, key, ciphertext);
   return new TextDecoder().decode(decrypted);
 };
 

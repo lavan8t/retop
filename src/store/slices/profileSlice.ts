@@ -37,10 +37,32 @@ export const createProfileSlice: StateCreator<DataState, [], [], ProfileSlice> =
           try {
             const imgRes = await fetch(`/vtop/users/image/?id=${regNo}`);
             const blob = await imgRes.blob();
-            const reader = new FileReader();
-            reader.readAsDataURL(blob);
-            profileImgBase64 = await new Promise((res) => {
-              reader.onloadend = () => res(reader.result as string);
+            
+            profileImgBase64 = await new Promise((resolve) => {
+              const url = URL.createObjectURL(blob);
+              const img = new Image();
+              img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                  ctx.drawImage(img, 0, 0);
+                  resolve(canvas.toDataURL('image/webp', 0.8));
+                } else {
+                  const reader = new FileReader();
+                  reader.onloadend = () => resolve(reader.result as string);
+                  reader.readAsDataURL(blob);
+                }
+                URL.revokeObjectURL(url);
+              };
+              img.onerror = () => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.readAsDataURL(blob);
+                URL.revokeObjectURL(url);
+              };
+              img.src = url;
             });
           } catch (e) {
             console.warn("Failed to fetch profile image for cache", e);

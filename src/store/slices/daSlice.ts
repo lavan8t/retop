@@ -1,14 +1,13 @@
 import { StateCreator } from "zustand";
 import { DataState } from "../dataStore";
 import { VTOPNetwork } from "../../utils/network";
-import { 
-  DACourse, 
-  DAAssignment, 
-  parseDASemesters, 
-  parseDACourses, 
-  parseDAAssignments 
+import {
+  DACourse,
+  DAAssignment,
+  parseDASemesters,
+  parseDACourses,
+  parseDAAssignments,
 } from "../../parsers/digital-assignments";
-
 
 export interface DASlice {
   daSemesters: { id: string; label: string }[];
@@ -19,12 +18,23 @@ export interface DASlice {
   daError: string | null;
   daRawHtml: string;
   fetchDASemesters: (network: VTOPNetwork, force?: boolean) => Promise<void>;
-  fetchDACourses: (network: VTOPNetwork, semesterId: string, force?: boolean) => Promise<void>;
-  fetchDAAssignments: (network: VTOPNetwork, classId: string, force?: boolean) => Promise<void>;
+  fetchDACourses: (
+    network: VTOPNetwork,
+    semesterId: string,
+    force?: boolean,
+  ) => Promise<void>;
+  fetchDAAssignments: (
+    network: VTOPNetwork,
+    classId: string,
+    force?: boolean,
+  ) => Promise<void>;
   setDaSelectedSem: (semId: string) => void;
 }
 
-export const createDASlice: StateCreator<DataState, [], [], DASlice> = (set, get) => ({
+export const createDASlice: StateCreator<DataState, [], [], DASlice> = (
+  set,
+  get,
+) => ({
   daSemesters: [],
   daSelectedSem: "",
   daCourses: [],
@@ -66,19 +76,21 @@ export const createDASlice: StateCreator<DataState, [], [], DASlice> = (set, get
     }
   },
 
-  fetchDACourses: async (network: VTOPNetwork, semesterId: string, force = false) => {
+  fetchDACourses: async (
+    network: VTOPNetwork,
+    semesterId: string,
+    force = false,
+  ) => {
     const { status } = get();
     if (status === "Demo Mode Active") {
       set({
         daCourses: [
           {
             classId: "123",
-            code: "CSE1001",
+            code: "CS101",
             title: "Problem Solving and Programming",
             type: "TH",
             faculty: "Dr. Demo",
-            slot: "A1",
-            credits: "3",
           },
         ],
       });
@@ -87,8 +99,13 @@ export const createDASlice: StateCreator<DataState, [], [], DASlice> = (set, get
 
     set({ daLoading: true, daError: null, daCourses: [], daRawHtml: "" });
     try {
-      const isPastSemester = get().daSemesters.length > 0 && semesterId !== get().daSemesters[0].id;
-      const html = await network.getDACourses(semesterId, force, isPastSemester);
+      const isPastSemester =
+        get().daSemesters.length > 0 && semesterId !== get().daSemesters[0].id;
+      const html = await network.getDACourses(
+        semesterId,
+        force,
+        isPastSemester,
+      );
       const courses = parseDACourses(html);
       set({ daCourses: courses, daRawHtml: html });
     } catch (e: any) {
@@ -102,23 +119,29 @@ export const createDASlice: StateCreator<DataState, [], [], DASlice> = (set, get
     }
   },
 
-  fetchDAAssignments: async (network: VTOPNetwork, classId: string, force = false) => {
+  fetchDAAssignments: async (
+    network: VTOPNetwork,
+    classId: string,
+    force = false,
+  ) => {
     const { status } = get();
     if (status === "Demo Mode Active") return;
 
     set({ daLoading: true, daError: null });
     try {
       // Find which semester this course belongs to
-      const course = get().daCourses.find(c => c.classId === classId);
-      const isPastSemester = get().daSemesters.length > 0 && get().daSelectedSem !== get().daSemesters[0].id;
-      
+      const course = get().daCourses.find((c) => c.classId === classId);
+      const isPastSemester =
+        get().daSemesters.length > 0 &&
+        get().daSelectedSem !== get().daSemesters[0].id;
+
       const html = await network.getDAForCourse(classId, force, isPastSemester);
       const assignments = parseDAAssignments(html);
       set((state) => ({
         daAssignments: {
           ...state.daAssignments,
-          [classId]: assignments
-        }
+          [classId]: assignments,
+        },
       }));
     } catch (e: any) {
       if (e.message !== "OFFLINE_CACHE_MISS") {
@@ -129,5 +152,5 @@ export const createDASlice: StateCreator<DataState, [], [], DASlice> = (set, get
     } finally {
       set({ daLoading: false });
     }
-  }
+  },
 });

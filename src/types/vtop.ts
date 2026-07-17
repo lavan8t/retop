@@ -68,6 +68,7 @@ export interface CurriculumCourse {
   p: string;
   j: string;
   basket: string;
+  isCompleted?: boolean;
 }
 
 

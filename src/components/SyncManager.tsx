@@ -80,10 +80,7 @@ export const SyncManager = () => {
   };
 
   return (
-    <div className="flex flex-col gap-3 mt-4 w-full">
-      <div className="font-expanded uppercase text-sm font-black mb-2 border-b-2 border-(--border-main) pb-2">
-        Sync Manager
-      </div>
+    <div className="flex flex-col gap-3 mt-2 w-full">
       {loading ? (
         <div className="text-xs text-(--text-muted) uppercase font-expanded">Loading cache...</div>
       ) : keys.length === 0 ? (
@@ -100,7 +97,7 @@ export const SyncManager = () => {
                 </div>
                 <button
                   onClick={() => handleDelete(k.key)}
-                  className="px-3 py-1.5 rounded-lg text-[10px] font-black font-expanded uppercase transition-all border-2 border-(--border-main) shadow-none hover:-translate-y-px hover:shadow-(--brutal-shadow-hover) cursor-pointer bg-(--accent-error) text-black whitespace-nowrap ml-2"
+                  className="px-3 py-1.5 rounded-lg text-[10px] font-black font-expanded uppercase transition-all border-2 border-(--border-main) shadow-none hover:shadow-(--brutal-shadow-hover) cursor-pointer bg-(--accent-error) text-black whitespace-nowrap ml-2"
                 >
                   Clear
                 </button>

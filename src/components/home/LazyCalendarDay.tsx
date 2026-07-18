@@ -12,8 +12,8 @@ interface LazyCalendarDayProps {
   events: Event[];
   getClassesForDate: (d: Date, calEvent: any) => UpcomingClass[];
   use24HourTime: boolean;
-  nowRef: React.RefObject<HTMLDivElement>;
-  setSelectedCourse: (course: { data: UpcomingClass; pos: { x: number; y: number } } | null) => void;
+  nowRef: React.RefObject<HTMLDivElement | null>;
+  todayRef?: React.RefObject<HTMLDivElement | null>;
   onNavigate?: (link: any) => void;
 }
 
@@ -28,7 +28,6 @@ export const LazyCalendarDay = React.memo(({
   use24HourTime,
   todayRef,
   nowRef,
-  setSelectedCourse,
   onNavigate
 }: LazyCalendarDayProps) => {
   const isToday = d.toDateString() === new Date().toDateString();
@@ -135,7 +134,7 @@ export const LazyCalendarDay = React.memo(({
             className="w-full text-left pb-2 flex flex-col opacity-100"
           >
             <span
-              className={`font-black font-expanded uppercase text-base md:text-lg ${evt.data.isHoliday ? "text-red-500" : "text-(--text-main)"}`}
+              className={`font-black font-expanded uppercase text-base md:text-lg ${evt.data.isHoliday ? "text-att-danger" : "text-(--text-main)"}`}
             >
               {evt.data.info}
             </span>
@@ -147,18 +146,12 @@ export const LazyCalendarDay = React.memo(({
           </div>
         ))}
 
-        {doneEvents.map((evt: any, i: number) => (
+        {doneEvents.filter((e: any) => e.type !== "class").map((evt: any, i: number) => (
           <div
             key={`done-${i}`}
             className="opacity-50 grayscale-50 pointer-events-none transition-all"
           >
-            {evt.type === "class" ? (
-              <ScheduleRow
-                item={evt.data as UpcomingClass}
-                onClick={() => {}}
-                use24HourTime={use24HourTime}
-              />
-            ) : evt.type === "assignment" ? (
+            {evt.type === "assignment" ? (
               <AssignmentRow 
                 assignment={evt.data as Assignment} 
                 onClick={() => onNavigate && onNavigate({ title: "Digital Assignments", url: "examinations/StudentDA", category: "Examinations" })}
@@ -169,7 +162,7 @@ export const LazyCalendarDay = React.memo(({
               >
                 <div className="flex flex-col">
                   <span
-                    className={`font-black uppercase text-xs ${evt.data.isHoliday ? "text-red-500" : "text-(--text-main)"}`}
+                    className={`font-black uppercase text-xs ${evt.data.isHoliday ? "text-att-danger" : "text-(--text-main)"}`}
                   >
                     {evt.data.info}
                   </span>
@@ -219,13 +212,7 @@ export const LazyCalendarDay = React.memo(({
             {evt.type === "class" ? (
               <ScheduleRow
                 item={evt.data as UpcomingClass}
-                onClick={(e, item) => {
-                  e.stopPropagation();
-                  setSelectedCourse({
-                    data: item,
-                    pos: { x: e.clientX, y: e.clientY },
-                  });
-                }}
+                onClick={() => onNavigate && onNavigate({ title: "Timetable", url: "academics/common/StudentTimeTable", category: "Academics" })}
                 use24HourTime={use24HourTime}
               />
             ) : evt.type === "assignment" ? (
@@ -236,7 +223,7 @@ export const LazyCalendarDay = React.memo(({
             ) : evt.type === "calendar" ? (
               <div className="w-full text-left pb-3 flex flex-col">
                 <span
-                  className={`font-black font-expanded uppercase text-base md:text-lg ${evt.data.isHoliday ? "text-red-500" : "text-(--text-main)"}`}
+                  className={`font-black font-expanded uppercase text-base md:text-lg ${evt.data.isHoliday ? "text-att-danger" : "text-(--text-main)"}`}
                 >
                   {evt.data.info}
                 </span>

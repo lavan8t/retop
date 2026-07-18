@@ -4,11 +4,13 @@ import {
   LocationOn,
   ArrowForward,
   Schedule,
+  PriorityHigh,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { CourseSummary, Assignment, Event } from "../../types/vtop";
 import { UpcomingClass } from "../../utils/timetable-slots";
 import { formatTimeStr } from "../../utils/formatting";
 import { MarqueeText } from "../common/MarqueeText";
+import { SPRING_SNAPPY } from "../../utils/motion";
 
 const rowVariants: Variants = {
   hidden: { opacity: 0 },
@@ -22,24 +24,24 @@ export const AttendanceRow = ({ course }: { course: CourseSummary }) => {
   const val = parseFloat(course.attendance);
   const displayVal = isNaN(val) ? 0 : Math.round(val);
 
-  let badgeBg = "bg-(--attendance-green) text-(--bg-main)";
+  let badgeBg = "bg-(--attendance-green) text-(--bg-main) border-2 border-(--border-main)";
   let barColor = "bg-(--attendance-green)";
 
   if (isNaN(val)) {
-    badgeBg = "bg-(--bg-highlight) text-(--text-muted)";
+    badgeBg = "bg-(--bg-highlight) text-(--text-muted) border-2 border-(--border-dim)";
     barColor = "bg-(--bg-highlight)";
   } else if (val <= 75) {
-    badgeBg = "bg-(--attendance-red) text-(--bg-main)";
-    barColor = "bg-(--attendance-red)";
+    badgeBg = "bg-(--attendance-red) text-(--bg-main) border-2 border-(--border-main)";
+    barColor = "bg-(--attendance-red-bg)";
   } else if (val < 90) {
-    badgeBg = "bg-(--attendance-blue) text-(--bg-main)";
-    barColor = "bg-(--attendance-blue)";
+    badgeBg = "bg-(--attendance-blue) text-(--bg-main) border-2 border-(--border-main)";
+    barColor = "bg-(--attendance-blue-bg)";
   }
 
   return (
     <div className="relative flex items-center justify-between p-2 rounded-xl bg-(--bg-surface) hover:bg-(--bg-highlight) transition-colors cursor-pointer group/row select-none overflow-hidden">
       <div
-        className={`absolute top-0 left-0 h-full ${barColor} opacity-10 group-hover/row:opacity-20 transition-opacity duration-fast`}
+        className={`absolute top-0 left-0 h-full ${barColor} transition-all duration-fast`}
         style={{ width: `${displayVal}%` }}
       />
       <div className="relative z-10 flex items-center gap-2 min-w-0 flex-1 pr-3">
@@ -74,47 +76,64 @@ export const ScheduleRow = ({
 }) => {
   const isLab = item.course?.type?.includes("Lab") || false;
   const isNow = item.status === "Now";
+  const formattedTime = formatTimeStr(item.time, use24HourTime);
+  const timeParts = formattedTime.split(" - ");
+  const startTime = timeParts[0];
+
+  const [isHovered, setIsHovered] = React.useState(false);
 
   return (
     <motion.div
       layout
       variants={rowVariants}
       onClick={(e) => onClick?.(e, item)}
-      className={`p-3 rounded-xl shadow-none cursor-pointer select-none overflow-hidden relative border-2 border-transparent hover:border-(--border-main) ${isNow ? "bg-(--accent-base) text-(--text-inverse)" : "bg-(--bg-surface) text-(--text-main)"}`}
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      className={`flex flex-col p-3 rounded-xl shadow-none cursor-pointer select-none overflow-hidden relative border-2 border-transparent hover:border-(--border-main) ${isNow ? "bg-(--accent-base) text-(--text-inverse)" : "bg-(--bg-surface) text-(--text-main)"}`}
     >
-      <div className="flex-1 min-w-0 flex flex-col justify-center">
-        <div className="flex items-start gap-2 mb-1.5">
-          <span
-            className={`shrink-0 text-[10px] font-black uppercase px-2 py-0.5 rounded-md leading-none mt-0.5 ${
-              isNow
-                ? "bg-(--text-main) text-(--bg-main) shadow-none"
-                : isLab
-                  ? "bg-purple-500 text-(--bg-main) shadow-none"
-                  : "bg-(--text-main) text-(--bg-main) shadow-none"
-            }`}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <motion.div
+            layout="position"
+            animate={{ width: isHovered ? 0 : "auto", opacity: isHovered ? 0 : 1, x: isHovered ? -16 : 0 }}
+            transition={SPRING_SNAPPY}
+            className="font-mono text-[11px] font-bold shrink-0 overflow-hidden whitespace-nowrap"
           >
-            {item.course.slot}
-          </span>
-          <span
-            className={`text-sm font-black leading-tight flex-1 ${isNow ? "text-(--text-inverse)" : "text-(--text-main)"}`}
+            {startTime}
+          </motion.div>
+          <motion.div
+            layout="position"
+            transition={SPRING_SNAPPY}
+            className="text-sm font-black leading-tight flex-1 truncate"
           >
             {item.course.title}
-          </span>
+          </motion.div>
         </div>
-
-        <div
-          className={`flex flex-wrap items-center gap-3 text-[11px] font-bold font-mono mt-1 ${isNow ? "text-(--text-inverse)/90" : "text-(--text-muted)"}`}
-        >
-          <span className="flex items-center gap-1.5 bg-black/10 px-1.5 py-0.5 rounded-md">
-            <Schedule className="w-3 h-3 opacity-80" />
-            {formatTimeStr(item.time, use24HourTime)}
-          </span>
-          <span className="flex items-center gap-1.5 bg-black/10 px-1.5 py-0.5 rounded-md">
-            <LocationOn className="w-3 h-3" />
-            {item.course.venue}
-          </span>
-        </div>
+        <motion.div layout="position" transition={SPRING_SNAPPY} className="text-[10px] font-bold font-mono shrink-0 bg-black/10 px-1.5 py-0.5 rounded-md flex items-center gap-1">
+          <LocationOn className="w-3 h-3" />
+          {item.course.venue}
+        </motion.div>
       </div>
+      
+      <motion.div
+        layout
+        initial={{ height: 0, opacity: 0, marginTop: 0 }}
+        animate={{ height: isHovered ? "auto" : 0, opacity: isHovered ? 1 : 0, marginTop: isHovered ? 8 : 0 }}
+        transition={SPRING_SNAPPY}
+        className="flex items-center justify-between overflow-hidden"
+      >
+        <motion.div 
+          animate={{ x: isHovered ? 0 : -16 }}
+          transition={SPRING_SNAPPY}
+          className="font-mono text-[10px] font-bold opacity-80 flex items-center gap-1"
+        >
+          <Schedule className="w-3 h-3" />
+          {formattedTime}
+        </motion.div>
+        <div className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded leading-none shrink-0 ${isNow ? "bg-(--text-main) text-(--bg-main)" : "bg-black/10"}`}>
+          {item.course.slot}
+        </div>
+      </motion.div>
     </motion.div>
   );
 };
@@ -130,23 +149,32 @@ export const AssignmentRow = ({
     layout
     variants={rowVariants}
     onClick={onClick}
-    className="p-3 rounded-xl bg-(--bg-surface) shadow-none cursor-pointer select-none relative border-2 border-transparent hover:border-(--border-main)"
+    className="p-3 rounded-xl bg-(--bg-surface) hover:bg-(--bg-highlight) shadow-none cursor-pointer select-none relative transition-colors overflow-hidden"
   >
-    <div className="flex justify-between items-start gap-3">
-      <div className="flex-1 min-w-0 pr-6">
-        <div className="text-sm font-black text-(--text-main) leading-tight transition-colors line-clamp-2">
+    <div className="flex flex-col relative z-10">
+      <div className="flex justify-between items-start gap-2">
+        <span className="text-sm font-black text-(--text-main) leading-tight flex-1 line-clamp-2">
           {assignment.title}
-        </div>
-        <div className="text-[10px] font-bold font-mono text-(--bg-main) mt-2 truncate bg-(--text-main) inline-block px-2 py-1 rounded-md shadow-none">
+        </span>
+        <span className="shrink-0 text-[10px] font-bold font-mono text-(--text-muted) bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded-md">
           {assignment.course}
-        </div>
+        </span>
       </div>
-      <div className="shrink-0 flex flex-col items-end">
-        <span className="text-[10px] font-black font-mono uppercase text-(--bg-main) bg-(--att-danger) px-2 py-1 rounded-md shadow-none leading-none">
-          {assignment.dueDate}
+      <div className="flex justify-end mt-2">
+        <span className="text-[10px] font-black font-mono uppercase text-(--accent-base)">
+          Due {assignment.dueDate}
         </span>
       </div>
     </div>
+    <motion.div
+      animate={{ rotate: [0, -15, 15, -10, 10, 0] }}
+      transition={{ repeat: Infinity, duration: 1, repeatDelay: 3 }}
+      className="absolute -bottom-4 -left-2 z-20 pointer-events-none opacity-100 mix-blend-overlay"
+    >
+      <PriorityHigh 
+        className="w-20 h-20 text-red-500"
+      />
+    </motion.div>
   </motion.div>
 );
 
@@ -156,17 +184,19 @@ export const EventRow = ({ event }: { event: Event }) => (
     variants={rowVariants}
     className="p-3 rounded-xl bg-(--bg-surface) shadow-none cursor-pointer select-none relative border-2 border-transparent hover:border-(--border-main)"
   >
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col">
       <div className="flex items-start justify-between gap-2">
-        <span className="text-sm font-black text-(--text-main) leading-tight">
+        <span className="text-sm font-black text-(--text-main) leading-tight flex-1">
           {event.title}
         </span>
-        <span className="shrink-0 text-[10px] font-black uppercase px-2 py-0.5 rounded-md leading-none bg-blue-500 text-(--bg-main) shadow-none">
-          {event.category}
+        <span className="shrink-0 text-[10px] font-bold text-(--text-muted) text-right">
+          {event.organizer}
         </span>
       </div>
-      <div className="text-[11px] font-bold text-(--text-muted) truncate">
-        {event.organizer}
+      <div className="flex justify-end mt-1">
+        <span className="shrink-0 text-[9px] font-black uppercase text-(--text-muted) text-right">
+          {event.category}
+        </span>
       </div>
     </div>
   </motion.div>

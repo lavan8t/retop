@@ -131,7 +131,7 @@ export const TimetableWeek = ({
                 className={`flex-1 min-w-9.5 py-2 rounded-lg text-xs font-black font-expanded uppercase transition-all duration-fast border-2 ${
                   isActive
                     ? "bg-purple-400 text-black border-(--border-main) shadow-none -translate-y-px"
-                    : "bg-transparent text-zinc-500 border-transparent hover:text-zinc-300"
+                    : "bg-transparent text-content-dim border-transparent hover:text-content-muted"
                 }`}
               >
                 <span>{day.charAt(0)}</span>
@@ -145,7 +145,7 @@ export const TimetableWeek = ({
             {mobileActiveEvents.length === 0 ? (
               <motion.div
                 key="empty"
-                className="flex flex-col items-center justify-center h-full text-zinc-600 py-20"
+                className="flex flex-col items-center justify-center h-full text-content-dim py-20"
               >
                 <EventBusy className="w-12 h-12 opacity-50 mb-4" />
                 <span className="font-expanded font-bold text-xs uppercase ">

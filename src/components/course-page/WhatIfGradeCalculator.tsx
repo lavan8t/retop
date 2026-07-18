@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import { VTOPNetwork } from "../../utils/network";
 import { CourseMarks } from "../../types/vtop";
@@ -110,17 +110,20 @@ export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
     else if (totalScore >= 50) gradeStr = "E";
   }
 
+  const lastPredicted = useRef<string | null>(undefined as any);
+
   useEffect(() => {
     if (!isLatestSem || hasFatScore) return;
     
     if (onGradePredicted) {
-      if (hypotheticalFAT === "" || totalInternalWeightage < 60) {
-        onGradePredicted(null);
-      } else {
-        onGradePredicted(gradeStr);
+      const nextGrade = (hypotheticalFAT === "" || totalInternalWeightage < 60) ? null : gradeStr;
+      if (lastPredicted.current !== nextGrade) {
+        lastPredicted.current = nextGrade;
+        onGradePredicted(nextGrade);
       }
     }
-  }, [hypotheticalFAT, gradeStr, onGradePredicted, isLatestSem, hasFatScore, totalInternalWeightage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hypotheticalFAT, gradeStr, isLatestSem, hasFatScore, totalInternalWeightage]);
 
   if (!isLatestSem || hasFatScore) return null;
 
@@ -135,7 +138,7 @@ export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
         <div className="h-24 animate-pulse bg-(--bg-main) rounded-2xl"></div>
       ) : errorMsg || (!courseMarks && marksData.length > 0) ? (
         <div className="p-4 rounded-2xl bg-red-500/10 flex items-start gap-3">
-          <Error className="w-5 h-5 text-red-400 shrink-0" />
+          <Error className="w-5 h-5 text-att-danger shrink-0" />
           <p className="text-sm font-bold text-red-400/80">
             {errorMsg || "Internal marks not available for this course yet."}
           </p>
@@ -144,21 +147,21 @@ export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="flex-1 flex flex-col gap-4">
             <div className="bg-(--bg-main) p-4 rounded-2xl flex justify-between items-center">
-              <span className="text-sm font-bold text-zinc-400 uppercase">
+              <span className="text-sm font-bold text-content-muted uppercase">
                 Current Internal Marks
               </span>
               <span className="font-black text-cyan-400 text-xl font-mono">
-                {internalScoreStr} <span className="text-sm text-zinc-600">/ 60</span>
+                {internalScoreStr} <span className="text-sm text-content-dim">/ 60</span>
               </span>
             </div>
 
             {totalInternalWeightage >= 60 ? (
               <div className="bg-(--bg-main) p-4 rounded-2xl flex flex-col gap-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-bold text-zinc-400 uppercase">
+                  <span className="text-sm font-bold text-content-muted uppercase">
                     Hypothetical FAT Score
                   </span>
-                  <span className="text-xs font-bold text-zinc-600 bg-zinc-900 px-2 py-1 rounded border border-zinc-800">
+                  <span className="text-xs font-bold text-content-dim bg-surface px-2 py-1 rounded border border-border-default">
                     Out of 100
                   </span>
                 </div>
@@ -173,23 +176,23 @@ export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
                 />
               </div>
             ) : (
-              <div className="bg-(--bg-main) p-4 rounded-2xl flex items-center justify-center text-center border-2 border-dashed border-zinc-700">
-                <span className="text-sm font-bold text-zinc-500 uppercase tracking-widest">
+              <div className="bg-(--bg-main) p-4 rounded-2xl flex items-center justify-center text-center border-2 border-dashed border-border-dim">
+                <span className="text-sm font-bold text-content-dim uppercase tracking-widest">
                   Internals not finalized (Weightage: {totalInternalWeightage}/60)
                 </span>
               </div>
             )}
           </div>
           {totalInternalWeightage >= 60 && hypotheticalFAT !== "" && (
-            <div className={`w-full lg:w-48 shrink-0 rounded-3xl p-5 flex flex-col items-center justify-center text-center transition-all duration-fast ${isPass ? "bg-lime-400" : "bg-red-400"} shadow-none border-2 border-(--border-main)`}>
+            <div className={`w-full lg:w-48 shrink-0 rounded-3xl p-5 flex flex-col items-center justify-center text-center transition-all duration-fast ${isPass ? "bg-card-lime" : "bg-att-danger"} shadow-none border-2 border-(--border-main)`}>
               <div className="mt-4 flex flex-col gap-1 w-full text-left">
                 <div className={`text-[10px] font-bold uppercase flex justify-between items-center ${isPassingFAT ? "text-black/70" : "text-black"}`}>
                   <span>FAT &gt;= 40</span>
-                  {isPassingFAT ? <CheckCircle className="w-3 h-3" /> : <Error className="w-3 h-3 text-red-900" />}
+                  {isPassingFAT ? <CheckCircle className="w-3 h-3" /> : <Error className="w-3 h-3 text-att-danger" />}
                 </div>
                 <div className={`text-[10px] font-bold uppercase flex justify-between items-center ${isPassingTotal ? "text-black/70" : "text-black"}`}>
                   <span>Total &gt;= 50</span>
-                  {isPassingTotal ? <CheckCircle className="w-3 h-3" /> : <Error className="w-3 h-3 text-red-900" />}
+                  {isPassingTotal ? <CheckCircle className="w-3 h-3" /> : <Error className="w-3 h-3 text-att-danger" />}
                 </div>
               </div>
             </div>

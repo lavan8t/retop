@@ -67,10 +67,10 @@ export const TimetableList = ({
               </div>
               <div className="flex items-center gap-2 text-[10px] font-bold text-(--text-muted) bg-(--bg-highlight) p-2 rounded-xl border border-(--border-dim)">
                 <PieChart
-                  className={`w-3.5 h-3.5 ${!attStr ? "text-(--text-muted)" : attVal <= 75 ? "text-red-500" : "text-(--att-safe)"}`}
+                  className={`w-3.5 h-3.5 ${!attStr ? "text-(--text-muted)" : attVal <= 75 ? "text-att-danger" : "text-(--att-safe)"}`}
                 />
                 <span
-                  className={`truncate font-black ${!attStr ? "text-(--text-muted)" : attVal <= 75 ? "text-red-400" : "text-(--text-main)"}`}
+                  className={`truncate font-black ${!attStr ? "text-(--text-muted)" : attVal <= 75 ? "text-att-danger" : "text-(--text-main)"}`}
                 >
                   {attStr ? `${attStr}` : "N/A"}
                 </span>
@@ -106,7 +106,7 @@ export const TimetableList = ({
             const attColor = !attStr
               ? "text-(--text-muted)"
               : attVal <= 75
-                ? "text-red-400 font-black"
+                ? "text-att-danger font-black"
                 : "text-(--att-safe)";
 
             const lastCharMatch = c.code.match(/[a-zA-Z]+$/);

@@ -14,14 +14,14 @@ export const AttendanceMeter: React.FC<AttendanceMeterProps> = ({ courseCode }) 
 
   const { status, safeSkips, requiredToPass, futureScheduledClasses } = forecast;
 
-  let accentColor = "text-emerald-500";
+  let accentColor = "text-att-safe";
   let copy = `You can bunk ${safeSkips} more class${safeSkips !== 1 ? "es" : ""} safely.`;
 
   if (status === "WARNING") {
-    accentColor = "text-amber-500";
+    accentColor = "text-att-warn";
     copy = `Caution! Only ${safeSkips} skips remaining.`;
   } else if (status === "CRITICAL") {
-    accentColor = "text-red-500";
+    accentColor = "text-att-danger";
     copy = safeSkips === 0 
       ? "You can't bunk any more classes." 
       : `You need to attend ${requiredToPass} more class${requiredToPass !== 1 ? "es" : ""} to reach 75%.`;

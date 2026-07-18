@@ -55,7 +55,7 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
   const isLab = course.type.includes("Lab");
   const colors = isLab
     ? { bg: "bg-purple-400", text: "text-black", icon: "text-purple-500" }
-    : { bg: "bg-cyan-400", text: "text-black", icon: "text-blue-500" };
+    : { bg: "bg-card-cyan", text: "text-black", icon: "text-accent" };
 
   return (
     <>
@@ -63,7 +63,7 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
         ref={popupRef}
         onClick={(e) => e.stopPropagation()}
         style={{ top: adjustedPosition.y, left: adjustedPosition.x }}
-        className={`fixed z-50 w-72 bg-zinc-900 border-2 border-(--border-main) rounded-2xl shadow-none overflow-hidden transform transition-all duration-fast ease-[cubic-bezier(0.34,1.56,0.64,1)] origin-top-left ${active ? "scale-100 opacity-100" : "scale-90 opacity-0"}`}
+        className={`fixed z-50 w-72 bg-surface border-2 border-(--border-main) rounded-2xl shadow-none overflow-hidden transform transition-all duration-fast ease-[cubic-bezier(0.34,1.56,0.64,1)] origin-top-left ${active ? "scale-100 opacity-100" : "scale-90 opacity-0"}`}
       >
         <div
           className={`${colors.bg} p-3 border-b-2 border-(--border-main) relative overflow-hidden`}
@@ -97,19 +97,19 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
           </div>
         </div>
 
-        <div className="p-3 space-y-2 bg-zinc-900">
-          <div className="flex items-center gap-3 p-2 bg-zinc-950 rounded-xl border-2 border-(--border-main)">
+        <div className="p-3 space-y-2 bg-surface">
+          <div className="flex items-center gap-3 p-2 bg-background rounded-xl border-2 border-(--border-main)">
             <div
-              className={`w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center border-2 border-(--border-main) ${colors.icon}`}
+              className={`w-8 h-8 rounded-lg bg-surface flex items-center justify-center border-2 border-(--border-main) ${colors.icon}`}
             >
               <Person className="w-4 h-4" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[9px] font-bold text-zinc-500 uppercase  mb-0.5">
+              <p className="text-[9px] font-bold text-content-dim uppercase  mb-0.5">
                 Faculty
               </p>
               <p
-                className="text-zinc-200 font-bold text-xs truncate"
+                className="text-content font-bold text-xs truncate"
                 title={course.faculty}
               >
                 {course.faculty}
@@ -118,25 +118,25 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            <div className="p-2 bg-zinc-950 rounded-xl border-2 border-(--border-main)">
-              <div className="flex items-center gap-1.5 text-zinc-500 text-[9px] font-bold uppercase mb-1">
+            <div className="p-2 bg-background rounded-xl border-2 border-(--border-main)">
+              <div className="flex items-center gap-1.5 text-content-dim text-[9px] font-bold uppercase mb-1">
                 <LocationOn className="w-3 h-3" /> Venue
               </div>
-              <p className="text-zinc-200 font-black text-xs truncate">
+              <p className="text-content font-black text-xs truncate">
                 {course.venue}
               </p>
             </div>
-            <div className="p-2 bg-zinc-950 rounded-xl border-2 border-(--border-main)">
-              <div className="flex items-center gap-1.5 text-zinc-500 text-[9px] font-bold uppercase mb-1">
+            <div className="p-2 bg-background rounded-xl border-2 border-(--border-main)">
+              <div className="flex items-center gap-1.5 text-content-dim text-[9px] font-bold uppercase mb-1">
                 Credits
               </div>
-              <p className="text-zinc-200 font-black text-xs">
+              <p className="text-content font-black text-xs">
                 {course.credits}
               </p>
             </div>
 
-            <div className="p-2 bg-zinc-950 rounded-xl border-2 border-(--border-main)">
-              <div className="flex items-center gap-1.5 text-zinc-500 text-[9px] font-bold uppercase mb-2">
+            <div className="p-2 bg-background rounded-xl border-2 border-(--border-main)">
+              <div className="flex items-center gap-1.5 text-content-dim text-[9px] font-bold uppercase mb-2">
                 <Schedule className="w-3 h-3" /> Slots
               </div>
               <div className="flex flex-wrap gap-1">
@@ -151,12 +151,12 @@ export const CoursePopup: React.FC<CoursePopupProps> = ({
               </div>
             </div>
 
-            <div className="p-2 bg-zinc-950 rounded-xl border-2 border-(--border-main)">
-              <div className="flex items-center gap-1.5 text-zinc-500 text-[9px] font-bold uppercase mb-2">
+            <div className="p-2 bg-background rounded-xl border-2 border-(--border-main)">
+              <div className="flex items-center gap-1.5 text-content-dim text-[9px] font-bold uppercase mb-2">
                 <PieChart className="w-3 h-3" /> Attendance
               </div>
               <p
-                className={`font-black text-sm ${attendance && parseFloat(attendance) < 75 ? "text-red-500" : "text-emerald-400"}`}
+                className={`font-black text-sm ${attendance && parseFloat(attendance) < 75 ? "text-att-danger" : "text-att-safe"}`}
               >
                 {attendance || "N/A"}
               </p>

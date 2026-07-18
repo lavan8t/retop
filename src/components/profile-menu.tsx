@@ -14,22 +14,29 @@ import {
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { QuickLink } from "../types/vtop";
 import { motion, Variants, Transition, AnimatePresence } from "framer-motion";
+import { Tooltip } from "./ui/Tooltip";
 
 interface ProfileMenuProps {
   userName: string;
   userRegNo: string;
+  userProfileImg?: string;
   onNavigate: (link: QuickLink) => void;
   onLogout: () => void;
   onLegacyToggle: () => void;
+  onLegacyHover?: () => void;
+  onLegacyLeave?: () => void;
   onClose: () => void;
 }
 
 export const ProfileMenu: React.FC<ProfileMenuProps> = ({
   userName,
   userRegNo,
+  userProfileImg,
   onNavigate,
   onLogout,
   onLegacyToggle,
+  onLegacyHover,
+  onLegacyLeave,
   onClose,
 }) => {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
@@ -48,29 +55,22 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
       cat: "Profile",
     },
     {
-      title: "Backup Codes",
-      icon: FilterNone,
-      url: "user/backupCodes",
+      title: "Login ID",
+      icon: ManageAccounts,
+      url: "user/updateLoginId",
       cat: "Settings",
     },
-  ];
-
-  const editItems = [
     {
       title: "Password",
       icon: Key,
       url: "user/changePassword",
       cat: "Settings",
-      hoverClass:
-        "hover:bg-(--accent-base) hover:text-white hover:border-(--accent-base)",
     },
     {
-      title: "Login ID",
-      icon: ManageAccounts,
-      url: "user/updateLoginId",
+      title: "Backup Codes",
+      icon: FilterNone,
+      url: "user/backupCodes",
       cat: "Settings",
-      hoverClass:
-        "hover:bg-(--accent-base) hover:text-white hover:border-(--accent-base)",
     },
   ];
 
@@ -113,15 +113,28 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
       initial="hidden"
       animate="visible"
       exit="exit"
-      className="absolute right-2 top-2 md:right-4 md:top-4 w-64 bg-(--bg-surface) rounded-[32px] shadow-[var(--brutal-shadow-lg)] z-[9999] overflow-hidden origin-top-right flex flex-col will-change-transform transform-gpu popup-shadow"
+      className="absolute right-0 top-0 md:right-1 md:top-1 w-[17.5rem] bg-transparent border-0 z-[9999] origin-top-right flex flex-col will-change-transform transform-gpu p-3"
     >
-      <div className="overflow-y-auto custom-scrollbar p-2 flex-1">
+      <div className="flex-1 flex flex-col gap-2">
         {/* Profile Header */}
-        <div className="flex flex-col items-center justify-center p-4 mb-2 border-b-2 border-(--border-dim) overflow-hidden w-full">
-          <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-(--border-main) shadow-sm transition-all mb-3 cursor-default bg-(--bg-highlight) shrink-0 z-9999">
+        <div className="flex flex-row items-center justify-between pl-4 py-0 pr-0 bg-(--bg-highlight) rounded-[24px] overflow-hidden w-full border-2 border-(--border-dim) popup-shadow">
+          <div className="flex flex-col overflow-hidden relative flex-1 mr-2 py-3">
+            <div
+              className={`text-sm font-bold text-(--text-main) uppercase whitespace-nowrap inline-block ${(userName !== "Student" ? userName : userRegNo).length > 18 ? "animate-[profile-marquee_6s_linear_infinite]" : "w-full text-left"}`}
+              title={userName !== "Student" ? userName : userRegNo}
+            >
+              {userName !== "Student" ? userName : userRegNo}
+            </div>
+            {userName !== "Student" && (
+              <div className="text-[10px] text-(--text-muted) uppercase font-bold mt-0.5 text-left">
+                {userRegNo}
+              </div>
+            )}
+          </div>
+          <div className="w-16 h-full min-h-[64px] shadow-sm transition-all cursor-default bg-(--bg-main) shrink-0 z-9999 relative">
             {userRegNo !== "..." && userRegNo ? (
               <img
-                src={`/vtop/users/image/?id=${userRegNo}`}
+                src={userProfileImg || `/vtop/users/image/?id=${userRegNo}`}
                 className="w-full h-full object-cover"
                 alt="Profile"
               />
@@ -131,28 +144,12 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
               </div>
             )}
           </div>
-          <div
-            className="w-full overflow-hidden relative"
-            title={userName !== "Student" ? userName : userRegNo}
-          >
-            <div
-              className={`text-sm font-bold text-(--text-main) uppercase whitespace-nowrap inline-block ${(userName !== "Student" ? userName : userRegNo).length > 18 ? "animate-[profile-marquee_6s_linear_infinite]" : "w-full text-center"}`}
-            >
-              {userName !== "Student" ? userName : userRegNo}
-            </div>
-          </div>
-          {userName !== "Student" && (
-            <div className="text-[10px] text-(--text-muted) uppercase font-bold mt-0.5 text-center">
-              {userRegNo}
-            </div>
-          )}
         </div>
 
-        <div className="space-y-1 mb-1">
+        <div className="flex flex-col bg-(--bg-surface) rounded-[24px] overflow-hidden border-2 border-(--border-dim) popup-shadow">
           {mainItems.map((item, i) => (
-            <motion.button
+            <button
               key={i}
-              whileTap={{ scale: 0.96 }}
               onClick={() => {
                 onNavigate({
                   title: item.title,
@@ -161,91 +158,63 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
                 });
                 onClose();
               }}
-              className="flex w-full items-center justify-between px-3 py-2 rounded-2xl border-4 transition-all group border-transparent hover:bg-(--accent-base) hover:border-(--border-main) hover:shadow-none hover:-translate-y-px text-(--text-main) hover:text-(--text-inverse)"
+              className={`flex w-full items-center justify-start px-4 py-3 bg-(--bg-surface) hover:bg-(--bg-highlight) transition-colors group text-(--text-main)
+                ${i !== mainItems.length - 1 ? "border-b-2 border-(--border-dim)" : ""}
+              `}
             >
               <div className="flex items-center gap-3">
-                <item.icon className="w-4 h-4 transition-colors text-(--text-muted) group-hover:text-(--text-inverse) shrink-0" />
-                <span className="text-xs font-bold text-left transition-colors text-(--text-main) group-hover:text-(--text-inverse)">
+                <item.icon className="w-4 h-4 transition-colors text-(--text-muted) group-hover:text-(--text-main) shrink-0" />
+                <span className="text-xs font-bold text-left transition-colors text-(--text-main)">
                   {item.title}
                 </span>
               </div>
-              <ChevronRight className="w-4 h-4 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-(--text-main) group-hover:text-(--text-inverse)" />
-            </motion.button>
+            </button>
           ))}
         </div>
 
-        <div className="pt-4 mt-2 border-t-2 border-(--border-dim) mb-1">
-          <div className="flex items-center gap-2 px-1.5 mb-2.5">
-            <DesignServices className="w-3 h-3 text-(--text-dim)" />
-            <span className="text-[9px] font-expanded font-black uppercase  text-(--text-dim)">
-              Security
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            {editItems.map((item, i) => (
-              <motion.button
-                key={i}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => {
-                  onNavigate({
-                    title: item.title,
-                    url: item.url,
-                    category: item.cat,
-                  });
-                  onClose();
-                }}
-                className={`flex flex-col items-center justify-center py-2.5 rounded-xl border-2 border-transparent bg-(--bg-highlight) hover:-translate-y-0.5 transition-all group ${item.hoverClass}`}
-              >
-                <item.icon className="w-4 h-4 mb-1 transition-transform group-hover:scale-110 text-inherit" />
-                <span className="font-expanded font-black text-[8px] uppercase text-center text-inherit">
-                  {item.title}
-                </span>
-              </motion.button>
-            ))}
-          </div>
-        </div>
       </div>
 
-      <div className="p-2 flex gap-1.5 bg-(--bg-main) border-t-2 border-(--border-dim) shrink-0">
-        <button
-          onClick={() => {
-            onNavigate({
-              title: "Settings",
-              url: "#settings",
-              category: "System",
-            });
-            onClose();
-          }}
-          className="flex-1 flex items-center justify-center p-2.5 rounded-tl-md rounded-tr-[4px] rounded-bl-[24px] rounded-br-[4px] bg-(--bg-highlight) text-(--text-main) hover:bg-(--accent-base) hover:text-white transition-colors active:scale-95 group"
-          title="Settings"
-        >
-          <Settings className="w-4 h-4 group-hover:rotate-45 transition-transform" />
-        </button>
+      <div className="flex gap-1.5 bg-(--bg-surface) rounded-[24px] border-2 border-(--border-dim) p-1.5 shrink-0 popup-shadow">
+        <Tooltip text="Settings" className="flex-1">
+          <button
+            onClick={() => {
+              onNavigate({
+                title: "Settings",
+                url: "#settings",
+                category: "System",
+              });
+              onClose();
+            }}
+            className="w-full flex items-center justify-center p-2.5 rounded-[18px] bg-(--bg-highlight) text-(--text-main) hover:text-(--accent-base) transition-colors active:scale-95 group"
+          >
+            <Settings className="w-6 h-6 group-hover:rotate-90 transition-transform duration-700 ease-out" />
+          </button>
+        </Tooltip>
 
-        <button
-          onClick={() => {
-            onLegacyToggle();
-            onClose();
-          }}
-          className="flex-1 flex items-center justify-center p-2.5 rounded-md text-white hover:brightness-110 transition-all active:scale-95 group"
-          style={{
-            background:
-              "linear-gradient(130deg, var(--accent-hover) 23%, var(--accent-base) 52%, var(--md-sys-color-primary) 58%, var(--accent-base) 65%, var(--accent-active) 74%)",
-          }}
-          title="Legacy View"
-        >
-          <span className="text-md group-hover:scale-110 transition-transform font-['Times_New_Roman',Times,serif]! font-bold! text-white!">
-            VIT
-          </span>
-        </button>
+        <Tooltip text="VTOP" className="flex-1">
+          <button
+            onClick={() => {
+              onLegacyToggle();
+              onClose();
+            }}
+            onMouseEnter={() => onLegacyHover && onLegacyHover()}
+            onMouseLeave={() => onLegacyLeave && onLegacyLeave()}
+            className="w-full flex items-center justify-center p-2.5 rounded-[18px] bg-(--bg-highlight) text-(--text-main) hover:text-(--accent-base) transition-colors active:scale-95 group"
+          >
+            <span className="text-md group-hover:scale-110 transition-transform !font-['Times_New_Roman',Times,serif] font-bold">
+              VTOP
+            </span>
+          </button>
+        </Tooltip>
 
-        <button
-          onClick={() => setShowLogoutDialog(true)}
-          className="flex-1 flex items-center justify-center p-2.5 rounded-tr-md rounded-tl-[4px] rounded-br-[24px] rounded-bl-[4px] bg-(--bg-highlight) text-red-500 hover:text-white hover:bg-red-500 transition-colors active:scale-95 group"
-          title="Log Out"
-        >
-          <Logout className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-        </button>
+        <Tooltip text="Log Out" className="flex-1">
+          <button
+            onClick={() => setShowLogoutDialog(true)}
+            className="w-full flex items-center justify-center p-2.5 rounded-[18px] bg-(--bg-highlight) text-(--text-main) hover:text-red-500 transition-colors active:scale-95 group"
+          >
+            <Logout className="w-6 h-6 group-hover:translate-x-1.5 transition-transform duration-500 ease-out" />
+          </button>
+        </Tooltip>
       </div>
 
       <AnimatePresence>
@@ -256,7 +225,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
             exit={{ opacity: 0 }}
             className="absolute inset-0 z-50 bg-(--bg-main)/95 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center rounded-4xl"
           >
-            <Warning className="w-12 h-12 text-red-500 mb-3" />
+            <Warning className="w-12 h-12 text-att-danger mb-3" />
             <h3 className="text-xl font-black font-expanded text-(--text-main) uppercase mb-1">
               Log Out?
             </h3>
@@ -272,7 +241,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
               </button>
               <button
                 onClick={onLogout}
-                className="flex-1 py-2.5 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 transition-colors text-sm cursor-pointer"
+                className="flex-1 py-2.5 bg-att-danger text-content-inverse font-bold rounded-xl hover:bg-att-danger transition-colors text-sm cursor-pointer"
               >
                 Confirm
               </button>

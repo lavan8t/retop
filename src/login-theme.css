@@ -71,7 +71,6 @@
   --accent-base: #3b82f6;
   --bg-main: #000000;
   --bg-card: #000000;
-  --border-main: color-mix(in srgb, var(--accent-base) 25%, #262626);
   --text-main: #ffffff;
   --text-muted: #a3a3a3;
   --shadow-main: color-mix(in srgb, color-mix(in srgb, var(--accent-base) 20%, #3f3f46) 30%, transparent); /* Lighter shadow for amoled */

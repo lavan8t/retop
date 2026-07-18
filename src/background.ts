@@ -11,7 +11,7 @@ chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
     (item.referrer && item.referrer.includes("vtop.vit.ac.in"))
   ) {
     chrome.storage.local.get(["lastDownloadInfo"], (res) => {
-      const info = res.lastDownloadInfo;
+      const info = res.lastDownloadInfo as { timestamp: number; type: string; courseName: string; facultyName: string } | undefined;
       if (info && Date.now() - info.timestamp < 5000) {
         if (info.type === "course_page") {
           const sanitizedCourse = info.courseName.replace(/[\/\\?%*:|"<>]/g, '-').trim();

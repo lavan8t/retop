@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import "./input.css"; 
 import { applyTheme, useSettingsStore } from "./utils/settings-store";
 
 const Popup = () => {
@@ -8,7 +7,6 @@ const Popup = () => {
   const { settings, updateSetting } = useSettingsStore();
 
   useEffect(() => {
-    // Generate accent colors for the popup
     applyTheme(settings);
   }, [settings]);
 
@@ -33,7 +31,7 @@ const Popup = () => {
         () => {
           setIsHalted(true);
           reloadVtopTabs();
-        }
+        },
       );
     }
   };
@@ -51,56 +49,84 @@ const Popup = () => {
   return (
     <div className="flex flex-col h-full bg-[#0d0d0d] p-4 gap-4">
       <div className="flex items-center justify-center pb-2 pt-2">
-        <h2 className="text-[2.5rem] text-white font-logo cursor-default tracking-tighter leading-none lowercase">
+        <h2 className="text-[2.5rem] text-content-inverse font-logo cursor-default tracking-tighter leading-none lowercase">
           retop
         </h2>
       </div>
 
       <div className="flex flex-col gap-2">
         {/* Halt Widget Option */}
-        <div 
+        <div
           onClick={toggleHalt}
-          className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all ${isHalted ? 'bg-red-500/10 text-red-500' : 'bg-white/5 hover:bg-white/10 text-white'}`}
+          className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all ${isHalted ? "bg-red-500/10 text-att-danger" : "bg-white/5 hover:bg-white/10 text-content-inverse"}`}
         >
           <div className="flex flex-col gap-1">
-            <span className="font-bold text-sm uppercase font-expanded">{isHalted ? "Resume retop" : "Halt retop"}</span>
-            <span className={`text-xs font-medium leading-tight ${isHalted ? 'opacity-80' : 'text-white/50'}`}>
-              {isHalted ? "Enable the extension again" : "Disable extension for 1 hour"}
+            <span className="font-bold text-sm uppercase font-expanded">
+              {isHalted ? "Resume retop" : "Halt retop"}
+            </span>
+            <span
+              className={`text-xs font-medium leading-tight ${isHalted ? "opacity-80" : "text-white/50"}`}
+            >
+              {isHalted
+                ? "Enable the extension again"
+                : "Disable extension for 1 hour"}
             </span>
           </div>
-          <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1, 'wght' 700", fontSize: '24px' }}>
+          <span
+            className="material-symbols-rounded"
+            style={{
+              fontVariationSettings: "'FILL' 1, 'wght' 700",
+              fontSize: "24px",
+            }}
+          >
             {isHalted ? "play_arrow" : "pause"}
           </span>
         </div>
 
         {/* Offline Mode Option */}
-        <div 
+        <div
           onClick={() => {
-            chrome.tabs.create({ url: chrome.runtime.getURL("dist/offline.html") });
+            chrome.tabs.create({
+              url: chrome.runtime.getURL("dist/offline.html"),
+            });
             window.close();
           }}
-          className="flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all bg-white/5 hover:bg-white/10 text-white"
+          className="flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all bg-white/5 hover:bg-white/10 text-content-inverse"
         >
           <div className="flex flex-col gap-1">
-            <span className="font-bold text-sm uppercase font-expanded">Offline Cache</span>
+            <span className="font-bold text-sm uppercase font-expanded">
+              Offline Cache
+            </span>
             <span className="text-xs font-medium leading-tight text-white/50">
               View your cached data without internet
             </span>
           </div>
-          <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1, 'wght' 700", fontSize: '24px' }}>
+          <span
+            className="material-symbols-rounded"
+            style={{
+              fontVariationSettings: "'FILL' 1, 'wght' 700",
+              fontSize: "24px",
+            }}
+          >
             cloud_off
           </span>
         </div>
 
         {/* Theme Selection */}
         <div className="flex flex-col gap-3 p-4 rounded-2xl bg-white/5">
-          <span className="font-bold text-sm uppercase font-expanded text-white">App Theme</span>
+          <span className="font-bold text-sm uppercase font-expanded text-content-inverse">
+            App Theme
+          </span>
           <div className="flex items-center gap-1 w-full shrink-0">
             {["light", "dark", "amoled", "auto"].map((mode, idx, arr) => {
               const isActive = settings.themeMode === mode;
               const isFirst = idx === 0;
               const isLast = idx === arr.length - 1;
-              const rounding = isFirst ? "rounded-l-xl rounded-r-md" : isLast ? "rounded-l-md rounded-r-xl" : "rounded-md";
+              const rounding = isFirst
+                ? "rounded-l-xl rounded-r-md"
+                : isLast
+                  ? "rounded-l-md rounded-r-xl"
+                  : "rounded-md";
               const activeRounding = "rounded-xl";
               return (
                 <button
@@ -110,7 +136,7 @@ const Popup = () => {
                   }}
                   className={`flex-1 flex justify-center items-center px-2 py-2.5 text-[10px] font-bold font-expanded uppercase transition-all duration-fast ${
                     isActive
-                      ? `bg-(--accent-base) text-white shadow-none ${activeRounding}`
+                      ? `bg-(--accent-base) text-content-inverse shadow-none ${activeRounding}`
                       : `bg-black/50 text-white/50 hover:bg-black/80 hover:text-white shadow-none ${rounding}`
                   }`}
                 >

@@ -1,5 +1,4 @@
 import { renderDashboard } from "./pages/app";
-import "./input.css";
 
 const initializeOfflineMode = () => {
   chrome.storage.local.get(["retop_lastAuthId", "retop_lastName", "retop_profileImage"], (res) => {
@@ -12,7 +11,7 @@ const initializeOfflineMode = () => {
         <div class="h-screen w-screen bg-[#0f172a] flex items-center justify-center p-8">
           <div class="flex flex-col items-center gap-4 text-center">
             <span class="material-symbols-rounded text-6xl text-white/50">cloud_off</span>
-            <h2 class="text-2xl font-bold text-white">Offline Mode Unavailable</h2>
+            <h2 class="text-2xl font-bold text-content-inverse">Offline Mode Unavailable</h2>
             <p class="text-white/70 max-w-md">No cached data found. You must login to VTOP at least once to use offline mode.</p>
           </div>
         </div>
@@ -50,7 +49,7 @@ const initializeOfflineMode = () => {
 
     // Add Offline Banner
     const banner = document.createElement("div");
-    banner.className = "fixed bottom-4 left-1/2 -translate-x-1/2 bg-[#3b82f6] text-white px-4 py-2 rounded-full font-bold text-sm shadow-xl flex items-center gap-2 pointer-events-none";
+    banner.className = "fixed bottom-4 left-1/2 -translate-x-1/2 bg-[#3b82f6] text-content-inverse px-4 py-2 rounded-full font-bold text-sm shadow-xl flex items-center gap-2 pointer-events-none";
     banner.style.zIndex = "999999";
     banner.innerHTML = `<span class="material-symbols-rounded" style="font-size: 18px;">cloud_off</span> Viewing Offline Cache`;
     document.body.appendChild(banner);

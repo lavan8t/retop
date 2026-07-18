@@ -61,16 +61,12 @@
 /* --- 1. GLOBAL RESET & VARIABLES --- */
 @layer base {
   #retop-root *, #retop-root ::before, #retop-root ::after {
-    border-width: 0 !important;
-    box-shadow: none !important;
+    border-width: 0;
+    box-shadow: none;
   }
 
   .popup-shadow {
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
-  }
-
-  #retop-root *:hover {
-    --tw-translate-y: 0px !important;
   }
 
   :host,
@@ -113,14 +109,14 @@
     --brutal-shadow-active: none;
 
     /* Attendance Colors */
-    --attendance-green: #22c55e;
-    --attendance-green-bg: color-mix(in srgb, #22c55e 15%, transparent);
-    --attendance-green-text: color-mix(in srgb, #22c55e 40%, var(--text-main));
+    --attendance-green: #16a34a;
+    --attendance-green-bg: color-mix(in srgb, #16a34a 30%, var(--bg-main));
+    --attendance-green-text: color-mix(in srgb, #16a34a 40%, var(--text-main));
     --attendance-blue: #3b82f6;
-    --attendance-blue-bg: color-mix(in srgb, #3b82f6 15%, transparent);
+    --attendance-blue-bg: color-mix(in srgb, #3b82f6 30%, var(--bg-main));
     --attendance-blue-text: color-mix(in srgb, #3b82f6 40%, var(--text-main));
     --attendance-red: #ef4444;
-    --attendance-red-bg: color-mix(in srgb, #ef4444 15%, transparent);
+    --attendance-red-bg: color-mix(in srgb, #ef4444 30%, var(--bg-main));
     --attendance-red-text: color-mix(in srgb, #ef4444 40%, var(--text-main));
 
     /* Card Colors - Professional deep tones mixed with the surface for stark Brutalist blocks */
@@ -191,8 +187,6 @@
   --bg-main: #000000;
   --bg-surface: #000000;
   --bg-highlight: #111111;
-  --border-main: #262626;
-  --border-dim: #171717;
 
   --text-main: #ffffff;
   --text-muted: #a3a3a3;

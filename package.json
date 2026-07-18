@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "bun run build.ts",
-    "build:prod": "bun run build.ts --prod",
+    "build": "tsc --noEmit && bun run build.ts",
+    "build:prod": "tsc --noEmit && bun run build.ts --prod",
     "css:watch": "bunx tailwindcss -i src/input.css -o dist/style.css --watch"
   },
   "dependencies": {
@@ -12,10 +12,12 @@
     "@material/material-color-utilities": "^0.4.0",
     "@material/web": "^2.4.1",
     "@nine-thirty-five/material-symbols-react": "^2.1.2",
+    "clsx": "^2.1.1",
     "framer-motion": "^12.34.0",
     "react": "^19.2.4",
     "react-barcode": "^1.6.1",
     "react-dom": "^19.2.4",
+    "tailwind-merge": "^3.6.0",
     "zustand": "^5.0.14"
   },
   "devDependencies": {

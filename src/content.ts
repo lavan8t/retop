@@ -8,7 +8,6 @@ import {
 import { asciiArt } from "./components/asciiArt";
 import { autoSolveCaptcha } from "./utils/captchaSolver";
 
-
 const vtopContext = {
   csrf: "",
   authId: "",
@@ -17,22 +16,30 @@ const vtopContext = {
 // Apply theme immediately to prevent flashing, but strictly ignore /open/page
 const applyThemeFromSettings = (saved: any) => {
   try {
-    const data = typeof saved === 'string' ? JSON.parse(saved) : saved;
+    const data = typeof saved === "string" ? JSON.parse(saved) : saved;
     const settings = data.state?.settings || data;
     if (settings.themeMode) {
       let activeTheme = settings.themeMode;
       if (activeTheme === "auto") {
         const hour = new Date().getHours();
-        activeTheme = (hour >= 6 && hour < 18) ? "light" : "dark";
+        activeTheme = hour >= 6 && hour < 18 ? "light" : "dark";
       }
       document.documentElement.setAttribute("data-theme", activeTheme);
     }
     const MATERIAL_ACCENTS: Record<string, string> = {
-      blue: "#2563eb", indigo: "#4f46e5", purple: "#9333ea",
-      pink: "#db2777", red: "#dc2626", orange: "#ea580c",
-      yellow: "#ca8a04", lime: "#65a30d", green: "#16a34a", cyan: "#0891b2"
+      blue: "#2563eb",
+      indigo: "#4f46e5",
+      purple: "#9333ea",
+      pink: "#db2777",
+      red: "#dc2626",
+      orange: "#ea580c",
+      yellow: "#ca8a04",
+      lime: "#65a30d",
+      green: "#16a34a",
+      cyan: "#0891b2",
     };
-    let baseColor = MATERIAL_ACCENTS[settings.accentColor] || MATERIAL_ACCENTS.blue;
+    let baseColor =
+      MATERIAL_ACCENTS[settings.accentColor] || MATERIAL_ACCENTS.blue;
     if (settings.randomAccentColor) {
       const hue = Math.floor(Math.random() * 360);
       baseColor = `hsl(${hue}, 70%, 45%)`;
@@ -62,9 +69,158 @@ try {
 } catch (e) {}
 
 // Inject Splash Screen instantly for authenticated pages so it does not appear late
-if (window.location.pathname.includes("/vtop/content/")) {
-  // Removed splash screen
+function injectSplashScreen() {
+  if (window.location.pathname.includes("/vtop/content")) {
+    const splash = document.createElement("div");
+    splash.id = "retop-splash-screen";
+    splash.style.cssText = "position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--bg-main, #0b0b0b); z-index: 999999; display: flex; align-items: center; justify-content: center; font-family: 'GSF', monospace;";
+
+    const fontUrl1 = chrome.runtime.getURL("dist/fonts/gsf.subset.woff2");
+
+    chrome.storage.local.get("retop-data", (res) => {
+      let progress = 0;
+      let daysLeft = "";
+      let semName = "Retop";
+
+      try {
+        const data = (res["retop-data"] as any)?.state;
+        if (data && data.calGridData && data.calGridData.length > 0) {
+          let firstDay: Date | null = null;
+          let lastDay: Date | null = null;
+          for (const month of data.calGridData) {
+            for (const day of month.days) {
+              if (day.isInstructional && day.dateObj) {
+                const d = new Date(day.dateObj);
+                if (!firstDay || d < firstDay) firstDay = d;
+                if (!lastDay || d > lastDay) lastDay = d;
+              }
+            }
+          }
+          if (firstDay && lastDay) {
+            const start = firstDay.getTime();
+            const end = lastDay.getTime();
+            const now = new Date().getTime();
+            if (now < start) progress = 0;
+            else if (now > end) progress = 100;
+            else progress = Math.round(((now - start) / (end - start)) * 100);
+            
+            daysLeft = `${Math.max(0, Math.ceil((lastDay.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} days more`;
+            
+            if (data.calSelectedSem) {
+              const semOpt = data.calSemesters?.find((s: any) => s.id === data.calSelectedSem);
+              if (semOpt) semName = semOpt.label;
+            }
+          }
+        }
+      } catch (e) {}
+
+      splash.innerHTML = `
+        <style>
+          @font-face {
+            font-family: 'GSF';
+            src: url('${fontUrl1}') format('woff2');
+            font-display: swap;
+          }
+          .splash-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transform: scale(1.2);
+          }
+          .splash-percentage {
+            position: absolute;
+            bottom: 100%;
+            right: 0;
+            margin-bottom: 0.5rem;
+            font-weight: 900;
+            color: var(--accent-base, #2563eb);
+            text-transform: uppercase;
+            font-size: 1rem;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            animation: fade-in-up 0.5s ease-out;
+          }
+          .splash-days {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 0.5rem;
+            font-weight: 900;
+            color: var(--accent-base, #2563eb);
+            text-transform: uppercase;
+            font-size: 1rem;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            animation: fade-in-down 0.5s ease-out;
+          }
+          .splash-sem-text {
+            font-variation-settings: "wdth" 151, "wght" 800;
+            font-size: 4rem;
+            color: var(--text-main, #fff);
+            white-space: nowrap;
+            line-height: 1;
+            font-family: 'GSF', sans-serif;
+            animation: pulse-font 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
+          }
+          .splash-progress-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+          }
+          .splash-progress-fill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: ${progress}%;
+            overflow: hidden;
+            white-space: nowrap;
+            color: var(--text-main, #fff);
+            pointer-events: none;
+            opacity: 0.3;
+            font-family: 'GSF', sans-serif;
+            font-size: 4rem;
+            line-height: 1;
+            animation: pulse-font 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
+          }
+          @keyframes pulse-font {
+            0% { font-variation-settings: "wdth" 151, "wght" 800; }
+            100% { font-variation-settings: "wdth" 75, "wght" 300; }
+          }
+          @keyframes fade-in-up {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes fade-in-down {
+            0% { opacity: 0; transform: translateY(-10px); }
+            100% { opacity: 1; transform: translateY(0); }
+          }
+        </style>
+        <div class="splash-container">
+          <div class="splash-percentage">${progress}% Completed</div>
+          <div class="splash-progress-wrapper">
+             <div class="splash-sem-text">${semName}</div>
+             <div class="splash-progress-fill">${semName}</div>
+          </div>
+          <div class="splash-days">${daysLeft}</div>
+        </div>
+      `;
+    });
+
+    document.documentElement.appendChild(splash);
+  }
 }
+
+function removeSplashScreen() {
+  const splash = document.getElementById("retop-splash-screen");
+  if (splash) {
+    splash.style.opacity = "0";
+    splash.style.transition = "opacity 0.4s ease-out";
+    setTimeout(() => splash.remove(), 400);
+  }
+}
+
+injectSplashScreen();
 
 const originalFetch = window.fetch;
 
@@ -74,7 +230,7 @@ function showErrorSnackbar(message: string) {
   window.dispatchEvent(
     new CustomEvent("retop-toast", {
       detail: { message, type: "error" },
-    })
+    }),
   );
 }
 
@@ -82,25 +238,43 @@ async function handleNetworkError(status?: number) {
   if (isHandlingNetworkError) return;
   isHandlingNetworkError = true;
   try {
-    await originalFetch("https://example.com", { mode: 'no-cors', cache: 'no-store' });
-    
+    await originalFetch("https://example.com", {
+      mode: "no-cors",
+      cache: "no-store",
+    });
+
     if (status === 404) {
-      showErrorSnackbar("Something went wrong (404).");
+      showErrorSnackbar("E404: Something went wrong.");
     } else if (status === 401 || status === 403) {
-      showErrorDialog("Session Expired", "Your VTOP session has expired. Please login again to continue.", "Return to Login", "/vtop/");
+      showErrorDialog(
+        "Session Expired",
+        "Your VTOP session has expired. Please login again to continue.",
+        "Return to Login",
+        "/vtop/open/page",
+      );
     } else {
       showErrorSnackbar("An unexpected network error occurred.");
     }
   } catch (err) {
-    showErrorDialog("No Internet", "No internet connection detected. Please check your network and try again.", "Retry", "reload");
+    showErrorDialog(
+      "No Internet",
+      "No internet connection detected. Please check your network and try again.",
+      "Retry",
+      "reload",
+    );
   } finally {
     isHandlingNetworkError = false;
   }
 }
 
-function showErrorDialog(title: string, message: string, btnText: string, btnAction: string) {
+function showErrorDialog(
+  title: string,
+  message: string,
+  btnText: string,
+  btnAction: string,
+) {
   if (document.getElementById("retop-session-dialog")) return;
-  
+
   const dialog = document.createElement("div");
   dialog.id = "retop-session-dialog";
   dialog.style.cssText = `
@@ -145,7 +319,11 @@ function showErrorDialog(title: string, message: string, btnText: string, btnAct
 window.fetch = async (...args) => {
   try {
     const response = await originalFetch(...args);
-    if (response.status === 404 || response.status === 401 || response.status === 403) {
+    if (
+      response.status === 404 ||
+      response.status === 401 ||
+      response.status === 403
+    ) {
       handleNetworkError(response.status);
     }
     return response;
@@ -156,13 +334,16 @@ window.fetch = async (...args) => {
 };
 
 const originalXhrOpen = XMLHttpRequest.prototype.open;
-XMLHttpRequest.prototype.open = function(this: XMLHttpRequest, ...args: any[]) {
-  this.addEventListener("load", function() {
+XMLHttpRequest.prototype.open = function (
+  this: XMLHttpRequest,
+  ...args: any[]
+) {
+  this.addEventListener("load", function () {
     if (this.status === 404 || this.status === 401 || this.status === 403) {
       handleNetworkError(this.status);
     }
   });
-  this.addEventListener("error", function() {
+  this.addEventListener("error", function () {
     handleNetworkError();
   });
   return originalXhrOpen.apply(this, args as any);
@@ -173,19 +354,25 @@ const init = async () => {
 
   let pausedResult = null;
   let settingsResult = null;
-  
+
   try {
     if (!chrome?.runtime?.id) throw new Error("Context invalidated");
     [pausedResult, settingsResult] = await Promise.all([
       new Promise((resolve) => {
-        chrome.storage.local.get("retop-paused-until", (res) => resolve(res["retop-paused-until"]));
+        chrome.storage.local.get("retop-paused-until", (res) =>
+          resolve(res["retop-paused-until"]),
+        );
       }),
       new Promise((resolve) => {
-        chrome.storage.local.get("retop-settings", (res) => resolve(res["retop-settings"]));
-      })
+        chrome.storage.local.get("retop-settings", (res) =>
+          resolve(res["retop-settings"]),
+        );
+      }),
     ]);
   } catch (err) {
-    console.warn("[retop] Extension context invalidated or storage error. Falling back to native VTOP.");
+    console.warn(
+      "[retop] Extension context invalidated or storage error. Falling back to native VTOP.",
+    );
     document.body.style.opacity = "1";
     document.body.classList.add("show-legacy-ui");
     return;
@@ -193,16 +380,24 @@ const init = async () => {
 
   if (settingsResult) {
     try {
-      const data = typeof settingsResult === 'string' ? JSON.parse(settingsResult as string) : settingsResult;
+      const data =
+        typeof settingsResult === "string"
+          ? JSON.parse(settingsResult as string)
+          : settingsResult;
       const settings = data.state?.settings || data;
-      if (settings.defaultView === "legacy" && sessionStorage.getItem("vtop-legacy-mode") === null) {
+      if (
+        settings.defaultView === "legacy" &&
+        sessionStorage.getItem("vtop-legacy-mode") === null
+      ) {
         sessionStorage.setItem("vtop-legacy-mode", "true");
       }
     } catch (e) {}
   }
 
   if (pausedResult && Date.now() < parseInt(pausedResult as string, 10)) {
-    console.log("[retop] Extension is currently halted. Falling back to native VTOP.");
+    console.log(
+      "[retop] Extension is currently halted. Falling back to native VTOP.",
+    );
     document.body.style.opacity = "1";
     document.body.classList.add("show-legacy-ui");
     return;
@@ -228,24 +423,39 @@ const init = async () => {
   document.body.style.visibility = "visible";
   document.body.classList.add("show-legacy-ui");
 
-  const isRoleSelection = document.getElementById("stdForm") !== null || document.getElementById("empForm") !== null || (path.includes("/vtop/login") && document.getElementById("username") === null && document.getElementById("captchaBlock") === null);
+  const isRoleSelection =
+    document.getElementById("stdForm") !== null ||
+    document.getElementById("empForm") !== null ||
+    (path.includes("/vtop/login") &&
+      document.getElementById("username") === null &&
+      document.getElementById("captchaBlock") === null);
 
   if (path.includes("/vtop/open/page") || isRoleSelection) {
-    document.addEventListener("click", (e) => {
-      const target = e.target as HTMLElement;
-      const form = target.closest("form");
-      if (form && form.id) {
-        if (form.id === "stdForm") chrome.storage.local.set({ "retop-user-role": "student" });
-        if (form.id === "empForm") chrome.storage.local.set({ "retop-user-role": "employee" });
-        if (form.id === "parentForm") chrome.storage.local.set({ "retop-user-role": "parent" });
-        if (form.id === "alumniForm") chrome.storage.local.set({ "retop-user-role": "alumni" });
-      }
-    }, true);
+    document.addEventListener(
+      "click",
+      (e) => {
+        const target = e.target as HTMLElement;
+        const form = target.closest("form");
+        if (form && form.id) {
+          if (form.id === "stdForm")
+            chrome.storage.local.set({ "retop-user-role": "student" });
+          if (form.id === "empForm")
+            chrome.storage.local.set({ "retop-user-role": "employee" });
+          if (form.id === "parentForm")
+            chrome.storage.local.set({ "retop-user-role": "parent" });
+          if (form.id === "alumniForm")
+            chrome.storage.local.set({ "retop-user-role": "alumni" });
+        }
+      },
+      true,
+    );
     return;
   }
 
   const roleResult = await new Promise((resolve) => {
-    chrome.storage.local.get("retop-user-role", (res) => resolve(res["retop-user-role"]));
+    chrome.storage.local.get("retop-user-role", (res) =>
+      resolve(res["retop-user-role"]),
+    );
   });
   const currentRole = roleResult || "student";
 
@@ -254,7 +464,6 @@ const init = async () => {
     return;
   }
 
-  // Only run the invisible CAPTCHA solver on /vtop/login
   if (path.includes("/vtop/login")) {
     enhanceLegacyLogin();
     return;
@@ -276,11 +485,13 @@ const init = async () => {
       const newMenu = scrapeMenu(document);
       menuCount = newMenu.reduce((acc, cat) => acc + cat.links.length, 0);
       if (menuCount > 0) break;
-      await new Promise(r => setTimeout(r, 100));
+      await new Promise((r) => setTimeout(r, 100));
     }
 
     if (menuCount === 0) {
-      console.log("[retop] No menu items fetchable. Falling back to native VTOP.");
+      console.log(
+        "[retop] No menu items fetchable. Falling back to native VTOP.",
+      );
       document.body.classList.add("show-legacy-ui");
       removeSplashScreen();
       return; // Stop initialization of Retop UI completely
@@ -353,7 +564,7 @@ const injectLoginTheme = () => {
   const replaceHomeButtons = () => {
     try {
       const allLinksAndBtns = document.querySelectorAll(
-        ".btn:not(.retop-home-icon), a:not(.retop-home-icon), button:not(.retop-home-icon), input[type='button'], input[type='submit']"
+        ".btn:not(.retop-home-icon), a:not(.retop-home-icon), button:not(.retop-home-icon), input[type='button'], input[type='submit']",
       );
       for (const link of allLinksAndBtns) {
         // Collect all possible text sources
@@ -361,12 +572,19 @@ const injectLoginTheme = () => {
         const titleText = link.getAttribute("title") || "";
         const valText = (link as HTMLInputElement).value || "";
         const inner = link.textContent || "";
-        
-        const rawText = `${inner} ${valText} ${altText} ${titleText}`.toLowerCase();
-        
+
+        const rawText =
+          `${inner} ${valText} ${altText} ${titleText}`.toLowerCase();
+
         // Broadly match anything containing 'home' or the specific VTOP open page href
-        if (rawText.includes("home") || link.getAttribute("href")?.includes("/vtop/open/page")) {
-          if (link.tagName.toLowerCase() === "input" || link.tagName.toLowerCase() === "div") {
+        if (
+          rawText.includes("home") ||
+          link.getAttribute("href")?.includes("/vtop/open/page")
+        ) {
+          if (
+            link.tagName.toLowerCase() === "input" ||
+            link.tagName.toLowerCase() === "div"
+          ) {
             const newBtn = document.createElement("button");
             newBtn.innerHTML = `<span class="material-symbols-rounded" style="font-variation-settings: 'FILL' 1, 'wght' 700, 'GRAD' 0, 'opsz' 24;">home</span>`;
             newBtn.className = "retop-home-icon";
@@ -377,14 +595,16 @@ const injectLoginTheme = () => {
             newBtn.style.display = "flex";
             newBtn.style.alignItems = "center";
             newBtn.style.justifyContent = "center";
-            
+
             if (link.id) newBtn.id = link.id;
             if (link.getAttribute("onclick")) {
               newBtn.setAttribute("onclick", link.getAttribute("onclick")!);
             }
             if (link.parentNode) {
               // If parent is a formatting div, clean it up
-              if ((link.parentNode as HTMLElement).classList?.contains("text-end")) {
+              if (
+                (link.parentNode as HTMLElement).classList?.contains("text-end")
+              ) {
                 (link.parentNode as HTMLElement).classList.remove("text-end");
               }
               link.parentNode.replaceChild(newBtn, link);
@@ -399,8 +619,11 @@ const injectLoginTheme = () => {
             (link as HTMLElement).style.display = "inline-flex";
             (link as HTMLElement).style.alignItems = "center";
             (link as HTMLElement).style.justifyContent = "center";
-            
-            if (link.parentNode && (link.parentNode as HTMLElement).classList?.contains("text-end")) {
+
+            if (
+              link.parentNode &&
+              (link.parentNode as HTMLElement).classList?.contains("text-end")
+            ) {
               (link.parentNode as HTMLElement).classList.remove("text-end");
             }
           }
@@ -509,47 +732,67 @@ const injectLoginTheme = () => {
     `;
     document.head.appendChild(style);
 
-    document.addEventListener("click", (e) => {
-      const target = e.target as HTMLElement;
-      // Match the exact login button or any button that acts as login
-      if (target.closest("button") && target.closest("button")?.textContent?.trim().toLowerCase() === "login") {
-        const passwordInput = document.getElementById("password") as HTMLInputElement;
-        const usernameInput = document.getElementById("authorizedIDX") || document.getElementById("username") as HTMLInputElement;
-        const captchaInput = document.getElementById("captchaStr") as HTMLInputElement;
-        
-        let isInvalid = false;
+    document.addEventListener(
+      "click",
+      (e) => {
+        const target = e.target as HTMLElement;
+        // Match the exact login button or any button that acts as login
+        if (
+          target.closest("button") &&
+          target.closest("button")?.textContent?.trim().toLowerCase() ===
+            "login"
+        ) {
+          const passwordInput = document.getElementById(
+            "password",
+          ) as HTMLInputElement;
+          const usernameInput =
+            document.getElementById("authorizedIDX") ||
+            (document.getElementById("username") as HTMLInputElement);
+          const captchaInput = document.getElementById(
+            "captchaStr",
+          ) as HTMLInputElement;
 
-        // Check password
-        if (passwordInput && (!passwordInput.value || passwordInput.value.length < 8)) {
-          passwordInput.classList.remove("retop-wiggle");
-          void passwordInput.offsetWidth; // force reflow
-          passwordInput.classList.add("retop-wiggle");
-          isInvalid = true;
-        }
+          let isInvalid = false;
 
-        // Check username
-        if (usernameInput && !(usernameInput as HTMLInputElement).value) {
-          usernameInput.classList.remove("retop-wiggle");
-          void usernameInput.offsetWidth; // force reflow
-          usernameInput.classList.add("retop-wiggle");
-          isInvalid = true;
-        }
-        
-        // Check captcha
-        if (captchaInput && (!captchaInput.value || captchaInput.value.length !== 6)) {
-          captchaInput.classList.remove("retop-wiggle");
-          void captchaInput.offsetWidth; // force reflow
-          captchaInput.classList.add("retop-wiggle");
-          isInvalid = true;
-        }
+          // Check password
+          if (
+            passwordInput &&
+            (!passwordInput.value || passwordInput.value.length < 8)
+          ) {
+            passwordInput.classList.remove("retop-wiggle");
+            void passwordInput.offsetWidth; // force reflow
+            passwordInput.classList.add("retop-wiggle");
+            isInvalid = true;
+          }
 
-        if (isInvalid) {
-          e.preventDefault();
-          e.stopPropagation();
-          e.stopImmediatePropagation();
+          // Check username
+          if (usernameInput && !(usernameInput as HTMLInputElement).value) {
+            usernameInput.classList.remove("retop-wiggle");
+            void usernameInput.offsetWidth; // force reflow
+            usernameInput.classList.add("retop-wiggle");
+            isInvalid = true;
+          }
+
+          // Check captcha
+          if (
+            captchaInput &&
+            (!captchaInput.value || captchaInput.value.length !== 6)
+          ) {
+            captchaInput.classList.remove("retop-wiggle");
+            void captchaInput.offsetWidth; // force reflow
+            captchaInput.classList.add("retop-wiggle");
+            isInvalid = true;
+          }
+
+          if (isInvalid) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+          }
         }
-      }
-    }, true);
+      },
+      true,
+    );
   }
 
   // Error Page Handling
@@ -560,11 +803,14 @@ const injectLoginTheme = () => {
 
     // Spawn a beautiful compact brutalist snackbar
     const isCaptchaError = errorText.toLowerCase().includes("captcha");
-    
+
     window.dispatchEvent(
       new CustomEvent("retop-toast", {
-        detail: { message: errorText, type: isCaptchaError ? "warning" : "error" },
-      })
+        detail: {
+          message: errorText,
+          type: isCaptchaError ? "warning" : "error",
+        },
+      }),
     );
   }
 
@@ -859,12 +1105,15 @@ const injectLoginTheme = () => {
         let activeTheme = settings.themeMode;
         if (activeTheme === "auto") {
           const hour = new Date().getHours();
-          activeTheme = (hour >= 6 && hour < 18) ? "light" : "dark";
+          activeTheme = hour >= 6 && hour < 18 ? "light" : "dark";
         }
         document.documentElement.setAttribute("data-theme", activeTheme);
       }
     } catch (err) {
-      console.warn("[retop] Failed to load theme settings for login page:", err);
+      console.warn(
+        "[retop] Failed to load theme settings for login page:",
+        err,
+      );
     }
   });
 };
@@ -885,7 +1134,9 @@ const enhanceLegacyLogin = () => {
     });
     usernameInput.addEventListener("blur", () => {
       if (usernameInput.value) {
-        chrome.storage.local.set({ "retop-saved-username": usernameInput.value });
+        chrome.storage.local.set({
+          "retop-saved-username": usernameInput.value,
+        });
       }
     });
   }

@@ -31,8 +31,6 @@ useSettingsStore.subscribe((state) => {
   }
 });
 
-/** Standard hover lift for cards */
-export const HOVER_LIFT = { y: -2 };
+export const HOVER_LIFT = {};
 
-/** Standard tap press for clickable cards */
-export const TAP_PRESS = { scale: 0.95, y: 0 };
+export const TAP_PRESS = {};

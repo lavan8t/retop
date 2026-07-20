@@ -22,7 +22,7 @@ interface TopBarSearchProps {
   setIsOmniboxOpen: (val: boolean) => void;
   menuCategories: MenuCategory[];
   pinnedLinks: QuickLink[];
-  onNavigate: (link: QuickLink) => void;
+  onNavigate: (link: QuickLink, forceLegacy?: boolean) => void;
   onTogglePin: (link: QuickLink) => void;
   initialQuery?: string;
   pageTitle?: string;
@@ -61,6 +61,22 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
   lastSyncTime = 0,
 }) => {
   const [query, setQuery] = useState(initialQuery);
+  const [isShiftPressed, setIsShiftPressed] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Shift") setIsShiftPressed(true);
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === "Shift") setIsShiftPressed(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, []);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const [showLogoMenu, setShowLogoMenu] = useState(false);
@@ -209,7 +225,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
         );
       } else if (query && e.key === "Enter" && flattenedLinks[selectedIndex]) {
         e.preventDefault();
-        onNavigate(flattenedLinks[selectedIndex]);
+        onNavigate(flattenedLinks[selectedIndex], e.shiftKey);
         setIsOmniboxOpen(false);
       } else if (e.key === "Escape") {
         e.preventDefault();
@@ -250,25 +266,31 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
     },
   };
 
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setIsOmniboxOpen(false);
+      }
+    };
+    
+    if (isExpanded) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isExpanded, setIsOmniboxOpen]);
+
   return (
-    <div className="relative flex flex-col z-50">
+    <div ref={wrapperRef} className="relative flex flex-col z-50">
       {/* Unified Search Bar */}
       <div
         className={`group flex items-center gap-3 transition-all duration-fast ease-out cursor-text md:min-w-[360px] pl-4 pr-3 h-12 md:h-14 rounded-[32px] relative z-10000 bg-transparent border-2 border-transparent shadow-none`}
       >
-        <div
-          className="relative"
-          onMouseEnter={() => {
-            if (logoMenuTimeout.current) clearTimeout(logoMenuTimeout.current);
-            setShowLogoMenu(true);
-          }}
-          onMouseLeave={() => {
-            logoMenuTimeout.current = setTimeout(
-              () => setShowLogoMenu(false),
-              200,
-            );
-          }}
-        >
+        <div className="relative flex items-center shrink-0">
           <Tooltip text="Return to Dashboard">
             <button
               onClick={(e) => {
@@ -288,10 +310,10 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                     repeat: Infinity,
                     ease: "easeInOut",
                   }}
-                  className={`relative ml-[-1px] md:ml-[-3px] mb-0.5 md:mb-0.75 flex items-center justify-center transition-all origin-bottom-left w-1 h-1 md:w-1.5 md:h-1.5 bg-(--accent-base) rounded-full ${status === "loading" ? "" : "group-focus-within:scale-[2]"}`}
+                  className={`relative ml-[-1px] md:ml-[-3px] mb-0.5 md:mb-0.75 flex items-center justify-center transition-all origin-bottom-left w-1 h-1 md:w-1.5 md:h-1.5 bg-(--accent-base) rounded-full ${status === "loading" ? "" : isExpanded ? "scale-[2]" : ""}`}
                 >
                   <Search
-                    className={`w-0.5 h-0.5 md:w-1 md:h-1 text-(--text-inverse) transition-opacity absolute ${status === "loading" ? "opacity-0" : "opacity-0 group-focus-within:opacity-100"}`}
+                    className={`w-0.5 h-0.5 md:w-1 md:h-1 text-(--text-inverse) transition-opacity absolute ${status === "loading" ? "opacity-0" : isExpanded ? "opacity-100" : "opacity-0"}`}
                     strokeWidth={4}
                   />
                 </motion.div>
@@ -299,56 +321,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
             </button>
           </Tooltip>
 
-          {/* Logo hover dropdown */}
-          <AnimatePresence>
-            {showLogoMenu && !isExpanded && (
-              <motion.div
-                initial={{ opacity: 0, y: -4, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -4, scale: 0.95 }}
-                transition={{ duration: 0.15, ease: "easeOut" }}
-                className="absolute top-full left-1 mt-1 z-10001 flex flex-col gap-1"
-              >
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (onSync && !isSyncing) onSync();
-                  }}
-                  disabled={isSyncing}
-                  className="flex items-center gap-1.5 px-2 py-1 rounded-full hover:bg-(--bg-hover) transition-colors cursor-pointer text-left disabled:opacity-50"
-                >
-                  <motion.div
-                    animate={isSyncing ? { rotate: 360 } : {}}
-                    transition={
-                      isSyncing
-                        ? { duration: 1, repeat: Infinity, ease: "linear" }
-                        : {}
-                    }
-                    className="shrink-0 flex items-center justify-center"
-                  >
-                    <Autorenew className="w-3.5 h-3.5 text-(--text-muted)" />
-                  </motion.div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-bold uppercase text-(--text-main) leading-none mt-0.5">
-                      {isSyncing ? "Syncing" : "Sync"}
-                    </span>
-                    {lastSyncTime > 0 && (
-                      <span className="text-[8px] text-(--text-muted) leading-none mt-0.5">
-                        {(() => {
-                          const ago = Math.floor(
-                            (Date.now() - lastSyncTime) / 1000,
-                          );
-                          if (ago < 60) return "now";
-                          if (ago < 3600) return `${Math.floor(ago / 60)}m`;
-                          return `${Math.floor(ago / 3600)}h`;
-                        })()}
-                      </span>
-                    )}
-                  </div>
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+
         </div>
 
         <div className="relative flex-1 w-full min-w-0 flex items-center">
@@ -384,9 +357,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
               if (!isExpanded) setIsOmniboxOpen(true);
             }}
             onFocus={() => setIsOmniboxOpen(true)}
-            onBlur={() => {
-              setTimeout(() => setIsOmniboxOpen(false), 200);
-            }}
+
             className={`w-full bg-transparent text-lg md:text-xl font-bold text-(--text-main) focus:outline-none placeholder-(--text-muted) min-w-0 uppercase text-left pl-2 relative z-10`}
           />
         </div>
@@ -473,8 +444,8 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                           )}
                           <div className="relative w-full mb-1 group">
                             <button
-                              onClick={() => {
-                                onNavigate(link);
+                              onClick={(e) => {
+                                onNavigate(link, e.shiftKey);
                                 setIsOmniboxOpen(false);
                                 setQuery("");
                               }}
@@ -519,7 +490,13 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                 )}
               </div>
               <div className="w-full text-center py-2 px-3 text-[10px] font-bold text-(--text-muted) border-t-2 border-(--border-dim) bg-(--bg-surface) shrink-0 mt-1">
-                Hold Shift and press Enter to launch that page in VTOP
+                {isShiftPressed ? (
+                  <>
+                    Press Enter to open in <span className="!font-['Times_New_Roman',Times,serif] font-bold text-(--text-main) !text-[12px]">VTOP</span>
+                  </>
+                ) : (
+                  <>Hold Shift and press Enter to launch that page in VTOP</>
+                )}
               </div>
             </div>
           </motion.div>
@@ -535,7 +512,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
             animate={{ opacity: 1, scaleX: 1, scaleY: 1, x: 0 }}
             exit={{ opacity: 0, scaleX: 0.3, scaleY: 0.8, x: -20 }}
             transition={{ type: "spring", stiffness: 500, damping: 30 }}
-            className="absolute z-10001 bg-(--bg-surface) border-4 border-(--border-main) rounded-2xl shadow-(--brutal-shadow-hover) p-2 flex flex-col"
+            className="absolute z-[10001] bg-(--bg-surface) border-4 border-(--border-main) rounded-2xl shadow-(--brutal-shadow-hover) p-2 flex flex-col"
             style={{
               transformOrigin: "left center",
               left: activeMenu.rect.right ? activeMenu.rect.right + 12 : 0,
@@ -559,8 +536,8 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                   key={i}
                   id={`home-popup-item-${i}`}
                   onMouseEnter={() => setSelectedIndex(i)}
-                  onClick={() => {
-                    onNavigate(link);
+                  onClick={(e) => {
+                    onNavigate(link, e.shiftKey);
                     setActiveMenu(null);
                     setIsOmniboxOpen(false);
                   }}

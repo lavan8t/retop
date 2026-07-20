@@ -75,81 +75,9 @@ export function initializeContainer() {
   isInitialized = true;
 }
 
-export function injectSplashScreen() {
-  if (document.getElementById("retop-splash")) return;
-  const splash = document.createElement("div");
-  splash.id = "retop-splash";
-  
-  // Base styling for full screen matching brutalist theme
-  splash.style.cssText = `
-    position: fixed;
-    inset: 0;
-    background: #09090b;
-    z-index: 9999999;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-family: system-ui, -apple-system, sans-serif;
-    transition: opacity 0.3s ease;
-  `;
+export function injectSplashScreen() {}
 
-  splash.innerHTML = `
-    <style>
-      @font-face {
-        font-family: 'Outfit';
-        src: url('${chrome.runtime.getURL("dist/fonts/gsf.subset.woff2")}') format('woff2');
-        font-weight: 100 900;
-        font-style: normal;
-        font-display: swap;
-      }
-      @keyframes retop-bounce {
-        0%, 100% { transform: translateY(0) scale(1); }
-        50% { transform: translateY(-6px) scale(2); }
-      }
-      .retop-splash-container {
-        display: flex;
-        align-items: flex-end;
-        padding-bottom: 4px;
-      }
-      .retop-splash-text {
-        font-family: 'Outfit', system-ui, sans-serif;
-        font-size: 30px;
-        font-weight: 900;
-        font-style: italic;
-        color: #ffffff;
-        line-height: 1;
-      }
-      .retop-splash-dot {
-        width: 8px;
-        height: 8px;
-        background-color: #2563eb;
-        border-radius: 50%;
-        animation: retop-bounce 0.8s infinite ease-in-out;
-        margin-bottom: 3px;
-        margin-left: -4px;
-      }
-    </style>
-    <div class="retop-splash-container">
-      <span class="retop-splash-text">re</span>
-      <div class="retop-splash-dot"></div>
-    </div>
-  `;
-  
-  if (document.body) {
-    document.body.appendChild(splash);
-  } else {
-    document.documentElement.appendChild(splash);
-  }
-}
-
-export function removeSplashScreen() {
-  const splash = document.getElementById("retop-splash");
-  if (splash) {
-    splash.style.opacity = "0";
-    setTimeout(() => splash.remove(), 500);
-  }
-}
+export function removeSplashScreen() {}
 
 export function setUIVisibility(visible: boolean) {
   const host = document.getElementById("retop-host");

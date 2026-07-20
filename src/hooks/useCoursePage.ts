@@ -108,7 +108,7 @@ export const useCoursePageData = (
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-            "Close-Requested-With": "XMLHttpRequest",
+            "X-Requested-With": "XMLHttpRequest",
           },
           body: body,
         });

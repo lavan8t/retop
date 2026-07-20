@@ -1,0 +1,1191 @@
+{
+  "stats": {
+    "cgpa": "8.85",
+    "credits": "110",
+    "totalCredits": "160",
+    "nonGraded": "10",
+    "placement": "Eligible For Placement"
+  },
+  "attendance": [
+    {
+      "code": "BCSE302L",
+      "name": "Database Systems",
+      "type": "TH",
+      "slot": "N/A",
+      "faculty": "N/A",
+      "attendance": "88"
+    },
+    {
+      "code": "BCSE302P",
+      "name": "Database Systems Lab",
+      "type": "LO",
+      "slot": "N/A",
+      "faculty": "N/A",
+      "attendance": "81"
+    },
+    {
+      "code": "BCSE303L",
+      "name": "Operating Systems",
+      "type": "TH",
+      "slot": "N/A",
+      "faculty": "N/A",
+      "attendance": "86"
+    },
+    {
+      "code": "BCSE303P",
+      "name": "Operating Systems Lab",
+      "type": "LO",
+      "slot": "N/A",
+      "faculty": "N/A",
+      "attendance": "85"
+    },
+    {
+      "code": "BCSE306L",
+      "name": "Artificial Intelligence",
+      "type": "TH",
+      "slot": "N/A",
+      "faculty": "N/A",
+      "attendance": "98"
+    },
+    {
+      "code": "BCSE307L",
+      "name": "Compiler Design",
+      "type": "TH",
+      "slot": "N/A",
+      "faculty": "N/A",
+      "attendance": "82"
+    },
+    {
+      "code": "BCSE307P",
+      "name": "Compiler Design Lab",
+      "type": "LO",
+      "slot": "N/A",
+      "faculty": "N/A",
+      "attendance": "85"
+    },
+    {
+      "code": "BCSE308L",
+      "name": "Computer Networks",
+      "type": "TH",
+      "slot": "N/A",
+      "faculty": "N/A",
+      "attendance": "92"
+    },
+    {
+      "code": "BCSE308P",
+      "name": "Computer Networks Lab",
+      "type": "LO",
+      "slot": "N/A",
+      "faculty": "N/A",
+      "attendance": "90"
+    },
+    {
+      "code": "BCSE355L",
+      "name": "Cloud Architecture Design",
+      "type": "TH",
+      "slot": "N/A",
+      "faculty": "N/A",
+      "attendance": "87"
+    },
+    {
+      "code": "BSTS301P",
+      "name": "Advanced Competitive Coding - I",
+      "type": "SS",
+      "slot": "N/A",
+      "faculty": "N/A",
+      "attendance": "93"
+    }
+  ],
+  "assignments": [],
+  "events": [
+    {
+      "title": "Book Of The Month: February \u0026 March Edition",
+      "category": "Art",
+      "date": "2026-07-15",
+      "organizer": "The Next Chapter - Book Club"
+    },
+    {
+      "title": "KICKSTART 2.0",
+      "category": "Community Development",
+      "date": "2026-07-15",
+      "organizer": "Archi-tech"
+    }
+  ],
+  "ttCourses": [
+    {
+      "code": "BCSE302L",
+      "title": "Database Systems",
+      "type": "Theory Only",
+      "credits": "3.0",
+      "category": "Discipline Core",
+      "slot": "D1+TD1",
+      "venue": "SJT303",
+      "faculty": "Dr. John Doe",
+      "classId": "VL20262701000000",
+      "status": "Registered and Approved"
+    },
+    {
+      "code": "BCSE302P",
+      "title": "Database Systems Lab",
+      "type": "Lab Only",
+      "credits": "1.0",
+      "category": "Discipline Core",
+      "slot": "L51+L52",
+      "venue": "PRP234",
+      "faculty": "Dr. John Doe",
+      "classId": "VL20262701000001",
+      "status": "Registered and Approved"
+    },
+    {
+      "code": "BCSE303L",
+      "title": "Operating Systems",
+      "type": "Theory Only",
+      "credits": "3.0",
+      "category": "Discipline Core",
+      "slot": "B1+TB1",
+      "venue": "SJT502",
+      "faculty": "Prof. Jane Smith",
+      "classId": "VL20262701000002",
+      "status": "Registered and Approved"
+    },
+    {
+      "code": "BCSE303P",
+      "title": "Operating Systems Lab",
+      "type": "Lab Only",
+      "credits": "1.0",
+      "category": "Discipline Core",
+      "slot": "L37+L38",
+      "venue": "PRP232",
+      "faculty": "Prof. Jane Smith",
+      "classId": "VL20262701000003",
+      "status": "Registered and Approved"
+    },
+    {
+      "code": "BCSE306L",
+      "title": "Artificial Intelligence",
+      "type": "Theory Only",
+      "credits": "3.0",
+      "category": "Discipline Core",
+      "slot": "C1+TC1",
+      "venue": "SJT301",
+      "faculty": "Dr. Alan Turing",
+      "classId": "VL20262701000004",
+      "status": "Registered and Approved"
+    },
+    {
+      "code": "BCSE307L",
+      "title": "Compiler Design",
+      "type": "Theory Only",
+      "credits": "3.0",
+      "category": "Discipline Core",
+      "slot": "G1+TG1",
+      "venue": "SJT409",
+      "faculty": "Prof. Ada Lovelace",
+      "classId": "VL20262701000005",
+      "status": "Registered and Approved"
+    },
+    {
+      "code": "BCSE307P",
+      "title": "Compiler Design Lab",
+      "type": "Lab Only",
+      "credits": "1.0",
+      "category": "Discipline Core",
+      "slot": "L55+L56",
+      "venue": "SJT316",
+      "faculty": "Prof. Ada Lovelace",
+      "classId": "VL20262701000006",
+      "status": "Registered and Approved"
+    },
+    {
+      "code": "BCSE308L",
+      "title": "Computer Networks",
+      "type": "Theory Only",
+      "credits": "3.0",
+      "category": "Discipline Core",
+      "slot": "F1+TF1",
+      "venue": "SJT409",
+      "faculty": "Dr. Grace Hopper",
+      "classId": "VL20262701000007",
+      "status": "Registered and Approved"
+    },
+    {
+      "code": "BCSE308P",
+      "title": "Computer Networks Lab",
+      "type": "Lab Only",
+      "credits": "1.0",
+      "category": "Discipline Core",
+      "slot": "L49+L50",
+      "venue": "SJT517",
+      "faculty": "Dr. Grace Hopper",
+      "classId": "VL20262701000008",
+      "status": "Registered and Approved"
+    },
+    {
+      "code": "BCSE355L",
+      "title": "Cloud Architecture Design",
+      "type": "Theory Only",
+      "credits": "3.0",
+      "category": "Open Elective",
+      "slot": "A1+TA1",
+      "venue": "SJT301",
+      "faculty": "Prof. Charles Babbage",
+      "classId": "VL20262701000009",
+      "status": "Registered and Approved"
+    },
+    {
+      "code": "BSSC102N",
+      "title": "Indian Constitution",
+      "type": "Online Course",
+      "credits": "2.0",
+      "category": "Non-graded Core Requirement",
+      "slot": "NIL",
+      "venue": "N/A",
+      "faculty": "Dr. Richard Feynman",
+      "classId": "VL20262701000010",
+      "status": "Registered and Approved"
+    },
+    {
+      "code": "BSTS301P",
+      "title": "Advanced Competitive Coding - I",
+      "type": "Soft Skill",
+      "credits": "1.5",
+      "category": "Open Elective",
+      "slot": "E1+TE1",
+      "venue": "SJT404",
+      "faculty": "Prof. Marie Curie",
+      "classId": "VL20262701000011",
+      "status": "Registered and Approved"
+    }
+  ],
+  "ttSemesters": [
+    {
+      "id": "VL20262701",
+      "label": "Fall Semester 2026-27",
+      "isLatest": true
+    },
+    {
+      "id": "VL20252605",
+      "label": "Winter Semester 2025-26",
+      "isLatest": false
+    },
+    {
+      "id": "VL20252601",
+      "label": "Fall Semester 2025-26",
+      "isLatest": false
+    },
+    {
+      "id": "VL20242505",
+      "label": "Winter Semester 2024-25",
+      "isLatest": false
+    },
+    {
+      "id": "VL20242501",
+      "label": "Fall Semester 2024-25",
+      "isLatest": false
+    }
+  ],
+  "calSemesters": [
+    {
+      "id": "VL20262701",
+      "label": "Fall Semester 2026-27",
+      "selected": false
+    },
+    {
+      "id": "VL20252607",
+      "label": "Summer Semester 2025-26",
+      "selected": false
+    },
+    {
+      "id": "VL20252605",
+      "label": "Winter Semester 2025-26",
+      "selected": false
+    },
+    {
+      "id": "VL20252601",
+      "label": "Fall Semester 2025-26",
+      "selected": false
+    },
+    {
+      "id": "VL20242507",
+      "label": "Summer Semester 2024-25",
+      "selected": false
+    },
+    {
+      "id": "VL20242505",
+      "label": "Winter Semester 2024-25",
+      "selected": false
+    },
+    {
+      "id": "VL20242501",
+      "label": "Fall Semester 2024-25",
+      "selected": false
+    },
+    {
+      "id": "VL20232407",
+      "label": "Summer Semester 2023-24",
+      "selected": false
+    },
+    {
+      "id": "VL20232406",
+      "label": "Tri Semester III \u0026 VI 2023-24",
+      "selected": false
+    },
+    {
+      "id": "VL20232405",
+      "label": "Winter Semester 2023-24",
+      "selected": false
+    },
+    {
+      "id": "VL20232403",
+      "label": "Tri Semester II \u0026 V 2023-24",
+      "selected": false
+    },
+    {
+      "id": "VL20232402",
+      "label": "Tri Semester I \u0026 IV 2023-24",
+      "selected": false
+    },
+    {
+      "id": "VL20222307",
+      "label": "Summer Semester 2022-23",
+      "selected": false
+    },
+    {
+      "id": "VL20232401",
+      "label": "Fall Semester 2023-24",
+      "selected": false
+    },
+    {
+      "id": "VL20222306",
+      "label": "Tri Semester III \u0026 VI 2022-23",
+      "selected": false
+    },
+    {
+      "id": "VL20222305",
+      "label": "Winter Semester 2022-23",
+      "selected": false
+    },
+    {
+      "id": "VL20222303",
+      "label": "Tri Semester II \u0026 V 2022-23",
+      "selected": false
+    },
+    {
+      "id": "VL20222302",
+      "label": "Tri Semester I \u0026 IV 2022-23",
+      "selected": false
+    },
+    {
+      "id": "VL20222301",
+      "label": "Fall Semester 2022-23",
+      "selected": false
+    },
+    {
+      "id": "VL20212207",
+      "label": "Summer Semester Special 2021-22",
+      "selected": false
+    },
+    {
+      "id": "VL20212206",
+      "label": "Tri Semester III \u0026 VI 2021-22",
+      "selected": false
+    },
+    {
+      "id": "VL20212205",
+      "label": "Winter Semester 2021-22",
+      "selected": false
+    },
+    {
+      "id": "VL20212203",
+      "label": "Tri Semester II \u0026 V 2021-22",
+      "selected": false
+    },
+    {
+      "id": "VL20212202",
+      "label": "Tri Semester I \u0026 IV 2021-22",
+      "selected": false
+    },
+    {
+      "id": "VL20212201",
+      "label": "Fall Semester 2021-22",
+      "selected": false
+    },
+    {
+      "id": "VL20202107",
+      "label": "Summer Semester Special 2020-21",
+      "selected": false
+    },
+    {
+      "id": "VL20202106",
+      "label": "Tri Semester III and VI 2020-21",
+      "selected": false
+    },
+    {
+      "id": "VL20202105",
+      "label": "Winter Semester 2020-21",
+      "selected": false
+    },
+    {
+      "id": "VL20202110",
+      "label": "Winter Inter Semester 2020-21",
+      "selected": false
+    },
+    {
+      "id": "VL20202103",
+      "label": "Tri Semester II \u0026 V 2020-21",
+      "selected": false
+    },
+    {
+      "id": "VL20202102",
+      "label": "Tri Semester I \u0026 IV 2020-21",
+      "selected": false
+    },
+    {
+      "id": "VL20202101",
+      "label": "Fall Semester 2020-21",
+      "selected": false
+    },
+    {
+      "id": "VL2019207",
+      "label": "Summer Semester Special 2019-20",
+      "selected": false
+    },
+    {
+      "id": "VL2019206",
+      "label": "Tri Semester III \u0026 VI 2019-20",
+      "selected": false
+    },
+    {
+      "id": "VL2019205",
+      "label": "Winter Semester 2019-20",
+      "selected": false
+    },
+    {
+      "id": "VL2019203",
+      "label": "Tri Semester II \u0026 V 2019-20",
+      "selected": false
+    },
+    {
+      "id": "VL2019201",
+      "label": "Fall Semester 2019-20",
+      "selected": false
+    },
+    {
+      "id": "VL2019202",
+      "label": "Tri Semester I \u0026 IV 2019-20",
+      "selected": false
+    },
+    {
+      "id": "VL2018199",
+      "label": "Summer Semester II 2018-19",
+      "selected": false
+    },
+    {
+      "id": "VL2018197",
+      "label": "Summer Semester Special 2018-19",
+      "selected": false
+    },
+    {
+      "id": "VL2018198",
+      "label": "Summer Semester I 2018-19",
+      "selected": false
+    },
+    {
+      "id": "VL2018196",
+      "label": "Tri Semester III \u0026 VI 2018-19",
+      "selected": false
+    },
+    {
+      "id": "VL2018195",
+      "label": "Winter Semester 2018-19",
+      "selected": false
+    },
+    {
+      "id": "VL2018193",
+      "label": "Tri Semester II \u0026 V 2018-19",
+      "selected": false
+    },
+    {
+      "id": "VL2018191",
+      "label": "Fall Semester 2018-19",
+      "selected": false
+    },
+    {
+      "id": "VL2018192",
+      "label": "Tri Semester I \u0026 IV 2018-19",
+      "selected": false
+    },
+    {
+      "id": "VL2017189",
+      "label": "Summer Semester II 2017-18",
+      "selected": false
+    },
+    {
+      "id": "VL2017188",
+      "label": "Summer Semester I 2017-18",
+      "selected": false
+    },
+    {
+      "id": "VL2017186",
+      "label": "Tri Semester III and VI 2017-18",
+      "selected": false
+    },
+    {
+      "id": "VL2017185",
+      "label": "Winter Semester 2017-18",
+      "selected": false
+    },
+    {
+      "id": "VL2017183",
+      "label": "Tri Semester II \u0026 V 2017-18",
+      "selected": false
+    },
+    {
+      "id": "VL2017182",
+      "label": "Tri Semester I \u0026 IV 2017-18",
+      "selected": false
+    },
+    {
+      "id": "VL2017181",
+      "label": "Fall Semester 2017-18",
+      "selected": false
+    }
+  ],
+  "grades": {
+    "gpa": "",
+    "courses": []
+  },
+  "gradeHistory": {
+    "courses": [
+      {
+        "slNo": "1",
+        "code": "BCHY101L",
+        "title": "Engineering Chemistry",
+        "type": "TH",
+        "credits": "3.0",
+        "grade": "B",
+        "examMonth": "Nov-2024",
+        "resultDeclared": "02-Jan-2025",
+        "courseDistribution": "FC"
+      },
+      {
+        "slNo": "2",
+        "code": "BCHY101P",
+        "title": "Engineering Chemistry Lab",
+        "type": "LO",
+        "credits": "1.0",
+        "grade": "A",
+        "examMonth": "Nov-2024",
+        "resultDeclared": "02-Jan-2025",
+        "courseDistribution": "FC"
+      },
+      {
+        "slNo": "3",
+        "code": "BCSE101E",
+        "title": "Computer Programming: Python",
+        "type": "ETL",
+        "credits": "3.0",
+        "grade": "S",
+        "examMonth": "Nov-2024",
+        "resultDeclared": "02-Jan-2025",
+        "courseDistribution": "FC",
+        "details": [
+          {
+            "code": "BCSE101E",
+            "title": "Computer Programming: Python",
+            "type": "ETL",
+            "credits": "3.0",
+            "grade": "S",
+            "examMonth": "Nov-2024",
+            "resultDeclared": "02-Jan-2025"
+          },
+          {
+            "code": "BCSE101E",
+            "title": "Computer Programming: Python",
+            "type": "ETH",
+            "credits": "",
+            "grade": "-",
+            "examMonth": "Nov-2024",
+            "resultDeclared": "02-Jan-2025"
+          },
+          {
+            "code": "BCSE101E",
+            "title": "Computer Programming: Python",
+            "type": "ELA",
+            "credits": "",
+            "grade": "-",
+            "examMonth": "Nov-2024",
+            "resultDeclared": "02-Jan-2025"
+          }
+        ]
+      },
+      {
+        "slNo": "4",
+        "code": "BCSE101N",
+        "title": "Introduction to Engineering",
+        "type": "PJT",
+        "credits": "1.0",
+        "grade": "P",
+        "examMonth": "Nov-2024",
+        "resultDeclared": "02-Jan-2025",
+        "courseDistribution": "NGCR"
+      },
+      {
+        "slNo": "5",
+        "code": "BEEE102L",
+        "title": "Basic Electrical and Electronics Engineering",
+        "type": "TH",
+        "credits": "3.0",
+        "grade": "B",
+        "examMonth": "Nov-2024",
+        "resultDeclared": "02-Jan-2025",
+        "courseDistribution": "FC"
+      },
+      {
+        "slNo": "6",
+        "code": "BEEE102P",
+        "title": "Basic Electrical and Electronics Engineering Lab",
+        "type": "LO",
+        "credits": "1.0",
+        "grade": "S",
+        "examMonth": "Nov-2024",
+        "resultDeclared": "02-Jan-2025",
+        "courseDistribution": "FC"
+      },
+      {
+        "slNo": "7",
+        "code": "BMAT101L",
+        "title": "Calculus",
+        "type": "TH",
+        "credits": "3.0",
+        "grade": "B",
+        "examMonth": "Nov-2024",
+        "resultDeclared": "02-Jan-2025",
+        "courseDistribution": "FC"
+      },
+      {
+        "slNo": "8",
+        "code": "BMAT101P",
+        "title": "Calculus Lab",
+        "type": "LO",
+        "credits": "1.0",
+        "grade": "S",
+        "examMonth": "Nov-2024",
+        "resultDeclared": "02-Jan-2025",
+        "courseDistribution": "FC"
+      },
+      {
+        "slNo": "9",
+        "code": "BSTS201P",
+        "title": "Qualitative Skills Practice I",
+        "type": "SS",
+        "credits": "1.5",
+        "grade": "B",
+        "examMonth": "Nov-2024",
+        "resultDeclared": "26-Dec-2024",
+        "courseDistribution": "FC"
+      },
+      {
+        "slNo": "10",
+        "code": "BCSE102L",
+        "title": "Structured and Object-Oriented Programming",
+        "type": "TH",
+        "credits": "2.0",
+        "grade": "A",
+        "examMonth": "Apr-2025",
+        "resultDeclared": "30-May-2025",
+        "courseDistribution": "FC"
+      },
+      {
+        "slNo": "11",
+        "code": "BCSE102P",
+        "title": "Structured and Object-Oriented Programming Lab",
+        "type": "LO",
+        "credits": "2.0",
+        "grade": "S",
+        "examMonth": "Apr-2025",
+        "resultDeclared": "30-May-2025",
+        "courseDistribution": "FC"
+      },
+      {
+        "slNo": "12",
+        "code": "BENG101L",
+        "title": "Technical English Communication",
+        "type": "TH",
+        "credits": "2.0",
+        "grade": "A",
+        "examMonth": "Apr-2025",
+        "resultDeclared": "30-May-2025",
+        "courseDistribution": "FC"
+      },
+      {
+        "slNo": "13",
+        "code": "BENG101P",
+        "title": "Technical English Communication Lab",
+        "type": "LO",
+        "credits": "1.0",
+        "grade": "S",
+        "examMonth": "Apr-2025",
+        "resultDeclared": "30-May-2025",
+        "courseDistribution": "FC"
+      },
+      {
+        "slNo": "14",
+        "code": "BFRE101L",
+        "title": "French I",
+        "type": "TH",
+        "credits": "2.0",
+        "grade": "A",
+        "examMonth": "Apr-2025",
+        "resultDeclared": "30-May-2025",
+        "courseDistribution": "FC"
+      },
+      {
+        "slNo": "15",
+        "code": "BHUM101N",
+        "title": "Ethics and Values",
+        "type": "OC",
+        "credits": "2.0",
+        "grade": "P",
+        "examMonth": "Apr-2025",
+        "resultDeclared": "10-May-2025",
+        "courseDistribution": "NGCR"
+      },
+      {
+        "slNo": "16",
+        "code": "BMAT102L",
+        "title": "Differential Equations and Transforms",
+        "type": "TH",
+        "credits": "4.0",
+        "grade": "B",
+        "examMonth": "Apr-2025",
+        "resultDeclared": "30-May-2025",
+        "courseDistribution": "FC"
+      },
+      {
+        "slNo": "17",
+        "code": "BMGT101L",
+        "title": "Principles of Management",
+        "type": "TH",
+        "credits": "3.0",
+        "grade": "S",
+        "examMonth": "Apr-2025",
+        "resultDeclared": "30-May-2025",
+        "courseDistribution": "FC"
+      },
+      {
+        "slNo": "18",
+        "code": "BPHY101L",
+        "title": "Engineering Physics",
+        "type": "TH",
+        "credits": "3.0",
+        "grade": "B",
+        "examMonth": "Apr-2025",
+        "resultDeclared": "30-May-2025",
+        "courseDistribution": "FC"
+      },
+      {
+        "slNo": "19",
+        "code": "BPHY101P",
+        "title": "Engineering Physics Lab",
+        "type": "LO",
+        "credits": "1.0",
+        "grade": "A",
+        "examMonth": "Apr-2025",
+        "resultDeclared": "30-May-2025",
+        "courseDistribution": "FC"
+      },
+      {
+        "slNo": "20",
+        "code": "BSTS101P",
+        "title": "Quantitative Skills Practice I",
+        "type": "SS",
+        "credits": "1.5",
+        "grade": "B",
+        "examMonth": "Apr-2025",
+        "resultDeclared": "23-May-2025",
+        "courseDistribution": "FC"
+      },
+      {
+        "slNo": "21",
+        "code": "BCHY102N",
+        "title": "Environmental Sciences",
+        "type": "OC",
+        "credits": "2.0",
+        "grade": "P",
+        "examMonth": "Nov-2025",
+        "resultDeclared": "11-Dec-2025",
+        "courseDistribution": "NGCR"
+      },
+      {
+        "slNo": "22",
+        "code": "BCSE103E",
+        "title": "Computer Programming: Java",
+        "type": "ETL",
+        "credits": "3.0",
+        "grade": "S",
+        "examMonth": "Nov-2025",
+        "resultDeclared": "24-Dec-2025",
+        "courseDistribution": "FC",
+        "details": [
+          {
+            "code": "BCSE103E",
+            "title": "Computer Programming: Java",
+            "type": "ETL",
+            "credits": "3.0",
+            "grade": "S",
+            "examMonth": "Nov-2025",
+            "resultDeclared": "24-Dec-2025"
+          },
+          {
+            "code": "BCSE103E",
+            "title": "Computer Programming: Java",
+            "type": "ETH",
+            "credits": "",
+            "grade": "-",
+            "examMonth": "Nov-2025",
+            "resultDeclared": "24-Dec-2025"
+          },
+          {
+            "code": "BCSE103E",
+            "title": "Computer Programming: Java",
+            "type": "ELA",
+            "credits": "",
+            "grade": "-",
+            "examMonth": "Nov-2025",
+            "resultDeclared": "24-Dec-2025"
+          }
+        ]
+      },
+      {
+        "slNo": "23",
+        "code": "BCSE202L",
+        "title": "Data Structures and Algorithms",
+        "type": "TH",
+        "credits": "3.0",
+        "grade": "B",
+        "examMonth": "Nov-2025",
+        "resultDeclared": "24-Dec-2025",
+        "courseDistribution": "DC"
+      },
+      {
+        "slNo": "24",
+        "code": "BCSE202P",
+        "title": "Data Structures and Algorithms Lab",
+        "type": "LO",
+        "credits": "1.0",
+        "grade": "S",
+        "examMonth": "Nov-2025",
+        "resultDeclared": "24-Dec-2025",
+        "courseDistribution": "DC"
+      },
+      {
+        "slNo": "25",
+        "code": "BECE102L",
+        "title": "Digital Systems Design",
+        "type": "TH",
+        "credits": "3.0",
+        "grade": "B",
+        "examMonth": "Nov-2025",
+        "resultDeclared": "24-Dec-2025",
+        "courseDistribution": "DLES"
+      },
+      {
+        "slNo": "26",
+        "code": "BECE102P",
+        "title": "Digital Systems Design Lab",
+        "type": "LO",
+        "credits": "1.0",
+        "grade": "S",
+        "examMonth": "Nov-2025",
+        "resultDeclared": "24-Dec-2025",
+        "courseDistribution": "DLES"
+      },
+      {
+        "slNo": "27",
+        "code": "BENG102P",
+        "title": "Technical Report Writing",
+        "type": "LO",
+        "credits": "1.0",
+        "grade": "A",
+        "examMonth": "Nov-2025",
+        "resultDeclared": "24-Dec-2025",
+        "courseDistribution": "FC"
+      },
+      {
+        "slNo": "28",
+        "code": "BMAT201L",
+        "title": "Complex Variables and Linear Algebra",
+        "type": "TH",
+        "credits": "4.0",
+        "grade": "C",
+        "examMonth": "Nov-2025",
+        "resultDeclared": "24-Dec-2025",
+        "courseDistribution": "FC"
+      },
+      {
+        "slNo": "29",
+        "code": "BMAT205L",
+        "title": "Discrete Mathematics and Graph Theory",
+        "type": "TH",
+        "credits": "4.0",
+        "grade": "B",
+        "examMonth": "Nov-2025",
+        "resultDeclared": "24-Dec-2025",
+        "courseDistribution": "DLES"
+      },
+      {
+        "slNo": "30",
+        "code": "BSTS202P",
+        "title": "Qualitative Skills Practice II",
+        "type": "SS",
+        "credits": "1.5",
+        "grade": "B",
+        "examMonth": "Nov-2025",
+        "resultDeclared": "17-Dec-2025",
+        "courseDistribution": "FC"
+      },
+      {
+        "slNo": "31",
+        "code": "CFOC575M",
+        "title": "Wildlife Ecology",
+        "type": "OC",
+        "credits": "3.0",
+        "grade": "S",
+        "examMonth": "Nov-2025",
+        "resultDeclared": "12-Jan-2026",
+        "courseDistribution": "OE"
+      },
+      {
+        "slNo": "32",
+        "code": "AEXC176N",
+        "title": "Red Cross",
+        "type": "ECA",
+        "credits": "2.0",
+        "grade": "P",
+        "examMonth": "Apr-2026",
+        "resultDeclared": "04-Jun-2026",
+        "courseDistribution": "NGCR"
+      },
+      {
+        "slNo": "33",
+        "code": "BCSE203E",
+        "title": "Web Programming",
+        "type": "ETL",
+        "credits": "3.0",
+        "grade": "S",
+        "examMonth": "Apr-2026",
+        "resultDeclared": "29-May-2026",
+        "courseDistribution": "DC",
+        "details": [
+          {
+            "code": "BCSE203E",
+            "title": "Web Programming",
+            "type": "ETL",
+            "credits": "3.0",
+            "grade": "S",
+            "examMonth": "Apr-2026",
+            "resultDeclared": "29-May-2026"
+          },
+          {
+            "code": "BCSE203E",
+            "title": "Web Programming",
+            "type": "ETH",
+            "credits": "",
+            "grade": "-",
+            "examMonth": "Apr-2026",
+            "resultDeclared": "29-May-2026"
+          },
+          {
+            "code": "BCSE203E",
+            "title": "Web Programming",
+            "type": "ELA",
+            "credits": "",
+            "grade": "-",
+            "examMonth": "Apr-2026",
+            "resultDeclared": "29-May-2026"
+          }
+        ]
+      },
+      {
+        "slNo": "34",
+        "code": "BCSE204L",
+        "title": "Design and Analysis of Algorithms",
+        "type": "TH",
+        "credits": "3.0",
+        "grade": "B",
+        "examMonth": "Apr-2026",
+        "resultDeclared": "29-May-2026",
+        "courseDistribution": "DC"
+      },
+      {
+        "slNo": "35",
+        "code": "BCSE204P",
+        "title": "Design and Analysis of Algorithms Lab",
+        "type": "LO",
+        "credits": "1.0",
+        "grade": "S",
+        "examMonth": "Apr-2026",
+        "resultDeclared": "29-May-2026",
+        "courseDistribution": "DC"
+      },
+      {
+        "slNo": "36",
+        "code": "BCSE205L",
+        "title": "Computer Architecture and Organization",
+        "type": "TH",
+        "credits": "3.0",
+        "grade": "B",
+        "examMonth": "Apr-2026",
+        "resultDeclared": "29-May-2026",
+        "courseDistribution": "DC"
+      },
+      {
+        "slNo": "37",
+        "code": "BCSE304L",
+        "title": "Theory of Computation",
+        "type": "TH",
+        "credits": "3.0",
+        "grade": "C",
+        "examMonth": "Apr-2026",
+        "resultDeclared": "29-May-2026",
+        "courseDistribution": "DC"
+      },
+      {
+        "slNo": "38",
+        "code": "BECE204L",
+        "title": "Microprocessors and Microcontrollers",
+        "type": "TH",
+        "credits": "3.0",
+        "grade": "B",
+        "examMonth": "Apr-2026",
+        "resultDeclared": "29-May-2026",
+        "courseDistribution": "DLES"
+      },
+      {
+        "slNo": "39",
+        "code": "BECE204P",
+        "title": "Microprocessors and Microcontrollers Lab",
+        "type": "LO",
+        "credits": "1.0",
+        "grade": "S",
+        "examMonth": "Apr-2026",
+        "resultDeclared": "29-May-2026",
+        "courseDistribution": "DLES"
+      },
+      {
+        "slNo": "40",
+        "code": "BMAT202L",
+        "title": "Probability and Statistics",
+        "type": "TH",
+        "credits": "3.0",
+        "grade": "B",
+        "examMonth": "Apr-2026",
+        "resultDeclared": "29-May-2026",
+        "courseDistribution": "FC"
+      },
+      {
+        "slNo": "41",
+        "code": "BMAT202P",
+        "title": "Probability and Statistics Lab",
+        "type": "LO",
+        "credits": "1.0",
+        "grade": "A",
+        "examMonth": "Apr-2026",
+        "resultDeclared": "29-May-2026",
+        "courseDistribution": "FC"
+      },
+      {
+        "slNo": "42",
+        "code": "BSSC101N",
+        "title": "Essence of Traditional Knowledge",
+        "type": "OC",
+        "credits": "2.0",
+        "grade": "P",
+        "examMonth": "Apr-2026",
+        "resultDeclared": "25-May-2026",
+        "courseDistribution": "NGCR"
+      },
+      {
+        "slNo": "43",
+        "code": "BSTS102P",
+        "title": "Quantitative Skills Practice II",
+        "type": "SS",
+        "credits": "1.5",
+        "grade": "A",
+        "examMonth": "Apr-2026",
+        "resultDeclared": "25-May-2026",
+        "courseDistribution": "FC"
+      }
+    ],
+    "cgpa": null,
+    "curriculum": [
+      {
+        "title": "Foundation Core",
+        "required": "53.0",
+        "earned": "53.0"
+      },
+      {
+        "title": "Discipline-linked Engineering Sciences",
+        "required": "12.0",
+        "earned": "12.0"
+      },
+      {
+        "title": "Discipline Core",
+        "required": "47.0",
+        "earned": "17.0"
+      },
+      {
+        "title": "Specialization Elective",
+        "required": "21.0",
+        "earned": "0.0"
+      },
+      {
+        "title": "Projects and Internship",
+        "required": "9.0",
+        "earned": "0.0"
+      },
+      {
+        "title": "Open Elective",
+        "required": "9.0",
+        "earned": "3.0"
+      },
+      {
+        "title": "Bridge Course",
+        "required": "0.0",
+        "earned": "0.0"
+      },
+      {
+        "title": "Non-graded Core Requirement",
+        "required": "11.0",
+        "earned": "9.0"
+      },
+      {
+        "title": "Total Credits",
+        "required": "162.0",
+        "earned": "94.0"
+      }
+    ],
+    "baskets": [
+      {
+        "title": "B.Tech. Foreign Language - 2021onwards",
+        "distributionType": "FC",
+        "required": "2.0",
+        "earned": "2.0"
+      },
+      {
+        "title": "Extracurricular Activities / Co-Curricular Activities - B.Tech. Programmes",
+        "distributionType": "NGCR",
+        "required": "2.0",
+        "earned": "2.0"
+      },
+      {
+        "title": "B.Tech. HSM Elective - 2021 onwards",
+        "distributionType": "FC",
+        "required": "3.0",
+        "earned": "3.0"
+      }
+    ]
+  },
+  "marks": []
+}

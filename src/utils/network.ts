@@ -70,6 +70,37 @@ export class VTOPNetwork {
     return fetch(input, init);
   }
 
+  async fetchVtopApi(
+    endpoint: string,
+    params: Record<string, string> = {}
+  ): Promise<string> {
+    const url = endpoint.startsWith("/") ? endpoint : `/vtop/${endpoint}`;
+    const body = new URLSearchParams();
+
+    // Auto-append default params
+    if (!params._csrf) body.append("_csrf", this.csrf);
+    if (!params.authorizedID) body.append("authorizedID", this.authorizedID);
+
+    for (const [key, value] of Object.entries(params)) {
+      body.append(key, value);
+    }
+    
+    // Auto-append timestamp for cache busting if not specified
+    if (!params.x && !params.nocache) body.append("x", new Date().toUTCString());
+
+    const response = await this.rateLimitedFetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "X-Requested-With": "XMLHttpRequest",
+      },
+      body: body,
+    });
+
+    if (!response.ok) throw new Error(`Status ${response.status}`);
+    return await response.text();
+  }
+
   constructor(csrf: string, authorizedID: string) {
     this.csrf = csrf;
     this.authorizedID = authorizedID;
@@ -88,7 +119,7 @@ export class VTOPNetwork {
       const response = await this.rateLimitedFetch("/vtop/get/new/captcha", {
         method: "GET",
         headers: {
-          "Close-Requested-With": "XMLHttpRequest",
+          "X-Requested-With": "XMLHttpRequest",
         },
       });
 
@@ -110,6 +141,7 @@ export class VTOPNetwork {
     fetcher: () => Promise<string>,
     forceRefresh = false,
     customExpiryMs?: number,
+    validate?: (data: string) => boolean,
   ): Promise<string> {
     const stableId =
       localStorage.getItem("retop_lastAuthId") || this.authorizedID;
@@ -131,7 +163,8 @@ export class VTOPNetwork {
           data &&
           data.length > 50 &&
           !data.includes("Invalid") &&
-          !isErrorPage
+          !isErrorPage &&
+          (!validate || validate(data))
         ) {
           setCachedData(userScopedKey, data);
         }
@@ -242,7 +275,7 @@ export class VTOPNetwork {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          "Close-Requested-With": "XMLHttpRequest",
+          "X-Requested-With": "XMLHttpRequest",
         },
         body: params,
       });
@@ -255,7 +288,7 @@ export class VTOPNetwork {
   downloadSyllabus(courseCode: string) {
     const form = document.createElement("form");
     form.method = "POST";
-    form.action = "/vtop/courseSyllabusDownload1";
+    form.action = "/vtop/academics/common/courseSyllabusDownload1";
     form.target = "_blank";
     form.style.display = "none";
 
@@ -347,7 +380,7 @@ export class VTOPNetwork {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-            "Close-Requested-With": "XMLHttpRequest",
+            "X-Requested-With": "XMLHttpRequest",
           },
           body: body,
         });
@@ -505,7 +538,7 @@ export class VTOPNetwork {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          "Close-Requested-With": "XMLHttpRequest",
+          "X-Requested-With": "XMLHttpRequest",
         },
         body: body,
       });
@@ -530,7 +563,7 @@ export class VTOPNetwork {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          "Close-Requested-With": "XMLHttpRequest",
+          "X-Requested-With": "XMLHttpRequest",
         },
         body: body,
       });
@@ -556,7 +589,7 @@ export class VTOPNetwork {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-        "Close-Requested-With": "XMLHttpRequest",
+        "X-Requested-With": "XMLHttpRequest",
       },
       body: body,
     });
@@ -581,7 +614,7 @@ export class VTOPNetwork {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-            "Close-Requested-With": "XMLHttpRequest",
+            "X-Requested-With": "XMLHttpRequest",
           },
           body: body,
         },
@@ -613,7 +646,7 @@ export class VTOPNetwork {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          "Close-Requested-With": "XMLHttpRequest",
+          "X-Requested-With": "XMLHttpRequest",
         },
         body: body,
       });
@@ -678,7 +711,7 @@ export class VTOPNetwork {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-        "Close-Requested-With": "XMLHttpRequest",
+        "X-Requested-With": "XMLHttpRequest",
       },
       body: body,
     });
@@ -790,7 +823,7 @@ export class VTOPNetwork {
 
     const response = await this.rateLimitedFetch(path, {
       method: "POST",
-      headers: { "Close-Requested-With": "XMLHttpRequest" },
+      headers: { "X-Requested-With": "XMLHttpRequest" },
       body: formData,
     });
     return response.ok;
@@ -834,7 +867,7 @@ export class VTOPNetwork {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          "Close-Requested-With": "XMLHttpRequest",
+          "X-Requested-With": "XMLHttpRequest",
         },
         body: body,
       });

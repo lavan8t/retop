@@ -68,157 +68,10 @@ try {
   }
 } catch (e) {}
 
-// Inject Splash Screen instantly for authenticated pages so it does not appear late
-function injectSplashScreen() {
-  if (window.location.pathname.includes("/vtop/content")) {
-    const splash = document.createElement("div");
-    splash.id = "retop-splash-screen";
-    splash.style.cssText = "position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--bg-main, #0b0b0b); z-index: 999999; display: flex; align-items: center; justify-content: center; font-family: 'GSF', monospace;";
+// Splash Screen logic removed
+function injectSplashScreen() {}
 
-    const fontUrl1 = chrome.runtime.getURL("dist/fonts/gsf.subset.woff2");
-
-    chrome.storage.local.get("retop-data", (res) => {
-      let progress = 0;
-      let daysLeft = "";
-      let semName = "Retop";
-
-      try {
-        const data = (res["retop-data"] as any)?.state;
-        if (data && data.calGridData && data.calGridData.length > 0) {
-          let firstDay: Date | null = null;
-          let lastDay: Date | null = null;
-          for (const month of data.calGridData) {
-            for (const day of month.days) {
-              if (day.isInstructional && day.dateObj) {
-                const d = new Date(day.dateObj);
-                if (!firstDay || d < firstDay) firstDay = d;
-                if (!lastDay || d > lastDay) lastDay = d;
-              }
-            }
-          }
-          if (firstDay && lastDay) {
-            const start = firstDay.getTime();
-            const end = lastDay.getTime();
-            const now = new Date().getTime();
-            if (now < start) progress = 0;
-            else if (now > end) progress = 100;
-            else progress = Math.round(((now - start) / (end - start)) * 100);
-            
-            daysLeft = `${Math.max(0, Math.ceil((lastDay.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} days more`;
-            
-            if (data.calSelectedSem) {
-              const semOpt = data.calSemesters?.find((s: any) => s.id === data.calSelectedSem);
-              if (semOpt) semName = semOpt.label;
-            }
-          }
-        }
-      } catch (e) {}
-
-      splash.innerHTML = `
-        <style>
-          @font-face {
-            font-family: 'GSF';
-            src: url('${fontUrl1}') format('woff2');
-            font-display: swap;
-          }
-          .splash-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            transform: scale(1.2);
-          }
-          .splash-percentage {
-            position: absolute;
-            bottom: 100%;
-            right: 0;
-            margin-bottom: 0.5rem;
-            font-weight: 900;
-            color: var(--accent-base, #2563eb);
-            text-transform: uppercase;
-            font-size: 1rem;
-            text-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            animation: fade-in-up 0.5s ease-out;
-          }
-          .splash-days {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            margin-top: 0.5rem;
-            font-weight: 900;
-            color: var(--accent-base, #2563eb);
-            text-transform: uppercase;
-            font-size: 1rem;
-            text-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            animation: fade-in-down 0.5s ease-out;
-          }
-          .splash-sem-text {
-            font-variation-settings: "wdth" 151, "wght" 800;
-            font-size: 4rem;
-            color: var(--text-main, #fff);
-            white-space: nowrap;
-            line-height: 1;
-            font-family: 'GSF', sans-serif;
-            animation: pulse-font 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
-          }
-          .splash-progress-wrapper {
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-          }
-          .splash-progress-fill {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: ${progress}%;
-            overflow: hidden;
-            white-space: nowrap;
-            color: var(--text-main, #fff);
-            pointer-events: none;
-            opacity: 0.3;
-            font-family: 'GSF', sans-serif;
-            font-size: 4rem;
-            line-height: 1;
-            animation: pulse-font 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
-          }
-          @keyframes pulse-font {
-            0% { font-variation-settings: "wdth" 151, "wght" 800; }
-            100% { font-variation-settings: "wdth" 75, "wght" 300; }
-          }
-          @keyframes fade-in-up {
-            0% { opacity: 0; transform: translateY(10px); }
-            100% { opacity: 1; transform: translateY(0); }
-          }
-          @keyframes fade-in-down {
-            0% { opacity: 0; transform: translateY(-10px); }
-            100% { opacity: 1; transform: translateY(0); }
-          }
-        </style>
-        <div class="splash-container">
-          <div class="splash-percentage">${progress}% Completed</div>
-          <div class="splash-progress-wrapper">
-             <div class="splash-sem-text">${semName}</div>
-             <div class="splash-progress-fill">${semName}</div>
-          </div>
-          <div class="splash-days">${daysLeft}</div>
-        </div>
-      `;
-    });
-
-    document.documentElement.appendChild(splash);
-  }
-}
-
-function removeSplashScreen() {
-  const splash = document.getElementById("retop-splash-screen");
-  if (splash) {
-    splash.style.opacity = "0";
-    splash.style.transition = "opacity 0.4s ease-out";
-    setTimeout(() => splash.remove(), 400);
-  }
-}
+function removeSplashScreen() {}
 
 injectSplashScreen();
 
@@ -327,8 +180,12 @@ window.fetch = async (...args) => {
       handleNetworkError(response.status);
     }
     return response;
-  } catch (error) {
-    handleNetworkError();
+  } catch (error: any) {
+    // If the browser is offline, it's a real network error
+    // If online, it's likely an aborted fetch due to page navigation
+    if (!navigator.onLine) {
+      handleNetworkError();
+    }
     throw error;
   }
 };
@@ -344,7 +201,9 @@ XMLHttpRequest.prototype.open = function (
     }
   });
   this.addEventListener("error", function () {
-    handleNetworkError();
+    if (!navigator.onLine) {
+      handleNetworkError();
+    }
   });
   return originalXhrOpen.apply(this, args as any);
 };

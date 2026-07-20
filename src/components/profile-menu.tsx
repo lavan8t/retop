@@ -23,8 +23,6 @@ interface ProfileMenuProps {
   onNavigate: (link: QuickLink) => void;
   onLogout: () => void;
   onLegacyToggle: () => void;
-  onLegacyHover?: () => void;
-  onLegacyLeave?: () => void;
   onClose: () => void;
 }
 
@@ -35,8 +33,6 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
   onNavigate,
   onLogout,
   onLegacyToggle,
-  onLegacyHover,
-  onLegacyLeave,
   onClose,
 }) => {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
@@ -82,17 +78,15 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
   };
 
   const menuVariants: Variants = {
-    hidden: { opacity: 0, scale: 0.4, y: -20 },
+    hidden: { opacity: 0, scale: 0.95 },
     visible: {
       opacity: 1,
       scale: 1,
-      y: 0,
       transition: { type: "spring", stiffness: 1200, damping: 40 },
     },
     exit: {
       opacity: 0,
-      scale: 0.4,
-      y: -20,
+      scale: 0.95,
       transition: { type: "spring", stiffness: 1200, damping: 40 },
     },
   };
@@ -171,10 +165,9 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
             </button>
           ))}
         </div>
-
       </div>
 
-      <div className="flex gap-1.5 bg-(--bg-surface) rounded-[24px] border-2 border-(--border-dim) p-1.5 shrink-0 popup-shadow">
+      <div className="flex gap-1.5 bg-(--bg-surface) rounded-3xl border-2 border-(--border-dim) p-1.5 shrink-0 popup-shadow">
         <Tooltip text="Settings" className="flex-1">
           <button
             onClick={() => {
@@ -191,17 +184,15 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
           </button>
         </Tooltip>
 
-        <Tooltip text="VTOP" className="flex-1">
+        <Tooltip text="Get back to VTOP" className="flex-1">
           <button
             onClick={() => {
               onLegacyToggle();
               onClose();
             }}
-            onMouseEnter={() => onLegacyHover && onLegacyHover()}
-            onMouseLeave={() => onLegacyLeave && onLegacyLeave()}
             className="w-full flex items-center justify-center p-2.5 rounded-[18px] bg-(--bg-highlight) text-(--text-main) hover:text-(--accent-base) transition-colors active:scale-95 group"
           >
-            <span className="text-md group-hover:scale-110 transition-transform !font-['Times_New_Roman',Times,serif] font-bold">
+            <span className="text-md group-hover:scale-110 transition-transform font-['Times_New_Roman',Times,serif]! font-bold">
               VTOP
             </span>
           </button>
@@ -210,7 +201,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
         <Tooltip text="Log Out" className="flex-1">
           <button
             onClick={() => setShowLogoutDialog(true)}
-            className="w-full flex items-center justify-center p-2.5 rounded-[18px] bg-(--bg-highlight) text-(--text-main) hover:text-red-500 transition-colors active:scale-95 group"
+            className="w-full flex items-center justify-center p-2.5 rounded-[18px] bg-(--bg-highlight) text-(--text-main) hover:text-(--accent-base) transition-colors active:scale-95 group"
           >
             <Logout className="w-6 h-6 group-hover:translate-x-1.5 transition-transform duration-500 ease-out" />
           </button>

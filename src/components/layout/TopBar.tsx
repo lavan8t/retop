@@ -58,7 +58,7 @@ interface TopBarProps {
 const getPageTitle = (view: string, dynamicTitle?: string) => {
   switch (view) {
     case "dashboard":
-      return "home";
+      return "search";
     case "timetable":
       return "TIMETABLE";
     case "curriculum":
@@ -361,6 +361,33 @@ export const TopBar: React.FC<TopBarProps> = ({
               </motion.div>
             )}
 
+            {currentView === "calendar" && (
+              <motion.div
+                key="calendar-controls"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20, transition: { duration: 0.15 } }}
+                className="flex items-center gap-2 mr-1 md:mr-2 pointer-events-auto"
+              >
+                <SemesterDropdown
+                  semesters={calSemesters}
+                  selectedId={calSelectedSem}
+                  onChange={(id: string) => {
+                    setCalSelectedSem(id);
+                  }}
+                />
+                {calClassGroups.length > 0 && (
+                  <ClassGroupDropdown
+                    groups={calClassGroups}
+                    selectedId={calSelectedGroup}
+                    onChange={(id: string) => {
+                      setCalSelectedGroup(id);
+                    }}
+                  />
+                )}
+              </motion.div>
+            )}
+
             {currentView === "marks" && (
               <motion.div
                 key="marks-controls"
@@ -513,6 +540,46 @@ export const TopBar: React.FC<TopBarProps> = ({
               </motion.div>
             )}
           </AnimatePresence>
+
+          <div className="flex items-center pointer-events-auto mr-1 md:mr-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onSync && !isSyncing) onSync();
+              }}
+              disabled={isSyncing}
+              className="flex items-center gap-1.5 px-2 py-1 rounded-full hover:bg-(--bg-hover) transition-colors cursor-pointer text-left disabled:opacity-50 shrink-0"
+            >
+              <motion.div
+                animate={isSyncing ? { rotate: 360 } : {}}
+                transition={
+                  isSyncing
+                    ? { duration: 1, repeat: Infinity, ease: "linear" }
+                    : {}
+                }
+                className="shrink-0 flex items-center justify-center"
+              >
+                <Autorenew className="w-4 h-4 md:w-5 md:h-5 text-(--text-muted) hover:text-(--text-main) transition-colors" />
+              </motion.div>
+              <div className="flex flex-col shrink-0 pr-1">
+                <span className="text-[10px] font-bold uppercase text-(--text-main) leading-none mt-0.5">
+                  {isSyncing ? "Syncing" : "Sync"}
+                </span>
+                {lastSyncTime > 0 && (
+                  <span className="text-[8px] text-(--text-muted) leading-none mt-0.5">
+                    {(() => {
+                      const ago = Math.floor(
+                        (Date.now() - lastSyncTime) / 1000,
+                      );
+                      if (ago < 60) return "now";
+                      if (ago < 3600) return `${Math.floor(ago / 60)}m`;
+                      return `${Math.floor(ago / 3600)}h`;
+                    })()}
+                  </span>
+                )}
+              </div>
+            </button>
+          </div>
 
           <div className="relative shrink-0 flex items-center justify-center pointer-events-auto">
             <button

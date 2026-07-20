@@ -132,11 +132,12 @@ const getSavedView = (): ViewType => {
     : "dashboard";
 };
 
-const navigateLegacy = (title: string) => {
+const navigateLegacy = (title: string, url?: string) => {
   const links = Array.from(document.querySelectorAll("a"));
-  const target = links.find(
-    (el) => el.textContent?.trim() === title || el.innerText?.trim() === title,
-  );
+  const target = links.find((el) => {
+    if (url && el.getAttribute("data-url") === url) return true;
+    return el.textContent?.trim() === title || el.innerText?.trim() === title;
+  });
   if (target) target.click();
   else console.warn("Legacy link not found for:", title);
 };
@@ -468,7 +469,7 @@ const DashboardApp = () => {
     sessionStorage.setItem("vtop-legacy-mode", (!isModernUI).toString());
   }, [isModernUI]);
 
-  const handleLinkClick = async (link: QuickLink) => {
+  const handleLinkClick = async (link: QuickLink, forceLegacy: boolean = false) => {
     setIsOmniboxOpen(false);
     setShowProfileMenu(false);
 
@@ -480,10 +481,12 @@ const DashboardApp = () => {
 
     const dest = getDestinationView(link);
 
-    if (dest === "content") {
-      setIsModernUI(false);
+    if (forceLegacy || dest === "content") {
       setContentTitle(link.title);
-      setTimeout(() => navigateLegacy(link.title), 50);
+      setTimeout(() => {
+        setIsModernUI(false);
+        setTimeout(() => navigateLegacy(link.title, link.url), 50);
+      }, 200);
       return;
     }
 
@@ -545,7 +548,7 @@ const DashboardApp = () => {
         animate={{
           y: isModernUI
             ? isPeeking
-              ? "-15%"
+              ? "15%"
               : "0%"
             : isPeeking
               ? "65%"
@@ -620,6 +623,14 @@ const DashboardApp = () => {
             </AnimatePresence>
           </main>
 
+
+          {currentView === "timetable" && !isOmniboxOpen && (
+            <FloatingViewToggle
+              viewMode={ttViewMode}
+              setViewMode={setTtViewMode}
+            />
+          )}
+
           <AnimatePresence>
             {showProfileMenu && (
               <>
@@ -640,22 +651,17 @@ const DashboardApp = () => {
                     setIsPeeking(false);
                     setIsModernUI(false);
                   }}
-                  onLegacyHover={() => setIsPeeking(true)}
-                  onLegacyLeave={() => setIsPeeking(false)}
                   onClose={() => setShowProfileMenu(false)}
                 />
               </>
             )}
           </AnimatePresence>
-          {currentView === "timetable" && !isOmniboxOpen && (
-            <FloatingViewToggle
-              viewMode={ttViewMode}
-              setViewMode={setTtViewMode}
-            />
-          )}
+
           <SnackbarManager />
         </div>
       </motion.div>
+
+
       
       <AnimatePresence>
         {!isModernUI && (
@@ -677,14 +683,14 @@ const DashboardApp = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className="fixed top-24 left-1/2 -translate-x-1/2 z-99999 w-[600px] max-w-[90vw] pointer-events-auto flex flex-col"
+            className="fixed top-2 left-4 md:left-8 z-[99999] w-full max-w-[360px] pointer-events-auto flex flex-col"
           >
             {/* Backdrop to close when clicked outside */}
             <div 
-              className="fixed inset-0 z-[-1] bg-black/40 backdrop-blur-sm"
+              className="fixed inset-0 z-[-1] bg-transparent"
               onClick={() => setIsOmniboxOpen(false)}
             />
-            <div className="bg-(--bg-surface) rounded-[32px] shadow-2xl border-2 border-(--border-main) flex flex-col p-2 h-auto relative">
+            <div className="bg-(--bg-surface) rounded-[32px] shadow-(--brutal-shadow-hover) border-2 border-(--border-main) flex flex-col p-2 h-auto relative">
               <TopBarSearch
                 currentView={currentView}
                 isOmniboxOpen={isOmniboxOpen}
@@ -699,6 +705,11 @@ const DashboardApp = () => {
                 onTogglePin={handleTogglePin}
                 initialQuery={omniboxInitial}
                 pageTitle="Search Retop..."
+                onBack={() => {
+                  setIsModernUI(true);
+                  setCurrentView("dashboard");
+                  setIsOmniboxOpen(false);
+                }}
               />
             </div>
           </motion.div>

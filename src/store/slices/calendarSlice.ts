@@ -115,7 +115,7 @@ export const createCalendarSlice: StateCreator<DataState, [], [], CalendarSlice>
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          "Close-Requested-With": "XMLHttpRequest",
+          "X-Requested-With": "XMLHttpRequest",
         },
         body: body,
       });
@@ -123,10 +123,12 @@ export const createCalendarSlice: StateCreator<DataState, [], [], CalendarSlice>
       const html = await res.text();
       const { groups, months } = parseCalendarGroupsAndMonths(html);
 
-      localStorage.setItem(
-        cacheKey,
-        JSON.stringify({ date: today, data: { groups, months } }),
-      );
+      if (groups.length > 0 && months.length > 0) {
+        localStorage.setItem(
+          cacheKey,
+          JSON.stringify({ date: today, data: { groups, months } }),
+        );
+      }
 
       const savedGroup = localStorage.getItem("retop-cal-selected-group");
       const defaultGroup = (savedGroup && groups.some((g) => g.id === savedGroup))
@@ -166,7 +168,11 @@ export const createCalendarSlice: StateCreator<DataState, [], [], CalendarSlice>
               classGroupId: groupId,
             });
           },
-          forceFetch
+          forceFetch,
+          undefined,
+          (data) => {
+            return data.includes("calendar-table") || data.includes("table-responsive");
+          }
         );
 
         const days = parseCalendarDays(html, month.label);

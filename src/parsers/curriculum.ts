@@ -76,9 +76,34 @@ export function parseCurriculumDashboard(html: string): {
   return { totalCredits, categories };
 }
 
-export function parseCurriculumCategoryTable(html: string): CurriculumCourse[] {
+export function parseCurriculumCategoryTable(html: string): { courses: CurriculumCourse[], basketMaxCredits: Record<string, string> } {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, "text/html");
+  
+  const basketMap: Record<string, string> = {};
+  const basketMaxCredits: Record<string, string> = {};
+  
+  const navButtons = doc.querySelectorAll(".nav-tabs button");
+  navButtons.forEach(btn => {
+    const target = btn.getAttribute("data-bs-target") || "";
+    const name = btn.textContent?.trim() || "";
+    if (target && name) {
+      basketMap[target.replace("#", "")] = name;
+    }
+  });
+
+  const tabPanes = doc.querySelectorAll(".tab-pane");
+  tabPanes.forEach(pane => {
+    if (pane.id && basketMap[pane.id]) {
+      const basket = basketMap[pane.id];
+      const text = pane.textContent || "";
+      const match = text.match(/Maximum Basket Credits Allowed\s*:\s*([\d.]+)/i);
+      if (match) {
+        basketMaxCredits[basket] = match[1];
+      }
+    }
+  });
+
   const rows = doc.querySelectorAll("table tbody tr");
   const courses: CurriculumCourse[] = [];
 
@@ -94,6 +119,25 @@ export function parseCurriculumCategoryTable(html: string): CurriculumCourse[] {
       }
     }
 
+    let basket = "Core";
+    let currentPane = row.closest('.tab-pane');
+    while (currentPane) {
+      if (currentPane.id && basketMap[currentPane.id]) {
+        basket = basketMap[currentPane.id];
+        break;
+      }
+      currentPane = currentPane.parentElement?.closest('.tab-pane') || null;
+    }
+
+    if (basket === "Core") {
+      if (navButtons.length === 1) {
+        basket = navButtons[0].textContent?.trim() || "Core";
+      } else if (navButtons.length > 1) {
+        // If we couldn't find the pane but there are multiple tabs, default to the first one as a fallback
+        basket = navButtons[0].textContent?.trim() || "Core";
+      }
+    }
+
     if (codeIndex !== -1) {
       courses.push({
         sl: cells[0]?.textContent?.trim() || "",
@@ -105,7 +149,7 @@ export function parseCurriculumCategoryTable(html: string): CurriculumCourse[] {
         t: cells[codeIndex + 5]?.textContent?.trim() || "0",
         p: cells[codeIndex + 6]?.textContent?.trim() || "0",
         j: cells[codeIndex + 7]?.textContent?.trim() || "0",
-        basket: "Core",
+        basket: basket,
         isCompleted: row.getAttribute("style")?.toLowerCase().includes("background") || 
                      row.className.toLowerCase().includes("success") || 
                      Array.from(cells).some(c => c.textContent?.toLowerCase().includes("completed"))
@@ -113,5 +157,5 @@ export function parseCurriculumCategoryTable(html: string): CurriculumCourse[] {
     }
   });
 
-  return courses;
+  return { courses, basketMaxCredits };
 }

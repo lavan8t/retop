@@ -68,32 +68,7 @@ export function scrapeMenu(doc: Document): MenuCategory[] {
     }
   });
 
-  // Catch any links that weren't inside a known category
-  const allLinks = doc.querySelectorAll("a[data-url]");
-  const generalLinks: QuickLink[] = [];
 
-  allLinks.forEach((a) => {
-    const url = a.getAttribute("data-url");
-    let linkTitle = a.textContent?.trim() || "Untitled Module";
-    linkTitle = sanitizeMenuTitle(linkTitle);
-
-    if (url && !visitedUrls.has(url)) {
-      visitedUrls.add(url);
-      generalLinks.push({
-        title: linkTitle,
-        url: url,
-        category: "General / Utilities",
-      });
-    }
-  });
-
-  if (generalLinks.length > 0) {
-    categories.push({
-      id: "GENERAL_CATCHALL",
-      title: "General / Utilities",
-      links: generalLinks,
-    });
-  }
 
   return categories;
 }

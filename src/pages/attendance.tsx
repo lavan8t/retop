@@ -44,17 +44,17 @@ const AttendanceCalculator = ({
   const absent = course.total - course.attended;
   const remainingClasses = Math.max(0, course.total - (present + absent));
 
-  console.log("CALCULATION_DEBUG:", {
-    course: course.courseCode,
-    isLab,
-    weight,
-    rawTotal: course.total,
-    rawAttended: course.attended,
-    rawPercentage: course.percentage,
-    present,
-    absent,
-    remainingClasses,
-  });
+  // console.log("CALCULATION_DEBUG:", {
+  //   course: course.courseCode,
+  //   isLab,
+  //   weight,
+  //   rawTotal: course.total,
+  //   rawAttended: course.attended,
+  //   rawPercentage: course.percentage,
+  //   present,
+  //   absent,
+  //   remainingClasses,
+  // });
 
   const maxAttend = remainingClasses;
   const maxBunk = remainingClasses;

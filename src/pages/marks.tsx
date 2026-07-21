@@ -99,7 +99,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({
         const isPastSemester = semesters.length > 0 && selectedSem !== semesters[0].id;
         const html = await network.getStudentMarks(selectedSem, false, isPastSemester);
         const parsedMarks = parseStudentMarks(html);
-        console.log(`[DATA_CAPTURE] Marks (${selectedSem}):`, parsedMarks);
+        // console.log(`[DATA_CAPTURE] Marks (${selectedSem}):`, parsedMarks);
         setMarksData(parsedMarks);
         setOfflineMiss(false);
       } catch (e) {

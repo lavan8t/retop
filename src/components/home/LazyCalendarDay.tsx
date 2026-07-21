@@ -66,9 +66,40 @@ export const LazyCalendarDay = React.memo(({
   }
   if (eventFilter === "all" || eventFilter === "assignments") {
     if (isToday) {
-      assignments.forEach((a: any) =>
-        dayEvents.push({ type: "assignment", data: a }),
-      );
+      [...assignments]
+        .sort((a: any, b: any) => {
+          const parseDate = (dStr: string) => {
+            if (!dStr) return NaN;
+            // Standardize format by replacing slashes and dashes
+            const cleanStr = dStr.replace(/[-/]/g, " ").trim();
+            // Try standard Date parsing
+            const t = new Date(cleanStr).getTime();
+            if (!isNaN(t)) return t;
+            
+            // If it fails, maybe it's DD MM YYYY. Let's try to parse manually
+            const parts = cleanStr.split(" ");
+            if (parts.length >= 3) {
+              const day = parseInt(parts[0], 10);
+              const month = parseInt(parts[1], 10) - 1; // 0-indexed
+              const year = parseInt(parts[2], 10);
+              if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+                return new Date(year, month, day).getTime();
+              }
+            }
+            return NaN;
+          };
+
+          const dateA = parseDate(a.dueDate);
+          const dateB = parseDate(b.dueDate);
+          
+          if (isNaN(dateA) && isNaN(dateB)) return 0;
+          if (isNaN(dateA)) return 1;
+          if (isNaN(dateB)) return -1;
+          return dateA - dateB;
+        })
+        .forEach((a: any) =>
+          dayEvents.push({ type: "assignment", data: a }),
+        );
     }
   }
   if (eventFilter === "all" || eventFilter === "events") {

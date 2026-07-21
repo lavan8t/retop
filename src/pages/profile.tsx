@@ -429,7 +429,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4 grid-flow-dense">
 
           {/* 1. Digital ID Card (Top Left) */}
-          <div className="md:col-span-2 lg:col-span-2 lg:row-span-4 flex justify-start items-center z-10 pl-0 md:pl-4">
+          <div className="md:col-span-2 lg:col-span-2 lg:row-span-4 flex justify-center items-center z-10 w-full">
             <DigitalIDCard data={data} />
           </div>
 

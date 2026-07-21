@@ -10,6 +10,7 @@ import { CurriculumCategory, CurriculumCourse } from "../types/vtop";
 import {
   CheckCircle,
   Search,
+  Download,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { EmptyState } from "../components/EmptyState";
 import { motion, AnimatePresence } from "framer-motion";
@@ -25,6 +26,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
   const [categories, setCategories] = useState<CurriculumCategory[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [allCourses, setAllCourses] = useState<Record<string, CurriculumCourse[]>>({});
+  const [basketMaxCreditsMap, setBasketMaxCreditsMap] = useState<Record<string, Record<string, string>>>({});
   const [loadingCourses, setLoadingCourses] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [hideCompleted, setHideCompleted] = useState(() => {
@@ -71,15 +73,24 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
 
       setLoadingCourses(true);
       const categoryPromises = data.categories.map(cat => 
-        network.getCurriculumCategory(cat.id).then(catHtml => ({
-          id: cat.id,
-          courses: parseCurriculumCategoryTable(catHtml)
-        })).catch(() => ({ id: cat.id, courses: [] as CurriculumCourse[] }))
+        network.getCurriculumCategory(cat.id).then(catHtml => {
+          const parsed = parseCurriculumCategoryTable(catHtml);
+          return {
+            id: cat.id,
+            courses: parsed.courses,
+            basketMaxCredits: parsed.basketMaxCredits
+          };
+        }).catch(() => ({ id: cat.id, courses: [] as CurriculumCourse[], basketMaxCredits: {} as Record<string, string> }))
       );
       const catResults = await Promise.all(categoryPromises);
       const coursesMap: Record<string, CurriculumCourse[]> = {};
-      catResults.forEach(res => coursesMap[res.id] = res.courses);
+      const maxCreditsMap: Record<string, Record<string, string>> = {};
+      catResults.forEach(res => {
+        coursesMap[res.id] = res.courses;
+        maxCreditsMap[res.id] = res.basketMaxCredits;
+      });
       setAllCourses(coursesMap);
+      setBasketMaxCreditsMap(maxCreditsMap);
       setLoadingCourses(false);
     } catch (e) {
       console.error(e);
@@ -88,10 +99,24 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
     }
   };
 
+  const [selectedBasket, setSelectedBasket] = useState<string | null>(null);
+
   const handleSelectCategory = async (cat: CurriculumCategory) => {
     if (selectedId === cat.id) return;
     setSelectedId(cat.id);
+    setSelectedBasket(null);
   };
+
+  const availableBaskets = useMemo(() => {
+    if (!selectedId || !allCourses[selectedId]) return [];
+    const baskets = new Set<string>();
+    allCourses[selectedId].forEach(c => baskets.add(c.basket || "Core"));
+    return Array.from(baskets);
+  }, [selectedId, allCourses]);
+
+  const activeBasket = selectedBasket && availableBaskets.includes(selectedBasket) 
+    ? selectedBasket 
+    : availableBaskets[0];
 
   const filteredCourses = useMemo(() => {
     let result: CurriculumCourse[] = [];
@@ -109,6 +134,9 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
       });
     } else {
       result = selectedId && allCourses[selectedId] ? allCourses[selectedId] : [];
+      if (activeBasket && availableBaskets.length > 1) {
+        result = result.filter(c => (c.basket || "Core") === activeBasket);
+      }
     }
 
     result = result.map(c => ({
@@ -121,7 +149,30 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
     }
     
     return result;
-  }, [allCourses, selectedId, searchQuery, hideCompleted, completedCourseCodes]);
+  }, [allCourses, selectedId, searchQuery, hideCompleted, completedCourseCodes, activeBasket, availableBaskets]);
+
+  const basketStatus = useMemo(() => {
+    if (!selectedId || !activeBasket || searchQuery) return null;
+    const maxCreditStr = basketMaxCreditsMap[selectedId]?.[activeBasket];
+    if (!maxCreditStr) return null;
+    const maxCredits = parseFloat(maxCreditStr);
+    
+    const coursesInBasket = allCourses[selectedId]?.filter(c => (c.basket || "Core") === activeBasket) || [];
+    let completedCredits = 0;
+    coursesInBasket.forEach(c => {
+      if (c.isCompleted || completedCourseCodes.has(c.code)) {
+        completedCredits += parseFloat(c.credits) || 0;
+      }
+    });
+
+    const isFinished = completedCredits >= maxCredits;
+
+    return {
+      completed: completedCredits,
+      max: maxCredits,
+      isFinished
+    };
+  }, [selectedId, activeBasket, basketMaxCreditsMap, allCourses, completedCourseCodes, searchQuery]);
 
   return (
     <div className="h-full w-full overflow-y-auto custom-scrollbar bg-(--bg-main) relative">
@@ -206,6 +257,48 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
           )}
         </div>
 
+        {!searchQuery && availableBaskets.length > 1 && (
+          <div className="w-full flex items-center gap-2 px-2 md:px-4 mb-4 overflow-x-auto custom-scrollbar pb-2">
+            {availableBaskets.map(basket => (
+              <button
+                key={basket}
+                onClick={() => setSelectedBasket(basket)}
+                className={`px-4 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-all cursor-pointer shadow-sm ${
+                  activeBasket === basket
+                    ? "bg-(--text-main) text-(--bg-main)"
+                    : "bg-(--bg-surface) text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main)"
+                }`}
+              >
+                {basket}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {basketStatus && (
+          <div className="w-full px-2 md:px-4 mb-6 z-20 relative pointer-events-auto">
+            <div className={`flex items-center justify-between p-4 rounded-3xl transition-colors ${
+              basketStatus.isFinished ? "bg-green-500/10 border border-green-500/20" : "bg-(--bg-surface) border border-(--border-dim)"
+            }`}>
+              <div className="flex flex-col">
+                <span className={`text-[10px] md:text-xs font-black uppercase tracking-widest ${
+                  basketStatus.isFinished ? "text-green-500/80" : "text-(--text-muted)"
+                }`}>Basket Credits</span>
+                <span className={`text-sm md:text-base font-bold ${
+                  basketStatus.isFinished ? "text-att-safe" : "text-(--text-main)"
+                }`}>
+                  {basketStatus.completed} <span className="opacity-50">/ {basketStatus.max}</span>
+                </span>
+              </div>
+              {basketStatus.isFinished && (
+                <div className="flex items-center gap-1.5 text-att-safe text-[10px] md:text-xs font-black uppercase tracking-widest">
+                  <CheckCircle className="w-4 h-4" /> Finished
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="w-full pb-10">
           {loadingCourses ? (
             <div className="flex flex-col gap-3">
@@ -237,11 +330,12 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ delay: i * 0.02, duration: 0.2 }}
-                    className="group flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 md:p-5 bg-(--bg-surface) rounded-3xl hover:bg-(--bg-highlight) transition-colors"
+                    onClick={() => network.downloadSyllabus(c.code)}
+                    className="group flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 md:p-5 bg-(--bg-surface) rounded-3xl hover:bg-(--bg-highlight) transition-colors cursor-pointer"
                   >
                     <div className="flex flex-col min-w-0 flex-1">
                       <div className="flex items-center gap-2 md:gap-3 flex-wrap">
-                        <span className="font-black text-xs md:text-sm text-(--text-muted) font-mono">
+                        <span className="font-black text-xs md:text-sm text-(--text-muted) font-mono group-hover:text-(--accent-base) transition-colors">
                           {c.code}
                         </span>
                         <span className="font-expanded font-bold text-sm md:text-base lg:text-lg text-(--text-main) group-hover:text-(--accent-base) transition-colors flex items-center gap-2 flex-wrap">

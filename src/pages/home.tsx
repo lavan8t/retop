@@ -105,10 +105,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
     const today = new Date();
     today.setHours(0, 0, 0, 0); // ensure accurate date comparisons
 
-    // Calculate end of the current month
-    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    const diffTime = endOfMonth.getTime() - today.getTime();
-    const totalDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // Include today
+    const totalDays = 15;
 
     for (let i = 0; i < totalDays; i++) {
       const d = new Date(today);
@@ -173,88 +170,43 @@ export const HomeView: React.FC<HomeViewProps> = ({
       <div className="flex-none lg:flex-1 w-full flex flex-col gap-6 md:gap-8 overflow-hidden pt-1 pl-1 md:pl-0 min-h-0">
         <div className="flex flex-col items-center mb-2 lg:mb-4 px-2 w-full relative z-95 pointer-events-auto pt-20 md:pt-24 lg:pt-28">
           <div className="flex flex-col items-center w-full">
-            {/* Month Header and Filter Chips in a 3-column grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 w-full items-center mb-6 px-1 pt-4 gap-4 md:gap-0">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onNavigate({ title: "Academic Calendar", url: "academics/common/CalendarPreview", category: "Academics" });
-                }}
-                className="text-base md:text-lg font-bold text-(--text-main) hover:text-(--accent-hover) cursor-pointer transition-colors text-left flex justify-start focus:outline-none"
-              >
-                {monthDisplay.text}
-              </button>
+            {/* Month Header and Filter Chips */}
+            <div className="flex flex-col md:flex-row w-full items-start md:items-center justify-between mb-6 px-1 pt-4 gap-4 md:gap-0">
+              <div className="flex flex-col items-start justify-center text-left">
+                {monthDisplay.semName && (
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs md:text-sm font-black text-(--accent-base) tracking-wide">
+                      {monthDisplay.semName}
+                    </span>
+                    <span className="text-[10px] md:text-xs font-bold text-(--text-muted) opacity-70">
+                      {progress}%
+                    </span>
+                  </div>
+                )}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onNavigate({ title: "Academic Calendar", url: "academics/common/CalendarPreview", category: "Academics" });
+                  }}
+                  className="text-lg md:text-2xl font-black text-(--text-main) hover:text-(--accent-hover) cursor-pointer transition-colors text-left flex justify-start focus:outline-none"
+                >
+                  {monthDisplay.text}
+                </button>
+              </div>
 
-              <SegmentedControl
-                options={[
-                  { label: "All", value: "all" },
-                  { label: "Classes", value: "classes" },
-                  { label: "Tasks", value: "assignments" },
-                  { label: "Events", value: "events" },
-                ]}
-                value={eventFilter}
-                onChange={setEventFilter}
-                className="justify-center"
-              />
-
-              {monthDisplay.semName ? (
-                <div className="flex justify-end items-start h-8 relative z-20 pt-1">
-                  <style>{`
-                    .sem-text { font-variation-settings: "wdth" 151, "wght" 800; transition: font-variation-settings 300ms ease-out; }
-                    .sem-group:hover .sem-text { font-variation-settings: "wdth" 75, "wght" 1; }
-                  `}</style>
-                  <motion.div 
-                    initial="rest"
-                    whileHover="hover"
-                    animate="rest"
-                    className="flex flex-col items-end justify-start relative group sem-group"
-                  >
-                    <motion.div 
-                      variants={{ rest: { opacity: 0, y: 8 }, hover: { opacity: 1, y: 0 } }}
-                      transition={SPRING_SNAPPY}
-                      className="absolute bottom-full right-0 mb-1 pointer-events-none flex justify-end items-center whitespace-nowrap"
-                    >
-                      <span className="font-black text-(--accent-base) text-right text-[10px] md:text-[11px] drop-shadow-md uppercase tracking-wide">
-                        {progress}% Completed
-                      </span>
-                    </motion.div>
-
-                    <div className="relative text-right flex flex-col w-full min-w-[120px]">
-                      <div className="relative text-sm md:text-base leading-none font-expanded sem-text">
-                        <motion.span 
-                          variants={{ rest: { opacity: 1 }, hover: { opacity: 0.5 } }}
-                          transition={SPRING_SNAPPY}
-                          className="text-(--text-main) whitespace-nowrap inline-block"
-                        >
-                          {monthDisplay.semName}
-                        </motion.span>
-                        <motion.span
-                          variants={{ rest: { opacity: 0, scaleX: 0 }, hover: { opacity: 1, scaleX: 1 } }}
-                          transition={SPRING_SNAPPY}
-                          className="absolute left-0 top-0 overflow-hidden whitespace-nowrap text-(--text-main) pointer-events-none origin-left"
-                          style={{ width: `${progress}%` } as any}
-                        >
-                          {monthDisplay.semName}
-                        </motion.span>
-                      </div>
-                    </div>
-                    
-                    <motion.div 
-                      variants={{ rest: { opacity: 0, y: -8 }, hover: { opacity: 1, y: 0 } }}
-                      transition={SPRING_SNAPPY}
-                      className="absolute top-full right-0 mt-1 pointer-events-none flex justify-end items-center whitespace-nowrap"
-                    >
-                      <span className="font-black text-(--accent-base) text-right text-[10px] md:text-[11px] drop-shadow-md uppercase tracking-wide">
-                        {progressInfo.lastDay
-                          ? `${Math.max(0, Math.ceil((progressInfo.lastDay.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} days more`
-                          : "N/A"}
-                      </span>
-                    </motion.div>
-                  </motion.div>
-                </div>
-              ) : (
-                <div />
-              )}
+              <div className="flex justify-end items-center">
+                <SegmentedControl
+                  options={[
+                    { label: "All", value: "all" },
+                    { label: "Classes", value: "classes" },
+                    { label: "Tasks", value: "assignments" },
+                    { label: "Events", value: "events" },
+                  ]}
+                  value={eventFilter}
+                  onChange={setEventFilter}
+                  className="justify-center md:justify-end"
+                />
+              </div>
             </div>
           </div>
         </div>

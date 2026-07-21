@@ -144,39 +144,60 @@ export const AssignmentRow = ({
 }: {
   assignment: Assignment;
   onClick?: () => void;
-}) => (
-  <motion.div
-    layout
-    variants={rowVariants}
-    onClick={onClick}
-    className="p-3 rounded-xl bg-(--bg-surface) hover:bg-(--bg-highlight) shadow-none cursor-pointer select-none relative transition-colors overflow-hidden"
-  >
-    <div className="flex flex-col relative z-10">
-      <div className="flex justify-between items-start gap-2">
-        <span className="text-sm font-black text-(--text-main) leading-tight flex-1 line-clamp-2">
-          {assignment.title}
-        </span>
-        <span className="shrink-0 text-[10px] font-bold font-mono text-(--text-muted) bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded-md">
-          {assignment.course}
-        </span>
-      </div>
-      <div className="flex justify-end mt-2">
-        <span className="text-[10px] font-black font-mono uppercase text-(--accent-base)">
-          Due {assignment.dueDate}
-        </span>
-      </div>
-    </div>
+}) => {
+  const getDaysLeft = (dateStr: string) => {
+    // Attempt to parse standard DD-MMM-YYYY or similar
+    const target = new Date(dateStr.replace(/-/g, " "));
+    const now = new Date();
+    // Normalize to midnight to avoid partial day diffs
+    target.setHours(0, 0, 0, 0);
+    now.setHours(0, 0, 0, 0);
+
+    if (isNaN(target.getTime())) return `Due ${dateStr}`;
+
+    const diffMs = target.getTime() - now.getTime();
+    const days = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+    if (days < 0) return "Overdue";
+    if (days === 0) return "Due Today";
+    if (days === 1) return "Due Tomorrow";
+    return `Due in ${days} day${days > 1 ? "s" : ""}`;
+  };
+
+  return (
     <motion.div
-      animate={{ rotate: [0, -15, 15, -10, 10, 0] }}
-      transition={{ repeat: Infinity, duration: 1, repeatDelay: 3 }}
-      className="absolute -bottom-4 -left-2 z-20 pointer-events-none opacity-100 mix-blend-overlay"
+      layout
+      variants={rowVariants}
+      onClick={onClick}
+      className="p-3 rounded-xl bg-(--card-red) hover:bg-red-500/20 shadow-none cursor-pointer select-none relative transition-colors overflow-hidden"
     >
-      <PriorityHigh 
-        className="w-20 h-20 text-red-500"
-      />
+      <div className="flex flex-col relative z-10">
+        <div className="flex justify-between items-start gap-2">
+          <span className="text-sm font-black text-(--text-main) leading-tight flex-1 line-clamp-2">
+            {assignment.title}
+          </span>
+          <span className="shrink-0 text-[10px] font-bold font-mono text-(--text-muted)">
+            {assignment.course}
+          </span>
+        </div>
+        <div className="flex justify-end mt-2">
+          <span className="text-[10px] font-black font-mono uppercase text-(--text-main) opacity-80">
+            {getDaysLeft(assignment.dueDate)}
+          </span>
+        </div>
+      </div>
+      <motion.div
+        animate={{ rotate: [0, -15, 15, -10, 10, 0] }}
+        transition={{ repeat: Infinity, duration: 1, repeatDelay: 3 }}
+        className="absolute -bottom-4 -left-2 z-20 pointer-events-none opacity-100 mix-blend-overlay"
+      >
+        <PriorityHigh 
+          className="w-20 h-20 text-red-500"
+        />
+      </motion.div>
     </motion.div>
-  </motion.div>
-);
+  );
+};
 
 export const EventRow = ({ event }: { event: Event }) => (
   <motion.div

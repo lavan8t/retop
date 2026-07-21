@@ -65,13 +65,18 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
             </div>
 
             <div className="flex flex-col items-center">
-              <div className="flex items-center gap-2 text-3xl font-black font-expanded leading-none">
+              <div className="flex items-baseline gap-2 text-3xl font-black font-expanded leading-none">
                 <span>{gradedStr}</span>
                 <span className="text-xl text-(--text-muted)">+</span>
-                <span>{nonGradedStr}</span>
+                <span className="flex items-baseline gap-1">
+                  {nonGradedStr}
+                  <span className="text-[10px] text-(--text-muted) uppercase">ngcr</span>
+                </span>
               </div>
+              
+              <div className="w-24 h-[3px] rounded-full bg-(--text-main) my-3"></div>
 
-              <div className="text-3xl font-black font-expanded leading-none mt-2 text-(--text-muted)">
+              <div className="text-3xl font-black font-expanded leading-none text-(--text-muted)">
                 {stats.totalCredits}
               </div>
             </div>

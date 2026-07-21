@@ -18,6 +18,7 @@ import { SegmentedControl } from "../components/ui/SegmentedControl";
 import { MaterialSwitch } from "../components/MaterialSwitch";
 import { Tooltip } from "../components/ui/Tooltip";
 import { useDataStore } from "../store/dataStore";
+import { useAppStore } from "../store/appStore";
 
 interface SettingsPageProps {
   settings: AppSettings;
@@ -651,6 +652,10 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                       }
 
                       if (btn) btn.innerText = "SYNC COMPLETE!";
+                      useAppStore.getState().addSnackbar({
+                        message: "Synced Dashboard, Grades, and Marks",
+                        icon: Check,
+                      });
                       setTimeout(() => { if (btn) btn.innerText = "SYNC LATEST DATA"; }, 3000);
                     } catch (e) {
                       console.error(e);

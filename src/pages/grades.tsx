@@ -112,7 +112,7 @@ export const GradesPage: React.FC<GradesPageProps> = ({
       try {
         const html = await network.getStudentGradeHistory();
         const parsedHistory = parseGradeHistory(html);
-        console.log(`[DATA_CAPTURE] Grade History:`, parsedHistory);
+        // console.log(`[DATA_CAPTURE] Grade History:`, parsedHistory);
         setHistoryData(parsedHistory);
       } catch (e: any) {
         if (e && e.message === "OFFLINE_CACHE_MISS") {
@@ -147,7 +147,7 @@ export const GradesPage: React.FC<GradesPageProps> = ({
         const isPastSemester = semesters.length > 0 && semesters[0].id !== selectedSem;
         const html = await network.getStudentGrades(selectedSem, false, isPastSemester);
         const parsedGrades = parseGrades(html);
-        console.log(`[DATA_CAPTURE] Grades (${selectedSem}):`, parsedGrades);
+        // console.log(`[DATA_CAPTURE] Grades (${selectedSem}):`, parsedGrades);
 
         const isLatest = !isPastSemester;
         if (isLatest) {
@@ -164,7 +164,7 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                 method: "POST",
                 headers: {
                   "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-                  "Close-Requested-With": "XMLHttpRequest",
+                  "X-Requested-With": "XMLHttpRequest",
                 },
                 body: body,
               });
@@ -428,12 +428,12 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                             <span className="text-[9px] text-(--text-muted) uppercase font-bold">Credits</span>
                             <span className="text-sm font-bold text-(--text-main)">{parseFloat(course.c || "0").toString()}</span>
                           </div>
-                          <div className="w-px bg-(--border-dim) my-1"></div>
+                          <div className="w-px bg-(--text-main) opacity-10 my-1"></div>
                           <div className="flex flex-col">
                             <span className="text-[9px] text-(--text-muted) uppercase font-bold">Total</span>
                             <span className="text-sm font-bold text-(--text-main)">{course.grandTotal}</span>
                           </div>
-                          <div className="w-px bg-(--border-dim) my-1"></div>
+                          <div className="w-px bg-(--text-main) opacity-10 my-1"></div>
                           <div className="flex flex-col">
                             <span className="text-[9px] text-(--text-muted) uppercase font-bold">Type</span>
                             <span className="text-sm font-bold text-(--text-main)">{course.gradingType}</span>

@@ -49,8 +49,8 @@ export function parseTimetable(html: string): TimetableCourse[] {
   rows.forEach((row) => {
     const cells = Array.from(row.querySelectorAll("td"));
 
-    // Standard VTOP registered course rows always have exactly 12 columns.
-    if (cells.length !== 12) return;
+    // Standard VTOP registered course rows have at least 12 columns.
+    if (cells.length < 12) return;
 
     // Safely extract and clean text content
     const getText = (index: number) => {

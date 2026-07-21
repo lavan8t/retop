@@ -46,7 +46,7 @@ export const SemesterDropdown = ({ semesters, selectedId, onChange }: any) => {
     >
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 md:gap-2 bg-(--md-sys-color-secondary-container) border-2 border-(--md-sys-color-outline) px-2 md:px-3 py-1.5 rounded-lg md:rounded-xl text-(--md-sys-color-on-secondary-container) font-bold shadow-none hover:-translate-y-0.5 hover:shadow-(--brutal-shadow-hover) transition-all active:translate-y-0 active:shadow-(--brutal-shadow-active) text-[9px] sm:text-[10px] md:text-xs group"
+        className="flex items-center gap-1.5 md:gap-2 bg-(--md-sys-color-secondary-container) px-2 md:px-3 py-1.5 rounded-lg md:rounded-xl text-(--md-sys-color-on-secondary-container) font-bold transition-all text-[9px] sm:text-[10px] md:text-xs group"
       >
         <CalendarMonth className="w-3 h-3 md:w-3.5 md:h-3.5 text-(--accent-base) group-hover:text-(--accent-hover) transition-colors shrink-0" />
         <span className="uppercase  truncate max-w-12.5 sm:max-w-20 md:max-w-30 font-expanded">

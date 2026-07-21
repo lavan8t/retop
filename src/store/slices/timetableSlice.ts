@@ -37,25 +37,20 @@ export const createTimetableSlice: StateCreator<DataState, [], [], TimetableSlic
     set({ ttLoading: true, ttSelectedSem: semId });
     try {
       const cacheKey = `tt_${semId}`;
+      console.log(`[VTOP] Request sent for TIMETABLE - /vtop/processViewTimeTable | params: { semesterSubId: ${semId} }`);
       const html = await network.fetchWithCache(
         cacheKey,
         async () => {
-          const url = "/vtop/processViewTimeTable";
-          const body = new URLSearchParams();
-          body.append("_csrf", csrf);
-          body.append("authorizedID", authId);
-          body.append("semesterSubId", semId);
-          body.append("x", new Date().toUTCString());
-
-          const res = await fetch(url, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-              "Close-Requested-With": "XMLHttpRequest",
-            },
-            body: body,
-          });
-          return await res.text();
+          try {
+            const rawHtml = await network.fetchVtopApi("processViewTimeTable", {
+              semesterSubId: semId,
+            });
+            console.log(`[VTOP] Response code 200, raw length: ${rawHtml.length}`);
+            return rawHtml;
+          } catch (e: any) {
+            console.log(`[VTOP] Response Error: ${e.message}`);
+            throw e;
+          }
         },
         forceFetch,
         (get().ttSemesters.length > 0 && semId !== get().ttSemesters[0].id) ? Infinity : undefined
@@ -71,9 +66,11 @@ export const createTimetableSlice: StateCreator<DataState, [], [], TimetableSlic
           !c.status.toLowerCase().includes("drop") &&
           !c.status.toLowerCase().includes("withdrawn"),
       );
+      
+      console.log(`[VTOP] Timetable parsed data: ${courses.length} courses found.`);
 
       if (courses.length > 0) {
-        console.log(`[DATA_CAPTURE] Timetable (${semId}):`, courses);
+        console.log(`[VTOP] Updating cache with latest for ${semId}`);
         set({
           ttCourses: courses,
           upcoming: getUpcomingClasses(courses),

@@ -319,6 +319,64 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             </div>
           </SettingsCard>
 
+          {/* Calendar Theme Box */}
+          <SettingsCard
+            title="Calendar UI"
+            className="col-span-1 md:col-span-2 lg:col-span-1"
+          >
+            <div className="flex flex-col items-start justify-between gap-6 w-full min-w-0">
+              <div className="flex flex-col gap-2 w-full min-w-0">
+                <span className="text-sm font-bold text-(--text-muted)">
+                  Class Color
+                </span>
+                <div className="flex flex-nowrap overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden gap-4 snap-x py-2 px-6 lg:px-8 -mx-6 lg:-mx-8 min-w-0">
+                  {COLORS.map((c) => (
+                    <button
+                      key={`class-${c.id}`}
+                      onClick={() => updateSetting("calendarClassColor", c.id as any)}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-fast shrink-0 ${
+                        settings.calendarClassColor === c.id
+                          ? "ring-[3px] ring-inset ring-(--text-main)"
+                          : "ring-[3px] ring-inset ring-transparent hover:ring-(--border-dim)"
+                      }`}
+                      style={{ backgroundColor: c.hex }}
+                      title={c.label}
+                    >
+                      {settings.calendarClassColor === c.id && (
+                        <Check className="w-6 h-6 text-content-inverse" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2 w-full min-w-0">
+                <span className="text-sm font-bold text-(--text-muted)">
+                  Event Color
+                </span>
+                <div className="flex flex-nowrap overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden gap-4 snap-x py-2 px-6 lg:px-8 -mx-6 lg:-mx-8 min-w-0">
+                  {COLORS.map((c) => (
+                    <button
+                      key={`event-${c.id}`}
+                      onClick={() => updateSetting("calendarEventColor", c.id as any)}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-fast shrink-0 ${
+                        settings.calendarEventColor === c.id
+                          ? "ring-[3px] ring-inset ring-(--text-main)"
+                          : "ring-[3px] ring-inset ring-transparent hover:ring-(--border-dim)"
+                      }`}
+                      style={{ backgroundColor: c.hex }}
+                      title={c.label}
+                    >
+                      {settings.calendarEventColor === c.id && (
+                        <Check className="w-6 h-6 text-content-inverse" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </SettingsCard>
+
           <SettingsCard
             title={
               <span

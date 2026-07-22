@@ -253,6 +253,18 @@ export class VTOPNetwork {
     });
   }
 
+  async getExamScheduleView(): Promise<string> {
+    return this.fetchVtopApi("examinations/StudExamSchedule", {
+      verifyMenu: "true",
+    });
+  }
+
+  async getExamScheduleData(semesterSubId: string): Promise<string> {
+    return this.fetchVtopApi("examinations/doSearchExamScheduleForStudent", {
+      semesterSubId,
+    });
+  }
+
   async getCurriculumDashboard(): Promise<string> {
     const cacheKey = "curriculum_dashboard";
     return this.fetchWithCache(cacheKey, async () => {

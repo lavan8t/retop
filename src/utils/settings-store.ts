@@ -16,6 +16,8 @@ export interface AppSettings {
   use24HourTime: boolean;
   animationScale: "1x" | "0.5x" | "0x";
   searchHotkey: "/" | "space" | "instant";
+  calendarClassColor: string;
+  calendarEventColor: string;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -30,6 +32,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   use24HourTime: true,
   animationScale: "1x",
   searchHotkey: "/",
+  calendarClassColor: "blue",
+  calendarEventColor: "purple",
   pinnedLinks: [
     { title: "Time Table", url: "studenttimetable", category: "Core" },
     { title: "Marks", url: "mark", category: "Core" },
@@ -41,7 +45,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   ],
 };
 
-const MATERIAL_ACCENTS: Record<string, string> = {
+export const MATERIAL_ACCENTS: Record<string, string> = {
   blue: "#2563eb",
   indigo: "#4f46e5",
   purple: "#9333ea",

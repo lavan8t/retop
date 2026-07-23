@@ -5,7 +5,7 @@ import {
   injectGlobalFonts,
   initializeContainer,
 } from "./utils/bridge";
-import { asciiArt } from "./components/asciiArt";
+import { asciiArtTT, asciiArtPRP, asciiArtSMV, asciiArtMGR } from "./components/asciiArt";
 import { autoSolveCaptcha } from "./utils/captchaSolver";
 
 const vtopContext = {
@@ -90,34 +90,19 @@ function showErrorSnackbar(message: string) {
 async function handleNetworkError(status?: number) {
   if (isHandlingNetworkError) return;
   isHandlingNetworkError = true;
-  try {
-    await originalFetch("https://example.com", {
-      mode: "no-cors",
-      cache: "no-store",
-    });
-
-    if (status === 404) {
-      showErrorSnackbar("E404: Something went wrong.");
-    } else if (status === 401 || status === 403) {
-      showErrorDialog(
-        "Session Expired",
-        "Your VTOP session has expired. Please login again to continue.",
-        "Return to Login",
-        "/vtop/open/page",
-      );
-    } else {
-      showErrorSnackbar("An unexpected network error occurred.");
-    }
-  } catch (err) {
+  if (status === 404) {
+    showErrorSnackbar("E404: Something went wrong.");
+  } else if (status === 401 || status === 403) {
     showErrorDialog(
-      "No Internet",
-      "No internet connection detected. Please check your network and try again.",
-      "Retry",
-      "reload",
+      "Session Expired",
+      "Your VTOP session has expired. Please login again to continue.",
+      "Return to Login",
+      "/vtop/open/page",
     );
-  } finally {
-    isHandlingNetworkError = false;
+  } else {
+    showErrorSnackbar("An unexpected network error occurred.");
   }
+  isHandlingNetworkError = false;
 }
 
 function showErrorDialog(
@@ -445,7 +430,7 @@ const injectLoginTheme = () => {
             link.tagName.toLowerCase() === "div"
           ) {
             const newBtn = document.createElement("button");
-            newBtn.innerHTML = `<span class="material-symbols-rounded" style="font-variation-settings: 'FILL' 1, 'wght' 700, 'GRAD' 0, 'opsz' 24;">home</span>`;
+            newBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" fill="currentColor"><path d="M126-212v-342q0-30 13-56.5t37-44.5l228-171q34-26 76-26t76 26l228 171q24 18 37 44.5t13 56.5v342q0 53-36.5 89.5T708-86h-77q-26 0-44.5-18.5T568-149v-196q0-26-18.5-44.5T505-408h-50q-26 0-44.5 18.5T392-345v196q0 26-18.5 44.5T329-86h-77q-53 0-89.5-36.5T126-212" /></svg>`;
             newBtn.className = "retop-home-icon";
             newBtn.style.border = "none";
             newBtn.style.background = "transparent";
@@ -469,7 +454,7 @@ const injectLoginTheme = () => {
               link.parentNode.replaceChild(newBtn, link);
             }
           } else {
-            link.innerHTML = `<span class="material-symbols-rounded" style="font-variation-settings: 'FILL' 1, 'wght' 700, 'GRAD' 0, 'opsz' 24;">home</span>`;
+            link.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" fill="currentColor"><path d="M126-212v-342q0-30 13-56.5t37-44.5l228-171q34-26 76-26t76 26l228 171q24 18 37 44.5t13 56.5v342q0 53-36.5 89.5T708-86h-77q-26 0-44.5-18.5T568-149v-196q0-26-18.5-44.5T505-408h-50q-26 0-44.5 18.5T392-345v196q0 26-18.5 44.5T329-86h-77q-53 0-89.5-36.5T126-212" /></svg>`;
             link.className = "retop-home-icon"; // completely overwrite classes
             (link as HTMLElement).style.border = "none";
             (link as HTMLElement).style.background = "transparent";
@@ -712,6 +697,42 @@ const injectLoginTheme = () => {
 
     const asciiPre = document.createElement("pre");
     asciiPre.id = "retop-ascii-art";
+    const artTypes = ["TT", "PRP", "SMV", "MGR"];
+    const lastArt = localStorage.getItem("retop_last_ascii_art") || "";
+    const availableArts = artTypes.filter(type => type !== lastArt);
+    const pickedArt = availableArts[Math.floor(Math.random() * availableArts.length)];
+    localStorage.setItem("retop_last_ascii_art", pickedArt);
+
+    const isPRP = pickedArt === "PRP";
+    
+    let rawArt = asciiArtTT;
+    if (pickedArt === "PRP") rawArt = asciiArtPRP;
+    if (pickedArt === "SMV") rawArt = asciiArtSMV;
+    if (pickedArt === "MGR") rawArt = asciiArtMGR;
+    
+    const asciiArt = rawArt.replace(/\r/g, "");
+
+    // Force left alignment so 2D grid coordinates (charX) perfectly match the DOM rendering
+    asciiPre.style.setProperty("text-align", "left", "important");
+
+    if (pickedArt === "PRP") {
+      asciiPre.style.letterSpacing = "0px";
+      asciiPre.style.setProperty("margin-right", "0px", "important");
+      asciiPre.style.setProperty("font-size", "5px", "important");
+      // Use 4.5px line-height to counter Windows 125%/150% DPI scaling rounding artifacts
+      // which cause 1px gaps every ~4 lines at tiny font sizes.
+      asciiPre.style.setProperty("line-height", "4.5px", "important");
+    } else if (pickedArt === "SMV") {
+      asciiPre.style.letterSpacing = "0px";
+      asciiPre.style.setProperty("margin-right", "0px", "important");
+      asciiPre.style.setProperty("font-size", "4.2px", "important");
+      asciiPre.style.setProperty("line-height", "4px", "important");
+    } else if (pickedArt === "MGR") {
+      asciiPre.style.letterSpacing = "0px";
+      asciiPre.style.setProperty("margin-right", "0px", "important");
+      asciiPre.style.setProperty("font-size", "5.25px", "important");
+      // line-height left to CSS default (1)
+    }
     asciiPre.textContent = asciiArt;
     wrapper.appendChild(asciiPre);
 
@@ -747,8 +768,19 @@ const injectLoginTheme = () => {
     let lastMouseY = -1000;
     let lastTime = Date.now();
 
-    const charW = 4.2; // Approx width of a 7px monospace char
-    const charH = 7; // Line-height is 1 (7px)
+    let charW = 4.2; // default approx width of monospace char for 7px font
+    let charH = 7;   // default line-height matches font size
+    
+    if (pickedArt === "PRP") {
+      charW = 3;
+      charH = 4.5;
+    } else if (pickedArt === "SMV") {
+      charW = 2.5; // ~40% smaller than 4.2
+      charH = 4;
+    } else if (pickedArt === "MGR") {
+      charW = 3.15; // 25% smaller than 4.2
+      charH = 5.25; // line-height is 1
+    }
 
     const updateHoverPuddle = (
       x: number,
@@ -786,19 +818,19 @@ const injectLoginTheme = () => {
         const charY = Math.floor(currentY / charH);
         let onWater = false;
 
-        // Check current char and a few surrounding chars for leniency
+        // Check current char and surrounding chars for leniency (radius increased for sparse arts like MGR)
         for (
-          let cy = Math.max(0, charY - 1);
-          cy <= Math.min(originalLines.length - 1, charY + 1);
+          let cy = Math.max(0, charY - 3);
+          cy <= Math.min(originalLines.length - 1, charY + 3);
           cy++
         ) {
           const line = originalLines[cy];
           for (
-            let cx = Math.max(0, charX - 1);
-            cx <= Math.min(line.length - 1, charX + 1);
+            let cx = Math.max(0, charX - 8);
+            cx <= Math.min(line.length - 1, charX + 8);
             cx++
           ) {
-            if (line[cx] !== " ") onWater = true;
+            if (line[cx] && line[cx] !== " ") onWater = true;
           }
         }
 

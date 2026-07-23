@@ -9,7 +9,7 @@ import { TimetableGrid } from "../components/timetable/TimetableGrid";
 import { TimetableList } from "../components/timetable/TimetableList";
 import { TimetableWeek } from "../components/timetable/TimetableWeek";
 import { OfflineNotSynced } from "../components/ui/OfflineNotSynced";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useDataStore } from "../store/dataStore";
 
 interface TimetableContentViewProps {
@@ -65,28 +65,39 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
               />
             </motion.div>
           ) : (
-            <div className="absolute inset-0 pb-[80px] lg:pb-0">
-              {viewMode === "grid" && (
-                <TimetableGrid
-                  courses={courses}
-                  attendance={attendance}
-                  use24HourTime={use24HourTime}
-                />
-              )}
-              {viewMode === "list" && (
-                <TimetableList
-                  courses={courses}
-                  attendance={attendance}
-                  use24HourTime={use24HourTime}
-                />
-              )}
-              {viewMode === "week" && (
-                <TimetableWeek
-                  courses={courses}
-                  attendance={attendance}
-                  use24HourTime={use24HourTime}
-                />
-              )}
+            <div className="absolute inset-0 pb-[80px] lg:pb-0 overflow-hidden">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={viewMode}
+                  initial={{ scale: 0.95, y: 15 }}
+                  animate={{ scale: 1, y: 0 }}
+                  exit={{ scale: 0.95, y: -15 }}
+                  transition={{ type: "spring", stiffness: 600, damping: 35 }}
+                  className="w-full h-full"
+                >
+                  {viewMode === "grid" && (
+                    <TimetableGrid
+                      courses={courses}
+                      attendance={attendance}
+                      use24HourTime={use24HourTime}
+                    />
+                  )}
+                  {viewMode === "list" && (
+                    <TimetableList
+                      courses={courses}
+                      attendance={attendance}
+                      use24HourTime={use24HourTime}
+                    />
+                  )}
+                  {viewMode === "week" && (
+                    <TimetableWeek
+                      courses={courses}
+                      attendance={attendance}
+                      use24HourTime={use24HourTime}
+                    />
+                  )}
+                </motion.div>
+              </AnimatePresence>
             </div>
           )}
 

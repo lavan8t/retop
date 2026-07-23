@@ -5,6 +5,8 @@ import { School } from "@nine-thirty-five/material-symbols-react/rounded/700/fil
 import { AppSettings } from "../../utils/settings-store";
 import { Card } from "../ui/Card";
 import { SPRING_SNAPPY } from "../../utils/motion";
+import { Assignment } from "../../types/vtop";
+import { AssignmentRow } from "./HomeRows";
 
 interface HomeWidgetsProps {
   settings: AppSettings;
@@ -15,12 +17,14 @@ interface HomeWidgetsProps {
     nonGraded?: string;
     placement?: string;
   };
+  assignments: Assignment[];
   onNavigate: (link: any) => void;
 }
 
 export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
   settings,
   stats,
+  assignments,
   onNavigate,
 }) => {
   const totalEarnedStr = stats.credits || "...";
@@ -35,8 +39,35 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
     ? nonGradedNum.toString().replace(/\.0$/, "")
     : stats.nonGraded || "0";
 
+  const pendingAssignments = assignments
+    .filter((a) => a.status !== "submitted")
+    .sort((a, b) => {
+      const parseDate = (dStr: string) => {
+        if (!dStr) return NaN;
+        const cleanStr = dStr.replace(/[-/]/g, " ").trim();
+        const t = new Date(cleanStr).getTime();
+        if (!isNaN(t)) return t;
+        const parts = cleanStr.split(" ");
+        if (parts.length >= 3) {
+          const day = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10) - 1;
+          const year = parseInt(parts[2], 10);
+          if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+            return new Date(year, month, day).getTime();
+          }
+        }
+        return NaN;
+      };
+      const dateA = parseDate(a.dueDate);
+      const dateB = parseDate(b.dueDate);
+      if (isNaN(dateA) && isNaN(dateB)) return 0;
+      if (isNaN(dateA)) return 1;
+      if (isNaN(dateB)) return -1;
+      return dateA - dateB;
+    });
+
   return (
-    <div className="hidden lg:flex w-full lg:w-[24%] xl:w-[20%] flex-col shrink-0 h-auto lg:h-full relative z-30 pt-20 md:pt-24 lg:pt-28 pb-4 md:pb-6 lg:pb-8 pr-4 md:pr-6 lg:pr-0">
+    <div className="hidden lg:flex w-full lg:w-[24%] xl:w-[20%] flex-col shrink-0 h-auto lg:h-full relative z-30 pt-20 md:pt-24 lg:pt-28 pb-4 md:pb-6 lg:pb-8 pr-4 md:pr-6 lg:pr-0 gap-4">
       <Card
         initial="rest"
         whileHover="hover"
@@ -134,6 +165,35 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
           </div>
         </motion.div>
       </Card>
+
+      {pendingAssignments.length > 0 && (
+        <div className="flex-1 overflow-visible flex flex-col min-h-0 pb-2 mt-4">
+          <Card
+            onClick={() => onNavigate({
+              title: "Assignments",
+              url: "examinations/StudentDA",
+              category: "Examinations"
+            })}
+            className="group shrink-0 bg-(--bg-highlight) rounded-4xl flex flex-col relative z-30 cursor-pointer overflow-hidden border-2 border-transparent hover:border-(--border-main) transition-all h-fit"
+          >
+            <div className="px-5 pt-3 border-b-2 border-(--border-main) flex justify-between items-center shrink-0">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-expanded font-bold uppercase text-(--text-muted) mb-1">
+                  Pending Assignments
+                </span>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-3 flex flex-col gap-2">
+              {pendingAssignments.map((assignment, idx) => (
+                <AssignmentRow 
+                  key={idx} 
+                  assignment={assignment} 
+                />
+              ))}
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

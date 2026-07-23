@@ -35,6 +35,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { TopBar } from "../components/layout/TopBar";
 import { TopBarSearch } from "../components/layout/TopBarSearch";
 import { ContentRouter } from "../components/layout/ContentRouter";
+import { GlobalDADropZone } from "../components/ui/GlobalDADropZone";
 
 import { FloatingViewToggle } from "../components/timetable/FloatingViewToggle";
 import {
@@ -106,6 +107,12 @@ const getDestinationView = (link: QuickLink): ViewType | "content" => {
     lowerUrl.includes("studentda")
   )
     return "digitalAssignments";
+    
+  if (
+    lowerTitle.includes("exam schedule") ||
+    lowerUrl.includes("studexamschedule")
+  )
+    return "examSchedule";
 
   return "content";
 };
@@ -658,6 +665,8 @@ const DashboardApp = () => {
           </AnimatePresence>
 
           <SnackbarManager />
+          
+          <GlobalDADropZone network={networkRef.current!} />
         </div>
       </motion.div>
 
@@ -697,7 +706,7 @@ const DashboardApp = () => {
                 setIsOmniboxOpen={setIsOmniboxOpen}
                 menuCategories={menu}
                 pinnedLinks={pinnedLinks}
-                onNavigate={(link) => {
+                onNavigate={(link: any) => {
                   handleLinkClick(link);
                   setIsModernUI(true);
                   setIsPeeking(false);

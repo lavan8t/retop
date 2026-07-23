@@ -45,10 +45,10 @@ export function renderLoginPage() {
 
   let mode: "IMAGE" | "GOOGLE" | "NONE" = "NONE";
 
-  if (imgEl && imgEl.offsetParent !== null) {
-    mode = "IMAGE";
-  } else if (reCaptchaEl) {
+  if (reCaptchaEl) {
     mode = "GOOGLE";
+  } else if (imgEl || window.location.pathname.includes("/vtop/login")) {
+    mode = "IMAGE";
   }
 
   initializeContainer();

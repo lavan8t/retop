@@ -299,7 +299,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
               }}
               className="relative flex items-center justify-center shrink-0 cursor-pointer hover:opacity-75 transition-opacity"
             >
-              <div className="flex items-end pb-1">
+              <div className="flex items-end pb-1 pr-1 pl-1 md:pl-2">
                 <span className="font-expanded font-black text-2xl md:text-3xl italic lowercase leading-none text-(--text-main) group-focus-within:text-(--accent-hover) transition-colors">
                   re
                 </span>
@@ -357,8 +357,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
               if (!isExpanded) setIsOmniboxOpen(true);
             }}
             onFocus={() => setIsOmniboxOpen(true)}
-
-            className={`w-full bg-transparent text-lg md:text-xl font-bold text-(--text-main) focus:outline-none placeholder-(--text-muted) min-w-0 uppercase text-left pl-2 relative z-10`}
+            className={`w-full bg-transparent text-lg md:text-xl font-bold text-(--text-main) focus:outline-none placeholder:text-(--text-main) placeholder:opacity-100 min-w-0 text-left pl-2 relative z-10 ${query ? "uppercase" : "normal-case"}`}
           />
         </div>
       </div>

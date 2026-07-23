@@ -55,6 +55,7 @@ const contentBuild = await Bun.build({
   naming: "[name].[ext]",
   define: {
     __BUILD_NUMBER__: JSON.stringify(buildNumber),
+    "process.env.NODE_ENV": JSON.stringify(IS_PROD ? "production" : "production"),
   },
   plugins: [{
     name: "ignore-css",
@@ -88,6 +89,7 @@ const popupBuild = await Bun.build({
   naming: "[name].[ext]",
   define: {
     __BUILD_NUMBER__: JSON.stringify(buildNumber),
+    "process.env.NODE_ENV": JSON.stringify(IS_PROD ? "production" : "production"),
   },
   // CSS handled by Tailwind CLI — tell Bun to ignore .css imports
   plugins: [{

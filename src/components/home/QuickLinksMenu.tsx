@@ -47,8 +47,20 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [attSort, setAttSort] = useState<"asc" | "desc">("asc");
 
-  const { status, ttLoading, calLoadingGrid, calLoadingMonths, attRecordsLoading } = useDataStore();
-  const isLoading = status === "Syncing..." || status === "Initializing..." || ttLoading || calLoadingGrid || calLoadingMonths || attRecordsLoading;
+  const {
+    status,
+    ttLoading,
+    calLoadingGrid,
+    calLoadingMonths,
+    attRecordsLoading,
+  } = useDataStore();
+  const isLoading =
+    status === "Syncing..." ||
+    status === "Initializing..." ||
+    ttLoading ||
+    calLoadingGrid ||
+    calLoadingMonths ||
+    attRecordsLoading;
 
   // Recent Links State & Handler
   const [recentLinks, setRecentLinks] = useState<QuickLink[]>(() => {
@@ -107,7 +119,7 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       if (e.defaultPrevented) return;
-      
+
       const isInput =
         target.tagName === "INPUT" ||
         target.tagName === "TEXTAREA" ||
@@ -217,8 +229,6 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
   return (
     <>
       <div className="hidden lg:flex w-full lg:w-[26%] xl:w-[22%] flex-col shrink-0 h-auto lg:h-full relative z-40 pt-20 md:pt-24 lg:pt-28 pb-4 md:pb-6 lg:pb-8 gap-4">
-
-
         {/* Attendance Compact Box */}
         <div className="flex-1 overflow-visible flex flex-col min-h-0 pb-2">
           <Card
@@ -229,16 +239,18 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
                 category: "Academics",
               })
             }
-            className="group shrink-0 bg-(--bg-highlight) rounded-4xl flex flex-col relative z-30 cursor-pointer overflow-hidden border-2 border-transparent hover:border-(--border-main) transition-all h-full"
+            className="group shrink-0 bg-(--bg-highlight) rounded-4xl flex flex-col relative z-30 cursor-pointer overflow-hidden border-2 border-transparent hover:border-(--border-main) transition-all h-fit"
           >
-            <div className="px-5 py-3 border-b-2 border-(--border-main) flex justify-between items-center shrink-0">
+            <div className="px-5 pt-3 border-b-2 border-(--border-main) flex justify-between items-center shrink-0">
               <div className="flex flex-col">
-                <span className="text-[10px] font-expanded font-bold uppercase text-(--text-muted) mb-1">Attendance</span>
+                <span className="text-[10px] font-expanded font-bold uppercase text-(--text-muted) mb-1">
+                  Attendance
+                </span>
                 <span className="text-3xl font-black font-expanded leading-none text-(--text-main)">
                   {overallAttendance}
                 </span>
               </div>
-              
+
               <Tooltip text="Toggle Sort Order">
                 <button
                   onClick={(e) => {
@@ -254,7 +266,7 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
               </Tooltip>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-[2px] custom-scrollbar">
               {sortedAttendance.length === 0 ? (
                 <EmptyState msg="No Registered Courses" size="sm" />
               ) : (

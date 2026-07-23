@@ -2,15 +2,14 @@ import React from "react";
 import { motion, Variants } from "framer-motion";
 import {
   LocationOn,
-  ArrowForward,
   Schedule,
-  PriorityHigh,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { CourseSummary, Assignment, Event } from "../../types/vtop";
 import { UpcomingClass } from "../../utils/timetable-slots";
 import { formatTimeStr } from "../../utils/formatting";
 import { MarqueeText } from "../common/MarqueeText";
 import { SPRING_SNAPPY } from "../../utils/motion";
+import { useSettingsStore, MATERIAL_ACCENTS } from "../../utils/settings-store";
 
 const rowVariants: Variants = {
   hidden: { opacity: 0 },
@@ -25,7 +24,7 @@ export const AttendanceRow = ({ course }: { course: CourseSummary }) => {
   const displayVal = isNaN(val) ? 0 : Math.round(val);
 
   let badgeBg = "bg-(--attendance-green) text-(--bg-main) border-2 border-(--border-main)";
-  let barColor = "bg-(--attendance-green)";
+  let barColor = "bg-(--attendance-green-bg)";
 
   if (isNaN(val)) {
     badgeBg = "bg-(--bg-highlight) text-(--text-muted) border-2 border-(--border-dim)";
@@ -39,7 +38,7 @@ export const AttendanceRow = ({ course }: { course: CourseSummary }) => {
   }
 
   return (
-    <div className="relative flex items-center justify-between p-2 rounded-xl bg-(--bg-surface) hover:bg-(--bg-highlight) transition-colors cursor-pointer group/row select-none overflow-hidden">
+    <div className="relative flex items-center justify-between p-2 rounded-sm first:rounded-t-2xl last:rounded-b-2xl bg-(--bg-surface) hover:bg-(--bg-highlight) transition-colors cursor-pointer group/row select-none overflow-hidden">
       <div
         className={`absolute top-0 left-0 h-full ${barColor} transition-all duration-fast`}
         style={{ width: `${displayVal}%` }}
@@ -69,18 +68,23 @@ export const ScheduleRow = ({
   item,
   onClick,
   use24HourTime = true,
+  className,
 }: {
   item: UpcomingClass;
   onClick?: (e: React.MouseEvent, item: UpcomingClass) => void;
   use24HourTime?: boolean;
+  className?: string;
 }) => {
   const isLab = item.course?.type?.includes("Lab") || false;
   const isNow = item.status === "Now";
   const formattedTime = formatTimeStr(item.time, use24HourTime);
   const timeParts = formattedTime.split(" - ");
   const startTime = timeParts[0];
+  const { settings } = useSettingsStore();
 
   const [isHovered, setIsHovered] = React.useState(false);
+
+  const customColor = MATERIAL_ACCENTS[settings.calendarClassColor] || MATERIAL_ACCENTS.blue;
 
   return (
     <motion.div
@@ -89,7 +93,11 @@ export const ScheduleRow = ({
       onClick={(e) => onClick?.(e, item)}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
-      className={`flex flex-col p-3 rounded-xl shadow-none cursor-pointer select-none overflow-hidden relative border-2 border-transparent hover:border-(--border-main) ${isNow ? "bg-(--accent-base) text-(--text-inverse)" : "bg-(--bg-surface) text-(--text-main)"}`}
+      className={`flex flex-col p-3 shadow-none cursor-pointer select-none overflow-hidden relative border-2 hover:border-(--border-main) ${isNow ? "bg-(--accent-base) text-(--text-inverse)" : "text-(--text-main)"} ${className || "rounded-xl"}`}
+      style={{
+        backgroundColor: isNow ? undefined : `${customColor}15`,
+        borderColor: isHovered ? undefined : `${customColor}40`
+      }}
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -141,9 +149,11 @@ export const ScheduleRow = ({
 export const AssignmentRow = ({
   assignment,
   onClick,
+  className,
 }: {
   assignment: Assignment;
   onClick?: () => void;
+  className?: string;
 }) => {
   const getDaysLeft = (dateStr: string) => {
     // Attempt to parse standard DD-MMM-YYYY or similar
@@ -169,7 +179,7 @@ export const AssignmentRow = ({
       layout
       variants={rowVariants}
       onClick={onClick}
-      className="p-3 rounded-xl bg-(--card-red) hover:bg-red-500/20 shadow-none cursor-pointer select-none relative transition-colors overflow-hidden"
+      className={`p-3 bg-(--bg-surface) shadow-none relative transition-colors overflow-hidden border-2 border-transparent hover:border-(--border-main) ${onClick ? "cursor-pointer" : ""} ${className || "rounded-xl"}`}
     >
       <div className="flex flex-col relative z-10">
         <div className="flex justify-between items-start gap-2">
@@ -181,30 +191,29 @@ export const AssignmentRow = ({
           </span>
         </div>
         <div className="flex justify-end mt-2">
-          <span className="text-[10px] font-black font-mono uppercase text-(--text-main) opacity-80">
+          <span className="text-[10px] font-black font-mono uppercase text-(--accent-base)">
             {getDaysLeft(assignment.dueDate)}
           </span>
         </div>
       </div>
-      <motion.div
-        animate={{ rotate: [0, -15, 15, -10, 10, 0] }}
-        transition={{ repeat: Infinity, duration: 1, repeatDelay: 3 }}
-        className="absolute -bottom-4 -left-2 z-20 pointer-events-none opacity-100 mix-blend-overlay"
-      >
-        <PriorityHigh 
-          className="w-20 h-20 text-red-500"
-        />
-      </motion.div>
     </motion.div>
   );
 };
 
-export const EventRow = ({ event }: { event: Event }) => (
-  <motion.div
-    layout
-    variants={rowVariants}
-    className="p-3 rounded-xl bg-(--bg-surface) shadow-none cursor-pointer select-none relative border-2 border-transparent hover:border-(--border-main)"
-  >
+export const EventRow = ({ event, className }: { event: Event; className?: string }) => {
+  const { settings } = useSettingsStore();
+  const customColor = MATERIAL_ACCENTS[settings.calendarEventColor] || MATERIAL_ACCENTS.purple;
+
+  return (
+    <motion.div
+      layout
+      variants={rowVariants}
+      className={`p-3 shadow-none cursor-pointer select-none relative border-2 hover:border-(--border-main) ${className || "rounded-xl"}`}
+      style={{
+        backgroundColor: `${customColor}15`,
+        borderColor: `${customColor}40`
+      }}
+    >
     <div className="flex flex-col">
       <div className="flex items-start justify-between gap-2">
         <span className="text-sm font-black text-(--text-main) leading-tight flex-1">
@@ -221,4 +230,5 @@ export const EventRow = ({ event }: { event: Event }) => (
       </div>
     </div>
   </motion.div>
-);
+  );
+};

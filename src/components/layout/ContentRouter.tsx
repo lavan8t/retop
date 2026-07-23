@@ -10,6 +10,7 @@ import { CoursePage } from "../../pages/course-page";
 import { CalendarPage } from "../../pages/calendar";
 import { AttendancePage } from "../../pages/attendance";
 import DigitalAssignments from "../../pages/digital-assignments";
+import { ExamSchedulePage } from "../../pages/exam-schedule";
 
 import { useAppStore } from "../../store/appStore";
 import { useDataStore } from "../../store/dataStore";
@@ -116,6 +117,9 @@ export const ContentRouter = ({
 
     case "digitalAssignments":
       return <DigitalAssignments network={networkRef.current} />;
+
+    case "examSchedule":
+      return <ExamSchedulePage network={networkRef.current} />;
 
     case "content":
       return (

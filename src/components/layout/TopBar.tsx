@@ -14,6 +14,7 @@ import {
   KeyboardArrowDown,
   Refresh,
   Star,
+  Event,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import {
   QuickLink,
@@ -142,6 +143,10 @@ export const TopBar: React.FC<TopBarProps> = ({
     daCourses,
     isSyncing,
     lastSyncTime,
+    examSemesters,
+    examSelectedSem,
+    setExamSelectedSem,
+    fetchExamSchedule,
   } = useDataStore();
 
   const isLoading =
@@ -249,8 +254,8 @@ export const TopBar: React.FC<TopBarProps> = ({
                   <Star className="w-6 h-6" />
                 </div>
                 
-                <div className={`absolute top-full right-0 mt-3 transition-all duration-200 flex flex-col gap-1.5 bg-(--bg-surface) border-2 border-(--border-dim) rounded-[24px] p-2 popup-shadow min-w-56 z-[999] ${isStarOpen ? 'opacity-100 pointer-events-auto translate-y-0' : 'opacity-0 pointer-events-none translate-y-2'}`}>
-                  {pinnedLinks.slice(0, 9).map((link, idx) => {
+                <div className={`absolute top-full right-0 mt-3 transition-all duration-200 flex flex-col bg-(--bg-surface) border-2 border-(--border-dim) rounded-[16px] p-1.5 popup-shadow min-w-48 z-[999] ${isStarOpen ? 'opacity-100 pointer-events-auto translate-y-0' : 'opacity-0 pointer-events-none translate-y-2'}`}>
+                  {pinnedLinks.slice(0, 5).map((link, idx) => {
                     const Icon = getCategoryIcon(link.title, link.url);
                     return (
                       <button
@@ -259,14 +264,14 @@ export const TopBar: React.FC<TopBarProps> = ({
                           handleLinkClick(link);
                           setIsStarOpen(false);
                         }}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-[16px] bg-transparent hover:bg-(--bg-highlight) transition-colors text-left group/item border-2 border-transparent hover:border-(--border-dim)"
+                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-[12px] bg-transparent hover:bg-(--bg-highlight) transition-colors text-left group/item border-2 border-transparent hover:border-(--border-dim) relative overflow-hidden"
                       >
-                        <div className="w-6 h-6 rounded-md bg-(--bg-main) flex items-center justify-center text-[10px] font-black font-mono text-(--text-muted) transition-colors border-2 border-(--border-dim) shrink-0 group-hover/item:border-(--border-main) group-hover/item:text-(--text-main)">
-                          {idx + 1}
+                        <div className="flex-1 flex items-center gap-2 min-w-0 pr-4">
+                          <Icon className="w-3.5 h-3.5 text-(--text-muted) group-hover/item:text-(--text-main) transition-colors shrink-0" />
+                          <span className="text-[11px] font-bold text-(--text-main) truncate uppercase">{link.title}</span>
                         </div>
-                        <div className="flex-1 flex items-center gap-2 min-w-0">
-                          <Icon className="w-4 h-4 text-(--text-muted) group-hover/item:text-(--text-main) transition-colors shrink-0" />
-                          <span className="text-xs font-bold text-(--text-main) truncate uppercase">{link.title}</span>
+                        <div className="absolute bottom-0.5 right-1.5 text-[9px] font-black font-mono text-(--text-muted) transition-colors group-hover/item:text-(--text-main) opacity-40">
+                          {idx + 1}
                         </div>
                       </button>
                     );
@@ -355,7 +360,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                   className="bg-(--bg-surface) border-2 border-(--border-main) text-(--text-main) p-1.5 rounded-xl shadow-(--brutal-shadow-sm) hover:-translate-y-0.5 hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   <Tooltip text="Export timetable as iCal (.ics) file for Google Calendar">
-                    <Download className="w-4 h-4" />
+                    <Event className="w-4 h-4" />
                   </Tooltip>
                 </button>
               </motion.div>
@@ -521,6 +526,27 @@ export const TopBar: React.FC<TopBarProps> = ({
                 >
                   <Refresh className={`w-4 h-4 md:w-5 md:h-5 ${daLoading && !daCourses?.length ? "animate-spin" : ""}`} />
                 </button>
+              </motion.div>
+            )}
+
+            {currentView === "examSchedule" && (
+              <motion.div
+                key="examSchedule-controls"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20, transition: { duration: 0.15 } }}
+                className="flex items-center gap-2 mr-1 md:mr-2 pointer-events-auto"
+              >
+                <SemesterDropdown
+                  semesters={examSemesters}
+                  selectedId={examSelectedSem}
+                  onChange={(id: string) => {
+                    setExamSelectedSem(id);
+                    if (network) {
+                      fetchExamSchedule(network, id);
+                    }
+                  }}
+                />
               </motion.div>
             )}
 

@@ -58,7 +58,7 @@ export const SyncManager = () => {
     if (stripped.startsWith("marks_data_")) return { page: "Marks", semester: stripped.replace("marks_data_", "") };
     if (stripped.startsWith("grades_data_")) return { page: "Grades", semester: stripped.replace("grades_data_", "") };
     if (stripped === "grade_history_data") return { page: "Grade History", semester: "Global" };
-    if (stripped.startsWith("da_courses_")) return { page: "Digital Assignments", semester: stripped.replace("da_courses_", "") };
+    if (stripped.startsWith("da_courses_")) return { page: "Assignments", semester: stripped.replace("da_courses_", "") };
     if (stripped.startsWith("da_class_")) return { page: "DA Course Detail", semester: "Class " + stripped.replace("da_class_", "") };
     
     // Curriculum

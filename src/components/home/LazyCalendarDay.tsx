@@ -158,7 +158,7 @@ export const LazyCalendarDay = React.memo(({
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 flex-1 min-w-0 pb-4 border-l-2 border-(--border-dim) pl-4">
+      <div className="flex flex-col gap-[2px] flex-1 min-w-0 pb-4 border-l-2 border-(--border-dim) pl-4">
         {calendarEvents.map((evt: any, i: number) => (
           <div
             key={`cal-${i}`}
@@ -177,38 +177,56 @@ export const LazyCalendarDay = React.memo(({
           </div>
         ))}
 
-        {doneEvents.filter((e: any) => e.type !== "class").map((evt: any, i: number) => (
-          <div
-            key={`done-${i}`}
-            className="opacity-50 grayscale-50 pointer-events-none transition-all"
-          >
-            {evt.type === "assignment" ? (
-              <AssignmentRow 
-                assignment={evt.data as Assignment} 
-                onClick={() => onNavigate && onNavigate({ title: "Digital Assignments", url: "examinations/StudentDA", category: "Examinations" })}
-              />
-            ) : evt.type === "calendar" ? (
-              <div
-                className={`w-full text-left p-3 rounded-xl flex items-center justify-between border-2 border-transparent hover:border-(--border-main) shadow-none mb-3 ${evt.data.isHoliday ? "bg-red-500/10" : "bg-(--bg-surface)"}`}
-              >
-                <div className="flex flex-col">
-                  <span
-                    className={`font-black uppercase text-xs ${evt.data.isHoliday ? "text-att-danger" : "text-(--text-main)"}`}
-                  >
-                    {evt.data.info}
-                  </span>
-                  {evt.data.subInfo && (
-                    <span className="text-[10px] text-(--text-muted) font-bold">
-                      {evt.data.subInfo}
+        {doneEvents.filter((e: any) => e.type !== "class").map((evt: any, i: number, arr: any[]) => {
+          const isTask = evt.type === "assignment";
+          let radiusClass = "rounded-xl";
+          let marginClass = "";
+          
+          if (!isTask) {
+            const isFirst = i === 0 || arr[i - 1].type === "assignment";
+            const isLast = i === arr.length - 1 || arr[i + 1].type === "assignment";
+            if (isFirst && isLast) radiusClass = "rounded-2xl";
+            else if (isFirst) radiusClass = "rounded-t-2xl rounded-b-sm";
+            else if (isLast) radiusClass = "rounded-b-2xl rounded-t-sm";
+            else radiusClass = "rounded-sm";
+          } else {
+            marginClass = i > 0 ? "mt-2" : "";
+          }
+
+          return (
+            <div
+              key={`done-${i}`}
+              className={`opacity-50 grayscale-50 pointer-events-none transition-all ${marginClass}`}
+            >
+              {evt.type === "assignment" ? (
+                <AssignmentRow 
+                  assignment={evt.data as Assignment} 
+                  onClick={() => onNavigate && onNavigate({ title: "Assignments", url: "examinations/StudentDA", category: "Examinations" })}
+                  className={radiusClass}
+                />
+              ) : evt.type === "calendar" ? (
+                <div
+                  className={`w-full text-left p-3 flex items-center justify-between border-2 border-transparent hover:border-(--border-main) shadow-none ${radiusClass} ${evt.data.isHoliday ? "bg-red-500/10" : "bg-(--bg-surface)"}`}
+                >
+                  <div className="flex flex-col">
+                    <span
+                      className={`font-black uppercase text-xs ${evt.data.isHoliday ? "text-att-danger" : "text-(--text-main)"}`}
+                    >
+                      {evt.data.info}
                     </span>
-                  )}
+                    {evt.data.subInfo && (
+                      <span className="text-[10px] text-(--text-muted) font-bold">
+                        {evt.data.subInfo}
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <EventRow event={evt.data as Event} />
-            )}
-          </div>
-        ))}
+              ) : (
+                <EventRow event={evt.data as Event} className={radiusClass} />
+              )}
+            </div>
+          );
+        })}
 
         {isToday &&
           doneEvents.length > 0 &&
@@ -235,40 +253,59 @@ export const LazyCalendarDay = React.memo(({
             </div>
           )}
 
-        {upcomingEvents.map((evt: any, i: number) => (
-          <div
-            key={`upcoming-${i}`}
-            className={isToday ? "opacity-100" : "opacity-80"}
-          >
-            {evt.type === "class" ? (
-              <ScheduleRow
-                item={evt.data as UpcomingClass}
-                onClick={() => onNavigate && onNavigate({ title: "Timetable", url: "academics/common/StudentTimeTable", category: "Academics" })}
-                use24HourTime={use24HourTime}
-              />
-            ) : evt.type === "assignment" ? (
-              <AssignmentRow 
-                assignment={evt.data as Assignment} 
-                onClick={() => onNavigate && onNavigate({ title: "Digital Assignments", url: "examinations/StudentDA", category: "Examinations" })}
-              />
-            ) : evt.type === "calendar" ? (
-              <div className="w-full text-left pb-3 flex flex-col">
-                <span
-                  className={`font-black font-expanded uppercase text-base md:text-lg ${evt.data.isHoliday ? "text-att-danger" : "text-(--text-main)"}`}
-                >
-                  {evt.data.info}
-                </span>
-                {evt.data.subInfo && (
-                  <span className="text-xs text-(--text-muted) font-bold mt-1">
-                    {evt.data.subInfo}
+        {upcomingEvents.map((evt: any, i: number, arr: any[]) => {
+          const isTask = evt.type === "assignment";
+          let radiusClass = "rounded-xl";
+          let marginClass = "";
+          
+          if (!isTask) {
+            const isFirst = i === 0 || arr[i - 1].type === "assignment";
+            const isLast = i === arr.length - 1 || arr[i + 1].type === "assignment";
+            if (isFirst && isLast) radiusClass = "rounded-2xl";
+            else if (isFirst) radiusClass = "rounded-t-2xl rounded-b-sm";
+            else if (isLast) radiusClass = "rounded-b-2xl rounded-t-sm";
+            else radiusClass = "rounded-sm";
+          } else {
+            marginClass = i > 0 ? "mt-2" : "";
+          }
+
+          return (
+            <div
+              key={`upcoming-${i}`}
+              className={`${isToday ? "opacity-100" : "opacity-80"} ${marginClass}`}
+            >
+              {evt.type === "class" ? (
+                <ScheduleRow
+                  item={evt.data as UpcomingClass}
+                  onClick={() => onNavigate && onNavigate({ title: "Timetable", url: "academics/common/StudentTimeTable", category: "Academics" })}
+                  use24HourTime={use24HourTime}
+                  className={radiusClass}
+                />
+              ) : evt.type === "assignment" ? (
+                <AssignmentRow 
+                  assignment={evt.data as Assignment} 
+                  onClick={() => onNavigate && onNavigate({ title: "Assignments", url: "examinations/StudentDA", category: "Examinations" })}
+                  className={radiusClass}
+                />
+              ) : evt.type === "calendar" ? (
+                <div className={`w-full text-left p-3 flex flex-col ${radiusClass} ${evt.data.isHoliday ? "bg-red-500/10" : "bg-(--bg-surface)"}`}>
+                  <span
+                    className={`font-black font-expanded uppercase text-base md:text-lg ${evt.data.isHoliday ? "text-att-danger" : "text-(--text-main)"}`}
+                  >
+                    {evt.data.info}
                   </span>
-                )}
-              </div>
-            ) : (
-              <EventRow event={evt.data as Event} />
-            )}
-          </div>
-        ))}
+                  {evt.data.subInfo && (
+                    <span className="text-xs text-(--text-muted) font-bold mt-1">
+                      {evt.data.subInfo}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <EventRow event={evt.data as Event} className={radiusClass} />
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

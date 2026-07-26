@@ -105,6 +105,14 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
   const fontArial = "font-['Arial',Helvetica,sans-serif]!";
   const fontTimes = "font-['Times_New_Roman',Times,serif]!";
 
+  // Name condition processing
+  const fullName = toTitleCase(data.basic.name);
+  const isShortName = fullName.length < 17;
+  
+  const words = fullName.split(" ");
+  const line1 = words[0] || "";
+  const line2 = words.slice(1).join(" ") || "";
+
   return (
     <div className="group w-full max-w-74 aspect-64/100 perspective-[1000px] cursor-pointer shrink-0">
       {/* Container for 3D flip */}
@@ -127,7 +135,7 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
           </div>
 
           <div className="flex-1 flex flex-col justify-center top-1 items-center px-4 w-full">
-            <div className="w-38.5 h-59 overflow-hidden flex items-center justify-center z-10">
+            <div className={`overflow-hidden flex items-center justify-center z-10 transition-all w-[108px] h-[165px]`}>
               {data.basic.photoUrl ? (
                 <img
                   src={data.basic.photoUrl}
@@ -140,14 +148,25 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
             </div>
           </div>
 
-          <div className={`flex flex-col items-center shrink-0 pb-1`}>
+          {/* Negative top margin pulls the text block upward for two-line names */}
+          <div className={`flex flex-col items-center justify-center text-center shrink-0 pb-1 w-full ${isShortName ? '' : '-mt-2'}`}>
+            {isShortName ? (
+              <div
+                className={`font-bold text-[25px] ${fontArial} text-[#181d79] leading-none text-center px-2 mt-6`}
+              >
+                {fullName}
+              </div>
+            ) : (
+              <div
+                className={`font-bold text-[25px] ${fontArial} text-[#181d79] leading-[1.1] flex flex-col items-center justify-center text-center w-full mt-1 px-2`}
+              >
+                <span className={`${fontArial}`}>{line1}</span>
+                <span className={`${fontArial}`}>{line2}</span>
+              </div>
+            )}
+            
             <div
-              className={`font-bold text-[25px] ${fontArial} text-[#181d79] leading-none text-center px-2`}
-            >
-              {toTitleCase(data.basic.name)}
-            </div>
-            <div
-              className={`font-bold text-[18px] ${fontArial} text-black mt-4`}
+              className={`font-bold text-[18px] ${fontArial} text-black mt-1 text-center`}
             >
               {data.basic.regNo}
             </div>
@@ -227,14 +246,14 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
             </span>
           </div>
 
-          <div className="mt-2 flex justify-between text-[11px] italic items-end">
+          <div className="mt-2 flex justify-between text-[11px] items-end px-2">
             <div className="text-center flex flex-col items-center">
-              <span className="text-xl -mb-2 text-content-dim italic font-['cursive']!"></span>
-              <span className={fontTimes}> </span>
+              <span className={`text-xl -mb-2 text-content-dim ${fontArial}`}></span>
+              <span className={fontArial}> </span>
             </div>
             <div className="text-center flex flex-col items-center">
-              <span className="text-xl -mb-2 text-content-dim italic font-['cursive']!"></span>
-              <span className={fontTimes}> </span>
+              <span className={`text-xl -mb-2 text-content-dim ${fontArial}`}></span>
+              <span className={fontArial}> </span>
             </div>
           </div>
 
@@ -251,9 +270,10 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
                 format="CODE128"
                 background="transparent"
                 lineColor="#000000"
+                font="Arial"
               />
             </div>
-            <div className={`font-bold text-[13px] ${fontTimes} mt-1`}>
+            <div className={`font-bold text-[13px] ${fontArial} mt-1`}>
               Website : www.vit.ac.in
             </div>
           </div>

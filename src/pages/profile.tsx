@@ -139,8 +139,8 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
   const fontArial = "font-['Arial',Helvetica,sans-serif]!";
   const fontTimes = "font-['Times_New_Roman',Times,serif]!";
 
-  // Name condition processing
-  const fullName = toTitleCase(data.basic.name);
+  // FIX 1: Defensive Null Guard Implemented (Will not affect visuals)
+  const fullName = toTitleCase(data?.basic?.name ?? "");
   const isShortName = fullName.length < 17;
   
   const words = fullName.split(" ");

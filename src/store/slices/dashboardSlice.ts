@@ -114,6 +114,7 @@ export const createDashboardSlice: StateCreator<DataState, [], [], DashboardSlic
             });
 
             const subPromises = [];
+            subPromises.push(get().fetchExamSemesters(network));
             if (ttDefault) {
               subPromises.push(get().loadTimetable(network, csrf, authId, ttDefault));
             }
@@ -151,6 +152,7 @@ export const createDashboardSlice: StateCreator<DataState, [], [], DashboardSlic
         network.fetchWithCache("dashboard_events", () => network.fetchFragment("get/scheduled/events"), true),
         network.fetchWithCache("tt_semester_list", () => network.fetchFragment("academics/common/StudentTimeTable"), true),
         network.fetchWithCache("cal_semester_list", () => network.fetchFragment("academics/common/CalendarPreview"), true),
+        network.fetchWithCache("exam_schedule_view", () => network.getExamScheduleView(), true),
       ]).then(([newEdu, newAtt, newDa, newEvents, newSem, newCal]) => {
         set({
           stats: parseAcademicStats(newEdu),

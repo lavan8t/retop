@@ -5,9 +5,53 @@ import {
 } from "./cache";
 import { useAppStore } from "../store/appStore";
 
+export async function diagnoseNetworkError(): Promise<string> {
+  // 1. Check internet connectivity first (Google ping / navigator.onLine)
+  let hasInternet = typeof navigator !== "undefined" ? navigator.onLine : true;
+  if (hasInternet) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2500);
+      await fetch("https://www.google.com/generate_204", {
+        mode: "no-cors",
+        cache: "no-store",
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      hasInternet = true;
+    } catch {
+      hasInternet = false;
+    }
+  }
+
+  if (!hasInternet) {
+    return "No internet connection";
+  }
+
+  // 2. Internet is working, now test VTOP server responsiveness
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+    const res = await fetch("/vtop/open/page", {
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    if (!res.ok) {
+      return "Please try again later. VTOP is slow or unreachable.";
+    }
+  } catch {
+    return "Please try again later. VTOP is slow or unreachable.";
+  }
+
+  return "Please try again later. VTOP is slow or unreachable.";
+}
+
 export class VTOPNetwork {
   public csrf: string;
   public authorizedID: string;
+
+  public static has404Error = false;
 
   private static requestTimestamps: number[] = [];
 
@@ -61,13 +105,44 @@ export class VTOPNetwork {
     input: RequestInfo | URL,
     init?: RequestInit,
   ): Promise<Response> {
+    if (VTOPNetwork.has404Error) {
+      throw new Error("Network requests halted due to previous 404 error.");
+    }
+
     const urlStr =
       typeof input === "string"
         ? input
         : (input as any).url || input.toString();
     useAppStore.getState().logNetworkRequest(urlStr);
     await this.enforceRateLimit();
-    return fetch(input, init);
+
+    try {
+      const response = await fetch(input, init);
+      if (response.status === 404) {
+        VTOPNetwork.has404Error = true;
+        diagnoseNetworkError().then((msg) => {
+          window.dispatchEvent(
+            new CustomEvent("retop-toast", {
+              detail: { message: msg, type: "error" },
+            }),
+          );
+        });
+        throw new Error(`HTTP Status 404`);
+      }
+      return response;
+    } catch (err: any) {
+      if (err?.message?.includes("404") || (typeof navigator !== "undefined" && !navigator.onLine)) {
+        VTOPNetwork.has404Error = true;
+        diagnoseNetworkError().then((msg) => {
+          window.dispatchEvent(
+            new CustomEvent("retop-toast", {
+              detail: { message: msg, type: "error" },
+            }),
+          );
+        });
+      }
+      throw err;
+    }
   }
 
   async fetchVtopApi(
@@ -159,11 +234,19 @@ export class VTOPNetwork {
           data.includes("404 - File or directory not found") ||
           data.includes("<title>Error</title>");
 
-        if (
+        if (isErrorPage) {
+          VTOPNetwork.has404Error = true;
+          diagnoseNetworkError().then((msg) => {
+            window.dispatchEvent(
+              new CustomEvent("retop-toast", {
+                detail: { message: msg, type: "error" },
+              }),
+            );
+          });
+        } else if (
           data &&
           data.length > 50 &&
           !data.includes("Invalid") &&
-          !isErrorPage &&
           (!validate || validate(data))
         ) {
           setCachedData(userScopedKey, data);
@@ -254,14 +337,18 @@ export class VTOPNetwork {
   }
 
   async getExamScheduleView(): Promise<string> {
-    return this.fetchVtopApi("examinations/StudExamSchedule", {
-      verifyMenu: "true",
+    return this.fetchWithCache("exam_schedule_view", async () => {
+      return this.fetchVtopApi("examinations/StudExamSchedule", {
+        verifyMenu: "true",
+      });
     });
   }
 
   async getExamScheduleData(semesterSubId: string): Promise<string> {
-    return this.fetchVtopApi("examinations/doSearchExamScheduleForStudent", {
-      semesterSubId,
+    return this.fetchWithCache(`exam_schedule_data_${semesterSubId}`, async () => {
+      return this.fetchVtopApi("examinations/doSearchExamScheduleForStudent", {
+        semesterSubId,
+      });
     });
   }
 

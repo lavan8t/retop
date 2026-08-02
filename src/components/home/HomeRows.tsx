@@ -6,6 +6,7 @@ import {
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { CourseSummary, Assignment, Event } from "../../types/vtop";
 import { UpcomingClass } from "../../utils/timetable-slots";
+import { ExamEntry } from "../../parsers/exam-schedule";
 import { formatTimeStr } from "../../utils/formatting";
 import { MarqueeText } from "../common/MarqueeText";
 import { SPRING_SNAPPY } from "../../utils/motion";
@@ -38,7 +39,7 @@ export const AttendanceRow = ({ course }: { course: CourseSummary }) => {
   }
 
   return (
-    <div className="relative flex items-center justify-between p-2 rounded-sm first:rounded-t-2xl last:rounded-b-2xl bg-(--bg-surface) hover:bg-(--bg-highlight) transition-colors cursor-pointer group/row select-none overflow-hidden">
+    <div className="relative flex items-center justify-between px-3.5 py-2.5 rounded-xl first:rounded-t-2xl last:rounded-b-2xl bg-(--bg-surface) hover:bg-(--bg-highlight) transition-colors cursor-pointer group/row select-none overflow-hidden border border-(--border-dim)/40">
       <div
         className={`absolute top-0 left-0 h-full ${barColor} transition-all duration-fast`}
         style={{ width: `${displayVal}%` }}
@@ -49,14 +50,14 @@ export const AttendanceRow = ({ course }: { course: CourseSummary }) => {
           className="text-xs font-black text-(--text-main) transition-colors"
         />
         {course.type && (
-          <span className="text-[9px] font-black uppercase px-1 py-0.5 rounded bg-(--bg-main) text-(--text-muted) leading-none shrink-0">
+          <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md bg-(--bg-main) text-(--text-muted) leading-none shrink-0 border border-(--border-dim)">
             {course.type}
           </span>
         )}
       </div>
 
       <div
-        className={`relative z-10 shrink-0 font-black font-expanded text-sm leading-none px-2 py-1 rounded-md ${badgeBg}`}
+        className={`relative z-10 shrink-0 font-black font-expanded text-xs leading-none px-2.5 py-1 rounded-lg ${badgeBg}`}
       >
         {isNaN(val) ? "--" : `${displayVal}%`}
       </div>
@@ -246,21 +247,169 @@ export const EventRow = ({ event, className }: { event: Event; className?: strin
         color: cardFg,
       }}
     >
-    <div className="flex flex-col">
-      <div className="flex items-start justify-between gap-2">
-        <span className="text-sm font-black leading-tight flex-1">
-          {event.title}
-        </span>
-        <span className="shrink-0 text-[10px] font-bold opacity-80 text-right">
-          {event.organizer}
-        </span>
+      <div className="flex flex-col">
+        <div className="flex items-start justify-between gap-2">
+          <span className="text-sm font-black leading-tight flex-1">
+            {event.title}
+          </span>
+          <span className="shrink-0 text-[10px] font-bold opacity-80 text-right">
+            {event.organizer}
+          </span>
+        </div>
+        <div className="flex justify-end mt-1">
+          <span className="shrink-0 text-[9px] font-black uppercase opacity-80 text-right">
+            {event.category}
+          </span>
+        </div>
       </div>
-      <div className="flex justify-end mt-1">
-        <span className="shrink-0 text-[9px] font-black uppercase opacity-80 text-right">
-          {event.category}
-        </span>
+    </motion.div>
+  );
+};
+
+export const ExamRow = ({
+  exam,
+  groupType,
+  onClick,
+  className,
+}: {
+  exam: ExamEntry;
+  groupType?: string;
+  onClick?: () => void;
+  className?: string;
+}) => {
+  const { settings } = useSettingsStore();
+
+  const sysDark = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const isDark = settings.themeMode === "dark" || settings.themeMode === "amoled" || (settings.themeMode === "auto" && sysDark);
+  const cardBg = getMaterialThemeColor("purple", isDark);
+  const cardFg = getMaterialOnThemeColor("purple", isDark);
+
+  return (
+    <motion.div
+      layout
+      variants={rowVariants}
+      onClick={onClick}
+      className={`p-3 shadow-none select-none relative border-0 transition-all ${onClick ? "cursor-pointer" : ""} ${className || "rounded-xl"}`}
+      style={{
+        backgroundColor: cardBg,
+        color: cardFg,
+      }}
+    >
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+            <span className="px-1.5 py-0.5 rounded bg-black/15 text-[9px] font-black font-mono uppercase tracking-wider shrink-0">
+              {groupType || "EXAM"}
+            </span>
+            <span className="text-xs font-mono font-bold opacity-80 shrink-0">
+              {exam.courseCode}
+            </span>
+            <span className="text-sm font-black leading-tight flex-1 truncate">
+              {exam.courseTitle}
+            </span>
+          </div>
+          {exam.slot && (
+            <span className="text-[10px] font-mono font-bold shrink-0 opacity-80">
+              SLOT: {exam.slot}
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between text-[11px] font-bold opacity-90 pt-1.5 border-t border-black/10">
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1 font-mono">
+              <Schedule className="w-3.5 h-3.5 opacity-80" />
+              {exam.examTime} ({exam.examSession})
+            </span>
+            {exam.venue && (
+              <span className="flex items-center gap-1">
+                <LocationOn className="w-3.5 h-3.5 opacity-80" />
+                {exam.venue} {exam.seatNo ? `(Seat: ${exam.seatNo})` : ""}
+              </span>
+            )}
+          </div>
+          {exam.reportingTime && (
+            <span className="text-[10px] font-mono font-bold opacity-80">
+              RPT: {exam.reportingTime}
+            </span>
+          )}
+        </div>
       </div>
-    </div>
-  </motion.div>
+    </motion.div>
+  );
+};
+
+export const CustomEventRow = ({
+  event,
+  onDelete,
+  className,
+}: {
+  event: any;
+  onDelete?: () => void;
+  className?: string;
+}) => {
+  const { settings } = useSettingsStore();
+  const sysDark =
+    typeof window !== "undefined" &&
+    window.matchMedia &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const isDark =
+    settings.themeMode === "dark" ||
+    settings.themeMode === "amoled" ||
+    (settings.themeMode === "auto" && sysDark);
+
+  const colorMap: Record<string, string> = {
+    quiz: "violet",
+    assessment: "cyan",
+    event: "amber",
+    task: "emerald",
+    note: "pink",
+  };
+
+  const colorKey = colorMap[event.type] || "blue";
+  const cardBg = getMaterialThemeColor(colorKey, isDark);
+  const cardFg = getMaterialOnThemeColor(colorKey, isDark);
+
+  return (
+    <motion.div
+      layout
+      variants={rowVariants}
+      className={`p-3 shadow-none select-none relative border-0 ${className || "rounded-xl"}`}
+      style={{
+        backgroundColor: cardBg,
+        color: cardFg,
+      }}
+    >
+      <div className="flex flex-col gap-1">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+            <span className="px-1.5 py-0.5 rounded bg-black/15 text-[9px] font-black font-mono uppercase tracking-wider shrink-0">
+              {event.type}
+            </span>
+            <span className="text-sm font-black leading-tight truncate">
+              {event.title}
+            </span>
+          </div>
+          {onDelete && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              className="text-xs opacity-60 hover:opacity-100 p-0.5 rounded transition-opacity"
+              title="Delete Custom Event"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+        {(event.time || event.venue) && (
+          <div className="flex items-center gap-2 text-[10px] font-mono font-bold opacity-85 mt-0.5">
+            {event.time && <span>⏰ {event.time}</span>}
+            {event.venue && <span>📍 {event.venue}</span>}
+          </div>
+        )}
+      </div>
+    </motion.div>
   );
 };

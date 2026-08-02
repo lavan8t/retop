@@ -13,7 +13,7 @@
  *   5. Copy HTML files into dist/ with rewritten script paths
  */
 
-import { rmSync, mkdirSync, copyFileSync, readFileSync, writeFileSync, existsSync } from "fs";
+import { rmSync, mkdirSync, copyFileSync, readFileSync, writeFileSync, existsSync, realpathSync } from "fs";
 import { resolve, basename } from "path";
 
 const IS_PROD = process.argv.includes("--prod") || process.argv.includes("--production");
@@ -30,7 +30,7 @@ const buildNumber =
   pad(d.getMinutes()) +
   pad(d.getSeconds());
 
-const ROOT = import.meta.dir;
+const ROOT = resolve(process.cwd());
 const DIST = resolve(ROOT, "dist");
 
 // ── Step 0: Clean dist/ ──────────────────────────────────────────────
@@ -43,9 +43,9 @@ mkdirSync(resolve(DIST, "assets"), { recursive: true });
 console.log("Building content scripts...");
 const contentBuild = await Bun.build({
   entrypoints: [
-    resolve(ROOT, "src/content.ts"),
-    resolve(ROOT, "src/injected.ts"),
-    resolve(ROOT, "src/background.ts"),
+    "./src/content.ts",
+    "./src/injected.ts",
+    "./src/background.ts",
   ],
   outdir: DIST,
   target: "browser",
@@ -78,7 +78,7 @@ console.log("  - content.js, injected.js, background.js");
 console.log("Building offline...");
 const popupBuild = await Bun.build({
   entrypoints: [
-    resolve(ROOT, "src/offline.tsx"),
+    "./src/offline.tsx",
   ],
   outdir: DIST,
   target: "browser",
@@ -191,6 +191,17 @@ if (existsSync(publicAssetsDir)) {
     copyFileSync(resolve(publicAssetsDir, file), resolve(distAssetsDir, file));
   }
   console.log("  - assets/");
+}
+
+// Copy icons
+const iconsDir = resolve(ROOT, "icons");
+const distIconsDir = resolve(DIST, "icons");
+if (existsSync(iconsDir)) {
+  mkdirSync(distIconsDir, { recursive: true });
+  for (const file of new Bun.Glob("*").scanSync(iconsDir)) {
+    copyFileSync(resolve(iconsDir, file), resolve(distIconsDir, file));
+  }
+  console.log("  - icons/");
 }
 
 // ── Done: Report sizes ──────────────────────────────────────────────

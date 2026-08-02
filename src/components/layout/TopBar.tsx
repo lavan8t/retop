@@ -14,7 +14,6 @@ import {
   KeyboardArrowDown,
   Refresh,
   Star,
-  Event,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import {
   QuickLink,
@@ -32,7 +31,6 @@ import { SegmentedControl } from "../ui/SegmentedControl";
 import { getCategoryIcon } from "../../utils/icons";
 import { useDataStore } from "../../store/dataStore";
 import { useAppStore } from "../../store/appStore";
-import { downloadICalFile } from "../../utils/ical-export";
 import { Tooltip } from "../ui/Tooltip";
 
 interface TopBarProps {
@@ -80,6 +78,8 @@ const getPageTitle = (view: string, dynamicTitle?: string) => {
       return "Class Attendance";
     case "digitalAssignments":
       return "Digital Assignments";
+    case "examSchedule":
+      return "Exam Schedule";
     case "content":
       return dynamicTitle || "Content";
     default:
@@ -238,54 +238,6 @@ export const TopBar: React.FC<TopBarProps> = ({
 
         <div className="flex items-center gap-2 md:gap-4 h-full pointer-events-auto">
           <AnimatePresence mode="wait">
-            {pinnedLinks.length > 0 && (
-              <motion.div
-                key="dashboard-links"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20, transition: { duration: 0.15 } }}
-                className="hidden xl:flex items-center gap-2.5 relative"
-              >
-                {isStarOpen && (
-                  <div 
-                    className="fixed inset-0 z-[998]"
-                    onClick={() => setIsStarOpen(false)}
-                  />
-                )}
-                <div 
-                  className="flex items-center justify-center w-11 h-11 rounded-[14px] bg-transparent text-(--text-muted) border-0 cursor-pointer hover:text-(--text-main) transition-colors shadow-none z-[999]"
-                  onClick={() => setIsStarOpen(!isStarOpen)}
-                >
-                  <Star className="w-6 h-6" />
-                </div>
-                
-                <div className={`absolute top-full right-0 mt-3 transition-all duration-200 flex flex-col bg-(--bg-surface) border-2 border-(--border-dim) rounded-[16px] p-1.5 popup-shadow min-w-48 z-[999] ${isStarOpen ? 'opacity-100 pointer-events-auto translate-y-0' : 'opacity-0 pointer-events-none translate-y-2'}`}>
-                  {pinnedLinks.slice(0, 5).map((link, idx) => {
-                    const Icon = getCategoryIcon(link.title, link.url);
-                    return (
-                      <button
-                        key={idx}
-                        onClick={() => {
-                          handleLinkClick(link);
-                          setIsStarOpen(false);
-                        }}
-                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-[12px] bg-transparent hover:bg-(--bg-highlight) transition-colors text-left group/item border-2 border-transparent hover:border-(--border-dim) relative overflow-hidden"
-                      >
-                        <div className="flex-1 flex items-center gap-2 min-w-0 pr-4">
-                          <Icon className="w-3.5 h-3.5 text-(--text-muted) group-hover/item:text-(--text-main) transition-colors shrink-0" />
-                          <span className="text-[11px] font-bold text-(--text-main) truncate">{link.title}</span>
-                        </div>
-                        <div className="absolute bottom-0.5 right-1.5 text-[9px] font-black font-mono text-(--text-muted) transition-colors group-hover/item:text-(--text-main) opacity-40">
-                          {idx + 1}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          <AnimatePresence mode="wait">
 
             {currentView === "timetable" && (
               <motion.div
@@ -343,31 +295,6 @@ export const TopBar: React.FC<TopBarProps> = ({
                     onChange={(val) => setTtViewMode(val as any)}
                   />
                 </div>
-
-                <button
-                  onClick={() => {
-                    const semLabel =
-                      ttSemesters.find((s) => s.id === ttSelectedSem)?.label ||
-                      "";
-                    if (calGridData.length === 0) {
-                      alert(
-                        "Please open the Academics Calendar page first to load calendar data, then come back here to export.",
-                      );
-                      return;
-                    }
-                    downloadICalFile({
-                      courses: ttCourses,
-                      calGridData,
-                      semesterLabel: semLabel,
-                    });
-                  }}
-                  disabled={ttCourses.length === 0}
-                  className="bg-(--bg-surface) border-2 border-(--border-main) text-(--text-main) p-1.5 rounded-xl shadow-(--brutal-shadow-sm) hover:-translate-y-0.5 hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                >
-                  <Tooltip text="Export timetable as iCal (.ics) file for Google Calendar">
-                    <Event className="w-4 h-4" />
-                  </Tooltip>
-                </button>
               </motion.div>
             )}
 
@@ -475,27 +402,6 @@ export const TopBar: React.FC<TopBarProps> = ({
               </motion.div>
             )}
 
-            {currentView === "calendar" && (
-              <motion.div
-                key="calendar-controls"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20, transition: { duration: 0.15 } }}
-                className="flex items-center gap-1.5 md:gap-3 lg:gap-4 pr-0 pointer-events-auto"
-              >
-                <SemesterDropdown
-                  semesters={calSemesters}
-                  selectedId={calSelectedSem}
-                  onChange={(id: string) => setCalSelectedSem(id)}
-                />
-                <ClassGroupDropdown
-                  groups={calClassGroups}
-                  selectedId={calSelectedGroup}
-                  onChange={(id: string) => setCalSelectedGroup(id)}
-                />
-              </motion.div>
-            )}
-
             {currentView === "digitalAssignments" && (
               <motion.div
                 key="digitalAssignments-controls"
@@ -571,6 +477,48 @@ export const TopBar: React.FC<TopBarProps> = ({
               </motion.div>
             )}
           </AnimatePresence>
+
+          {pinnedLinks.length > 0 && (
+            <div className="hidden xl:flex items-center gap-2.5 relative pointer-events-auto shrink-0">
+              {isStarOpen && (
+                <div 
+                  className="fixed inset-0 z-[998]"
+                  onClick={() => setIsStarOpen(false)}
+                />
+              )}
+              <div 
+                className="flex items-center justify-center w-10 h-10 rounded-[14px] bg-transparent text-(--text-muted) border-0 cursor-pointer hover:text-(--text-main) transition-colors shadow-none z-[999]"
+                onClick={() => setIsStarOpen(!isStarOpen)}
+                title="Pinned Quick Links"
+              >
+                <Star className="w-5 h-5" />
+              </div>
+              
+              <div className={`absolute top-full right-0 mt-3 transition-all duration-200 flex flex-col bg-(--bg-surface) border-2 border-(--border-dim) rounded-[16px] p-1.5 popup-shadow min-w-48 z-[999] ${isStarOpen ? 'opacity-100 pointer-events-auto translate-y-0' : 'opacity-0 pointer-events-none translate-y-2'}`}>
+                {pinnedLinks.slice(0, 5).map((link, idx) => {
+                  const Icon = getCategoryIcon(link.title, link.url);
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        handleLinkClick(link);
+                        setIsStarOpen(false);
+                      }}
+                      className="flex items-center gap-2 px-2.5 py-1.5 rounded-[12px] bg-transparent hover:bg-(--bg-highlight) transition-colors text-left group/item border-2 border-transparent hover:border-(--border-dim) relative overflow-hidden"
+                    >
+                      <div className="flex-1 flex items-center gap-2 min-w-0 pr-4">
+                        <Icon className="w-3.5 h-3.5 text-(--text-muted) group-hover/item:text-(--text-main) transition-colors shrink-0" />
+                        <span className="text-[11px] font-bold text-(--text-main) truncate">{link.title}</span>
+                      </div>
+                      <div className="absolute bottom-0.5 right-1.5 text-[9px] font-black font-mono text-(--text-muted) transition-colors group-hover/item:text-(--text-main) opacity-40">
+                        {idx + 1}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center pointer-events-auto mr-1 md:mr-2">
             <button

@@ -245,7 +245,7 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
             }
             className="group shrink-0 bg-(--bg-highlight) rounded-4xl flex flex-col relative z-30 cursor-pointer overflow-hidden border-2 border-transparent hover:border-(--border-main) transition-all h-fit"
           >
-            <div className="px-5 pt-3 border-b-2 border-(--border-main) flex justify-between items-center shrink-0">
+            <div className="px-5 pt-5 border-b-2 border-(--border-main) flex justify-between items-center shrink-0">
               <div className="flex flex-col">
                 <span className="text-[10px] font-expanded font-bold uppercase text-(--text-muted) mb-1">
                   Attendance
@@ -270,7 +270,7 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
               </Tooltip>
             </div>
 
-            <div className="p-3 flex flex-col gap-[2px]">
+            <div className="p-3 flex flex-col gap-0.5">
               {sortedAttendance.length === 0 ? (
                 <EmptyState msg="No Registered Courses" size="sm" />
               ) : (

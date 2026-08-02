@@ -184,18 +184,21 @@ export function injectSplashScreen() {
         flex-direction: column !important;
         gap: 16px !important;
         background: #09090b !important;
-        font-family: system-ui, sans-serif !important;
+        font-family: "Google Sans Flex", system-ui, sans-serif !important;
         visibility: visible !important;
         opacity: 1 !important;
         transition: opacity 0.3s ease !important;
       }
-      #retop-open-loader .spinner {
-        width: 36px !important;
-        height: 36px !important;
-        border: 3px solid #27272a !important;
-        border-top-color: #3b82f6 !important;
-        border-radius: 50% !important;
-        animation: retop-spin 0.7s linear infinite !important;
+      #retop-open-loader .retop-brand {
+        font-size: 2rem !important;
+        font-weight: 900 !important;
+        letter-spacing: -0.02em !important;
+        color: #f8fafc !important;
+        text-transform: lowercase !important;
+        font-style: italic !important;
+        font-variation-settings: "wdth" 125, "wght" 900, "ROND" 100, "slnt" -10 !important;
+        animation: retop-wdth-bounce 1.8s ease-in-out infinite !important;
+        transform: skewX(-10deg) !important;
       }
       #retop-open-loader .label {
         color: #94a3b8 !important;
@@ -203,8 +206,9 @@ export function injectSplashScreen() {
         font-weight: 500 !important;
         letter-spacing: 0.03em !important;
       }
-      @keyframes retop-spin {
-        to { transform: rotate(360deg); }
+      @keyframes retop-wdth-bounce {
+        0%, 100% { font-variation-settings: "wdth" 125, "wght" 900, "ROND" 100, "slnt" -10; }
+        50% { font-variation-settings: "wdth" 151, "wght" 900, "ROND" 100, "slnt" -10; }
       }
     `;
     (document.head || document.documentElement).appendChild(earlyStyle);
@@ -212,7 +216,7 @@ export function injectSplashScreen() {
 
   const loader = document.createElement("div");
   loader.id = "retop-open-loader";
-  loader.innerHTML = `<div class="spinner"></div><div class="label">retop</div>`;
+  loader.innerHTML = `<div class="retop-brand">retop</div><div class="label">loading</div>`;
   document.documentElement.appendChild(loader);
 }
 

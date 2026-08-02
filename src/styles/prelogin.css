@@ -364,6 +364,8 @@ ul.list-group.spotlight-background {
 }
 
 .spotlight-background .list-group-item {
+  position: relative !important;
+  cursor: pointer !important;
   background: transparent !important;
   background-image: none !important;
   border: none !important;
@@ -382,9 +384,21 @@ ul.list-group.spotlight-background {
   transform: none !important;
 }
 
+/* Stretch inner links over the whole item area */
+.spotlight-background .list-group-item a::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 2 !important;
+}
+
 .spotlight-background strong,
 .spotlight-background span,
-.spotlight-background a {
+.spotlight-background a,
+.spotlight-background .list-group-item:hover strong,
+.spotlight-background .list-group-item:hover span,
+.spotlight-background .list-group-item:hover a,
+.spotlight-background a:hover {
   color: var(--text-main) !important;
   font-variation-settings: "wght" 500 !important;
   font-size: 0.9rem !important;

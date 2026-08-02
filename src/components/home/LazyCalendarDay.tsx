@@ -1,7 +1,9 @@
 import React from "react";
 import { UpcomingClass } from "../../utils/timetable-slots";
 import { Assignment, Event } from "../../types/vtop";
-import { ScheduleRow, AssignmentRow, EventRow } from "./HomeRows";
+import { ScheduleRow, AssignmentRow, EventRow, ExamRow, CustomEventRow } from "./HomeRows";
+import { ExamGroup, isSameDayExam } from "../../parsers/exam-schedule";
+import { useDataStore } from "../../store/dataStore";
 import {
   useSettingsStore,
   getMaterialThemeColor,
@@ -15,6 +17,7 @@ interface LazyCalendarDayProps {
   eventFilter: "all" | "classes" | "assignments" | "events";
   assignments: Assignment[];
   events: Event[];
+  examGroups?: ExamGroup[];
   getClassesForDate: (d: Date, calEvent: any) => UpcomingClass[];
   use24HourTime: boolean;
   nowRef: React.RefObject<HTMLDivElement | null>;
@@ -30,6 +33,7 @@ export const LazyCalendarDay = React.memo(
     eventFilter,
     assignments,
     events,
+    examGroups = [],
     getClassesForDate,
     use24HourTime,
     todayRef,
@@ -63,15 +67,37 @@ export const LazyCalendarDay = React.memo(
 
     const classesForDay = getClassesForDate(d, calEvent);
 
+    const dayExams: { exam: any; groupType: string }[] = [];
+    if (examGroups && examGroups.length > 0) {
+      for (const grp of examGroups) {
+        for (const entry of grp.entries) {
+          if (entry.examDate && isSameDayExam(entry.examDate, d)) {
+            dayExams.push({ exam: entry, groupType: grp.examType });
+          }
+        }
+      }
+    }
+
+    const { customEvents, removeCustomEvent } = useDataStore();
+    const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const dayCustomEvents = customEvents.filter((ce) => ce.date === dStr);
+
     const dayEvents: Array<
       | { type: "class"; data: UpcomingClass }
       | { type: "assignment"; data: Assignment }
       | { type: "event"; data: Event }
+      | { type: "exam"; data: { exam: any; groupType: string } }
+      | { type: "custom"; data: any }
       | { type: "calendar"; data: any }
     > = [];
 
     if (calEvent && (calEvent.info || calEvent.isHoliday)) {
       dayEvents.push({ type: "calendar", data: calEvent });
+    }
+
+    if (eventFilter === "all" || eventFilter === "events" || eventFilter === "classes") {
+      dayExams.forEach((ex) => dayEvents.push({ type: "exam", data: ex }));
+      dayCustomEvents.forEach((ce) => dayEvents.push({ type: "custom", data: ce }));
     }
 
     if (eventFilter === "all" || eventFilter === "classes") {
@@ -237,6 +263,26 @@ export const LazyCalendarDay = React.memo(
                             }
                             className={radiusClass}
                           />
+                        ) : evt.type === "exam" ? (
+                          <ExamRow
+                            exam={(evt.data as any).exam}
+                            groupType={(evt.data as any).groupType}
+                            onClick={() =>
+                              onNavigate &&
+                              onNavigate({
+                                title: "Exam Schedule",
+                                url: "examinations/StudExamSchedule",
+                                category: "Examinations",
+                              })
+                            }
+                            className={radiusClass}
+                          />
+                        ) : evt.type === "custom" ? (
+                          <CustomEventRow
+                            event={evt.data}
+                            onDelete={() => removeCustomEvent(evt.data.id)}
+                            className={radiusClass}
+                          />
                         ) : evt.type === "calendar" ? (
                           <div
                             className={`w-full text-left p-3 flex flex-col ${radiusClass}`}
@@ -292,6 +338,20 @@ export const LazyCalendarDay = React.memo(
                 )}
 
                 {renderGroupedEvents(upcomingEvents, "upcoming")}
+
+                {isToday && upcomingEvents.length === 0 && doneEvents.length > 0 && (
+                  <div
+                    ref={nowRef}
+                    className="flex flex-col items-center justify-center py-8 gap-2 scroll-mt-[40vh]"
+                  >
+                    <span className="text-base font-black text-(--text-muted) uppercase tracking-wider">
+                      You're all caught up for today
+                    </span>
+                    <span className="text-xs text-(--text-dim) font-medium">
+                      No more events remaining
+                    </span>
+                  </div>
+                )}
               </>
             );
           })()}

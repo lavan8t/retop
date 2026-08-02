@@ -109,3 +109,65 @@ export const toTitleCase = (str: string): string => {
     })
     .join(" ");
 };
+
+export function formatDateStr(dateStr: string, pattern: string = "DD Mon YYYY"): string {
+  if (!dateStr) return "";
+
+  const cleanStr = dateStr.replace(/[-/.]/g, " ").trim();
+  const directDate = new Date(cleanStr);
+  let dateObj: Date | null = null;
+
+  if (!isNaN(directDate.getTime())) {
+    dateObj = directDate;
+  } else {
+    const parts = cleanStr.split(/\s+/);
+    if (parts.length >= 3) {
+      let day = parseInt(parts[0], 10);
+      let year = parseInt(parts[2], 10);
+      let monthStr = parts[1].toLowerCase();
+
+      if (parts[0].length === 4) {
+        year = parseInt(parts[0], 10);
+        day = parseInt(parts[2], 10);
+        monthStr = parts[1].toLowerCase();
+      }
+
+      const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+      let monthIndex = months.indexOf(monthStr.slice(0, 3));
+      if (monthIndex === -1 && !isNaN(parseInt(monthStr, 10))) {
+        monthIndex = parseInt(monthStr, 10) - 1;
+      }
+
+      if (!isNaN(day) && monthIndex !== -1 && !isNaN(year)) {
+        dateObj = new Date(year, monthIndex, day);
+      }
+    }
+  }
+
+  if (!dateObj || isNaN(dateObj.getTime())) return dateStr;
+
+  const DD = String(dateObj.getDate()).padStart(2, "0");
+  const MM = String(dateObj.getMonth() + 1).padStart(2, "0");
+  const YYYY = String(dateObj.getFullYear());
+  const YY = YYYY.slice(2);
+  const Mon = dateObj.toLocaleDateString("en-US", { month: "short" });
+
+  switch (pattern) {
+    case "DD Mon YYYY":
+      return `${DD} ${Mon} ${YYYY}`;
+    case "DD Mon YY":
+      return `${DD} ${Mon} ${YY}`;
+    case "DD/MM/YYYY":
+      return `${DD}/${MM}/${YYYY}`;
+    case "MM/DD/YYYY":
+      return `${MM}/${DD}/${YYYY}`;
+    case "YYYY-MM-DD":
+      return `${YYYY}-${MM}-${DD}`;
+    case "DD.MM.YYYY":
+      return `${DD}.${MM}.${YYYY}`;
+    case "DD-MM-YYYY":
+      return `${DD}-${MM}-${YYYY}`;
+    default:
+      return `${DD} ${Mon} ${YYYY}`;
+  }
+}

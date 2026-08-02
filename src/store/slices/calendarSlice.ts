@@ -11,6 +11,16 @@ import {
 } from "../../types/vtop";
 import { DataState } from "../dataStore";
 
+export interface CustomCalendarEvent {
+  id: string;
+  title: string;
+  type: "quiz" | "assessment" | "event" | "task" | "note";
+  date: string; // YYYY-MM-DD
+  time?: string; // HH:MM
+  venue?: string;
+  description?: string;
+}
+
 export interface CalendarSlice {
   calSemesters: { id: string; label: string; selected?: boolean }[];
   setCalSemesters: (
@@ -32,6 +42,10 @@ export interface CalendarSlice {
   calLoadingMonths: boolean;
   calLoadingGrid: boolean;
 
+  customEvents: CustomCalendarEvent[];
+  addCustomEvent: (evt: Omit<CustomCalendarEvent, "id">) => void;
+  removeCustomEvent: (id: string) => void;
+
   fetchCalendarMonthsAndGroups: (
     network: VTOPNetwork,
     semId: string,
@@ -43,6 +57,15 @@ export interface CalendarSlice {
     months: CalendarMonthPreview[],
   ) => Promise<void>;
 }
+
+const loadSavedCustomEvents = (): CustomCalendarEvent[] => {
+  try {
+    const raw = localStorage.getItem("retop-custom-calendar-events");
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+};
 
 export const createCalendarSlice: StateCreator<DataState, [], [], CalendarSlice> = (set, get) => ({
   calSemesters: [],
@@ -70,6 +93,22 @@ export const createCalendarSlice: StateCreator<DataState, [], [], CalendarSlice>
   calLoadingInitial: true,
   calLoadingMonths: false,
   calLoadingGrid: false,
+
+  customEvents: loadSavedCustomEvents(),
+  addCustomEvent: (evt) => {
+    const newEvt: CustomCalendarEvent = {
+      ...evt,
+      id: `custom_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    };
+    const updated = [...get().customEvents, newEvt];
+    localStorage.setItem("retop-custom-calendar-events", JSON.stringify(updated));
+    set({ customEvents: updated });
+  },
+  removeCustomEvent: (id) => {
+    const updated = get().customEvents.filter((e) => e.id !== id);
+    localStorage.setItem("retop-custom-calendar-events", JSON.stringify(updated));
+    set({ customEvents: updated });
+  },
 
   fetchCalendarMonthsAndGroups: async (network, semId) => {
     set({ calLoadingMonths: true, calAvailableMonths: [], calClassGroups: [] });

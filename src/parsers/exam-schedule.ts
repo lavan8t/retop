@@ -19,6 +19,49 @@ export interface ExamGroup {
   entries: ExamEntry[];
 }
 
+export function isSameDayExam(examDateStr: string, targetDate: Date): boolean {
+  if (!examDateStr) return false;
+
+  const cleanStr = examDateStr.replace(/[-/.]/g, " ").trim();
+  const directDate = new Date(cleanStr);
+  if (!isNaN(directDate.getTime())) {
+    return (
+      directDate.getFullYear() === targetDate.getFullYear() &&
+      directDate.getMonth() === targetDate.getMonth() &&
+      directDate.getDate() === targetDate.getDate()
+    );
+  }
+
+  const parts = cleanStr.split(/\s+/);
+  if (parts.length >= 3) {
+    let day = parseInt(parts[0], 10);
+    let year = parseInt(parts[2], 10);
+    let monthStr = parts[1].toLowerCase();
+
+    if (parts[0].length === 4) {
+      year = parseInt(parts[0], 10);
+      day = parseInt(parts[2], 10);
+      monthStr = parts[1].toLowerCase();
+    }
+
+    const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+    let monthIndex = months.indexOf(monthStr.slice(0, 3));
+    if (monthIndex === -1 && !isNaN(parseInt(monthStr, 10))) {
+      monthIndex = parseInt(monthStr, 10) - 1;
+    }
+
+    if (!isNaN(day) && monthIndex !== -1 && !isNaN(year)) {
+      return (
+        year === targetDate.getFullYear() &&
+        monthIndex === targetDate.getMonth() &&
+        day === targetDate.getDate()
+      );
+    }
+  }
+
+  return false;
+}
+
 export function parseExamSemesters(html: string): { id: string; label: string }[] {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, "text/html");

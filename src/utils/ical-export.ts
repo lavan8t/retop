@@ -1,5 +1,7 @@
 import { TimetableCourse, CalendarEvent, CalendarMonthPreview } from "../types/vtop";
 import { CAMPUS_SLOTS, CAMPUS_SLOT_TIMINGS, DAYS } from "./timetable-slots";
+import { ExamGroup } from "../parsers/exam-schedule";
+import { CustomCalendarEvent } from "../store/slices/calendarSlice";
 
 /**
  * Generates an iCal (.ics) file from timetable courses and academic calendar data.
@@ -203,12 +205,19 @@ const getDateRange = (
   return { start: minDate, end: maxDate };
 };
 
-// ---- Main Export Function ----
-
 export interface ICalExportOptions {
-  courses: TimetableCourse[];
-  calGridData: { month: CalendarMonthPreview; days: CalendarEvent[]; startOffset: number }[];
+  courses?: TimetableCourse[];
+  calGridData?: { month: CalendarMonthPreview; days: CalendarEvent[]; startOffset: number }[];
+  examGroups?: ExamGroup[];
+  customEvents?: CustomCalendarEvent[];
+  events?: any[];
   semesterLabel?: string;
+
+  includeTimetable?: boolean;
+  includeCalendar?: boolean;
+  includeEvents?: boolean;
+  includeExams?: boolean;
+  includeCustomEvents?: boolean;
 }
 
 interface MergedOccurrence {
@@ -273,14 +282,25 @@ const setTime = (d: Date, time: { hours: number; minutes: number }): Date => {
 };
 
 export function generateICalFile(options: ICalExportOptions): string {
-  const { courses, calGridData, semesterLabel } = options;
+  const {
+    courses = [],
+    calGridData = [],
+    examGroups = options.examGroups || [],
+    customEvents = options.customEvents || [],
+    events = options.events || [],
+    semesterLabel,
+    includeTimetable = true,
+    includeCalendar = true,
+    includeEvents = true,
+    includeExams = true,
+    includeCustomEvents = true,
+  } = options;
 
   const calLookup = buildCalendarLookup(calGridData);
-  const dateRange = getDateRange(calGridData);
-
-  if (!dateRange) {
-    throw new Error("No valid dates found in the academic calendar data.");
-  }
+  const dateRange = getDateRange(calGridData) || {
+    start: new Date(),
+    end: new Date(Date.now() + 120 * 24 * 60 * 60 * 1000),
+  };
 
   const nowUTC = toICalDateUTC(new Date());
 
@@ -290,7 +310,7 @@ export function generateICalFile(options: ICalExportOptions): string {
     "PRODID:-//retop//VTOP Timetable Export//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
-    `X-WR-CALNAME:${escapeIcal(semesterLabel ? `Timetable — ${semesterLabel}` : "VIT Timetable")}`,
+    `X-WR-CALNAME:${escapeIcal(semesterLabel ? `retop Export — ${semesterLabel}` : "retop Calendar Export")}`,
     "X-WR-TIMEZONE:Asia/Kolkata",
     "BEGIN:VTIMEZONE",
     "TZID:Asia/Kolkata",
@@ -307,7 +327,8 @@ export function generateICalFile(options: ICalExportOptions): string {
   endDate.setHours(23, 59, 59, 999);
   const untilStr = toICalDateUTC(endDate);
 
-  for (const course of courses) {
+  if (includeTimetable && courses.length > 0) {
+    for (const course of courses) {
     const mergedOccurrences = getMergedOccurrences(course);
 
     for (const occ of mergedOccurrences) {
@@ -391,6 +412,109 @@ export function generateICalFile(options: ICalExportOptions): string {
       lines.push(`CATEGORIES:${escapeIcal(course.type)}`);
       lines.push(`STATUS:CONFIRMED`);
       lines.push(`TRANSP:OPAQUE`);
+      
+      // 10-minute reminder for class starting
+      lines.push("BEGIN:VALARM");
+      lines.push("TRIGGER:-PT10M");
+      lines.push("ACTION:DISPLAY");
+      lines.push(`DESCRIPTION:${escapeIcal(`Reminder: ${course.title} starting in 10 minutes`)}`);
+      lines.push("END:VALARM");
+
+      lines.push("END:VEVENT");
+    }
+  }
+  }
+
+  // Export Exams if available (with 30-minute reminder)
+  if (includeExams && examGroups.length > 0) {
+    for (const group of examGroups) {
+      for (const entry of group.entries) {
+        if (!entry.examDate) continue;
+        const dObj = new Date(entry.examDate);
+        if (isNaN(dObj.getTime())) continue;
+
+        let startTimeHour = 9;
+        let startTimeMin = 0;
+
+        if (entry.examTime && entry.examTime.includes("-")) {
+          const parts = entry.examTime.split("-")[0].trim().split(":");
+          if (parts.length >= 2) {
+            startTimeHour = parseInt(parts[0], 10);
+            startTimeMin = parseInt(parts[1], 10);
+          }
+        }
+
+        const start = new Date(dObj);
+        start.setHours(startTimeHour, startTimeMin, 0, 0);
+        const end = new Date(start);
+        end.setHours(start.getHours() + 2, start.getMinutes(), 0, 0);
+
+        const uid = `exam-${entry.courseCode}-${toICalDate(start)}@retop`;
+
+        lines.push("BEGIN:VEVENT");
+        lines.push(`DTSTAMP:${nowUTC}`);
+        lines.push(`UID:${uid}`);
+        lines.push(`DTSTART;TZID=Asia/Kolkata:${toICalDate(start)}`);
+        lines.push(`DTEND;TZID=Asia/Kolkata:${toICalDate(end)}`);
+        lines.push(`SUMMARY:${escapeIcal(`[EXAM] ${entry.courseTitle} (${entry.courseCode})`)}`);
+        lines.push(`DESCRIPTION:${escapeIcal(`Exam Group: ${group.examType}\nSlot: ${entry.slot}\nReporting Time: ${entry.reportingTime}\nVenue: ${entry.venue || "TBA"}\nSeat: ${entry.seatNo || "N/A"}`)}`);
+        if (entry.venue) lines.push(`LOCATION:${escapeIcal(entry.venue)}`);
+        lines.push(`CATEGORIES:EXAM`);
+        lines.push("STATUS:CONFIRMED");
+
+        // 30-minute reminder before exams
+        lines.push("BEGIN:VALARM");
+        lines.push("TRIGGER:-PT30M");
+        lines.push("ACTION:DISPLAY");
+        lines.push(`DESCRIPTION:${escapeIcal(`Reminder: Exam ${entry.courseTitle} starting in 30 minutes`)}`);
+        lines.push("END:VALARM");
+
+        lines.push("END:VEVENT");
+      }
+    }
+  }
+
+  // Export Custom Events if available
+  if (includeCustomEvents && customEvents.length > 0) {
+    for (const evt of customEvents) {
+      if (!evt.date) continue;
+      const dObj = new Date(evt.date);
+      if (isNaN(dObj.getTime())) continue;
+
+      let h = 10, m = 0;
+      if (evt.time) {
+        const parts = evt.time.split(":");
+        if (parts.length >= 2) {
+          h = parseInt(parts[0], 10);
+          m = parseInt(parts[1], 10);
+        }
+      }
+
+      const start = new Date(dObj);
+      start.setHours(h, m, 0, 0);
+      const end = new Date(start);
+      end.setHours(start.getHours() + 1, start.getMinutes(), 0, 0);
+
+      const uid = `${evt.id}@retop`;
+
+      lines.push("BEGIN:VEVENT");
+      lines.push(`DTSTAMP:${nowUTC}`);
+      lines.push(`UID:${uid}`);
+      lines.push(`DTSTART;TZID=Asia/Kolkata:${toICalDate(start)}`);
+      lines.push(`DTEND;TZID=Asia/Kolkata:${toICalDate(end)}`);
+      lines.push(`SUMMARY:${escapeIcal(`[${evt.type.toUpperCase()}] ${evt.title}`)}`);
+      lines.push(`DESCRIPTION:${escapeIcal(evt.description || evt.title)}`);
+      if (evt.venue) lines.push(`LOCATION:${escapeIcal(evt.venue)}`);
+      lines.push(`CATEGORIES:${escapeIcal(evt.type.toUpperCase())}`);
+      lines.push("STATUS:CONFIRMED");
+
+      // 15-minute reminder for custom event/quiz/assessment
+      lines.push("BEGIN:VALARM");
+      lines.push("TRIGGER:-PT15M");
+      lines.push("ACTION:DISPLAY");
+      lines.push(`DESCRIPTION:${escapeIcal(`Reminder: ${evt.title} starting in 15 minutes`)}`);
+      lines.push("END:VALARM");
+
       lines.push("END:VEVENT");
     }
   }

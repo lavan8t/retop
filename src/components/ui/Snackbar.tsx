@@ -1,6 +1,11 @@
 import React, { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore, SnackbarData } from "../../store/appStore";
+import {
+  Warning,
+  CheckCircle,
+  Info,
+} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 
 export const Snackbar: React.FC<{ snackbar: SnackbarData; onDismiss: () => void }> = ({ snackbar, onDismiss }) => {
   useEffect(() => {
@@ -10,29 +15,44 @@ export const Snackbar: React.FC<{ snackbar: SnackbarData; onDismiss: () => void 
     return () => clearTimeout(timer);
   }, [onDismiss]);
 
-  const Icon = snackbar.icon;
+  const IconComponent =
+    snackbar.icon ||
+    (snackbar.type === "error"
+      ? Warning
+      : snackbar.type === "success"
+      ? CheckCircle
+      : Info);
+
+  const iconColor =
+    snackbar.type === "error"
+      ? "text-red-500"
+      : snackbar.type === "success"
+      ? "text-emerald-500"
+      : "text-(--accent-base)";
 
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, scale: 0.95, y: 20 }}
+      initial={{ opacity: 0, scale: 0.95, y: 20, x: -20 }}
       animate={{ 
         opacity: 1, 
         scale: 1, 
         y: 0, 
+        x: 0,
         transition: { ease: "easeOut", duration: 0.225 } 
       }}
       exit={{ 
         opacity: 0, 
         scale: 0.95, 
         y: 20, 
+        x: -20,
         transition: { ease: "easeIn", duration: 0.195 } 
       }}
-      className="flex items-center gap-3 px-4 py-3 bg-(--bg-surface) border-2 border-(--border-dim) rounded-[24px] shadow-lg popup-shadow text-sm font-bold text-(--text-main) pointer-events-auto"
+      className="flex items-center gap-3 px-4 py-3.5 bg-(--bg-surface) border-2 border-(--border-dim) rounded-[24px] shadow-lg popup-shadow text-xs md:text-sm font-bold text-(--text-main) pointer-events-auto min-w-[18rem] sm:min-w-[22rem] md:min-w-[26rem] max-w-[32rem] w-full"
     >
-      {Icon && <Icon className="w-5 h-5 shrink-0 text-(--text-muted)" />}
+      <IconComponent className={`w-5 h-5 shrink-0 ${iconColor}`} />
       
-      <span className="flex-1 text-left">{snackbar.message}</span>
+      <span className="flex-1 text-left leading-snug">{snackbar.message}</span>
       
       {snackbar.action && (
         <button
@@ -40,7 +60,7 @@ export const Snackbar: React.FC<{ snackbar: SnackbarData; onDismiss: () => void 
             snackbar.action?.onClick();
             onDismiss();
           }}
-          className="uppercase text-xs font-black text-(--accent-base) hover:text-(--accent-hover) active:scale-95 transition-all ml-2"
+          className="uppercase text-xs font-black text-(--accent-base) hover:text-(--accent-hover) active:scale-95 transition-all ml-2 shrink-0"
         >
           {snackbar.action.label}
         </button>
@@ -57,12 +77,9 @@ export const SnackbarManager: React.FC = () => {
       const toastData = e.detail;
       useAppStore.getState().addSnackbar({
         message: toastData.message || toastData.title || "Something went wrong",
-        type: toastData.type === "error" ? "error" : "default"
+        type: toastData.type === "error" ? "error" : toastData.type === "success" ? "success" : "default"
       });
-      if (toastData.type === "error") {
-        useAppStore.getState().setIsPeeking(false);
-        useAppStore.getState().setIsModernUI(false);
-      }
+      // NOTE: Never force redirect or shut back to legacy VTOP!
     };
     
     window.addEventListener("retop-toast", handleToast);
@@ -70,9 +87,9 @@ export const SnackbarManager: React.FC = () => {
   }, []);
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[10000] flex flex-col-reverse gap-2 pointer-events-none items-center">
+    <div className="fixed bottom-6 left-6 md:bottom-8 md:left-8 z-[10000] flex flex-col-reverse gap-2.5 pointer-events-none items-start max-w-[calc(100vw-3rem)]">
       <AnimatePresence mode="popLayout">
-        {snackbars.map((sb) => (
+        {snackbars.slice(0, 3).map((sb) => (
           <Snackbar key={sb.id} snackbar={sb} onDismiss={() => removeSnackbar(sb.id)} />
         ))}
       </AnimatePresence>

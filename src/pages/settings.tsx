@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   AppSettings,
   resetDynamicThemeSeed,
@@ -29,6 +29,9 @@ import { SyncManager } from "../components/SyncManager";
 import { SegmentedControl } from "../components/ui/SegmentedControl";
 import { MaterialSwitch } from "../components/MaterialSwitch";
 import { Tooltip } from "../components/ui/Tooltip";
+import { SemesterDropdown } from "../components/timetable/SemesterDropdown";
+import { downloadICalFile } from "../utils/ical-export";
+import { useDataStore } from "../store/dataStore";
 
 interface SettingsPageProps {
   settings: AppSettings;
@@ -108,6 +111,167 @@ const SettingTopicCard = ({
   </div>
 );
 
+interface DropdownOption<T> {
+  label: string;
+  value: T;
+}
+
+interface SettingsDropdownProps<T> {
+  options: DropdownOption<T>[];
+  value: T;
+  onChange: (val: T) => void;
+  className?: string;
+}
+
+export function SettingsDropdown<T extends string | number>({
+  options,
+  value,
+  onChange,
+  className = "",
+  align = "auto",
+}: SettingsDropdownProps<T> & { align?: "left" | "right" | "auto" }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [menuAlign, setMenuAlign] = useState<"left" | "right">("left");
+  const [menuVAlign, setMenuVAlign] = useState<"top" | "bottom">("bottom");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const selectedOption = options.find((o) => o.value === value) || options[0];
+
+  const updateAlignment = () => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      
+      // Horizontal check
+      if (align === "left" || align === "right") {
+        setMenuAlign(align);
+      } else if (rect.left > window.innerWidth / 2 || rect.right > window.innerWidth - 120) {
+        setMenuAlign("right");
+      } else {
+        setMenuAlign("left");
+      }
+
+      // Vertical check (space below vs above)
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      if (spaceBelow < 220 && spaceAbove > spaceBelow) {
+        setMenuVAlign("top");
+      } else {
+        setMenuVAlign("bottom");
+      }
+    }
+  };
+
+  const handleMouseEnter = () => {
+    if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+    updateAlignment();
+    setIsOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    closeTimeoutRef.current = setTimeout(() => {
+      setIsOpen(false);
+    }, 180);
+  };
+
+  const toggleOpen = () => {
+    if (!isOpen) updateAlignment();
+    setIsOpen(!isOpen);
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen]);
+
+  const isTop = menuVAlign === "top";
+  const isRight = menuAlign === "right";
+
+  const originClass = isTop
+    ? isRight ? "origin-bottom-right" : "origin-bottom-left"
+    : isRight ? "origin-top-right" : "origin-top-left";
+
+  const positionClass = isTop
+    ? "bottom-full pb-1.5"
+    : "top-full pt-1.5";
+
+  const alignmentClass = isRight ? "right-0" : "left-0";
+
+  return (
+    <div
+      ref={containerRef}
+      className={`relative z-50 ${className}`}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={toggleOpen}
+        className="flex items-center justify-between gap-3 bg-(--bg-highlight) hover:bg-(--bg-surface) border-2 border-(--border-main) px-4 py-2.5 rounded-2xl text-(--text-main) font-bold text-xs md:text-sm transition-all cursor-pointer shadow-xs min-w-48 group"
+      >
+        <span className="truncate">{selectedOption?.label}</span>
+        <KeyboardArrowDown
+          className={`w-4 h-4 text-(--accent-base) transition-transform duration-200 shrink-0 ${
+            isOpen ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: isTop ? 6 : -6, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: isTop ? 6 : -6, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            className={`absolute z-100 min-w-48 ${positionClass} ${alignmentClass} ${originClass}`}
+          >
+            <div className="w-full bg-(--bg-card) border-2 border-(--border-main) rounded-2xl shadow-xl py-1.5 overflow-hidden max-h-56 overflow-y-auto custom-scrollbar">
+              {options.map((opt) => {
+                const isSelected = opt.value === value;
+                return (
+                  <button
+                    key={String(opt.value)}
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onChange(opt.value);
+                      setIsOpen(false);
+                    }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onChange(opt.value);
+                      setIsOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 text-xs md:text-sm font-bold flex items-center justify-between hover:bg-(--bg-highlight) transition-colors cursor-pointer ${
+                      isSelected
+                        ? "text-(--accent-base) bg-(--bg-highlight)/50"
+                        : "text-(--text-main)"
+                    }`}
+                  >
+                    <span>{opt.label}</span>
+                    {isSelected && <Check className="w-3.5 h-3.5 text-(--accent-base)" />}
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
   const [activeCategory, setActiveCategory] =
     useState<CategoryId>("appearance");
@@ -117,6 +281,29 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
   const [isHoveredRetop, setIsHoveredRetop] = useState<boolean>(false);
   const [isThemeDropdownOpen, setIsThemeDropdownOpen] =
     useState<boolean>(false);
+
+  const [icalOptions, setIcalOptions] = useState({
+    includeTimetable: true,
+    includeCalendar: true,
+    includeEvents: true,
+    includeExams: true,
+    includeCustomEvents: true,
+  });
+
+  const handleExportICal = () => {
+    const { ttCourses, calGridData, examGroups, customEvents } = useDataStore.getState();
+    downloadICalFile({
+      courses: ttCourses,
+      calGridData,
+      examGroups,
+      customEvents,
+      includeTimetable: icalOptions.includeTimetable,
+      includeCalendar: icalOptions.includeCalendar,
+      includeEvents: icalOptions.includeEvents,
+      includeExams: icalOptions.includeExams,
+      includeCustomEvents: icalOptions.includeCustomEvents,
+    });
+  };
 
   const handleDriveBackup = async () => {
     setIsDriveSyncing(true);
@@ -538,6 +725,53 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
                       </div>
                     </div>
                   </SettingTopicCard>
+
+                  <SettingTopicCard
+                    title="Font Scaling & Weight"
+                    description="Adjust text size and thickness across the entire interface"
+                  >
+                    <div className="flex flex-col sm:flex-row gap-6 w-full items-start sm:items-center justify-between">
+                      <div className="flex flex-col gap-2">
+                        <span className="text-sm font-bold text-(--text-main)">Font Size</span>
+                        <span className="text-xs text-(--text-muted)">Scale text size across retop</span>
+                        <SettingsDropdown
+                          options={[
+                            { label: "80% (Compact)", value: 80 },
+                            { label: "90% (Small)", value: 90 },
+                            { label: "100% (Default)", value: 100 },
+                            { label: "110% (Large)", value: 110 },
+                            { label: "120% (Extra Large)", value: 120 },
+                            { label: "130% (Huge)", value: 130 },
+                          ]}
+                          value={settings.fontScale ?? 100}
+                          onChange={(val) => {
+                            updateSetting("fontScale", val);
+                            document.documentElement.style.fontSize = `${val}%`;
+                          }}
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <span className="text-sm font-bold text-(--text-main)">Font Weight</span>
+                        <span className="text-xs text-(--text-muted)">Set global text boldness</span>
+                        <SettingsDropdown
+                          options={[
+                            { label: "400 - Light", value: 400 },
+                            { label: "500 - Regular", value: 500 },
+                            { label: "600 - SemiBold", value: 600 },
+                            { label: "700 - Bold (Default)", value: 700 },
+                            { label: "800 - ExtraBold", value: 800 },
+                            { label: "900 - Black", value: 900 },
+                          ]}
+                          value={settings.fontWeight ?? 700}
+                          onChange={(val) => {
+                            updateSetting("fontWeight", val);
+                            document.documentElement.style.setProperty("--retop-font-weight", String(val));
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </SettingTopicCard>
                 </>
               )}
 
@@ -564,6 +798,28 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
                           className="w-full flex-1 *:flex-1"
                         />
                       </div>
+                    </div>
+                  </SettingTopicCard>
+
+                  <SettingTopicCard
+                    title="Date Format Pattern"
+                    description="Choose default date display pattern across retop"
+                  >
+                    <div className="flex flex-col gap-2 w-fit">
+                      <SemesterDropdown
+                        semesters={[
+                          { id: "DD Mon YYYY", label: "DD Mon YYYY" },
+                          { id: "DD/MM/YYYY", label: "DD/MM/YYYY" },
+                          { id: "MM/DD/YYYY", label: "MM/DD/YYYY" },
+                          { id: "YYYY-MM-DD", label: "YYYY-MM-DD" },
+                          { id: "DD.MM.YYYY", label: "DD.MM.YYYY" },
+                          { id: "DD-MM-YYYY", label: "DD-MM-YYYY" },
+                        ]}
+                        selectedId={settings.dateFormat || "DD Mon YYYY"}
+                        onChange={(id: string) =>
+                          updateSetting("dateFormat", id as any)
+                        }
+                      />
                     </div>
                   </SettingTopicCard>
 
@@ -728,6 +984,79 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
                       />
                     </div>
                   </SettingTopicCard>
+
+                  <SettingTopicCard
+                    title="Export iCal (.ics) File"
+                    description="Export your schedule, exams, and calendar events as a standard .ics calendar file for Apple Calendar, Outlook, or Google Calendar"
+                  >
+                    <div className="flex flex-col gap-5 w-full">
+                      <div className="flex flex-col gap-3">
+                        <span className="text-xs font-bold uppercase font-expanded text-(--text-muted) tracking-wider">
+                          Choose Data to Include
+                        </span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          <label className="flex items-center gap-3 p-3 rounded-2xl bg-(--bg-main) border border-(--border-dim) cursor-pointer hover:bg-(--bg-highlight) transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={icalOptions.includeTimetable}
+                              onChange={(e) => setIcalOptions(prev => ({ ...prev, includeTimetable: e.target.checked }))}
+                              className="w-4 h-4 accent-(--accent-base) rounded cursor-pointer"
+                            />
+                            <span className="text-xs font-bold text-(--text-main)">Timetable (Classes & Slots)</span>
+                          </label>
+
+                          <label className="flex items-center gap-3 p-3 rounded-2xl bg-(--bg-main) border border-(--border-dim) cursor-pointer hover:bg-(--bg-highlight) transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={icalOptions.includeCalendar}
+                              onChange={(e) => setIcalOptions(prev => ({ ...prev, includeCalendar: e.target.checked }))}
+                              className="w-4 h-4 accent-(--accent-base) rounded cursor-pointer"
+                            />
+                            <span className="text-xs font-bold text-(--text-main)">Academic Calendar</span>
+                          </label>
+
+                          <label className="flex items-center gap-3 p-3 rounded-2xl bg-(--bg-main) border border-(--border-dim) cursor-pointer hover:bg-(--bg-highlight) transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={icalOptions.includeExams}
+                              onChange={(e) => setIcalOptions(prev => ({ ...prev, includeExams: e.target.checked }))}
+                              className="w-4 h-4 accent-(--accent-base) rounded cursor-pointer"
+                            />
+                            <span className="text-xs font-bold text-(--text-main)">Exam Schedules</span>
+                          </label>
+
+                          <label className="flex items-center gap-3 p-3 rounded-2xl bg-(--bg-main) border border-(--border-dim) cursor-pointer hover:bg-(--bg-highlight) transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={icalOptions.includeEvents}
+                              onChange={(e) => setIcalOptions(prev => ({ ...prev, includeEvents: e.target.checked }))}
+                              className="w-4 h-4 accent-(--accent-base) rounded cursor-pointer"
+                            />
+                            <span className="text-xs font-bold text-(--text-main)">University Events</span>
+                          </label>
+
+                          <label className="flex items-center gap-3 p-3 rounded-2xl bg-(--bg-main) border border-(--border-dim) cursor-pointer hover:bg-(--bg-highlight) transition-colors sm:col-span-2">
+                            <input
+                              type="checkbox"
+                              checked={icalOptions.includeCustomEvents}
+                              onChange={(e) => setIcalOptions(prev => ({ ...prev, includeCustomEvents: e.target.checked }))}
+                              className="w-4 h-4 accent-(--accent-base) rounded cursor-pointer"
+                            />
+                            <span className="text-xs font-bold text-(--text-main)">Custom User-Added Events</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end pt-2 border-t border-(--border-dim)">
+                        <button
+                          onClick={handleExportICal}
+                          className="px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wider bg-(--accent-base) text-(--text-inverse) transition-all border-0 cursor-pointer hover:opacity-90 shadow-sm"
+                        >
+                          Export iCal (.ics) File
+                        </button>
+                      </div>
+                    </div>
+                  </SettingTopicCard>
                 </>
               )}
 
@@ -780,12 +1109,11 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
                   <div className="flex flex-col items-center justify-center text-center p-8 md:p-12 rounded-3xl bg-transparent border-2 border-(--border-dim) gap-6 w-full max-w-2xl mx-auto">
                     {/* retop Signature Logo */}
                     <div className="flex flex-col items-center justify-center gap-2">
-                      <span className="font-logo retop-logo text-6xl md:text-7xl lg:text-8xl cursor-pointer inline-block select-none text-(--text-main) hover:text-(--accent-base) lowercase tracking-tighter">
+                      <span className="retop-about-logo text-6xl md:text-7xl lg:text-8xl cursor-pointer inline-block select-none text-(--text-main) hover:text-(--accent-base) lowercase tracking-tighter">
                         retop
                       </span>
                       <p className="text-sm md:text-base font-bold font-expanded text-(--text-muted) max-w-md mt-1">
-                        Next-generation Material You extension & re-skin for
-                        VTOP
+                        uni portal done better.
                       </p>
                     </div>
 

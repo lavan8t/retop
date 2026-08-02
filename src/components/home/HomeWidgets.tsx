@@ -67,7 +67,7 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
     });
 
   return (
-    <div className="hidden lg:flex w-full lg:w-[24%] xl:w-[20%] flex-col shrink-0 h-auto lg:h-full relative z-30 pt-20 md:pt-24 lg:pt-28 pb-4 md:pb-6 lg:pb-8 pr-4 md:pr-6 lg:pr-0 gap-4">
+    <div className="hidden lg:flex w-full lg:w-[24%] xl:w-[20%] flex-col shrink-0 h-auto lg:h-full overflow-y-auto custom-scrollbar relative z-30 pt-20 md:pt-24 lg:pt-28 pb-4 md:pb-6 lg:pb-8 pr-4 md:pr-6 lg:pr-0 gap-4">
       <Card
         initial="rest"
         whileHover="hover"
@@ -107,7 +107,7 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
                 </div>
               </div>
               
-              <div className="w-24 h-[3px] rounded-full bg-(--text-main) my-3"></div>
+              <div className="w-24 h-0.75 rounded-full bg-(--text-main) my-3"></div>
 
               <div className="text-3xl font-black font-expanded leading-none text-(--text-muted)">
                 {stats.totalCredits}
@@ -178,14 +178,14 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
             })}
             className="shrink-0 bg-(--bg-highlight) rounded-4xl flex flex-col relative z-30 cursor-pointer overflow-hidden border-2 border-transparent hover:border-(--border-main) transition-all h-fit"
           >
-            <div className="px-5 pt-3 border-b-2 border-(--border-main) flex justify-between items-center shrink-0">
+            <div className="px-5 pt-5 border-b-2 border-(--border-main) flex justify-between items-center shrink-0">
               <div className="flex flex-col">
                 <span className="text-[10px] font-expanded font-bold uppercase text-(--text-muted) mb-1">
                   Pending Assignments
                 </span>
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-3 flex flex-col gap-[2px] rounded-2xl overflow-hidden">
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-3 flex flex-col gap-0.5 rounded-2xl overflow-hidden">
               {pendingAssignments.map((assignment, idx) => (
                 <AssignmentRow 
                   key={idx} 

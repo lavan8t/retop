@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Semester } from "../../types/vtop";
 import {
   CalendarMonth,
@@ -33,23 +33,96 @@ export const formatShortSemesterName = (label: string) => {
   return prefix && yearSuffix ? `${prefix}${yearSuffix}` : label;
 };
 
-export const SemesterDropdown = ({ semesters, selectedId, onChange }: any) => {
+export const SemesterDropdown = ({ semesters, selectedId, onChange, align = "auto" }: any) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [menuAlign, setMenuAlign] = useState<"left" | "right">("right");
+  const [menuVAlign, setMenuVAlign] = useState<"top" | "bottom">("bottom");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const selected =
     semesters.find((s: Semester) => s.id === selectedId) || semesters[0];
 
+  const updateAlignment = () => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      
+      // Horizontal check
+      if (align === "left" || align === "right") {
+        setMenuAlign(align);
+      } else if (rect.left > window.innerWidth / 2 || rect.right > window.innerWidth - 120) {
+        setMenuAlign("right");
+      } else {
+        setMenuAlign("left");
+      }
+
+      // Vertical check (space below vs above)
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      if (spaceBelow < 220 && spaceAbove > spaceBelow) {
+        setMenuVAlign("top");
+      } else {
+        setMenuVAlign("bottom");
+      }
+    }
+  };
+
+  const handleMouseEnter = () => {
+    if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+    updateAlignment();
+    setIsOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    closeTimeoutRef.current = setTimeout(() => {
+      setIsOpen(false);
+    }, 180);
+  };
+
+  const toggleOpen = () => {
+    if (!isOpen) updateAlignment();
+    setIsOpen(!isOpen);
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen]);
+
+  const isTop = menuVAlign === "top";
+  const isRight = menuAlign === "right";
+
+  const originClass = isTop
+    ? isRight ? "origin-bottom-right" : "origin-bottom-left"
+    : isRight ? "origin-top-right" : "origin-top-left";
+
+  const positionClass = isTop
+    ? "bottom-full pb-1.5"
+    : "top-full pt-1.5";
+
+  const alignmentClass = isRight ? "right-0" : "left-0";
+
   return (
     <div 
+      ref={containerRef}
       className="relative z-50"
-      onMouseEnter={() => setIsOpen(true)}
-      onMouseLeave={() => setIsOpen(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        ref={buttonRef}
+        onClick={toggleOpen}
         className="flex items-center gap-1.5 md:gap-2 bg-(--md-sys-color-secondary-container) px-2 md:px-3 py-1.5 rounded-lg md:rounded-xl text-(--md-sys-color-on-secondary-container) font-bold transition-all text-[9px] sm:text-[10px] md:text-xs group"
       >
         <CalendarMonth className="w-3 h-3 md:w-3.5 md:h-3.5 text-(--accent-base) group-hover:text-(--accent-hover) transition-colors shrink-0" />
-        <span className="uppercase  truncate max-w-12.5 sm:max-w-20 md:max-w-30 font-expanded">
+        <span className="uppercase truncate max-w-12.5 sm:max-w-20 md:max-w-30 font-expanded">
           {selected ? formatShortSemesterName(selected.label) : "Select Sem"}
         </span>
         <KeyboardArrowDown
@@ -59,19 +132,27 @@ export const SemesterDropdown = ({ semesters, selectedId, onChange }: any) => {
 
       <AnimatePresence>
         {isOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0, y: -10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.95 }}
-              transition={{ duration: 0.2, ease: [0.34, 1.56, 0.64, 1] }}
-              className="absolute top-full right-0 mt-2 w-[60vw] min-w-50 max-w-72 md:w-72 bg-(--bg-surface) border-2 border-(--border-main) rounded-xl overflow-hidden z-50 origin-top-right popup-shadow"
-            >
-              <div className="max-h-64 overflow-y-auto custom-scrollbar p-1.5 md:p-2 space-y-1">
+          <motion.div
+            initial={{ opacity: 0, y: isTop ? 6 : -6, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: isTop ? 6 : -6, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            className={`absolute z-50 w-[60vw] min-w-50 max-w-72 md:w-72 ${positionClass} ${alignmentClass} ${originClass}`}
+          >
+            <div className="w-full bg-(--bg-surface) border-2 border-(--border-main) rounded-xl overflow-hidden popup-shadow">
+              <div className="max-h-56 overflow-y-auto custom-scrollbar p-1.5 md:p-2 space-y-1">
                 {semesters.map((sem: Semester) => (
                   <button
                     key={sem.id}
-                    onClick={() => {
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onChange(sem.id);
+                      setIsOpen(false);
+                    }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
                       onChange(sem.id);
                       setIsOpen(false);
                     }}
@@ -85,8 +166,8 @@ export const SemesterDropdown = ({ semesters, selectedId, onChange }: any) => {
                   </button>
                 ))}
               </div>
-            </motion.div>
-          </>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

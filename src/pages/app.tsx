@@ -141,14 +141,70 @@ const getSavedView = (): ViewType => {
     : "dashboard";
 };
 
+const findLegacyTarget = (title: string, url?: string): HTMLElement | null => {
+  const links = Array.from(document.querySelectorAll("a, button, [onclick], .nav-link, .menu-item, [data-url], li"));
+  const cleanTitle = title.trim().toLowerCase();
+  const urlEnd = url ? url.split("/").pop()!.toLowerCase() : "";
+
+  const synonyms: Record<string, string[]> = {
+    "login id": ["update loginid", "update login id", "loginid", "login id", "user/updateloginid", "updateloginid"],
+    "update loginid": ["update loginid", "update login id", "loginid", "login id", "user/updateloginid", "updateloginid"],
+    "password": ["change password", "password", "user/changepassword", "changepassword"],
+    "change password": ["change password", "password", "user/changepassword", "changepassword"],
+    "profile": ["student profile all view", "profile", "studentsrecord/studentprofileallview", "studentprofileallview"],
+    "student profile all view": ["student profile all view", "profile", "studentsrecord/studentprofileallview", "studentprofileallview"],
+    "bank info": ["student bank info", "bank info", "fees/studentbankinfo", "studentbankinfo"],
+    "student bank info": ["student bank info", "bank info", "fees/studentbankinfo", "studentbankinfo"],
+    "backup codes": ["backup codes", "user/backupcodes", "backupcodes"],
+  };
+
+  const targetSynonyms = synonyms[cleanTitle] || [cleanTitle];
+
+  return (
+    (links.find((el) => {
+      const dataUrl = (
+        el.getAttribute("data-url") ||
+        el.getAttribute("href") ||
+        el.getAttribute("onclick") ||
+        ""
+      ).toLowerCase();
+
+      if (url && dataUrl.includes(url.toLowerCase())) return true;
+      if (urlEnd && dataUrl.includes(urlEnd)) return true;
+
+      const txt = (el.textContent || (el as HTMLElement).innerText || "")
+        .trim()
+        .toLowerCase();
+
+      if (!txt) return false;
+
+      for (const syn of targetSynonyms) {
+        if (txt === syn || txt.includes(syn) || syn.includes(txt)) return true;
+        if (dataUrl.includes(syn)) return true;
+      }
+
+      return false;
+    }) as HTMLElement | null)
+  );
+};
+
 const navigateLegacy = (title: string, url?: string) => {
-  const links = Array.from(document.querySelectorAll("a"));
-  const target = links.find((el) => {
-    if (url && el.getAttribute("data-url") === url) return true;
-    return el.textContent?.trim() === title || el.innerText?.trim() === title;
-  });
-  if (target) target.click();
-  else console.warn("Legacy link not found for:", title);
+  const attemptFindAndClick = (attemptsLeft: number) => {
+    const target = findLegacyTarget(title, url);
+    if (target) {
+      target.click();
+      return true;
+    }
+
+    if (attemptsLeft > 0) {
+      setTimeout(() => attemptFindAndClick(attemptsLeft - 1), 150);
+    } else {
+      console.warn("Legacy link not found for:", title, url);
+    }
+    return false;
+  };
+
+  attemptFindAndClick(33);
 };
 import { useAppStore } from "../store/appStore";
 
@@ -309,6 +365,13 @@ const DashboardApp = () => {
   useEffect(() => {
     applyTheme(settings);
 
+    // Apply font scaling & weight from settings
+    if (settings.fontScale && settings.fontScale !== 100) {
+      document.documentElement.style.fontSize = `${settings.fontScale}%`;
+    }
+    if (settings.fontWeight) {
+      document.documentElement.style.setProperty('--retop-font-weight', String(settings.fontWeight));
+    }
     const authIdInput = document.getElementById(
       "authorizedIDX",
     ) as HTMLInputElement;
@@ -593,7 +656,7 @@ const DashboardApp = () => {
           transformPerspective: 1500,
           transformOrigin: "bottom center",
         }}
-        className={`fixed inset-0 h-screen font-mono selection:bg-blue-500 selection:text-white flex flex-col overflow-hidden bg-(--bg-main) z-100 ${!isModernUI ? "pointer-events-none" : "pointer-events-auto"} ${isPeeking ? "shadow-[0px_-20px_60px_rgba(0,0,0,0.6)]" : ""}`}
+        className={`fixed inset-0 h-screen font-mono selection:bg-(--accent-base)/35 selection:text-(--text-main) flex flex-col overflow-hidden bg-(--bg-main) z-100 ${!isModernUI ? "pointer-events-none" : "pointer-events-auto"} ${isPeeking ? "shadow-[0px_-20px_60px_rgba(0,0,0,0.6)]" : ""}`}
       >
         <div className="flex flex-col h-full pointer-events-auto overflow-hidden">
           <TopBar

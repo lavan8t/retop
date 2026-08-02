@@ -437,6 +437,17 @@ const injectPreloginTheme = () => {
   link.href = chrome.runtime.getURL("dist/prelogin.css");
   document.head.appendChild(link);
 
+  document.addEventListener("click", (e) => {
+    const target = e.target as HTMLElement;
+    const item = target.closest(".list-group-item, .spotlightMsgDivs li, .spotlight-background li");
+    if (item) {
+      const link = item.querySelector("a, button[data-spotlighttitle]") as HTMLElement;
+      if (link && target !== link && !link.contains(target)) {
+        link.click();
+      }
+    }
+  });
+
   console.log("[retop] prelogin.css URL:", link.href);
 };
 
@@ -468,8 +479,6 @@ const injectLoginTheme = () => {
       </svg>
     `;
   }
-
-  // No custom lock icon injected anymore per user request.
 
   // Replace Home link with SVG Icon globally
   const replaceHomeButtons = () => {
@@ -665,11 +674,12 @@ const injectLoginTheme = () => {
 
           let isInvalid = false;
 
+          const isPasswordValid = (pwd: string) => {
+            return Boolean(pwd && pwd.trim().length >= 1 && pwd.length <= 100);
+          };
+
           // Check password
-          if (
-            passwordInput &&
-            (!passwordInput.value || passwordInput.value.length < 8)
-          ) {
+          if (passwordInput && !isPasswordValid(passwordInput.value)) {
             passwordInput.classList.remove("retop-wiggle");
             void passwordInput.offsetWidth; // force reflow
             passwordInput.classList.add("retop-wiggle");
@@ -704,6 +714,28 @@ const injectLoginTheme = () => {
       },
       true,
     );
+
+    document.addEventListener("input", (e) => {
+      const target = e.target as HTMLInputElement;
+      if (target && (target.id === "username" || target.id === "authorizedIDX")) {
+        target.value = target.value.replace(/[^a-zA-Z0-9]/g, "");
+      }
+    });
+
+    // Auto-focus first empty field
+    setTimeout(() => {
+      const userInput = (document.getElementById("authorizedIDX") || document.getElementById("username")) as HTMLInputElement;
+      const passInput = document.getElementById("password") as HTMLInputElement;
+      const captchaInput = document.getElementById("captchaStr") as HTMLInputElement;
+
+      if (userInput && !userInput.value) {
+        userInput.focus();
+      } else if (passInput && !passInput.value) {
+        passInput.focus();
+      } else if (captchaInput && !captchaInput.value) {
+        captchaInput.focus();
+      }
+    }, 200);
   }
 
   // Error Page Handling
@@ -887,7 +919,7 @@ const injectLoginTheme = () => {
 
         const getLineOffsetX = (lineLen: number) => {
           if (pickedArt === "MGR") {
-            return Math.max(0, (rect.width - lineLen * charW) / 2);
+            return Math.max(0, rect.width - lineLen * charW);
           }
           return 0;
         };
@@ -956,7 +988,7 @@ const injectLoginTheme = () => {
           for (let y = 0; y < originalLines.length; y++) {
             const line = originalLines[y];
             const py = y * charH;
-            const offsetX = pickedArt === "MGR" ? Math.max(0, (preWidth - line.length * charW) / 2) : 0;
+            const offsetX = pickedArt === "MGR" ? Math.max(0, preWidth - line.length * charW) : 0;
 
             let newLine = "";
             for (let x = 0; x < line.length; x++) {

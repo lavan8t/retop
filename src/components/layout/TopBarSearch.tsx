@@ -55,7 +55,9 @@ export const hasRetopPage = (link: QuickLink | string): boolean => {
     url.includes("studexamschedule") ||
     url.includes("studentprofileallview") ||
     url.includes("curriculum") ||
-    url.includes("coursepage");
+    url.includes("coursepage") ||
+    url.includes("calendarpreview") ||
+    url.includes("calendar");
 
   if (hasUrlMatch) return true;
 
@@ -76,6 +78,10 @@ export const hasRetopPage = (link: QuickLink | string): boolean => {
     "profile",
     "curriculum",
     "course page",
+    "academic calendar",
+    "academics calendar",
+    "calendar",
+    "academic calendar preview",
   ];
 
   return exactFullTitles.includes(title);
@@ -94,10 +100,10 @@ const renderCategoryTitle = (catTitle: string) => {
       <span>
         {parts[0]}
         <span
-          className="font-logo retop-logo inline-block lowercase text-(--accent-base)"
+          className="font-logo retop-logo inline-block lowercase text-inherit"
           style={{
             fontFamily: "var(--font-expanded)",
-            fontVariationSettings: "'wdth' 125, 'wght' 700, 'ROND' 100, 'slnt' -10",
+            fontVariationSettings: "'wdth' 125, 'wght' 900, 'ROND' 100, 'slnt' -10",
           }}
         >
           retop
@@ -176,6 +182,20 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
     }
   }, [isExpanded]);
 
+  // STRICT HIERARCHY RULE ENFORCEMENT:
+  // 1 = Search Bar (isExpanded)
+  // 2 = Categories Menu (isExpanded && !query)
+  // 3 = Right List of Pages Submenu (activeMenu)
+  // Rule 1: If 1 is closed, 2 & 3 can NEVER be open.
+  // Rule 2: If 2 is closed (!isExpanded || query), 3 can NEVER be open (3 is NEVER a zombie).
+  useEffect(() => {
+    if (!isExpanded || query.trim() !== "") {
+      if (activeMenu !== null) {
+        setActiveMenu(null);
+      }
+    }
+  }, [isExpanded, query, activeMenu]);
+
   useEffect(() => {
     if (initialQuery) {
       setQuery(initialQuery);
@@ -203,7 +223,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
     const retopNativeLinks: QuickLink[] = [
       { title: "Time Table", url: "academics/common/StudentTimeTable", category: "Made for retop" },
       { title: "Class Attendance", url: "academics/common/StudentAttendance", category: "Made for retop" },
-      { title: "Digital Assignments", url: "examinations/StudentDA", category: "Made for retop" },
+      { title: "Assignments", url: "examinations/StudentDA", category: "Made for retop" },
       { title: "Marks View", url: "examinations/StudentMarkView", category: "Made for retop" },
       { title: "Grades View", url: "examinations/StudentGradeView", category: "Made for retop" },
       { title: "Academic Calendar", url: "academics/common/CalendarPreview", category: "Made for retop" },
@@ -228,7 +248,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
     const staticLinks: QuickLink[] = [
       { title: "Time Table", url: "academics/common/StudentTimeTable", category: "Made for retop" },
       { title: "Class Attendance", url: "academics/common/StudentAttendance", category: "Made for retop" },
-      { title: "Digital Assignments", url: "examinations/StudentDA", category: "Made for retop" },
+      { title: "Assignments", url: "examinations/StudentDA", category: "Made for retop" },
       { title: "Marks View", url: "examinations/StudentMarkView", category: "Made for retop" },
       { title: "Grades View", url: "examinations/StudentGradeView", category: "Made for retop" },
       { title: "Academic Calendar", url: "academics/common/CalendarPreview", category: "Made for retop" },
@@ -249,6 +269,11 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
       const matches: { link: QuickLink; score: number }[] = [];
 
       allLinks.forEach((link) => {
+        // Exclude Made for retop items from search results
+        if (hasRetopPage(link) || link.category === "Made for retop") {
+          return;
+        }
+
         const titleLower = link.title.toLowerCase();
         const urlLower = link.url.toLowerCase();
         let score = 0;
@@ -342,18 +367,18 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
   const isSearchActive = isExpanded;
 
   const menuVariants: Variants = {
-    hidden: { opacity: 0, scale: 0.9, y: -10 },
+    hidden: { opacity: 0, scale: 0.95, y: -8 },
     visible: {
       opacity: 1,
       scale: 1,
       y: 0,
-      transition: { type: "spring", stiffness: 1200, damping: 40 },
+      transition: { type: "spring", stiffness: 400, damping: 28 },
     },
     exit: {
       opacity: 0,
-      scale: 0.9,
-      y: -10,
-      transition: { type: "spring", stiffness: 1200, damping: 40 },
+      scale: 0.95,
+      y: -8,
+      transition: { duration: 0.15, ease: "easeOut" },
     },
   };
 
@@ -479,6 +504,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                         <div
                           key={catIdx}
                           onMouseEnter={(e) => {
+                            if (!isExpanded || query.trim() !== "") return;
                             setSelectedIndex(0);
                             setActiveMenu({
                               cat,
@@ -551,7 +577,14 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                               <div className="flex-1 min-w-0 pr-8 flex items-center justify-between gap-2 h-5">
                                 <MarqueeText text={toTitleCase(link.title)} />
                                 {hasRetopPage(link) && (
-                                  <span className={`text-[9px] font-black px-1.5 py-0.5 rounded leading-none shrink-0 ${isSelected ? "bg-white/20 text-white" : "bg-(--accent-base)/20 text-(--accent-base)"}`}>
+                                  <span
+                                    className={`re-badge inline-block text-[9px] font-black px-1.5 py-0.5 rounded leading-none shrink-0 ${isSelected ? "bg-white/20 text-white" : "bg-(--accent-base)/20 text-(--accent-base)"}`}
+                                    style={{
+                                      fontFamily: "var(--font-expanded)",
+                                      fontVariationSettings: "'wdth' 151, 'wght' 700, 'ROND' 100, 'slnt' -10",
+                                      transform: "skewX(-10deg)",
+                                    }}
+                                  >
                                     re.
                                   </span>
                                 )}
@@ -599,7 +632,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                         className="font-logo retop-logo inline-block lowercase text-(--accent-base)"
                         style={{
                           fontFamily: "var(--font-expanded)",
-                          fontVariationSettings: "'wdth' 125, 'wght' 700, 'ROND' 100, 'slnt' -10",
+                          fontVariationSettings: "'wdth' 125, 'wght' 900, 'ROND' 100, 'slnt' -10",
                         }}
                       >
                         retop
@@ -618,13 +651,13 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
       </AnimatePresence>
 
       <AnimatePresence>
-        {activeMenu && (
+        {isExpanded && !query.trim() && activeMenu && (
           <motion.div
             onMouseEnter={handleMenuEnter}
             onMouseLeave={handleMenuLeave}
-            initial={{ opacity: 0, scaleX: 0.3, scaleY: 0.8, x: -20 }}
+            initial={{ opacity: 0, scaleX: 0.3, scaleY: 0.8, x: 20 }}
             animate={{ opacity: 1, scaleX: 1, scaleY: 1, x: 0 }}
-            exit={{ opacity: 0, scaleX: 0.3, scaleY: 0.8, x: -20 }}
+            exit={{ opacity: 0, scaleX: 0.3, scaleY: 0.8, x: 20 }}
             transition={{ type: "spring", stiffness: 500, damping: 30 }}
             className="absolute z-[10001] bg-(--bg-surface) border-4 border-(--border-main) rounded-2xl popup-shadow shadow-2xl shadow-black/50 p-2 flex flex-col"
             style={{
@@ -663,7 +696,14 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                 >
                   <span className="flex-1 truncate">{link.title}</span>
                   {hasRetopPage(link) && (
-                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded leading-none shrink-0 ${i === selectedIndex && !query ? "bg-white/20 text-white" : "bg-(--accent-base)/20 text-(--accent-base)"}`}>
+                    <span
+                      className={`re-badge inline-block text-[9px] font-black px-1.5 py-0.5 rounded leading-none shrink-0 ${i === selectedIndex && !query ? "bg-white/20 text-white" : "bg-(--accent-base)/20 text-(--accent-base)"}`}
+                      style={{
+                        fontFamily: "var(--font-expanded)",
+                        fontVariationSettings: "'wdth' 151, 'wght' 700, 'ROND' 100, 'slnt' -10",
+                        transform: "skewX(-10deg)",
+                      }}
+                    >
                       re.
                     </span>
                   )}

@@ -6,7 +6,7 @@ import {
   QuickLink,
   MenuCategory,
   TimetableCourse,
-  Event,
+  Event as VTOPEvent,
   SpotlightCategoryGroup,
 } from "../types/vtop";
 import { UpcomingClass } from "../utils/timetable-slots";
@@ -21,6 +21,9 @@ import { EmptyState } from "../components/EmptyState";
 import { SPRING_SNAPPY } from "../utils/motion";
 import { HomeWidgets } from "../components/home/HomeWidgets";
 import { getClassesForDate } from "../utils/timetable-helpers";
+import { AddCustomEventModal } from "../components/home/AddCustomEventModal";
+import { Add } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
+import { Tooltip } from "../components/ui/Tooltip";
 
 export type EventFilterType = "all" | "classes" | "assignments" | "events";
 
@@ -35,7 +38,7 @@ interface HomeViewProps {
   };
   attendance: CourseSummary[];
   assignments: Assignment[];
-  events: Event[];
+  events: VTOPEvent[];
   upcoming: UpcomingClass[];
   dayName: string;
   menuCategories: MenuCategory[];
@@ -67,7 +70,39 @@ export const HomeView: React.FC<HomeViewProps> = ({
   handleTogglePin,
   spotlightCategories,
 }) => {
-  const { calGridData } = useDataStore();
+  const { calGridData, examGroups, customEvents, fetchExamSemesters } = useDataStore();
+  const [isAddEventOpen, setIsAddEventOpen] = useState(false);
+  const [isFabVisible, setIsFabVisible] = useState(true);
+  const lastScrollTopRef = useRef(0);
+  const isScrollingRef = useRef(false);
+  const scrollTimeoutRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (examGroups.length === 0 && (window as any).__RETOP_NETWORK__) {
+      fetchExamSemesters((window as any).__RETOP_NETWORK__);
+    }
+  }, [examGroups.length, fetchExamSemesters]);
+
+  const handleCalendarScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    isScrollingRef.current = true;
+    if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+    scrollTimeoutRef.current = setTimeout(() => {
+      isScrollingRef.current = false;
+    }, 150);
+
+    const currentScrollTop = e.currentTarget.scrollTop;
+    if (currentScrollTop > lastScrollTopRef.current && currentScrollTop > 10) {
+      setIsFabVisible(false);
+    } else if (currentScrollTop < lastScrollTopRef.current) {
+      setIsFabVisible(true);
+    }
+    lastScrollTopRef.current = currentScrollTop;
+  };
+
+  const handleCalendarNavigate = (link: any) => {
+    if (isScrollingRef.current) return;
+    onNavigate(link);
+  };
 
   const progressInfo = useMemo(() => {
     let firstDay: Date | null = null;
@@ -169,7 +204,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       />
 
       {/* CENTER PANE: Surface Level Unified Event CalendarMonth */}
-      <div className="flex-none lg:flex-1 w-full flex flex-col gap-6 md:gap-8 overflow-hidden pt-1 pl-1 md:pl-0 min-h-0">
+      <div className="flex-none lg:flex-1 w-full flex flex-col gap-6 md:gap-8 overflow-hidden pt-1 pl-1 md:pl-0 min-h-0 relative">
         <div className="flex flex-col items-center mb-2 lg:mb-4 px-2 w-full relative z-95 pointer-events-auto pt-20 md:pt-24 lg:pt-28">
           <div className="flex flex-col items-center w-full">
             <div className="flex justify-between w-full items-center mb-6 px-1 pt-4">
@@ -262,6 +297,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
 
         <div
+          onScroll={handleCalendarScroll}
           className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-4 pr-3 pb-32 pt-20.5 -mt-30 -mb-12 relative z-0 pointer-events-auto empty-events-container"
           style={{
             maskImage:
@@ -277,19 +313,46 @@ export const HomeView: React.FC<HomeViewProps> = ({
               eventFilter="all"
               assignments={[]}
               events={events}
+              examGroups={examGroups}
               getClassesForDate={(date: Date, evt: any) =>
                 getClassesForDate(date, ttCourses, evt)
               }
               use24HourTime={use24HourTime}
               todayRef={todayRef}
               nowRef={nowRef}
-              onNavigate={onNavigate}
+              onNavigate={handleCalendarNavigate}
             />
           ))}
         </div>
+
+        {/* Floating Calendar Actions Bar - Bottom Right */}
+        <AnimatePresence>
+          <motion.div
+            initial={{ y: 90, opacity: 0 }}
+            animate={{ y: isFabVisible ? 0 : 90, opacity: isFabVisible ? 1 : 0 }}
+            exit={{ y: 90, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 500, damping: 32 }}
+            className="absolute bottom-6 right-6 md:bottom-8 md:right-8 z-100 flex items-center bg-(--bg-surface)/95 backdrop-blur-md p-1.5 rounded-2xl border-2 border-(--border-main) shadow-(--brutal-shadow-sm) hover:shadow-(--brutal-shadow-hover) transition-all pointer-events-auto"
+          >
+            <Tooltip text="Add Event">
+              <button
+                onClick={() => setIsAddEventOpen(true)}
+                className="w-11 h-11 rounded-xl bg-(--accent-base) text-(--text-inverse) flex items-center justify-center shadow-xs hover:opacity-90 transition-all cursor-pointer p-2.5"
+                aria-label="Add Event"
+              >
+                <Add className="w-6 h-6 stroke-[3] font-black" />
+              </button>
+            </Tooltip>
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       <HomeWidgets settings={settings} stats={stats} assignments={assignments} onNavigate={onNavigate} />
+
+      <AddCustomEventModal
+        isOpen={isAddEventOpen}
+        onClose={() => setIsAddEventOpen(false)}
+      />
     </div>
   );
 };

@@ -3,6 +3,15 @@ import { persist, createJSONStorage, StateStorage } from "zustand/middleware";
 import { getAppRoot } from "./bridge";
 import { QuickLink } from "../types/vtop";
 
+export type DateFormatPattern =
+  | "DD Mon YYYY"
+  | "DD Mon YY"
+  | "DD/MM/YYYY"
+  | "MM/DD/YYYY"
+  | "YYYY-MM-DD"
+  | "DD.MM.YYYY"
+  | "DD-MM-YYYY";
+
 export interface AppSettings {
   defaultView: "modern" | "legacy";
   themeMode: "dark" | "light" | "amoled" | "auto";
@@ -22,6 +31,9 @@ export interface AppSettings {
   calendarEventColor: string;
   timetableMode: "weekly" | "slot" | "consolidated" | "fullMonth";
   googleClientId: string;
+  dateFormat: DateFormatPattern;
+  fontScale: number;
+  fontWeight: number;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -42,6 +54,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   calendarEventColor: "purple",
   timetableMode: "weekly",
   googleClientId: "",
+  dateFormat: "DD Mon YYYY",
+  fontScale: 100,
+  fontWeight: 700,
   pinnedLinks: [
     { title: "Time Table", url: "studenttimetable", category: "Core" },
     { title: "Marks", url: "mark", category: "Core" },
@@ -57,14 +72,21 @@ export const MATERIAL_ACCENTS: Record<string, string> = {
   grey: "#71717a",
   red: "#ef4444",
   orange: "#f97316",
+  amber: "#f59e0b",
   yellow: "#eab308",
   green: "#22c55e",
-  blue: "#3b82f6",
-  purple: "#a855f7",
-  pink: "#ec4899",
+  emerald: "#10b981",
+  teal: "#14b8a6",
   cyan: "#06b6d4",
+  sky: "#0ea5e9",
+  blue: "#3b82f6",
   indigo: "#6366f1",
+  purple: "#a855f7",
+  violet: "#8b5cf6",
+  pink: "#ec4899",
+  rose: "#f43f5e",
   lime: "#84cc16",
+  deepOrange: "#ff5722",
 };
 
 import { argbFromHex, hexFromArgb, Hct, SchemeVibrant, SchemeMonochrome } from "@material/material-color-utilities";

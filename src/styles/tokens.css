@@ -1,5 +1,16 @@
 :root,
 [data-theme="dark"] {
+  --retop-font-weight: 700;
+  /* Unified Font Size Hierarchy */
+  --font-size-header: 1.5rem;
+  --font-size-title: 1.125rem;
+  --font-size-card-title: 0.9375rem;
+  --font-size-card-sub: 0.8125rem;
+  --font-size-body: 0.875rem;
+  --font-size-caption: 0.75rem;
+  --font-size-badge: 0.6875rem;
+  --font-size-mono: 0.75rem;
+
   --accent-base: var(--md-sys-color-primary, #3b82f6);
   --bg-main: var(--md-sys-color-background, #09090b);
   --bg-card: var(--md-sys-color-surface, #18181b);
@@ -37,3 +48,84 @@
   --text-dim: #737373;
   --shadow-main: transparent;
 }
+
+/* Material 3 Selection & Shadow DOM Text Selection styling */
+::selection,
+#retop-root ::selection {
+  background-color: color-mix(in srgb, var(--accent-base, #3b82f6) 35%, transparent) !important;
+  color: var(--text-main, #ffffff) !important;
+}
+
+::-moz-selection,
+#retop-root ::-moz-selection {
+  background-color: color-mix(in srgb, var(--accent-base, #3b82f6) 35%, transparent) !important;
+  color: var(--text-main, #ffffff) !important;
+}
+
+/* Signature retop badge & logo font variation settings */
+.re-badge,
+.retop-logo,
+.re-logo,
+.re-text,
+.font-logo,
+.retop-menu-badge {
+  display: inline-block !important;
+  font-family: var(--font-expanded, sans-serif) !important;
+  font-variation-settings: "wdth" 151, "wght" 700, "ROND" 100, "slnt" -10 !important;
+  transform: skewX(-10deg) !important;
+}
+
+.retop-about-logo {
+  display: inline-block !important;
+  font-family: var(--font-expanded, sans-serif) !important;
+  font-variation-settings: "wdth" 125, "wght" 900, "ROND" 100, "slnt" -10 !important;
+  transform: skewX(-10deg) !important;
+  transition: font-variation-settings 100ms ease-out !important;
+}
+
+.retop-about-logo:hover {
+  font-variation-settings: "wdth" 125, "wght" 1, "ROND" 100, "slnt" -10 !important;
+}
+
+/* Range slider styling — no ghosting */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--bg-highlight);
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent-base);
+  border: 3px solid var(--bg-surface);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+input[type="range"]::-webkit-slider-thumb:active {
+  transform: scale(1.25);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent-base);
+  border: 3px solid var(--bg-surface);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  cursor: pointer;
+}
+

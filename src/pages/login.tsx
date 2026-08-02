@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ProgressActivity,
   VerifiedUser,
   ArrowForward,
   Visibility,
@@ -90,6 +89,10 @@ const LoginPage = ({
     applyTheme(settings);
   }, [settings]);
 
+  const usernameRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const captchaRef = useRef<HTMLInputElement>(null);
+
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -103,6 +106,24 @@ const LoginPage = ({
     password: false,
     captcha: false,
   });
+
+  // Focus first empty field when login page opens / mode resolves
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const uVal = usernameRef.current?.value || formData.username;
+      const pVal = passwordRef.current?.value || formData.password;
+      const cVal = captchaRef.current?.value || formData.captcha;
+
+      if (!uVal && usernameRef.current) {
+        usernameRef.current.focus();
+      } else if (!pVal && passwordRef.current) {
+        passwordRef.current.focus();
+      } else if (mode === "IMAGE" && !cVal && captchaRef.current) {
+        captchaRef.current.focus();
+      }
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [mode]);
 
   useEffect(() => {
     const initSession = async () => {
@@ -195,13 +216,20 @@ const LoginPage = ({
     }
   };
 
+  const validatePassword = (pwd: string): boolean => {
+    return Boolean(pwd && pwd.trim().length >= 1 && pwd.length <= 100);
+  };
+
   const handleInputChange = (field: string, value: string) => {
+    if (field === "username") {
+      value = value.replace(/[^a-zA-Z0-9]/g, "");
+    }
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const submitLogin = async (gResponseToken?: string) => {
     const { username, password, captcha } = formData;
-    if (!username || !password) return;
+    if (!username || !validatePassword(password)) return;
 
     if (window.location.pathname.includes("/vtop/open/page")) {
       setIsLoading(true);
@@ -257,7 +285,7 @@ const LoginPage = ({
   const handleAuthorize = () => {
     const newErrors = {
       username: !formData.username,
-      password: !formData.password,
+      password: !validatePassword(formData.password),
       captcha: mode === "IMAGE" && !formData.captcha,
     };
 
@@ -355,12 +383,14 @@ const LoginPage = ({
                         Identity
                       </label>
                       <input
+                        ref={usernameRef}
                         type="text"
                         placeholder="REG NO."
                         value={formData.username}
                         onChange={(e) =>
                           handleInputChange("username", e.target.value)
                         }
+                        onKeyDown={(e) => e.key === "Enter" && handleAuthorize()}
                         className="w-full bg-(--bg-surface) border-4 border-(--border-main) rounded-2xl p-4 pl-5 font-expanded font-black text-xl outline-none focus:shadow-(--brutal-shadow-hover) focus:-translate-y-1 transition-all uppercase text-(--text-main) placeholder-(--text-muted)"
                       />
                     </motion.div>
@@ -372,15 +402,18 @@ const LoginPage = ({
                       className="relative group"
                     >
                       <label className="absolute -top-3 left-4 bg-(--bg-surface) border-2 border-(--border-main) px-2 py-0.5 text-[10px] font-expanded font-black uppercase z-10 rounded-lg shadow-none text-(--text-main) group-focus-within:bg-(--accent-base) group-focus-within:text-(--text-inverse) transition-colors">
-                        Security
+                        Password
                       </label>
                       <input
+                        ref={passwordRef}
                         type={showPassword ? "text" : "password"}
+                        maxLength={100}
                         placeholder="••••••••"
                         value={formData.password}
                         onChange={(e) =>
                           handleInputChange("password", e.target.value)
                         }
+                        onKeyDown={(e) => e.key === "Enter" && handleAuthorize()}
                         className="w-full bg-(--bg-surface) border-4 border-(--border-main) rounded-2xl p-4 pl-5 font-expanded font-black text-xl outline-none focus:shadow-(--brutal-shadow-hover) focus:-translate-y-1 transition-all text-(--text-main) placeholder-(--text-muted) pr-12"
                       />
                       <button
@@ -411,17 +444,19 @@ const LoginPage = ({
                             Verification
                           </label>
                           <input
+                            ref={captchaRef}
                             type="text"
                             placeholder="CAPTCHA"
                             value={formData.captcha}
                             onChange={(e) =>
                               handleInputChange("captcha", e.target.value)
                             }
+                            onKeyDown={(e) => e.key === "Enter" && handleAuthorize()}
                             className="w-full bg-(--bg-surface) border-4 border-(--border-main) rounded-2xl p-4 pl-5 font-expanded font-black text-xl outline-none uppercase focus:shadow-(--brutal-shadow-hover) focus:-translate-y-1 transition-all text-(--text-main)"
                           />
                         </motion.div>
                         <div
-                          className="w-30 bg-white border-4 border-(--border-main) rounded-2xl overflow-hidden shadow-none relative flex items-center justify-center shrink-0 group cursor-pointer active:translate-y-1 active:shadow-none transition-all"
+                          className="w-30 bg-white border-4 border-(--border-main) rounded-2xl overflow-hidden shadow-none relative flex items-center justify-center shrink-0 group cursor-pointer transition-all"
                           onClick={refreshCaptcha}
                           title="Click to refresh captcha"
                         >
@@ -447,7 +482,7 @@ const LoginPage = ({
                     <button
                       onClick={handleAuthorize}
                       disabled={isLoading}
-                      className={`w-full border-4 border-(--border-main) rounded-2xl py-4 text-2xl font-expanded font-black uppercase flex items-center justify-center gap-3 transition-all duration-fast mt-2 ${isLoading ? "bg-(--bg-surface) text-(--text-muted) cursor-not-allowed" : "bg-(--accent-base) text-(--text-inverse) shadow-none hover:-translate-y-1 hover:shadow-(--brutal-shadow-xl) active:translate-y-1 active:shadow-(--brutal-shadow-active)"}`}
+                      className={`w-full border-4 border-(--border-main) rounded-2xl py-4 text-2xl font-expanded font-black uppercase flex items-center justify-center gap-3 transition-colors duration-200 mt-2 ${isLoading ? "bg-(--bg-surface) text-(--text-muted) cursor-not-allowed" : "bg-(--accent-base) text-(--text-inverse) shadow-none hover:bg-(--accent-hover) hover:brightness-115 active:brightness-95"}`}
                     >
                       {isLoading ? (
                         <motion.div

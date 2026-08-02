@@ -75,7 +75,7 @@ export const useAppStore = create<AppState>((set) => ({
   },
   addSnackbar: (snackbar) =>
     set((state) => ({
-      snackbars: [...state.snackbars, { ...snackbar, id: Math.random().toString(36).substr(2, 9) }],
+      snackbars: [...state.snackbars, { ...snackbar, id: Math.random().toString(36).substr(2, 9) }].slice(-3),
     })),
   removeSnackbar: (id) =>
     set((state) => ({

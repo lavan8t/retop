@@ -7,13 +7,10 @@ import {
   ManageAccounts,
   Logout,
   Settings,
-  ChevronRight,
-  DesignServices,
   Warning,
-  SwapHoriz,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { QuickLink } from "../types/vtop";
-import { motion, Variants, Transition, AnimatePresence } from "framer-motion";
+import { motion, Variants, AnimatePresence } from "framer-motion";
 import { Tooltip } from "./ui/Tooltip";
 
 interface ProfileMenuProps {
@@ -40,58 +37,54 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
   const mainItems = [
     {
       title: "Profile",
+      targetTitle: "Student Profile All View",
       icon: AccountCircle,
       url: "studentsRecord/StudentProfileAllView",
       cat: "Profile",
     },
     {
       title: "Bank Info",
+      targetTitle: "Student Bank Info",
       icon: CreditCard,
       url: "fees/StudentBankInfo",
       cat: "Profile",
     },
     {
       title: "Login ID",
+      targetTitle: "Update Loginid",
       icon: ManageAccounts,
       url: "user/updateLoginId",
       cat: "Settings",
     },
     {
       title: "Password",
+      targetTitle: "Change Password",
       icon: Key,
       url: "user/changePassword",
       cat: "Settings",
     },
     {
       title: "Backup Codes",
+      targetTitle: "Backup Codes",
       icon: FilterNone,
       url: "user/backupCodes",
       cat: "Settings",
     },
   ];
 
-  const iosSpring: Transition = {
-    type: "spring",
-    stiffness: 900,
-    damping: 30,
-    mass: 0.6,
-  };
-
   const menuVariants: Variants = {
-    hidden: { opacity: 0, scaleX: 0.3, scaleY: 0.8, x: 20 },
+    hidden: { opacity: 0, scale: 0.95, y: -6 },
     visible: {
       opacity: 1,
-      scaleX: 1,
-      scaleY: 1,
-      x: 0,
-      transition: { type: "spring", stiffness: 500, damping: 30 },
+      scale: 1,
+      y: 0,
+      transition: { duration: 0.05, ease: "easeOut" },
     },
     exit: {
       opacity: 0,
-      scaleX: 0.3,
-      scaleY: 0.8,
-      x: 20,
-      transition: { type: "spring", stiffness: 500, damping: 30 },
+      scale: 0.95,
+      y: -6,
+      transition: { duration: 0.05, ease: "easeIn" },
     },
   };
 
@@ -112,11 +105,11 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
       animate="visible"
       exit="exit"
       style={{ transformOrigin: "right top" }}
-      className="absolute right-0 top-0 md:right-1 md:top-1 w-[17.5rem] bg-transparent border-0 z-[9999] flex flex-col will-change-transform transform-gpu p-3"
+      className="absolute right-0 top-0 md:right-1 md:top-1 w-70 bg-transparent border-0 z-9999 flex flex-col will-change-transform transform-gpu p-3"
     >
       <div className="flex-1 flex flex-col gap-2">
         {/* Profile Header */}
-        <div className="flex flex-row items-center justify-between pl-4 py-0 pr-0 bg-(--bg-highlight) rounded-[24px] overflow-hidden w-full border-2 border-(--border-dim) popup-shadow">
+        <div className="flex flex-row items-center justify-between pl-4 py-0 pr-0 bg-(--bg-highlight) rounded-3xl overflow-hidden w-full border-2 border-(--border-dim) popup-shadow">
           <div className="flex flex-col overflow-hidden relative flex-1 mr-2 py-3">
             <div
               className={`text-sm font-bold text-(--text-main) uppercase whitespace-nowrap inline-block ${(userName !== "Student" ? userName : userRegNo).length > 18 ? "animate-[profile-marquee_6s_linear_infinite]" : "w-full text-left"}`}
@@ -130,7 +123,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
               </div>
             )}
           </div>
-          <div className="w-16 h-full min-h-[64px] shadow-sm transition-all cursor-default bg-(--bg-main) shrink-0 z-9999 relative">
+          <div className="w-16 h-full min-h-16 shadow-sm transition-all cursor-default bg-(--bg-main) shrink-0 z-9999 relative">
             {userRegNo !== "..." && userRegNo ? (
               <img
                 src={userProfileImg || `/vtop/users/image/?id=${userRegNo}`}
@@ -145,13 +138,13 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
           </div>
         </div>
 
-        <div className="flex flex-col bg-(--bg-surface) rounded-[24px] overflow-hidden border-2 border-(--border-dim) popup-shadow">
+        <div className="flex flex-col bg-(--bg-surface) rounded-3xl overflow-hidden border-2 border-(--border-dim) popup-shadow">
           {mainItems.map((item, i) => (
             <button
               key={i}
               onClick={() => {
                 onNavigate({
-                  title: item.title,
+                  title: item.targetTitle || item.title,
                   url: item.url,
                   category: item.cat,
                 });

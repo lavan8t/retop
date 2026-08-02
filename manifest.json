@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "retop",
-  "description": "college portal made better.",
+  "description": "uni portal done better.",
   "version": "0.3.0",
 
   "permissions": ["storage", "activeTab", "unlimitedStorage", "downloads", "identity"],
@@ -35,7 +35,6 @@
         "dist/offline.html",
         "dist/fonts/gsf.subset.woff2",
         "dist/fonts/gsf.subset2.woff2",
-        "dist/fonts/material-symbols-rounded.woff2",
         "dist/assets/vitLogo.svg"
       ],
       "matches": ["https://vtop.vit.ac.in/*"]

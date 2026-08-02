@@ -53,22 +53,20 @@ const applyThemeFromSettings = (saved: any) => {
 };
 
 try {
-  if (!window.location.pathname.includes("/open/page")) {
-    chrome.storage.local.get("retop-settings", (result) => {
-      const saved = result["retop-settings"];
-      if (saved) {
-        applyThemeFromSettings(saved);
+  chrome.storage.local.get("retop-settings", (result) => {
+    const saved = result["retop-settings"];
+    if (saved) {
+      applyThemeFromSettings(saved);
+    }
+  });
+
+  if (chrome.storage && chrome.storage.onChanged) {
+    chrome.storage.onChanged.addListener((changes, namespace) => {
+      if (namespace === "local" && changes["retop-settings"]) {
+        const newValue = changes["retop-settings"].newValue;
+        if (newValue) applyThemeFromSettings(newValue);
       }
     });
-
-    if (chrome.storage && chrome.storage.onChanged) {
-      chrome.storage.onChanged.addListener((changes, namespace) => {
-        if (namespace === "local" && changes["retop-settings"]) {
-          const newValue = changes["retop-settings"].newValue;
-          if (newValue) applyThemeFromSettings(newValue);
-        }
-      });
-    }
   }
 } catch (e) {}
 
@@ -285,6 +283,7 @@ const init = async () => {
       document.getElementById("captchaBlock") === null);
 
   if (path.includes("/vtop/open/page") || isRoleSelection) {
+    injectPreloginTheme();
     document.addEventListener(
       "click",
       (e) => {
@@ -382,6 +381,18 @@ function waitForTokens(): Promise<boolean> {
     }, 100);
   });
 }
+
+const injectPreloginTheme = () => {
+  if (document.getElementById("vtop-prelogin-theme")) return;
+
+  injectGlobalFonts();
+
+  const link = document.createElement("link");
+  link.id = "vtop-prelogin-theme";
+  link.rel = "stylesheet";
+  link.href = chrome.runtime.getURL("dist/prelogin.css");
+  document.head.appendChild(link);
+};
 
 const injectLoginTheme = () => {
   if (document.getElementById("vtop-login-theme")) return;
@@ -712,8 +723,6 @@ const injectLoginTheme = () => {
     const availableArts = artTypes.filter(type => type !== lastArt);
     const pickedArt = availableArts.length ? availableArts[Math.floor(Math.random() * availableArts.length)] : "TT";
     localStorage.setItem("retop_last_ascii_art", pickedArt);
-
-    const isPRP = false;
     
     let rawArt = asciiArtTT;
     if (pickedArt === "SMV") rawArt = asciiArtSMV;
@@ -739,7 +748,7 @@ const injectLoginTheme = () => {
     } else if (pickedArt === "MGR") {
       asciiPre.style.letterSpacing = "0px";
       asciiPre.style.setProperty("margin-right", "0px", "important");
-      asciiPre.style.setProperty("font-size", "5.25px", "important");
+      asciiPre.style.setProperty("font-size", "5px", "important");
       // line-height left to CSS default (1)
     }
     asciiPre.textContent = asciiArt;

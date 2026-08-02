@@ -78,18 +78,20 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
   };
 
   const menuVariants: Variants = {
-    hidden: { opacity: 0, scale: 0.9, y: -10 },
+    hidden: { opacity: 0, scaleX: 0.3, scaleY: 0.8, x: 20 },
     visible: {
       opacity: 1,
-      scale: 1,
-      y: 0,
-      transition: { type: "spring", stiffness: 1200, damping: 40 },
+      scaleX: 1,
+      scaleY: 1,
+      x: 0,
+      transition: { type: "spring", stiffness: 500, damping: 30 },
     },
     exit: {
       opacity: 0,
-      scale: 0.9,
-      y: -10,
-      transition: { type: "spring", stiffness: 1200, damping: 40 },
+      scaleX: 0.3,
+      scaleY: 0.8,
+      x: 20,
+      transition: { type: "spring", stiffness: 500, damping: 30 },
     },
   };
 
@@ -109,7 +111,8 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
       initial="hidden"
       animate="visible"
       exit="exit"
-      className="absolute right-0 top-0 md:right-1 md:top-1 w-[17.5rem] bg-transparent border-0 z-[9999] origin-top-right flex flex-col will-change-transform transform-gpu p-3"
+      style={{ transformOrigin: "right top" }}
+      className="absolute right-0 top-0 md:right-1 md:top-1 w-[17.5rem] bg-transparent border-0 z-[9999] flex flex-col will-change-transform transform-gpu p-3"
     >
       <div className="flex-1 flex flex-col gap-2">
         {/* Profile Header */}

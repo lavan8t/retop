@@ -160,9 +160,84 @@ export function initializeContainer() {
   isInitialized = true;
 }
 
-export function injectSplashScreen() {}
+export function injectSplashScreen() {
+  if (document.getElementById("retop-open-loader")) return;
 
-export function removeSplashScreen() {}
+  const styleId = "retop-early-cloak";
+  if (!document.getElementById(styleId)) {
+    const earlyStyle = document.createElement("style");
+    earlyStyle.id = styleId;
+    earlyStyle.textContent = `
+      /* Hide native body completely from frame 1 */
+      html > body {
+        opacity: 0 !important;
+        visibility: hidden !important;
+      }
+      /* Branded loader overlay attached to html */
+      #retop-open-loader {
+        position: fixed !important;
+        inset: 0 !important;
+        z-index: 2147483647 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-direction: column !important;
+        gap: 16px !important;
+        background: #09090b !important;
+        font-family: system-ui, sans-serif !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        transition: opacity 0.3s ease !important;
+      }
+      #retop-open-loader .spinner {
+        width: 36px !important;
+        height: 36px !important;
+        border: 3px solid #27272a !important;
+        border-top-color: #3b82f6 !important;
+        border-radius: 50% !important;
+        animation: retop-spin 0.7s linear infinite !important;
+      }
+      #retop-open-loader .label {
+        color: #94a3b8 !important;
+        font-size: 0.85rem !important;
+        font-weight: 500 !important;
+        letter-spacing: 0.03em !important;
+      }
+      @keyframes retop-spin {
+        to { transform: rotate(360deg); }
+      }
+    `;
+    (document.head || document.documentElement).appendChild(earlyStyle);
+  }
+
+  const loader = document.createElement("div");
+  loader.id = "retop-open-loader";
+  loader.innerHTML = `<div class="spinner"></div><div class="label">retop</div>`;
+  document.documentElement.appendChild(loader);
+}
+
+export function removeSplashScreen() {
+  const loader = document.getElementById("retop-open-loader");
+  const cloak = document.getElementById("retop-early-cloak");
+
+  if (loader) {
+    loader.style.opacity = "0";
+    setTimeout(() => {
+      loader.remove();
+      if (cloak) cloak.remove();
+      if (document.body) {
+        document.body.style.opacity = "1";
+        document.body.style.visibility = "visible";
+      }
+    }, 300);
+  } else {
+    if (cloak) cloak.remove();
+    if (document.body) {
+      document.body.style.opacity = "1";
+      document.body.style.visibility = "visible";
+    }
+  }
+}
 
 export function setUIVisibility(visible: boolean) {
   const host = document.getElementById("retop-host");

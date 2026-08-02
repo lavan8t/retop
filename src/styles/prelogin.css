@@ -1,13 +1,11 @@
+@import "./fonts.css";
 @import "./tokens.css";
 
 /* ═══════════════════════════════════════════════════════════════════════
-   PRELOGIN / OPEN PAGE — RETOP THEME OVERRIDE
-   Targets: https://vtop.vit.ac.in/vtop/open/page
-   Rules: Google Sans Flex everywhere, zero shadow, zero border,
-          zero gradient, compact padding, retop dark/light tokens.
+   PRELOGIN / OPEN / LOGIN PAGE — RETOP THEME OVERRIDE
    ═══════════════════════════════════════════════════════════════════════ */
 
-/* ── Extreme Shadow Destruction (Overrides Bootstrap !important) ───── */
+/* ── Absolute Shadow & Border Reset (No Shadows Anywhere or on Hover) ─ */
 html body .shadow,
 html body .shadow-sm,
 html body .shadow-lg,
@@ -16,7 +14,12 @@ html body .card-body,
 html body .card-header,
 html body .navbar,
 html body .offcanvas,
-html body [class*="shadow"] {
+html body [class*="shadow"],
+input, select, textarea, .form-control, .input-group,
+button, .btn, .btn-primary, .btn-secondary, .btn-outline,
+input:focus, select:focus, textarea:focus, .form-control:focus,
+input:hover, select:hover, textarea:hover, .form-control:hover,
+button:hover, .btn:hover, .btn-primary:hover, *:hover, *:focus {
   box-shadow: none !important;
   -webkit-box-shadow: none !important;
   filter: none !important;
@@ -34,7 +37,18 @@ body, body.WhiteBackground {
   font-family: 'Google Sans Flex', system-ui, sans-serif !important;
 }
 
-/* ── Navbar / Header Fix ────────────────────────────────────────────── */
+/* ── Hide Native Stock Images & FontAwesome Icons ──────────────────── */
+#stdForm img,
+#empForm img,
+#parentForm img,
+#alumniForm img,
+i.fa,
+i.fa-bolt,
+i.fa-sign-in {
+  display: none !important;
+}
+
+/* ── Navbar / Header ───────────────────────────────────────────────── */
 #vtopOpenPageHeader,
 nav.navbar,
 .navbar.navbar-expand-lg,
@@ -46,7 +60,7 @@ nav.navbar,
   box-shadow: none !important;
 }
 
-/* VIT Emblem Image Visibility in Dark/Light themes */
+/* VIT Emblem: Black in Light theme, White in Dark theme */
 img.VITEmblem,
 .VITEmblem {
   max-height: 38px !important;
@@ -56,25 +70,33 @@ img.VITEmblem,
   display: inline-block !important;
   visibility: visible !important;
   opacity: 1 !important;
-  filter: brightness(0) invert(1) !important; /* Make visible in dark mode */
+  filter: brightness(0) invert(1) !important; /* White in Dark mode */
 }
 
+html[data-theme="light"] img.VITEmblem,
+html[data-theme="light"] .VITEmblem,
 [data-theme="light"] img.VITEmblem,
 [data-theme="light"] .VITEmblem {
-  filter: none !important;
+  filter: brightness(0) !important; /* Black in Light mode */
 }
 
+/* VIT Text: Times New Roman Bold */
 .VITLogoStyle,
-.VITLogoStyle span.h1 {
-  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
-  font-variation-settings: "wdth" 125, "wght" 700 !important;
+.VITLogoStyle span.h1,
+.VITLogoStyle .h1 {
+  font-family: 'Times New Roman', Times, serif !important;
+  font-weight: bold !important;
   color: var(--text-main) !important;
 }
 
-.navbar-text {
-  color: var(--text-muted) !important;
+/* Navbar text: Vellore Campus — 1.5x bigger text size */
+.navbar-text,
+.navbar-text.text-light,
+span.navbar-text {
+  color: var(--text-main) !important;
   font-family: 'Google Sans Flex', system-ui, sans-serif !important;
   font-variation-settings: "wght" 500 !important;
+  font-size: 1.35rem !important; /* 1.5x bigger */
 }
 
 /* ── Typography — all text on the page ─────────────────────────────── */
@@ -120,17 +142,66 @@ strong.h2 b {
   font-variation-settings: "wght" 450 !important;
 }
 
+/* ── Form Inputs & Login Button Styles ─────────────────────────────── */
+input, select, textarea, .form-control {
+  background-color: var(--bg-surface) !important;
+  color: var(--text-main) !important;
+  border: 1px solid color-mix(in srgb, var(--text-muted) 20%, transparent) !important;
+  border-radius: 12px !important;
+  padding: 10px 16px !important;
+  box-shadow: none !important;
+}
+
+input:focus, select:focus, textarea:focus, .form-control:focus {
+  border-color: var(--accent-base) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Submit/Login Button: fully rounded pill, increased Y padding */
+#btnSubmit,
+#submitBtn,
+button[type="submit"],
+.btn-primary,
+input[type="submit"] {
+  background-color: var(--accent-base) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 9999px !important; /* Fully rounded pill */
+  padding-left: 20px !important;
+  padding-right: 20px !important;
+  padding-top: 14px !important;     /* Increased Y padding */
+  padding-bottom: 14px !important;  /* Increased Y padding */
+  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
+  font-variation-settings: "wght" 600 !important;
+  box-shadow: none !important;
+  transition: opacity 0.15s ease !important;
+}
+
+#btnSubmit:hover,
+#submitBtn:hover,
+button[type="submit"]:hover,
+.btn-primary:hover,
+input[type="submit"]:hover {
+  opacity: 0.9 !important;
+  box-shadow: none !important;
+}
+
 /* ── Role Cards (Student / Employee / Parent / Alumni) ─────────────── */
 .cardStudent,
 .cardEmployee,
 .cardParent,
 .cardAlumni {
+  position: relative !important;
   background-color: var(--bg-surface) !important;
   background-image: none !important;
   border: none !important;
   border-radius: 16px !important;
-  padding: 20px 16px !important;
+  padding: 16px 20px !important;
+  min-height: 90px !important;
   box-shadow: none !important;
+  overflow: hidden !important;
+  cursor: pointer !important;
   transition: background-color 0.15s ease !important;
 }
 
@@ -140,9 +211,10 @@ strong.h2 b {
 .cardAlumni:hover {
   background-color: var(--bg-highlight) !important;
   transform: none !important;
+  box-shadow: none !important;
 }
 
-/* Remove arrow buttons from the 4 cards as requested */
+/* Hide submit button inside cards */
 .cardStudent button,
 .cardEmployee button,
 .cardParent button,
@@ -150,34 +222,93 @@ strong.h2 b {
   display: none !important;
 }
 
-/* Role label text */
+.cardStudent form,
+.cardEmployee form,
+.cardParent form,
+.cardAlumni form {
+  height: 100% !important;
+}
+
+.cardStudent a,
+.cardEmployee a,
+.cardParent a,
+.cardAlumni a {
+  display: block !important;
+  height: 100% !important;
+  position: relative !important;
+}
+
+.cardStudent .d-flex,
+.cardEmployee .d-flex,
+.cardParent .d-flex,
+.cardAlumni .d-flex {
+  position: relative !important;
+  min-height: 60px !important;
+}
+
+/* Icon container div: Positioned at Bottom-Left Corner (bottom: -2px) */
+.cardStudent .w-50,
+.cardEmployee .w-50,
+.cardParent .w-50,
+.cardAlumni .w-50 {
+  position: absolute !important;
+  left: 0px !important;
+  bottom: -2px !important;
+  width: auto !important;
+  display: flex !important;
+  align-items: flex-end !important;
+  justify-content: flex-start !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* No background fill for icons, clean raw icon styling */
+.retop-inline-icon {
+  display: inline-flex !important;
+  align-items: flex-end !important;
+  justify-content: flex-start !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border-radius: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  pointer-events: none !important;
+}
+
+.retop-inline-icon svg,
+.retop-inline-icon svg path {
+  fill: var(--accent-base) !important;
+  color: var(--accent-base) !important;
+  width: 42px !important;
+  height: 42px !important;
+}
+
+/* Title text: Positioned at Top-Right Corner */
+.cardStudent .flex-grow-1,
+.cardEmployee .flex-grow-1,
+.cardParent .flex-grow-1,
+.cardAlumni .flex-grow-1 {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  justify-content: flex-start !important;
+  text-align: right !important;
+  width: 100% !important;
+}
+
 .cardStudent .fw-bold,
 .cardEmployee .fw-bold,
 .cardParent .fw-bold,
 .cardAlumni .fw-bold {
   color: var(--text-main) !important;
-  font-variation-settings: "wdth" 125, "wght" 600 !important;
-  font-size: 1.05rem !important;
+  font-variation-settings: "wdth" 125, "wght" 700 !important;
+  font-size: 1.15rem !important;
+  text-align: right !important;
 }
 
-/* Material Symbols Icon Container in Cards */
-.retop-inline-icon {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: 56px !important;
-  height: 56px !important;
-  border-radius: 50% !important;
-  background-color: var(--bg-highlight) !important;
-  color: var(--accent-base) !important;
-  margin-bottom: 8px !important;
-}
-
-.retop-inline-icon .material-symbols-rounded {
-  color: var(--accent-base) !important;
-}
-
-/* ── Spotlight Section ─────────────────────────────────────────────── */
+/* ── Spotlight Section (Compact & Clean Hover) ─────────────────────── */
 .card.border-0.shadow-lg,
 .card.border-0 {
   background-color: var(--bg-surface) !important;
@@ -193,7 +324,10 @@ strong.h2 b {
   background-image: none !important;
   border: none !important;
   border-bottom: 1px solid color-mix(in srgb, var(--text-muted) 15%, transparent) !important;
-  padding: 12px 16px !important;
+  padding: 8px 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
 }
 
 .spotlightHeader span.fw-bold,
@@ -202,11 +336,24 @@ strong.h2 b {
   font-variation-settings: "wght" 600 !important;
 }
 
+/* More... button icon styling */
 .spotlightHeader button,
+.spotlightHeader a,
 .spotlightHeader .btn-link {
   color: var(--accent-base) !important;
-  font-variation-settings: "wght" 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   text-decoration: none !important;
+  padding: 4px 6px !important;
+  border-radius: 8px !important;
+  transition: background-color 0.15s ease !important;
+}
+
+.spotlightHeader button:hover,
+.spotlightHeader a:hover,
+.spotlightHeader .btn-link:hover {
+  background-color: var(--bg-highlight) !important;
 }
 
 .spotlight-background,
@@ -220,9 +367,9 @@ ul.list-group.spotlight-background {
   background: transparent !important;
   background-image: none !important;
   border: none !important;
-  border-bottom: 1px solid color-mix(in srgb, var(--text-muted) 12%, transparent) !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--text-muted) 10%, transparent) !important;
   color: var(--text-main) !important;
-  padding: 10px 16px !important;
+  padding: 6px 14px !important;
   transition: background-color 0.15s ease !important;
 }
 
@@ -240,17 +387,11 @@ ul.list-group.spotlight-background {
 .spotlight-background a {
   color: var(--text-main) !important;
   font-variation-settings: "wght" 500 !important;
+  font-size: 0.9rem !important;
   text-decoration: none !important;
 }
 
-/* Hide native stock bolt icons (fa fa-bolt) */
-.spotlight-background .fa.fa-bolt,
-.hightlight1 .fa.fa-bolt,
-.offcanvas-body .fa.fa-bolt {
-  display: none !important;
-}
-
-/* Material Symbols Spotlight bolt */
+/* Material Symbols Spotlight Bolt SVG Styling */
 .retop-spotlight-bolt {
   color: var(--accent-base) !important;
   display: inline-flex !important;
@@ -259,8 +400,12 @@ ul.list-group.spotlight-background {
   margin-right: 8px !important;
 }
 
-.retop-spotlight-bolt .material-symbols-rounded {
+.retop-spotlight-bolt svg,
+.retop-spotlight-bolt svg path {
+  fill: var(--accent-base) !important;
   color: var(--accent-base) !important;
+  width: 16px !important;
+  height: 16px !important;
 }
 
 /* ── Offcanvas (Spotlight "More...") ───────────────────────────────── */
@@ -284,6 +429,7 @@ ul.list-group.spotlight-background {
   filter: invert(1) !important;
 }
 
+html[data-theme="light"] .btn-close,
 [data-theme="light"] .btn-close {
   filter: none !important;
 }
@@ -302,13 +448,13 @@ ul.list-group.spotlight-background {
   border: none !important;
   border-top: 1px solid var(--border-main) !important;
   box-shadow: none !important;
-  color: var(--text-muted) !important;
+  color: var(--text-main) !important;
   font-family: 'Google Sans Flex', system-ui, sans-serif !important;
   font-variation-settings: "wght" 450 !important;
 }
 
 .footercolor span, .footercolor a {
-  color: var(--text-muted) !important;
+  color: var(--text-main) !important;
 }
 
 /* ── Container ─────────────────────────────────────────────────────── */

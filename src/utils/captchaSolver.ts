@@ -99,12 +99,62 @@ const max_soft = (a: number[]) => {
 export const autoSolveCaptcha = async (
   img: HTMLImageElement,
 ): Promise<string> => {
+  console.log("[retop-captcha] autoSolveCaptcha called with img:", img, "src:", img?.src);
+
   if (!bitmaps || !bitmaps.weights || !bitmaps.biases) {
     console.warn(
-      "bitmaps is not defined or missing NN data. Skipping auto-solver.",
+      "[retop-captcha] bitmaps is not defined or missing NN data. Skipping auto-solver.",
     );
     return "";
   }
+
+  if (!img || !img.src) {
+    console.warn("[retop-captcha] Image element or src is missing.");
+    return "";
+  }
+
+  let processImg: HTMLImageElement = img;
+
+  // Convert to Data URL if src is a remote/relative URL to avoid canvas CORS tainting
+  if (!img.src.startsWith("data:")) {
+    try {
+      console.log("[retop-captcha] Fetching captcha image bytes to create safe Data URL...");
+      const res = await fetch(img.src, { credentials: "include" });
+      const blob = await res.blob();
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+
+      const tempImg = new Image();
+      tempImg.src = dataUrl;
+      await new Promise((resolve) => {
+        if (tempImg.complete) resolve(true);
+        else {
+          tempImg.onload = () => resolve(true);
+          tempImg.onerror = () => resolve(false);
+        }
+      });
+      processImg = tempImg;
+      console.log("[retop-captcha] Data URL created successfully.");
+    } catch (e) {
+      console.warn("[retop-captcha] Data URL conversion failed, falling back to direct img element:", e);
+    }
+  }
+
+  // Ensure image is loaded and has dimensions
+  if (!processImg.complete || processImg.naturalWidth === 0) {
+    console.log("[retop-captcha] Waiting for image load...");
+    await new Promise((resolve) => {
+      const timeout = setTimeout(resolve, 1500);
+      processImg.addEventListener("load", () => { clearTimeout(timeout); resolve(true); }, { once: true });
+      processImg.addEventListener("error", () => { clearTimeout(timeout); resolve(false); }, { once: true });
+    });
+  }
+
+  console.log("[retop-captcha] Image ready for processing. Width:", processImg.naturalWidth, "Height:", processImg.naturalHeight);
 
   const weights = bitmaps.weights as number[][];
   const biases = bitmaps.biases as number[];
@@ -112,26 +162,34 @@ export const autoSolveCaptcha = async (
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
 
-  if (!ctx) return "";
+  if (!ctx) {
+    console.error("[retop-captcha] Could not create 2D canvas context.");
+    return "";
+  }
 
   canvas.width = 200;
   canvas.height = 40;
 
-  // Draw the actual image passed from the main DOM
-  ctx.drawImage(img, 0, 0, 200, 40);
-  const pd = ctx.getImageData(0, 0, 200, 40);
-  const bls = saturation(pd.data);
-  let out = "";
+  try {
+    ctx.drawImage(processImg, 0, 0, 200, 40);
+    const pd = ctx.getImageData(0, 0, 200, 40);
+    const bls = saturation(pd.data);
+    let out = "";
 
-  for (let i = 0; i < 6; i += 1) {
-    let currentBls = pre_img(bls[i]);
-    const flattened = [flatten(currentBls)];
-    const multiplied = mat_mul(flattened, weights);
-    const added = mat_add(multiplied[0], biases);
-    const soft = max_soft(added);
-    const index = soft.indexOf(Math.max(...soft));
-    out += label_txt[index];
+    for (let i = 0; i < 6; i += 1) {
+      let currentBls = pre_img(bls[i]);
+      const flattened = [flatten(currentBls)];
+      const multiplied = mat_mul(flattened, weights);
+      const added = mat_add(multiplied[0], biases);
+      const soft = max_soft(added);
+      const index = soft.indexOf(Math.max(...soft));
+      out += label_txt[index];
+    }
+
+    console.log("[retop-captcha] Successfully predicted CAPTCHA code:", out);
+    return out;
+  } catch (err) {
+    console.error("[retop-captcha] Error processing captcha canvas:", err);
+    return "";
   }
-
-  return out;
 };

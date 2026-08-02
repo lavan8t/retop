@@ -1,7 +1,25 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
+import {
+  School,
+  Badge,
+  FamilyRestroom,
+  WorkspacePremium,
+  Bolt,
+  Visibility,
+  Home,
+  OpenInNew,
+} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 
-// Helper component to replace a native element with a React/Portal element
+// Inject a React element into a native DOM container via portal
+const PortalInject: React.FC<{
+  container: HTMLElement;
+  children: React.ReactNode;
+}> = ({ container, children }) => {
+  return createPortal(children, container);
+};
+
+// Hide original element and create a sibling container for portal
 const PortalReplacer: React.FC<{
   target: Element;
   children: React.ReactNode;
@@ -31,106 +49,192 @@ const PortalReplacer: React.FC<{
   return createPortal(children, container);
 };
 
+interface PortalTargets {
+  // Card icon containers — inject icon INTO these divs
+  stdIconContainer: HTMLElement | null;
+  empIconContainer: HTMLElement | null;
+  parentIconContainer: HTMLElement | null;
+  alumniIconContainer: HTMLElement | null;
+  // Bolt replacements
+  boltContainers: HTMLElement[];
+  // Spotlight More... button
+  moreBtnContainer: HTMLElement | null;
+  // Eye icon
+  eyeIcon: Element | null;
+  // Home links
+  homeLinks: Element[];
+}
+
 export const NativePortals: React.FC = () => {
-  const [elements, setElements] = useState<{
-    stdImg: Element | null;
-    empImg: Element | null;
-    parentImg: Element | null;
-    alumniImg: Element | null;
-    bolts: Element[];
-    eyeIcon: Element | null;
-    homeLinks: Element[];
-  }>({
-    stdImg: null,
-    empImg: null,
-    parentImg: null,
-    alumniImg: null,
-    bolts: [],
+  const [targets, setTargets] = useState<PortalTargets>({
+    stdIconContainer: null,
+    empIconContainer: null,
+    parentIconContainer: null,
+    alumniIconContainer: null,
+    boltContainers: [],
+    moreBtnContainer: null,
     eyeIcon: null,
     homeLinks: [],
   });
+  const injectedRef = useRef(false);
 
   useEffect(() => {
-    const findElements = () => {
-      setElements({
-        stdImg: document.querySelector("#stdForm img:not([data-retop-portal])"),
-        empImg: document.querySelector("#empForm img:not([data-retop-portal])"),
-        parentImg: document.querySelector("#parentForm img:not([data-retop-portal])"),
-        alumniImg: document.querySelector("#alumniForm img:not([data-retop-portal])"),
-        bolts: Array.from(document.querySelectorAll(".fa-bolt:not([data-retop-portal])")),
-        eyeIcon: document.querySelector("#passwordIcon:not([data-retop-portal])"),
-        homeLinks: Array.from(
-          document.querySelectorAll(
-            '.retop-home-icon:not([data-retop-portal]), a[href="javascript:gotoHome()"]:not([data-retop-portal])'
-          )
-        ),
+    const inject = () => {
+      if (injectedRef.current) return;
+
+      // Make card container clickable anywhere
+      const attachCardClick = (formId: string) => {
+        const form = document.getElementById(formId);
+        if (!form) return;
+        const card = (form.closest(".cardStudent, .cardEmployee, .cardParent, .cardAlumni, .card") || form) as HTMLElement;
+        if (card) {
+          card.style.cursor = "pointer";
+          card.onclick = (e) => {
+            e.preventDefault();
+            (window as any).submitForm?.(formId);
+          };
+        }
+      };
+
+      attachCardClick("stdForm");
+      attachCardClick("empForm");
+      attachCardClick("parentForm");
+      attachCardClick("alumniForm");
+
+      // Card icons: find .w-50 inside each form, hide native img, use container
+      const stdW50 = document.querySelector("#stdForm .w-50") as HTMLElement;
+      const empW50 = document.querySelector("#empForm .w-50") as HTMLElement;
+      const parentW50 = document.querySelector("#parentForm .w-50") as HTMLElement;
+      const alumniW50 = document.querySelector("#alumniForm .w-50") as HTMLElement;
+
+      // Hide native images
+      document.querySelectorAll("#stdForm img, #empForm img, #parentForm img, #alumniForm img").forEach(img => {
+        (img as HTMLElement).style.display = "none";
       });
+
+      // Bolts: hide native, create containers
+      const nativeBolts = document.querySelectorAll(".fa-bolt");
+      const boltContainers: HTMLElement[] = [];
+      nativeBolts.forEach(bolt => {
+        (bolt as HTMLElement).style.display = "none";
+        const div = document.createElement("span");
+        div.className = "retop-spotlight-bolt";
+        bolt.parentNode?.insertBefore(div, bolt);
+        boltContainers.push(div);
+      });
+
+      // Spotlight More... button
+      const moreBtn = document.querySelector(".spotlightHeader button, .spotlightHeader a, .spotlightHeader .btn-link") as HTMLElement;
+      let moreBtnContainer: HTMLElement | null = null;
+      if (moreBtn) {
+        moreBtn.textContent = ""; // Clear native "More..." text
+        moreBtnContainer = moreBtn;
+      }
+
+      const eyeIcon = document.querySelector("#passwordIcon");
+      const homeLinks = Array.from(
+        document.querySelectorAll('a[href="javascript:gotoHome()"]')
+      );
+
+      if (stdW50 || empW50 || parentW50 || alumniW50 || boltContainers.length > 0) {
+        injectedRef.current = true;
+
+        // Create icon container divs inside .w-50
+        const makeContainer = (parent: HTMLElement | null): HTMLElement | null => {
+          if (!parent) return null;
+          const existing = parent.querySelector(".retop-inline-icon");
+          if (existing) return existing as HTMLElement;
+          const div = document.createElement("div");
+          div.className = "retop-inline-icon";
+          parent.appendChild(div);
+          return div;
+        };
+
+        setTargets({
+          stdIconContainer: makeContainer(stdW50),
+          empIconContainer: makeContainer(empW50),
+          parentIconContainer: makeContainer(parentW50),
+          alumniIconContainer: makeContainer(alumniW50),
+          boltContainers,
+          moreBtnContainer,
+          eyeIcon,
+          homeLinks,
+        });
+
+        console.log("[retop] NativePortals injected icons & click handlers");
+      }
     };
 
-    findElements();
-    const observer = new MutationObserver(findElements);
-    observer.observe(document.body, { childList: true, subtree: true });
-    return () => observer.disconnect();
-  }, []);
+    // Try immediately
+    inject();
 
-  useEffect(() => {
-    Object.values(elements).flat().forEach((el) => {
-      if (el) (el as HTMLElement).dataset.retopPortal = "true";
-    });
-  }, [elements]);
+    // Retry after short delay if DOM not ready
+    if (!injectedRef.current) {
+      const timer = setTimeout(inject, 500);
+      const timer2 = setTimeout(inject, 1500);
+      return () => { clearTimeout(timer); clearTimeout(timer2); };
+    }
+  }, []);
 
   return (
     <>
-      {/* Role Card Left Icons — Material Symbols Rounded */}
-      {elements.stdImg && (
-        <PortalReplacer target={elements.stdImg} wrapperClass="retop-inline-icon">
-          <span className="material-symbols-rounded" style={{ fontSize: "38px" }}>school</span>
-        </PortalReplacer>
+      {/* Card Icons */}
+      {targets.stdIconContainer && (
+        <PortalInject container={targets.stdIconContainer}>
+          <School size="42px" />
+        </PortalInject>
       )}
-      {elements.empImg && (
-        <PortalReplacer target={elements.empImg} wrapperClass="retop-inline-icon">
-          <span className="material-symbols-rounded" style={{ fontSize: "38px" }}>badge</span>
-        </PortalReplacer>
+      {targets.empIconContainer && (
+        <PortalInject container={targets.empIconContainer}>
+          <Badge size="42px" />
+        </PortalInject>
       )}
-      {elements.parentImg && (
-        <PortalReplacer target={elements.parentImg} wrapperClass="retop-inline-icon">
-          <span className="material-symbols-rounded" style={{ fontSize: "38px" }}>family_restroom</span>
-        </PortalReplacer>
+      {targets.parentIconContainer && (
+        <PortalInject container={targets.parentIconContainer}>
+          <FamilyRestroom size="42px" />
+        </PortalInject>
       )}
-      {elements.alumniImg && (
-        <PortalReplacer target={elements.alumniImg} wrapperClass="retop-inline-icon">
-          <span className="material-symbols-rounded" style={{ fontSize: "38px" }}>workspace_premium</span>
-        </PortalReplacer>
+      {targets.alumniIconContainer && (
+        <PortalInject container={targets.alumniIconContainer}>
+          <WorkspacePremium size="42px" />
+        </PortalInject>
       )}
 
-      {/* Spotlight Bolt Icons — Material Symbols Rounded */}
-      {elements.bolts.map((bolt, i) => (
-        <PortalReplacer key={`bolt-${i}`} target={bolt} wrapperClass="retop-spotlight-bolt">
-          <span className="material-symbols-rounded" style={{ fontSize: "18px" }}>bolt</span>
-        </PortalReplacer>
+      {/* Bolt Icons */}
+      {targets.boltContainers.map((container, i) => (
+        <PortalInject key={`bolt-${i}`} container={container}>
+          <Bolt size="16px" />
+        </PortalInject>
       ))}
 
-      {/* Password Eye Toggle */}
-      {elements.eyeIcon && (
+      {/* Spotlight More... Button Icon */}
+      {targets.moreBtnContainer && (
+        <PortalInject container={targets.moreBtnContainer}>
+          <OpenInNew size="20px" />
+        </PortalInject>
+      )}
+
+      {/* Eye Toggle */}
+      {targets.eyeIcon && (
         <PortalReplacer
-          target={elements.eyeIcon}
+          target={targets.eyeIcon}
           wrapperStyle={{ cursor: "pointer", display: "inline-flex", fontSize: "24px" }}
         >
           <div onClick={() => (window as any).toggleEye()}>
-            <span className="material-symbols-rounded">visibility</span>
+            <Visibility size="24px" />
           </div>
         </PortalReplacer>
       )}
 
-      {/* Home Button Links */}
-      {elements.homeLinks.map((home, i) => (
+      {/* Home Links */}
+      {targets.homeLinks.map((home, i) => (
         <PortalReplacer
           key={`home-${i}`}
           target={home}
           wrapperStyle={{ display: "inline-flex", cursor: "pointer" }}
         >
           <div onClick={() => (window as any).gotoHome()}>
-            <span className="material-symbols-rounded">home</span>
+            <Home size="24px" />
           </div>
         </PortalReplacer>
       ))}

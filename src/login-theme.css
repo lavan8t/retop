@@ -460,8 +460,8 @@ body {
 
 .form-control:focus {
   border-color: var(--accent-base) !important;
-  box-shadow: 4px 4px 0px 0px var(--shadow-main) !important;
-  transform: translate(-1px, -1px);
+  box-shadow: none !important;
+  transform: none !important;
   outline: none !important;
 }
 
@@ -503,7 +503,7 @@ body {
   background: #ffcccc;
   color: #dc3545;
   border: 2px solid #dc3545;
-  box-shadow: 3px 3px 0px #dc3545;
+  box-shadow: none !important;
   padding: 12px 20px;
   border-radius: 6px;
   z-index: 999999;
@@ -517,7 +517,7 @@ body {
   background: #3f1a1a;
   color: #ffb3b3;
   border: 2px solid #ffb3b3;
-  box-shadow: 3px 3px 0px #ffb3b3;
+  box-shadow: none !important;
 }
 
 /* Yellow warning toast for Captcha */
@@ -525,14 +525,14 @@ body {
   background: #fff3cd;
   color: #856404;
   border: 2px solid #856404;
-  box-shadow: 3px 3px 0px #856404;
+  box-shadow: none !important;
 }
 
 [data-theme="dark"] .retop-error-toast.retop-warning-toast {
   background: #332701;
   color: #ffda6a;
   border: 2px solid #ffda6a;
-  box-shadow: 3px 3px 0px #ffda6a;
+  box-shadow: none !important;
 }
 
 @keyframes slideUpCenter {
@@ -566,9 +566,9 @@ body {
   font-family: 'Google Sans Flex', system-ui, sans-serif !important;
   font-variation-settings: "wdth" 151, "wght" 800, "GRAD" 100, "ROND" 100 !important;
   text-transform: uppercase;
-  border-radius: 0.75rem !important;
+  border-radius: 9999px !important;
   box-shadow: none !important;
-  padding: 0.5rem 1.5rem !important;
+  padding: 0.85rem 1.5rem !important;
   font-size: 1rem;
   letter-spacing: 0.05em;
   transition: all 0.15s ease-out;
@@ -578,14 +578,14 @@ body {
 
 .btn-primary:hover,
 .btn-success:hover {
-  transform: translateY(-2px);
-  box-shadow: 3px 3px 0px 0px var(--shadow-main) !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 .btn-primary:active,
 .btn-success:active {
-  transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0px 0px var(--shadow-main) !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 /* Links at the bottom */

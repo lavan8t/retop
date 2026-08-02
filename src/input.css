@@ -24,6 +24,28 @@
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
   }
 
+  /* Zero Borders on all Retop cards, filter chips, attendance cards, CGPA cards */
+  :host *, #retop-root * {
+    border-color: transparent;
+  }
+
+  .border,
+  .border-1,
+  .border-2,
+  .border-4,
+  .border-t,
+  .border-b,
+  .border-l,
+  .border-r,
+  .border-t-2,
+  .border-b-2,
+  .border-l-4,
+  .border-l-2,
+  .border-r-2 {
+    border-width: 0px !important;
+    border-style: none !important;
+  }
+
   :host,
   #retop-root {
     /* Base Accent (Injected dynamically by JS, default shown here) */

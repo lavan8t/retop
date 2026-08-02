@@ -5,6 +5,8 @@ import {
   injectGlobalFonts,
   initializeContainer,
   getAppRoot,
+  injectSplashScreen,
+  removeSplashScreen,
 } from "./utils/bridge";
 import React from "react";
 import { createRoot } from "react-dom/client";
@@ -70,64 +72,27 @@ try {
   }
 } catch (e) {}
 
-// ── Early intercept at document_start for /open/page ─────────────────
-// Runs BEFORE the DOM exists. Hides native body + shows branded loader
-// so the user never sees the ugly unstyled native page or slow icon fonts.
-const isOpenPage = window.location.pathname.includes("/vtop/open/page");
+// ── Early intercept at document_start for prelogin / open / login pages ──
+const isTopWindow = window.self === window.top;
+const isPreloginOrLoginPage =
+  isTopWindow && (
+    window.location.pathname.includes("/vtop/open/page") ||
+    window.location.pathname.includes("/vtop/vtopLogin") ||
+    window.location.pathname.includes("/vtop/login") ||
+    window.location.pathname.includes("/vtop/prelogin")
+  );
 
-if (isOpenPage) {
-  // 1. Inject CSS immediately to hide native body and show loader
-  const earlyStyle = document.createElement("style");
-  earlyStyle.id = "retop-early-cloak";
-  earlyStyle.textContent = `
-    /* Hide EVERYTHING until we're ready */
-    html, body { opacity: 0 !important; }
+if (isPreloginOrLoginPage) {
+  injectSplashScreen();
 
-    /* Branded loader overlay */
-    #retop-open-loader {
-      position: fixed; inset: 0; z-index: 99999;
-      display: flex; align-items: center; justify-content: center;
-      flex-direction: column; gap: 16px;
-      background: #09090b;
-      font-family: system-ui, sans-serif;
-      opacity: 1 !important;
-    }
-    #retop-open-loader .spinner {
-      width: 36px; height: 36px;
-      border: 3px solid #27272a;
-      border-top-color: #3b82f6;
-      border-radius: 50%;
-      animation: retop-spin 0.7s linear infinite;
-    }
-    #retop-open-loader .label {
-      color: #94a3b8; font-size: 0.85rem; font-weight: 500;
-      letter-spacing: 0.03em;
-    }
-    @keyframes retop-spin {
-      to { transform: rotate(360deg); }
-    }
-  `;
-  (document.head || document.documentElement).appendChild(earlyStyle);
-
-  // 2. Create the loader element
-  const loader = document.createElement("div");
-  loader.id = "retop-open-loader";
-  loader.innerHTML = `<div class="spinner"></div><div class="label">retop</div>`;
-  // Append to documentElement since body doesn't exist yet at document_start
-  document.documentElement.appendChild(loader);
-
-  // 3. Inject prelogin.css early so it's cached/parsed before DOM appears
-  const earlyLink = document.createElement("link");
-  earlyLink.id = "vtop-prelogin-theme";
-  earlyLink.rel = "stylesheet";
-  earlyLink.href = chrome.runtime.getURL("dist/prelogin.css");
-  (document.head || document.documentElement).appendChild(earlyLink);
-
-  // 4. Inject fonts early
-  injectGlobalFonts();
+  if (window.location.pathname.includes("/vtop/open/page")) {
+    const earlyLink = document.createElement("link");
+    earlyLink.id = "vtop-early-theme";
+    earlyLink.rel = "stylesheet";
+    earlyLink.href = chrome.runtime.getURL("dist/prelogin.css");
+    (document.head || document.documentElement).appendChild(earlyLink);
+  }
 }
-
-function removeSplashScreen() {}
 
 
 const originalFetch = window.fetch;
@@ -335,24 +300,26 @@ const init = async () => {
       document.getElementById("username") === null &&
       document.getElementById("captchaBlock") === null);
 
-  if (path.includes("/vtop/open/page") || isRoleSelection) {
+  const isLoginPage =
+    path.includes("/vtop/open/page") ||
+    path.includes("/vtop/vtopLogin") ||
+    path.includes("/vtop/login") ||
+    path.includes("/vtop/prelogin") ||
+    isRoleSelection;
+
+  if (isLoginPage) {
     // CSS was already injected at document_start. Now the DOM is ready:
     // remove the loader and uncloak the page.
-    injectPreloginTheme(); // no-op if already injected, ensures fallback
+    if (path.includes("/vtop/open/page")) {
+      injectPreloginTheme();
+    } else {
+      injectLoginTheme();
+      enhanceLegacyLogin();
+    }
 
-    // Remove loader overlay
-    const loader = document.getElementById("retop-open-loader");
-    if (loader) loader.remove();
+    removeSplashScreen();
 
-    // Remove the cloak that hid native html/body
-    const cloak = document.getElementById("retop-early-cloak");
-    if (cloak) cloak.remove();
-
-    // Force body visible
-    document.body.style.opacity = "1";
-    document.body.style.visibility = "visible";
-
-    console.log("[retop] Open page styled and revealed");
+    console.log("[retop] Open/login page styled and revealed");
 
     document.addEventListener(
       "click",
@@ -387,12 +354,17 @@ const init = async () => {
     return;
   }
 
-  if (path.includes("/vtop/login")) {
+  if (
+    path.toLowerCase().includes("login") ||
+    document.getElementById("username") !== null ||
+    document.getElementById("captchaStr") !== null
+  ) {
     enhanceLegacyLogin();
     return;
   }
 
   // --- Authenticated Pages Only ---
+  injectSplashScreen();
   document.body.classList.remove("show-legacy-ui");
   injectGlobalStyles();
 
@@ -804,8 +776,12 @@ const injectLoginTheme = () => {
     
     const asciiArt = rawArt.replace(/\r/g, "");
 
-    // Force left alignment so 2D grid coordinates (charX) perfectly match the DOM rendering
-    asciiPre.style.setProperty("text-align", "left", "important");
+    // Force left alignment for grid arts, except MGR which centers
+    if (pickedArt !== "MGR") {
+      asciiPre.style.setProperty("text-align", "left", "important");
+    } else {
+      asciiPre.style.removeProperty("text-align");
+    }
 
     if (pickedArt === "PRP") {
       asciiPre.style.letterSpacing = "0px";
@@ -822,8 +798,8 @@ const injectLoginTheme = () => {
     } else if (pickedArt === "MGR") {
       asciiPre.style.letterSpacing = "0px";
       asciiPre.style.setProperty("margin-right", "0px", "important");
-      asciiPre.style.setProperty("font-size", "5px", "important");
-      // line-height left to CSS default (1)
+      asciiPre.style.setProperty("font-size", "4.8px", "important");
+      asciiPre.style.setProperty("line-height", "4.4px", "important");
     }
     asciiPre.textContent = asciiArt;
     wrapper.appendChild(asciiPre);
@@ -870,8 +846,8 @@ const injectLoginTheme = () => {
       charW = 2.5; // ~40% smaller than 4.2
       charH = 4;
     } else if (pickedArt === "MGR") {
-      charW = 3.15; // 25% smaller than 4.2
-      charH = 5.25; // line-height is 1
+      charW = 2.9;
+      charH = 4.4;
     }
 
     const updateHoverPuddle = (
@@ -906,9 +882,15 @@ const injectLoginTheme = () => {
         const distance = Math.sqrt(dx * dx + dy * dy);
 
         // Check if mouse is touching an actual character ("water") with slight leniency
-        const charX = Math.floor(currentX / charW);
         const charY = Math.floor(currentY / charH);
         let onWater = false;
+
+        const getLineOffsetX = (lineLen: number) => {
+          if (pickedArt === "MGR") {
+            return Math.max(0, (rect.width - lineLen * charW) / 2);
+          }
+          return 0;
+        };
 
         // Check current char and surrounding chars for leniency (radius increased for sparse arts like MGR)
         for (
@@ -917,12 +899,15 @@ const injectLoginTheme = () => {
           cy++
         ) {
           const line = originalLines[cy];
+          const offsetX = getLineOffsetX(line.length);
+          const charX = Math.floor((currentX - offsetX) / charW);
+
           for (
             let cx = Math.max(0, charX - 8);
             cx <= Math.min(line.length - 1, charX + 8);
             cx++
           ) {
-            if (line[cx] && line[cx] !== " ") onWater = true;
+            if (cx >= 0 && line[cx] && line[cx] !== " ") onWater = true;
           }
         }
 
@@ -966,10 +951,12 @@ const injectLoginTheme = () => {
             return;
           }
 
+          const preWidth = asciiPre.getBoundingClientRect().width;
           let newText = "";
           for (let y = 0; y < originalLines.length; y++) {
             const line = originalLines[y];
             const py = y * charH;
+            const offsetX = pickedArt === "MGR" ? Math.max(0, (preWidth - line.length * charW) / 2) : 0;
 
             let newLine = "";
             for (let x = 0; x < line.length; x++) {
@@ -978,7 +965,7 @@ const injectLoginTheme = () => {
                 newLine += " ";
                 continue;
               }
-              const px = x * charW;
+              const px = offsetX + x * charW;
 
               let totalWave = 0;
               let isAffected = false;
@@ -1107,45 +1094,60 @@ const enhanceLegacyLogin = () => {
   const maxAttempts = 300; // 30 seconds (300 * 100ms)
 
   // Save/Restore Username
-  const usernameInput = document.getElementById("username") as HTMLInputElement;
+  const usernameInput = (document.getElementById("username") ||
+    document.querySelector("input[name='username']") ||
+    document.querySelector("input[name='uname']")) as HTMLInputElement;
+
   if (usernameInput) {
     chrome.storage.local.get("retop-saved-username", (result) => {
       const savedUser = result["retop-saved-username"] as string;
       if (savedUser && !usernameInput.value) {
         usernameInput.value = savedUser;
+        usernameInput.dispatchEvent(new Event("input", { bubbles: true }));
+        usernameInput.dispatchEvent(new Event("change", { bubbles: true }));
       }
     });
-    usernameInput.addEventListener("blur", () => {
+
+    const saveUser = () => {
       if (usernameInput.value) {
         chrome.storage.local.set({
           "retop-saved-username": usernameInput.value,
         });
       }
-    });
+    };
+
+    usernameInput.addEventListener("input", saveUser);
+    usernameInput.addEventListener("blur", saveUser);
+    usernameInput.form?.addEventListener("submit", saveUser);
   }
 
   // Polling loop to handle VTOP's asynchronous CAPTCHA loading
   const findAndSolve = setInterval(async () => {
     attempts++;
 
-    // Updated Selectors based on VTOP's current HTML structure
-    const captchaBlock = document.getElementById("captchaBlock");
-    injectLoginTheme();
-    const captchaImg = captchaBlock?.querySelector("img") as HTMLImageElement;
-    const captchaInput = document.getElementById(
-      "captchaStr",
-    ) as HTMLInputElement;
+    // Broadened selectors for VTOP login variations
+    const captchaImg = (document.getElementById("captchaCheck") ||
+      document.querySelector("#captchaBlock img") ||
+      document.querySelector("img[src*='captcha']")) as HTMLImageElement;
+    const captchaInput = (document.getElementById("captchaStr") ||
+      document.querySelector("input[name='captchaCheck']") ||
+      document.querySelector("input[placeholder*='Captcha']")) as HTMLInputElement;
+    const captchaBlock = document.getElementById("captchaBlock") || captchaImg?.parentElement;
 
-    // Check if image exists and actually has pixel data
-    if (
-      captchaBlock &&
-      captchaImg &&
-      captchaInput &&
-      captchaImg.complete &&
-      captchaImg.naturalWidth > 0
-    ) {
+    injectLoginTheme();
+
+    // Check if image and input exist in DOM
+    if (captchaImg && captchaInput) {
       clearInterval(findAndSolve);
-      console.log("[retop] CAPTCHA found. Initializing solver.");
+      console.log("[retop-captcha] CAPTCHA img & input found in DOM. Initializing solver...", captchaImg, captchaInput);
+
+      // Check for reCAPTCHA / hCaptcha presence
+      const recaptchaElem = document.querySelector(
+        ".g-recaptcha, iframe[src*='recaptcha'], #g-recaptcha, .h-captcha, iframe[src*='hcaptcha']",
+      );
+      if (recaptchaElem) {
+        console.log("[retop-captcha] reCAPTCHA / hCaptcha detected on page:", recaptchaElem);
+      }
 
       // Make it compact by physically restructuring the DOM safely
       const captchaInputGroup = captchaInput.closest(".input-group");
@@ -1168,23 +1170,22 @@ const enhanceLegacyLogin = () => {
           // Move captchaBlock into flexContainer
           flexContainer.appendChild(captchaBlock);
 
-          // Move the actual reload button into our container
-          const reloadBtn = document.getElementById("button-addon2");
+          // Ensure only ONE reload button exists and is styled properly
+          const reloadBtn = flexContainer.querySelector("#button-addon2, a[onclick*='loadCaptcha'], button[onclick*='loadCaptcha']");
           if (reloadBtn) {
-            flexContainer.appendChild(reloadBtn);
-            reloadBtn.className = ""; // Strip native Bootstrap classes like .btn
             reloadBtn.classList.add("retop-reload-btn");
-          } else {
-            // Fallback if inside captchaBlock
-            const fallbackReloadBtn = captchaBlock.querySelector("a, button");
-            if (fallbackReloadBtn) {
-              fallbackReloadBtn.className = "";
-              fallbackReloadBtn.classList.add("retop-reload-btn");
+          }
+
+          // Clean up any duplicate reload buttons inside flexContainer
+          const allReloadBtns = flexContainer.querySelectorAll("#button-addon2, .retop-reload-btn, button[onclick*='loadCaptcha']");
+          if (allReloadBtns.length > 1) {
+            for (let i = 1; i < allReloadBtns.length; i++) {
+              allReloadBtns[i].remove();
             }
           }
 
           // Physically remove the old wrappers
-          if (captchaInputGroup) {
+          if (captchaInputGroup && captchaInputGroup !== flexContainer) {
             captchaInputGroup.remove();
           }
           const oldCol = document
@@ -1199,10 +1200,12 @@ const enhanceLegacyLogin = () => {
           const solvedText = await autoSolveCaptcha(imgElement);
           if (solvedText && captchaInput) {
             captchaInput.value = solvedText;
-            console.log("[retop] CAPTCHA Auto-Solved:", solvedText);
+            captchaInput.dispatchEvent(new Event("input", { bubbles: true }));
+            captchaInput.dispatchEvent(new Event("change", { bubbles: true }));
+            console.log("[retop-captcha] CAPTCHA Auto-Solved & filled:", solvedText);
           }
         } catch (e) {
-          console.error("[retop] Failed to solve CAPTCHA:", e);
+          console.error("[retop-captcha] Failed to solve CAPTCHA:", e);
         }
       };
 
@@ -1211,30 +1214,30 @@ const enhanceLegacyLogin = () => {
 
       // Attach observer to the wrapper block, not the image.
       // VTOP uses innerHTML to replace the image, which destroys the old image node.
-      const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-          if (mutation.addedNodes && mutation.addedNodes.length > 0) {
-            const newImg = captchaBlock.querySelector(
-              "img",
-            ) as HTMLImageElement;
-            if (newImg) {
-              captchaInput.value = ""; // Clear old value immediately
-              if (newImg.complete && newImg.naturalWidth > 0) {
-                solve(newImg);
-              } else {
-                newImg.addEventListener("load", () => solve(newImg), {
-                  once: true,
-                });
+      if (captchaBlock) {
+        const observer = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            if (mutation.addedNodes && mutation.addedNodes.length > 0) {
+              const newImg = (captchaBlock.querySelector("img") || document.getElementById("captchaCheck")) as HTMLImageElement;
+              if (newImg) {
+                captchaInput.value = ""; // Clear old value immediately
+                if (newImg.complete && newImg.naturalWidth > 0) {
+                  solve(newImg);
+                } else {
+                  newImg.addEventListener("load", () => solve(newImg), {
+                    once: true,
+                  });
+                }
               }
             }
-          }
+          });
         });
-      });
 
-      observer.observe(captchaBlock, { childList: true, subtree: true });
+        observer.observe(captchaBlock, { childList: true, subtree: true });
+      }
     } else if (attempts >= maxAttempts) {
       clearInterval(findAndSolve);
-      console.warn("[retop] CAPTCHA elements not found after 30 seconds.");
+      console.log("[retop-captcha] CAPTCHA search polling finished.");
     }
   }, 100);
 };

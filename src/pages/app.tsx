@@ -171,6 +171,10 @@ export function renderDashboard() {
 }
 
 const DashboardApp = () => {
+  useEffect(() => {
+    removeSplashScreen();
+  }, []);
+
   const [menu, setMenu] = useState<MenuCategory[]>([]);
   const [spotlightCategories, setSpotlightCategories] = useState<SpotlightCategoryGroup[]>([]);
   const [isOmniboxOpen, setIsOmniboxOpen] = useState(false);

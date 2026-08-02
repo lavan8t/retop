@@ -204,6 +204,13 @@ if (existsSync(iconsDir)) {
   console.log("  - icons/");
 }
 
+// Copy manifest.json
+const manifestPath = resolve(ROOT, "manifest.json");
+if (existsSync(manifestPath)) {
+  copyFileSync(manifestPath, resolve(DIST, "manifest.json"));
+  console.log("  - manifest.json");
+}
+
 // ── Done: Report sizes ──────────────────────────────────────────────
 import { statSync, readdirSync, readFileSync } from "fs";
 import { gzipSync } from "zlib";

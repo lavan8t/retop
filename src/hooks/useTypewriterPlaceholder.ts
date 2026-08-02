@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 
 const PHRASES = [
-  "timetable",
-  "digital assignment",
-  "marks view",
-  "academics calendar",
-  "biometric view",
-  "curriculum",
-  "course page"
+  "Timetable",
+  "Assignments",
+  "Marks View",
+  "Academic Calendar",
+  "Biometric View",
+  "Curriculum",
+  "Course Page"
 ];
 
 export function useTypewriterPlaceholder() {

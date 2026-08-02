@@ -74,11 +74,10 @@ if (!contentBuild.success) {
 }
 console.log("  - content.js, injected.js, background.js");
 
-// ── Step 2: Build popup + offline React bundles ─────────────────────
-console.log("Building popup + offline...");
+// ── Step 2: Build offline React bundle ──────────────────────────────
+console.log("Building offline...");
 const popupBuild = await Bun.build({
   entrypoints: [
-    resolve(ROOT, "src/popup.tsx"),
     resolve(ROOT, "src/offline.tsx"),
   ],
   outdir: DIST,
@@ -103,11 +102,11 @@ const popupBuild = await Bun.build({
 });
 
 if (!popupBuild.success) {
-  console.error("Popup/offline build failed:");
+  console.error("Offline build failed:");
   for (const log of popupBuild.logs) console.error(log);
   process.exit(1);
 }
-console.log("  - popup.js, offline.js");
+console.log("  - offline.js");
 
 // ── Step 3: Tailwind CSS via CLI ────────────────────────────────────
 console.log("Building CSS with Tailwind...");
@@ -140,13 +139,26 @@ if (loginCssProc.exitCode !== 0) {
 }
 console.log("  - login.css");
 
+// prelogin.css → dist/prelogin.css
+const preloginCssProc = Bun.spawnSync([
+  "bunx", "tailwindcss",
+  "-i", resolve(ROOT, "src/styles/prelogin.css"),
+  "-o", resolve(DIST, "prelogin.css"),
+  ...(IS_PROD ? ["--minify"] : []),
+], { cwd: ROOT, stdio: ["inherit", "inherit", "inherit"] });
+
+if (preloginCssProc.exitCode !== 0) {
+  console.error("Tailwind build failed for prelogin.css");
+  process.exit(1);
+}
+console.log("  - prelogin.css");
+
 // ── Step 4: Copy + rewrite HTML files ───────────────────────────────
 console.log("Processing HTML...");
 
 function processHtml(srcPath: string, outName: string, jsEntryName: string) {
   let html = readFileSync(srcPath, "utf-8");
   // Replace source script tags with built JS
-  // Match: <script type="module" src="./src/popup.tsx"> or similar
   html = html.replace(
     /<script\s+type="module"\s+src="[^"]*">\s*<\/script>/,
     `<script type="module" src="./${jsEntryName}.js"></script>`
@@ -154,9 +166,8 @@ function processHtml(srcPath: string, outName: string, jsEntryName: string) {
   writeFileSync(resolve(DIST, outName), html);
 }
 
-processHtml(resolve(ROOT, "popup.html"), "popup.html", "popup");
 processHtml(resolve(ROOT, "offline.html"), "offline.html", "offline");
-console.log("  - popup.html, offline.html");
+console.log("  - offline.html");
 
 // ── Step 5: Copy static assets ──────────────────────────────────────
 console.log("Copying static assets...");

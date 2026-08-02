@@ -96,3 +96,16 @@ export function formatTimeStr(timeStr: string, use24Hour: boolean): string {
 
   return convert(timeStr);
 }
+
+export const toTitleCase = (str: string): string => {
+  if (!str) return "";
+  if (str === "retop") return "retop";
+  return str
+    .toLowerCase()
+    .split(" ")
+    .map((word) => {
+      if (word.length === 0) return "";
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join(" ");
+};

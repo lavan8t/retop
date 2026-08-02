@@ -13,8 +13,10 @@ import {
 import { QuickLink, MenuCategory } from "../../types/vtop";
 import { MarqueeText } from "../common/MarqueeText";
 import { useDataStore } from "../../store/dataStore";
+import { useAppStore } from "../../store/appStore";
 import { getCategoryIcon } from "../../utils/icons";
 import { Tooltip } from "../ui/Tooltip";
+import { toTitleCase } from "../../utils/formatting";
 
 interface TopBarSearchProps {
   currentView: string;
@@ -39,9 +41,72 @@ const getDestinationView = (link: QuickLink) => {
     : "content";
 };
 
+export const hasRetopPage = (link: QuickLink | string): boolean => {
+  const url = (typeof link === "string" ? link : link.url).toLowerCase().trim();
+  const title = (typeof link === "string" ? "" : link.title).toLowerCase().trim();
+
+  // 1. Primary check: Request URL matching
+  const hasUrlMatch =
+    url.includes("studenttimetable") ||
+    url.includes("studentattendance") ||
+    url.includes("studentda") ||
+    url.includes("studentmark") ||
+    url.includes("studentgradeview") ||
+    url.includes("studexamschedule") ||
+    url.includes("studentprofileallview") ||
+    url.includes("curriculum") ||
+    url.includes("coursepage");
+
+  if (hasUrlMatch) return true;
+
+  // 2. Secondary check: Strict EXACT full title match only
+  const exactFullTitles = [
+    "timetable",
+    "time table",
+    "class attendance",
+    "attendance",
+    "digital assignments",
+    "digital assignment upload",
+    "assignments",
+    "marks",
+    "marks view",
+    "grades view",
+    "grades & history",
+    "exam schedule",
+    "profile",
+    "curriculum",
+    "course page",
+  ];
+
+  return exactFullTitles.includes(title);
+};
+
 const fuzzyMatch = (str: string, pattern: string) => {
   pattern = pattern.split("").reduce((a, b) => a + ".*" + b);
   return new RegExp(pattern).test(str);
+};
+
+const renderCategoryTitle = (catTitle: string) => {
+  const titleStr = toTitleCase(catTitle);
+  if (titleStr.toLowerCase().includes("retop")) {
+    const parts = titleStr.split(/retop/i);
+    return (
+      <span>
+        {parts[0]}
+        <span
+          className="font-logo retop-logo inline-block lowercase text-(--accent-base)"
+          style={{
+            fontFamily: "var(--font-expanded)",
+            fontVariationSettings: "'wdth' 125, 'wght' 700, 'ROND' 100, 'slnt' -10",
+          }}
+        >
+          retop
+        </span>
+        {parts[1] || ""}
+      </span>
+    );
+  }
+  return titleStr;
 };
 
 export const TopBarSearch: React.FC<TopBarSearchProps> = ({
@@ -60,6 +125,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
   isSyncing = false,
   lastSyncTime = 0,
 }) => {
+  const { isModernUI } = useAppStore();
   const [query, setQuery] = useState(initialQuery);
   const [isShiftPressed, setIsShiftPressed] = useState(false);
 
@@ -94,31 +160,28 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
   const handleMenuLeave = () => {
     closeTimeoutRef.current = setTimeout(() => {
       setActiveMenu(null);
-    }, 300);
+    }, 150);
   };
 
   const isExpanded = isOmniboxOpen;
 
   useEffect(() => {
-    if (isOmniboxOpen) {
+    if (isExpanded) {
       setTimeout(() => {
         if (inputRef.current) inputRef.current.focus();
       }, 50);
-    }
-  }, [isOmniboxOpen]);
-
-  useEffect(() => {
-    if (isExpanded && initialQuery) {
-      setQuery(initialQuery);
-    }
-  }, [isExpanded, initialQuery]);
-
-  useEffect(() => {
-    if (!isExpanded) {
+    } else {
       setQuery("");
       setActiveMenu(null);
     }
   }, [isExpanded]);
+
+  useEffect(() => {
+    if (initialQuery) {
+      setQuery(initialQuery);
+      setIsOmniboxOpen(true);
+    }
+  }, [initialQuery]);
 
   useEffect(() => {
     if (query) {
@@ -132,46 +195,47 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
       if (inputRef.current) inputRef.current.focus();
     };
     window.addEventListener("vtop-omnibox-type", handleOmniboxType);
-    return () => window.removeEventListener("vtop-omnibox-type", handleOmniboxType);
+    return () =>
+      window.removeEventListener("vtop-omnibox-type", handleOmniboxType);
   }, []);
 
-  const flattenedLinks = useMemo(() => {
-    const staticLinks: QuickLink[] = [];
+  const allCategories = useMemo(() => {
+    const retopNativeLinks: QuickLink[] = [
+      { title: "Time Table", url: "academics/common/StudentTimeTable", category: "Made for retop" },
+      { title: "Class Attendance", url: "academics/common/StudentAttendance", category: "Made for retop" },
+      { title: "Digital Assignments", url: "examinations/StudentDA", category: "Made for retop" },
+      { title: "Marks View", url: "examinations/StudentMarkView", category: "Made for retop" },
+      { title: "Grades View", url: "examinations/StudentGradeView", category: "Made for retop" },
+      { title: "Academic Calendar", url: "academics/common/CalendarPreview", category: "Made for retop" },
+      { title: "Student Profile", url: "studentsRecord/StudentProfileAllView", category: "Made for retop" },
+      { title: "Curriculum", url: "academics/common/CurriculumSyllabus", category: "Made for retop" },
+      { title: "Exam Schedule", url: "examinations/StudExamSchedule", category: "Made for retop" },
+    ];
 
-    if ((window as any).__RETOP_OFFLINE__) {
-      staticLinks.push(
-        {
-          title: "Time Table",
-          url: "academics/common/StudentTimeTable",
-          category: "Academics",
-        },
-        {
-          title: "Academic Calendar",
-          url: "academics/common/CalendarPreview",
-          category: "Academics",
-        },
-        {
-          title: "Profile",
-          url: "studentsRecord/StudentProfileAllView",
-          category: "Profile",
-        },
-        {
-          title: "Marks View",
-          url: "examinations/StudentMarkView",
-          category: "Examinations",
-        },
-        {
-          title: "Grades View",
-          url: "examinations/StudentGradeView",
-          category: "Examinations",
-        },
-        {
-          title: "Attendance",
-          url: "academics/common/StudentAttendance",
-          category: "Academics",
-        },
-      );
-    }
+    const madeForRetopCat: MenuCategory = {
+      id: "made-for-retop",
+      title: "Made for retop",
+      links: retopNativeLinks,
+    };
+
+    const filtered = menuCategories.filter(
+      (c) => c.title !== "Made for retop",
+    );
+    return [madeForRetopCat, ...filtered];
+  }, [menuCategories]);
+
+  const flattenedLinks = useMemo(() => {
+    const staticLinks: QuickLink[] = [
+      { title: "Time Table", url: "academics/common/StudentTimeTable", category: "Made for retop" },
+      { title: "Class Attendance", url: "academics/common/StudentAttendance", category: "Made for retop" },
+      { title: "Digital Assignments", url: "examinations/StudentDA", category: "Made for retop" },
+      { title: "Marks View", url: "examinations/StudentMarkView", category: "Made for retop" },
+      { title: "Grades View", url: "examinations/StudentGradeView", category: "Made for retop" },
+      { title: "Academic Calendar", url: "academics/common/CalendarPreview", category: "Made for retop" },
+      { title: "Student Profile", url: "studentsRecord/StudentProfileAllView", category: "Made for retop" },
+      { title: "Curriculum", url: "academics/common/CurriculumSyllabus", category: "Made for retop" },
+      { title: "Exam Schedule", url: "examinations/StudExamSchedule", category: "Made for retop" },
+    ];
 
     const allLinks = [
       ...staticLinks,
@@ -186,8 +250,24 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
 
       allLinks.forEach((link) => {
         const titleLower = link.title.toLowerCase();
+        const urlLower = link.url.toLowerCase();
         let score = 0;
-        if (titleLower === lowerQ) score = 100;
+
+        const isAssignmentPage =
+          titleLower === "assignments" ||
+          titleLower === "digital assignments" ||
+          titleLower === "digital assignment upload" ||
+          urlLower.includes("studentda");
+
+        const searchMatchesAssignment =
+          lowerQ.includes("digital") ||
+          lowerQ.includes("assignment") ||
+          lowerQ.includes("upload") ||
+          lowerQ === "da";
+
+        if (isAssignmentPage && searchMatchesAssignment) {
+          score = 90;
+        } else if (titleLower === lowerQ) score = 100;
         else if (titleLower.startsWith(lowerQ)) score = 80;
         else if (titleLower.includes(lowerQ)) score = 50;
         else if (fuzzyMatch(titleLower, lowerQ)) score = 10;
@@ -202,13 +282,21 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
 
     const grouped = new Map<string, QuickLink[]>();
     sortedMatches.forEach((link) => {
-      const cat = link.category || "Other";
+      const cat = hasRetopPage(link) ? "Made for retop" : (link.category || "Other");
       if (!grouped.has(cat)) grouped.set(cat, []);
       grouped.get(cat)!.push(link);
     });
 
     const finalLinks: QuickLink[] = [];
-    grouped.forEach((links) => finalLinks.push(...links));
+    if (grouped.has("Made for retop")) {
+      finalLinks.push(...grouped.get("Made for retop")!);
+    }
+    grouped.forEach((links, catKey) => {
+      if (catKey !== "Made for retop") {
+        finalLinks.push(...links);
+      }
+    });
+
     return finalLinks;
   }, [query, menuCategories]);
 
@@ -225,7 +313,9 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
         );
       } else if (query && e.key === "Enter" && flattenedLinks[selectedIndex]) {
         e.preventDefault();
-        onNavigate(flattenedLinks[selectedIndex], e.shiftKey);
+        const selLink = flattenedLinks[selectedIndex];
+        const forceLegacy = e.shiftKey ? isModernUI : !isModernUI;
+        onNavigate(selLink, forceLegacy);
         setIsOmniboxOpen(false);
       } else if (e.key === "Escape") {
         e.preventDefault();
@@ -246,6 +336,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
     onNavigate,
     setIsOmniboxOpen,
     activeMenu,
+    isModernUI,
   ]);
 
   const isSearchActive = isExpanded;
@@ -270,15 +361,18 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(event.target as Node)
+      ) {
         setIsOmniboxOpen(false);
       }
     };
-    
+
     if (isExpanded) {
       document.addEventListener("mousedown", handleClickOutside);
     }
-    
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
@@ -288,7 +382,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
     <div ref={wrapperRef} className="relative flex flex-col z-50">
       {/* Unified Search Bar */}
       <div
-        className={`group flex items-center gap-3 transition-all duration-fast ease-out cursor-text md:min-w-[360px] pl-4 pr-3 h-12 md:h-14 rounded-[32px] relative z-10000 bg-transparent border-2 border-transparent shadow-none`}
+        className={`group flex items-center gap-3 transition-all duration-fast ease-out cursor-text md:min-w-90 pl-4 pr-3 h-12 md:h-14 rounded-[32px] relative z-10000 bg-transparent border-2 border-transparent shadow-none`}
       >
         <div className="relative flex items-center shrink-0">
           <Tooltip text="Return to Dashboard">
@@ -320,29 +414,27 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
               </div>
             </button>
           </Tooltip>
-
-
         </div>
 
         <div className="relative flex-1 w-full min-w-0 flex items-center">
           {query &&
             flattenedLinks.length > 0 &&
-            flattenedLinks[0].title
+            toTitleCase(flattenedLinks[0].title)
               .toLowerCase()
               .startsWith(query.toLowerCase()) && (
               <div className="absolute left-2 top-0 bottom-0 flex items-center pointer-events-none w-full overflow-hidden">
-                <span className="text-lg md:text-xl font-bold text-transparent whitespace-pre uppercase">
+                <span className="text-lg md:text-xl font-bold text-transparent whitespace-pre">
                   {query}
                 </span>
-                <span className="text-lg md:text-xl font-bold text-(--text-muted) opacity-50 whitespace-pre uppercase truncate">
-                  {flattenedLinks[0].title.slice(query.length)}
+                <span className="text-lg md:text-xl font-bold text-(--text-muted) opacity-50 whitespace-pre truncate">
+                  {toTitleCase(flattenedLinks[0].title).slice(query.length)}
                 </span>
               </div>
             )}
           <input
             ref={inputRef}
             type="text"
-            placeholder={pageTitle}
+            placeholder={toTitleCase(pageTitle)}
             value={query}
             onChange={(e) => {
               const sanitized = e.target.value.replace(/[^a-zA-Z\s]/g, "");
@@ -357,7 +449,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
               if (!isExpanded) setIsOmniboxOpen(true);
             }}
             onFocus={() => setIsOmniboxOpen(true)}
-            className={`w-full bg-transparent text-lg md:text-xl font-bold text-(--text-main) focus:outline-none placeholder:text-(--text-main) placeholder:opacity-100 min-w-0 text-left pl-2 relative z-10 ${query ? "uppercase" : "normal-case"}`}
+            className="w-full bg-transparent text-lg md:text-xl font-bold text-(--text-main) focus:outline-none placeholder:text-(--text-main) placeholder:opacity-100 min-w-0 text-left pl-2 relative z-10 normal-case"
           />
         </div>
       </div>
@@ -370,7 +462,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="absolute top-full mt-2 left-0 w-full max-w-[calc(100vw-24px)] bg-(--bg-surface) border-0 rounded-[32px] z-10001 origin-top-left flex flex-col will-change-transform transform-gpu overflow-hidden popup-shadow p-2"
+            className="absolute top-full mt-2 left-0 w-full max-w-[calc(100vw-24px)] bg-(--bg-surface) border-0 rounded-3xl z-10001 origin-top-left flex flex-col will-change-transform transform-gpu overflow-hidden popup-shadow p-2"
           >
             <div className="p-1">
               <div className="flex flex-col gap-1 max-h-[50vh] overflow-y-auto custom-scrollbar pr-1.5">
@@ -380,7 +472,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                     onMouseLeave={handleMenuLeave}
                     onMouseEnter={handleMenuEnter}
                   >
-                    {menuCategories.map((cat, catIdx) => {
+                    {allCategories.map((cat, catIdx) => {
                       const CatIcon = getCategoryIcon(cat.title);
                       const isActive = activeMenu?.cat.title === cat.title;
                       return (
@@ -393,16 +485,16 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                               rect: e.currentTarget.getBoundingClientRect(),
                             });
                           }}
-                          className={`flex w-full items-center justify-between p-3 rounded-2xl transition-all duration-fast ease-out group ${isActive ? "bg-(--accent-base) text-(--text-inverse)" : "bg-transparent text-(--text-main) hover:bg-(--bg-highlight)"}`}
+                          className={`flex w-full items-center justify-between p-2 md:p-2.5 rounded-xl transition-all duration-fast ease-out group ${isActive ? "bg-(--accent-base) text-(--text-inverse)" : "bg-transparent text-(--text-main) hover:bg-(--bg-highlight)"}`}
                         >
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2.5">
                             <CatIcon
-                              className={`w-5 h-5 transition-colors ${isActive ? "text-(--text-inverse)" : "text-(--text-muted) group-hover:text-(--accent-base)"}`}
+                              className={`w-4 h-4 md:w-5 md:h-5 transition-colors ${isActive ? "text-(--text-inverse)" : "text-(--text-muted) group-hover:text-(--accent-base)"}`}
                             />
                             <span
-                              className={`font-expanded font-black text-xs uppercase text-left transition-colors ${isActive ? "text-(--text-inverse)" : "text-(--text-main) group-hover:text-(--accent-base)"}`}
+                              className={`font-expanded font-bold text-xs text-left transition-colors ${isActive ? "text-(--text-inverse)" : "text-(--text-main) group-hover:text-(--accent-base)"}`}
                             >
-                              {cat.title}
+                              {renderCategoryTitle(cat.title)}
                             </span>
                           </div>
                           <ChevronRight
@@ -415,7 +507,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                 ) : flattenedLinks.length === 0 ? (
                   <div className="flex flex-col items-center justify-center p-6 text-(--text-dim)">
                     <Error className="w-8 h-8 mb-2 opacity-50" />
-                    <span className="font-expanded text-sm uppercase text-(--text-muted)">
+                    <span className="font-expanded text-sm font-bold text-(--text-muted)">
                       No Matches
                     </span>
                   </div>
@@ -430,56 +522,62 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                         pinnedLinks.some(
                           (p) => getDestinationView(p) === linkDest,
                         );
-                      const category = link.category || "Other";
+                      const category = hasRetopPage(link) ? "Made for retop" : (link.category || "Other");
                       const isNewCategory = category !== currentCategory;
                       if (isNewCategory) currentCategory = category;
 
                       return (
                         <React.Fragment key={i}>
                           {isNewCategory && (
-                            <div className="px-3 pt-4 pb-2 text-[11px] font-expanded font-black text-(--text-main) uppercase tracking-wider border-b border-(--border-dim) mb-2">
-                              {currentCategory}
+                            <div className="px-2.5 pt-3 pb-1.5 text-[11px] font-expanded font-bold text-(--text-main) tracking-wider border-b border-(--border-dim) mb-1.5">
+                              {renderCategoryTitle(currentCategory)}
                             </div>
                           )}
                           <div className="relative w-full mb-1 group">
                             <button
                               onClick={(e) => {
-                                onNavigate(link, e.shiftKey);
+                                const forceLegacy = e.shiftKey ? isModernUI : !isModernUI;
+                                onNavigate(link, forceLegacy);
                                 setIsOmniboxOpen(false);
                                 setQuery("");
                               }}
                               onMouseEnter={() => setSelectedIndex(i)}
-                              className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-3 border-4 ${
+                              className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 border-2 ${
                                 isSelected
                                   ? "bg-(--accent-base) text-(--text-inverse) border-(--border-main) shadow-none -translate-y-px"
                                   : "bg-transparent border-transparent text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main)"
                               }`}
                             >
-                              <div className="flex-1 min-w-0 pr-8 flex items-center h-5">
-                                <MarqueeText text={link.title} />
+                              <div className="flex-1 min-w-0 pr-8 flex items-center justify-between gap-2 h-5">
+                                <MarqueeText text={toTitleCase(link.title)} />
+                                {hasRetopPage(link) && (
+                                  <span className={`text-[9px] font-black px-1.5 py-0.5 rounded leading-none shrink-0 ${isSelected ? "bg-white/20 text-white" : "bg-(--accent-base)/20 text-(--accent-base)"}`}>
+                                    re.
+                                  </span>
+                                )}
                               </div>
                             </button>
                             <div
                               className={`absolute right-1 top-1 bottom-1 w-12 pr-1 flex items-center justify-end rounded-r-xl transition-all pointer-events-none z-20 ${!isPinned ? "opacity-50 group-hover:opacity-100" : "opacity-100"}`}
                             >
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onTogglePin(link);
-                                  }}
-                                  className={`pointer-events-auto p-1.5 rounded-xl transition-all border-2 shadow-none hover:bg-(--bg-highlight) ${
-                                    isPinned
-                                      ? "bg-transparent text-(--accent-base) border-transparent"
-                                      : "bg-transparent border-transparent text-(--text-muted) hover:text-(--text-main)"
-                                  }`}
-                                  title={
-                                    isPinned ? "Unpin from Dock" : "Pin to Dock"
-                                  }
-                                >
-                                  <Star
-                                    className={`w-4 h-4 transition-transform ${isPinned ? "scale-110" : "scale-100 opacity-50 group-hover:opacity-100"}`}
-                                  />
-                                </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onTogglePin(link);
+                                }}
+                                className={`pointer-events-auto p-1.5 rounded-xl transition-all border-2 shadow-none hover:bg-(--bg-highlight) ${
+                                  isPinned
+                                    ? "bg-transparent text-(--accent-base) border-transparent"
+                                    : "bg-transparent border-transparent text-(--text-muted) hover:text-(--text-main)"
+                                }`}
+                                title={
+                                  isPinned ? "Unpin from Dock" : "Pin to Dock"
+                                }
+                              >
+                                <Star
+                                  className={`w-4 h-4 transition-transform ${isPinned ? "scale-110" : "scale-100 opacity-50 group-hover:opacity-100"}`}
+                                />
+                              </button>
                             </div>
                           </div>
                         </React.Fragment>
@@ -491,10 +589,27 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
               <div className="w-full text-center py-2 px-3 text-[10px] font-bold text-(--text-muted) border-t-2 border-(--border-dim) bg-(--bg-surface) shrink-0 mt-1">
                 {isShiftPressed ? (
                   <>
-                    Press Enter to open in <span className="!font-['Times_New_Roman',Times,serif] font-bold text-(--text-main) !text-[12px]">VTOP</span>
+                    Press Shift + Enter to open in{" "}
+                    {isModernUI ? (
+                      <span className="!font-['Times_New_Roman',Times,serif] font-bold text-(--text-main) !text-[12px]">
+                        VTOP
+                      </span>
+                    ) : (
+                      <span
+                        className="font-logo retop-logo inline-block lowercase text-(--accent-base)"
+                        style={{
+                          fontFamily: "var(--font-expanded)",
+                          fontVariationSettings: "'wdth' 125, 'wght' 700, 'ROND' 100, 'slnt' -10",
+                        }}
+                      >
+                        retop
+                      </span>
+                    )}
                   </>
                 ) : (
-                  <>Hold Shift and press Enter to launch that page in VTOP</>
+                  <>
+                    <span className="font-mono font-bold text-(--accent-base)">Shift + Enter</span> for {isModernUI ? "VTOP" : "retop"} &nbsp;•&nbsp; <span className="font-mono font-bold text-(--text-muted)">Enter</span> for {isModernUI ? "retop" : "VTOP"}
+                  </>
                 )}
               </div>
             </div>
@@ -511,7 +626,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
             animate={{ opacity: 1, scaleX: 1, scaleY: 1, x: 0 }}
             exit={{ opacity: 0, scaleX: 0.3, scaleY: 0.8, x: -20 }}
             transition={{ type: "spring", stiffness: 500, damping: 30 }}
-            className="absolute z-[10001] bg-(--bg-surface) border-4 border-(--border-main) rounded-2xl shadow-(--brutal-shadow-hover) p-2 flex flex-col"
+            className="absolute z-[10001] bg-(--bg-surface) border-4 border-(--border-main) rounded-2xl popup-shadow shadow-2xl shadow-black/50 p-2 flex flex-col"
             style={{
               transformOrigin: "left center",
               left: activeMenu.rect.right ? activeMenu.rect.right + 12 : 0,
@@ -536,17 +651,22 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                   id={`home-popup-item-${i}`}
                   onMouseEnter={() => setSelectedIndex(i)}
                   onClick={(e) => {
-                    onNavigate(link, e.shiftKey);
+                    onNavigate(link, e.altKey && hasRetopPage(link) ? false : e.shiftKey);
                     setActiveMenu(null);
                     setIsOmniboxOpen(false);
                   }}
-                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 group ${
+                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between gap-2 group ${
                     i === selectedIndex && !query
                       ? "bg-(--accent-base) text-(--text-inverse)"
                       : "bg-transparent text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main)"
                   }`}
                 >
                   <span className="flex-1 truncate">{link.title}</span>
+                  {hasRetopPage(link) && (
+                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded leading-none shrink-0 ${i === selectedIndex && !query ? "bg-white/20 text-white" : "bg-(--accent-base)/20 text-(--accent-base)"}`}>
+                      re.
+                    </span>
+                  )}
                 </button>
               ))}
             </div>

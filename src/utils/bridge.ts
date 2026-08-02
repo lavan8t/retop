@@ -24,6 +24,33 @@ export function getAppRoot(): HTMLElement | null {
 }
 
 export function injectGlobalFonts() {
+  if (!document.getElementById("retop-material-symbols-style")) {
+    const style = document.createElement("style");
+    style.id = "retop-material-symbols-style";
+    style.textContent = `
+      @font-face {
+        font-family: 'Material Symbols Rounded';
+        font-style: normal;
+        font-weight: 100 700;
+        src: url("chrome-extension://${chrome.runtime.id}/dist/fonts/material-symbols-rounded.woff2") format('woff2');
+      }
+
+      .material-symbols-rounded {
+        font-family: 'Material Symbols Rounded' !important;
+        font-weight: normal !important;
+        font-style: normal !important;
+        display: inline-block !important;
+        line-height: 1 !important;
+        text-transform: none !important;
+        letter-spacing: normal !important;
+        word-wrap: normal !important;
+        white-space: nowrap !important;
+        direction: ltr !important;
+        -webkit-font-smoothing: antialiased !important;
+      }
+    `;
+    (document.head || document.documentElement).appendChild(style);
+  }
 }
 
 export function injectGlobalStyles() {
@@ -39,38 +66,65 @@ export function injectGlobalStyles() {
 }
 
 export function initializeContainer() {
-  if (isInitialized) return;
+  if (isInitialized && document.getElementById("retop-host")) return;
 
   if ((window as any).__RETOP_OFFLINE__) {
     const root = document.getElementById("root") || document.body;
     const appRoot = document.createElement("div");
     appRoot.id = "retop-root";
     appRoot.style.cssText = "width: 100%; height: 100%; pointer-events: auto; background: transparent;";
-    root.appendChild(appRoot);
+    root?.appendChild(appRoot);
     isInitialized = true;
     return;
   }
 
-  const host = document.createElement("div");
-  host.id = "retop-host";
+  let host = document.getElementById("retop-host") as HTMLElement;
+  if (!host) {
+    host = document.createElement("div");
+    host.id = "retop-host";
+  }
 
-  // Set default fixed positioning.
   host.style.cssText =
-    "position: fixed; inset: 0; z-index: 2147483647; pointer-events: none; background: transparent;";
-  document.body.appendChild(host);
+    "position: fixed !important; inset: 0 !important; z-index: 2147483647 !important; pointer-events: none; background: transparent !important;";
 
-  shadowRoot = host.attachShadow({ mode: "open" });
+  const parent = document.documentElement || document.body;
+  if (parent && host.parentElement !== parent) {
+    parent.appendChild(host);
+  }
 
-  const cssLink = document.createElement("link");
-  cssLink.rel = "stylesheet";
-  cssLink.href = chrome.runtime.getURL("dist/style.css");
-  shadowRoot.appendChild(cssLink);
+  // Ensure Shadow DOM stays on top even as page mutates or loads
+  const ensureOnTop = () => {
+    const p = document.documentElement || document.body;
+    if (p && p.lastElementChild !== host) {
+      p.appendChild(host);
+    }
+  };
 
-  const appRoot = document.createElement("div");
-  appRoot.id = "retop-root";
-  appRoot.style.cssText =
-    "width: 100%; height: 100%; pointer-events: none; background: transparent;";
-  shadowRoot.appendChild(appRoot);
+  ensureOnTop();
+
+  const observer = new MutationObserver(ensureOnTop);
+  if (document.documentElement) {
+    observer.observe(document.documentElement, { childList: true });
+  }
+
+  if (!shadowRoot || !host.shadowRoot) {
+    shadowRoot = host.shadowRoot || host.attachShadow({ mode: "open" });
+
+    if (!shadowRoot.querySelector("link[href*='dist/style.css']")) {
+      const cssLink = document.createElement("link");
+      cssLink.rel = "stylesheet";
+      cssLink.href = chrome.runtime.getURL("dist/style.css");
+      shadowRoot.appendChild(cssLink);
+    }
+
+    if (!shadowRoot.querySelector("#retop-root")) {
+      const appRoot = document.createElement("div");
+      appRoot.id = "retop-root";
+      appRoot.style.cssText =
+        "width: 100%; height: 100%; pointer-events: none; background: transparent;";
+      shadowRoot.appendChild(appRoot);
+    }
+  }
 
   isInitialized = true;
 }

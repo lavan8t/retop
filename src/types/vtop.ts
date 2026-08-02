@@ -6,6 +6,19 @@ export interface QuickLink {
   category: string;
 }
 
+export interface SpotlightLinkItem {
+  title: string;
+  url?: string;
+  downloadId?: string;
+  isDownload?: boolean;
+  isExternal?: boolean;
+}
+
+export interface SpotlightCategoryGroup {
+  category: string;
+  items: SpotlightLinkItem[];
+}
+
 export interface MenuCategory {
   id: string;
   title: string;

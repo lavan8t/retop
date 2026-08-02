@@ -15,6 +15,7 @@ import {
   MenuCategory,
   CourseSummary,
   TimetableCourse,
+  SpotlightCategoryGroup,
 } from "../../types/vtop";
 import { Card } from "../ui/Card";
 import { MarqueeText } from "../common/MarqueeText";
@@ -24,6 +25,7 @@ import { EmptyState } from "../EmptyState";
 import { getCategoryIcon } from "../../utils/icons";
 import { useDataStore } from "../../store/dataStore";
 import { Tooltip } from "../ui/Tooltip";
+import { SpotlightSection } from "./SpotlightSection";
 
 interface QuickLinksMenuProps {
   menuCategories: MenuCategory[];
@@ -32,6 +34,7 @@ interface QuickLinksMenuProps {
   handleTogglePin?: (link: QuickLink) => void;
   attendance: CourseSummary[];
   ttCourses: TimetableCourse[];
+  spotlightCategories: SpotlightCategoryGroup[];
 }
 
 export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
@@ -41,6 +44,7 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
   handleTogglePin,
   attendance,
   ttCourses,
+  spotlightCategories,
 }) => {
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -228,9 +232,9 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
 
   return (
     <>
-      <div className="hidden lg:flex w-full lg:w-[26%] xl:w-[22%] flex-col shrink-0 h-auto lg:h-full relative z-40 pt-20 md:pt-24 lg:pt-28 pb-4 md:pb-6 lg:pb-8 gap-4">
+      <div className="hidden lg:flex w-full lg:w-[26%] xl:w-[22%] flex-col shrink-0 h-auto lg:h-full overflow-y-auto custom-scrollbar relative z-40 pt-20 md:pt-24 lg:pt-28 pb-4 md:pb-6 lg:pb-8 gap-4">
         {/* Attendance Compact Box */}
-        <div className="flex-1 overflow-visible flex flex-col min-h-0 pb-2">
+        <div className="shrink-0 flex flex-col w-full">
           <Card
             onClick={() =>
               onNavigate({
@@ -266,7 +270,7 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
               </Tooltip>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-[2px] custom-scrollbar">
+            <div className="p-3 flex flex-col gap-[2px]">
               {sortedAttendance.length === 0 ? (
                 <EmptyState msg="No Registered Courses" size="sm" />
               ) : (
@@ -277,6 +281,12 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
             </div>
           </Card>
         </div>
+
+        {spotlightCategories && spotlightCategories.length > 0 && (
+          <div className="shrink-0 flex flex-col relative z-30 w-full mt-2">
+            <SpotlightSection spotlightCategories={spotlightCategories} />
+          </div>
+        )}
       </div>
 
       {/* Floating Menu Portal - Minimal Material Brutalism */}

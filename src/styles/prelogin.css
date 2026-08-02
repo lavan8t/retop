@@ -1,0 +1,237 @@
+
+/* --- PRELOGIN / VTOP OPEN PAGE STYLING --- */
+body:has(#stdForm),
+body:has(header),
+body.WhiteBackground {
+  display: block !important;
+  height: 100vh !important;
+  padding: 0 !important;
+  padding-top: 56px !important;
+  margin: 0 !important;
+  background-color: var(--bg-main) !important;
+  color: var(--text-main) !important;
+  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+header {
+  height: 56px !important;
+  min-height: 56px !important;
+  max-height: 56px !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  z-index: 9999 !important;
+  background-color: var(--bg-card) !important;
+  background-image: none !important;
+  border-bottom: 2px solid var(--border-main) !important;
+  padding: 0 1.5rem !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+  display: block !important;
+}
+
+header .container-fluid {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  height: 100% !important;
+  padding: 0 !important;
+  margin: 0 auto !important;
+  width: 100% !important;
+}
+
+header .navbar-header {
+  display: flex !important;
+  align-items: center !important;
+  margin: 0 !important;
+}
+
+header .navbar-brand {
+  display: flex !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  height: auto !important;
+  text-decoration: none !important;
+}
+
+header .navbar-brand span.h1 {
+  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
+  font-variation-settings: "wdth" 151, "wght" 700, "slnt" -10, "ROND" 100 !important;
+  color: var(--text-main) !important;
+  font-size: 1.5rem !important;
+  margin: 0 !important;
+}
+
+header img.VITEmblem, 
+#retop-react-logo {
+  height: 32px !important;
+  max-height: 32px !important;
+  width: auto !important;
+  margin-right: 8px !important;
+  object-fit: contain !important;
+  display: block !important;
+}
+
+.VITLogoStyle {
+  display: none !important;
+}
+
+header .navbar-text,
+header .retop-campus-text {
+  color: var(--text-muted) !important;
+  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
+  font-variation-settings: "wght" 600 !important;
+  font-size: 0.95rem !important;
+  margin: 0 !important;
+  margin-left: 0.75rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+/* Fast Inline Icons for Role Selection */
+.retop-inline-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: var(--accent-base) !important;
+  width: 55px !important;
+  height: 55px !important;
+}
+
+.retop-inline-icon svg {
+  width: 36px !important;
+  height: 36px !important;
+  fill: var(--accent-base) !important;
+}
+
+.retop-spotlight-bolt {
+  color: var(--accent-base) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  margin-right: 0.5rem !important;
+}
+
+.retop-spotlight-bolt svg {
+  fill: var(--accent-base) !important;
+  width: 16px !important;
+  height: 16px !important;
+}
+
+/* Role Selection Grid Cards */
+.cardStudent,
+.cardEmployee,
+.cardParent,
+.cardAlumni {
+  background-color: var(--bg-card) !important;
+  background-image: none !important;
+  border: none !important;
+  border-radius: 1.5rem !important;
+  padding: 1.25rem !important;
+  box-shadow: none !important;
+}
+
+.cardStudent:hover,
+.cardEmployee:hover,
+.cardParent:hover,
+.cardAlumni:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.cardStudent .btn,
+.cardEmployee .btn,
+.cardParent .btn,
+.cardAlumni .btn {
+  border-radius: 1rem !important;
+  padding: 0.5rem 1rem !important;
+  transition: background-color 0.15s ease-out !important;
+  box-shadow: none !important;
+}
+
+.cardStudent .btn:hover,
+.cardEmployee .btn:hover,
+.cardParent .btn:hover,
+.cardAlumni .btn:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.cardStudent .fw-bold,
+.cardEmployee .fw-bold,
+.cardParent .fw-bold,
+.cardAlumni .fw-bold {
+  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
+  font-variation-settings: "wdth" 125, "wght" 700 !important;
+  color: var(--text-main) !important;
+}
+
+/* Spotlight Card & List - FLAT STYLING, ZERO GRADIENT */
+.spotlightHeader {
+  background: var(--bg-surface) !important;
+  background-image: none !important;
+  border: none !important;
+  padding: 1rem 1.25rem !important;
+  border-top-left-radius: 1.5rem !important;
+  border-top-right-radius: 1.5rem !important;
+}
+
+.spotlightHeader span,
+.spotlightHeader button {
+  color: var(--text-main) !important;
+  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
+  font-variation-settings: "wght" 700 !important;
+}
+
+.spotlight-background {
+  background-color: var(--bg-card) !important;
+  background-image: none !important;
+  border: none !important;
+  border-bottom-left-radius: 1.5rem !important;
+  border-bottom-right-radius: 1.5rem !important;
+}
+
+.spotlight-background .list-group-item {
+  background: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  color: var(--text-main) !important;
+  transition: background-color 0.2s ease-out !important;
+  padding: 0.85rem 1.25rem !important;
+}
+
+.spotlight-background .list-group-item:hover {
+  background-color: var(--bg-highlight) !important;
+  background-image: none !important;
+  transform: none !important;
+}
+
+.spotlight-background strong,
+.spotlight-background span {
+  color: var(--text-main) !important;
+}
+
+/* Footer Styling */
+.footercolor {
+  background-color: var(--bg-card) !important;
+  border: none !important;
+  color: var(--text-muted) !important;
+  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
+  padding: 1rem 0 !important;
+  position: fixed !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  left: 0 !important;
+  z-index: 10 !important;
+}
+.footercolor a {
+  color: var(--text-muted) !important;
+}
+.footercolor a:hover {
+  color: var(--accent-base) !important;
+}

@@ -9,7 +9,7 @@ import { UpcomingClass } from "../../utils/timetable-slots";
 import { formatTimeStr } from "../../utils/formatting";
 import { MarqueeText } from "../common/MarqueeText";
 import { SPRING_SNAPPY } from "../../utils/motion";
-import { useSettingsStore, MATERIAL_ACCENTS } from "../../utils/settings-store";
+import { useSettingsStore, MATERIAL_ACCENTS, getMaterialThemeColor, getMaterialOnThemeColor } from "../../utils/settings-store";
 
 const rowVariants: Variants = {
   hidden: { opacity: 0 },
@@ -84,7 +84,10 @@ export const ScheduleRow = ({
 
   const [isHovered, setIsHovered] = React.useState(false);
 
-  const customColor = MATERIAL_ACCENTS[settings.calendarClassColor] || MATERIAL_ACCENTS.blue;
+  const sysDark = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const isDark = settings.themeMode === "dark" || settings.themeMode === "amoled" || (settings.themeMode === "auto" && sysDark && settings.pureBlack) || (settings.themeMode === "auto" && sysDark);
+  const cardBg = getMaterialThemeColor(settings.calendarClassColor, isDark);
+  const cardFg = getMaterialOnThemeColor(settings.calendarClassColor, isDark);
 
   return (
     <motion.div
@@ -93,10 +96,10 @@ export const ScheduleRow = ({
       onClick={(e) => onClick?.(e, item)}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
-      className={`flex flex-col p-3 shadow-none cursor-pointer select-none overflow-hidden relative border-2 hover:border-(--border-main) ${isNow ? "bg-(--accent-base) text-(--text-inverse)" : "text-(--text-main)"} ${className || "rounded-xl"}`}
+      className={`flex flex-col p-3 shadow-none cursor-pointer select-none overflow-hidden relative border-0 ${isNow ? "bg-(--accent-base) text-(--text-inverse)" : ""} ${className || "rounded-xl"}`}
       style={{
-        backgroundColor: isNow ? undefined : `${customColor}15`,
-        borderColor: isHovered ? undefined : `${customColor}40`
+        backgroundColor: isNow ? undefined : cardBg,
+        color: isNow ? undefined : cardFg,
       }}
     >
       <div className="flex items-center justify-between gap-2">
@@ -117,7 +120,7 @@ export const ScheduleRow = ({
             {item.course.title}
           </motion.div>
         </div>
-        <motion.div layout="position" transition={SPRING_SNAPPY} className="text-[10px] font-bold font-mono shrink-0 bg-black/10 px-1.5 py-0.5 rounded-md flex items-center gap-1">
+        <motion.div layout="position" transition={SPRING_SNAPPY} className="text-[10px] font-bold font-mono shrink-0 px-1 py-0.5 flex items-center gap-1">
           <LocationOn className="w-3 h-3" />
           {item.course.venue}
         </motion.div>
@@ -138,7 +141,7 @@ export const ScheduleRow = ({
           <Schedule className="w-3 h-3" />
           {formattedTime}
         </motion.div>
-        <div className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded leading-none shrink-0 ${isNow ? "bg-(--text-main) text-(--bg-main)" : "bg-black/10"}`}>
+        <div className={`text-[9px] font-black uppercase px-1 py-0.5 rounded leading-none shrink-0 opacity-80`}>
           {item.course.slot}
         </div>
       </motion.div>
@@ -155,31 +158,55 @@ export const AssignmentRow = ({
   onClick?: () => void;
   className?: string;
 }) => {
-  const getDaysLeft = (dateStr: string) => {
-    // Attempt to parse standard DD-MMM-YYYY or similar
-    const target = new Date(dateStr.replace(/-/g, " "));
+  const getFormattedDates = (dateStr: string) => {
+    if (!dateStr) return { days: "", exact: "" };
+    const cleanStr = dateStr.replace(/[-/]/g, " ").trim();
+    const parts = cleanStr.split(" ");
+    let target: Date;
+    if (parts.length >= 3) {
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const year = parseInt(parts[2], 10);
+      target = new Date(year, month, day);
+    } else {
+      target = new Date(cleanStr);
+    }
+
     const now = new Date();
-    // Normalize to midnight to avoid partial day diffs
     target.setHours(0, 0, 0, 0);
     now.setHours(0, 0, 0, 0);
 
-    if (isNaN(target.getTime())) return `Due ${dateStr}`;
+    let exact = "";
+    if (!isNaN(target.getTime())) {
+      const dayNum = target.getDate().toString().padStart(2, "0");
+      const monthName = target.toLocaleDateString("en-US", { month: "short" });
+      exact = `${dayNum} ${monthName}`;
+    } else {
+      exact = dateStr;
+    }
+
+    if (isNaN(target.getTime())) return { days: `Due ${dateStr}`, exact };
 
     const diffMs = target.getTime() - now.getTime();
     const days = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
-    if (days < 0) return "Overdue";
-    if (days === 0) return "Due Today";
-    if (days === 1) return "Due Tomorrow";
-    return `Due in ${days} day${days > 1 ? "s" : ""}`;
+    let daysText = "";
+    if (days < 0) daysText = "Overdue";
+    else if (days === 0) daysText = "Due Today";
+    else if (days === 1) daysText = "Due Tomorrow";
+    else daysText = `Due in ${days} Day${days > 1 ? "s" : ""}`;
+
+    return { days: daysText, exact };
   };
+
+  const { days, exact } = getFormattedDates(assignment.dueDate);
 
   return (
     <motion.div
       layout
       variants={rowVariants}
       onClick={onClick}
-      className={`p-3 bg-(--bg-surface) shadow-none relative transition-colors overflow-hidden border-2 border-transparent hover:border-(--border-main) ${onClick ? "cursor-pointer" : ""} ${className || "rounded-xl"}`}
+      className={`group p-3 bg-(--bg-surface) hover:bg-(--bg-highlight) shadow-none relative transition-colors overflow-hidden border-0 ${onClick ? "cursor-pointer" : ""} ${className || "rounded-xl"}`}
     >
       <div className="flex flex-col relative z-10">
         <div className="flex justify-between items-start gap-2">
@@ -191,8 +218,9 @@ export const AssignmentRow = ({
           </span>
         </div>
         <div className="flex justify-end mt-2">
-          <span className="text-[10px] font-black font-mono uppercase text-(--accent-base)">
-            {getDaysLeft(assignment.dueDate)}
+          <span className="text-[10px] font-black font-mono text-(--accent-base) transition-all">
+            <span className="inline group-hover:hidden">{days}</span>
+            <span className="hidden group-hover:inline">{exact}</span>
           </span>
         </div>
       </div>
@@ -202,29 +230,33 @@ export const AssignmentRow = ({
 
 export const EventRow = ({ event, className }: { event: Event; className?: string }) => {
   const { settings } = useSettingsStore();
-  const customColor = MATERIAL_ACCENTS[settings.calendarEventColor] || MATERIAL_ACCENTS.purple;
+
+  const sysDark = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const isDark = settings.themeMode === "dark" || settings.themeMode === "amoled" || (settings.themeMode === "auto" && sysDark && settings.pureBlack) || (settings.themeMode === "auto" && sysDark);
+  const cardBg = getMaterialThemeColor(settings.calendarEventColor, isDark);
+  const cardFg = getMaterialOnThemeColor(settings.calendarEventColor, isDark);
 
   return (
     <motion.div
       layout
       variants={rowVariants}
-      className={`p-3 shadow-none cursor-pointer select-none relative border-2 hover:border-(--border-main) ${className || "rounded-xl"}`}
+      className={`p-3 shadow-none cursor-pointer select-none relative border-0 ${className || "rounded-xl"}`}
       style={{
-        backgroundColor: `${customColor}15`,
-        borderColor: `${customColor}40`
+        backgroundColor: cardBg,
+        color: cardFg,
       }}
     >
     <div className="flex flex-col">
       <div className="flex items-start justify-between gap-2">
-        <span className="text-sm font-black text-(--text-main) leading-tight flex-1">
+        <span className="text-sm font-black leading-tight flex-1">
           {event.title}
         </span>
-        <span className="shrink-0 text-[10px] font-bold text-(--text-muted) text-right">
+        <span className="shrink-0 text-[10px] font-bold opacity-80 text-right">
           {event.organizer}
         </span>
       </div>
       <div className="flex justify-end mt-1">
-        <span className="shrink-0 text-[9px] font-black uppercase text-(--text-muted) text-right">
+        <span className="shrink-0 text-[9px] font-black uppercase opacity-80 text-right">
           {event.category}
         </span>
       </div>

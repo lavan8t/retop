@@ -1,0 +1,39 @@
+:root,
+[data-theme="dark"] {
+  --accent-base: var(--md-sys-color-primary, #3b82f6);
+  --bg-main: var(--md-sys-color-background, #09090b);
+  --bg-card: var(--md-sys-color-surface, #18181b);
+  --bg-surface: var(--md-sys-color-surface-variant, #18181b);
+  --bg-highlight: color-mix(in srgb, var(--md-sys-color-primary, #3b82f6) 15%, var(--md-sys-color-surface, #18181b));
+  --border-main: var(--md-sys-color-outline, transparent);
+  --text-main: var(--md-sys-color-on-background, #f8fafc);
+  --text-muted: var(--md-sys-color-on-surface-variant, #94a3b8);
+  --text-dim: color-mix(in srgb, var(--md-sys-color-on-surface-variant, #94a3b8) 70%, transparent);
+  --shadow-main: transparent;
+}
+
+[data-theme="light"] {
+  --accent-base: var(--md-sys-color-primary, #3b82f6);
+  --bg-main: var(--md-sys-color-background, #f8fafc);
+  --bg-card: var(--md-sys-color-surface, #ffffff);
+  --bg-surface: var(--md-sys-color-surface-variant, #ffffff);
+  --bg-highlight: color-mix(in srgb, var(--md-sys-color-primary, #3b82f6) 10%, var(--md-sys-color-surface, #ffffff));
+  --border-main: var(--md-sys-color-outline, transparent);
+  --text-main: var(--md-sys-color-on-background, #0f172a);
+  --text-muted: var(--md-sys-color-on-surface-variant, #475569);
+  --text-dim: color-mix(in srgb, var(--md-sys-color-on-surface-variant, #475569) 70%, transparent);
+  --shadow-main: transparent;
+}
+
+[data-theme="amoled"] {
+  --accent-base: var(--md-sys-color-primary, #3b82f6);
+  --bg-main: #000000;
+  --bg-card: #000000;
+  --bg-surface: #000000;
+  --bg-highlight: #111111;
+  --border-main: var(--md-sys-color-outline, #27272a);
+  --text-main: #ffffff;
+  --text-muted: #a3a3a3;
+  --text-dim: #737373;
+  --shadow-main: transparent;
+}

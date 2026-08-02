@@ -20,6 +20,7 @@ import {
 } from "../parsers/dashboard";
 import { parseSemesters, parseTimetable } from "../parsers/timetable";
 import { parseStudentProfile } from "../parsers/profile";
+import { scrapeSpotlight } from "../parsers/spotlight";
 import {
   QuickLink,
   MenuCategory,
@@ -29,6 +30,7 @@ import {
   Semester,
   CoursePageOption,
   ViewType,
+  SpotlightCategoryGroup,
 } from "../types/vtop";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -170,6 +172,7 @@ export function renderDashboard() {
 
 const DashboardApp = () => {
   const [menu, setMenu] = useState<MenuCategory[]>([]);
+  const [spotlightCategories, setSpotlightCategories] = useState<SpotlightCategoryGroup[]>([]);
   const [isOmniboxOpen, setIsOmniboxOpen] = useState(false);
   const [omniboxInitial, setOmniboxInitial] = useState("");
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -345,10 +348,21 @@ const DashboardApp = () => {
           setMenu(cachedMenu);
         }
       });
+      getCachedData<SpotlightCategoryGroup[]>(`${authId}_vtop_spotlight`).then(cachedSpotlight => {
+        if (cachedSpotlight && cachedSpotlight.length > 0) {
+          setSpotlightCategories(cachedSpotlight);
+        }
+      });
     } else {
       let attempts = 0;
       menuPoller = setInterval(() => {
         attempts++;
+        const newSpotlight = scrapeSpotlight(document);
+        if (newSpotlight.length > 0) {
+          setSpotlightCategories(newSpotlight);
+          setCachedData(`${authId}_vtop_spotlight`, newSpotlight);
+        }
+
         const newMenu = scrapeMenu(document);
         const count = newMenu.reduce((acc, cat) => acc + cat.links.length, 0);
         
@@ -623,6 +637,8 @@ const DashboardApp = () => {
                   menu={menu}
                   handleLinkClick={handleLinkClick}
                   events={events}
+                  spotlightCategories={spotlightCategories}
+                  upcoming={upcoming}
                   pinnedLinks={pinnedLinks}
                   handleTogglePin={handleTogglePin}
                 />

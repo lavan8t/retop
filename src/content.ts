@@ -4,8 +4,12 @@ import {
   injectGlobalStyles,
   injectGlobalFonts,
   initializeContainer,
+  getAppRoot,
 } from "./utils/bridge";
-import { asciiArtTT, asciiArtPRP, asciiArtSMV, asciiArtMGR } from "./components/asciiArt";
+import React from "react";
+import { createRoot } from "react-dom/client";
+import { NativePortals } from "./components/NativePortals";
+import { asciiArtTT, asciiArtSMV, asciiArtMGR } from "./components/asciiArt";
 import { autoSolveCaptcha } from "./utils/captchaSolver";
 
 const vtopContext = {
@@ -266,6 +270,12 @@ const init = async () => {
   document.body.style.display = "block";
   document.body.style.visibility = "visible";
   document.body.classList.add("show-legacy-ui");
+
+  // Mount native portals for injected React icons over legacy VTOP UI
+  const portalsRoot = document.createElement("div");
+  portalsRoot.id = "retop-native-portals";
+  document.body.appendChild(portalsRoot);
+  createRoot(portalsRoot).render(React.createElement(NativePortals));
 
   const isRoleSelection =
     document.getElementById("stdForm") !== null ||
@@ -697,16 +707,15 @@ const injectLoginTheme = () => {
 
     const asciiPre = document.createElement("pre");
     asciiPre.id = "retop-ascii-art";
-    const artTypes = ["TT", "PRP", "SMV", "MGR"];
+    const artTypes = ["TT", "SMV", "MGR"];
     const lastArt = localStorage.getItem("retop_last_ascii_art") || "";
     const availableArts = artTypes.filter(type => type !== lastArt);
-    const pickedArt = availableArts[Math.floor(Math.random() * availableArts.length)];
+    const pickedArt = availableArts.length ? availableArts[Math.floor(Math.random() * availableArts.length)] : "TT";
     localStorage.setItem("retop_last_ascii_art", pickedArt);
 
-    const isPRP = pickedArt === "PRP";
+    const isPRP = false;
     
     let rawArt = asciiArtTT;
-    if (pickedArt === "PRP") rawArt = asciiArtPRP;
     if (pickedArt === "SMV") rawArt = asciiArtSMV;
     if (pickedArt === "MGR") rawArt = asciiArtMGR;
     

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { PlayArrow, Pause, CloudOff } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { applyTheme, useSettingsStore } from "./utils/settings-store";
 
 const Popup = () => {
@@ -72,14 +73,8 @@ const Popup = () => {
                 : "Disable extension for 1 hour"}
             </span>
           </div>
-          <span
-            className="material-symbols-rounded"
-            style={{
-              fontVariationSettings: "'FILL' 1, 'wght' 700",
-              fontSize: "24px",
-            }}
-          >
-            {isHalted ? "play_arrow" : "pause"}
+          <span style={{ fontSize: "24px", display: "flex" }}>
+            {isHalted ? <PlayArrow width="1em" height="1em" /> : <Pause width="1em" height="1em" />}
           </span>
         </div>
 
@@ -101,14 +96,8 @@ const Popup = () => {
               View your cached data without internet
             </span>
           </div>
-          <span
-            className="material-symbols-rounded"
-            style={{
-              fontVariationSettings: "'FILL' 1, 'wght' 700",
-              fontSize: "24px",
-            }}
-          >
-            cloud_off
+          <span style={{ fontSize: "24px", display: "flex" }}>
+            <CloudOff width="1em" height="1em" />
           </span>
         </div>
 

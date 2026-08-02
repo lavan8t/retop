@@ -6,34 +6,42 @@ import { QuickLink } from "../types/vtop";
 export interface AppSettings {
   defaultView: "modern" | "legacy";
   themeMode: "dark" | "light" | "amoled" | "auto";
-  accentColor: "blue" | "purple" | "pink" | "red" | "orange" | "yellow" | "lime" | "green" | "cyan" | "indigo" | "random" | "neon-green" | "neon-yellow" | "neon-orange" | "neon-red";
+  vtopThemeMode: "same" | "dark" | "light" | "amoled" | "none";
+  accentColor: "grey" | "red" | "orange" | "yellow" | "green" | "blue" | "purple" | "pink" | "cyan" | "indigo" | "lime" | "monochrome";
   randomAccentColor: boolean;
   blurCgpa: boolean;
   googleLinked: boolean;
   calendarSync: boolean;
   driveSync: boolean;
+  pureBlack: boolean;
   pinnedLinks: QuickLink[];
   use24HourTime: boolean;
   animationScale: "1x" | "0.5x" | "0x";
   searchHotkey: "/" | "space" | "instant";
   calendarClassColor: string;
   calendarEventColor: string;
+  timetableMode: "weekly" | "slot" | "consolidated" | "fullMonth";
+  googleClientId: string;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
   defaultView: "modern",
   themeMode: "dark",
+  vtopThemeMode: "same",
   accentColor: "blue",
   randomAccentColor: false,
   blurCgpa: false,
   googleLinked: false,
   calendarSync: false,
   driveSync: false,
+  pureBlack: false,
   use24HourTime: true,
   animationScale: "1x",
   searchHotkey: "/",
   calendarClassColor: "blue",
   calendarEventColor: "purple",
+  timetableMode: "weekly",
+  googleClientId: "",
   pinnedLinks: [
     { title: "Time Table", url: "studenttimetable", category: "Core" },
     { title: "Marks", url: "mark", category: "Core" },
@@ -46,34 +54,49 @@ const DEFAULT_SETTINGS: AppSettings = {
 };
 
 export const MATERIAL_ACCENTS: Record<string, string> = {
-  blue: "#2563eb",
-  indigo: "#4f46e5",
-  purple: "#9333ea",
-  pink: "#db2777",
-  red: "#dc2626",
-  orange: "#ea580c",
-  yellow: "#ca8a04",
-  lime: "#65a30d",
-  green: "#16a34a",
-  cyan: "#0891b2",
-  "neon-green": "#39ff14",
-  "neon-yellow": "#eaff00",
-  "neon-orange": "#ff6700",
-  "neon-red": "#ff073a",
+  grey: "#71717a",
+  red: "#ef4444",
+  orange: "#f97316",
+  yellow: "#eab308",
+  green: "#22c55e",
+  blue: "#3b82f6",
+  purple: "#a855f7",
+  pink: "#ec4899",
+  cyan: "#06b6d4",
+  indigo: "#6366f1",
+  lime: "#84cc16",
 };
 
-import { argbFromHex, hexFromArgb, Hct, SchemeVibrant, MaterialDynamicColors } from "@material/material-color-utilities";
+import { argbFromHex, hexFromArgb, Hct, SchemeVibrant, SchemeMonochrome } from "@material/material-color-utilities";
 
-// Convert an HSL string to Hex
-const hslToHex = (h: number, s: number, l: number) => {
-  l /= 100;
-  const a = s * Math.min(l, 1 - l) / 100;
-  const f = (n: number) => {
-    const k = (n + h / 30) % 12;
-    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-    return Math.round(255 * color).toString(16).padStart(2, '0');
-  };
-  return `#${f(0)}${f(8)}${f(4)}`;
+export const getMaterialThemeColor = (colorKey: string, isDark: boolean = true): string => {
+  if (colorKey === "grey" || colorKey === "monochrome") {
+    return isDark ? "#27272a" : "#f4f4f5";
+  }
+  const hex = MATERIAL_ACCENTS[colorKey] || (colorKey && colorKey.startsWith("#") ? colorKey : MATERIAL_ACCENTS.blue);
+  try {
+    const hct = Hct.fromInt(argbFromHex(hex));
+    const containerTone = isDark ? 30 : 90;
+    const containerHct = Hct.from(hct.hue, hct.chroma, containerTone);
+    return hexFromArgb(containerHct.toInt());
+  } catch {
+    return hex;
+  }
+};
+
+export const getMaterialOnThemeColor = (colorKey: string, isDark: boolean = true): string => {
+  if (colorKey === "grey" || colorKey === "monochrome") {
+    return isDark ? "#f4f4f5" : "#18181b";
+  }
+  const hex = MATERIAL_ACCENTS[colorKey] || (colorKey && colorKey.startsWith("#") ? colorKey : MATERIAL_ACCENTS.blue);
+  try {
+    const hct = Hct.fromInt(argbFromHex(hex));
+    const onContainerTone = isDark ? 95 : 15;
+    const onContainerHct = Hct.from(hct.hue, hct.chroma, onContainerTone);
+    return hexFromArgb(onContainerHct.toInt());
+  } catch {
+    return isDark ? "#ffffff" : "#000000";
+  }
 };
 
 export const applyTheme = (settings: AppSettings) => {
@@ -82,30 +105,39 @@ export const applyTheme = (settings: AppSettings) => {
 
   let appliedTheme = settings.themeMode;
   if (appliedTheme === "auto") {
-    const hour = new Date().getHours();
-    appliedTheme = (hour >= 18 || hour < 6) ? "dark" : "light";
+    const systemDark = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    appliedTheme = systemDark ? (settings.pureBlack ? "amoled" : "dark") : "light";
+  } else if (appliedTheme === "dark" && settings.pureBlack) {
+    appliedTheme = "amoled";
   }
 
   if (root) root.setAttribute("data-theme", appliedTheme);
-  document.documentElement.setAttribute("data-theme", appliedTheme);
 
-  let baseColor = MATERIAL_ACCENTS[settings.accentColor] || MATERIAL_ACCENTS.blue;
-  if (settings.randomAccentColor) {
-    const hue = Math.floor(Math.random() * 360);
-    baseColor = hslToHex(hue, 70, 45);
+  let vtopTheme = settings.vtopThemeMode || "same";
+  let appliedVtopTheme = vtopTheme === "same" ? appliedTheme : vtopTheme;
+  if (appliedVtopTheme === "none") {
+    document.documentElement.removeAttribute("data-theme");
+  } else {
+    document.documentElement.setAttribute("data-theme", appliedVtopTheme);
   }
 
+  const isMonochrome = settings.accentColor === "grey" || (settings as any).accentColor === "monochrome";
+  const baseColor = MATERIAL_ACCENTS[settings.accentColor] || MATERIAL_ACCENTS.grey;
   const isDark = appliedTheme === "dark" || appliedTheme === "amoled";
-  
+
   // Initialize Material Theme
   const hct = Hct.fromInt(argbFromHex(baseColor));
-  const scheme = isDark 
-    ? new SchemeVibrant(hct, true, 0.0) 
-    : new SchemeVibrant(hct, false, 0.0);
-  
+  const scheme = isMonochrome
+    ? new SchemeMonochrome(hct, isDark, 0.0)
+    : new SchemeVibrant(hct, isDark, 0.0);
+
+  const primaryHex = isMonochrome
+    ? (isDark ? "#a1a1aa" : "#52525b")
+    : hexFromArgb(scheme.primary);
+
   // Set the base variables
-  if (root) root.style.setProperty("--accent-base", hexFromArgb(scheme.primary));
-  document.documentElement.style.setProperty("--accent-base", hexFromArgb(scheme.primary));
+  if (root) root.style.setProperty("--accent-base", primaryHex);
+  document.documentElement.style.setProperty("--accent-base", primaryHex);
 
   // Set standard Material Design 3 variables
   const sysColors = {
@@ -154,21 +186,40 @@ const chromeStorage: StateStorage = {
   getItem: async (name: string): Promise<string | null> => {
     return new Promise((resolve) => {
       try {
-        chrome.storage.local.get(name, (result) => {
-          resolve((result?.[name] as string) || null);
-        });
+        if (typeof chrome !== "undefined" && chrome.runtime?.id && chrome.storage?.local) {
+          chrome.storage.local.get(name, (result) => {
+            if (chrome.runtime?.lastError) {
+              try { resolve(localStorage.getItem(name)); } catch { resolve(null); }
+            } else {
+              const val = (result?.[name] as string) || null;
+              if (val) resolve(val);
+              else {
+                try { resolve(localStorage.getItem(name)); } catch { resolve(null); }
+              }
+            }
+          });
+        } else {
+          try { resolve(localStorage.getItem(name)); } catch { resolve(null); }
+        }
       } catch (e) {
-        console.warn("Storage get failed", e);
-        resolve(null);
+        try { resolve(localStorage.getItem(name)); } catch { resolve(null); }
       }
     });
   },
   setItem: async (name: string, value: string): Promise<void> => {
     return new Promise((resolve) => {
       try {
-        chrome.storage.local.set({ [name]: value }, () => resolve());
+        try { localStorage.setItem(name, value); } catch {}
+
+        if (typeof chrome !== "undefined" && chrome.runtime?.id && chrome.storage?.local) {
+          chrome.storage.local.set({ [name]: value }, () => {
+            const _err = chrome.runtime?.lastError;
+            resolve();
+          });
+        } else {
+          resolve();
+        }
       } catch (e) {
-        console.warn("Storage set failed", e);
         resolve();
       }
     });
@@ -176,9 +227,17 @@ const chromeStorage: StateStorage = {
   removeItem: async (name: string): Promise<void> => {
     return new Promise((resolve) => {
       try {
-        chrome.storage.local.remove(name, () => resolve());
+        try { localStorage.removeItem(name); } catch {}
+
+        if (typeof chrome !== "undefined" && chrome.runtime?.id && chrome.storage?.local) {
+          chrome.storage.local.remove(name, () => {
+            const _err = chrome.runtime?.lastError;
+            resolve();
+          });
+        } else {
+          resolve();
+        }
       } catch (e) {
-        console.warn("Storage remove failed", e);
         resolve();
       }
     });

@@ -20,7 +20,6 @@ export const SyncManager = () => {
     setLoading(true);
     try {
       const allKeys = await getAllCachedKeys();
-      // Show all cache keys, regardless of the user prefix
       setKeys(allKeys.sort((a, b) => b.timestamp - a.timestamp));
     } catch (e) {
       console.error(e);
@@ -39,21 +38,17 @@ export const SyncManager = () => {
   };
 
   const categorizeKey = (key: string) => {
-    // Strip user prefix
     const stripped = key.substring(key.indexOf("_") + 1);
     
-    // Dashboard Caches
     if (stripped === "dashboard_stats") return { page: "CGPA & Credits", semester: "Current" };
     if (stripped === "dashboard_attendance") return { page: "Attendance Summary", semester: "Current" };
     if (stripped === "dashboard_da") return { page: "Upcoming Assignments", semester: "Current" };
     if (stripped === "dashboard_events") return { page: "Upcoming Events", semester: "Global" };
     
-    // Semesters Lists
     if (stripped === "tt_semester_list") return { page: "Timetable Semesters", semester: "Global" };
     if (stripped === "cal_semester_list") return { page: "Calendar Semesters", semester: "Global" };
     if (stripped === "da_semesters") return { page: "DA Semesters", semester: "Global" };
     
-    // Specific Semester Caches
     if (stripped.startsWith("tt_sem_")) return { page: "Timetable", semester: stripped.replace("tt_sem_", "") };
     if (stripped.startsWith("marks_data_")) return { page: "Marks", semester: stripped.replace("marks_data_", "") };
     if (stripped.startsWith("grades_data_")) return { page: "Grades", semester: stripped.replace("grades_data_", "") };
@@ -61,49 +56,106 @@ export const SyncManager = () => {
     if (stripped.startsWith("da_courses_")) return { page: "Assignments", semester: stripped.replace("da_courses_", "") };
     if (stripped.startsWith("da_class_")) return { page: "DA Course Detail", semester: "Class " + stripped.replace("da_class_", "") };
     
-    // Curriculum
     if (stripped === "curriculum_dashboard") return { page: "Curriculum Categories", semester: "Global" };
     if (stripped.startsWith("curriculum_cat_")) return { page: "Curriculum Courses", semester: stripped.replace("curriculum_cat_", "") };
     
-    // Course Page
     if (stripped === "course_page_consolidated") return { page: "Course Page (List)", semester: "Global" };
     if (stripped.startsWith("course_details_")) return { page: "Course Detail", semester: stripped.replace("course_details_", "").split("_")[0] };
 
-    // Calendar
     if (stripped.startsWith("timetable") || stripped.startsWith("cal_")) return { page: "Academic Calendar", semester: "Global" };
     
-    // Navigation & Profile
-    if (stripped.startsWith("menu")) return { page: "Navigation Menu", semester: "Global" };
+    if (stripped === "vtop_menu" || stripped.startsWith("menu")) return { page: "Navigation Menu", semester: "Global" };
     if (stripped.startsWith("profile")) return { page: "Student Profile", semester: "Global" };
     
     return { page: "Other Cache", semester: stripped };
   };
 
+  const currentKeys = keys.filter((k) => {
+    const { semester } = categorizeKey(k.key);
+    return semester === "Current" || semester === "Global";
+  });
+
+  const olderKeys = keys.filter((k) => {
+    const { semester } = categorizeKey(k.key);
+    return semester !== "Current" && semester !== "Global";
+  });
+
+  const handleClearOlder = async () => {
+    for (const k of olderKeys) {
+      await removeCacheKey(k.key);
+    }
+    await fetchKeys();
+  };
+
   return (
-    <div className="flex flex-col gap-3 mt-2 w-full">
+    <div className="flex flex-col gap-4 mt-2 w-full">
       {loading ? (
         <div className="text-xs text-(--text-muted) uppercase font-expanded">Loading cache...</div>
       ) : keys.length === 0 ? (
         <div className="text-xs text-(--text-muted) uppercase font-expanded">No cached data found.</div>
       ) : (
-        <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-          {keys.map((k) => {
-            const { page, semester } = categorizeKey(k.key);
-            return (
-              <div key={k.key} className="flex justify-between items-center bg-(--bg-card) p-3 rounded-lg border-2 border-(--border-main)">
-                <div className="flex flex-col">
-                  <span className="font-expanded uppercase text-[13px] font-black">{page}</span>
-                  <span className="text-[11px] text-(--text-muted)">Sem: {semester} • Synced: {formatTimeAgo(k.timestamp)} ago</span>
-                </div>
+        <div className="flex flex-col gap-4">
+          {/* Current & Global Data Section */}
+          <div className="flex flex-col gap-2">
+            <span className="text-[11px] font-black uppercase tracking-wider text-(--text-muted)">
+              Current & Active Session Data ({currentKeys.length})
+            </span>
+            <div className="flex flex-col gap-1.5 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
+              {currentKeys.map((k) => {
+                const { page, semester } = categorizeKey(k.key);
+                return (
+                  <div key={k.key} className="flex justify-between items-center bg-(--bg-main) px-3 py-2.5 rounded-xl border-0">
+                    <div className="flex flex-col">
+                      <span className="font-expanded text-xs font-bold text-(--text-main)">{page}</span>
+                      <span className="text-[10px] text-(--text-muted)">Sem: {semester} • Synced: {formatTimeAgo(k.timestamp)} ago</span>
+                    </div>
+                    <button
+                      onClick={() => handleDelete(k.key)}
+                      className="px-4 py-2 rounded-full text-[10px] font-black uppercase transition-all border-0 bg-(--accent-base) text-(--text-inverse) hover:opacity-90 cursor-pointer ml-2 shadow-sm"
+                    >
+                      Clear Data
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Older Semesters Data Section */}
+          {olderKeys.length > 0 && (
+            <div className="flex flex-col gap-2 border-t-2 border-(--border-dim) pt-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-black uppercase tracking-wider text-(--text-muted)">
+                  Older Semesters Cached Data ({olderKeys.length})
+                </span>
                 <button
-                  onClick={() => handleDelete(k.key)}
-                  className="px-3 py-1.5 rounded-lg text-[10px] font-black font-expanded uppercase transition-all border-2 border-(--border-main) shadow-none hover:shadow-(--brutal-shadow-hover) cursor-pointer bg-(--accent-error) text-black whitespace-nowrap ml-2"
+                  onClick={handleClearOlder}
+                  className="px-4 py-2 rounded-full text-[10px] font-black uppercase border-0 bg-(--accent-base) text-(--text-inverse) hover:opacity-90 cursor-pointer shadow-sm"
                 >
-                  Clear
+                  Clear All Older Semesters
                 </button>
               </div>
-            );
-          })}
+              <div className="flex flex-col gap-1.5 max-h-[200px] overflow-y-auto pr-1 custom-scrollbar">
+                {olderKeys.map((k) => {
+                  const { page, semester } = categorizeKey(k.key);
+                  return (
+                    <div key={k.key} className="flex justify-between items-center bg-(--bg-main) px-3 py-2.5 rounded-xl border-0">
+                      <div className="flex flex-col">
+                        <span className="font-expanded text-xs font-bold text-(--text-main)">{page}</span>
+                        <span className="text-[10px] text-(--text-muted)">Sem: {semester} • Synced: {formatTimeAgo(k.timestamp)} ago</span>
+                      </div>
+                      <button
+                        onClick={() => handleDelete(k.key)}
+                        className="px-4 py-2 rounded-full text-[10px] font-black uppercase transition-all border-0 bg-(--accent-base) text-(--text-inverse) hover:opacity-90 cursor-pointer ml-2 shadow-sm"
+                      >
+                        Clear Data
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

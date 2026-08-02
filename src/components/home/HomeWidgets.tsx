@@ -96,13 +96,15 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
             </div>
 
             <div className="flex flex-col items-center">
-              <div className="flex items-baseline gap-2 text-3xl font-black font-expanded leading-none">
+              <div className="flex items-center gap-2 text-3xl font-black font-expanded leading-none">
                 <span>{gradedStr}</span>
                 <span className="text-xl text-(--text-muted)">+</span>
-                <span className="flex items-baseline gap-1">
-                  {nonGradedStr}
-                  <span className="text-[10px] text-(--text-muted) uppercase">ngcr</span>
-                </span>
+                <div className="flex flex-col items-center">
+                  <span>{nonGradedStr}</span>
+                  <span className="text-[8px] font-bold text-(--text-muted) uppercase tracking-wider -mt-0.5">
+                    NGCR
+                  </span>
+                </div>
               </div>
               
               <div className="w-24 h-[3px] rounded-full bg-(--text-main) my-3"></div>
@@ -174,7 +176,7 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
               url: "examinations/StudentDA",
               category: "Examinations"
             })}
-            className="group shrink-0 bg-(--bg-highlight) rounded-4xl flex flex-col relative z-30 cursor-pointer overflow-hidden border-2 border-transparent hover:border-(--border-main) transition-all h-fit"
+            className="shrink-0 bg-(--bg-highlight) rounded-4xl flex flex-col relative z-30 cursor-pointer overflow-hidden border-2 border-transparent hover:border-(--border-main) transition-all h-fit"
           >
             <div className="px-5 pt-3 border-b-2 border-(--border-main) flex justify-between items-center shrink-0">
               <div className="flex flex-col">
@@ -183,11 +185,12 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
                 </span>
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-3 flex flex-col gap-2">
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-3 flex flex-col gap-[2px] rounded-2xl overflow-hidden">
               {pendingAssignments.map((assignment, idx) => (
                 <AssignmentRow 
                   key={idx} 
                   assignment={assignment} 
+                  className="rounded-sm first:rounded-t-2xl last:rounded-b-2xl"
                 />
               ))}
             </div>

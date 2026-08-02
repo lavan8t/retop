@@ -1,24 +1,34 @@
 import React, { useState } from "react";
-import { AppSettings, resetDynamicThemeSeed } from "../utils/settings-store";
+import {
+  AppSettings,
+  resetDynamicThemeSeed,
+  getMaterialThemeColor,
+  getMaterialOnThemeColor,
+} from "../utils/settings-store";
+import { uploadBackup, downloadBackup } from "../utils/googleDriveSync";
 import { clearCache } from "../utils/cache";
-import { parseGradesSemesters, parseGrades, parseGradeHistory } from "../parsers/grades";
-import { parseMarksSemesters, parseStudentMarks } from "../parsers/marks";
 import {
   Check,
   Casino,
-  Close,
+  LocationOn,
+  Palette,
+  Sync,
+  Tune,
+  Storage,
+  KeyboardArrowDown,
+  Info,
+  WbSunny,
+  DarkMode,
+  Computer,
   Language,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { motion, AnimatePresence } from "framer-motion";
-import { SPRING_SNAPPY } from "../utils/motion";
 import { Icon } from "@iconify/react";
 
 import { SyncManager } from "../components/SyncManager";
 import { SegmentedControl } from "../components/ui/SegmentedControl";
 import { MaterialSwitch } from "../components/MaterialSwitch";
 import { Tooltip } from "../components/ui/Tooltip";
-import { useDataStore } from "../store/dataStore";
-import { useAppStore } from "../store/appStore";
 
 interface SettingsPageProps {
   settings: AppSettings;
@@ -29,128 +39,197 @@ interface SettingsPageProps {
   network?: any;
 }
 
-const SettingsCard = ({
+const CATEGORIES = [
+  {
+    id: "appearance",
+    label: "Appearance",
+    description: "Colors, themes, and calendar card accents",
+    icon: Palette,
+  },
+  {
+    id: "defaults",
+    label: "Defaults",
+    description: "Timetable mode, launch view, and display preferences",
+    icon: Tune,
+  },
+  {
+    id: "sync",
+    label: "Sync",
+    description: "Google Drive backups and Google Calendar export",
+    icon: Sync,
+  },
+  {
+    id: "data",
+    label: "Data & Storage",
+    description: "Cache management and endpoint storage explorer",
+    icon: Storage,
+  },
+  {
+    id: "about",
+    label: "About",
+    description: "retop version, links, and project info",
+    icon: Info,
+  },
+] as const;
+
+type CategoryId = (typeof CATEGORIES)[number]["id"];
+
+declare const __BUILD_NUMBER__: string;
+
+const SettingTopicCard = ({
   title,
   description,
   children,
   className = "",
-  contentClassName = "mt-auto self-start relative z-10 flex w-full",
-  disabled = false,
 }: {
   title?: React.ReactNode;
   description?: React.ReactNode;
   children?: React.ReactNode;
   className?: string;
-  contentClassName?: string;
-  disabled?: boolean;
 }) => (
-  <motion.div
-    variants={{
-      hidden: {
-        opacity: 0,
-        scale: 0.95,
-        boxShadow: "0px 0px 0px 0px var(--shadow-main)",
-      },
-      show: {
-        opacity: 1,
-        scale: 1,
-        boxShadow: "0px 0px 0px 0px var(--shadow-main)",
-      },
-      hover: {
-        boxShadow: "var(--brutal-shadow-hover)",
-      }
-    }}
-    whileHover="hover"
-    transition={SPRING_SNAPPY}
-    className={`break-inside-avoid w-full mb-4 lg:mb-6 bg-(--bg-surface) rounded-[32px] p-6 lg:p-8 flex flex-col justify-between gap-6 overflow-hidden relative border-4 border-(--border-main) shadow-none ${className} ${disabled ? "opacity-40 grayscale pointer-events-none" : ""}`}
+  <div
+    className={`p-6 rounded-3xl bg-transparent border-2 border-(--border-dim) flex flex-col gap-4 ${className}`}
   >
     {(title || description) && (
-      <div className="flex flex-col gap-2 relative z-10">
+      <div className="flex flex-col gap-1 border-b-2 border-(--border-dim) pb-4">
         {title && (
-          <div className="font-expanded font-black text-xl text-(--text-main) leading-tight">
+          <h3 className="font-expanded font-black text-lg md:text-xl text-(--text-main)">
             {title}
-          </div>
+          </h3>
         )}
         {description && (
-          <div className="text-sm font-bold text-(--text-muted) leading-snug">
+          <p className="text-xs md:text-sm font-medium text-(--text-muted)">
             {description}
-          </div>
+          </p>
         )}
       </div>
     )}
-    <div className={contentClassName}>{children}</div>
-  </motion.div>
+    {children}
+  </div>
 );
 
-export const SettingsPage: React.FC<SettingsPageProps> = ({
-  settings,
-  updateSetting,
-  network,
-}) => {
+export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
+  const [activeCategory, setActiveCategory] =
+    useState<CategoryId>("appearance");
+  const [isDriveSyncing, setIsDriveSyncing] = useState<boolean>(false);
+  const [driveStatus, setDriveStatus] = useState<string>("");
+  const [clearStatus, setClearStatus] = useState<string>("");
+  const [isHoveredRetop, setIsHoveredRetop] = useState<boolean>(false);
+  const [isThemeDropdownOpen, setIsThemeDropdownOpen] =
+    useState<boolean>(false);
+
+  const handleDriveBackup = async () => {
+    setIsDriveSyncing(true);
+    setDriveStatus("Backing up to Google Drive...");
+    try {
+      await uploadBackup(settings, settings.googleClientId);
+      setDriveStatus("Backup successful!");
+      updateSetting("driveSync", true);
+    } catch (e: any) {
+      setDriveStatus(`Backup failed: ${e.message || e}`);
+    } finally {
+      setIsDriveSyncing(false);
+    }
+  };
+
+  const handleDriveRestore = async () => {
+    setIsDriveSyncing(true);
+    setDriveStatus("Restoring from Google Drive...");
+    try {
+      const data = await downloadBackup(settings.googleClientId);
+      if (data && data.settings) {
+        Object.entries(data.settings).forEach(([k, v]) => {
+          updateSetting(k as keyof AppSettings, v as any);
+        });
+        setDriveStatus("Restore successful!");
+      } else {
+        setDriveStatus("No backup found on Drive.");
+      }
+    } catch (e: any) {
+      setDriveStatus(`Restore failed: ${e.message || e}`);
+    } finally {
+      setIsDriveSyncing(false);
+    }
+  };
+
+  const handleClearAllCache = async () => {
+    try {
+      await clearCache();
+      setClearStatus("Cache cleared successfully!");
+      setTimeout(() => setClearStatus(""), 3000);
+    } catch (e) {
+      setClearStatus("Failed to clear cache.");
+    }
+  };
+
   const COLORS = [
-    { id: "blue", hex: "#3b82f6", label: "Blue" },
-    { id: "indigo", hex: "#6366f1", label: "Indigo" },
-    { id: "purple", hex: "#a855f7", label: "Purple" },
-    { id: "pink", hex: "#ec4899", label: "Pink" },
+    { id: "grey", hex: "#71717a", label: "Monochrome" },
     { id: "red", hex: "#ef4444", label: "Red" },
     { id: "orange", hex: "#f97316", label: "Orange" },
     { id: "yellow", hex: "#eab308", label: "Yellow" },
-    { id: "lime", hex: "#84cc16", label: "Lime" },
     { id: "green", hex: "#22c55e", label: "Green" },
-    { id: "cyan", hex: "#06b6d4", label: "Cyan" },
-    { id: "neon-green", hex: "#39ff14", label: "Neon Green" },
-    { id: "neon-yellow", hex: "#eaff00", label: "Neon Yellow" },
-    { id: "neon-orange", hex: "#ff6700", label: "Neon Orange" },
-    { id: "neon-red", hex: "#ff073a", label: "Neon Red" },
+    { id: "blue", hex: "#3b82f6", label: "Blue" },
+    { id: "pink", hex: "#ec4899", label: "Pink" },
   ];
 
   const handleThemeChange = (
-    e: React.MouseEvent | { clientX: number; clientY: number },
+    e: React.MouseEvent | { clientX: number; clientY: number } | undefined,
     targetMode: "light" | "dark" | "amoled" | "auto",
   ) => {
-    const x = e.clientX;
-    const y = e.clientY;
+    // 1. Pre-calculate layout & geometry before dirtying the DOM
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    // Fallback to center if no event provided
+    const x = e && "clientX" in e ? e.clientX : window.innerWidth / 2;
+    const y = e && "clientY" in e ? e.clientY : window.innerHeight / 2;
+
+    // Calculate max radius needed to cover the screen from click origin
+    const endRadius = Math.hypot(
+      Math.max(x, window.innerWidth - x),
+      Math.max(y, window.innerHeight - y),
+    );
+
     const root = document.getElementById("retop-root");
-
-    const bgColors: Record<string, string> = {
-      light: "#f8fafc",
-      dark: "#09090b",
-      amoled: "#000000",
+    const doc = document as Document & {
+      startViewTransition?: (callback: () => void) => {
+        ready: Promise<void>;
+      };
     };
-    // Set the old background color on html before taking the snapshot so it doesn't default to white
-    document.documentElement.style.backgroundColor =
-      bgColors[settings.themeMode] || "#09090b";
 
-    if (!(document as any).startViewTransition) {
+    // Helper to apply the actual DOM update
+    const applyThemeUpdate = () => {
       updateSetting("themeMode", targetMode as any);
       if (root) {
         let activeTheme = targetMode;
         if (activeTheme === "auto") {
-          const hour = new Date().getHours();
-          activeTheme = hour >= 6 && hour < 18 ? "light" : "dark";
+          const sysDark =
+            typeof window !== "undefined" &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches;
+          activeTheme = sysDark
+            ? settings.pureBlack
+              ? "amoled"
+              : "dark"
+            : "light";
+        } else if (activeTheme === "dark" && settings.pureBlack) {
+          activeTheme = "amoled";
         }
         root.setAttribute("data-theme", activeTheme);
       }
+    };
+
+    // 2. Bypass transition if not supported or user prefers reduced motion
+    if (!doc.startViewTransition || prefersReducedMotion) {
+      applyThemeUpdate();
       return;
     }
 
-    const transition = (document as any).startViewTransition(() => {
-      updateSetting("themeMode", targetMode as any);
-      if (root) {
-        let activeTheme = targetMode;
-        if (activeTheme === "auto") {
-          const hour = new Date().getHours();
-          activeTheme = hour >= 6 && hour < 18 ? "light" : "dark";
-        }
-        root.setAttribute("data-theme", activeTheme);
-      }
-    });
+    // 3. Start transition
+    const transition = doc.startViewTransition(applyThemeUpdate);
 
+    // 4. Animate safely using pre-calculated dimensions
     transition.ready.then(() => {
-      const endRadius = Math.hypot(
-        Math.max(x, innerWidth - x),
-        Math.max(y, innerHeight - y),
-      );
       document.documentElement.animate(
         {
           clipPath: [
@@ -159,13 +238,30 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           ],
         },
         {
-          duration: 500,
-          easing: "ease-in-out",
+          duration: 400,
+          easing: "cubic-bezier(0.25, 1, 0.5, 1)",
           pseudoElement: "::view-transition-new(root)",
         },
       );
     });
   };
+
+  const sysDark =
+    typeof window !== "undefined" &&
+    window.matchMedia &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const isDark =
+    settings.themeMode === "dark" ||
+    settings.themeMode === "amoled" ||
+    (settings.themeMode === "auto" && sysDark);
+
+  const activeClassKey = settings.calendarClassColor;
+  const activeEventKey = settings.calendarEventColor;
+
+  const dummyClassBg = getMaterialThemeColor(activeClassKey, isDark);
+  const dummyClassFg = getMaterialOnThemeColor(activeClassKey, isDark);
+  const dummyEventBg = getMaterialThemeColor(activeEventKey, isDark);
+  const dummyEventFg = getMaterialOnThemeColor(activeEventKey, isDark);
 
   return (
     <>
@@ -175,572 +271,579 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           animation: none;
           mix-blend-mode: normal;
         }
+        ::view-transition-old(root) {
+          z-index: 1;
+        }
+        ::view-transition-new(root) {
+          z-index: 9999;
+          will-change: clip-path;
+        }
+        ::view-transition-old(root) *,
+        ::view-transition-new(root) * {
+          backdrop-filter: none !important;
+        }
       `}</style>
 
       <motion.div
-        initial="hidden"
-        animate="show"
-        variants={{
-          hidden: { opacity: 0 },
-          show: {
-            opacity: 1,
-            transition: { staggerChildren: 0.1 },
-          },
-        }}
-        className="h-full overflow-y-auto custom-scrollbar p-2 md:p-4 pt-16 md:pt-20 lg:pt-24 pb-32 md:pb-12 bg-(--bg-main) text-(--text-main) relative"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="h-full w-full bg-(--bg-main) text-(--text-main) relative overflow-hidden flex flex-col px-3 md:px-6"
       >
-        <div className="max-w-[1380px] mx-auto relative z-10 columns-1 md:columns-2 lg:columns-4 gap-4 lg:gap-6 pb-16">
-          {/* Appearance Box */}
-          <SettingsCard
-            title="Theme"
-            className="col-span-1 md:col-span-2 lg:col-span-1"
-          >
-            <div className="flex flex-col items-start justify-between gap-8 w-full min-w-0">
-              <div className="flex flex-col gap-4 w-full min-w-0">
-                <div className="flex flex-col gap-2 w-full">
-                  <span className="text-sm font-bold text-(--text-muted)">
-                    Color Scheme
-                  </span>
-                  <div className="flex bg-transparent rounded-full border-2 border-(--border-main) shadow-(--brutal-shadow-sm) w-full max-w-md items-center">
-                    <SegmentedControl
-                      options={[
-                        { label: <span className="uppercase">light</span>, value: "light" },
-                        { label: <span className="uppercase">dark</span>, value: "dark" },
-                        { label: <span className="uppercase">auto</span>, value: "auto" },
-                      ]}
-                      value={settings.themeMode === "amoled" ? "dark" : settings.themeMode}
-                      onChange={(val, e) => {
-                        let targetMode = val;
-                        if (val === "light") targetMode = "light";
-                        handleThemeChange(e as any, targetMode as any);
-                      }}
-                      className="w-full flex-1 *:flex-1"
-                    />
-                  </div>
-                </div>
+        <div className="max-w-270 w-full mx-auto flex-1 flex flex-col md:flex-row gap-6 md:gap-8 min-h-0 overflow-hidden h-full">
+          {/* Left Category Sidebar */}
+          <div className="w-full md:w-72 lg:w-80 shrink-0 flex flex-col gap-1 h-fit overflow-y-auto scrollbar-none pt-18 md:pt-22 pb-6 pr-1">
+            {CATEGORIES.map((cat, i) => {
+              const isSelected = activeCategory === cat.id;
+              const CatIcon = cat.icon;
+              const isFirst = i === 0;
+              const isLast = i === CATEGORIES.length - 1;
+              const roundingClass = isFirst
+                ? "rounded-t-4xl rounded-b-xl"
+                : isLast
+                  ? "rounded-b-4xl rounded-t-xl"
+                  : "rounded-xl";
 
-                <div className="flex items-center justify-between gap-4 w-full">
-                  <span
-                    className={`text-sm font-bold ${settings.themeMode !== "dark" && settings.themeMode !== "amoled" ? "text-(--text-muted) opacity-50" : "text-(--text-muted)"}`}
-                  >
-                    Use pure black
-                  </span>
-                  <MaterialSwitch
-                    selected={settings.themeMode === "amoled"}
-                    disabled={
-                      settings.themeMode !== "dark" &&
-                      settings.themeMode !== "amoled"
-                    }
-                    onChange={(checked) => {
-                      const e = {
-                        clientX: window.innerWidth / 2,
-                        clientY: window.innerHeight / 2,
-                      };
-                      handleThemeChange(e, checked ? "amoled" : "dark");
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2 w-full min-w-0">
-                <span className="text-sm font-bold text-(--text-muted)">
-                  Accent
-                </span>
-                <div className="flex flex-nowrap overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden gap-4 snap-x py-2 px-6 lg:px-8 -mx-6 lg:-mx-8 min-w-0">
-                  <Tooltip text="Random Accent">
-                    <button
-                      onClick={() => {
-                        if (!settings.randomAccentColor) resetDynamicThemeSeed();
-                        updateSetting("randomAccentColor", true);
-                      }}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-fast shrink-0 ${
-                        settings.randomAccentColor
-                          ? "ring-[3px] ring-inset ring-(--text-main) bg-linear-to-tr from-purple-500 via-pink-500 to-orange-500"
-                          : "ring-[3px] ring-inset ring-transparent bg-(--bg-highlight) hover:ring-(--border-dim)"
-                      }`}
-                      title="Random Accent"
-                    >
-                      {settings.randomAccentColor ? (
-                        <Check className="w-4 h-4 text-content-inverse" />
-                      ) : (
-                        <Casino className="w-4 h-4 text-(--text-muted)" />
-                      )}
-                    </button>
-                  </Tooltip>
-                  {COLORS.map((c) => (
-                    <button
-                      key={c.id}
-                      onClick={() => {
-                        updateSetting("randomAccentColor", false);
-                        updateSetting("accentColor", c.id as any);
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.setAttribute(
-                          "data-orig",
-                          document.documentElement.style.getPropertyValue(
-                            "--accent-base",
-                          ),
-                        );
-                        document.documentElement.style.setProperty(
-                          "--accent-base",
-                          c.hex,
-                        );
-                      }}
-                      onMouseLeave={(e) => {
-                        const orig = e.currentTarget.getAttribute("data-orig");
-                        if (orig) {
-                          document.documentElement.style.setProperty(
-                            "--accent-base",
-                            orig,
-                          );
-                        } else {
-                          document.documentElement.style.removeProperty(
-                            "--accent-base",
-                          );
-                        }
-                      }}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-fast shrink-0 ${
-                        settings.accentColor === c.id &&
-                        !settings.randomAccentColor
-                          ? "ring-[3px] ring-inset ring-(--text-main)"
-                          : "ring-[3px] ring-inset ring-transparent hover:ring-(--border-dim)"
-                      }`}
-                      style={{ backgroundColor: c.hex }}
-                      title={c.label}
-                    >
-                      {settings.accentColor === c.id &&
-                        !settings.randomAccentColor && (
-                          <Check className="w-6 h-6 text-content-inverse" />
-                        )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </SettingsCard>
-
-          {/* Calendar Theme Box */}
-          <SettingsCard
-            title="Calendar UI"
-            className="col-span-1 md:col-span-2 lg:col-span-1"
-          >
-            <div className="flex flex-col items-start justify-between gap-6 w-full min-w-0">
-              <div className="flex flex-col gap-2 w-full min-w-0">
-                <span className="text-sm font-bold text-(--text-muted)">
-                  Class Color
-                </span>
-                <div className="flex flex-nowrap overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden gap-4 snap-x py-2 px-6 lg:px-8 -mx-6 lg:-mx-8 min-w-0">
-                  {COLORS.map((c) => (
-                    <button
-                      key={`class-${c.id}`}
-                      onClick={() => updateSetting("calendarClassColor", c.id as any)}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-fast shrink-0 ${
-                        settings.calendarClassColor === c.id
-                          ? "ring-[3px] ring-inset ring-(--text-main)"
-                          : "ring-[3px] ring-inset ring-transparent hover:ring-(--border-dim)"
-                      }`}
-                      style={{ backgroundColor: c.hex }}
-                      title={c.label}
-                    >
-                      {settings.calendarClassColor === c.id && (
-                        <Check className="w-6 h-6 text-content-inverse" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2 w-full min-w-0">
-                <span className="text-sm font-bold text-(--text-muted)">
-                  Event Color
-                </span>
-                <div className="flex flex-nowrap overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden gap-4 snap-x py-2 px-6 lg:px-8 -mx-6 lg:-mx-8 min-w-0">
-                  {COLORS.map((c) => (
-                    <button
-                      key={`event-${c.id}`}
-                      onClick={() => updateSetting("calendarEventColor", c.id as any)}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-fast shrink-0 ${
-                        settings.calendarEventColor === c.id
-                          ? "ring-[3px] ring-inset ring-(--text-main)"
-                          : "ring-[3px] ring-inset ring-transparent hover:ring-(--border-dim)"
-                      }`}
-                      style={{ backgroundColor: c.hex }}
-                      title={c.label}
-                    >
-                      {settings.calendarEventColor === c.id && (
-                        <Check className="w-6 h-6 text-content-inverse" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </SettingsCard>
-
-          <SettingsCard
-            title={
-              <span
-                className="lowercase tracking-tighter"
-                style={{
-                  fontFamily: "'Google Sans Flex', system-ui, sans-serif",
-                  fontVariationSettings:
-                    '"wdth" 151, "wght" 800, "GRAD" 100, "ROND" 100, "slnt" -10',
-                }}
-              >
-                retop
-              </span>
-            }
-            description="Always load the modernized view on login"
-            className="col-span-1"
-          >
-            <div className="w-full flex justify-end">
-              <MaterialSwitch
-                selected={settings.defaultView === "modern"}
-                onChange={() => {
-                  const newVal = settings.defaultView === "modern" ? "legacy" : "modern";
-                  updateSetting("defaultView", newVal);
-                  if (newVal === "legacy") {
-                    sessionStorage.setItem("vtop-legacy-mode", "true");
-                  } else {
-                    sessionStorage.setItem("vtop-legacy-mode", "false");
-                  }
-                }}
-              />
-            </div>
-          </SettingsCard>
-
-          {/* About Retop Section */}
-          <SettingsCard
-            className="col-span-1 text-center"
-            contentClassName="relative z-10 flex flex-col justify-between w-full flex-1"
-          >
-            <div className="flex flex-col items-center gap-3 w-full">
-              <motion.h2
-                variants={{
-                  show: { fontVariationSettings: '"wdth" 125, "wght" 800, "GRAD" 100, "ROND" 100, "slnt" -10' },
-                  hover: { fontVariationSettings: '"wdth" 125, "wght" 1, "GRAD" 100, "ROND" 100, "slnt" -10' }
-                }}
-                transition={SPRING_SNAPPY}
-                className="text-5xl text-(--text-main) font-logo cursor-default tracking-tighter leading-none lowercase"
-              >
-                retop
-              </motion.h2>
-              <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
-                <span className="bg-(--bg-highlight) text-(--text-main) px-3 py-1 rounded-full text-[10px] font-bold font-mono uppercase">
-                  v{(() => {
-                    try {
-                      if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.getManifest) {
-                        return chrome.runtime.getManifest().version;
-                      }
-                    } catch (e) {
-                      // Extension context invalidated
-                    }
-                    return "dev";
-                  })()}
-                </span>
-                <span className="bg-(--bg-highlight) text-(--text-muted) px-3 py-1 rounded-full text-[10px] font-bold font-mono uppercase">
-                  {typeof __BUILD_NUMBER__ !== "undefined"
-                    ? __BUILD_NUMBER__
-                    : "unknown_build"}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-4 mt-2">
-              <Tooltip text="GitHub">
-                <a
-                  href="https://github.com/lavan8t/retop"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="p-3.5 rounded-full transition-all bg-(--bg-highlight) text-(--text-main) hover:bg-(--text-main) hover:text-(--bg-main) hover:scale-105 active:scale-95 flex items-center justify-center shadow-none hover:shadow-lg"
-                >
-                  <Icon icon="mdi:github" className="w-8 h-8" />
-                </a>
-              </Tooltip>
-              <Tooltip text="Website">
-                <a
-                  href="https://getretop.web.app"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="p-3.5 rounded-full transition-all bg-(--bg-highlight) text-(--text-main) hover:bg-(--text-main) hover:text-(--bg-main) hover:scale-105 active:scale-95 flex items-center justify-center shadow-none hover:shadow-lg"
-                >
-                  <Language className="w-8 h-8" />
-                </a>
-              </Tooltip>
-            </div>
-          </SettingsCard>
-
-
-
-          <SettingsCard
-            title="Hide CGPA"
-            description="Hide your CGPA on the dashboard until you point it"
-            className="col-span-1"
-          >
-            <div className="w-full flex justify-end">
-              <MaterialSwitch
-                selected={settings.blurCgpa}
-                onChange={() => updateSetting("blurCgpa", !settings.blurCgpa)}
-              />
-            </div>
-          </SettingsCard>
-
-          <SettingsCard
-            title="System Animations"
-            description="Adjust global animation speed"
-            className="col-span-1"
-          >
-            <div className="flex flex-col gap-2 w-full">
-              <div className="flex bg-transparent rounded-full border-2 border-(--border-main) shadow-(--brutal-shadow-sm) w-full items-center">
-                <SegmentedControl
-                  options={[
-                    { label: <span className="uppercase">1x</span>, value: "1x" },
-                    { label: <span className="uppercase">0.5x</span>, value: "0.5x" },
-                    { label: <span className="uppercase">off</span>, value: "0x" },
-                  ]}
-                  value={settings.animationScale || "1x"}
-                  onChange={(val) => updateSetting("animationScale", val as any)}
-                  className="w-full flex-1 *:flex-1"
-                />
-              </div>
-            </div>
-          </SettingsCard>
-
-
-
-          <SettingsCard
-            title="Cloud & Sync"
-            className="col-span-1 md:col-span-2 lg:col-span-2"
-          >
-            <div className="flex flex-col w-full gap-6">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm md:text-base font-bold text-(--text-main)">
-                    Google Account
-                  </span>
-                  <span className="text-xs text-(--text-muted)">
-                    {settings.googleLinked
-                      ? "Connected to student account"
-                      : "Not connected"}
-                  </span>
-                </div>
+              return (
                 <button
-                  onClick={() =>
-                    updateSetting("googleLinked", !settings.googleLinked)
-                  }
-                  className={`px-5 py-2.5 shrink-0 rounded-xl text-xs font-black font-expanded uppercase transition-all border-2 border-(--border-main) shadow-none hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) cursor-pointer ${
-                    settings.googleLinked
-                      ? "bg-(--bg-surface) text-(--text-main) hover:text-att-danger hover:bg-red-500/10"
-                      : "bg-(--text-main) text-(--bg-main)"
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`flex items-start gap-4 px-5 py-4 ${roundingClass} transition-all cursor-pointer text-left border-2 ${
+                    isSelected
+                      ? "bg-(--accent-base) text-(--text-inverse) border-(--accent-base) shadow-none"
+                      : "bg-(--bg-surface) text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main) border-(--border-dim)"
                   }`}
                 >
-                  {settings.googleLinked ? "Disconnect" : "Connect"}
-                </button>
-              </div>
-              <div
-                className={`flex flex-col gap-5 transition-all duration-fast ${settings.googleLinked ? "opacity-100" : "opacity-40 grayscale pointer-events-none"}`}
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-sm font-bold text-(--text-main)">
-                      Sync Timetable
+                  <CatIcon
+                    className={`w-6 h-6 shrink-0 mt-0.5 transition-transform ${isSelected ? "scale-105" : ""}`}
+                  />
+                  <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+                    <span className="font-expanded font-black text-sm md:text-base leading-snug">
+                      {cat.label}
                     </span>
-                    <span className="text-xs text-(--text-muted)">
-                      Sync classes to Google Calendar
+                    <span
+                      className={`text-xs font-medium leading-snug ${isSelected ? "opacity-90 text-(--text-inverse)" : "text-(--text-muted)"}`}
+                    >
+                      {cat.description}
                     </span>
                   </div>
-                  <MaterialSwitch
-                    selected={settings.calendarSync}
-                    onChange={() =>
-                      updateSetting("calendarSync", !settings.calendarSync)
-                    }
-                  />
-                </div>
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-sm font-bold text-(--text-main)">
-                      Drive Backup
-                    </span>
-                    <span className="text-xs text-(--text-muted)">
-                      Save settings to Google Drive
-                    </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Right Topic Content Area (Separately Scrollable behind TopBar) */}
+          <div className="flex-1 min-w-0 h-full overflow-y-auto custom-scrollbar pt-18 md:pt-22 pb-24 md:pb-12 pr-2">
+            <div className="flex flex-col gap-6 max-w-2xl">
+              {/* 1. APPEARANCE */}
+              {activeCategory === "appearance" && (
+                <>
+                  <SettingTopicCard
+                    title="Theme & Color Scheme"
+                    description="Choose light, dark, or automatic system theme"
+                  >
+                    <div className="flex flex-col gap-6 w-full">
+                      <div className="flex flex-col gap-2 w-full min-w-0">
+                        <span className="text-xs font-bold text-(--text-muted) uppercase font-expanded">
+                          Color Scheme
+                        </span>
+                        <div className="flex items-center justify-around w-full py-2">
+                          {[
+                            { id: "light", label: "Light", icon: WbSunny },
+                            { id: "dark", label: "Dark", icon: DarkMode },
+                            { id: "auto", label: "System", icon: Computer },
+                          ].map((item) => {
+                            const isSelected =
+                              settings.themeMode === item.id ||
+                              (item.id === "dark" &&
+                                settings.themeMode === "amoled");
+
+                            return (
+                              <button
+                                key={item.id}
+                                onClick={(e) =>
+                                  handleThemeChange(e, item.id as any)
+                                }
+                                className={`flex flex-col items-center justify-center gap-2 p-3 w-20 h-20 rounded-2xl transition-all cursor-pointer border-0 ${
+                                  isSelected
+                                    ? "bg-(--accent-base) text-(--text-inverse) shadow-md"
+                                    : "bg-transparent hover:bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main)"
+                                }`}
+                              >
+                                <item.icon className="w-8 h-8 shrink-0" />
+                                <span className="text-[10px] font-bold font-expanded">
+                                  {item.label}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-center gap-3 w-fit mx-auto px-4 py-1.5 rounded-full border-2 border-(--border-dim) mt-2">
+                        <span className="text-sm font-bold text-(--text-muted)">
+                          Use Pure Black
+                        </span>
+                        <MaterialSwitch
+                          selected={
+                            settings.themeMode === "amoled" ||
+                            settings.pureBlack
+                          }
+                          disabled={settings.themeMode === "light"}
+                          onChange={(checked) => {
+                            updateSetting("pureBlack", checked);
+                            if (
+                              settings.themeMode === "dark" ||
+                              settings.themeMode === "amoled"
+                            ) {
+                              const e = {
+                                clientX: window.innerWidth / 2,
+                                clientY: window.innerHeight / 2,
+                              };
+                              handleThemeChange(
+                                e as any,
+                                checked ? "amoled" : "dark",
+                              );
+                            }
+                          }}
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2 w-full min-w-0">
+                        <span className="text-xs font-bold text-(--text-muted) uppercase font-expanded">
+                          Accent
+                        </span>
+                        <div className="flex flex-nowrap overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden gap-3 snap-x py-3 px-2 min-w-0">
+                          {COLORS.map((c) => (
+                            <button
+                              key={c.id}
+                              onClick={() =>
+                                updateSetting("accentColor", c.id as any)
+                              }
+                              className={`w-9 h-9 rounded-full flex items-center justify-center transition-all shrink-0 cursor-pointer ${
+                                settings.accentColor === c.id
+                                  ? "ring-2 ring-offset-2 ring-(--text-main) scale-105"
+                                  : "hover:scale-105 opacity-80 hover:opacity-100"
+                              }`}
+                              style={{ backgroundColor: c.hex }}
+                              title={c.label}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </SettingTopicCard>
+
+                  <SettingTopicCard
+                    title="Calendar Card Theme Colors"
+                    description="Tone-derived theme colors for class and event cards"
+                  >
+                    <div className="flex flex-col gap-6 w-full">
+                      {/* Live Class & Event Dummy Preview */}
+                      <div className="flex flex-col gap-1.5 rounded-2xl overflow-hidden w-full max-w-md border-2 border-(--border-dim) p-2 bg-(--bg-main)">
+                        <div
+                          className="flex flex-col p-3 rounded-xl shadow-none border-0 transition-colors"
+                          style={{
+                            backgroundColor: dummyClassBg,
+                            color: dummyClassFg,
+                          }}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <span className="font-mono text-xs font-bold shrink-0">
+                                08:00
+                              </span>
+                              <span className="text-sm font-black truncate">
+                                Operating Systems
+                              </span>
+                            </div>
+                            <span className="text-[10px] font-bold font-mono shrink-0 flex items-center gap-1 opacity-90">
+                              <LocationOn className="w-3 h-3" />
+                              SJT 412
+                            </span>
+                          </div>
+                        </div>
+
+                        <div
+                          className="flex flex-col p-3 rounded-xl shadow-none border-0 transition-colors"
+                          style={{
+                            backgroundColor: dummyEventBg,
+                            color: dummyEventFg,
+                          }}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="text-sm font-black leading-tight flex-1">
+                              Do Good Hackathon
+                            </span>
+                            <span className="shrink-0 text-[10px] font-bold opacity-80 text-right">
+                              The Club
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-2 w-full min-w-0">
+                        <span className="text-xs font-bold text-(--text-muted) uppercase font-expanded">
+                          Classes
+                        </span>
+                        <div className="flex flex-nowrap overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden gap-3 snap-x py-2 px-5 min-w-0">
+                          {COLORS.map((c) => (
+                            <button
+                              key={`class-${c.id}`}
+                              onClick={() =>
+                                updateSetting("calendarClassColor", c.id as any)
+                              }
+                              className={`w-9 h-9 rounded-full flex items-center justify-center transition-all shrink-0 cursor-pointer ${
+                                settings.calendarClassColor === c.id
+                                  ? "ring-2 ring-offset-2 ring-(--text-main) scale-105"
+                                  : "hover:scale-105 opacity-80 hover:opacity-100"
+                              }`}
+                              style={{
+                                backgroundColor: getMaterialThemeColor(
+                                  c.id,
+                                  isDark,
+                                ),
+                              }}
+                              title={c.label}
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-2 w-full min-w-0">
+                        <span className="text-xs font-bold text-(--text-muted) uppercase font-expanded">
+                          Events
+                        </span>
+                        <div className="flex flex-nowrap overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden gap-3 snap-x py-2 px-5 min-w-0">
+                          {COLORS.map((c) => (
+                            <button
+                              key={`event-${c.id}`}
+                              onClick={() =>
+                                updateSetting("calendarEventColor", c.id as any)
+                              }
+                              className={`w-9 h-9 rounded-full flex items-center justify-center transition-all shrink-0 cursor-pointer ${
+                                settings.calendarEventColor === c.id
+                                  ? "ring-2 ring-offset-2 ring-(--text-main) scale-105"
+                                  : "hover:scale-105 opacity-80 hover:opacity-100"
+                              }`}
+                              style={{
+                                backgroundColor: getMaterialThemeColor(
+                                  c.id,
+                                  isDark,
+                                ),
+                              }}
+                              title={c.label}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </SettingTopicCard>
+                </>
+              )}
+
+              {/* 2. DEFAULTS */}
+              {activeCategory === "defaults" && (
+                <>
+                  <SettingTopicCard
+                    title="Timetable View Mode"
+                    description="Select preferred default timetable layout format"
+                  >
+                    <div className="flex flex-col gap-4 w-full">
+                      <div className="flex bg-transparent rounded-2xl border-2 border-(--border-main) p-1 w-full max-w-xl">
+                        <SegmentedControl
+                          options={[
+                            { label: "Weekly View", value: "weekly" },
+                            { label: "Slot Grid", value: "slot" },
+                            { label: "Consolidated", value: "consolidated" },
+                            { label: "Full Month", value: "fullMonth" },
+                          ]}
+                          value={settings.timetableMode || "weekly"}
+                          onChange={(val) =>
+                            updateSetting("timetableMode", val as any)
+                          }
+                          className="w-full flex-1 *:flex-1"
+                        />
+                      </div>
+                    </div>
+                  </SettingTopicCard>
+
+                  <SettingTopicCard
+                    title="Default Launch View"
+                    description="Always load retop modernized view on login"
+                  >
+                    <div className="flex items-center justify-between gap-4 w-full">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-sm font-bold text-(--text-main)">
+                          Load retop on Login
+                        </span>
+                        <span className="text-xs text-(--text-muted)">
+                          Automatically show retop dashboard instead of legacy
+                          VTOP UI
+                        </span>
+                      </div>
+                      <MaterialSwitch
+                        selected={settings.defaultView === "modern"}
+                        onChange={() => {
+                          const newVal =
+                            settings.defaultView === "modern"
+                              ? "legacy"
+                              : "modern";
+                          updateSetting("defaultView", newVal);
+                          if (newVal === "legacy") {
+                            sessionStorage.setItem("vtop-legacy-mode", "true");
+                          } else {
+                            sessionStorage.setItem("vtop-legacy-mode", "false");
+                          }
+                        }}
+                      />
+                    </div>
+                  </SettingTopicCard>
+
+                  <SettingTopicCard
+                    title="Display & Privacy Preferences"
+                    description="Time format display and private data masking"
+                  >
+                    <div className="flex flex-col gap-6 w-full">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-sm font-bold text-(--text-main)">
+                            24-Hour Railway Time
+                          </span>
+                          <span className="text-xs text-(--text-muted)">
+                            Display times in 24-hour format (14:00 instead of
+                            02:00 PM)
+                          </span>
+                        </div>
+                        <MaterialSwitch
+                          selected={settings.use24HourTime}
+                          onChange={() =>
+                            updateSetting(
+                              "use24HourTime",
+                              !settings.use24HourTime,
+                            )
+                          }
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-sm font-bold text-(--text-main)">
+                            Blur CGPA & Credits
+                          </span>
+                          <span className="text-xs text-(--text-muted)">
+                            Hide CGPA and credit totals on home dashboard for
+                            privacy
+                          </span>
+                        </div>
+                        <MaterialSwitch
+                          selected={settings.blurCgpa}
+                          onChange={() =>
+                            updateSetting("blurCgpa", !settings.blurCgpa)
+                          }
+                        />
+                      </div>
+                    </div>
+                  </SettingTopicCard>
+                </>
+              )}
+
+              {/* 3. SYNC */}
+              {activeCategory === "sync" && (
+                <>
+                  <SettingTopicCard
+                    title="Google Drive Backup & Restore"
+                    description="Securely sync settings and preferences to your Google Drive AppData folder"
+                  >
+                    <div className="flex flex-col gap-4 w-full">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-sm font-bold text-(--text-main)">
+                            Drive Automatic Sync
+                          </span>
+                          <span className="text-xs text-(--text-muted)">
+                            Auto-sync settings across devices using Google Drive
+                          </span>
+                        </div>
+                        <MaterialSwitch
+                          selected={settings.driveSync}
+                          onChange={() => {
+                            const next = !settings.driveSync;
+                            updateSetting("driveSync", next);
+                            if (next) handleDriveBackup();
+                          }}
+                        />
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-3 mt-2">
+                        <button
+                          onClick={handleDriveBackup}
+                          disabled={isDriveSyncing}
+                          className="px-4 py-2.5 rounded-xl text-xs font-black uppercase bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white border-2 border-zinc-300 dark:border-zinc-700 transition-all cursor-pointer disabled:opacity-50 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2"
+                        >
+                          <Icon icon="logos:google-icon" className="w-4 h-4" />
+                          Sign in with Google
+                        </button>
+                        <button
+                          onClick={handleDriveBackup}
+                          disabled={isDriveSyncing}
+                          className="px-4 py-2.5 rounded-xl text-xs font-black uppercase bg-(--accent-base) text-(--text-inverse) transition-all border-0 cursor-pointer disabled:opacity-50 hover:opacity-90"
+                        >
+                          Backup Now
+                        </button>
+                        <button
+                          onClick={handleDriveRestore}
+                          disabled={isDriveSyncing}
+                          className="px-4 py-2.5 rounded-xl text-xs font-black uppercase bg-(--bg-main) text-(--text-main) border-2 border-(--border-dim) transition-all cursor-pointer disabled:opacity-50 hover:bg-(--bg-highlight)"
+                        >
+                          Restore
+                        </button>
+                      </div>
+
+                      {driveStatus && (
+                        <span className="text-xs font-bold text-(--text-muted) mt-1">
+                          {driveStatus}
+                        </span>
+                      )}
+                    </div>
+                  </SettingTopicCard>
+
+                  <SettingTopicCard
+                    title="Google Calendar Export"
+                    description="Synchronize timetable classes directly to Google Calendar"
+                  >
+                    <div className="flex items-center justify-between gap-4 w-full">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-sm font-bold text-(--text-main)">
+                          Google Calendar Sync
+                        </span>
+                        <span className="text-xs text-(--text-muted)">
+                          Export scheduled classes as Google Calendar events
+                        </span>
+                      </div>
+                      <MaterialSwitch
+                        selected={settings.calendarSync}
+                        onChange={() =>
+                          updateSetting("calendarSync", !settings.calendarSync)
+                        }
+                      />
+                    </div>
+                  </SettingTopicCard>
+                </>
+              )}
+
+              {/* 4. DATA & STORAGE */}
+              {activeCategory === "data" && (
+                <>
+                  <SettingTopicCard
+                    title="Cache & Storage Management"
+                    description="Clear cached VTOP portal data or manage specific cached endpoints"
+                  >
+                    <div className="flex flex-col gap-4 w-full">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-sm font-bold text-(--text-main)">
+                            Clear All Portal Cache
+                          </span>
+                          <span className="text-xs text-(--text-muted)">
+                            Removes offline cached data for timetable, marks,
+                            attendance, and assignments
+                          </span>
+                        </div>
+                        <button
+                          onClick={handleClearAllCache}
+                          className="px-5 py-2.5 rounded-full text-xs font-black uppercase bg-(--accent-base) text-(--text-inverse) transition-all border-0 cursor-pointer disabled:opacity-50 hover:opacity-90 ml-2 shadow-sm"
+                        >
+                          Clear Cache
+                        </button>
+                      </div>
+
+                      {clearStatus && (
+                        <span className="text-xs font-bold text-(--text-muted)">
+                          {clearStatus}
+                        </span>
+                      )}
+
+                      <div className="border-t-2 border-(--border-dim) pt-4 mt-2">
+                        <span className="text-xs font-bold uppercase font-expanded text-(--text-muted) mb-2 block">
+                          Cached Endpoint Explorer
+                        </span>
+                        <SyncManager />
+                      </div>
+                    </div>
+                  </SettingTopicCard>
+                </>
+              )}
+
+              {/* 5. ABOUT */}
+              {activeCategory === "about" && (
+                <>
+                  <div className="flex flex-col items-center justify-center text-center p-8 md:p-12 rounded-3xl bg-transparent border-2 border-(--border-dim) gap-6 w-full max-w-2xl mx-auto">
+                    {/* retop Signature Logo */}
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <span className="font-logo retop-logo text-6xl md:text-7xl lg:text-8xl cursor-pointer inline-block select-none text-(--text-main) hover:text-(--accent-base) lowercase tracking-tighter">
+                        retop
+                      </span>
+                      <p className="text-sm md:text-base font-bold font-expanded text-(--text-muted) max-w-md mt-1">
+                        Next-generation Material You extension & re-skin for
+                        VTOP
+                      </p>
+                    </div>
+
+                    {/* Version & Build Pill */}
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-(--bg-surface) border-2 border-(--border-dim) text-xs md:text-sm font-bold font-mono text-(--text-muted)">
+                      <span>
+                        v
+                        {(() => {
+                          try {
+                            return (
+                              (typeof chrome !== "undefined" &&
+                                chrome.runtime?.getManifest?.()?.version) ||
+                              "0.3.0"
+                            );
+                          } catch {
+                            return "0.3.0";
+                          }
+                        })()}
+                      </span>
+                      <span>•</span>
+                      <span>
+                        Build{" "}
+                        {typeof __BUILD_NUMBER__ !== "undefined"
+                          ? __BUILD_NUMBER__
+                          : "dev"}
+                      </span>
+                    </div>
+
+                    {/* Official Link Buttons */}
+                    <div className="flex flex-wrap items-center justify-center gap-4 pt-2 w-full">
+                      <a
+                        href="https://getretop.web.app"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-6 py-3.5 rounded-2xl text-sm md:text-base font-bold bg-(--accent-base) text-(--text-inverse) transition-all border-0 hover:opacity-90 flex items-center gap-2.5 shadow-sm hover:scale-[1.03] active:scale-[0.98]"
+                      >
+                        <Language className="w-5 h-5 shrink-0" />
+                        <span>getretop.web.app</span>
+                      </a>
+                      <a
+                        href="https://github.com/lavan8t/retop"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-6 py-3.5 rounded-2xl text-sm md:text-base font-bold bg-(--bg-surface) text-(--text-main) border-2 border-(--border-dim) transition-all hover:bg-(--bg-highlight) flex items-center gap-2.5 shadow-sm hover:scale-[1.03] active:scale-[0.98]"
+                      >
+                        <Icon icon="mdi:github" className="w-5 h-5 shrink-0" />
+                        <span>lavan8t/retop</span>
+                      </a>
+                    </div>
                   </div>
-                  <MaterialSwitch
-                    selected={settings.driveSync}
-                    onChange={() =>
-                      updateSetting("driveSync", !settings.driveSync)
-                    }
-                  />
-                </div>
-              </div>
+                </>
+              )}
             </div>
-          </SettingsCard>
-
-          <SettingsCard
-            title="24-Hour Time"
-            description="Use railway time format"
-            className="col-span-1"
-          >
-            <div className="w-full flex justify-end">
-              <MaterialSwitch
-                selected={settings.use24HourTime}
-                onChange={() =>
-                  updateSetting("use24HourTime", !settings.use24HourTime)
-                }
-              />
-            </div>
-          </SettingsCard>
-
-
-
-          <SettingsCard
-            title="Developer Options"
-            description="Fill all VTOP types with dummy data for testing UI rendering across all pages."
-            className="col-span-1 md:col-span-2 lg:col-span-4"
-          >
-            <div className="w-full flex flex-col md:flex-row justify-end gap-3">
-              <button
-                id="export-btn"
-                onClick={async () => {
-                  if (!network) {
-                    alert("Network instance not found.");
-                    return;
-                  }
-                  const btn = document.getElementById("export-btn");
-                  if (btn) btn.innerText = "CAPTURING...";
-                  try {
-                    await useDataStore.getState().fetchDashboardData(network, network.csrf, network.authorizedID);
-                    
-                    const state = useDataStore.getState();
-
-                    const gradesViewHTML = await network.getGradesView();
-                    const gradesSems = parseGradesSemesters(gradesViewHTML);
-                    let grades = null;
-                    if (gradesSems.length > 0) {
-                        const html = await network.getStudentGrades(gradesSems[0].id);
-                        grades = parseGrades(html);
-                    }
-                    const historyHtml = await network.getStudentGradeHistory();
-                    const gradeHistory = parseGradeHistory(historyHtml);
-
-                    const marksViewHTML = await network.getMarksView();
-                    const marksSems = parseMarksSemesters(marksViewHTML);
-                    let marks = null;
-                    if (marksSems.length > 0) {
-                        const html = await network.getStudentMarks(marksSems[0].id);
-                        marks = parseStudentMarks(html);
-                    }
-
-                    const exportData = {
-                        stats: state.stats,
-                        attendance: state.attendance,
-                        assignments: state.assignments,
-                        events: state.events,
-                        ttCourses: state.ttCourses,
-                        ttSemesters: state.ttSemesters,
-                        calSemesters: state.calSemesters,
-                        grades,
-                        gradeHistory,
-                        marks
-                    };
-                    
-                    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = "vtop_dummy_data.json";
-                    a.click();
-                    URL.revokeObjectURL(url);
-
-                    if (btn) btn.innerText = "DONE! CHECK DOWNLOADS";
-                    setTimeout(() => { if (btn) btn.innerText = "EXPORT REAL DATA AS JSON"; }, 3000);
-                  } catch (e) {
-                    console.error(e);
-                    if (btn) btn.innerText = "ERROR!";
-                  }
-                }}
-                className="px-5 py-2.5 rounded-xl text-xs font-black font-expanded uppercase transition-all border-2 border-(--border-main) shadow-none hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) cursor-pointer bg-(--bg-surface) text-(--text-main)"
-              >
-                Export Real Data As JSON
-              </button>
-              <button
-                onClick={() => {
-                  useDataStore.getState().enableDemoMode();
-                  alert("Demo Mode Active: Dummy data injected.");
-                }}
-                className="px-5 py-2.5 rounded-xl text-xs font-black font-expanded uppercase transition-all border-2 border-(--border-main) shadow-none hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) cursor-pointer bg-(--text-main) text-(--bg-main)"
-              >
-                Fill Dummy Data
-              </button>
-            </div>
-          </SettingsCard>
-        </div>
-
-        <div className="max-w-[1380px] mx-auto relative z-10 mt-8 mb-16 clear-both">
-          <SettingsCard
-            title="Data, Cache & Sync"
-            description="Manage your local offline data and synchronize the latest academic records from VTOP."
-            className="w-full"
-          >
-            <div className="flex flex-col gap-6">
-              <div className="w-full flex flex-col sm:flex-row justify-end gap-3 border-b-2 border-(--border-dim) pb-6">
-                <button
-                  id="sync-btn"
-                  onClick={async () => {
-                    if (!network) {
-                      alert("Network instance not found.");
-                      return;
-                    }
-                    const btn = document.getElementById("sync-btn");
-                    if (btn) btn.innerText = "SYNCING...";
-                    try {
-                      await useDataStore.getState().fetchDashboardData(network, network.csrf, network.authorizedID);
-                      
-                      const gradesViewHTML = await network.getGradesView(true);
-                      const gradesSems = parseGradesSemesters(gradesViewHTML);
-                      if (gradesSems.length > 0) {
-                          await network.getStudentGrades(gradesSems[0].id, true);
-                      }
-                      await network.getStudentGradeHistory(true);
-
-                      const marksViewHTML = await network.getMarksView(true);
-                      const marksSems = parseMarksSemesters(marksViewHTML);
-                      if (marksSems.length > 0) {
-                          await network.getStudentMarks(marksSems[0].id, true);
-                      }
-
-                      if (btn) btn.innerText = "SYNC COMPLETE!";
-                      useAppStore.getState().addSnackbar({
-                        message: "Synced Dashboard, Grades, and Marks",
-                        icon: Check,
-                      });
-                      setTimeout(() => { if (btn) btn.innerText = "SYNC LATEST DATA"; }, 3000);
-                    } catch (e) {
-                      console.error(e);
-                      if (btn) btn.innerText = "SYNC FAILED!";
-                      setTimeout(() => { if (btn) btn.innerText = "SYNC LATEST DATA"; }, 3000);
-                    }
-                  }}
-                  className="px-5 py-2.5 rounded-xl text-xs font-black font-expanded uppercase transition-all border-2 border-(--border-main) shadow-none hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) cursor-pointer bg-(--accent-base) text-black"
-                >
-                  Sync Latest Data
-                </button>
-                <button
-                  onClick={() => {
-                    clearCache();
-                    window.location.reload();
-                  }}
-                  className="px-5 py-2.5 rounded-xl text-xs font-black font-expanded uppercase transition-all border-2 border-(--border-main) shadow-none hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) cursor-pointer bg-(--text-main) text-(--bg-main)"
-                >
-                  Clear All Cache
-                </button>
-              </div>
-
-              <SyncManager />
-            </div>
-          </SettingsCard>
+          </div>
         </div>
       </motion.div>
     </>
   );
-};
+}
+
+export default SettingsPage;

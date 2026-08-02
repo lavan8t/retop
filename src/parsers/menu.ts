@@ -10,6 +10,13 @@ const sanitizeMenuTitle = (title: string): string => {
     return "Course Page";
   }
 
+  if (
+    lowerTitle.includes("digital assignment") ||
+    lowerTitle.includes("digital assignment upload")
+  ) {
+    return "Assignments";
+  }
+
   if (lowerTitle.includes("grade")) {
     return "Grades & History";
   }
@@ -47,7 +54,10 @@ export function scrapeMenu(doc: Document): MenuCategory[] {
     const anchors = container.querySelectorAll("a[data-url]");
 
     anchors.forEach((a) => {
-      let linkTitle = a.textContent?.trim() || "";
+      const clone = a.cloneNode(true) as HTMLElement;
+      clone.querySelectorAll(".retop-menu-badge").forEach((b) => b.remove());
+      let linkTitle = clone.textContent?.trim() || "";
+      linkTitle = linkTitle.replace(/re\.$/i, "").trim();
       linkTitle = sanitizeMenuTitle(linkTitle);
       const url = a.getAttribute("data-url");
 

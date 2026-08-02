@@ -19,19 +19,31 @@ import {
   Cake,
   Bloodtype,
   Wc,
-  Public
+  Public,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 
 import Barcode from "react-barcode";
 
-const CopyableText = ({ text, children, className = "" }: { text: string, children?: React.ReactNode, className?: string }) => {
+const CopyableText = ({
+  text,
+  children,
+  className = "",
+}: {
+  text: string;
+  children?: React.ReactNode;
+  className?: string;
+}) => {
   return (
-    <span 
+    <span
       className={`cursor-pointer hover:underline decoration-2 underline-offset-4 transition-all ${className}`}
       onClick={(e) => {
         e.stopPropagation();
         navigator.clipboard.writeText(text);
-        window.dispatchEvent(new CustomEvent("retop-toast", { detail: { message: "Copied!", type: "info" } }));
+        window.dispatchEvent(
+          new CustomEvent("retop-toast", {
+            detail: { message: "Copied!", type: "info" },
+          }),
+        );
       }}
       title="Click to copy"
     >
@@ -44,44 +56,66 @@ interface ProfilePageProps {
   network: VTOPNetwork;
 }
 
+const isValid = (val: string | null | undefined) =>
+  val &&
+  val !== "-" &&
+  val.trim() !== "" &&
+  val.toUpperCase() !== "N/A" &&
+  val.toUpperCase() !== "NA";
 
-
-const isValid = (val: string | null | undefined) => val && val !== "-" && val.trim() !== "" && val.toUpperCase() !== "N/A" && val.toUpperCase() !== "NA";
-
-const BentoBlock = ({ title, value, span = "col-span-1", children, className = "", icon: Icon }: any) => {
+const BentoBlock = ({
+  title,
+  value,
+  span = "col-span-1",
+  children,
+  className = "",
+  icon: Icon,
+}: any) => {
   if (value !== undefined && !isValid(value)) return null;
-  
+
   return (
-    <div 
+    <div
       className={`relative p-5 md:p-6 bg-(--bg-surface) text-(--text-main) rounded-4xl transition-all duration-fast flex flex-col justify-between gap-4 overflow-hidden break-words whitespace-normal min-h-[140px] max-h-max ${span} ${className}`}
     >
       <div className="relative z-10 flex flex-col justify-between h-full gap-4 w-full">
-         {Icon ? (
-           <div className="flex items-start justify-between w-full h-full gap-4">
-             <Icon className="w-8 h-8 md:w-10 md:h-10 text-(--text-main) mix-blend-overlay opacity-80 shrink-0" />
-             <div className="flex flex-col items-end justify-end text-right h-full w-full min-w-0">
-               {title && <div className="text-[10px] md:text-xs uppercase font-black font-expanded opacity-50 shrink-0 mb-2">{title}</div>}
-               {value ? (
-                   <div className="text-2xl md:text-3xl font-black font-expanded leading-none w-full break-words whitespace-normal py-1">
-                     {value}
-                   </div>
-               ) : (
-                   <div className="w-full flex flex-col items-end justify-end text-sm md:text-base font-black font-expanded gap-1 break-words whitespace-normal">{children}</div>
-               )}
-             </div>
-           </div>
-         ) : (
-           <>
-             {title && <div className="text-[10px] md:text-xs uppercase font-black font-expanded opacity-50 shrink-0 mb-2 text-right w-full">{title}</div>}
-             {value ? (
-                 <div className="text-xl md:text-2xl lg:text-3xl font-black font-expanded leading-tight w-full break-words whitespace-normal text-right">
-                   {value}
-                 </div>
-             ) : (
-                 <div className="w-full h-full flex flex-col justify-end text-sm md:text-base font-black font-expanded gap-1 break-words whitespace-normal text-right">{children}</div>
-             )}
-           </>
-         )}
+        {Icon ? (
+          <div className="flex items-start justify-between w-full h-full gap-4">
+            <Icon className="w-8 h-8 md:w-10 md:h-10 text-(--text-main) mix-blend-overlay opacity-80 shrink-0" />
+            <div className="flex flex-col items-end justify-end text-right h-full w-full min-w-0">
+              {title && (
+                <div className="text-[10px] md:text-xs uppercase font-black font-expanded opacity-50 shrink-0 mb-2">
+                  {title}
+                </div>
+              )}
+              {value ? (
+                <div className="text-2xl md:text-3xl font-black font-expanded leading-none w-full break-words whitespace-normal py-1">
+                  {value}
+                </div>
+              ) : (
+                <div className="w-full flex flex-col items-end justify-end text-sm md:text-base font-black font-expanded gap-1 break-words whitespace-normal">
+                  {children}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <>
+            {title && (
+              <div className="text-[10px] md:text-xs uppercase font-black font-expanded opacity-50 shrink-0 mb-2 text-right w-full">
+                {title}
+              </div>
+            )}
+            {value ? (
+              <div className="text-xl md:text-2xl lg:text-3xl font-black font-expanded leading-tight w-full break-words whitespace-normal text-right">
+                {value}
+              </div>
+            ) : (
+              <div className="w-full h-full flex flex-col justify-end text-sm md:text-base font-black font-expanded gap-1 break-words whitespace-normal text-right">
+                {children}
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
@@ -345,7 +379,15 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
             classObtained: "First",
             breakInStudy: "No",
             breakReason: "",
-            address: { street: "", area: "", city: "Vellore", state: "Tamil Nadu", country: "India", pincode: "632014", phone: "" },
+            address: {
+              street: "",
+              area: "",
+              city: "Vellore",
+              state: "Tamil Nadu",
+              country: "India",
+              pincode: "632014",
+              phone: "",
+            },
           },
           family: {
             father: {
@@ -357,7 +399,15 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
               income: "N/A",
               mobile: "9999988888",
               email: "father@demo.com",
-              address: { street: "", area: "", city: "Vellore", state: "Tamil Nadu", country: "India", pincode: "632014", phone: "" },
+              address: {
+                street: "",
+                area: "",
+                city: "Vellore",
+                state: "Tamil Nadu",
+                country: "India",
+                pincode: "632014",
+                phone: "",
+              },
             },
             mother: {
               name: "Mrs. Demo Mother",
@@ -368,7 +418,15 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
               income: "N/A",
               mobile: "8888899999",
               email: "mother@demo.com",
-              address: { street: "", area: "", city: "Vellore", state: "Tamil Nadu", country: "India", pincode: "632014", phone: "" },
+              address: {
+                street: "",
+                area: "",
+                city: "Vellore",
+                state: "Tamil Nadu",
+                country: "India",
+                pincode: "632014",
+                phone: "",
+              },
             },
             brothers: "1",
             sisters: "0",
@@ -408,11 +466,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
         <div className="max-w-[1380px] mx-auto flex flex-col gap-12 md:gap-20 animate-pulse pb-20">
           <div className="w-full max-w-74 mx-auto aspect-64/100 bg-(--bg-surface) rounded-2xl" />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-4">
-             <div className="md:col-span-2 h-40 bg-(--bg-surface)" />
-             <div className="md:col-span-2 h-40 bg-(--bg-surface)" />
-             <div className="md:col-span-2 h-40 bg-(--bg-surface)" />
-             <div className="col-span-1 h-40 bg-(--bg-surface)" />
-             <div className="col-span-1 h-40 bg-(--bg-surface)" />
+            <div className="md:col-span-2 h-40 bg-(--bg-surface)" />
+            <div className="md:col-span-2 h-40 bg-(--bg-surface)" />
+            <div className="md:col-span-2 h-40 bg-(--bg-surface)" />
+            <div className="col-span-1 h-40 bg-(--bg-surface)" />
+            <div className="col-span-1 h-40 bg-(--bg-surface)" />
           </div>
         </div>
       </div>
@@ -424,10 +482,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
   return (
     <div className="h-full w-full overflow-y-auto bg-(--bg-main) p-4 md:p-8 pt-20 md:pt-24 lg:pt-28 font-mono custom-scrollbar">
       <div className="max-w-[1380px] mx-auto flex flex-col pb-20">
-        
         {/* BENTO GRID */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4 grid-flow-dense">
-
           {/* 1. Digital ID Card (Top Left) */}
           <div className="md:col-span-2 lg:col-span-2 lg:row-span-4 flex justify-center items-center z-10 w-full">
             <DigitalIDCard data={data} />
@@ -435,129 +491,254 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
 
           {/* 2. Program & School */}
           <BentoBlock span="md:col-span-2 lg:col-span-2" icon={School}>
-             <div className="text-lg md:text-xl font-black leading-tight break-words whitespace-normal text-right">{data.basic.program}</div>
-             <div className="opacity-70 text-sm mt-1 break-words whitespace-normal text-right">{data.basic.school}</div>
+            <div className="text-lg md:text-xl font-black leading-tight break-words whitespace-normal text-right">
+              {data.basic.program}
+            </div>
+            <div className="opacity-70 text-sm mt-1 break-words whitespace-normal text-right">
+              {data.basic.school}
+            </div>
           </BentoBlock>
 
           {/* 3. Institutional Email */}
           {isValid(data.basic.email) && (
-             <BentoBlock icon={AlternateEmail} span="md:col-span-2 lg:col-span-2">
-                <div className="text-xl md:text-2xl font-black leading-tight transition-all duration-fast origin-right w-full py-1 text-wrap wrap-break-word">
-                   <CopyableText text={data.basic.email} />
-                </div>
-             </BentoBlock>
+            <BentoBlock
+              icon={AlternateEmail}
+              span="md:col-span-2 lg:col-span-2"
+            >
+              <div className="text-xl md:text-2xl font-black leading-tight transition-all duration-fast origin-right w-full py-1 text-wrap wrap-break-word">
+                <CopyableText text={data.basic.email} />
+              </div>
+            </BentoBlock>
           )}
 
           {/* 4. Proctor Information */}
           {(isValid(data.proctor.name) || isValid(data.proctor.mobile)) && (
-            <div 
-               className="relative md:col-span-2 lg:col-span-2 bg-(--bg-surface) text-(--text-main) rounded-4xl transition-all duration-fast flex overflow-hidden min-h-[140px] max-h-max break-words whitespace-normal">
-               {data.proctor.photoUrl && (
-                  <div className="relative z-10 w-[30%] shrink-0">
-                     <img src={data.proctor.photoUrl} className="w-full h-full object-cover transition-all duration-fast" alt="Proctor" />
+            <div className="relative md:col-span-2 lg:col-span-2 bg-(--bg-surface) text-(--text-main) rounded-4xl transition-all duration-fast flex overflow-hidden min-h-[140px] max-h-max break-words whitespace-normal">
+              {data.proctor.photoUrl && (
+                <div className="relative z-10 w-[30%] shrink-0">
+                  <img
+                    src={data.proctor.photoUrl}
+                    className="w-full h-full object-cover transition-all duration-fast"
+                    alt="Proctor"
+                  />
+                </div>
+              )}
+              <div className="relative z-10 p-5 md:p-6 flex flex-col justify-between gap-4 flex-1 w-full text-right">
+                <div className="text-[10px] md:text-xs uppercase font-black font-expanded opacity-50 shrink-0 mb-2">
+                  Proctor Information
+                </div>
+                <div className="transition-all duration-fast origin-right w-full flex flex-col justify-between text-sm md:text-base font-black font-expanded gap-4">
+                  <div className="flex flex-col items-end justify-start gap-1 flex-1 min-w-0">
+                    {isValid(data.proctor.name) && (
+                      <div className="text-xl md:text-2xl leading-tight break-words whitespace-normal">
+                        {data.proctor.name}
+                      </div>
+                    )}
+                    {isValid(data.proctor.designation) && (
+                      <div className="opacity-70 mt-1 break-words whitespace-normal">
+                        {data.proctor.designation}
+                      </div>
+                    )}
+                    {isValid(data.proctor.school) && (
+                      <div className="opacity-50 text-[10px] md:text-xs mt-1 break-words whitespace-normal">
+                        {data.proctor.school}{" "}
+                        {isValid(data.proctor.dept) && `/ ${data.proctor.dept}`}
+                      </div>
+                    )}
                   </div>
-               )}
-               <div className="relative z-10 p-5 md:p-6 flex flex-col justify-between gap-4 flex-1 w-full text-right">
-                  <div className="text-[10px] md:text-xs uppercase font-black font-expanded opacity-50 shrink-0 mb-2">Proctor Information</div>
-                  <div className="transition-all duration-fast origin-right w-full flex flex-col justify-between text-sm md:text-base font-black font-expanded gap-4">
-                     
-                     <div className="flex flex-col items-end justify-start gap-1 flex-1 min-w-0">
-                        {isValid(data.proctor.name) && <div className="text-xl md:text-2xl leading-tight break-words whitespace-normal">{data.proctor.name}</div>}
-                        {isValid(data.proctor.designation) && <div className="opacity-70 mt-1 break-words whitespace-normal">{data.proctor.designation}</div>}
-                        {isValid(data.proctor.school) && <div className="opacity-50 text-[10px] md:text-xs mt-1 break-words whitespace-normal">{data.proctor.school} {isValid(data.proctor.dept) && `/ ${data.proctor.dept}`}</div>}
-                     </div>
 
-                     <div className="flex flex-col items-end justify-start gap-1 min-w-0 border-t-2 border-zinc-500/20 pt-3 mt-1">
-                        {isValid(data.proctor.mobile) && <div className="text-xl md:text-2xl leading-tight"><CopyableText text={data.proctor.mobile} /></div>}
-                        {isValid(data.proctor.email) && <div className="opacity-70 normal-case lowercase mt-1 break-words whitespace-normal"><CopyableText text={data.proctor.email} /></div>}
-                        {isValid(data.proctor.cabin) && <div className="opacity-50 text-[10px] md:text-xs mt-1 mb-1 break-words whitespace-normal">Cabin: {data.proctor.cabin}</div>}
-                     </div>
+                  <div className="flex flex-col items-end justify-start gap-1 min-w-0 border-t-2 border-zinc-500/20 pt-3 mt-1">
+                    {isValid(data.proctor.mobile) && (
+                      <div className="text-xl md:text-2xl leading-tight">
+                        <CopyableText text={data.proctor.mobile} />
+                      </div>
+                    )}
+                    {isValid(data.proctor.email) && (
+                      <div className="opacity-70 normal-case lowercase mt-1 break-words whitespace-normal">
+                        <CopyableText text={data.proctor.email} />
+                      </div>
+                    )}
+                    {isValid(data.proctor.cabin) && (
+                      <div className="opacity-50 text-[10px] md:text-xs mt-1 mb-1 break-words whitespace-normal">
+                        Cabin: {data.proctor.cabin}
+                      </div>
+                    )}
                   </div>
-               </div>
+                </div>
+              </div>
             </div>
           )}
 
           {/* 5. Hostel Details / Day Scholar */}
           {data.hostel ? (
-             <BentoBlock icon={Domain} span="md:col-span-2 lg:col-span-4">
-                <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-end sm:items-end py-1 w-full text-right">
-                   <div className="flex items-end justify-end gap-3 shrink-0">
-                      <span className="text-6xl md:text-7xl font-black font-expanded leading-tight break-words whitespace-normal text-right">{data.hostel.room}</span>
-                      <span className="text-2xl md:text-3xl opacity-60 pb-1 break-words whitespace-normal text-right">{data.hostel.block}</span>
-                   </div>
-                   <div className="flex flex-col sm:items-end text-right flex-1 min-w-0">
-                      {isValid(data.hostel.mess) && <div className="text-xl md:text-2xl leading-tight text-wrap break-words break-all sm:break-words">{data.hostel.mess}</div>}
-                      {isValid(data.hostel.bedType) && <div className="text-sm md:text-base opacity-60 mt-1 uppercase font-black font-expanded text-wrap break-words text-right">{data.hostel.bedType} Bed</div>}
-                   </div>
+            <BentoBlock icon={Domain} span="md:col-span-2 lg:col-span-4">
+              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-end sm:items-end py-1 w-full text-right">
+                <div className="flex items-end justify-end gap-3 shrink-0">
+                  <span className="text-6xl md:text-7xl font-black font-expanded leading-tight break-words whitespace-normal text-right">
+                    {data.hostel.room}
+                  </span>
+                  <span className="text-2xl md:text-3xl opacity-60 pb-1 break-words whitespace-normal text-right">
+                    {data.hostel.block}
+                  </span>
                 </div>
-             </BentoBlock>
+                <div className="flex flex-col sm:items-end text-right flex-1 min-w-0">
+                  {isValid(data.hostel.mess) && (
+                    <div className="text-xl md:text-2xl leading-tight text-wrap break-words break-all sm:break-words">
+                      {data.hostel.mess}
+                    </div>
+                  )}
+                  {isValid(data.hostel.bedType) && (
+                    <div className="text-sm md:text-base opacity-60 mt-1 uppercase font-black font-expanded text-wrap break-words text-right">
+                      {data.hostel.bedType} Bed
+                    </div>
+                  )}
+                </div>
+              </div>
+            </BentoBlock>
           ) : (
-             <BentoBlock icon={Domain} value="Day Scholar" span="md:col-span-2 lg:col-span-4" className="bg-(--bg-highlight)! py-16" />
+            <BentoBlock
+              icon={Domain}
+              value="Day Scholar"
+              span="md:col-span-2 lg:col-span-4"
+              className="bg-(--bg-highlight)! py-16"
+            />
           )}
 
           {/* 6. Academic Program */}
           {isValid(data.education.degree) && (
-            <BentoBlock title="Academic Program" span="md:col-span-2 lg:col-span-2">
-               <div className="text-xl leading-tight break-words whitespace-normal text-right">{data.education.degree} - {data.education.branch}</div>
-               <div className="opacity-70 mt-2 break-words whitespace-normal text-right">{data.education.qualification}</div>
-               <div className="opacity-50 text-[10px] md:text-xs mt-1 text-right">Class: {data.education.classObtained}</div>
-               {data.education.breakInStudy === "Yes" && (
-                  <div className="text-att-danger text-[10px] md:text-xs mt-1 text-right">Break: {data.education.breakReason}</div>
-               )}
+            <BentoBlock
+              title="Academic Program"
+              span="md:col-span-2 lg:col-span-2"
+            >
+              <div className="text-xl leading-tight break-words whitespace-normal text-right">
+                {data.education.degree} - {data.education.branch}
+              </div>
+              <div className="opacity-70 mt-2 break-words whitespace-normal text-right">
+                {data.education.qualification}
+              </div>
+              <div className="opacity-50 text-[10px] md:text-xs mt-1 text-right">
+                Class: {data.education.classObtained}
+              </div>
+              {data.education.breakInStudy === "Yes" && (
+                <div className="text-att-danger text-[10px] md:text-xs mt-1 text-right">
+                  Break: {data.education.breakReason}
+                </div>
+              )}
             </BentoBlock>
           )}
 
           {/* 7. Previous Education */}
           {isValid(data.education.school) && (
-            <BentoBlock title="Previous Education" span="md:col-span-2 lg:col-span-2">
-               <div className="text-lg md:text-xl leading-tight break-words whitespace-normal text-right">{data.education.school}</div>
-               <div className="opacity-70 text-sm mt-2 break-words whitespace-normal text-right">{data.education.board} {isValid(data.education.medium) && `/ Medium: ${data.education.medium}`}</div>
-               <div className="opacity-50 text-[10px] md:text-xs mt-1 text-right">Year: {data.education.year} {data.education.month} / Reg: {data.education.regNo}</div>
+            <BentoBlock
+              title="Previous Education"
+              span="md:col-span-2 lg:col-span-2"
+            >
+              <div className="text-lg md:text-xl leading-tight break-words whitespace-normal text-right">
+                {data.education.school}
+              </div>
+              <div className="opacity-70 text-sm mt-2 break-words whitespace-normal text-right">
+                {data.education.board}{" "}
+                {isValid(data.education.medium) &&
+                  `/ Medium: ${data.education.medium}`}
+              </div>
+              <div className="opacity-50 text-[10px] md:text-xs mt-1 text-right">
+                Year: {data.education.year} {data.education.month} / Reg:{" "}
+                {data.education.regNo}
+              </div>
             </BentoBlock>
           )}
 
           {/* 8. Blood Group, DOB, Gender */}
           <BentoBlock icon={Bloodtype} value={data.personal.bloodGroup} />
-          <BentoBlock icon={Cake} value={data.personal.dob?.replace(/-/g, " ")} />
+          <BentoBlock
+            icon={Cake}
+            value={data.personal.dob?.replace(/-/g, " ")}
+          />
           <BentoBlock icon={Wc} value={data.personal.gender} />
-          
+
           {/* 9. Background (Nationality, Religion, Community, Language, State) */}
           <BentoBlock icon={Public} span="col-span-1 lg:col-span-1">
-             <div className="flex flex-col items-end text-right gap-1 w-full">
-                {isValid(data.personal.nationality) && <div>{data.personal.nationality}</div>}
-                {isValid(data.personal.nativeLanguage) && <div className="opacity-70 text-sm">{data.personal.nativeLanguage}</div>}
-                {isValid(data.personal.religion) && <div className="opacity-50 text-xs">{data.personal.religion}</div>}
-             </div>
+            <div className="flex flex-col items-end text-right gap-1 w-full">
+              {isValid(data.personal.nationality) && (
+                <div>{data.personal.nationality}</div>
+              )}
+              {isValid(data.personal.nativeLanguage) && (
+                <div className="opacity-70 text-sm">
+                  {data.personal.nativeLanguage}
+                </div>
+              )}
+              {isValid(data.personal.religion) && (
+                <div className="opacity-50 text-xs">
+                  {data.personal.religion}
+                </div>
+              )}
+            </div>
           </BentoBlock>
 
           {/* 10. Personal Contact */}
           {(isValid(data.personal.mobile) || isValid(data.personal.email)) && (
             <BentoBlock icon={Mobile} span="md:col-span-2 lg:col-span-2">
-               {isValid(data.personal.mobile) && <div className="text-2xl md:text-3xl leading-tight"><CopyableText text={data.personal.mobile} /></div>}
-               {isValid(data.personal.email) && <div className="text-sm md:text-base opacity-70 normal-case lowercase mt-1 w-full text-right text-wrap wrap-break-word"><CopyableText text={data.personal.email} /></div>}
+              {isValid(data.personal.mobile) && (
+                <div className="text-2xl md:text-3xl leading-tight">
+                  <CopyableText text={data.personal.mobile} />
+                </div>
+              )}
+              {isValid(data.personal.email) && (
+                <div className="text-sm md:text-base opacity-70 normal-case lowercase mt-1 w-full text-right text-wrap wrap-break-word">
+                  <CopyableText text={data.personal.email} />
+                </div>
+              )}
             </BentoBlock>
           )}
 
           {/* 11 & 12. Address */}
-          {(isValid(data.currentAddress.street) || isValid(data.permanentAddress.street)) && (
+          {(isValid(data.currentAddress.street) ||
+            isValid(data.permanentAddress.street)) && (
             <BentoBlock icon={LocationOn} span="md:col-span-2 lg:col-span-4">
               <div className="flex flex-col md:flex-row gap-6 w-full text-right justify-end">
                 {isValid(data.currentAddress.street) && (
                   <div className="flex flex-col items-end flex-1 text-right break-words whitespace-normal">
-                    <div className="opacity-50 text-[10px] md:text-xs mb-1 uppercase font-black font-expanded">Current Address</div>
-                    <div className="text-lg md:text-xl leading-tight break-words whitespace-normal">{data.currentAddress.street}</div>
-                    <div className="opacity-70 text-sm mt-2 break-words whitespace-normal">{data.currentAddress.area}, {data.currentAddress.city}</div>
-                    <div className="opacity-50 text-[10px] md:text-xs mt-1 mb-2 break-words whitespace-normal">{data.currentAddress.state}, {data.currentAddress.country} - {data.currentAddress.pincode}</div>
-                    {isValid(data.currentAddress.phone) && <div className="mt-1 text-xl"><CopyableText text={data.currentAddress.phone} /></div>}
+                    <div className="opacity-50 text-[10px] md:text-xs mb-1 uppercase font-black font-expanded">
+                      Current Address
+                    </div>
+                    <div className="text-lg md:text-xl leading-tight break-words whitespace-normal">
+                      {data.currentAddress.street}
+                    </div>
+                    <div className="opacity-70 text-sm mt-2 break-words whitespace-normal">
+                      {data.currentAddress.area}, {data.currentAddress.city}
+                    </div>
+                    <div className="opacity-50 text-[10px] md:text-xs mt-1 mb-2 break-words whitespace-normal">
+                      {data.currentAddress.state}, {data.currentAddress.country}{" "}
+                      - {data.currentAddress.pincode}
+                    </div>
+                    {isValid(data.currentAddress.phone) && (
+                      <div className="mt-1 text-xl">
+                        <CopyableText text={data.currentAddress.phone} />
+                      </div>
+                    )}
                   </div>
                 )}
                 {isValid(data.permanentAddress.street) && (
                   <div className="flex flex-col items-end flex-1 text-right break-words whitespace-normal">
-                    <div className="opacity-50 text-[10px] md:text-xs mb-1 uppercase font-black font-expanded">Permanent Address</div>
-                    <div className="text-lg md:text-xl leading-tight break-words whitespace-normal">{data.permanentAddress.street}</div>
-                    <div className="opacity-70 text-sm mt-2 break-words whitespace-normal">{data.permanentAddress.area}, {data.permanentAddress.city}</div>
-                    <div className="opacity-50 text-[10px] md:text-xs mt-1 mb-2 break-words whitespace-normal">{data.permanentAddress.state}, {data.permanentAddress.country} - {data.permanentAddress.pincode}</div>
-                    {isValid(data.permanentAddress.phone) && <div className="mt-1 text-xl"><CopyableText text={data.permanentAddress.phone} /></div>}
+                    <div className="opacity-50 text-[10px] md:text-xs mb-1 uppercase font-black font-expanded">
+                      Permanent Address
+                    </div>
+                    <div className="text-lg md:text-xl leading-tight break-words whitespace-normal">
+                      {data.permanentAddress.street}
+                    </div>
+                    <div className="opacity-70 text-sm mt-2 break-words whitespace-normal">
+                      {data.permanentAddress.area}, {data.permanentAddress.city}
+                    </div>
+                    <div className="opacity-50 text-[10px] md:text-xs mt-1 mb-2 break-words whitespace-normal">
+                      {data.permanentAddress.state},{" "}
+                      {data.permanentAddress.country} -{" "}
+                      {data.permanentAddress.pincode}
+                    </div>
+                    {isValid(data.permanentAddress.phone) && (
+                      <div className="mt-1 text-xl">
+                        <CopyableText text={data.permanentAddress.phone} />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -567,59 +748,122 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
           {/* 13. Parent Profile */}
           {isValid(data.family.father.name) && (
             <BentoBlock title="Parent" span="md:col-span-2 lg:col-span-2">
-               <div className="text-2xl md:text-3xl leading-tight break-words whitespace-normal text-right">{data.family.father.name}</div>
-               <div className="opacity-70 text-sm mt-2 break-words whitespace-normal text-right">
-                  {[data.family.father.designation, data.family.father.organization].filter(isValid).join(" at ") || "No Work Info"}
-               </div>
-               <div className="opacity-50 text-[10px] md:text-xs mt-1 break-words whitespace-normal text-right">{data.family.father.qualification} / {data.family.father.occupation} {isValid(data.family.father.income) && `/ Income: ${data.family.father.income}`}</div>
-               <div className="mt-4 flex flex-col items-end gap-1 w-full border-t-2 border-zinc-500/20 pt-4">
-                 {isValid(data.family.father.mobile) && <div className="text-xl md:text-2xl leading-tight"><CopyableText text={data.family.father.mobile} /></div>}
-                 {isValid(data.family.father.email) && <div className="opacity-70 normal-case lowercase mt-1 break-words whitespace-normal text-right"><CopyableText text={data.family.father.email} /></div>}
-                 {isValid(data.family.father.address.city) && <div className="opacity-50 text-[10px] md:text-xs mt-1 mb-2 break-words whitespace-normal text-right">{data.family.father.address.city}, {data.family.father.address.state}</div>}
-               </div>
+              <div className="text-2xl md:text-3xl leading-tight break-words whitespace-normal text-right">
+                {data.family.father.name}
+              </div>
+              <div className="opacity-70 text-sm mt-2 break-words whitespace-normal text-right">
+                {[
+                  data.family.father.designation,
+                  data.family.father.organization,
+                ]
+                  .filter(isValid)
+                  .join(" at ") || "No Work Info"}
+              </div>
+              <div className="opacity-50 text-[10px] md:text-xs mt-1 break-words whitespace-normal text-right">
+                {data.family.father.qualification} /{" "}
+                {data.family.father.occupation}{" "}
+                {isValid(data.family.father.income) &&
+                  `/ Income: ${data.family.father.income}`}
+              </div>
+              <div className="mt-4 flex flex-col items-end gap-1 w-full border-t-2 border-zinc-500/20 pt-4">
+                {isValid(data.family.father.mobile) && (
+                  <div className="text-xl md:text-2xl leading-tight">
+                    <CopyableText text={data.family.father.mobile} />
+                  </div>
+                )}
+                {isValid(data.family.father.email) && (
+                  <div className="opacity-70 normal-case lowercase mt-1 break-words whitespace-normal text-right">
+                    <CopyableText text={data.family.father.email} />
+                  </div>
+                )}
+                {isValid(data.family.father.address.city) && (
+                  <div className="opacity-50 text-[10px] md:text-xs mt-1 mb-2 break-words whitespace-normal text-right">
+                    {data.family.father.address.city},{" "}
+                    {data.family.father.address.state}
+                  </div>
+                )}
+              </div>
             </BentoBlock>
           )}
 
           {/* 14. Mother Profile */}
           {isValid(data.family.mother.name) && (
             <BentoBlock title="Mother" span="md:col-span-2 lg:col-span-2">
-               <div className="text-2xl md:text-3xl leading-tight break-words whitespace-normal text-right">{data.family.mother.name}</div>
-               <div className="opacity-70 text-sm mt-2 break-words whitespace-normal text-right">
-                  {[data.family.mother.designation, data.family.mother.organization].filter(isValid).join(" at ") || "No Work Info"}
-               </div>
-               <div className="opacity-50 text-[10px] md:text-xs mt-1 break-words whitespace-normal text-right">{data.family.mother.qualification} / {data.family.mother.occupation} {isValid(data.family.mother.income) && `/ Income: ${data.family.mother.income}`}</div>
-               <div className="mt-4 flex flex-col items-end gap-1 w-full border-t-2 border-zinc-500/20 pt-4">
-                 {isValid(data.family.mother.mobile) && <div className="text-xl md:text-2xl leading-tight"><CopyableText text={data.family.mother.mobile} /></div>}
-                 {isValid(data.family.mother.email) && <div className="opacity-70 normal-case lowercase mt-1 break-words whitespace-normal text-right"><CopyableText text={data.family.mother.email} /></div>}
-                 {isValid(data.family.mother.address.city) && <div className="opacity-50 text-[10px] md:text-xs mt-1 mb-2 break-words whitespace-normal text-right">{data.family.mother.address.city}, {data.family.mother.address.state}</div>}
-               </div>
+              <div className="text-2xl md:text-3xl leading-tight break-words whitespace-normal text-right">
+                {data.family.mother.name}
+              </div>
+              <div className="opacity-70 text-sm mt-2 break-words whitespace-normal text-right">
+                {[
+                  data.family.mother.designation,
+                  data.family.mother.organization,
+                ]
+                  .filter(isValid)
+                  .join(" at ") || "No Work Info"}
+              </div>
+              <div className="opacity-50 text-[10px] md:text-xs mt-1 break-words whitespace-normal text-right">
+                {data.family.mother.qualification} /{" "}
+                {data.family.mother.occupation}{" "}
+                {isValid(data.family.mother.income) &&
+                  `/ Income: ${data.family.mother.income}`}
+              </div>
+              <div className="mt-4 flex flex-col items-end gap-1 w-full border-t-2 border-zinc-500/20 pt-4">
+                {isValid(data.family.mother.mobile) && (
+                  <div className="text-xl md:text-2xl leading-tight">
+                    <CopyableText text={data.family.mother.mobile} />
+                  </div>
+                )}
+                {isValid(data.family.mother.email) && (
+                  <div className="opacity-70 normal-case lowercase mt-1 break-words whitespace-normal text-right">
+                    <CopyableText text={data.family.mother.email} />
+                  </div>
+                )}
+                {isValid(data.family.mother.address.city) && (
+                  <div className="opacity-50 text-[10px] md:text-xs mt-1 mb-2 break-words whitespace-normal text-right">
+                    {data.family.mother.address.city},{" "}
+                    {data.family.mother.address.state}
+                  </div>
+                )}
+              </div>
             </BentoBlock>
           )}
 
           {/* 15. Family Extras */}
           <BentoBlock title="Family Extras" span="md:col-span-2 lg:col-span-2">
-             <div className="grid grid-cols-2 gap-4 w-full">
-                <div className="flex flex-col items-end">
-                   <div className="opacity-50 text-[10px] mb-1">Siblings</div>
-                   <div className="font-bold text-sm">Brothers: {data.family.brothers}</div>
-                   <div className="font-bold text-sm">Sisters: {data.family.sisters}</div>
+            <div className="grid grid-cols-2 gap-4 w-full">
+              <div className="flex flex-col items-end">
+                <div className="opacity-50 text-[10px] mb-1">Siblings</div>
+                <div className="font-bold text-sm">
+                  Brothers: {data.family.brothers}
                 </div>
-                <div className="flex flex-col items-end">
-                   <div className="opacity-50 text-[10px] mb-1">VIT Relations</div>
-                   <div className="font-bold text-sm">Studying: {data.family.studyingInVit}</div>
-                   <div className="font-bold text-sm">Studied: {data.family.studiedInVit}</div>
+                <div className="font-bold text-sm">
+                  Sisters: {data.family.sisters}
                 </div>
-                <div className="flex flex-col items-end">
-                   <div className="opacity-50 text-[10px] mb-1">Local Guardian</div>
-                   <div className="font-bold text-sm break-words whitespace-normal text-right">{data.family.guardian}</div>
+              </div>
+              <div className="flex flex-col items-end">
+                <div className="opacity-50 text-[10px] mb-1">VIT Relations</div>
+                <div className="font-bold text-sm">
+                  Studying: {data.family.studyingInVit}
                 </div>
-                <div className="flex flex-col items-end">
-                   <div className="opacity-50 text-[10px] mb-1">Friend Mobile</div>
-                   <div className="font-bold text-sm"><CopyableText text={data.family.friendMobile} /></div>
+                <div className="font-bold text-sm">
+                  Studied: {data.family.studiedInVit}
                 </div>
-             </div>
+              </div>
+              <div className="flex flex-col items-end">
+                <div className="opacity-50 text-[10px] mb-1">
+                  Local Guardian
+                </div>
+                <div className="font-bold text-sm break-words whitespace-normal text-right">
+                  {data.family.guardian}
+                </div>
+              </div>
+              <div className="flex flex-col items-end">
+                <div className="opacity-50 text-[10px] mb-1">Friend Mobile</div>
+                <div className="font-bold text-sm">
+                  <CopyableText text={data.family.friendMobile} />
+                </div>
+              </div>
+            </div>
           </BentoBlock>
-
         </div>
       </div>
     </div>

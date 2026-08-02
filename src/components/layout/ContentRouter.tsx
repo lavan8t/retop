@@ -25,6 +25,7 @@ export const ContentRouter = ({
   events,
   pinnedLinks,
   handleTogglePin,
+  spotlightCategories,
 }: any) => {
   const appState = useAppStore();
   const dataState = useDataStore();
@@ -50,6 +51,7 @@ export const ContentRouter = ({
           calSelectedSem={dataState.calSelectedSem || dataState.ttSelectedSem}
           pinnedLinks={pinnedLinks}
           handleTogglePin={handleTogglePin}
+          spotlightCategories={spotlightCategories}
         />
       );
     case "timetable":

@@ -7,6 +7,7 @@ import {
   MenuCategory,
   TimetableCourse,
   Event,
+  SpotlightCategoryGroup,
 } from "../types/vtop";
 import { UpcomingClass } from "../utils/timetable-slots";
 import { useDataStore } from "../store/dataStore";
@@ -45,6 +46,7 @@ interface HomeViewProps {
   calSelectedSem?: string;
   pinnedLinks?: QuickLink[];
   handleTogglePin?: (link: QuickLink) => void;
+  spotlightCategories: SpotlightCategoryGroup[];
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
@@ -63,6 +65,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   calSelectedSem = "",
   pinnedLinks = [],
   handleTogglePin,
+  spotlightCategories,
 }) => {
   const { calGridData } = useDataStore();
 
@@ -162,6 +165,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         handleTogglePin={handleTogglePin}
         attendance={attendance}
         ttCourses={ttCourses}
+        spotlightCategories={spotlightCategories}
       />
 
       {/* CENTER PANE: Surface Level Unified Event CalendarMonth */}

@@ -78,15 +78,17 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
   };
 
   const menuVariants: Variants = {
-    hidden: { opacity: 0, scale: 0.95 },
+    hidden: { opacity: 0, scale: 0.9, y: -10 },
     visible: {
       opacity: 1,
       scale: 1,
+      y: 0,
       transition: { type: "spring", stiffness: 1200, damping: 40 },
     },
     exit: {
       opacity: 0,
-      scale: 0.95,
+      scale: 0.9,
+      y: -10,
       transition: { type: "spring", stiffness: 1200, damping: 40 },
     },
   };

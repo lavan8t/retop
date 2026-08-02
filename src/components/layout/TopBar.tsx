@@ -59,29 +59,29 @@ interface TopBarProps {
 const getPageTitle = (view: string, dynamicTitle?: string) => {
   switch (view) {
     case "dashboard":
-      return "search";
+      return "Search";
     case "timetable":
-      return "TIMETABLE";
+      return "Timetable";
     case "curriculum":
-      return "CURRICULUM";
+      return "Curriculum";
     case "marks":
-      return "MARKS";
+      return "Marks";
     case "grades":
-      return "GRADES & HISTORY";
+      return "Grades & History";
     case "profile":
-      return "PROFILE";
+      return "Profile";
     case "settings":
-      return "SETTINGS";
+      return "Settings";
     case "coursePage":
-      return "COURSE PAGE";
+      return "Course Page";
     case "calendar":
-      return "ACADEMICS CALENDAR";
+      return "Academics Calendar";
     case "attendance":
-      return "CLASS ATTENDANCE";
+      return "Class Attendance";
     case "digitalAssignments":
-      return "DIGITAL ASSIGNMENTS";
+      return "Digital Assignments";
     case "content":
-      return dynamicTitle || "CONTENT";
+      return dynamicTitle || "Content";
     default:
       return "retop";
   }
@@ -161,12 +161,17 @@ export const TopBar: React.FC<TopBarProps> = ({
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ignore if user is typing in an input field
-      const target = e.target as HTMLElement;
-      if (
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.isContentEditable
-      ) {
+      const activeEl = document.activeElement as HTMLElement | null;
+      const target = e.target as HTMLElement | null;
+      const isInputEl = (el: HTMLElement | null) =>
+        el &&
+        (el.tagName === "INPUT" ||
+          el.tagName === "TEXTAREA" ||
+          el.tagName === "SELECT" ||
+          el.isContentEditable ||
+          Boolean(el.closest("input, textarea, select, [contenteditable='true']")));
+
+      if (isInputEl(target) || isInputEl(activeEl)) {
         return;
       }
 
@@ -268,7 +273,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                       >
                         <div className="flex-1 flex items-center gap-2 min-w-0 pr-4">
                           <Icon className="w-3.5 h-3.5 text-(--text-muted) group-hover/item:text-(--text-main) transition-colors shrink-0" />
-                          <span className="text-[11px] font-bold text-(--text-main) truncate uppercase">{link.title}</span>
+                          <span className="text-[11px] font-bold text-(--text-main) truncate">{link.title}</span>
                         </div>
                         <div className="absolute bottom-0.5 right-1.5 text-[9px] font-black font-mono text-(--text-muted) transition-colors group-hover/item:text-(--text-main) opacity-40">
                           {idx + 1}
@@ -613,22 +618,20 @@ export const TopBar: React.FC<TopBarProps> = ({
               className="flex items-center focus:outline-none group cursor-pointer transition-all hover:scale-105 active:scale-95"
             >
               <div className="w-10 h-10 md:w-12 md:h-12 relative flex items-center justify-center">
-                {!showProfileMenu && (
-                  <motion.div className="w-10 h-10 md:w-12 md:h-12 absolute inset-0 rounded-full overflow-hidden shrink-0 border-2 border-(--border-main) group-hover:border-(--accent-base) shadow-sm transition-all flex items-center justify-center bg-(--bg-highlight) z-9999">
-                    {user.regNo !== "..." ? (
-                      <img
-                        src={
-                          user.profileImgBase64 ||
-                          `/vtop/users/image/?id=${user.regNo}`
-                        }
-                        className="w-full h-full object-cover"
-                        alt="Profile"
-                      />
-                    ) : (
-                      <Person className="w-5 h-5 md:w-6 md:h-6 text-(--text-dim)" />
-                    )}
-                  </motion.div>
-                )}
+                <div className="w-10 h-10 md:w-12 md:h-12 absolute inset-0 rounded-full overflow-hidden shrink-0 border-2 border-(--border-main) group-hover:border-(--accent-base) shadow-sm transition-all flex items-center justify-center bg-(--bg-highlight) z-9999">
+                  {user.regNo !== "..." ? (
+                    <img
+                      src={
+                        user.profileImgBase64 ||
+                        `/vtop/users/image/?id=${user.regNo}`
+                      }
+                      className="w-full h-full object-cover"
+                      alt="Profile"
+                    />
+                  ) : (
+                    <Person className="w-5 h-5 md:w-6 md:h-6 text-(--text-dim)" />
+                  )}
+                </div>
               </div>
             </button>
           </div>

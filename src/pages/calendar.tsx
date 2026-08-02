@@ -18,6 +18,11 @@ import {
 import { CalendarMonthPreview, CalendarEvent, ClassGroup } from "../types/vtop";
 
 import { useDataStore } from "../store/dataStore";
+import {
+  useSettingsStore,
+  getMaterialThemeColor,
+  getMaterialOnThemeColor,
+} from "../utils/settings-store";
 
 interface CalendarPageProps {
   network: VTOPNetwork;
@@ -27,6 +32,29 @@ const WEEKDAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const spring = { type: "spring", stiffness: 300, damping: 30 } as const;
 
 export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
+  const { settings } = useSettingsStore();
+
+  const sysDark =
+    typeof window !== "undefined" &&
+    window.matchMedia &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const isDark =
+    settings.themeMode === "dark" ||
+    settings.themeMode === "amoled" ||
+    (settings.themeMode === "auto" && sysDark);
+
+  const classBg = getMaterialThemeColor(settings.calendarClassColor, isDark);
+  const classFg = getMaterialOnThemeColor(settings.calendarClassColor, isDark);
+
+  const eventBg = getMaterialThemeColor(settings.calendarEventColor, isDark);
+  const eventFg = getMaterialOnThemeColor(settings.calendarEventColor, isDark);
+
+  const holidayBg = getMaterialThemeColor("red", isDark);
+  const holidayFg = getMaterialOnThemeColor("red", isDark);
+
+  const examBg = getMaterialThemeColor("orange", isDark);
+  const examFg = getMaterialOnThemeColor("orange", isDark);
+
   const {
     calSemesters,
     setCalSemesters,
@@ -211,45 +239,60 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                               new Date().toDateString() ===
                               new Date(day.dateObj).toDateString();
 
-                            let innerBgClass = "";
+                            let cardStyle: React.CSSProperties = {};
                             let bgClass =
-                              "bg-(--bg-highlight) hover:bg-(--border-dim)";
+                              "bg-(--bg-surface) hover:bg-(--bg-highlight)";
                             let borderClass = "";
                             let textClass = "text-(--text-muted)";
                             let numberClass = "text-(--text-main)";
 
-                            if (day.isInstructional) {
-                              textClass = "text-(--text-main)";
-                            }
                             if (day.isHoliday) {
-                              bgClass = "bg-red-500/20 hover:bg-red-500/30";
-                              textClass = "text-att-danger dark:text-red-400 font-black";
-                              numberClass = "text-att-danger dark:text-red-400 font-black";
+                              cardStyle = {
+                                backgroundColor: holidayBg,
+                                color: holidayFg,
+                              };
+                              bgClass = "border-0 shadow-xs hover:opacity-90";
+                              textClass = "opacity-95 font-extrabold";
+                              numberClass = "font-black";
                             } else if (day.isExam) {
-                              bgClass = "bg-(--accent-base)/20 hover:bg-(--accent-base)/30";
-                              textClass = "text-(--accent-base) font-black";
-                              numberClass = "text-(--accent-base) font-black";
+                              cardStyle = {
+                                backgroundColor: examBg,
+                                color: examFg,
+                              };
+                              bgClass = "border-0 shadow-xs hover:opacity-90";
+                              textClass = "opacity-95 font-extrabold";
+                              numberClass = "font-black";
+                            } else if (day.isInstructional) {
+                              cardStyle = {
+                                backgroundColor: classBg,
+                                color: classFg,
+                              };
+                              bgClass = "border-0 shadow-xs hover:opacity-90";
+                              textClass = "opacity-95 font-bold";
+                              numberClass = "font-black";
+                            } else if (day.info) {
+                              cardStyle = {
+                                backgroundColor: eventBg,
+                                color: eventFg,
+                              };
+                              bgClass = "border-0 shadow-xs hover:opacity-90";
+                              textClass = "opacity-95 font-bold";
+                              numberClass = "font-black";
                             }
 
                             if (isToday) {
-                              bgClass += " z-10 shadow-lg";
+                              bgClass += " z-10 shadow-lg ring-2 ring-(--accent-base)";
                               numberClass =
-                                "text-(--text-inverse) bg-(--accent-base) w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center -ml-1 -mt-1";
+                                "text-(--text-inverse) bg-(--accent-base) w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center -ml-1 -mt-1 font-black";
                             }
 
                             return (
                               <div
                                 key={idx}
                                 ref={isToday ? todayRef : null}
+                                style={cardStyle}
                                 className={`relative p-3 md:p-4 flex flex-col transition-all group rounded-3xl ${bgClass} ${borderClass}`}
                               >
-                                {/* Rounded Inner Background Fill */}
-                                {innerBgClass && (
-                                  <div
-                                    className={`absolute inset-[2px] rounded-xl pointer-events-none transition-colors ${innerBgClass}`}
-                                  />
-                                )}
-
                                 <div className="flex justify-between items-start mb-1 md:mb-2 pt-1 md:pt-0 relative z-10">
                                   <span
                                     className={`font-black text-sm md:text-lg lg:text-xl font-expanded leading-none transition-transform duration-fast ease-out group-hover:scale-[1.15] origin-top-left ${numberClass}`}
@@ -262,7 +305,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                                   <div className="mt-auto relative z-10 flex flex-col gap-1 pt-2">
                                     {day.subInfo && (
                                       <span
-                                        className={`inline-flex items-center text-[9px] md:text-[10px] font-black px-2 py-1 rounded-full uppercase w-max max-w-full bg-(--text-main) text-(--bg-main)`}
+                                        className={`inline-flex items-center text-[9px] md:text-[10px] font-black px-2 py-1 rounded-full uppercase w-max max-w-full bg-current/15 text-current`}
                                       >
                                         <span className="whitespace-normal wrap-break-word truncate">
                                           {day.subInfo.replace(/[()]/g, "")}

@@ -70,12 +70,65 @@ try {
   }
 } catch (e) {}
 
-// Splash Screen logic removed
-function injectSplashScreen() {}
+// ── Early intercept at document_start for /open/page ─────────────────
+// Runs BEFORE the DOM exists. Hides native body + shows branded loader
+// so the user never sees the ugly unstyled native page or slow icon fonts.
+const isOpenPage = window.location.pathname.includes("/vtop/open/page");
+
+if (isOpenPage) {
+  // 1. Inject CSS immediately to hide native body and show loader
+  const earlyStyle = document.createElement("style");
+  earlyStyle.id = "retop-early-cloak";
+  earlyStyle.textContent = `
+    /* Hide EVERYTHING until we're ready */
+    html, body { opacity: 0 !important; }
+
+    /* Branded loader overlay */
+    #retop-open-loader {
+      position: fixed; inset: 0; z-index: 99999;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 16px;
+      background: #09090b;
+      font-family: system-ui, sans-serif;
+      opacity: 1 !important;
+    }
+    #retop-open-loader .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid #27272a;
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      animation: retop-spin 0.7s linear infinite;
+    }
+    #retop-open-loader .label {
+      color: #94a3b8; font-size: 0.85rem; font-weight: 500;
+      letter-spacing: 0.03em;
+    }
+    @keyframes retop-spin {
+      to { transform: rotate(360deg); }
+    }
+  `;
+  (document.head || document.documentElement).appendChild(earlyStyle);
+
+  // 2. Create the loader element
+  const loader = document.createElement("div");
+  loader.id = "retop-open-loader";
+  loader.innerHTML = `<div class="spinner"></div><div class="label">retop</div>`;
+  // Append to documentElement since body doesn't exist yet at document_start
+  document.documentElement.appendChild(loader);
+
+  // 3. Inject prelogin.css early so it's cached/parsed before DOM appears
+  const earlyLink = document.createElement("link");
+  earlyLink.id = "vtop-prelogin-theme";
+  earlyLink.rel = "stylesheet";
+  earlyLink.href = chrome.runtime.getURL("dist/prelogin.css");
+  (document.head || document.documentElement).appendChild(earlyLink);
+
+  // 4. Inject fonts early
+  injectGlobalFonts();
+}
 
 function removeSplashScreen() {}
 
-injectSplashScreen();
 
 const originalFetch = window.fetch;
 
@@ -283,7 +336,24 @@ const init = async () => {
       document.getElementById("captchaBlock") === null);
 
   if (path.includes("/vtop/open/page") || isRoleSelection) {
-    injectPreloginTheme();
+    // CSS was already injected at document_start. Now the DOM is ready:
+    // remove the loader and uncloak the page.
+    injectPreloginTheme(); // no-op if already injected, ensures fallback
+
+    // Remove loader overlay
+    const loader = document.getElementById("retop-open-loader");
+    if (loader) loader.remove();
+
+    // Remove the cloak that hid native html/body
+    const cloak = document.getElementById("retop-early-cloak");
+    if (cloak) cloak.remove();
+
+    // Force body visible
+    document.body.style.opacity = "1";
+    document.body.style.visibility = "visible";
+
+    console.log("[retop] Open page styled and revealed");
+
     document.addEventListener(
       "click",
       (e) => {
@@ -385,6 +455,8 @@ function waitForTokens(): Promise<boolean> {
 const injectPreloginTheme = () => {
   if (document.getElementById("vtop-prelogin-theme")) return;
 
+  console.log("[retop] Injecting prelogin theme for /open/page");
+
   injectGlobalFonts();
 
   const link = document.createElement("link");
@@ -392,6 +464,8 @@ const injectPreloginTheme = () => {
   link.rel = "stylesheet";
   link.href = chrome.runtime.getURL("dist/prelogin.css");
   document.head.appendChild(link);
+
+  console.log("[retop] prelogin.css URL:", link.href);
 };
 
 const injectLoginTheme = () => {

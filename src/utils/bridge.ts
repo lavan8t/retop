@@ -25,6 +25,7 @@ export function getAppRoot(): HTMLElement | null {
 
 export function injectGlobalFonts() {
   if (!document.getElementById("retop-material-symbols-style")) {
+    const extUrl = `chrome-extension://${chrome.runtime.id}/dist/fonts`;
     const style = document.createElement("style");
     style.id = "retop-material-symbols-style";
     style.textContent = `
@@ -32,7 +33,7 @@ export function injectGlobalFonts() {
         font-family: 'Material Symbols Rounded';
         font-style: normal;
         font-weight: 100 700;
-        src: url("chrome-extension://${chrome.runtime.id}/dist/fonts/material-symbols-rounded.woff2") format('woff2');
+        src: url("${extUrl}/material-symbols-rounded.woff2") format('woff2');
       }
 
       .material-symbols-rounded {
@@ -47,6 +48,36 @@ export function injectGlobalFonts() {
         white-space: nowrap !important;
         direction: ltr !important;
         -webkit-font-smoothing: antialiased !important;
+      }
+
+      /* Google Sans Flex — Latin + UI text */
+      @font-face {
+        font-family: "Google Sans Flex";
+        font-weight: 1 1000;
+        font-stretch: 25% 151%;
+        font-display: swap;
+        src: url("${extUrl}/gsf.subset.woff2") format("woff2");
+        unicode-range:
+          U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+          U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+          U+2212, U+2215, U+FEFF, U+FFFD;
+      }
+
+      /* Google Sans Flex — Symbols, emoji, extended */
+      @font-face {
+        font-family: "Google Sans Flex";
+        font-weight: 1 1000;
+        font-stretch: 25% 151%;
+        font-display: swap;
+        src: url("${extUrl}/gsf.subset2.woff2") format("woff2");
+        unicode-range:
+          U+0001-000C, U+000E-001F, U+007F-009F, U+20DD-20E0, U+20E2-20E4,
+          U+2150-218F, U+2190, U+2192, U+2194-2199, U+21AF, U+21E6-21F0, U+21F3,
+          U+2218-2219, U+2299, U+22C4-22C6, U+2300-243F, U+2440-244A, U+2460-24FF,
+          U+25A0-27BF, U+2800-28FF, U+2921-2922, U+2981, U+29BF, U+29EB, U+2B00-2BFF,
+          U+4DC0-4DFF, U+FFF9-FFFB, U+10140-1018E, U+10190-1019C, U+101A0,
+          U+101D0-101FD, U+102E0-102FB, U+10E60-10E7E, U+1D2C0-1D2D3, U+1D2E0-1D37F,
+          U+1F000-1F0FF, U+1F100-1F1AD;
       }
     `;
     (document.head || document.documentElement).appendChild(style);

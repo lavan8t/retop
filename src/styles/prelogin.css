@@ -1,160 +1,137 @@
 @import "./tokens.css";
 
-/* --- PRELOGIN / VTOP OPEN PAGE STYLING --- */
-/* Strictly Material Design 3 aesthetic: Flat, no shadows, no gradients, pill buttons, solid token colors */
+/* ═══════════════════════════════════════════════════════════════════════
+   PRELOGIN / OPEN PAGE — RETOP THEME OVERRIDE
+   Targets: https://vtop.vit.ac.in/vtop/open/page
+   Rules: Google Sans Flex everywhere, zero shadow, zero border,
+          zero gradient, compact padding, retop dark/light tokens.
+   ═══════════════════════════════════════════════════════════════════════ */
 
-body:has(#stdForm),
-body:has(header),
-body.WhiteBackground {
-  display: block !important;
-  height: 100vh !important;
-  padding: 0 !important;
-  padding-top: 64px !important;
-  margin: 0 !important;
-  background-color: var(--bg-main) !important;
-  color: var(--text-main) !important;
-  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
-  box-sizing: border-box !important;
-  overflow-x: hidden !important;
+/* ── Extreme Shadow Destruction (Overrides Bootstrap !important) ───── */
+html body .shadow,
+html body .shadow-sm,
+html body .shadow-lg,
+html body .card,
+html body .card-body,
+html body .card-header,
+html body .navbar,
+html body .offcanvas,
+html body [class*="shadow"] {
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  filter: none !important;
 }
 
-/* --- App Bar (Header) --- */
-header {
-  height: 64px !important;
-  min-height: 64px !important;
-  max-height: 64px !important;
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  width: 100% !important;
-  z-index: 9999 !important;
+*, *::before, *::after {
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+body, body.WhiteBackground {
   background-color: var(--bg-main) !important;
   background-image: none !important;
+  color: var(--text-main) !important;
+  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
+}
+
+/* ── Navbar / Header Fix ────────────────────────────────────────────── */
+#vtopOpenPageHeader,
+nav.navbar,
+.navbar.navbar-expand-lg,
+.headerBackgroundColor {
+  background-color: var(--bg-main) !important;
+  background-image: none !important;
+  border: none !important;
   border-bottom: 1px solid var(--border-main) !important;
-  padding: 0 16px !important;
-  margin: 0 !important;
   box-shadow: none !important;
-  display: flex !important;
-  align-items: center !important;
 }
 
-header .container-fluid {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important; /* CENTERED as requested */
-  height: 100% !important;
-  padding: 0 !important;
-  margin: 0 auto !important;
-  width: 100% !important;
-  position: relative !important;
+/* VIT Emblem Image Visibility in Dark/Light themes */
+img.VITEmblem,
+.VITEmblem {
+  max-height: 38px !important;
+  height: 38px !important;
+  width: auto !important;
+  object-fit: contain !important;
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  filter: brightness(0) invert(1) !important; /* Make visible in dark mode */
 }
 
-header .navbar-header {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  margin: 0 !important;
+[data-theme="light"] img.VITEmblem,
+[data-theme="light"] .VITEmblem {
+  filter: none !important;
 }
 
-header .navbar-brand {
-  display: flex !important;
-  align-items: center !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  height: auto !important;
-  text-decoration: none !important;
-}
-
-header .navbar-brand span.h1 {
+.VITLogoStyle,
+.VITLogoStyle span.h1 {
   font-family: 'Google Sans Flex', system-ui, sans-serif !important;
   font-variation-settings: "wdth" 125, "wght" 700 !important;
   color: var(--text-main) !important;
-  font-size: 1.25rem !important;
-  margin: 0 !important;
 }
 
-header img.VITEmblem {
-  height: 36px !important;
-  max-height: 36px !important;
-  width: auto !important;
-  margin-right: 12px !important;
-  object-fit: contain !important;
-  display: block !important;
-}
-
-.VITLogoStyle {
-  display: inline-flex !important;
-}
-
-header .navbar-text,
-header .retop-campus-text {
+.navbar-text {
   color: var(--text-muted) !important;
   font-family: 'Google Sans Flex', system-ui, sans-serif !important;
   font-variation-settings: "wght" 500 !important;
-  font-size: 0.95rem !important;
-  margin: 0 !important;
-  margin-left: 0.5rem !important;
-  display: inline-flex !important;
-  align-items: center !important;
 }
 
-/* Fix text colors globally for the page */
-.primaryTextColor1, .text-dark, .fg-black, .fw-bold.hightlight1.h6 {
+/* ── Typography — all text on the page ─────────────────────────────── */
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6,
+p, span, strong, b, a, div, li, label, small {
+  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
+}
+
+.primaryTextColor1, .text-primary {
+  color: var(--accent-base) !important;
+}
+
+.text-dark, .text-dark.fw-bold, .fg-black, .fw-bold {
   color: var(--text-main) !important;
 }
 
-/* Fast Inline Icons for Role Selection */
-.retop-inline-icon {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+.text-light {
+  color: var(--text-main) !important;
+}
+
+.text-info {
   color: var(--accent-base) !important;
-  width: 48px !important;
-  height: 48px !important;
-  background-color: var(--bg-highlight) !important;
-  border-radius: 50% !important;
-  margin-bottom: 12px !important;
 }
 
-.retop-inline-icon svg {
-  width: 24px !important;
-  height: 24px !important;
-  fill: var(--accent-base) !important;
+.text-muted, .small, small {
+  color: var(--text-muted) !important;
 }
 
-.retop-spotlight-bolt {
+/* Hero heading */
+strong.h2, .h2.primaryTextColor1 {
+  font-variation-settings: "wdth" 125, "wght" 700 !important;
+  color: var(--text-main) !important;
+}
+
+strong.h2 b {
   color: var(--accent-base) !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  margin-right: 12px !important;
-  background-color: var(--bg-highlight) !important;
-  padding: 6px !important;
-  border-radius: 50% !important;
 }
 
-.retop-spotlight-bolt svg {
-  fill: var(--accent-base) !important;
-  width: 16px !important;
-  height: 16px !important;
+/* Description paragraph */
+.h6.text-dark, .h6.text-center {
+  color: var(--text-muted) !important;
+  font-variation-settings: "wght" 450 !important;
 }
 
-/* --- Role Selection Grid Cards (Material Cards) --- */
+/* ── Role Cards (Student / Employee / Parent / Alumni) ─────────────── */
 .cardStudent,
 .cardEmployee,
 .cardParent,
 .cardAlumni {
   background-color: var(--bg-surface) !important;
   background-image: none !important;
-  border: 1px solid var(--border-main) !important;
-  border-radius: 24px !important;
-  padding: 24px 16px !important;
-  box-shadow: none !important; /* NO SHADOWS */
-  transition: background-color 0.2s ease !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
+  border: none !important;
+  border-radius: 16px !important;
+  padding: 20px 16px !important;
+  box-shadow: none !important;
+  transition: background-color 0.15s ease !important;
 }
 
 .cardStudent:hover,
@@ -162,133 +139,91 @@ header .retop-campus-text {
 .cardParent:hover,
 .cardAlumni:hover {
   background-color: var(--bg-highlight) !important;
-  transform: none !important; /* NO LIFT ON HOVER */
-  box-shadow: none !important;
-}
-
-/* Reset image wrapper */
-.cardStudent .d-flex.jusitfy-content-start,
-.cardEmployee .d-flex.jusitfy-content-start,
-.cardParent .d-flex.jusitfy-content-start,
-.cardAlumni .d-flex.jusitfy-content-start {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: 100% !important;
-}
-
-.cardStudent .w-50,
-.cardEmployee .w-50,
-.cardParent .w-50,
-.cardAlumni .w-50 {
-  width: 100% !important;
-  display: flex !important;
-  justify-content: center !important;
-}
-
-.cardStudent .flex-grow-1,
-.cardEmployee .flex-grow-1,
-.cardParent .flex-grow-1,
-.cardAlumni .flex-grow-1 {
-  width: 100% !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-}
-
-/* Material Buttons inside cards */
-.cardStudent .btn,
-.cardEmployee .btn,
-.cardParent .btn,
-.cardAlumni .btn {
-  background-color: var(--accent-base) !important;
-  color: var(--bg-main) !important;
-  border: none !important;
-  border-radius: 9999px !important; /* Pill shape */
-  padding: 10px 24px !important;
-  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
-  font-variation-settings: "wght" 600 !important;
-  font-size: 0.9rem !important;
-  box-shadow: none !important; /* NO SHADOWS */
-  transition: opacity 0.2s ease !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  margin-top: 16px !important;
-}
-
-.cardStudent .btn:hover,
-.cardEmployee .btn:hover,
-.cardParent .btn:hover,
-.cardAlumni .btn:hover {
-  opacity: 0.9 !important;
   transform: none !important;
-  box-shadow: none !important;
 }
 
-.cardStudent .btn svg,
-.cardEmployee .btn svg,
-.cardParent .btn svg,
-.cardAlumni .btn svg {
-  fill: currentColor !important;
+/* Remove arrow buttons from the 4 cards as requested */
+.cardStudent button,
+.cardEmployee button,
+.cardParent button,
+.cardAlumni button {
+  display: none !important;
 }
 
-/* Role Labels */
+/* Role label text */
 .cardStudent .fw-bold,
 .cardEmployee .fw-bold,
 .cardParent .fw-bold,
 .cardAlumni .fw-bold {
-  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
-  font-variation-settings: "wdth" 125, "wght" 600 !important;
   color: var(--text-main) !important;
-  font-size: 1.1rem !important;
-  margin-top: 8px !important;
+  font-variation-settings: "wdth" 125, "wght" 600 !important;
+  font-size: 1.05rem !important;
 }
 
-/* --- Spotlight Card & List (Material 3 List) --- */
-.col-12.col-md-6 .card.border-0.shadow-lg {
+/* Material Symbols Icon Container in Cards */
+.retop-inline-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 56px !important;
+  height: 56px !important;
+  border-radius: 50% !important;
+  background-color: var(--bg-highlight) !important;
+  color: var(--accent-base) !important;
+  margin-bottom: 8px !important;
+}
+
+.retop-inline-icon .material-symbols-rounded {
+  color: var(--accent-base) !important;
+}
+
+/* ── Spotlight Section ─────────────────────────────────────────────── */
+.card.border-0.shadow-lg,
+.card.border-0 {
   background-color: var(--bg-surface) !important;
-  border: 1px solid var(--border-main) !important;
-  border-radius: 24px !important;
-  box-shadow: none !important; /* NO SHADOWS */
+  border: none !important;
+  border-radius: 16px !important;
+  box-shadow: none !important;
   overflow: hidden !important;
 }
 
-.spotlightHeader {
-  background: transparent !important;
-  background-image: none !important; /* NO GRADIENT */
-  border-bottom: 1px solid var(--border-main) !important;
-  padding: 20px 24px !important;
+.spotlightHeader,
+.card-header.spotlightHeader {
+  background: var(--bg-surface) !important;
+  background-image: none !important;
+  border: none !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--text-muted) 15%, transparent) !important;
+  padding: 12px 16px !important;
 }
 
-.spotlightHeader span {
+.spotlightHeader span.fw-bold,
+.hightlight1 {
   color: var(--text-main) !important;
-  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
   font-variation-settings: "wght" 600 !important;
-  font-size: 1.1rem !important;
 }
 
-.spotlightHeader button {
+.spotlightHeader button,
+.spotlightHeader .btn-link {
   color: var(--accent-base) !important;
-  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
   font-variation-settings: "wght" 600 !important;
+  text-decoration: none !important;
 }
 
-.spotlight-background {
+.spotlight-background,
+ul.list-group.spotlight-background {
   background-color: transparent !important;
-  background-image: none !important; /* NO GRADIENT */
+  background-image: none !important;
   border: none !important;
 }
 
 .spotlight-background .list-group-item {
   background: transparent !important;
-  background-image: none !important; /* NO GRADIENT */
+  background-image: none !important;
   border: none !important;
-  border-bottom: 1px solid var(--border-main) !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--text-muted) 12%, transparent) !important;
   color: var(--text-main) !important;
-  padding: 16px 24px !important;
-  transition: background-color 0.2s ease !important;
+  padding: 10px 16px !important;
+  transition: background-color 0.15s ease !important;
 }
 
 .spotlight-background .list-group-item:last-child {
@@ -297,38 +232,119 @@ header .retop-campus-text {
 
 .spotlight-background .list-group-item:hover {
   background-color: var(--bg-highlight) !important;
-  transform: none !important; /* NO LIFT ON HOVER */
+  transform: none !important;
 }
 
 .spotlight-background strong,
-.spotlight-background span {
+.spotlight-background span,
+.spotlight-background a {
   color: var(--text-main) !important;
-  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
   font-variation-settings: "wght" 500 !important;
-  font-size: 0.95rem !important;
-}
-
-/* Footer Styling */
-.footercolor {
-  background-color: var(--bg-main) !important;
-  border-top: 1px solid var(--border-main) !important;
-  color: var(--text-muted) !important;
-  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
-  font-variation-settings: "wght" 500 !important;
-  padding: 16px 0 !important;
-  position: fixed !important;
-  bottom: 0 !important;
-  width: 100% !important;
-  left: 0 !important;
-  z-index: 10 !important;
-  box-shadow: none !important; /* NO SHADOWS */
-}
-
-.footercolor a {
-  color: var(--text-muted) !important;
   text-decoration: none !important;
 }
 
-.footercolor a:hover {
+/* Hide native stock bolt icons (fa fa-bolt) */
+.spotlight-background .fa.fa-bolt,
+.hightlight1 .fa.fa-bolt,
+.offcanvas-body .fa.fa-bolt {
+  display: none !important;
+}
+
+/* Material Symbols Spotlight bolt */
+.retop-spotlight-bolt {
   color: var(--accent-base) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-right: 8px !important;
+}
+
+.retop-spotlight-bolt .material-symbols-rounded {
+  color: var(--accent-base) !important;
+}
+
+/* ── Offcanvas (Spotlight "More...") ───────────────────────────────── */
+.offcanvas {
+  background-color: var(--bg-main) !important;
+  color: var(--text-main) !important;
+  border: none !important;
+}
+
+.offcanvas-header {
+  border-bottom: 1px solid color-mix(in srgb, var(--text-muted) 15%, transparent) !important;
+}
+
+.offcanvas-title,
+.offcanvas-title.primaryColor1 {
+  color: var(--text-main) !important;
+  font-variation-settings: "wdth" 125, "wght" 700 !important;
+}
+
+.btn-close {
+  filter: invert(1) !important;
+}
+
+[data-theme="light"] .btn-close {
+  filter: none !important;
+}
+
+/* ── App Download Section ──────────────────────────────────────────── */
+.col.text-center .fw-bold.text-primary {
+  color: var(--accent-base) !important;
+  font-variation-settings: "wght" 600 !important;
+}
+
+/* ── Footer ────────────────────────────────────────────────────────── */
+.footercolor,
+.fixed-bottom.footercolor {
+  background-color: var(--bg-main) !important;
+  background-image: none !important;
+  border: none !important;
+  border-top: 1px solid var(--border-main) !important;
+  box-shadow: none !important;
+  color: var(--text-muted) !important;
+  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
+  font-variation-settings: "wght" 450 !important;
+}
+
+.footercolor span, .footercolor a {
+  color: var(--text-muted) !important;
+}
+
+/* ── Container ─────────────────────────────────────────────────────── */
+.container-fluid > .row.WhiteBackground {
+  background-color: var(--bg-main) !important;
+}
+
+.card.card-body.border-0 {
+  background-color: var(--bg-main) !important;
+  border: none !important;
+}
+
+/* ── Modal (Session Timed Out) ─────────────────────────────────────── */
+.modal-content {
+  background-color: var(--bg-surface) !important;
+  border: none !important;
+  border-radius: 16px !important;
+}
+
+.modal-header, .modal-footer {
+  border: none !important;
+}
+
+.modal-title {
+  color: var(--text-main) !important;
+  font-variation-settings: "wght" 600 !important;
+}
+
+/* ── Scrollbar (match retop) ───────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--text-dim);
+  border-radius: 3px;
 }

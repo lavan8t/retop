@@ -1,52 +1,57 @@
-
 /* --- PRELOGIN / VTOP OPEN PAGE STYLING --- */
+/* Strictly Material Design 3 aesthetic: Flat, no shadows, no gradients, pill buttons, solid token colors */
+
 body:has(#stdForm),
 body:has(header),
 body.WhiteBackground {
   display: block !important;
   height: 100vh !important;
   padding: 0 !important;
-  padding-top: 56px !important;
+  padding-top: 64px !important;
   margin: 0 !important;
   background-color: var(--bg-main) !important;
   color: var(--text-main) !important;
   font-family: 'Google Sans Flex', system-ui, sans-serif !important;
   box-sizing: border-box !important;
-  overflow: hidden !important;
+  overflow-x: hidden !important;
 }
 
+/* --- App Bar (Header) --- */
 header {
-  height: 56px !important;
-  min-height: 56px !important;
-  max-height: 56px !important;
+  height: 64px !important;
+  min-height: 64px !important;
+  max-height: 64px !important;
   position: fixed !important;
   top: 0 !important;
   left: 0 !important;
   right: 0 !important;
   width: 100% !important;
   z-index: 9999 !important;
-  background-color: var(--bg-card) !important;
+  background-color: var(--bg-main) !important;
   background-image: none !important;
-  border-bottom: 2px solid var(--border-main) !important;
-  padding: 0 1.5rem !important;
+  border-bottom: 1px solid var(--border-main) !important;
+  padding: 0 16px !important;
   margin: 0 !important;
   box-shadow: none !important;
-  display: block !important;
+  display: flex !important;
+  align-items: center !important;
 }
 
 header .container-fluid {
   display: flex !important;
   align-items: center !important;
-  justify-content: flex-start !important;
+  justify-content: center !important; /* CENTERED as requested */
   height: 100% !important;
   padding: 0 !important;
   margin: 0 auto !important;
   width: 100% !important;
+  position: relative !important;
 }
 
 header .navbar-header {
   display: flex !important;
   align-items: center !important;
+  justify-content: center !important;
   margin: 0 !important;
 }
 
@@ -61,36 +66,40 @@ header .navbar-brand {
 
 header .navbar-brand span.h1 {
   font-family: 'Google Sans Flex', system-ui, sans-serif !important;
-  font-variation-settings: "wdth" 151, "wght" 700, "slnt" -10, "ROND" 100 !important;
+  font-variation-settings: "wdth" 125, "wght" 700 !important;
   color: var(--text-main) !important;
-  font-size: 1.5rem !important;
+  font-size: 1.25rem !important;
   margin: 0 !important;
 }
 
-header img.VITEmblem, 
-#retop-react-logo {
-  height: 32px !important;
-  max-height: 32px !important;
+header img.VITEmblem {
+  height: 36px !important;
+  max-height: 36px !important;
   width: auto !important;
-  margin-right: 8px !important;
+  margin-right: 12px !important;
   object-fit: contain !important;
   display: block !important;
 }
 
 .VITLogoStyle {
-  display: none !important;
+  display: inline-flex !important;
 }
 
 header .navbar-text,
 header .retop-campus-text {
   color: var(--text-muted) !important;
   font-family: 'Google Sans Flex', system-ui, sans-serif !important;
-  font-variation-settings: "wght" 600 !important;
+  font-variation-settings: "wght" 500 !important;
   font-size: 0.95rem !important;
   margin: 0 !important;
-  margin-left: 0.75rem !important;
+  margin-left: 0.5rem !important;
   display: inline-flex !important;
   align-items: center !important;
+}
+
+/* Fix text colors globally for the page */
+.primaryTextColor1, .text-dark, .fg-black, .fw-bold.hightlight1.h6 {
+  color: var(--text-main) !important;
 }
 
 /* Fast Inline Icons for Role Selection */
@@ -99,13 +108,16 @@ header .retop-campus-text {
   align-items: center !important;
   justify-content: center !important;
   color: var(--accent-base) !important;
-  width: 55px !important;
-  height: 55px !important;
+  width: 48px !important;
+  height: 48px !important;
+  background-color: var(--bg-highlight) !important;
+  border-radius: 50% !important;
+  margin-bottom: 12px !important;
 }
 
 .retop-inline-icon svg {
-  width: 36px !important;
-  height: 36px !important;
+  width: 24px !important;
+  height: 24px !important;
   fill: var(--accent-base) !important;
 }
 
@@ -113,7 +125,10 @@ header .retop-campus-text {
   color: var(--accent-base) !important;
   display: inline-flex !important;
   align-items: center !important;
-  margin-right: 0.5rem !important;
+  margin-right: 12px !important;
+  background-color: var(--bg-highlight) !important;
+  padding: 6px !important;
+  border-radius: 50% !important;
 }
 
 .retop-spotlight-bolt svg {
@@ -122,116 +137,196 @@ header .retop-campus-text {
   height: 16px !important;
 }
 
-/* Role Selection Grid Cards */
+/* --- Role Selection Grid Cards (Material Cards) --- */
 .cardStudent,
 .cardEmployee,
 .cardParent,
 .cardAlumni {
-  background-color: var(--bg-card) !important;
+  background-color: var(--bg-surface) !important;
   background-image: none !important;
-  border: none !important;
-  border-radius: 1.5rem !important;
-  padding: 1.25rem !important;
-  box-shadow: none !important;
+  border: 1px solid var(--border-main) !important;
+  border-radius: 24px !important;
+  padding: 24px 16px !important;
+  box-shadow: none !important; /* NO SHADOWS */
+  transition: background-color 0.2s ease !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .cardStudent:hover,
 .cardEmployee:hover,
 .cardParent:hover,
 .cardAlumni:hover {
-  transform: none !important;
+  background-color: var(--bg-highlight) !important;
+  transform: none !important; /* NO LIFT ON HOVER */
   box-shadow: none !important;
-  border: none !important;
 }
 
+/* Reset image wrapper */
+.cardStudent .d-flex.jusitfy-content-start,
+.cardEmployee .d-flex.jusitfy-content-start,
+.cardParent .d-flex.jusitfy-content-start,
+.cardAlumni .d-flex.jusitfy-content-start {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+}
+
+.cardStudent .w-50,
+.cardEmployee .w-50,
+.cardParent .w-50,
+.cardAlumni .w-50 {
+  width: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+}
+
+.cardStudent .flex-grow-1,
+.cardEmployee .flex-grow-1,
+.cardParent .flex-grow-1,
+.cardAlumni .flex-grow-1 {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
+
+/* Material Buttons inside cards */
 .cardStudent .btn,
 .cardEmployee .btn,
 .cardParent .btn,
 .cardAlumni .btn {
-  border-radius: 1rem !important;
-  padding: 0.5rem 1rem !important;
-  transition: background-color 0.15s ease-out !important;
-  box-shadow: none !important;
+  background-color: var(--accent-base) !important;
+  color: var(--bg-main) !important;
+  border: none !important;
+  border-radius: 9999px !important; /* Pill shape */
+  padding: 10px 24px !important;
+  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
+  font-variation-settings: "wght" 600 !important;
+  font-size: 0.9rem !important;
+  box-shadow: none !important; /* NO SHADOWS */
+  transition: opacity 0.2s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-top: 16px !important;
 }
 
 .cardStudent .btn:hover,
 .cardEmployee .btn:hover,
 .cardParent .btn:hover,
 .cardAlumni .btn:hover {
+  opacity: 0.9 !important;
   transform: none !important;
   box-shadow: none !important;
 }
 
+.cardStudent .btn svg,
+.cardEmployee .btn svg,
+.cardParent .btn svg,
+.cardAlumni .btn svg {
+  fill: currentColor !important;
+}
+
+/* Role Labels */
 .cardStudent .fw-bold,
 .cardEmployee .fw-bold,
 .cardParent .fw-bold,
 .cardAlumni .fw-bold {
   font-family: 'Google Sans Flex', system-ui, sans-serif !important;
-  font-variation-settings: "wdth" 125, "wght" 700 !important;
+  font-variation-settings: "wdth" 125, "wght" 600 !important;
   color: var(--text-main) !important;
+  font-size: 1.1rem !important;
+  margin-top: 8px !important;
 }
 
-/* Spotlight Card & List - FLAT STYLING, ZERO GRADIENT */
+/* --- Spotlight Card & List (Material 3 List) --- */
+.col-12.col-md-6 .card.border-0.shadow-lg {
+  background-color: var(--bg-surface) !important;
+  border: 1px solid var(--border-main) !important;
+  border-radius: 24px !important;
+  box-shadow: none !important; /* NO SHADOWS */
+  overflow: hidden !important;
+}
+
 .spotlightHeader {
-  background: var(--bg-surface) !important;
-  background-image: none !important;
-  border: none !important;
-  padding: 1rem 1.25rem !important;
-  border-top-left-radius: 1.5rem !important;
-  border-top-right-radius: 1.5rem !important;
+  background: transparent !important;
+  background-image: none !important; /* NO GRADIENT */
+  border-bottom: 1px solid var(--border-main) !important;
+  padding: 20px 24px !important;
 }
 
-.spotlightHeader span,
-.spotlightHeader button {
+.spotlightHeader span {
   color: var(--text-main) !important;
   font-family: 'Google Sans Flex', system-ui, sans-serif !important;
-  font-variation-settings: "wght" 700 !important;
+  font-variation-settings: "wght" 600 !important;
+  font-size: 1.1rem !important;
+}
+
+.spotlightHeader button {
+  color: var(--accent-base) !important;
+  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
+  font-variation-settings: "wght" 600 !important;
 }
 
 .spotlight-background {
-  background-color: var(--bg-card) !important;
-  background-image: none !important;
+  background-color: transparent !important;
+  background-image: none !important; /* NO GRADIENT */
   border: none !important;
-  border-bottom-left-radius: 1.5rem !important;
-  border-bottom-right-radius: 1.5rem !important;
 }
 
 .spotlight-background .list-group-item {
   background: transparent !important;
-  background-image: none !important;
+  background-image: none !important; /* NO GRADIENT */
   border: none !important;
+  border-bottom: 1px solid var(--border-main) !important;
   color: var(--text-main) !important;
-  transition: background-color 0.2s ease-out !important;
-  padding: 0.85rem 1.25rem !important;
+  padding: 16px 24px !important;
+  transition: background-color 0.2s ease !important;
+}
+
+.spotlight-background .list-group-item:last-child {
+  border-bottom: none !important;
 }
 
 .spotlight-background .list-group-item:hover {
   background-color: var(--bg-highlight) !important;
-  background-image: none !important;
-  transform: none !important;
+  transform: none !important; /* NO LIFT ON HOVER */
 }
 
 .spotlight-background strong,
 .spotlight-background span {
   color: var(--text-main) !important;
+  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
+  font-variation-settings: "wght" 500 !important;
+  font-size: 0.95rem !important;
 }
 
 /* Footer Styling */
 .footercolor {
-  background-color: var(--bg-card) !important;
-  border: none !important;
+  background-color: var(--bg-main) !important;
+  border-top: 1px solid var(--border-main) !important;
   color: var(--text-muted) !important;
   font-family: 'Google Sans Flex', system-ui, sans-serif !important;
-  padding: 1rem 0 !important;
+  font-variation-settings: "wght" 500 !important;
+  padding: 16px 0 !important;
   position: fixed !important;
   bottom: 0 !important;
   width: 100% !important;
   left: 0 !important;
   z-index: 10 !important;
+  box-shadow: none !important; /* NO SHADOWS */
 }
+
 .footercolor a {
   color: var(--text-muted) !important;
+  text-decoration: none !important;
 }
+
 .footercolor a:hover {
   color: var(--accent-base) !important;
 }

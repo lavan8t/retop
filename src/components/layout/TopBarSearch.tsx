@@ -62,7 +62,7 @@ export const hasRetopPage = (link: QuickLink | string): boolean => {
 
   if (hasUrlMatch) return true;
 
-  // 2. Secondary check: Strict EXACT full title match only
+  // 2. Secondary check: Title matching for Retop native pages
   const exactFullTitles = [
     "timetable",
     "time table",
@@ -79,13 +79,15 @@ export const hasRetopPage = (link: QuickLink | string): boolean => {
     "profile",
     "curriculum",
     "course page",
+    "course page consolidated",
+    "course page (consolidated)",
     "academic calendar",
     "academics calendar",
     "calendar",
     "academic calendar preview",
   ];
 
-  return exactFullTitles.includes(title);
+  return exactFullTitles.includes(title) || title.includes("course page");
 };
 
 const fuzzyMatch = (str: string, pattern: string) => {

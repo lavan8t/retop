@@ -118,10 +118,9 @@ const getDestinationView = (link: QuickLink): ViewType | "content" => {
     return "profile";
   }
 
-  // 7. Course Page (Course Materials) - EXACT match only!
+  // 7. Course Page (Course Materials)
   if (
-    lowerTitle === "course page" ||
-    lowerTitle === "course page view" ||
+    lowerTitle.includes("course page") ||
     lowerUrl.includes("coursepage") ||
     lowerUrl.includes("processviewcoursepage")
   ) {

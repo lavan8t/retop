@@ -28,11 +28,11 @@ import { SemesterDropdown } from "../timetable/SemesterDropdown";
 import { TRANSITION_PULSE, DURATION_SPINNER } from "../../utils/motion";
 import { ClassGroupDropdown } from "../timetable/ClassGroupDropdown";
 import { TopBarSearch } from "./TopBarSearch";
+import { Tooltip } from "../ui/Tooltip";
 import { SegmentedControl } from "../ui/SegmentedControl";
 import { getCategoryIcon } from "../../utils/icons";
 import { useDataStore } from "../../store/dataStore";
 import { useAppStore } from "../../store/appStore";
-import { Tooltip } from "../ui/Tooltip";
 
 interface TopBarProps {
   currentView: string;
@@ -522,31 +522,28 @@ export const TopBar: React.FC<TopBarProps> = ({
           )}
 
           <div className="flex items-center pointer-events-auto mr-1 md:mr-2">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onSync && !isSyncing) onSync();
-              }}
-              disabled={isSyncing}
-              className="flex items-center gap-1.5 px-2 py-1 rounded-full hover:bg-(--bg-hover) transition-colors cursor-pointer text-left disabled:opacity-50 shrink-0"
-            >
-              <motion.div
-                animate={isSyncing ? { rotate: 360 } : {}}
-                transition={
-                  isSyncing
-                    ? { duration: DURATION_SPINNER, repeat: Infinity, ease: "linear" }
-                    : {}
-                }
-                className="shrink-0 flex items-center justify-center"
+            <Tooltip text={isSyncing ? "Syncing..." : "Sync now"}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onSync && !isSyncing) onSync();
+                }}
+                disabled={isSyncing}
+                className="flex items-center gap-1.5 px-2 py-1 rounded-full hover:bg-(--bg-hover) transition-colors cursor-pointer text-left disabled:opacity-50 shrink-0"
               >
-                <Autorenew className="w-4 h-4 md:w-5 md:h-5 text-(--text-muted) hover:text-(--text-main) transition-colors" />
-              </motion.div>
-              <div className="flex flex-col shrink-0 pr-1">
-                <span className="text-[10px] font-bold uppercase text-(--text-main) leading-none mt-0.5">
-                  {isSyncing ? "Syncing" : "Sync"}
-                </span>
+                <motion.div
+                  animate={isSyncing ? { rotate: 360 } : {}}
+                  transition={
+                    isSyncing
+                      ? { duration: DURATION_SPINNER, repeat: Infinity, ease: "linear" }
+                      : {}
+                  }
+                  className="shrink-0 flex items-center justify-center"
+                >
+                  <Refresh className="w-4 h-4 md:w-5 md:h-5 text-(--text-muted) hover:text-(--text-main) transition-colors" />
+                </motion.div>
                 {lastSyncTime > 0 && (
-                  <span className="text-[8px] text-(--text-muted) leading-none mt-0.5">
+                  <span className="text-xs font-mono font-bold text-(--text-muted) leading-none">
                     {(() => {
                       const ago = Math.floor(
                         (Date.now() - lastSyncTime) / 1000,
@@ -557,8 +554,8 @@ export const TopBar: React.FC<TopBarProps> = ({
                     })()}
                   </span>
                 )}
-              </div>
-            </button>
+              </button>
+            </Tooltip>
           </div>
 
           <div className="relative shrink-0 flex items-center justify-center pointer-events-auto">

@@ -52,71 +52,126 @@ import { SnackbarManager } from "../components/ui/Snackbar";
 
 
 const getDestinationView = (link: QuickLink): ViewType | "content" => {
-  const lowerTitle = link.title.toLowerCase();
-  const lowerUrl = link.url.toLowerCase();
+  const lowerTitle = link.title.toLowerCase().trim();
+  const lowerUrl = link.url.toLowerCase().trim();
 
-  if (lowerTitle === "home" || lowerTitle === "dashboard" || lowerUrl.includes("home")) {
+  // 1. Dashboard / Home
+  if (
+    lowerTitle === "home" ||
+    lowerTitle === "dashboard" ||
+    lowerUrl === "home" ||
+    lowerUrl === "/home"
+  ) {
     return "dashboard";
   }
 
+  // 2. Timetable
   if (
-    lowerTitle.includes("time table") ||
-    lowerTitle.includes("timetable") ||
-    lowerUrl.includes("timetable") ||
-    lowerUrl.includes("studenttimetable")
-  )
+    lowerTitle === "timetable" ||
+    lowerTitle === "time table" ||
+    lowerTitle === "class timetable" ||
+    lowerUrl.includes("studenttimetable") ||
+    lowerUrl.includes("processviewtimetable")
+  ) {
     return "timetable";
-  if (lowerTitle.includes("curriculum") || lowerUrl.includes("curriculum"))
-    return "curriculum";
-  if (
-    lowerTitle.includes("mark") ||
-    lowerUrl.includes("mark")
-  )
-    return "marks";
-  if (
-    lowerTitle.includes("grade") ||
-    lowerUrl.includes("grade")
-  )
-    return "grades";
-  if (
-    lowerTitle.includes("profile view") ||
-    lowerTitle.includes("profile") ||
-    lowerUrl.includes("studentprofileallview") ||
-    lowerUrl.includes("profile")
-  )
-    return "profile";
-  if (
-    lowerTitle.includes("course page") ||
-    lowerTitle.includes("course") ||
-    lowerUrl.includes("coursepage") ||
-    lowerUrl.includes("course")
-  )
-    return "coursePage";
-  if (
-    lowerTitle.includes("calendar") ||
-    lowerUrl.includes("processviewcalendar") ||
-    lowerUrl.includes("calendarpreview")
-  )
-    return "calendar";
-  if (
-    lowerTitle.includes("attendance") ||
-    lowerUrl.includes("studentattendance")
-  )
-    return "attendance";
-  if (
-    lowerTitle.includes("digital assignment") ||
-    lowerTitle.includes("digital assignment upload") ||
-    lowerTitle.includes("assignment") ||
-    lowerUrl.includes("studentda")
-  )
-    return "digitalAssignments";
-    
-  if (
-    lowerTitle.includes("exam schedule") ||
-    lowerUrl.includes("studexamschedule")
-  )
-    return "examSchedule";
+  }
 
+  // 3. Curriculum
+  if (
+    lowerTitle === "curriculum" ||
+    lowerTitle === "programme curriculum" ||
+    lowerUrl.includes("studentcurriculum")
+  ) {
+    return "curriculum";
+  }
+
+  // 4. Marks
+  if (
+    lowerTitle === "marks" ||
+    lowerTitle === "marks view" ||
+    lowerTitle === "student marks" ||
+    lowerUrl.includes("studentmark") ||
+    lowerUrl.includes("processviewstudentmark")
+  ) {
+    return "marks";
+  }
+
+  // 5. Grades
+  if (
+    lowerTitle === "grades" ||
+    lowerTitle === "grades view" ||
+    lowerTitle === "grades & history" ||
+    lowerTitle === "grade history" ||
+    lowerUrl.includes("studentgradeview") ||
+    lowerUrl.includes("processviewstudentgrade")
+  ) {
+    return "grades";
+  }
+
+  // 6. Profile
+  if (
+    lowerTitle === "profile" ||
+    lowerTitle === "profile view" ||
+    lowerTitle === "student profile" ||
+    lowerUrl.includes("studentprofileallview")
+  ) {
+    return "profile";
+  }
+
+  // 7. Course Page (Course Materials) - EXACT match only!
+  if (
+    lowerTitle === "course page" ||
+    lowerTitle === "course page view" ||
+    lowerUrl.includes("coursepage") ||
+    lowerUrl.includes("processviewcoursepage")
+  ) {
+    return "coursePage";
+  }
+
+  // 8. Calendar
+  if (
+    lowerTitle === "calendar" ||
+    lowerTitle === "academic calendar" ||
+    lowerTitle === "academics calendar" ||
+    lowerTitle === "academic calendar preview" ||
+    lowerUrl.includes("calendarpreview") ||
+    lowerUrl.includes("processviewcalendar")
+  ) {
+    return "calendar";
+  }
+
+  // 9. Attendance
+  if (
+    lowerTitle === "attendance" ||
+    lowerTitle === "class attendance" ||
+    lowerUrl.includes("studentattendance") ||
+    lowerUrl.includes("processviewstudentattendance")
+  ) {
+    return "attendance";
+  }
+
+  // 10. Digital Assignments
+  if (
+    lowerTitle === "digital assignments" ||
+    lowerTitle === "digital assignment upload" ||
+    lowerTitle === "assignments" ||
+    lowerUrl.includes("studentda") ||
+    lowerUrl.includes("processviewstudentda")
+  ) {
+    return "digitalAssignments";
+  }
+
+  // 11. Exam Schedule
+  if (
+    lowerTitle === "exam schedule" ||
+    lowerTitle === "examinations schedule" ||
+    lowerUrl.includes("studexamschedule") ||
+    lowerUrl.includes("processviewexamschedule")
+  ) {
+    return "examSchedule";
+  }
+
+  // Default: Open in legacy content mode (with re. theme)
   return "content";
 };
 

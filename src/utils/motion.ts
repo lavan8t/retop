@@ -161,6 +161,46 @@ export const TRANSITION_PULSE: Transition = {
 export const HOVER_LIFT = {};
 export const TAP_PRESS = {};
 
+// ── Stagger Motion Variants ──────────────────────────────────────────
+export const STAGGER_CONTAINER_VARIANTS = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: STAGGER_ITEM,
+      delayChildren: 0.02,
+    },
+  },
+  exit: {
+    opacity: 0,
+    transition: {
+      staggerChildren: 0.01,
+      staggerDirection: -1,
+    },
+  },
+};
+
+export const STAGGER_ITEM_VARIANTS = {
+  hidden: { opacity: 0, y: 12, scale: 0.98 },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: DURATION_MODERATE,
+      ease: EASE_OUT,
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: -8,
+    scale: 0.98,
+    transition: {
+      duration: DURATION_FAST,
+    },
+  },
+};
+
 // ── Animation scale subscriber (settings-driven) ────────────────────
 useSettingsStore.subscribe((state) => {
   const scale = state.settings.animationScale || "1x";

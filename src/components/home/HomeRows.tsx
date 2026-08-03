@@ -82,6 +82,14 @@ export const ScheduleRow = ({
   const timeParts = formattedTime.split(" - ");
   const startTime = timeParts[0];
   const { settings } = useSettingsStore();
+  const { attendance } = useDataStore();
+  const attObj = (attendance || []).find(
+    (a) =>
+      a.code === item.course?.code ||
+      (item.course?.title && a.name && item.course.title.includes(a.name)),
+  );
+  const attVal = attObj ? parseFloat(attObj.attendance) : NaN;
+  const isCriticalAtt = !isNaN(attVal) && attVal <= 75;
 
   const [isHovered, setIsHovered] = React.useState(false);
 
@@ -116,9 +124,14 @@ export const ScheduleRow = ({
           <motion.div
             layout="position"
             transition={SPRING_SNAPPY}
-            className="text-sm font-black leading-tight flex-1 truncate"
+            className="text-sm font-black leading-tight flex-1 truncate flex items-center gap-1.5"
           >
-            {item.course.title}
+            <span className="truncate">{item.course.title}</span>
+            {isCriticalAtt && (
+              <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded bg-red-500 text-white shrink-0">
+                ⚠️ {Math.round(attVal)}%
+              </span>
+            )}
           </motion.div>
         </div>
         <motion.div layout="position" transition={SPRING_SNAPPY} className="text-[10px] font-bold font-mono shrink-0 px-1 py-0.5 flex items-center gap-1">

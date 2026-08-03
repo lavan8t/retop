@@ -80,26 +80,23 @@ const AttendanceCalculator = ({
     circleCircumference - (percentage / 100) * circleCircumference;
 
   return (
-    <div className="flex flex-col gap-5 mb-6 relative bg-(--bg-surface)/40 rounded-3xl p-5 border-0">
-      {/* Header & Reset */}
-      <div className="flex items-center justify-between">
-        <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-(--text-muted)">
-          Attendance Forecast & Simulator
-        </h4>
-        {hasChanged && (
+    <div className="flex flex-col gap-4 mb-6 relative">
+      {/* Reset button if changed */}
+      {hasChanged && (
+        <div className="flex justify-end">
           <button
             onClick={handleReset}
-            className="flex items-center gap-1 text-[10px] uppercase font-mono font-bold bg-(--bg-main) hover:bg-(--bg-highlight) text-(--text-main) px-2.5 py-1 rounded-full transition-colors cursor-pointer border border-(--border-dim)/40"
+            className="flex items-center gap-1 text-[10px] uppercase font-mono font-bold bg-(--bg-surface) hover:bg-(--bg-highlight) text-(--text-main) px-2.5 py-1 rounded-full transition-colors cursor-pointer border border-(--border-dim)/40"
           >
             <Refresh className="w-3 h-3 text-(--accent-base)" />
             Reset
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Ring Gauge & Summary */}
+      {/* Ring Gauge (1.5x width stroke: strokeWidth="15") & Summary */}
       <div className="flex flex-col sm:flex-row items-center justify-around gap-4 py-2">
-        <div className="relative w-40 h-40 flex items-center justify-center shrink-0">
+        <div className="relative w-44 h-44 flex items-center justify-center shrink-0">
           <svg
             className="absolute inset-0 w-full h-full -rotate-90"
             viewBox="0 0 140 140"
@@ -108,8 +105,8 @@ const AttendanceCalculator = ({
               cx="70"
               cy="70"
               r={circleRadius}
-              className="stroke-(--bg-main)"
-              strokeWidth="10"
+              className="stroke-(--bg-surface)"
+              strokeWidth="15"
               fill="none"
             />
             <circle
@@ -117,7 +114,7 @@ const AttendanceCalculator = ({
               cy="70"
               r={circleRadius}
               className={`transition-all duration-normal ease-out ${ringColor}`}
-              strokeWidth="10"
+              strokeWidth="15"
               fill="none"
               strokeDasharray={circleCircumference}
               strokeDashoffset={strokeDashoffset}
@@ -126,7 +123,7 @@ const AttendanceCalculator = ({
           </svg>
           <div className="flex flex-col items-center z-10 text-center">
             <span
-              className={`font-mono font-black text-3xl leading-none ${ringColor.replace("stroke-", "text-")}`}
+              className={`font-mono font-black text-4xl leading-none ${ringColor.replace("stroke-", "text-")}`}
             >
               {percentage}%
             </span>
@@ -135,15 +132,15 @@ const AttendanceCalculator = ({
 
         {/* Stats Column */}
         <div className="flex flex-col gap-2 w-full text-xs font-mono">
-          <div className="flex justify-between items-center bg-(--bg-main)/50 px-3 py-1.5 rounded-xl border border-(--border-dim)/20">
+          <div className="flex justify-between items-center bg-(--bg-surface)/60 px-3.5 py-2 rounded-xl border border-(--border-dim)/20">
             <span className="text-(--text-muted)">Conducted So Far</span>
             <span className="font-bold text-(--text-main)">{conductedSoFar}</span>
           </div>
-          <div className="flex justify-between items-center bg-(--bg-main)/50 px-3 py-1.5 rounded-xl border border-(--border-dim)/20">
+          <div className="flex justify-between items-center bg-(--bg-surface)/60 px-3.5 py-2 rounded-xl border border-(--border-dim)/20">
             <span className="text-(--text-muted)">Attended So Far</span>
             <span className="font-bold text-emerald-400">{present}</span>
           </div>
-          <div className="flex justify-between items-center bg-(--bg-main)/50 px-3 py-1.5 rounded-xl border border-(--border-dim)/20">
+          <div className="flex justify-between items-center bg-(--bg-surface)/60 px-3.5 py-2 rounded-xl border border-(--border-dim)/20">
             <span className="text-(--text-muted)">
               Left before {forecast?.examName || "Exams"}
             </span>
@@ -154,7 +151,7 @@ const AttendanceCalculator = ({
 
       {/* Target Callout Banner */}
       {forecast && (
-        <div className="p-3 rounded-2xl bg-(--bg-main)/70 text-xs font-mono flex items-center justify-between gap-2 border border-(--border-dim)/30">
+        <div className="p-3 rounded-2xl bg-(--bg-surface)/70 text-xs font-mono flex items-center justify-between gap-2 border border-(--border-dim)/30">
           <span className="text-(--text-muted)">
             {forecast.status === "CRITICAL"
               ? `Need ${
@@ -178,16 +175,16 @@ const AttendanceCalculator = ({
         </div>
       )}
 
-      {/* Attend & Bunk Simulator Controls (Word 'more' removed) */}
+      {/* Attend & Bunk Simulator Controls */}
       <div className="flex gap-3 justify-center pt-1">
-        <div className="flex-1 flex flex-col items-center bg-(--bg-main)/60 rounded-2xl p-2.5 border border-(--border-dim)/30">
+        <div className="flex-1 flex flex-col items-center bg-(--bg-surface)/60 rounded-2xl p-2.5 border border-(--border-dim)/30">
           <span className="text-[10px] font-mono font-bold uppercase text-(--text-muted) mb-1">
             Attend
           </span>
           <div className="flex items-center gap-3">
             <button
               onClick={decreaseAttend}
-              className="w-7 h-7 flex items-center justify-center bg-(--bg-surface) rounded-full active:scale-90 transition-transform text-(--text-main) cursor-pointer border-0"
+              className="w-7 h-7 flex items-center justify-center bg-(--bg-main) rounded-full active:scale-90 transition-transform text-(--text-main) cursor-pointer border-0"
             >
               <Remove className="w-3.5 h-3.5" />
             </button>
@@ -196,21 +193,21 @@ const AttendanceCalculator = ({
             </span>
             <button
               onClick={increaseAttend}
-              className="w-7 h-7 flex items-center justify-center bg-(--bg-surface) rounded-full active:scale-90 transition-transform text-(--text-main) cursor-pointer border-0"
+              className="w-7 h-7 flex items-center justify-center bg-(--bg-main) rounded-full active:scale-90 transition-transform text-(--text-main) cursor-pointer border-0"
             >
               <Add className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col items-center bg-(--bg-main)/60 rounded-2xl p-2.5 border border-(--border-dim)/30">
+        <div className="flex-1 flex flex-col items-center bg-(--bg-surface)/60 rounded-2xl p-2.5 border border-(--border-dim)/30">
           <span className="text-[10px] font-mono font-bold uppercase text-(--text-muted) mb-1">
             Bunk
           </span>
           <div className="flex items-center gap-3">
             <button
               onClick={decreaseBunk}
-              className="w-7 h-7 flex items-center justify-center bg-(--bg-surface) rounded-full active:scale-90 transition-transform text-(--text-main) cursor-pointer border-0"
+              className="w-7 h-7 flex items-center justify-center bg-(--bg-main) rounded-full active:scale-90 transition-transform text-(--text-main) cursor-pointer border-0"
             >
               <Remove className="w-3.5 h-3.5" />
             </button>
@@ -219,7 +216,7 @@ const AttendanceCalculator = ({
             </span>
             <button
               onClick={increaseBunk}
-              className="w-7 h-7 flex items-center justify-center bg-(--bg-surface) rounded-full active:scale-90 transition-transform text-(--text-main) cursor-pointer border-0"
+              className="w-7 h-7 flex items-center justify-center bg-(--bg-main) rounded-full active:scale-90 transition-transform text-(--text-main) cursor-pointer border-0"
             >
               <Add className="w-3.5 h-3.5" />
             </button>
@@ -266,20 +263,20 @@ const CourseCard = ({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: idx * 0.02 }}
-      className={`relative flex items-center justify-between p-3 md:p-3.5 rounded-xl overflow-hidden transition-colors duration-fast cursor-pointer group select-none border border-(--border-dim)/30 ${
+      className={`relative flex items-center justify-between py-2 px-3.5 rounded-xl overflow-hidden transition-all duration-fast cursor-pointer group select-none border border-(--border-dim)/40 ${
         isSelected
-          ? "bg-(--bg-highlight) border-l-4 border-l-(--accent-base)"
-          : "bg-(--bg-surface)/50 hover:bg-(--bg-highlight)"
+          ? "bg-(--accent-base)/20 border-l-4 border-l-(--accent-base) border-(--accent-base)/40"
+          : "bg-(--bg-surface)/60 hover:bg-(--accent-base)/15 hover:border-(--accent-base)/50"
       }`}
       onClick={onClick}
     >
       <div
-        className={`absolute top-0 left-0 h-full ${barColor} transition-all duration-fast opacity-60`}
+        className={`absolute top-0 left-0 h-full ${barColor} transition-all duration-fast opacity-50`}
         style={{ width: `${course.percentage}%` }}
       />
       <div className="relative z-10 flex items-center gap-3 min-w-0 flex-1 pr-3">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+          <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
             <span className="px-2 py-0.5 bg-(--bg-main) text-(--text-main) text-[10px] font-mono font-bold uppercase rounded-md border border-(--border-dim)/40">
               {course.courseCode}
             </span>
@@ -294,13 +291,13 @@ const CourseCard = ({
           </div>
           <MarqueeText
             text={course.courseTitle}
-            className="text-xs md:text-sm font-bold text-(--text-main) leading-snug"
+            className="text-base md:text-lg font-black leading-tight font-expanded transition-colors text-(--text-main)"
           />
         </div>
       </div>
 
       <div
-        className={`relative z-10 shrink-0 font-mono font-black text-sm md:text-base leading-none px-2.5 py-1.5 rounded-lg ${badgeBg}`}
+        className={`relative z-10 shrink-0 font-mono font-black text-sm md:text-base leading-none px-2.5 py-1 rounded-lg ${badgeBg}`}
       >
         {course.percentage}%
       </div>

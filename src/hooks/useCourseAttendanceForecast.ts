@@ -6,11 +6,14 @@ export const useCourseAttendanceForecast = (courseCode: string) => {
   const timetable = useDataStore((state) => state.ttCourses || []);
   const calGridData = useDataStore((state) => state.calGridData || []);
   const attendanceCourses = useDataStore((state) => state.attendance || []);
+  const examGroups = useDataStore((state) => state.examGroups || []);
 
   return useMemo(() => {
-    const courseAttendance = attendanceCourses.find(c => c.code === courseCode);
-    const attended = courseAttendance ? (courseAttendance.attended || 0) : 0;
-    const total = courseAttendance ? (courseAttendance.total || 0) : 0;
+    const courseAttendance = attendanceCourses.find(
+      (c) => c.code === courseCode || c.name?.includes(courseCode)
+    );
+    const attended = courseAttendance ? courseAttendance.attended || 0 : 0;
+    const total = courseAttendance ? courseAttendance.total || 0 : 0;
 
     const flatCalendarEvents: any[] = [];
     if (Array.isArray(calGridData)) {
@@ -30,7 +33,8 @@ export const useCourseAttendanceForecast = (courseCode: string) => {
       attended,
       total,
       timetable,
-      flatCalendarEvents
+      flatCalendarEvents,
+      examGroups
     );
-  }, [courseCode, attendanceCourses, timetable, calGridData]);
+  }, [courseCode, attendanceCourses, timetable, calGridData, examGroups]);
 };

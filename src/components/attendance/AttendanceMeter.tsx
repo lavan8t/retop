@@ -12,48 +12,83 @@ export const AttendanceMeter: React.FC<AttendanceMeterProps> = ({ courseCode }) 
 
   if (!forecast) return null;
 
-  const { status, safeSkips, requiredToPass, futureScheduledClasses } = forecast;
+  const {
+    status,
+    safeSkips,
+    requiredToPass,
+    classesNeededBeforeExam,
+    futureScheduledClasses,
+    examName,
+  } = forecast;
 
-  let accentColor = "text-att-safe";
-  let copy = `You can bunk ${safeSkips} more class${safeSkips !== 1 ? "es" : ""} safely.`;
+  let accentColor = "text-emerald-400";
+  let copy = `Safe! Can skip ${safeSkips} class${safeSkips !== 1 ? "es" : ""}.`;
 
   if (status === "WARNING") {
-    accentColor = "text-att-warn";
-    copy = `Caution! Only ${safeSkips} skips remaining.`;
+    accentColor = "text-amber-400";
+    copy = `Caution! Only ${safeSkips} safe skip${safeSkips !== 1 ? "s" : ""} left.`;
   } else if (status === "CRITICAL") {
-    accentColor = "text-att-danger";
-    copy = safeSkips === 0 
-      ? "You can't bunk any more classes." 
-      : `You need to attend ${requiredToPass} more class${requiredToPass !== 1 ? "es" : ""} to reach 75%.`;
+    accentColor = "text-red-400";
+    copy =
+      safeSkips === 0
+        ? `Must attend ${classesNeededBeforeExam || requiredToPass} class${
+            (classesNeededBeforeExam || requiredToPass) !== 1 ? "es" : ""
+          } before ${examName || "exams"}.`
+        : `Attend ${requiredToPass} class${requiredToPass !== 1 ? "es" : ""} to reach 75%.`;
   }
 
   return (
     <div className="flex flex-col items-center mt-2 w-full">
-      <button 
+      <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 group outline-none"
+        className="flex items-center gap-2 group outline-none cursor-pointer"
       >
         <span className={`text-center font-bold text-sm ${accentColor}`}>
           {copy}
         </span>
-        <KeyboardArrowDown className={`w-4 h-4 ${accentColor} transition-transform duration-fast ${isOpen ? "rotate-180" : ""}`} />
+        <KeyboardArrowDown
+          className={`w-4 h-4 ${accentColor} transition-transform duration-fast ${
+            isOpen ? "rotate-180" : ""
+          }`}
+        />
       </button>
 
       {isOpen && (
-        <div className="mt-4 p-4 bg-(--bg-surface) rounded-2xl w-full max-w-sm border-2 border-(--border-main)">
-          {futureScheduledClasses > 0 && (
-            <p className="text-xs text-center text-(--text-muted) font-bold uppercase mb-4">
-              Based on {futureScheduledClasses} upcoming scheduled classes
-            </p>
-          )}
-          <div className="grid grid-cols-2 gap-4">
+        <div className="mt-3 p-4 bg-(--bg-surface)/60 rounded-2xl w-full max-w-sm border-0 flex flex-col gap-3">
+          <p className="text-[11px] text-center text-(--text-muted) font-mono font-bold uppercase tracking-wider">
+            {futureScheduledClasses > 0
+              ? `${futureScheduledClasses} classes remaining before ${
+                  examName || "Exams"
+                }`
+              : `Semester Schedule`}
+          </p>
+
+          <div className="grid grid-cols-3 gap-2 pt-1 border-t border-(--border-dim)/20">
             <div className="flex flex-col items-center">
-              <span className="text-[10px] uppercase font-black text-(--text-muted) tracking-widest mb-1">Safe Skips</span>
-              <span className="text-2xl font-expanded font-black text-(--text-main)">{safeSkips}</span>
+              <span className="text-[9px] uppercase font-mono font-bold text-(--text-muted) tracking-wider mb-0.5">
+                Classes Left
+              </span>
+              <span className="text-xl font-mono font-black text-(--text-main)">
+                {futureScheduledClasses}
+              </span>
             </div>
-            <div className="flex flex-col items-center border-l-2 border-(--border-main)">
-              <span className="text-[10px] uppercase font-black text-(--text-muted) tracking-widest mb-1">Required</span>
-              <span className="text-2xl font-expanded font-black text-(--text-main)">{requiredToPass}</span>
+
+            <div className="flex flex-col items-center border-x border-(--border-dim)/30">
+              <span className="text-[9px] uppercase font-mono font-bold text-(--text-muted) tracking-wider mb-0.5">
+                Safe Skips
+              </span>
+              <span className="text-xl font-mono font-black text-emerald-400">
+                {safeSkips}
+              </span>
+            </div>
+
+            <div className="flex flex-col items-center">
+              <span className="text-[9px] uppercase font-mono font-bold text-(--text-muted) tracking-wider mb-0.5">
+                Needed @ 75%
+              </span>
+              <span className="text-xl font-mono font-black text-amber-400">
+                {classesNeededBeforeExam}
+              </span>
             </div>
           </div>
         </div>

@@ -70,7 +70,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   handleTogglePin,
   spotlightCategories,
 }) => {
-  const { calGridData, examGroups, customEvents, fetchExamSemesters, fetchAttendance } = useDataStore();
+  const { calGridData, examGroups, customEvents, fetchExamSemesters, fetchDetailedAttendance, attSelectedSem } = useDataStore();
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
   const [isFabVisible, setIsFabVisible] = useState(true);
   const lastScrollTopRef = useRef(0);
@@ -81,10 +81,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
     if (examGroups.length === 0 && (window as any).__RETOP_NETWORK__) {
       fetchExamSemesters((window as any).__RETOP_NETWORK__);
     }
-    if (attendance.length === 0 && (window as any).__RETOP_NETWORK__) {
-      fetchAttendance((window as any).__RETOP_NETWORK__);
+    if (attendance.length === 0 && attSelectedSem && (window as any).__RETOP_NETWORK__) {
+      fetchDetailedAttendance((window as any).__RETOP_NETWORK__, attSelectedSem);
     }
-  }, [examGroups.length, fetchExamSemesters, attendance.length, fetchAttendance]);
+  }, [examGroups.length, fetchExamSemesters, attendance.length, attSelectedSem, fetchDetailedAttendance]);
 
   const handleCalendarScroll = (e: React.UIEvent<HTMLDivElement>) => {
     isScrollingRef.current = true;

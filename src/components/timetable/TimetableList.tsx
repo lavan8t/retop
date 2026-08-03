@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { TimetableCourse, CourseSummary } from "../../types/vtop";
 import {
   Person,
@@ -7,6 +7,7 @@ import {
   PieChart,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { motion } from "framer-motion";
+import { useDataStore } from "../../store/dataStore";
 
 interface TimetableListProps {
   courses: TimetableCourse[];
@@ -41,6 +42,15 @@ export const TimetableList: React.FC<TimetableListProps> = ({
   courses,
   attendance,
 }) => {
+  const { highlightedCourseCode, setHighlightedCourseCode } = useDataStore();
+  const highlightedRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (highlightedCourseCode && highlightedRef.current) {
+      highlightedRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [highlightedCourseCode]);
+
   return (
     <div className="h-full w-full bg-(--bg-main) flex flex-col overflow-hidden relative">
       {/* Sticky Header with Fade */}
@@ -64,14 +74,36 @@ export const TimetableList: React.FC<TimetableListProps> = ({
           const attVal = parseFloat(attStr || "0");
           const hasAtt = Boolean(attStr);
           const isLowAtt = hasAtt && attVal <= 75;
+          const isHighlighted = highlightedCourseCode === c.code;
 
           return (
             <motion.div
               key={c.code + "-" + i}
+              ref={isHighlighted ? (el) => { (highlightedRef as any).current = el; } : undefined}
               initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.02 }}
-              className="bg-(--bg-surface)/40 hover:bg-(--bg-surface)/80 transition-colors rounded-2xl p-4 md:px-5 md:py-4 flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-4 items-start md:items-center border-0 shadow-none"
+              animate={
+                isHighlighted
+                  ? {
+                      opacity: [1, 0.2, 1, 0.2, 1],
+                      scale: [1, 1.02, 1, 1.02, 1],
+                    }
+                  : { opacity: 1, y: 0 }
+              }
+              transition={
+                isHighlighted
+                  ? { duration: 1.2, times: [0, 0.25, 0.5, 0.75, 1] }
+                  : { delay: i * 0.02 }
+              }
+              onAnimationComplete={() => {
+                if (isHighlighted) {
+                  setHighlightedCourseCode(null);
+                }
+              }}
+              className={`rounded-2xl p-4 md:px-5 md:py-4 flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-4 items-start md:items-center border transition-colors ${
+                isHighlighted
+                  ? "bg-(--accent-base)/25 border-(--accent-base) ring-2 ring-(--accent-base)/50"
+                  : "bg-(--bg-surface)/40 hover:bg-(--bg-surface)/80 border-transparent shadow-none"
+              }`}
             >
               {/* Left Column: Pill Above Name + Attendance Next to Course */}
               <div className="col-span-5 flex flex-col gap-1.5 w-full">
@@ -92,7 +124,7 @@ export const TimetableList: React.FC<TimetableListProps> = ({
                   <span
                     className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono font-bold ${
                       !hasAtt
-                        ? "bg-(--bg-highlight) text-(--text-muted)"
+                        ? "bg-(--bg-highlight)"
                         : isLowAtt
                           ? "bg-red-500/20 text-red-400"
                           : "bg-emerald-500/20 text-emerald-400"
@@ -123,31 +155,22 @@ export const TimetableList: React.FC<TimetableListProps> = ({
 
               {/* Faculty Column */}
               <div className="col-span-3 flex items-center gap-2 text-xs text-(--text-muted)">
-                <Person className="w-4 h-4 text-(--text-muted) shrink-0" />
-                <span className="truncate font-medium text-(--text-main)">
-                  {c.faculty}
-                </span>
+                <Person className="w-4 h-4 shrink-0 text-(--text-muted)" />
+                <span className="truncate">{c.faculty}</span>
               </div>
 
-              {/* Right Column: Attendance Status Detail */}
-              <div className="col-span-2 hidden md:flex flex-col items-end text-right">
+              {/* Right Column: Attendance Summary (Mobile/Desktop) */}
+              <div className="col-span-2 flex md:justify-end items-center w-full md:w-auto">
                 <span
-                  className={`text-sm font-mono font-black ${
+                  className={`text-sm font-mono font-bold px-3 py-1 rounded-full ${
                     !hasAtt
-                      ? "text-(--text-muted)"
+                      ? "bg-(--bg-highlight) text-(--text-muted)"
                       : isLowAtt
-                        ? "text-red-400"
-                        : "text-emerald-400"
+                        ? "bg-red-500/20 text-red-400"
+                        : "bg-emerald-500/20 text-emerald-400"
                   }`}
                 >
-                  {hasAtt ? attStr : "N/A"}
-                </span>
-                <span className="text-[10px] uppercase font-mono tracking-wider text-(--text-muted)">
-                  {!hasAtt
-                    ? "No Data"
-                    : isLowAtt
-                      ? "Low Attendance"
-                      : "On Track"}
+                  {hasAtt ? `${attStr}` : "N/A"}
                 </span>
               </div>
             </motion.div>

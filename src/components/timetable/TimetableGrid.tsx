@@ -7,8 +7,8 @@ import {
   CAMPUS_SLOTS,
 } from "../../utils/timetable-slots";
 import { getCourseAcronym, formatTimeStr } from "../../utils/formatting";
-import { CoursePopup } from "./CoursePopup";
 import { LocationOn } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
+import { useDataStore } from "../../store/dataStore";
 
 const getAttendanceEmoji = (attendanceStr?: string) => {
   return "";
@@ -18,10 +18,12 @@ export const TimetableGrid = ({
   courses,
   attendance,
   use24HourTime = true,
+  onSelectCourse,
 }: {
   courses: TimetableCourse[];
   attendance: CourseSummary[];
   use24HourTime?: boolean;
+  onSelectCourse?: (code: string) => void;
 }) => {
   const [selectedCourse, setSelectedCourse] = useState<{
     data: TimetableCourse;
@@ -230,11 +232,10 @@ export const TimetableGrid = ({
               data-tile="true"
               onClick={(e) => {
                 e.stopPropagation();
-                const rect = e.currentTarget.getBoundingClientRect();
-                setSelectedCourse({
-                  data: cellContent,
-                  position: { x: rect.left, y: rect.bottom + 10 },
-                });
+                if (cellContent?.code) {
+                  useDataStore.getState().setHighlightedCourseCode(cellContent.code);
+                  onSelectCourse?.(cellContent.code);
+                }
               }}
               className={`
                 w-full h-full rounded-2xl flex flex-col items-start justify-start text-left overflow-hidden
@@ -317,15 +318,6 @@ export const TimetableGrid = ({
           </div>
         </div>
       </div>
-      <CoursePopup
-        course={selectedCourse?.data || null}
-        position={selectedCourse?.position || null}
-        attendance={
-          attendance?.find((a) => a.code === selectedCourse?.data.code)
-            ?.attendance
-        }
-        onClose={() => setSelectedCourse(null)}
-      />
     </>
   );
 };

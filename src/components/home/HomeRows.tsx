@@ -11,6 +11,7 @@ import { formatTimeStr } from "../../utils/formatting";
 import { MarqueeText } from "../common/MarqueeText";
 import { SPRING_SNAPPY, DURATION_MODERATE, TRANSITION_FADE_IN } from "../../utils/motion";
 import { useSettingsStore, MATERIAL_ACCENTS, getMaterialThemeColor, getMaterialOnThemeColor } from "../../utils/settings-store";
+import { useDataStore } from "../../store/dataStore";
 
 const rowVariants: Variants = {
   hidden: { opacity: 0 },
@@ -84,7 +85,7 @@ export const ScheduleRow = ({
   const { settings } = useSettingsStore();
   const { attendance } = useDataStore();
   const attObj = (attendance || []).find(
-    (a) =>
+    (a: any) =>
       a.code === item.course?.code ||
       (item.course?.title && a.name && item.course.title.includes(a.name)),
   );

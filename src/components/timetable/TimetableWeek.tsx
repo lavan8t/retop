@@ -7,16 +7,18 @@ import {
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { motion, AnimatePresence } from "framer-motion";
 import { getCourseAcronym, formatTimeStr } from "../../utils/formatting";
-import { CoursePopup } from "./CoursePopup";
+import { useDataStore } from "../../store/dataStore";
 
 export const TimetableWeek = ({
   courses,
   attendance,
   use24HourTime = true,
+  onSelectCourse,
 }: {
   courses: TimetableCourse[];
   attendance: CourseSummary[];
   use24HourTime?: boolean;
+  onSelectCourse?: (code: string) => void;
 }) => {
   const activeDays = useMemo(() => {
     const hasSaturday = courses.some((c) =>
@@ -280,11 +282,11 @@ export const TimetableWeek = ({
                         key={`${day}-${startHour}`}
                         data-tile="true"
                         onClick={(e) => {
-                          const rect = e.currentTarget.getBoundingClientRect();
-                          setSelectedCourse({
-                            data: course,
-                            position: { x: rect.left, y: rect.bottom + 10 },
-                          });
+                          e.stopPropagation();
+                          if (course?.code) {
+                            useDataStore.getState().setHighlightedCourseCode(course.code);
+                            onSelectCourse?.(course.code);
+                          }
                         }}
                         className="w-full text-left p-3.5 rounded-2xl bg-(--bg-main) hover:bg-(--bg-highlight) flex flex-col gap-2 cursor-pointer border-0 transition-colors shadow-none"
                       >
@@ -324,16 +326,6 @@ export const TimetableWeek = ({
           );
         })}
       </div>
-
-      <CoursePopup
-        course={selectedCourse?.data || null}
-        position={selectedCourse?.position || null}
-        attendance={
-          attendance?.find((a) => a.code === selectedCourse?.data?.code)
-            ?.attendance
-        }
-        onClose={() => setSelectedCourse(null)}
-      />
     </div>
   );
 };

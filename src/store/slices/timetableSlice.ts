@@ -21,6 +21,9 @@ export interface TimetableSlice {
 
   cpSelectedSem: string;
   setCpSelectedSem: (semId: string) => void;
+
+  highlightedCourseCode: string | null;
+  setHighlightedCourseCode: (code: string | null) => void;
 }
 
 export const createTimetableSlice: StateCreator<DataState, [], [], TimetableSlice> = (set, get) => ({
@@ -28,6 +31,8 @@ export const createTimetableSlice: StateCreator<DataState, [], [], TimetableSlic
   ttSelectedSem: localStorage.getItem("retop-tt-selected-sem") || "",
   ttCourses: [],
   ttLoading: true,
+  highlightedCourseCode: null,
+  setHighlightedCourseCode: (code) => set({ highlightedCourseCode: code }),
   setTtSelectedSem: (semId) => {
     localStorage.setItem("retop-tt-selected-sem", semId);
     set({ ttSelectedSem: semId });

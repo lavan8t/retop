@@ -81,6 +81,7 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
                       courses={courses}
                       attendance={attendance}
                       use24HourTime={use24HourTime}
+                      onSelectCourse={() => setViewMode("list")}
                     />
                   )}
                   {viewMode === "list" && (
@@ -95,6 +96,7 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
                       courses={courses}
                       attendance={attendance}
                       use24HourTime={use24HourTime}
+                      onSelectCourse={() => setViewMode("list")}
                     />
                   )}
                 </motion.div>

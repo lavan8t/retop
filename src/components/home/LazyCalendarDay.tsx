@@ -239,14 +239,21 @@ export const LazyCalendarDay = React.memo(
                         {evt.type === "class" ? (
                           <ScheduleRow
                             item={evt.data as UpcomingClass}
-                            onClick={() =>
+                            onClick={() => {
+                              if ((evt.data as UpcomingClass)?.course?.code) {
+                                useDataStore
+                                  .getState()
+                                  .setHighlightedCourseCode(
+                                    (evt.data as UpcomingClass).course.code,
+                                  );
+                              }
                               onNavigate &&
-                              onNavigate({
-                                title: "Timetable",
-                                url: "academics/common/StudentTimeTable",
-                                category: "Academics",
-                              })
-                            }
+                                onNavigate({
+                                  title: "Timetable",
+                                  url: "academics/common/StudentTimeTable",
+                                  category: "Academics",
+                                });
+                            }}
                             use24HourTime={use24HourTime}
                             className={radiusClass}
                           />

@@ -10,6 +10,7 @@ import { TimetableList } from "../components/timetable/TimetableList";
 import { TimetableWeek } from "../components/timetable/TimetableWeek";
 import { OfflineNotSynced } from "../components/ui/OfflineNotSynced";
 import { motion, AnimatePresence } from "framer-motion";
+import { TRANSITION_PAGE_ENTER } from "../utils/motion";
 import { useDataStore } from "../store/dataStore";
 
 interface TimetableContentViewProps {
@@ -69,10 +70,10 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
               <AnimatePresence mode="wait">
                 <motion.div
                   key={viewMode}
-                  initial={{ scale: 0.95, y: 15 }}
-                  animate={{ scale: 1, y: 0 }}
-                  exit={{ scale: 0.95, y: -15 }}
-                  transition={{ type: "spring", stiffness: 600, damping: 35 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={TRANSITION_PAGE_ENTER}
                   className="w-full h-full"
                 >
                   {viewMode === "grid" && (

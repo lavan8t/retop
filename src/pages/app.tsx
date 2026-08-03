@@ -695,9 +695,9 @@ const DashboardApp = () => {
               <motion.div
                 key={currentView}
                 className="h-full w-full flex flex-col overflow-hidden"
-                initial={hasSlideCompleted ? { opacity: 0, y: 15 } : false}
-                animate={{ opacity: 1, y: 0 }}
-                exit={hasSlideCompleted ? { opacity: 0, y: -15 } : { opacity: 0 }}
+                initial={hasSlideCompleted ? { opacity: 0 } : false}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 transition={hasSlideCompleted ? TRANSITION_PAGE_ENTER : { duration: 0 }}
               >
                 <ContentRouter

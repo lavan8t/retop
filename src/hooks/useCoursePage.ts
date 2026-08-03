@@ -279,7 +279,11 @@ export const useCoursePageData = (
   }, [filteredMaterials, materialSort]);
 
   const isCurrentSem = isSameSem(selectedSem, ttSelectedSem);
-  const courseTimetable = isCurrentSem ? ttCourses.find(c => c.classId === currentOption?.classId) : null;
+  const courseTimetable = ttCourses.find(
+    (c) =>
+      c.classId === currentOption?.classId ||
+      (currentOption && c.code.toLowerCase() === currentOption.code.toLowerCase())
+  ) || null;
   const courseAttendance = attendance.find(a => currentOption && a.code.includes(currentOption.code.trim()));
   const courseAssignments = assignments.filter(a => currentOption && (a.course.includes(currentOption.code.trim()) || a.course.includes(currentOption.title.trim())));
 

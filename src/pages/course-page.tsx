@@ -12,6 +12,7 @@ import {
   Filter,
   KeyboardArrowDown,
   Close,
+  SwapVert,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { VTOPNetwork } from "../utils/network";
 import { parseCoursePage } from "../parsers/course-page";
@@ -115,42 +116,68 @@ export const CoursePage = ({
     materialSort
   );
 
-  const assignedFacName = (courseTimetable?.faculty || "")
-    .toLowerCase()
-    .trim();
+  const { detailedAttendance, attendance } = useDataStore();
+
+  const assignedFacRaw = (
+    courseTimetable?.faculty ||
+    detailedAttendance?.find(
+      (a) => currentOption && a.courseCode === currentOption.code
+    )?.faculty ||
+    attendance?.find(
+      (a) => currentOption && a.code.includes(currentOption.code.trim())
+    )?.faculty ||
+    ""
+  ).toLowerCase().trim();
+
+  const isAssignedFaculty = useMemo(() => {
+    return (facKey: string) => {
+      if (!assignedFacRaw) return false;
+
+      // 1. Match by Employee ID (e.g. 4-7 digit numbers like 10234)
+      const targetEmpId = (assignedFacRaw.match(/\b\d{4,7}\b/) || [])[0];
+      const groupEmpId = (facKey.match(/\b\d{4,7}\b/) || [])[0];
+
+      if (targetEmpId && groupEmpId && targetEmpId === groupEmpId) {
+        return true;
+      }
+      if (targetEmpId && facKey.includes(targetEmpId)) {
+        return true;
+      }
+
+      // 2. Match by Faculty Name Tokens
+      const cleanTokens = (str: string) =>
+        str
+          .replace(/\b\d{4,7}\b/g, "")
+          .replace(/\b(dr|prof|mr|mrs|ms|assoc|assistant|professor|ela|eth)\b/gi, "")
+          .replace(/[^a-zA-Z\s]/g, "")
+          .toLowerCase()
+          .split(/\s+/)
+          .filter((t) => t.length > 2);
+
+      const targetTokens = cleanTokens(assignedFacRaw);
+      const groupTokens = cleanTokens(facKey);
+
+      if (targetTokens.length === 0 || groupTokens.length === 0) return false;
+
+      const matchingTokens = targetTokens.filter((t) =>
+        groupTokens.includes(t)
+      );
+      return matchingTokens.length > 0;
+    };
+  }, [assignedFacRaw]);
 
   const sortedGroupedEntries = useMemo(() => {
     const entries = Object.entries(groupedMaterials);
-    if (!assignedFacName) return entries;
-
-    const cleanAssigned = assignedFacName
-      .replace(/\([^)]*\)/g, "")
-      .replace(/^\d+\s*-\s*/, "")
-      .trim()
-      .toLowerCase();
+    if (!assignedFacRaw) return entries;
 
     return [...entries].sort(([facA], [facB]) => {
-      const nameA = formatFaculty(facA)
-        .name.toLowerCase()
-        .replace(/\([^)]*\)/g, "")
-        .trim();
-      const nameB = formatFaculty(facB)
-        .name.toLowerCase()
-        .replace(/\([^)]*\)/g, "")
-        .trim();
-
-      const isAAssigned =
-        cleanAssigned &&
-        (nameA.includes(cleanAssigned) || cleanAssigned.includes(nameA));
-      const isBAssigned =
-        cleanAssigned &&
-        (nameB.includes(cleanAssigned) || cleanAssigned.includes(nameB));
-
-      if (isAAssigned && !isBAssigned) return -1;
-      if (!isAAssigned && isBAssigned) return 1;
+      const isA = isAssignedFaculty(facA);
+      const isB = isAssignedFaculty(facB);
+      if (isA && !isB) return -1;
+      if (!isA && isB) return 1;
       return 0;
     });
-  }, [groupedMaterials, assignedFacName]);
+  }, [groupedMaterials, assignedFacRaw, isAssignedFaculty]);
 
   return (
     <div className="absolute inset-0 w-full h-full font-mono transition-colors bg-transparent text-(--text-main)">
@@ -530,17 +557,17 @@ export const CoursePage = ({
             </div>
 
             {/* === SCROLLABLE RIGHT PANEL === */}
-            <div className="lg:col-span-6 xl:col-span-6 h-full flex flex-col overflow-y-auto custom-scrollbar pt-24 md:pt-28 pb-24 pr-2 space-y-6">
-              {/* Material 3 Search Bar at top of Right Panel */}
-              <div className="sticky top-0 z-20 pt-2 pb-3 bg-(--bg-main)/90 backdrop-blur-md">
-                <div className="relative flex items-center w-full group">
+            <div className="lg:col-span-6 xl:col-span-6 h-full flex flex-col overflow-y-auto custom-scrollbar pt-18 md:pt-20 pb-24 pr-2 space-y-6">
+              {/* Material 3 Search Bar & Sort Button at top of Right Panel */}
+              <div className="sticky -top-1 z-20 pt-4 pb-3 bg-(--bg-main) flex items-center gap-3">
+                <div className="relative flex items-center flex-1 group">
                   <Search className="absolute left-4 w-5 h-5 text-(--text-muted) group-focus-within:text-(--accent-base) transition-colors pointer-events-none" />
                   <input
                     type="text"
                     value={localSearchTerm}
                     onChange={(e) => setLocalSearchTerm(e.target.value)}
                     placeholder="Search course materials, topics, modules..."
-                    className="w-full pl-12 pr-10 py-3 bg-(--bg-surface)/70 hover:bg-(--bg-surface) focus:bg-(--bg-surface) text-sm font-mono font-bold text-(--text-main) placeholder:text-(--text-muted) rounded-full border border-(--border-dim)/40 focus:border-(--accent-base) focus:ring-2 focus:ring-(--accent-base)/30 outline-none transition-all"
+                    className="w-full pl-12 pr-10 py-3 bg-(--bg-surface) text-sm font-mono font-bold text-(--text-main) placeholder:text-(--text-muted) rounded-full border border-(--border-dim)/40 focus:border-(--accent-base) outline-none transition-colors"
                   />
                   {localSearchTerm && (
                     <button
@@ -551,6 +578,15 @@ export const CoursePage = ({
                     </button>
                   )}
                 </div>
+                <button
+                  onClick={() =>
+                    setMaterialSort((s) => (s === "date" ? "module" : "date"))
+                  }
+                  className="flex items-center gap-1.5 px-4 py-3 rounded-full bg-(--bg-surface) hover:bg-(--bg-highlight) transition-colors text-xs font-mono font-bold uppercase text-(--text-main) shrink-0 border border-(--border-dim)/40 cursor-pointer"
+                >
+                  <SwapVert className="w-4 h-4 text-(--accent-base)" />
+                  {materialSort === "date" ? "Date" : "Module"}
+                </button>
               </div>
 
               {/* Stagger Animated Materials List */}
@@ -563,10 +599,7 @@ export const CoursePage = ({
               >
                 {sortedGroupedEntries.map(([facultyStr, mats]) => {
                   const fac = formatFaculty(facultyStr);
-                  const isAssigned =
-                    assignedFacName &&
-                    (fac.name.toLowerCase().includes(assignedFacName.split("-")[0].trim().toLowerCase()) ||
-                     assignedFacName.includes(fac.name.split("-")[0].trim().toLowerCase()));
+                  const isAssigned = isAssignedFaculty(facultyStr);
 
                   return (
                     <motion.div
@@ -586,17 +619,6 @@ export const CoursePage = ({
                               </span>
                             )}
                           </div>
-                          <button
-                            onClick={() =>
-                              setMaterialSort((s) =>
-                                s === "date" ? "module" : "date"
-                              )
-                            }
-                            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-(--bg-surface) hover:bg-(--bg-highlight) transition-colors text-xs font-mono font-bold uppercase text-(--text-main) shrink-0 border border-(--border-dim)/40 cursor-pointer"
-                          >
-                            <Filter className="w-3.5 h-3.5" />
-                            Sort by {materialSort}
-                          </button>
                         </div>
                         {fac.subs.length > 0 && (
                           <div className="flex flex-wrap gap-2 mt-1">

@@ -165,9 +165,29 @@ export function injectSplashScreen() {
 
   const styleId = "retop-early-cloak";
   if (!document.getElementById(styleId)) {
+    const extUrl =
+      typeof chrome !== "undefined" && chrome.runtime?.id
+        ? `chrome-extension://${chrome.runtime.id}/dist/fonts`
+        : "";
+
     const earlyStyle = document.createElement("style");
     earlyStyle.id = styleId;
     earlyStyle.textContent = `
+      ${
+        extUrl
+          ? `
+      @font-face {
+        font-family: "Google Sans Flex";
+        font-weight: 1 1000;
+        font-stretch: 25% 151%;
+        font-display: block;
+        src: url("${extUrl}/gsf.subset.woff2") format("woff2");
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+      }
+      `
+          : ""
+      }
+
       /* Hide native body completely from frame 1 */
       html > body {
         opacity: 0 !important;
@@ -182,33 +202,32 @@ export function injectSplashScreen() {
         align-items: center !important;
         justify-content: center !important;
         flex-direction: column !important;
-        gap: 16px !important;
         background: #09090b !important;
         font-family: "Google Sans Flex", system-ui, sans-serif !important;
         visibility: visible !important;
         opacity: 1 !important;
         transition: opacity var(--duration-slow, 0.3s) ease !important;
       }
-      #retop-open-loader .retop-brand {
-        font-size: 2rem !important;
-        font-weight: 900 !important;
-        letter-spacing: -0.02em !important;
+      #retop-open-loader .retop-brand,
+      #retop-open-loader .retop-about-logo,
+      .retop-about-logo {
+        display: inline-block !important;
+        font-family: "Google Sans Flex", var(--font-expanded, sans-serif) !important;
+        font-size: 3.5rem !important;
+        letter-spacing: -0.04em !important;
         color: #f8fafc !important;
         text-transform: lowercase !important;
-        font-style: italic !important;
         font-variation-settings: "wdth" 125, "wght" 900, "ROND" 100, "slnt" -10 !important;
-        animation: retop-wdth-bounce 1.8s ease-in-out infinite !important; /* loader-specific, not tokenized */
         transform: skewX(-10deg) !important;
+        animation: retop-logo-bounce 1.2s ease-in-out infinite alternate !important;
       }
-      #retop-open-loader .label {
-        color: #94a3b8 !important;
-        font-size: 0.85rem !important;
-        font-weight: 500 !important;
-        letter-spacing: 0.03em !important;
-      }
-      @keyframes retop-wdth-bounce {
-        0%, 100% { font-variation-settings: "wdth" 125, "wght" 900, "ROND" 100, "slnt" -10; }
-        50% { font-variation-settings: "wdth" 151, "wght" 900, "ROND" 100, "slnt" -10; }
+      @keyframes retop-logo-bounce {
+        0% {
+          font-variation-settings: "wdth" 125, "wght" 900, "ROND" 100, "slnt" -10 !important;
+        }
+        100% {
+          font-variation-settings: "wdth" 125, "wght" 1, "ROND" 100, "slnt" -10 !important;
+        }
       }
     `;
     (document.head || document.documentElement).appendChild(earlyStyle);
@@ -216,7 +235,7 @@ export function injectSplashScreen() {
 
   const loader = document.createElement("div");
   loader.id = "retop-open-loader";
-  loader.innerHTML = `<div class="retop-brand">retop</div><div class="label">loading</div>`;
+  loader.innerHTML = `<div class="retop-brand retop-about-logo">retop</div>`;
   document.documentElement.appendChild(loader);
 }
 

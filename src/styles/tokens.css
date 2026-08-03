@@ -77,14 +77,19 @@
 
 .retop-about-logo {
   display: inline-block !important;
-  font-family: var(--font-expanded, sans-serif) !important;
+  font-family: "Google Sans Flex", var(--font-expanded, sans-serif) !important;
   font-variation-settings: "wdth" 125, "wght" 900, "ROND" 100, "slnt" -10 !important;
   transform: skewX(-10deg) !important;
-  transition: font-variation-settings var(--duration-fast) ease-out !important;
+  animation: retop-logo-bounce 1.2s ease-in-out infinite alternate !important;
 }
 
-.retop-about-logo:hover {
-  font-variation-settings: "wdth" 125, "wght" 1, "ROND" 100, "slnt" -10 !important;
+@keyframes retop-logo-bounce {
+  0% {
+    font-variation-settings: "wdth" 125, "wght" 900, "ROND" 100, "slnt" -10 !important;
+  }
+  100% {
+    font-variation-settings: "wdth" 125, "wght" 1, "ROND" 100, "slnt" -10 !important;
+  }
 }
 
 /* Range slider styling — no ghosting */

@@ -377,21 +377,6 @@ export const TopBar: React.FC<TopBarProps> = ({
                 exit={{ opacity: 0, x: 20, transition: { duration: 0.15 } }}
                 className="flex items-center gap-2 mr-1 md:mr-2"
               >
-                {/* Course Page Search Bar */}
-                {cpSelectedCourseId && cpOptions.length > 0 && (
-                  <div className="relative z-50 hidden md:block w-32 lg:w-48 xl:w-64">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-(--text-muted)" />
-                    <input
-                      type="text"
-                      placeholder="Search..."
-                      className="w-full pl-8 pr-3 py-1.5 bg-(--bg-surface) border-2 border-(--border-main) rounded-lg md:rounded-xl text-[10px] md:text-xs font-bold text-(--text-main) focus:outline-none focus:border-(--accent-base) focus:shadow-(--brutal-shadow-hover) transition-all placeholder:text-(--text-dim) uppercase"
-                      value={cpSearchTerm}
-                      onChange={(e) => setCpSearchTerm(e.target.value)}
-                    />
-                  </div>
-                )}
-
-
                 <SemesterDropdown
                   semesters={ttSemesters}
                   selectedId={cpSelectedSem}

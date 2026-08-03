@@ -691,10 +691,10 @@ const DashboardApp = () => {
             network={networkRef.current}
           />
           <main className="flex-1 overflow-hidden relative">
-            <AnimatePresence mode="wait">
+            <AnimatePresence>
               <motion.div
                 key={currentView}
-                className="h-full w-full flex flex-col overflow-hidden"
+                className="absolute inset-0 w-full h-full flex flex-col overflow-hidden"
                 initial={hasSlideCompleted ? { opacity: 0 } : false}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}

@@ -67,14 +67,14 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
             </motion.div>
           ) : (
             <div className="absolute inset-0 pb-[80px] lg:pb-0 overflow-hidden">
-              <AnimatePresence mode="wait">
+              <AnimatePresence>
                 <motion.div
                   key={viewMode}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={TRANSITION_PAGE_ENTER}
-                  className="w-full h-full"
+                  className="absolute inset-0 w-full h-full"
                 >
                   {viewMode === "grid" && (
                     <TimetableGrid

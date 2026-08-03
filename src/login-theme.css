@@ -332,7 +332,7 @@ body {
   font-variation-settings: "wdth" 151, "wght" 800, "GRAD" 100, "ROND" 100, "slnt" -10 !important;
   text-transform: lowercase !important;
   letter-spacing: -0.05em;
-  transition: font-variation-settings 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  transition: font-variation-settings var(--duration-dramatic) var(--easing-overshoot) !important;
   font-size: 2.5rem;
   color: var(--text-main) !important;
   margin: 0;
@@ -401,7 +401,7 @@ body {
   font-size: 1.1rem !important;
   padding: 0.75rem 1rem !important;
   height: 48px !important;
-  transition: all 0.2s;
+  transition: all var(--duration-normal) ease;
   flex: 1 1 auto;
 }
 
@@ -415,7 +415,7 @@ body {
   padding: 0 0.5rem;
   color: var(--text-muted) !important;
   pointer-events: none;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--duration-normal) var(--easing-standard);
   font-size: 1.1rem;
   z-index: 10;
   border-radius: 0.25rem;
@@ -436,7 +436,7 @@ body {
   width: 24px !important;
   height: 24px !important;
   color: var(--text-muted) !important;
-  transition: color 0.2s, transform 0.2s;
+  transition: color var(--duration-normal), transform var(--duration-normal);
 }
 
 .btn-light:hover {
@@ -481,7 +481,7 @@ body {
 #passwordIcon .retop-eye-strike {
   stroke-dasharray: 29; /* length of the diagonal strike line */
   stroke-dashoffset: 29; /* default hidden (not struck) */
-  transition: stroke-dashoffset 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: stroke-dashoffset var(--duration-slow) var(--easing-overshoot);
 }
 
 /* VTOP uses fa-eye when password is hidden, so show the strike */
@@ -510,7 +510,7 @@ body {
   display: flex;
   align-items: center;
   white-space: nowrap;
-  animation: slideUpCenter 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  animation: slideUpCenter var(--duration-slow) var(--easing-overshoot) forwards;
 }
 
 [data-theme="dark"] .retop-error-toast {
@@ -571,7 +571,7 @@ body {
   padding: 0.85rem 1.5rem !important;
   font-size: 1rem;
   letter-spacing: 0.05em;
-  transition: all 0.15s ease-out;
+  transition: all var(--duration-font-var) ease-out;
   width: 100%;
   margin-top: 0.5rem;
 }
@@ -622,7 +622,7 @@ body {
   text-decoration: underline !important;
   text-underline-offset: 4px !important;
   text-decoration-color: var(--border-main) !important;
-  transition: all 0.2s !important;
+  transition: all var(--duration-normal) !important;
 }
 
 .retop-forgot-links a:hover {
@@ -639,7 +639,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s !important;
+  transition: all var(--duration-normal) !important;
 }
 
 .card-footer .text-success:hover {
@@ -728,7 +728,7 @@ body {
   color: var(--text-muted) !important;
   box-shadow: none !important;
   cursor: pointer !important;
-  transition: all 0.2s !important;
+  transition: all var(--duration-normal) !important;
   text-decoration: none !important;
   flex-shrink: 0 !important;
   outline: none !important;
@@ -762,7 +762,7 @@ body {
 #passwordIcon,
 .retop-reload-btn, #button-addon2,
 .retop-home-icon {
-  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+  transition: all var(--duration-normal) var(--easing-overshoot) !important;
 }
 
 #passwordIcon:hover,
@@ -889,7 +889,7 @@ img[src*="spinner" i],
   justify-content: center;
   padding: 0.5rem;
   color: var(--text-muted) !important;
-  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: all var(--duration-normal) var(--easing-overshoot);
   border: none !important;
   background: transparent !important;
   box-shadow: none !important;

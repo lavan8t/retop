@@ -12,6 +12,7 @@ import {
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { QuickLink, MenuCategory } from "../../types/vtop";
 import { MarqueeText } from "../common/MarqueeText";
+import { SPRING_SNAPPY, SPRING_QUICK, TRANSITION_DROPDOWN_EXIT } from "../../utils/motion";
 import { useDataStore } from "../../store/dataStore";
 import { useAppStore } from "../../store/appStore";
 import { getCategoryIcon } from "../../utils/icons";
@@ -238,29 +239,19 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
       links: retopNativeLinks,
     };
 
-    const filtered = menuCategories.filter(
-      (c) => c.title !== "Made for retop",
-    );
+    const filtered = menuCategories
+      .filter((c) => c.title !== "Made for retop")
+      .map((c) => ({
+        ...c,
+        links: c.links.filter((l) => !hasRetopPage(l)),
+      }))
+      .filter((c) => c.links.length > 0);
+
     return [madeForRetopCat, ...filtered];
   }, [menuCategories]);
 
   const flattenedLinks = useMemo(() => {
-    const staticLinks: QuickLink[] = [
-      { title: "Time Table", url: "academics/common/StudentTimeTable", category: "Made for retop" },
-      { title: "Class Attendance", url: "academics/common/StudentAttendance", category: "Made for retop" },
-      { title: "Assignments", url: "examinations/StudentDA", category: "Made for retop" },
-      { title: "Marks View", url: "examinations/StudentMarkView", category: "Made for retop" },
-      { title: "Grades View", url: "examinations/StudentGradeView", category: "Made for retop" },
-      { title: "Academic Calendar", url: "academics/common/CalendarPreview", category: "Made for retop" },
-      { title: "Student Profile", url: "studentsRecord/StudentProfileAllView", category: "Made for retop" },
-      { title: "Curriculum", url: "academics/common/CurriculumSyllabus", category: "Made for retop" },
-      { title: "Exam Schedule", url: "examinations/StudExamSchedule", category: "Made for retop" },
-    ];
-
-    const allLinks = [
-      ...staticLinks,
-      ...menuCategories.flatMap((c) => c.links),
-    ];
+    const allLinks = allCategories.flatMap((c) => c.links);
 
     let sortedMatches = allLinks;
 
@@ -269,11 +260,6 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
       const matches: { link: QuickLink; score: number }[] = [];
 
       allLinks.forEach((link) => {
-        // Exclude Made for retop items from search results
-        if (hasRetopPage(link) || link.category === "Made for retop") {
-          return;
-        }
-
         const titleLower = link.title.toLowerCase();
         const urlLower = link.url.toLowerCase();
         let score = 0;
@@ -305,8 +291,19 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
         .slice(0, 15);
     }
 
-    const grouped = new Map<string, QuickLink[]>();
+    const seen = new Set<string>();
+    const deduplicatedMatches: QuickLink[] = [];
+
     sortedMatches.forEach((link) => {
+      const key = `${link.title.toLowerCase().trim()}:${link.url.toLowerCase().trim()}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        deduplicatedMatches.push(link);
+      }
+    });
+
+    const grouped = new Map<string, QuickLink[]>();
+    deduplicatedMatches.forEach((link) => {
       const cat = hasRetopPage(link) ? "Made for retop" : (link.category || "Other");
       if (!grouped.has(cat)) grouped.set(cat, []);
       grouped.get(cat)!.push(link);
@@ -323,7 +320,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
     });
 
     return finalLinks;
-  }, [query, menuCategories]);
+  }, [query, allCategories]);
 
   useEffect(() => {
     if (!isExpanded) return;
@@ -372,13 +369,13 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
       opacity: 1,
       scale: 1,
       y: 0,
-      transition: { type: "spring", stiffness: 400, damping: 28 },
+      transition: SPRING_SNAPPY,
     },
     exit: {
       opacity: 0,
       scale: 0.95,
       y: -8,
-      transition: { duration: 0.15, ease: "easeOut" },
+      transition: TRANSITION_DROPDOWN_EXIT,
     },
   };
 
@@ -658,7 +655,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
             initial={{ opacity: 0, scaleX: 0.3, scaleY: 0.8, x: 20 }}
             animate={{ opacity: 1, scaleX: 1, scaleY: 1, x: 0 }}
             exit={{ opacity: 0, scaleX: 0.3, scaleY: 0.8, x: 20 }}
-            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+            transition={SPRING_QUICK}
             className="absolute z-[10001] bg-(--bg-surface) border-4 border-(--border-main) rounded-2xl popup-shadow shadow-2xl shadow-black/50 p-2 flex flex-col"
             style={{
               transformOrigin: "left center",

@@ -25,6 +25,7 @@ import {
   CourseSummary,
 } from "../../types/vtop";
 import { SemesterDropdown } from "../timetable/SemesterDropdown";
+import { TRANSITION_PULSE, DURATION_SPINNER } from "../../utils/motion";
 import { ClassGroupDropdown } from "../timetable/ClassGroupDropdown";
 import { TopBarSearch } from "./TopBarSearch";
 import { SegmentedControl } from "../ui/SegmentedControl";
@@ -250,7 +251,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                 {ttLoading && (
                   <motion.div
                     animate={{ y: [0, -4, 0], scale: [1, 1.2, 1] }}
-                    transition={{ duration: 0.8, repeat: Infinity, ease: "easeInOut" }}
+                    transition={TRANSITION_PULSE}
                     className="w-2 h-2 bg-(--accent-base) rounded-full hidden sm:block"
                   />
                 )}
@@ -533,7 +534,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                 animate={isSyncing ? { rotate: 360 } : {}}
                 transition={
                   isSyncing
-                    ? { duration: 1, repeat: Infinity, ease: "linear" }
+                    ? { duration: DURATION_SPINNER, repeat: Infinity, ease: "linear" }
                     : {}
                 }
                 className="shrink-0 flex items-center justify-center"

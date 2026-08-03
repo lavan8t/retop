@@ -80,7 +80,7 @@
   font-family: var(--font-expanded, sans-serif) !important;
   font-variation-settings: "wdth" 125, "wght" 900, "ROND" 100, "slnt" -10 !important;
   transform: skewX(-10deg) !important;
-  transition: font-variation-settings 100ms ease-out !important;
+  transition: font-variation-settings var(--duration-fast) ease-out !important;
 }
 
 .retop-about-logo:hover {
@@ -108,7 +108,7 @@ input[type="range"]::-webkit-slider-thumb {
   border: 3px solid var(--bg-surface);
   box-shadow: 0 1px 4px rgba(0,0,0,0.25);
   cursor: pointer;
-  transition: transform 0.15s ease;
+  transition: transform var(--duration-font-var) ease;
 }
 
 input[type="range"]::-webkit-slider-thumb:hover {

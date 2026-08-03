@@ -42,7 +42,7 @@ export const AttendanceMeter: React.FC<AttendanceMeterProps> = ({ courseCode }) 
       {isOpen && (
         <div className="mt-4 p-4 bg-(--bg-surface) rounded-2xl w-full max-w-sm border-2 border-(--border-main)">
           {futureScheduledClasses > 0 && (
-            <p className="text-xs text-center text-(--text-muted) font-bold uppercase mb-4 tracking-wider">
+            <p className="text-xs text-center text-(--text-muted) font-bold uppercase mb-4">
               Based on {futureScheduledClasses} upcoming scheduled classes
             </p>
           )}

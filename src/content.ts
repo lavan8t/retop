@@ -82,7 +82,11 @@ const isPreloginOrLoginPage =
     window.location.pathname.includes("/vtop/prelogin")
   );
 
-if (isPreloginOrLoginPage) {
+const isContentPage =
+  isTopWindow &&
+  window.location.pathname.includes("/vtop/content");
+
+if (isPreloginOrLoginPage || isContentPage) {
   injectSplashScreen();
 
   if (window.location.pathname.includes("/vtop/open/page")) {
@@ -310,7 +314,15 @@ const init = async () => {
   if (isLoginPage) {
     // CSS was already injected at document_start. Now the DOM is ready:
     // remove the loader and uncloak the page.
-    if (path.includes("/vtop/open/page")) {
+    //
+    // PAGE DETECTION FIX: VTOP sometimes serves /open/page (role selection)
+    // content at /vtop/login URL. Detect actual page content by checking
+    // for DOM elements unique to each page, not just the URL path.
+    const isActuallyRoleSelectionPage =
+      isRoleSelection ||
+      document.querySelector(".spotlight-background, .spotlightMsgDivs, #stdForm") !== null;
+
+    if (path.includes("/vtop/open/page") || isActuallyRoleSelectionPage) {
       injectPreloginTheme();
     } else {
       injectLoginTheme();
@@ -339,6 +351,30 @@ const init = async () => {
       },
       true,
     );
+
+    // SKIP ROLE SELECTION: When enabled in settings, auto-select student
+    // role and proceed to login, bypassing /open/page role picker.
+    if (isActuallyRoleSelectionPage) {
+      try {
+        const skipResult = await new Promise<any>((resolve) => {
+          chrome.storage.local.get("retop-settings", (res) => resolve(res["retop-settings"]));
+        });
+        const skipData = typeof skipResult === "string" ? JSON.parse(skipResult) : skipResult;
+        const skipSettings = skipData?.state?.settings || skipData;
+        if (skipSettings?.skipRoleSelection) {
+          const stdForm = document.getElementById("stdForm") as HTMLFormElement;
+          if (stdForm) {
+            console.log("[retop] skipRoleSelection enabled, auto-submitting student form");
+            chrome.storage.local.set({ "retop-user-role": "student" });
+            stdForm.submit();
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn("[retop] skipRoleSelection check failed", e);
+      }
+    }
+
     return;
   }
 
@@ -645,7 +681,7 @@ const injectLoginTheme = () => {
         80% { transform: translateX(4px); }
       }
       .retop-wiggle {
-        animation: retop-wiggle 0.4s ease-in-out !important;
+        animation: retop-wiggle var(--duration-dramatic, 0.4s) ease-in-out !important;
         border-color: #ef4444 !important;
         box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
       }

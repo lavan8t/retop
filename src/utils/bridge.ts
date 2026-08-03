@@ -187,7 +187,7 @@ export function injectSplashScreen() {
         font-family: "Google Sans Flex", system-ui, sans-serif !important;
         visibility: visible !important;
         opacity: 1 !important;
-        transition: opacity 0.3s ease !important;
+        transition: opacity var(--duration-slow, 0.3s) ease !important;
       }
       #retop-open-loader .retop-brand {
         font-size: 2rem !important;
@@ -197,7 +197,7 @@ export function injectSplashScreen() {
         text-transform: lowercase !important;
         font-style: italic !important;
         font-variation-settings: "wdth" 125, "wght" 900, "ROND" 100, "slnt" -10 !important;
-        animation: retop-wdth-bounce 1.8s ease-in-out infinite !important;
+        animation: retop-wdth-bounce 1.8s ease-in-out infinite !important; /* loader-specific, not tokenized */
         transform: skewX(-10deg) !important;
       }
       #retop-open-loader .label {

@@ -33,6 +33,7 @@ import {
   SpotlightCategoryGroup,
 } from "../types/vtop";
 import { motion, AnimatePresence } from "framer-motion";
+import { SPRING_SOFT, SPRING_SNAPPY, TRANSITION_PAGE_ENTER, EASE_OUT } from "../utils/motion";
 
 import { TopBar } from "../components/layout/TopBar";
 import { TopBarSearch } from "../components/layout/TopBarSearch";
@@ -251,6 +252,11 @@ const DashboardApp = () => {
   } = useAppStore();
 
   const [contentTitle, setContentTitle] = useState("");
+  const [hasSlideCompleted, setHasSlideCompleted] = useState(false);
+
+  useEffect(() => {
+    if (!isModernUI) setHasSlideCompleted(false);
+  }, [isModernUI]);
 
   const {
     user,
@@ -614,7 +620,7 @@ const DashboardApp = () => {
           body:not(.show-legacy-ui) body > form {
             opacity: 1 !important;
             pointer-events: auto !important;
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+            transition: all var(--duration-dramatic) cubic-bezier(0.16, 1, 0.3, 1) !important;
           }
         `}</style>
       )}
@@ -646,12 +652,10 @@ const DashboardApp = () => {
           opacity: isModernUI ? 1 : isPeeking ? 1 : 0,
           borderRadius: isPeeking ? "2rem" : "0rem",
         }}
-        transition={{
-          type: "spring",
-          damping: 28,
-          stiffness: 280,
-          mass: 0.8,
+        onAnimationComplete={() => {
+          if (isModernUI && !isPeeking) setHasSlideCompleted(true);
         }}
+        transition={SPRING_SOFT}
         style={{
           transformPerspective: 1500,
           transformOrigin: "bottom center",
@@ -691,10 +695,10 @@ const DashboardApp = () => {
               <motion.div
                 key={currentView}
                 className="h-full w-full flex flex-col overflow-hidden"
-                initial={{ opacity: 0, y: 15 }}
+                initial={hasSlideCompleted ? { opacity: 0, y: 15 } : false}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -15 }}
-                transition={{ duration: 0.25, ease: "easeOut" }}
+                exit={hasSlideCompleted ? { opacity: 0, y: -15 } : { opacity: 0 }}
+                transition={hasSlideCompleted ? TRANSITION_PAGE_ENTER : { duration: 0 }}
               >
                 <ContentRouter
                   currentView={currentView}
@@ -774,7 +778,7 @@ const DashboardApp = () => {
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
-            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            transition={SPRING_SNAPPY}
             className="fixed top-2 left-4 md:left-8 z-[99999] w-full max-w-[360px] pointer-events-auto flex flex-col"
           >
             {/* Backdrop to close when clicked outside */}

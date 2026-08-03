@@ -6,6 +6,7 @@ import {
   getMaterialOnThemeColor,
 } from "../utils/settings-store";
 import { uploadBackup, downloadBackup } from "../utils/googleDriveSync";
+import { DURATION_NORMAL, DURATION_DRAMATIC } from "../utils/motion";
 import { clearCache } from "../utils/cache";
 import {
   Check,
@@ -231,7 +232,7 @@ export function SettingsDropdown<T extends string | number>({
             initial={{ opacity: 0, y: isTop ? 6 : -6, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: isTop ? 6 : -6, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
+            transition={{ duration: DURATION_NORMAL }}
             className={`absolute z-100 min-w-48 ${positionClass} ${alignmentClass} ${originClass}`}
           >
             <div className="w-full bg-(--bg-card) border-2 border-(--border-main) rounded-2xl shadow-xl py-1.5 overflow-hidden max-h-56 overflow-y-auto custom-scrollbar">
@@ -425,7 +426,7 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
           ],
         },
         {
-          duration: 400,
+          duration: DURATION_DRAMATIC * 1000,
           easing: "cubic-bezier(0.25, 1, 0.5, 1)",
           pseudoElement: "::view-transition-new(root)",
         },
@@ -851,6 +852,32 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
                             sessionStorage.setItem("vtop-legacy-mode", "false");
                           }
                         }}
+                      />
+                    </div>
+                  </SettingTopicCard>
+
+                  <SettingTopicCard
+                    title="Login Flow"
+                    description="Skip role selection and go straight to student login"
+                  >
+                    <div className="flex items-center justify-between gap-4 w-full">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-sm font-bold text-(--text-main)">
+                          Skip Role Selection
+                        </span>
+                        <span className="text-xs text-(--text-muted)">
+                          Automatically select "Student" on /open/page and
+                          proceed directly to login
+                        </span>
+                      </div>
+                      <MaterialSwitch
+                        selected={settings.skipRoleSelection}
+                        onChange={() =>
+                          updateSetting(
+                            "skipRoleSelection",
+                            !settings.skipRoleSelection,
+                          )
+                        }
                       />
                     </div>
                   </SettingTopicCard>

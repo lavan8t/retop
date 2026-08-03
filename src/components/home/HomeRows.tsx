@@ -9,14 +9,14 @@ import { UpcomingClass } from "../../utils/timetable-slots";
 import { ExamEntry } from "../../parsers/exam-schedule";
 import { formatTimeStr } from "../../utils/formatting";
 import { MarqueeText } from "../common/MarqueeText";
-import { SPRING_SNAPPY } from "../../utils/motion";
+import { SPRING_SNAPPY, DURATION_MODERATE, TRANSITION_FADE_IN } from "../../utils/motion";
 import { useSettingsStore, MATERIAL_ACCENTS, getMaterialThemeColor, getMaterialOnThemeColor } from "../../utils/settings-store";
 
 const rowVariants: Variants = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    transition: { duration: 0.2 },
+    transition: TRANSITION_FADE_IN,
   },
 };
 

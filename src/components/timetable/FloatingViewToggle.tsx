@@ -5,6 +5,7 @@ import {
   List,
   CalendarMonth,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
+import { SPRING_BOUNCY } from "../../utils/motion";
 
 interface FloatingViewToggleProps {
   viewMode: "grid" | "list" | "week";
@@ -62,7 +63,7 @@ export const FloatingViewToggle: React.FC<FloatingViewToggleProps> = ({
   }, []);
 
   const syncSpring: Transition = useMemo(
-    () => ({ type: "spring", stiffness: 600, damping: 25, mass: 0.5 }),
+    () => SPRING_BOUNCY,
     [],
   );
 

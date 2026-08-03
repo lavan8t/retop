@@ -175,7 +175,7 @@ input[type="submit"] {
   font-family: 'Google Sans Flex', system-ui, sans-serif !important;
   font-variation-settings: "wght" 600 !important;
   box-shadow: none !important;
-  transition: opacity 0.15s ease !important;
+  transition: opacity var(--duration-font-var) ease !important;
 }
 
 #btnSubmit:hover,
@@ -202,7 +202,7 @@ input[type="submit"]:hover {
   box-shadow: none !important;
   overflow: hidden !important;
   cursor: pointer !important;
-  transition: background-color 0.15s ease !important;
+  transition: background-color var(--duration-font-var) ease !important;
 }
 
 .cardStudent:hover,
@@ -347,7 +347,7 @@ input[type="submit"]:hover {
   text-decoration: none !important;
   padding: 4px 6px !important;
   border-radius: 8px !important;
-  transition: background-color 0.15s ease !important;
+  transition: background-color var(--duration-font-var) ease !important;
 }
 
 .spotlightHeader button:hover,
@@ -372,7 +372,7 @@ ul.list-group.spotlight-background {
   border-bottom: 1px solid color-mix(in srgb, var(--text-muted) 10%, transparent) !important;
   color: var(--text-main) !important;
   padding: 6px 14px !important;
-  transition: background-color 0.15s ease !important;
+  transition: background-color var(--duration-font-var) ease !important;
 }
 
 .spotlight-background .list-group-item:last-child {

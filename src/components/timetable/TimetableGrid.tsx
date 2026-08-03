@@ -241,7 +241,7 @@ export const TimetableGrid = ({
                 hover:-translate-y-0.5 group/cell
                 ${colorClasses}
               `}
-              style={{ transition: 'background-color 0.3s 0.075s, transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s cubic-bezier(0.34,1.56,0.64,1)' }}
+              style={{ transition: 'background-color var(--duration-slow) 0.075s, transform var(--duration-slow) var(--easing-overshoot), box-shadow var(--duration-slow) var(--easing-overshoot)' }}
             >
               <div className="mb-auto w-full flex flex-col items-start p-2.5 md:p-3 relative z-10">
                 <div

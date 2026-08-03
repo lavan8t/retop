@@ -34,6 +34,7 @@ export interface AppSettings {
   dateFormat: DateFormatPattern;
   fontScale: number;
   fontWeight: number;
+  skipRoleSelection: boolean;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -57,6 +58,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   dateFormat: "DD Mon YYYY",
   fontScale: 100,
   fontWeight: 700,
+  skipRoleSelection: false,
   pinnedLinks: [
     { title: "Time Table", url: "studenttimetable", category: "Core" },
     { title: "Marks", url: "mark", category: "Core" },

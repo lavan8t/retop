@@ -10,12 +10,25 @@
   --duration-fast: 100ms;
   --duration-normal: 200ms;
   --duration-slow: 350ms;
+  --duration-instant: 50ms;
+  --duration-host: 500ms;
+  --duration-dramatic: 400ms;
+  --duration-marquee: 12s;
+  --duration-progress: 1.5s;
+  --duration-icon-hover: 700ms;
+  --duration-icon-action: 500ms;
+  --duration-font-var: 150ms;
+  --duration-scrollbar: 200ms;
+  --duration-shadow: 100ms;
+  --easing-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --easing-overshoot: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --easing-decelerate: cubic-bezier(0, 0, 0.2, 1);
 }
 
 /* --- 1. GLOBAL RESET & VARIABLES --- */
 @layer base {
   *, ::before, ::after {
-    transition-duration: 100ms;
+    transition-duration: var(--duration-fast);
     transition-timing-function: ease-out;
   }
 
@@ -144,7 +157,7 @@
 
   /* Unify all card and hover shadow transitions to make them smooth and easy to manage globally */
   #retop-root {
-    --duration-shadow: 100ms;
+    --duration-shadow: var(--duration-fast);
   }
 
   #retop-root [class*="hover:shadow"],
@@ -227,7 +240,7 @@
     "slnt" -10,
     "ROND" 100 !important;
   line-height: 1 !important;
-  transition: font-variation-settings 0.15s ease-out !important;
+  transition: font-variation-settings var(--duration-font-var) ease-out !important;
 }
 
 .retop-logo:hover,
@@ -261,7 +274,7 @@
     }
   }
   .animate-marquee-infinite {
-    animation: marquee-infinite 12s linear infinite;
+    animation: marquee-infinite var(--duration-marquee) linear infinite;
   }
 
   .bg-zinc-950 {
@@ -382,7 +395,7 @@
 #retop-root [class*="overflow-"],
 #retop-root .custom-scrollbar {
   --scrollbar-thumb-color: transparent;
-  transition: --scrollbar-thumb-color 0.2s ease-out;
+  transition: --scrollbar-thumb-color var(--duration-scrollbar) ease-out;
 }
 
 #retop-root [class*="overflow-"]:hover,
@@ -404,7 +417,7 @@
 @layer components {
   /* The Host Container for the React App */
   #retop-host {
-    @apply fixed inset-0 z-2323 block transition-all duration-500 ease-out;
+    @apply fixed inset-0 z-2323 block transition-all duration-[var(--duration-host)] ease-out;
     opacity: 1;
     transform: scale(1);
   }
@@ -421,8 +434,8 @@
   body > table,
   body > form {
     transition:
-      opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
-      transform 0.5s ease !important;
+      opacity var(--duration-host) var(--easing-standard),
+      transform var(--duration-host) ease !important;
   }
 
   body:not(.show-legacy-ui) #page-wrapper,
@@ -435,7 +448,7 @@
   }
 
   #vtop-ui-toggle-container {
-    @apply fixed bottom-8 right-8 z-2323 hidden opacity-0 transition-opacity duration-500;
+    @apply fixed bottom-8 right-8 z-2323 hidden opacity-0 transition-opacity duration-[var(--duration-host)];
   }
 
   body.show-legacy-ui #vtop-ui-toggle-container {
@@ -445,7 +458,7 @@
 
   /* The Neo-Brutalist Toggle Button (UNTOUCHED) */
   .vtop-toggle-btn {
-    @apply bg-yellow-400 text-black font-black font-expanded px-8 py-4 border-4 border-(--border-main) cursor-pointer shadow-none transition-all duration-200 uppercase;
+    @apply bg-yellow-400 text-black font-black font-expanded px-8 py-4 border-4 border-(--border-main) cursor-pointer shadow-none transition-all duration-[var(--duration-normal)] uppercase;
   }
 
   .vtop-toggle-btn:hover {

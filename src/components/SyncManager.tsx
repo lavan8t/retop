@@ -97,7 +97,7 @@ export const SyncManager = () => {
         <div className="flex flex-col gap-4">
           {/* Current & Global Data Section */}
           <div className="flex flex-col gap-2">
-            <span className="text-[11px] font-black uppercase tracking-wider text-(--text-muted)">
+            <span className="text-[11px] font-black uppercase text-(--text-muted)">
               Current & Active Session Data ({currentKeys.length})
             </span>
             <div className="flex flex-col gap-1.5 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
@@ -125,7 +125,7 @@ export const SyncManager = () => {
           {olderKeys.length > 0 && (
             <div className="flex flex-col gap-2 border-t-2 border-(--border-dim) pt-3">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-black uppercase tracking-wider text-(--text-muted)">
+                <span className="text-[11px] font-black uppercase text-(--text-muted)">
                   Older Semesters Cached Data ({olderKeys.length})
                 </span>
                 <button

@@ -225,7 +225,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               {monthDisplay.semName ? (
                 <div className="flex justify-end items-start h-8 relative z-20 pt-1">
                   <style>{`
-                    .sem-text { font-variation-settings: "wdth" 151, "wght" 800; transition: font-variation-settings 300ms ease-out; }
+                    .sem-text { font-variation-settings: "wdth" 151, "wght" 800; transition: font-variation-settings var(--duration-slow) ease-out; }
                     .sem-group:hover .sem-text { font-variation-settings: "wdth" 75, "wght" 1; }
                   `}</style>
                   <motion.div

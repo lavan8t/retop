@@ -199,7 +199,7 @@ const ExamCardM3 = ({
                 {timeline.reportingTime}
               </span>
               <span className="text-[10px] font-bold uppercase tracking-wider text-(--text-muted) mt-0.5">
-                Repott
+                Report
               </span>
             </div>
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useDataStore } from "../store/dataStore";
 import { OfflineNotSynced } from "../components/ui/OfflineNotSynced";
 import { VTOPNetwork } from "../utils/network";
@@ -40,31 +40,72 @@ const isAllowedFile = (file: File) => {
   return ALLOWED_EXTENSIONS.includes(ext);
 };
 
-interface FilePreviewModalProps {
-  file: File;
+const parseDueDateTimestamp = (dateStr?: string): number => {
+  if (!dateStr || dateStr.trim() === "" || dateStr.toUpperCase() === "N/A") {
+    return Infinity;
+  }
+  try {
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) return d.getTime();
+    const parts = dateStr.trim().split(/[\s-]+/);
+    if (parts.length >= 3) {
+      const day = parseInt(parts[0], 10);
+      const monthMap: Record<string, number> = {
+        jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+        jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
+      };
+      const month = monthMap[parts[1].toLowerCase().slice(0, 3)];
+      const year = parseInt(parts[2], 10);
+      if (!isNaN(day) && month !== undefined && !isNaN(year)) {
+        return new Date(year, month, day).getTime();
+      }
+    }
+  } catch (e) {}
+  return Infinity;
+};
+
+interface LeftUploadPanelProps {
+  selectedFile: File | null;
+  onClearFile: () => void;
+  onSelectFile: (file: File) => void;
   courses: any[];
   assignmentsMap: Record<string, any[]>;
-  initialClassId?: string;
-  initialAssgnCode?: string;
-  onClose: () => void;
+  initialClassId: string;
+  initialAssgnCode: string;
   network: VTOPNetwork;
-  onSuccess: (classId: string) => void;
+  onSuccessUpload: (classId: string) => void;
 }
 
-const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
-  file,
+const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
+  selectedFile,
+  onClearFile,
+  onSelectFile,
   courses,
   assignmentsMap,
-  initialClassId = "",
-  initialAssgnCode = "",
-  onClose,
+  initialClassId,
+  initialAssgnCode,
   network,
-  onSuccess,
+  onSuccessUpload,
 }) => {
-  const [selectedClassId, setSelectedClassId] = useState<string>(initialClassId || courses[0]?.classId || "");
-  const [selectedAssgnCode, setSelectedAssgnCode] = useState<string>(initialAssgnCode || "");
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [selectedClassId, setSelectedClassId] = useState<string>(initialClassId);
+  const [selectedAssgnCode, setSelectedAssgnCode] = useState<string>(initialAssgnCode);
   const [isUploading, setIsUploading] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  useEffect(() => {
+    if (initialClassId) setSelectedClassId(initialClassId);
+  }, [initialClassId]);
+
+  useEffect(() => {
+    if (initialAssgnCode) setSelectedAssgnCode(initialAssgnCode);
+  }, [initialAssgnCode]);
+
+  useEffect(() => {
+    if (!selectedClassId && courses.length > 0) {
+      setSelectedClassId(courses[0].classId);
+    }
+  }, [courses, selectedClassId]);
 
   const availableAssignments = useMemo(() => {
     return assignmentsMap[selectedClassId] || [];
@@ -77,11 +118,11 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
   }, [availableAssignments, selectedAssgnCode]);
 
   const pdfUrl = useMemo(() => {
-    if (file.type === "application/pdf" || getFileExtension(file.name) === "pdf") {
-      return URL.createObjectURL(file);
+    if (selectedFile && (selectedFile.type === "application/pdf" || getFileExtension(selectedFile.name) === "pdf")) {
+      return URL.createObjectURL(selectedFile);
     }
     return null;
-  }, [file]);
+  }, [selectedFile]);
 
   useEffect(() => {
     return () => {
@@ -89,9 +130,29 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
     };
   }, [pdfUrl]);
 
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(false);
+
+    if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+      const droppedFile = e.dataTransfer.files[0];
+      if (!isAllowedFile(droppedFile)) {
+        alert("Invalid file format. Allowed formats: PDF, XLS, XLSX, DOC, DOCX.");
+        return;
+      }
+      if (droppedFile.size > MAX_FILE_SIZE) {
+        alert("File size exceeds 4MB limit.");
+        return;
+      }
+      onSelectFile(droppedFile);
+    }
+  };
+
   const handleUploadSubmit = async () => {
+    if (!selectedFile) return;
     if (!selectedClassId || !selectedAssgnCode) {
-      setStatusMsg({ type: "error", text: "Please select a target course and assignment." });
+      setStatusMsg({ type: "error", text: "Please select target course and assignment." });
       return;
     }
 
@@ -103,12 +164,13 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
 
     try {
       await network.getDAUploadView(selectedClassId, selectedAssgnCode);
-      await network.uploadStudentDA(selectedClassId, selectedAssgnCode, assgnTitle, file);
+      await network.uploadStudentDA(selectedClassId, selectedAssgnCode, assgnTitle, selectedFile);
       setStatusMsg({ type: "success", text: "Assignment uploaded successfully!" });
       setTimeout(() => {
-        onSuccess(selectedClassId);
-        onClose();
-      }, 1200);
+        onSuccessUpload(selectedClassId);
+        onClearFile();
+        setStatusMsg(null);
+      }, 1500);
     } catch (err: any) {
       setStatusMsg({ type: "error", text: err?.message || "Upload failed. Please try again." });
     } finally {
@@ -116,95 +178,109 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
     }
   };
 
-  const ext = getFileExtension(file.name);
+  const ext = selectedFile ? getFileExtension(selectedFile.name) : "";
 
   return (
-    <div className="fixed inset-0 z-[10005] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        transition={SPRING_SNAPPY}
-        className="w-full max-w-2xl bg-(--bg-surface) border-2 border-(--border-dim) rounded-3xl overflow-hidden popup-shadow flex flex-col max-h-[90vh]"
+    <div className="w-full lg:w-96 shrink-0 flex flex-col gap-4">
+      {/* Dropzone Container */}
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsDraggingOver(true);
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsDraggingOver(false);
+        }}
+        onDrop={handleDrop}
+        onClick={() => {
+          if (!selectedFile) {
+            const input = document.createElement("input");
+            input.type = "file";
+            input.accept = ".pdf,.xls,.xlsx,.doc,.docx";
+            input.onchange = (e: any) => {
+              const f = e.target.files?.[0];
+              if (f) {
+                if (!isAllowedFile(f)) {
+                  alert("Invalid file format. Allowed formats: PDF, XLS, XLSX, DOC, DOCX.");
+                  return;
+                }
+                if (f.size > MAX_FILE_SIZE) {
+                  alert("File size exceeds 4MB limit.");
+                  return;
+                }
+                onSelectFile(f);
+              }
+            };
+            input.click();
+          }
+        }}
+        className={`w-full p-6 rounded-3xl border-2 border-dashed transition-all flex flex-col items-center justify-center text-center gap-3 cursor-pointer ${
+          isDraggingOver
+            ? "border-(--accent-base) bg-(--accent-base)/10"
+            : "border-(--border-dim) bg-(--bg-surface)/40 hover:bg-(--bg-surface)/80"
+        }`}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b-2 border-(--border-dim) bg-(--bg-main)">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-(--accent-base)/10 text-(--accent-base)">
-              <FilePresent className="w-6 h-6" />
-            </div>
-            <div className="flex flex-col">
-              <h3 className="font-expanded font-black text-lg text-(--text-main) leading-tight">
-                File Preview & Submission
-              </h3>
-              <span className="text-xs font-bold text-(--text-muted)">
-                Review document details before uploading to VTOP
-              </span>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-highlight) transition-colors cursor-pointer"
-          >
-            <Close className="w-5 h-5" />
-          </button>
+        <div className="p-3.5 rounded-2xl bg-(--accent-base)/15 text-(--accent-base)">
+          <CloudUpload className="w-7 h-7" />
         </div>
+        <div className="flex flex-col gap-1">
+          <h3 className="font-expanded font-black text-base text-(--text-main)">
+            {selectedFile ? "File Attached" : "Drag & Drop Assignment"}
+          </h3>
+          <span className="text-xs font-bold text-(--text-muted)">
+            {selectedFile
+              ? "Click change or select assignment details below"
+              : "Drop file here or click to browse (PDF, DOCX, XLSX • Max 4MB)"}
+          </span>
+        </div>
+      </div>
 
-        {/* Content Body */}
-        <div className="p-6 overflow-y-auto custom-scrollbar flex flex-col gap-6 flex-1">
+      {/* File Details & Target Selection Panel */}
+      {selectedFile && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-(--bg-surface)/60 rounded-3xl p-5 border-0 flex flex-col gap-4"
+        >
           {/* File Card Banner */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl bg-(--bg-main) border-2 border-(--border-dim)">
+          <div className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-(--bg-main) border border-(--border-dim)/40">
             <div className="flex items-center gap-3 min-w-0 flex-1">
-              <div className="p-3 rounded-xl bg-(--accent-base) text-(--text-inverse) shrink-0 font-mono font-black text-xs uppercase">
+              <div className="p-2.5 rounded-xl bg-(--accent-base) text-(--text-inverse) shrink-0 font-mono font-black text-xs uppercase">
                 {ext}
               </div>
               <div className="flex flex-col min-w-0 flex-1">
-                <span className="font-bold text-sm text-(--text-main) truncate" title={file.name}>
-                  {file.name}
+                <span className="font-bold text-xs text-(--text-main) truncate" title={selectedFile.name}>
+                  {selectedFile.name}
                 </span>
-                <span className="text-xs text-(--text-muted) font-mono">
-                  Size: {formatFileSize(file.size)} • Type: {file.type || "Document"}
+                <span className="text-[11px] text-(--text-muted) font-mono">
+                  {formatFileSize(selectedFile.size)}
                 </span>
               </div>
             </div>
-            <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-              Valid Format
-            </span>
+            <button
+              onClick={onClearFile}
+              className="p-1.5 rounded-lg text-(--text-muted) hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+              title="Remove File"
+            >
+              <Close className="w-4 h-4" />
+            </button>
           </div>
 
-          {/* Document Visual Preview */}
-          <div className="w-full flex flex-col gap-2">
-            <span className="text-xs font-bold text-(--text-muted) uppercase font-expanded flex items-center gap-1.5">
-              <Visibility className="w-4 h-4 text-(--accent-base)" />
-              Document Preview
-            </span>
+          {/* PDF Visual Preview if available */}
+          {pdfUrl && (
+            <div className="w-full h-44 rounded-2xl overflow-hidden border border-(--border-dim)/40 bg-zinc-900">
+              <iframe src={pdfUrl} title="PDF Preview" className="w-full h-full border-0" />
+            </div>
+          )}
 
-            {pdfUrl ? (
-              <div className="w-full h-64 rounded-2xl overflow-hidden border-2 border-(--border-dim) bg-zinc-900">
-                <iframe
-                  src={pdfUrl}
-                  title="PDF Preview"
-                  className="w-full h-full border-0"
-                />
-              </div>
-            ) : (
-              <div className="w-full p-8 rounded-2xl border-2 border-dashed border-(--border-dim) bg-(--bg-main) flex flex-col items-center justify-center text-center gap-2">
-                <Description className="w-12 h-12 text-(--text-muted) opacity-60" />
-                <span className="font-bold text-sm text-(--text-main)">
-                  {file.name}
-                </span>
-                <span className="text-xs text-(--text-muted)">
-                  Visual preview is available for PDF files. Document data ({ext.toUpperCase()}) will be submitted directly to VTOP portal.
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Target Assignment Selector */}
-          <div className="flex flex-col gap-4 p-4 rounded-2xl bg-(--bg-main) border-2 border-(--border-dim)">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold uppercase font-expanded text-(--text-muted)">
-                Select Course
+          {/* Course & Assignment Target Pickers */}
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-(--text-muted)">
+                Target Course
               </label>
               <select
                 value={selectedClassId}
@@ -212,7 +288,7 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
                   setSelectedClassId(e.target.value);
                   setSelectedAssgnCode("");
                 }}
-                className="w-full px-4 py-2.5 rounded-xl font-bold text-sm bg-(--bg-surface) border-2 border-(--border-dim) text-(--text-main) outline-none cursor-pointer focus:border-(--accent-base)"
+                className="w-full px-3.5 py-2 rounded-xl text-xs font-bold bg-(--bg-main) border border-(--border-dim)/40 text-(--text-main) outline-none cursor-pointer focus:border-(--accent-base)"
               >
                 {courses.map((c) => (
                   <option key={c.classId} value={c.classId}>
@@ -222,14 +298,14 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
               </select>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold uppercase font-expanded text-(--text-muted)">
-                Select Assignment
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-(--text-muted)">
+                Target Assignment
               </label>
               <select
                 value={selectedAssgnCode}
                 onChange={(e) => setSelectedAssgnCode(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl font-bold text-sm bg-(--bg-surface) border-2 border-(--border-dim) text-(--text-main) outline-none cursor-pointer focus:border-(--accent-base)"
+                className="w-full px-3.5 py-2 rounded-xl text-xs font-bold bg-(--bg-main) border border-(--border-dim)/40 text-(--text-main) outline-none cursor-pointer focus:border-(--accent-base)"
               >
                 {availableAssignments.length === 0 ? (
                   <option value="">No assignments found for course</option>
@@ -244,53 +320,56 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
             </div>
           </div>
 
+          {/* Status Message */}
           {statusMsg && (
             <div
-              className={`p-4 rounded-2xl font-bold text-xs flex items-center gap-2 ${
+              className={`p-3 rounded-xl font-bold text-xs flex items-center gap-2 ${
                 statusMsg.type === "success"
-                  ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-2 border-emerald-500/30"
-                  : "bg-red-500/15 text-red-600 dark:text-red-400 border-2 border-red-500/30"
+                  ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                  : "bg-red-500/15 text-red-400 border border-red-500/30"
               }`}
             >
               {statusMsg.type === "success" ? (
-                <CheckCircle className="w-5 h-5 shrink-0" />
+                <CheckCircle className="w-4 h-4 shrink-0" />
               ) : (
-                <ErrorIcon className="w-5 h-5 shrink-0" />
+                <ErrorIcon className="w-4 h-4 shrink-0" />
               )}
               <span>{statusMsg.text}</span>
             </div>
           )}
-        </div>
 
-        {/* Footer Actions */}
-        <div className="p-4 border-t-2 border-(--border-dim) bg-(--bg-main) flex items-center justify-end gap-3">
-          <button
-            onClick={onClose}
-            disabled={isUploading}
-            className="px-5 py-2.5 rounded-xl text-xs font-black uppercase border-2 border-(--border-dim) text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-highlight) transition-all cursor-pointer disabled:opacity-50"
-          >
-            Cancel
-          </button>
+          {/* Submit Action Button */}
           <button
             onClick={handleUploadSubmit}
             disabled={isUploading || availableAssignments.length === 0}
-            className="px-6 py-2.5 rounded-xl text-xs font-black uppercase bg-(--accent-base) text-(--text-inverse) transition-all border-0 cursor-pointer disabled:opacity-50 hover:opacity-90 flex items-center gap-2"
+            className="w-full py-3 rounded-xl text-xs font-black uppercase tracking-wider bg-(--accent-base) text-(--text-inverse) transition-all cursor-pointer disabled:opacity-50 hover:opacity-90 flex items-center justify-center gap-2 border-0"
           >
             <CloudUpload className="w-4 h-4" />
-            {isUploading ? "Uploading to VTOP..." : "Submit Assignment"}
+            {isUploading ? "Uploading to VTOP..." : "Submit to VTOP"}
           </button>
-        </div>
-      </motion.div>
+        </motion.div>
+      )}
     </div>
   );
 };
 
 const CourseCard = ({ course, network, expanded, setExpanded, onSelectFile }: any) => {
   const { daAssignments, fetchDAAssignments, daLoading } = useDataStore();
-  const assignments = daAssignments[course.classId];
+  const rawAssignments = daAssignments[course.classId];
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeAssgn, setActiveAssgn] = useState<any>(null);
   const [downloading, setDownloading] = useState<string | null>(null);
+
+  // Sort assignments: pending first, then by due date timestamp ascending
+  const sortedAssignments = useMemo(() => {
+    if (!rawAssignments) return [];
+    return [...rawAssignments].sort((a, b) => {
+      const aSubmitted = Boolean(a.lastUpdated && a.lastUpdated.trim() !== "");
+      const bSubmitted = Boolean(b.lastUpdated && b.lastUpdated.trim() !== "");
+      if (aSubmitted !== bSubmitted) return aSubmitted ? 1 : -1;
+      return parseDueDateTimestamp(a.dueDate) - parseDueDateTimestamp(b.dueDate);
+    });
+  }, [rawAssignments]);
 
   const handleDownload = (e: React.MouseEvent, assgn: any) => {
     e.stopPropagation();
@@ -327,47 +406,51 @@ const CourseCard = ({ course, network, expanded, setExpanded, onSelectFile }: an
       setExpanded(null);
     } else {
       setExpanded(course.classId);
-      if (!assignments) {
+      if (!rawAssignments) {
         fetchDAAssignments(network, course.classId);
       }
     }
   };
 
-  const pendingCount = assignments
-    ? assignments.filter((a: any) => !a.lastUpdated || a.lastUpdated.trim() === "").length
+  const pendingCount = rawAssignments
+    ? rawAssignments.filter((a: any) => !a.lastUpdated || a.lastUpdated.trim() === "").length
     : 0;
 
   return (
-    <div className="bg-(--bg-surface) border-2 border-(--border-dim) rounded-3xl overflow-hidden transition-all duration-200">
+    <div className="bg-(--bg-surface)/40 hover:bg-(--bg-surface)/70 rounded-3xl overflow-hidden transition-colors border-0 shadow-none">
       <button
         onClick={handleToggle}
-        className="w-full p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left hover:bg-(--bg-highlight) transition-colors cursor-pointer"
+        className="w-full p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left transition-colors cursor-pointer"
       >
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="px-2.5 py-0.5 rounded-lg bg-(--accent-base)/10 text-(--accent-base) text-xs font-bold font-mono border border-(--accent-base)/20">
+          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+            <span className="px-2.5 py-0.5 rounded-full bg-(--bg-highlight) text-(--text-main) text-xs font-mono font-bold">
               {course.code}
             </span>
-            <span className="px-2.5 py-0.5 rounded-lg bg-(--bg-main) text-(--text-muted) text-xs font-bold font-mono border border-(--border-dim)">
+            <span className="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-xs font-mono font-black uppercase">
               {course.type}
             </span>
             {pendingCount > 0 && (
-              <span className="px-2.5 py-0.5 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 text-xs font-black uppercase font-mono border border-amber-500/30">
+              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-xs font-mono font-black uppercase tracking-wider">
                 {pendingCount} Pending
               </span>
             )}
           </div>
-          <h3 className="text-lg md:text-xl font-black font-expanded text-(--text-main) truncate leading-tight">
+          <h3 className="text-base md:text-lg font-bold text-(--text-main) truncate leading-snug">
             {course.title}
           </h3>
-          <div className="flex items-center gap-1.5 mt-2 text-(--text-muted) text-xs md:text-sm font-bold">
-            <Person className="w-4 h-4 text-(--accent-base)" />
+          <div className="flex items-center gap-1.5 mt-1 text-(--text-muted) text-xs">
+            <Person className="w-4 h-4 text-(--text-muted)" />
             <span className="truncate">{course.faculty}</span>
           </div>
         </div>
 
-        <div className="shrink-0 flex items-center justify-between md:justify-end gap-4">
-          <div className={`p-2 rounded-xl bg-(--bg-main) border-2 border-(--border-dim) transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}>
+        <div className="shrink-0 flex items-center justify-between md:justify-end gap-3">
+          <div
+            className={`p-2 rounded-full bg-(--bg-main) transition-transform duration-200 ${
+              expanded ? "rotate-180" : ""
+            }`}
+          >
             <KeyboardArrowDown className="w-5 h-5 text-(--text-muted)" />
           </div>
         </div>
@@ -382,47 +465,49 @@ const CourseCard = ({ course, network, expanded, setExpanded, onSelectFile }: an
             transition={{ duration: 0.15 }}
             className="overflow-hidden"
           >
-            <div className="p-4 md:p-6 pt-0 border-t-2 border-(--border-dim) bg-(--bg-main)/50">
-              {daLoading && !assignments ? (
-                <div className="flex justify-center py-8 text-(--text-muted) font-mono font-bold text-xs animate-pulse">
+            <div className="p-4 md:p-5 pt-0 border-t border-(--border-dim)/20 bg-(--bg-main)/40">
+              {daLoading && !rawAssignments ? (
+                <div className="flex justify-center py-6 text-(--text-muted) font-mono font-bold text-xs animate-pulse">
                   LOADING ASSIGNMENTS...
                 </div>
-              ) : assignments && assignments.length > 0 ? (
-                <div className="grid grid-cols-1 gap-3 mt-4">
-                  {assignments.map((assgn: any, idx: number) => {
+              ) : sortedAssignments && sortedAssignments.length > 0 ? (
+                <div className="grid grid-cols-1 gap-3 mt-3">
+                  {sortedAssignments.map((assgn: any, idx: number) => {
                     const isSubmitted = Boolean(assgn.lastUpdated && assgn.lastUpdated.trim() !== "");
 
                     return (
                       <div
                         key={idx}
-                        className="bg-(--bg-surface) p-4 rounded-2xl border-2 border-(--border-dim) flex flex-col md:flex-row md:items-center justify-between gap-4"
+                        className="bg-(--bg-surface)/60 p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 border-0"
                       >
                         <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-bold text-(--text-main) text-base truncate">{assgn.title}</h4>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="font-bold text-(--text-main) text-sm truncate">
+                              {assgn.title}
+                            </h4>
                             <span
-                              className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full shrink-0 ${
+                              className={`text-[10px] font-mono font-black uppercase px-2.5 py-0.5 rounded-full shrink-0 ${
                                 isSubmitted
-                                  ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
-                                  : "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                                  ? "bg-emerald-500/20 text-emerald-400"
+                                  : "bg-amber-500/20 text-amber-400"
                               }`}
                             >
                               {isSubmitted ? "Submitted" : "Pending"}
                             </span>
                           </div>
-                          <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-(--text-muted)">
-                            <span className="bg-(--bg-main) px-2.5 py-1 rounded-lg border border-(--border-dim)">
-                              Max Marks: <strong className="text-(--text-main)">{assgn.maxMark}</strong>
+                          <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-(--text-muted)">
+                            <span className="bg-(--bg-main) px-2.5 py-0.5 rounded-md">
+                              Max: <strong className="text-(--text-main)">{assgn.maxMark}</strong>
                             </span>
-                            <span className="bg-(--bg-main) px-2.5 py-1 rounded-lg border border-(--border-dim)">
+                            <span className="bg-(--bg-main) px-2.5 py-0.5 rounded-md">
                               Weightage: <strong className="text-(--text-main)">{assgn.weightage}</strong>
                             </span>
                           </div>
                         </div>
 
-                        <div className="shrink-0 flex flex-col items-start md:items-end gap-1.5 text-xs font-mono text-(--text-muted)">
+                        <div className="shrink-0 flex flex-col items-start md:items-end gap-1 text-xs font-mono text-(--text-muted)">
                           <div>
-                            Due Date: <span className="text-(--text-main) font-bold">{assgn.dueDate || "N/A"}</span>
+                            Due: <span className="text-(--text-main) font-bold">{assgn.dueDate || "N/A"}</span>
                           </div>
                           <div className="text-[11px] text-(--text-muted)">
                             Updated: {assgn.lastUpdated || "Not Uploaded"}
@@ -432,9 +517,9 @@ const CourseCard = ({ course, network, expanded, setExpanded, onSelectFile }: an
                               <button
                                 onClick={(e) => handleDownload(e, assgn)}
                                 disabled={downloading === assgn.code}
-                                className="px-3 py-1.5 flex items-center gap-1.5 bg-(--bg-main) hover:bg-(--bg-highlight) rounded-xl transition-colors border-2 border-(--border-dim) text-xs font-bold text-(--text-main) cursor-pointer"
+                                className="px-3 py-1 flex items-center gap-1.5 bg-(--bg-main) hover:bg-(--bg-highlight) rounded-xl transition-colors text-xs font-bold text-(--text-main) cursor-pointer border-0"
                               >
-                                <Download className="w-4 h-4 text-(--accent-base)" />
+                                <Download className="w-3.5 h-3.5 text-(--accent-base)" />
                                 {downloading === assgn.code ? "Downloading..." : "Download"}
                               </button>
                             )}
@@ -444,9 +529,9 @@ const CourseCard = ({ course, network, expanded, setExpanded, onSelectFile }: an
                                 setActiveAssgn(assgn);
                                 fileInputRef.current?.click();
                               }}
-                              className="px-4 py-1.5 flex items-center gap-1.5 bg-(--accent-base) text-(--text-inverse) hover:opacity-90 rounded-xl transition-opacity text-xs font-black uppercase cursor-pointer border-0"
+                              className="px-3.5 py-1 flex items-center gap-1.5 bg-(--accent-base) text-(--text-inverse) hover:opacity-90 rounded-xl transition-opacity text-xs font-mono font-bold uppercase cursor-pointer border-0"
                             >
-                              <Upload className="w-4 h-4" />
+                              <Upload className="w-3.5 h-3.5" />
                               Upload
                             </button>
                           </div>
@@ -463,7 +548,7 @@ const CourseCard = ({ course, network, expanded, setExpanded, onSelectFile }: an
                   />
                 </div>
               ) : (
-                <div className="flex justify-center py-8 text-(--text-muted) font-bold font-mono text-xs">
+                <div className="flex justify-center py-6 text-(--text-muted) font-bold font-mono text-xs">
                   NO ASSIGNMENTS FOUND
                 </div>
               )}
@@ -480,9 +565,11 @@ export default function DigitalAssignments({ network }: { network: VTOPNetwork }
     useDataStore();
 
   const [expandedCourse, setExpandedCourse] = useState<string | null>(null);
-  const [selectedFileForPreview, setSelectedFileForPreview] = useState<File | null>(null);
-  const [targetContext, setTargetContext] = useState<{ classId: string; assgnCode: string }>({ classId: "", assgnCode: "" });
-  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [targetContext, setTargetContext] = useState<{ classId: string; assgnCode: string }>({
+    classId: "",
+    assgnCode: "",
+  });
 
   useEffect(() => {
     if (status !== "Demo Mode Active" && daSemesters.length === 0) {
@@ -490,45 +577,32 @@ export default function DigitalAssignments({ network }: { network: VTOPNetwork }
     }
   }, [status, daSemesters.length, fetchDASemesters, network]);
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDraggingOver(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDraggingOver(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDraggingOver(false);
-
-    if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
-      const droppedFile = e.dataTransfer.files[0];
-      if (!isAllowedFile(droppedFile)) {
-        alert("Invalid file format. Allowed formats: PDF, XLS, XLSX, DOC, DOCX.");
-        return;
-      }
-      if (droppedFile.size > MAX_FILE_SIZE) {
-        alert("File size exceeds 4MB limit.");
-        return;
-      }
-      setSelectedFileForPreview(droppedFile);
-    }
-  };
-
-  const handleSelectFileFromCard = (file: File, classId: string, assgnCode: string) => {
-    setTargetContext({ classId, assgnCode });
-    setSelectedFileForPreview(file);
+  const handleSelectFile = (file: File, classId: string = "", assgnCode: string = "") => {
+    if (classId) setTargetContext({ classId, assgnCode });
+    setSelectedFile(file);
   };
 
   const handleSuccessUpload = (classId: string) => {
     fetchDAAssignments(network, classId, true);
   };
+
+  // Sort courses by earliest pending assignment due date
+  const sortedCourses = useMemo(() => {
+    if (!daCourses) return [];
+    return [...daCourses].sort((a, b) => {
+      const aAssgns = daAssignments[a.classId] || [];
+      const bAssgns = daAssignments[b.classId] || [];
+      const aMinDue = aAssgns.reduce(
+        (min: number, curr: any) => Math.min(min, parseDueDateTimestamp(curr.dueDate)),
+        Infinity,
+      );
+      const bMinDue = bAssgns.reduce(
+        (min: number, curr: any) => Math.min(min, parseDueDateTimestamp(curr.dueDate)),
+        Infinity,
+      );
+      return aMinDue - bMinDue;
+    });
+  }, [daCourses, daAssignments]);
 
   if (status === "Offline - Not Synced") {
     return <OfflineNotSynced />;
@@ -536,72 +610,57 @@ export default function DigitalAssignments({ network }: { network: VTOPNetwork }
 
   return (
     <div
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-      className="h-full w-full bg-(--bg-main) text-(--text-main) overflow-hidden relative z-0 flex"
+      id="retop-da-page"
+      className="h-full w-full bg-(--bg-main) text-(--text-main) overflow-y-auto custom-scrollbar relative z-0"
     >
-      <div className="flex-1 flex flex-col w-full h-full overflow-y-auto custom-scrollbar">
-        <div className="w-full h-21 md:h-25 shrink-0" />
-        <div className="flex-1 pb-20 p-4 md:p-8 max-w-5xl mx-auto w-full flex flex-col gap-6">
-          {/* Cool Top Dropzone Banner */}
-          <div
-            className={`w-full p-6 md:p-8 rounded-3xl border-2 border-dashed transition-all flex flex-col items-center justify-center text-center gap-3 cursor-pointer ${
-              isDraggingOver
-                ? "border-(--accent-base) bg-(--accent-base)/10 scale-[1.01]"
-                : "border-(--border-dim) bg-(--bg-surface) hover:border-(--accent-base)/50"
-            }`}
-            onClick={() => {
-              const input = document.createElement("input");
-              input.type = "file";
-              input.accept = ".pdf,.xls,.xlsx,.doc,.docx";
-              input.onchange = (e: any) => {
-                const f = e.target.files?.[0];
-                if (f) {
-                  if (!isAllowedFile(f)) {
-                    alert("Invalid file format. Allowed formats: PDF, XLS, XLSX, DOC, DOCX.");
-                    return;
-                  }
-                  if (f.size > MAX_FILE_SIZE) {
-                    alert("File size exceeds 4MB limit.");
-                    return;
-                  }
-                  setSelectedFileForPreview(f);
-                }
-              };
-              input.click();
-            }}
-          >
-            <div className="p-4 rounded-2xl bg-(--accent-base)/10 text-(--accent-base)">
-              <CloudUpload className="w-8 h-8" />
-            </div>
-            <div className="flex flex-col gap-1">
-              <h2 className="font-expanded font-black text-lg md:text-xl text-(--text-main)">
-                Drag & Drop Assignment File
-              </h2>
-              <span className="text-xs md:text-sm font-bold text-(--text-muted)">
-                Click to browse or drop file anywhere (PDF, XLS, XLSX, DOC, DOCX • Max 4MB)
-              </span>
-            </div>
+      <div className="w-full h-20 md:h-24 shrink-0" />
+
+      <div className="pb-32 px-4 md:px-8 max-w-7xl mx-auto w-full flex flex-col lg:flex-row gap-6 items-start">
+        {/* LEFT COLUMN: Drag & Drop + File Attachment & Upload Target Panel */}
+        <LeftUploadPanel
+          selectedFile={selectedFile}
+          onClearFile={() => {
+            setSelectedFile(null);
+            setTargetContext({ classId: "", assgnCode: "" });
+          }}
+          onSelectFile={handleSelectFile}
+          courses={daCourses}
+          assignmentsMap={daAssignments}
+          initialClassId={targetContext.classId}
+          initialAssgnCode={targetContext.assgnCode}
+          network={network}
+          onSuccessUpload={handleSuccessUpload}
+        />
+
+        {/* RIGHT COLUMN: Course Cards & Sorted Assignments */}
+        <div className="flex-1 w-full flex flex-col gap-4">
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-xl font-expanded font-black text-(--text-main)">
+              Digital Assignments
+            </h2>
+            <span className="text-xs font-mono font-bold text-(--text-muted)">
+              {daCourses.length} Courses
+            </span>
           </div>
 
-          {/* Courses & Assignments Grid */}
           {daLoading && daCourses.length === 0 ? (
             <div className="grid grid-cols-1 gap-4">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-32 bg-(--bg-surface) rounded-3xl border-2 border-(--border-dim) animate-pulse" />
+                <div key={i} className="h-28 bg-(--bg-surface)/40 rounded-3xl animate-pulse" />
               ))}
             </div>
-          ) : daCourses.length > 0 ? (
-            <div className="grid grid-cols-1 gap-4">
-              {daCourses.map((course) => (
+          ) : sortedCourses.length > 0 ? (
+            <div className="grid grid-cols-1 gap-3">
+              {sortedCourses.map((course) => (
                 <CourseCard
                   key={course.classId}
                   course={course}
                   network={network}
                   expanded={expandedCourse === course.classId}
                   setExpanded={setExpandedCourse}
-                  onSelectFile={handleSelectFileFromCard}
+                  onSelectFile={(file: File, classId: string, assgnCode: string) =>
+                    handleSelectFile(file, classId, assgnCode)
+                  }
                 />
               ))}
             </div>
@@ -614,25 +673,6 @@ export default function DigitalAssignments({ network }: { network: VTOPNetwork }
           )}
         </div>
       </div>
-
-      {/* File Preview & Submission Modal */}
-      <AnimatePresence>
-        {selectedFileForPreview && (
-          <FilePreviewModal
-            file={selectedFileForPreview}
-            courses={daCourses}
-            assignmentsMap={daAssignments}
-            initialClassId={targetContext.classId}
-            initialAssgnCode={targetContext.assgnCode}
-            onClose={() => {
-              setSelectedFileForPreview(null);
-              setTargetContext({ classId: "", assgnCode: "" });
-            }}
-            network={network}
-            onSuccess={handleSuccessUpload}
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 }

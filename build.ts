@@ -15,7 +15,7 @@
 
 import { rmSync, mkdirSync, copyFileSync, readFileSync, writeFileSync, existsSync, realpathSync, statSync, readdirSync } from "fs";
 import { resolve, basename } from "path";
-import { gzipSync } from "zlib";
+import { gzipSync, deflateRawSync } from "zlib";
 
 const IS_PROD = process.argv.includes("--prod") || process.argv.includes("--production");
 
@@ -369,7 +369,13 @@ function crc32(buf: Uint8Array): number {
 }
 
 function createZipArchive(sourceDir: string, outputFile: string) {
-  const fileEntries: { relPath: string; data: Uint8Array; crc: number; size: number }[] = [];
+  const fileEntries: {
+    relPath: string;
+    compressedData: Uint8Array;
+    crc: number;
+    uncompressedSize: number;
+    compressedSize: number;
+  }[] = [];
 
   function collectFiles(dir: string, base = "") {
     const items = readdirSync(dir, { withFileTypes: true });
@@ -379,9 +385,16 @@ function createZipArchive(sourceDir: string, outputFile: string) {
       if (item.isDirectory()) {
         collectFiles(fullPath, relPath);
       } else {
-        const data = new Uint8Array(readFileSync(fullPath));
-        const crc = crc32(data);
-        fileEntries.push({ relPath, data, crc, size: data.length });
+        const uncompressedData = new Uint8Array(readFileSync(fullPath));
+        const compressedData = new Uint8Array(deflateRawSync(uncompressedData));
+        const crc = crc32(uncompressedData);
+        fileEntries.push({
+          relPath,
+          compressedData,
+          crc,
+          uncompressedSize: uncompressedData.length,
+          compressedSize: compressedData.length,
+        });
       }
     }
   }
@@ -400,18 +413,18 @@ function createZipArchive(sourceDir: string, outputFile: string) {
     view.setUint32(0, 0x04034b50, true);
     view.setUint16(4, 20, true);
     view.setUint16(6, 0, true);
-    view.setUint16(8, 0, true);
+    view.setUint16(8, 8, true); // Method 8 = Deflate
     view.setUint16(10, 0, true);
     view.setUint16(12, 0, true);
     view.setUint32(14, file.crc, true);
-    view.setUint32(18, file.size, true);
-    view.setUint32(22, file.size, true);
+    view.setUint32(18, file.compressedSize, true);
+    view.setUint32(22, file.uncompressedSize, true);
     view.setUint16(26, nameBytes.length, true);
     view.setUint16(28, 0, true);
     localHeader.set(nameBytes, 30);
 
     localHeaders.push(localHeader);
-    localHeaders.push(file.data);
+    localHeaders.push(file.compressedData);
 
     const centralHeader = new Uint8Array(46 + nameBytes.length);
     const cView = new DataView(centralHeader.buffer);
@@ -419,12 +432,12 @@ function createZipArchive(sourceDir: string, outputFile: string) {
     cView.setUint16(4, 20, true);
     cView.setUint16(6, 20, true);
     cView.setUint16(8, 0, true);
-    cView.setUint16(10, 0, true);
+    cView.setUint16(10, 8, true); // Method 8 = Deflate
     cView.setUint16(12, 0, true);
     cView.setUint16(14, 0, true);
     cView.setUint32(16, file.crc, true);
-    cView.setUint32(20, file.size, true);
-    cView.setUint32(24, file.size, true);
+    cView.setUint32(20, file.compressedSize, true);
+    cView.setUint32(24, file.uncompressedSize, true);
     cView.setUint16(28, nameBytes.length, true);
     cView.setUint16(30, 0, true);
     cView.setUint16(32, 0, true);
@@ -435,7 +448,7 @@ function createZipArchive(sourceDir: string, outputFile: string) {
     centralHeader.set(nameBytes, 46);
 
     centralHeaders.push(centralHeader);
-    currentOffset += localHeader.length + file.data.length;
+    currentOffset += localHeader.length + file.compressedData.length;
   }
 
   const centralDirOffset = currentOffset;

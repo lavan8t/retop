@@ -45,48 +45,54 @@ export const hasRetopPage = (link: QuickLink | string): boolean => {
   const url = (typeof link === "string" ? link : link.url).toLowerCase().trim();
   const title = (typeof link === "string" ? "" : link.title).toLowerCase().trim();
 
-  // 1. Primary check: Request URL matching
+  // 1. Primary check: Specific native URL matching
   const hasUrlMatch =
     url.includes("studenttimetable") ||
+    url.includes("processviewtimetable") ||
     url.includes("studentattendance") ||
+    url.includes("processviewstudentattendance") ||
     url.includes("studentda") ||
-    url.includes("studentmark") ||
+    url.includes("processviewstudentda") ||
+    url.includes("studentmarkview") ||
+    url.includes("processviewstudentmark") ||
     url.includes("studentgradeview") ||
+    url.includes("processviewstudentgrade") ||
     url.includes("studexamschedule") ||
+    url.includes("processviewexamschedule") ||
     url.includes("studentprofileallview") ||
-    url.includes("curriculum") ||
-    url.includes("coursepage") ||
-    url.includes("calendarpreview") ||
-    url.includes("calendar");
+    url.includes("curriculumsyllabus") ||
+    url.includes("studentcoursepage") ||
+    url.includes("calendarpreview");
 
   if (hasUrlMatch) return true;
 
-  // 2. Secondary check: Title matching for Retop native pages
+  // 2. Secondary check: Exact native titles only
   const exactFullTitles = [
     "timetable",
     "time table",
+    "class timetable",
     "class attendance",
-    "attendance",
+    "student attendance",
     "digital assignments",
     "digital assignment upload",
-    "assignments",
-    "marks",
     "marks view",
+    "student marks",
     "grades view",
     "grades & history",
+    "grade history",
     "exam schedule",
-    "profile",
+    "student profile",
     "curriculum",
-    "course page",
+    "programme curriculum",
+    "curriculum & syllabus",
     "course page consolidated",
     "course page (consolidated)",
     "academic calendar",
     "academics calendar",
-    "calendar",
     "academic calendar preview",
   ];
 
-  return exactFullTitles.includes(title) || title.includes("course page");
+  return exactFullTitles.includes(title);
 };
 
 const fuzzyMatch = (str: string, pattern: string) => {
@@ -171,12 +177,34 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
     };
   }, []);
 
+  const isChildHoveredRef = useRef(false);
+
   const handleMenuEnter = () => {
-    if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
   };
+
+  const handleChildEnter = () => {
+    handleMenuEnter();
+    isChildHoveredRef.current = true;
+  };
+
+  const handleChildLeave = () => {
+    isChildHoveredRef.current = false;
+    closeTimeoutRef.current = setTimeout(() => {
+      if (!isChildHoveredRef.current) {
+        setActiveMenu(null);
+      }
+    }, 300);
+  };
+
   const handleMenuLeave = () => {
     closeTimeoutRef.current = setTimeout(() => {
-      setActiveMenu(null);
+      if (!isChildHoveredRef.current) {
+        setActiveMenu(null);
+      }
     }, 450);
   };
 
@@ -238,6 +266,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
       { title: "Time Table", url: "academics/common/StudentTimeTable", category: "Made for retop" },
       { title: "Class Attendance", url: "academics/common/StudentAttendance", category: "Made for retop" },
       { title: "Assignments", url: "examinations/StudentDA", category: "Made for retop" },
+      { title: "Course Page Consolidated", url: "academics/common/StudentCoursePage", category: "Made for retop" },
       { title: "Marks View", url: "examinations/StudentMarkView", category: "Made for retop" },
       { title: "Grades View", url: "examinations/StudentGradeView", category: "Made for retop" },
       { title: "Academic Calendar", url: "academics/common/CalendarPreview", category: "Made for retop" },
@@ -256,15 +285,11 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
       return [madeForRetopCat];
     }
 
-    const filtered = menuCategories
+    const otherCats = menuCategories
       .filter((c) => c.title !== "Made for retop")
-      .map((c) => ({
-        ...c,
-        links: c.links.filter((l) => !hasRetopPage(l)),
-      }))
-      .filter((c) => c.links.length > 0);
+      .filter((c) => c.links && c.links.length > 0);
 
-    return [madeForRetopCat, ...filtered];
+    return [madeForRetopCat, ...otherCats];
   }, [menuCategories]);
 
   const flattenedLinks = useMemo(() => {
@@ -692,7 +717,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
       {isSearchActive && (
         <div
           key="search-dropdown"
-          className="hidden lg:flex absolute top-full mt-2 left-0 w-full max-w-[calc(100vw-24px)] bg-(--bg-surface) border-0 rounded-3xl z-[999999] origin-top-left flex-col overflow-hidden popup-shadow p-2 transition-all duration-200"
+          className="hidden lg:flex absolute top-full mt-2 left-0 w-full max-w-[calc(100vw-24px)] bg-(--bg-surface) border-0 rounded-3xl z-[999999] origin-top-left flex-col overflow-hidden popup-shadow p-2 transition-all duration-200 animate-popup-open"
         >
           <div className="p-1">
             <div className="flex flex-col gap-1 max-h-[50vh] overflow-y-auto custom-scrollbar pr-1.5">
@@ -876,32 +901,38 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
 
       {/* Desktop Category Submenu Popup */}
       {isExpanded && !query.trim() && activeMenu && (() => {
-        const popupWidth = activeMenu.cat.links.length > 10 ? 340 : 220;
+        const itemCount = activeMenu.cat.links.length;
+        const cols = Math.max(1, Math.min(5, Math.ceil(itemCount / 10)));
+        const colWidth = 220;
+        const popupWidth = cols * colWidth;
         const targetLeft = activeMenu.rect.right ? activeMenu.rect.right + 6 : 0;
         const maxLeft = typeof window !== "undefined" ? window.innerWidth - popupWidth - 16 : targetLeft;
         const leftPos = Math.min(targetLeft, maxLeft);
 
         const targetTop = activeMenu.rect.top ? activeMenu.rect.top : 0;
-        const maxTop = typeof window !== "undefined" ? window.innerHeight - 380 : targetTop;
+        const estimatedHeight = Math.ceil(itemCount / cols) * 38 + 24;
+        const maxTop = typeof window !== "undefined" ? window.innerHeight - estimatedHeight - 16 : targetTop;
         const topPos = Math.max(16, Math.min(targetTop, maxTop));
 
         return (
           <div
-            onMouseEnter={handleMenuEnter}
-            onMouseLeave={handleMenuLeave}
+            onMouseEnter={handleChildEnter}
+            onMouseLeave={handleChildLeave}
             className="hidden lg:flex fixed z-[999999] bg-(--bg-surface) border-2 border-(--border-main) rounded-2xl popup-shadow shadow-2xl p-2 flex-col transition-all duration-150"
             style={{
               transformOrigin: "left center",
               left: leftPos,
               top: topPos,
-              maxHeight: "calc(100vh - 40px)",
               width: `${popupWidth}px`,
               maxWidth: "calc(100vw - 32px)",
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <div
-              className={`grid ${activeMenu.cat.links.length > 10 ? "grid-cols-2" : "grid-cols-1"} gap-1 overflow-y-auto custom-scrollbar max-h-[350px] p-0.5`}
+              className="grid gap-1 p-0.5"
+              style={{
+                gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+              }}
             >
               {activeMenu.cat.links.map((link, i) => (
                 <button
@@ -910,6 +941,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                   onMouseEnter={() => setSelectedIndex(i)}
                   onMouseDown={(e) => {
                     e.preventDefault();
+                    isChildHoveredRef.current = false;
                     const forceLegacy = e.shiftKey ? isModernUI : !isModernUI;
                     onNavigate(link, forceLegacy);
                     setActiveMenu(null);
@@ -917,6 +949,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                   }}
                   onClick={(e) => {
                     e.preventDefault();
+                    isChildHoveredRef.current = false;
                     const forceLegacy = e.shiftKey ? isModernUI : !isModernUI;
                     onNavigate(link, forceLegacy);
                     setActiveMenu(null);

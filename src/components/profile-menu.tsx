@@ -111,7 +111,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
   return (
     <div
       style={{ transformOrigin: "right top" }}
-      className="absolute right-0 top-0 md:right-1 md:top-1 w-70 bg-transparent border-0 z-9999 flex flex-col p-3 transition-all duration-200"
+      className="absolute right-0 top-0 md:right-1 md:top-1 w-70 bg-transparent border-0 z-9999 flex flex-col p-3 transition-all duration-200 animate-popup-open"
     >
       <div className="flex-1 flex flex-col gap-2">
         {/* Profile Header */}

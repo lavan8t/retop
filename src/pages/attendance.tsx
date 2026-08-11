@@ -2,21 +2,23 @@ import { useEffect, useState, useRef } from "react";
 import { useDataStore } from "../store/dataStore";
 import { VTOPNetwork } from "../utils/network";
 import { EmptyState } from "../components/EmptyState";
-
 import { OfflineNotSynced } from "../components/ui/OfflineNotSynced";
 import {
-  Warning,
-  CalendarMonth,
-  School,
-  Check,
-  Close,
+  Refresh,
   ArrowBack,
   Add,
   Remove,
-  Refresh,
+  School,
+  CalendarMonth,
+  Warning,
+  CheckCircle,
+  Cancel,
+  Check,
+  Close,
   ArrowUpward,
   ArrowDownward,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
+import { Pill } from "../components/ui/Pill";
 import { DetailedAttendanceCourse } from "../types/vtop";
 import { useCourseAttendanceForecast } from "../hooks/useCourseAttendanceForecast";
 
@@ -60,7 +62,7 @@ const AttendanceCalculator = ({
     projectedConducted === 0
       ? 0
       : Math.round((projectedAttended / projectedConducted) * 100);
-  const isInvalid = rawPercentage> 100;
+  const isInvalid = rawPercentage > 100;
   const percentage = isInvalid ? 100 : rawPercentage;
 
   let ringColor = "stroke-(--attendance-green)";
@@ -73,7 +75,7 @@ const AttendanceCalculator = ({
     setBunkCount(0);
   };
 
-  const hasChanged = attendCount> 0 || bunkCount> 0;
+  const hasChanged = attendCount > 0 || bunkCount > 0;
 
   const circleRadius = 60;
   const circleCircumference = 2 * Math.PI * circleRadius;
@@ -82,19 +84,17 @@ const AttendanceCalculator = ({
 
   return (
     <div className="flex flex-col gap-4 mb-6 relative">
-      {/* Reset button if changed */}
       {hasChanged && (
         <div className="flex justify-end">
           <button
             onClick={handleReset}
-            className="flex items-center gap-1 text-[10px] uppercase font-mono font-bold bg-(--bg-surface) hover:bg-(--bg-highlight) text-(--text-main) px-2.5 py-1 rounded-full transition-colors cursor-pointer border border-(--border-dim)/40">
-            <Refresh className="w-3 h-3 text-(--accent-base)" />
+            className="flex items-center gap-1 text-[10px] uppercase font-mono font-bold bg-(--color-surface-container) hover:bg-(--color-surface-container-high) text-(--color-on-surface) px-2.5 py-1 rounded-full transition-colors cursor-pointer border border-(--color-outline-variant)">
+            <Refresh className="w-3 h-3 text-(--color-primary)" />
             Reset
           </button>
         </div>
       )}
 
-      {/* Ring Gauge (1.5x width stroke: strokeWidth="15") & Summary */}
       <div className="flex flex-col sm:flex-row items-center justify-around gap-4 py-2">
         <div className="relative w-44 h-44 flex items-center justify-center shrink-0">
           <svg
@@ -104,7 +104,7 @@ const AttendanceCalculator = ({
               cx="70"
               cy="70"
               r={circleRadius}
-              className="stroke-(--bg-surface)"
+              className="stroke-(--color-surface-container-high)"
               strokeWidth="15"
               fill="none" />
             <circle
@@ -126,29 +126,27 @@ const AttendanceCalculator = ({
           </div>
         </div>
 
-        {/* Stats Column */}
         <div className="flex flex-col gap-2 w-full text-xs font-mono">
-          <div className="flex justify-between items-center bg-(--bg-surface)/60 px-3.5 py-2 rounded-xl border border-(--border-dim)/20">
-            <span className="text-(--text-muted)">Conducted So Far</span>
-            <span className="font-bold text-(--text-main)">{conductedSoFar}</span>
+          <div className="flex justify-between items-center bg-(--color-surface-container-low) px-3.5 py-2 rounded-xl border border-(--color-outline-variant)">
+            <span className="text-(--color-on-surface-variant)">Conducted So Far</span>
+            <span className="font-bold text-(--color-on-surface)">{conductedSoFar}</span>
           </div>
-          <div className="flex justify-between items-center bg-(--bg-surface)/60 px-3.5 py-2 rounded-xl border border-(--border-dim)/20">
-            <span className="text-(--text-muted)">Attended So Far</span>
-            <span className="font-bold text-emerald-400">{present}</span>
+          <div className="flex justify-between items-center bg-(--color-surface-container-low) px-3.5 py-2 rounded-xl border border-(--color-outline-variant)">
+            <span className="text-(--color-on-surface-variant)">Attended So Far</span>
+            <span className="font-bold text-(--color-primary)">{present}</span>
           </div>
-          <div className="flex justify-between items-center bg-(--bg-surface)/60 px-3.5 py-2 rounded-xl border border-(--border-dim)/20">
-            <span className="text-(--text-muted)">
+          <div className="flex justify-between items-center bg-(--color-surface-container-low) px-3.5 py-2 rounded-xl border border-(--color-outline-variant)">
+            <span className="text-(--color-on-surface-variant)">
               Left before {forecast?.examName || "Exams"}
             </span>
-            <span className="font-bold text-(--text-main)">{remainingClasses}</span>
+            <span className="font-bold text-(--color-on-surface)">{remainingClasses}</span>
           </div>
         </div>
       </div>
 
-      {/* Target Callout Banner */}
       {forecast && (
-        <div className="p-3 rounded-2xl bg-(--bg-surface)/70 text-xs font-mono flex items-center justify-between gap-2 border border-(--border-dim)/30">
-          <span className="text-(--text-muted)">
+        <div className="p-3 rounded-2xl bg-(--color-surface-container-low) text-xs font-mono flex items-center justify-between gap-2 border border-(--color-outline-variant)">
+          <span className="text-(--color-on-surface-variant)">
             {forecast.status === "CRITICAL"
               ? `Need ${
                   forecast.classesNeededBeforeExam || forecast.requiredToPass
@@ -157,29 +155,29 @@ const AttendanceCalculator = ({
                   forecast.safeSkips !== 1 ? "es" : ""
                 } safely`}
           </span>
-          <span
-            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+          <Pill
+            variant={
               forecast.status === "SAFE"
-                ? "bg-emerald-500/20 text-emerald-300"
+                ? "success"
                 : forecast.status === "WARNING"
-                  ? "bg-amber-500/20 text-amber-300"
-                  : "bg-red-500/20 text-red-300"
-            }`}>
+                  ? "main"
+                  : "error"
+            }
+          >
             {forecast.status}
-          </span>
+          </Pill>
         </div>
       )}
 
-      {/* Attend & Bunk Simulator Controls */}
       <div className="flex gap-3 justify-center pt-1">
-        <div className="flex-1 flex flex-col items-center bg-(--bg-surface)/60 rounded-2xl p-2.5 border border-(--border-dim)/30">
-          <span className="text-[10px] font-mono font-bold uppercase text-(--text-muted) mb-1">
+        <div className="flex-1 flex flex-col items-center bg-(--color-surface-container-low) rounded-2xl p-2.5 border border-(--color-outline-variant)">
+          <span className="text-[10px] font-mono font-bold uppercase text-(--color-on-surface-variant) mb-1">
             Attend
           </span>
           <div className="flex items-center gap-3">
             <button
               onClick={decreaseAttend}
-              className="w-7 h-7 flex items-center justify-center bg-(--bg-main) rounded-full active:scale-90 transition-transform text-(--text-main) cursor-pointer border-0">
+              className="w-7 h-7 flex items-center justify-center bg-(--color-surface) rounded-full active:scale-90 transition-transform text-(--color-on-surface) cursor-pointer border border-(--color-outline)">
               <Remove className="w-3.5 h-3.5" />
             </button>
             <span className="font-mono font-black text-base w-5 text-center">
@@ -187,20 +185,20 @@ const AttendanceCalculator = ({
             </span>
             <button
               onClick={increaseAttend}
-              className="w-7 h-7 flex items-center justify-center bg-(--bg-main) rounded-full active:scale-90 transition-transform text-(--text-main) cursor-pointer border-0">
+              className="w-7 h-7 flex items-center justify-center bg-(--color-surface) rounded-full active:scale-90 transition-transform text-(--color-on-surface) cursor-pointer border border-(--color-outline)">
               <Add className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col items-center bg-(--bg-surface)/60 rounded-2xl p-2.5 border border-(--border-dim)/30">
-          <span className="text-[10px] font-mono font-bold uppercase text-(--text-muted) mb-1">
+        <div className="flex-1 flex flex-col items-center bg-(--color-surface-container-low) rounded-2xl p-2.5 border border-(--color-outline-variant)">
+          <span className="text-[10px] font-mono font-bold uppercase text-(--color-on-surface-variant) mb-1">
             Bunk
           </span>
           <div className="flex items-center gap-3">
             <button
               onClick={decreaseBunk}
-              className="w-7 h-7 flex items-center justify-center bg-(--bg-main) rounded-full active:scale-90 transition-transform text-(--text-main) cursor-pointer border-0">
+              className="w-7 h-7 flex items-center justify-center bg-(--color-surface) rounded-full active:scale-90 transition-transform text-(--color-on-surface) cursor-pointer border border-(--color-outline)">
               <Remove className="w-3.5 h-3.5" />
             </button>
             <span className="font-mono font-black text-base w-5 text-center">
@@ -208,7 +206,7 @@ const AttendanceCalculator = ({
             </span>
             <button
               onClick={increaseBunk}
-              className="w-7 h-7 flex items-center justify-center bg-(--bg-main) rounded-full active:scale-90 transition-transform text-(--text-main) cursor-pointer border-0">
+              className="w-7 h-7 flex items-center justify-center bg-(--color-surface) rounded-full active:scale-90 transition-transform text-(--color-on-surface) cursor-pointer border border-(--color-outline)">
               <Add className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -222,71 +220,56 @@ const CourseCard = ({
   course,
   isSelected,
   onClick,
-  idx,
 }: {
   course: DetailedAttendanceCourse;
   isSelected: boolean;
   onClick: () => void;
-  idx: number;
 }) => {
   const p = course.percentage;
 
-  let badgeBg =
-    "bg-(--attendance-green) text-(--bg-main) border border-(--border-main)";
+  let badgeVariant: "success" | "warning" | "error" | "muted" = "success";
   let barColor = "bg-(--attendance-green-bg)";
 
   if (isNaN(p)) {
-    badgeBg =
-      "bg-(--bg-highlight) text-(--text-muted) border border-(--border-dim)";
+    badgeVariant = "muted";
     barColor = "bg-(--bg-highlight)";
   } else if (p <= 75) {
-    badgeBg =
-      "bg-(--attendance-red) text-(--bg-main) border border-(--border-main)";
+    badgeVariant = "error";
     barColor = "bg-(--attendance-red-bg)";
   } else if (p < 90) {
-    badgeBg =
-      "bg-(--attendance-blue) text-(--bg-main) border border-(--border-main)";
+    badgeVariant = "warning";
     barColor = "bg-(--attendance-blue-bg)";
   }
 
   return (
     <div
- 
- 
- 
       className={`relative flex items-center justify-between py-2 px-3.5 rounded-xl overflow-hidden transition-all duration-fast cursor-pointer group select-none border border-(--border-dim)/40 ${
         isSelected
-          ? "bg-(--accent-base)/20 border-l-4 border-l-(--accent-base) border-(--accent-base)/40"
-          : "bg-(--bg-surface)/60 hover:bg-(--accent-base)/15 hover:border-(--accent-base)/50"
+          ? "bg-(--accent-base)/20 border-l-4 border-l-(--accent-base)"
+          : "bg-(--bg-surface)/60 hover:bg-(--bg-highlight)"
       }`}
       onClick={onClick}>
       <div
-        className={`absolute top-0 left-0 h-full ${barColor} transition-all duration-fast opacity-50`}
+        className={`absolute top-0 left-0 h-full ${barColor} transition-all duration-fast opacity-60`}
         style={{ width: `${course.percentage}%` }} />
       <div className="relative z-10 flex items-center gap-3 min-w-0 flex-1 pr-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-            <span className="px-2 py-0.5 bg-(--bg-main) text-(--text-main) text-[10px] font-mono font-bold uppercase rounded-md border border-(--border-dim)/40">
-              {course.courseCode}
-            </span>
-            <span className="px-2 py-0.5 bg-(--bg-main) text-(--text-muted) text-[10px] font-mono font-bold uppercase rounded-md border border-(--border-dim)/40">
-              {course.classType}
-            </span>
+            <Pill variant="surface">{course.courseCode}</Pill>
+            <Pill variant="surface">{course.classType}</Pill>
             {course.debarStatus !== "-" && (
-              <span className="px-1.5 py-0.5 bg-red-500/20 text-red-400 text-[9px] font-mono font-bold uppercase rounded-md">
-                Debarred
-              </span>
+              <Pill variant="error">Debarred</Pill>
             )}
           </div>
-          <span className="text-base md:text-lg font-black leading-tight font-expanded transition-colors text-(--text-main) break-words">
+          <span className="text-base md:text-lg font-black leading-tight font-expanded transition-colors text-(--color-on-surface) break-words">
             {course.courseTitle}
           </span>
         </div>
       </div>
 
       <div
-        className={`relative z-10 shrink-0 font-mono font-black text-sm md:text-base leading-none px-2.5 py-1 rounded-lg ${badgeBg}`}>
-        {course.percentage}%
+        className={`relative z-10 shrink-0`}>
+        <Pill variant={badgeVariant}>{course.percentage}%</Pill>
       </div>
     </div>
   );
@@ -313,7 +296,7 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
   }, [attSelectedSem, network, fetchDetailedAttendance]);
 
   useEffect(() => {
-    if (detailedAttendance && detailedAttendance.length> 0) {
+    if (detailedAttendance && detailedAttendance.length > 0) {
       const exists = detailedAttendance.some(
         (c) => `${c.courseId}-${c.classType}` === selectedCourse
       );
@@ -361,19 +344,19 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
 
   if (attLoading) {
     return (
-      <div className="h-full w-full bg-(--bg-main) overflow-hidden flex">
+      <div className="h-full w-full bg-(--color-surface) overflow-hidden flex">
         <div className="flex-1 flex w-full max-w-7xl mx-auto h-full">
           <div className="w-full lg:w-1/2 flex flex-col px-4 md:px-6 lg:px-8 space-y-4 pt-25">
             {[...Array(6)].map((_, i) => (
               <div
                 key={i}
-                className="h-20 bg-(--bg-surface) rounded-2xl animate-pulse" />
+                className="h-20 bg-(--color-surface-container) rounded-2xl animate-pulse" />
             ))}
           </div>
-          <div className="w-full lg:w-1/2 hidden lg:flex flex-col px-4 md:px-6 lg:px-8 space-y-6 pt-25 border-l border-(--border-dim)/20">
-            <div className="h-10 w-2/3 bg-(--bg-surface) rounded animate-pulse" />
-            <div className="h-64 w-full bg-(--bg-surface) rounded-3xl animate-pulse" />
-            <div className="h-24 w-full bg-(--bg-surface) rounded-3xl animate-pulse" />
+          <div className="w-full lg:w-1/2 hidden lg:flex flex-col px-4 md:px-6 lg:px-8 space-y-6 pt-25 border-l border-(--color-outline-variant)">
+            <div className="h-10 w-2/3 bg-(--color-surface-container) rounded animate-pulse" />
+            <div className="h-64 w-full bg-(--color-surface-container) rounded-3xl animate-pulse" />
+            <div className="h-24 w-full bg-(--color-surface-container) rounded-3xl animate-pulse" />
           </div>
         </div>
       </div>
@@ -390,7 +373,7 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
 
   if (!detailedAttendance || detailedAttendance.length === 0) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-8 bg-(--bg-main) font-mono relative z-0">
+      <div className="flex-1 flex flex-col items-center justify-center p-8 bg-(--color-surface) font-mono relative z-0">
         <EmptyState
           msg="No Attendance Data"
           subMsg="Attendance information is not available for the selected semester."
@@ -419,26 +402,23 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
   }) : null;
 
   return (
-    <div className="h-full w-full bg-(--bg-main) text-(--text-main) overflow-hidden relative z-0 flex">
+    <div className="h-full w-full bg-(--color-surface) text-(--color-on-surface) overflow-hidden relative z-0 flex">
       <div className="flex-1 flex flex-col lg:flex-row w-full max-w-7xl mx-auto h-full overflow-y-auto lg:overflow-hidden">
-        {/* Left Column: Course List */}
         <div
-          className={`w-full lg:w-1/2 flex flex-col border-r-0 lg:border-r border-(--border-dim)/20 h-full overflow-y-auto custom-scrollbar px-4 md:px-6 lg:px-8 pb-32 lg:pb-12 ${
+          className={`w-full lg:w-1/2 flex flex-col border-r-0 lg:border-r border-(--color-outline-variant) h-full overflow-y-auto custom-scrollbar px-4 md:px-6 lg:px-8 pb-32 lg:pb-12 ${
             selectedCourse ? "hidden lg:flex" : "flex"
           }`}>
           <div className="w-full h-21 md:h-25 shrink-0" />
 
-          {/* Header */}
           <div className="mb-6 flex flex-col gap-1">
-            <h1 className="text-2xl md:text-3xl font-black font-expanded tracking-tight text-(--text-main)">
+            <h1 className="text-2xl md:text-3xl font-black font-expanded tracking-tight text-(--color-on-surface)">
               Attendance
             </h1>
-            <p className="text-xs text-(--text-muted) font-mono">
+            <p className="text-xs text-(--color-on-surface-variant) font-mono">
               Track course attendance and forecast targets
             </p>
           </div>
 
-          {/* Courses List */}
           <div className="flex flex-col gap-3">
             {detailedAttendance.map((course, idx) => {
               const key = `${course.courseId}-${course.classType}`;
@@ -446,7 +426,6 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
                 <CourseCard
                   key={key}
                   course={course}
-                  idx={idx}
                   isSelected={key === selectedCourse}
                   onClick={() =>
                     handleSelectCourse(course.courseId, course.classType)
@@ -457,20 +436,18 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
           </div>
         </div>
 
-        {/* Right Column: Detailed View */}
         {selectedCourseObj && (
           <div
             className={`w-full lg:w-1/2 flex flex-col h-full overflow-y-auto custom-scrollbar px-4 md:px-6 lg:px-8 pb-32 lg:pb-12 ${
               !selectedCourse
                 ? "hidden lg:flex"
-                : "flex absolute inset-0 lg:static z-20"
+                : "flex absolute inset-0 lg:static z-20 bg-(--color-surface)"
             }`}>
             <div className="w-full h-21 md:h-25 shrink-0 hidden lg:block" />
-            {/* Mobile Back Button */}
             <div className="lg:hidden flex items-center mb-4 pt-21 md:pt-25">
               <button
                 onClick={() => setSelectedCourse(null)}
-                className="flex items-center gap-2 text-(--text-main) bg-(--bg-surface) px-4 py-2 rounded-full font-bold uppercase font-mono text-xs cursor-pointer border border-(--border-dim)/40">
+                className="flex items-center gap-2 text-(--color-on-surface) bg-(--color-surface-container) px-4 py-2 rounded-full font-bold uppercase font-mono text-xs cursor-pointer border border-(--color-outline-variant)">
                 <ArrowBack className="w-4 h-4" />
                 Back
               </button>
@@ -478,12 +455,8 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
 
             <div className="mb-4 lg:mt-0">
               <div className="flex items-center gap-2 mb-2">
-                <span className="px-2.5 py-0.5 bg-(--bg-highlight) text-(--text-main) text-[10px] font-mono font-bold uppercase rounded-md border border-(--border-dim)/40">
-                  {selectedCourseObj.courseCode}
-                </span>
-                <span className="px-2.5 py-0.5 bg-blue-500/20 text-blue-300 text-[10px] font-mono font-bold uppercase rounded-md">
-                  {selectedCourseObj.classType}
-                </span>
+                <Pill variant="surface">{selectedCourseObj.courseCode}</Pill>
+                <Pill variant="surface">{selectedCourseObj.classType}</Pill>
               </div>
               <h2 className="text-xl md:text-2xl font-bold font-mono leading-snug mb-3 text-(--text-main)">
                 {selectedCourseObj.courseTitle}
@@ -542,17 +515,17 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
                         .includes("absent");
 
                       let historyBg =
-                        "bg-emerald-950/40 text-emerald-300 border border-emerald-800/40";
-                      let iconColor = "text-emerald-400";
+                        "bg-(--attendance-green-bg) text-(--text-main) border border-(--attendance-green)/30";
+                      let iconColor = "text-(--attendance-green-text)";
 
                       if (isAbsent) {
                         historyBg =
-                          "bg-red-950/40 text-red-300 border border-red-800/40";
-                        iconColor = "text-red-400";
+                          "bg-(--attendance-red-bg) text-(--text-main) border border-(--attendance-red)/30";
+                        iconColor = "text-(--attendance-red-text)";
                       } else if (!isPresent) {
                         historyBg =
-                          "bg-amber-950/40 text-amber-300 border border-amber-800/40";
-                        iconColor = "text-amber-400";
+                          "bg-(--attendance-blue-bg) text-(--text-main) border border-(--attendance-blue)/30";
+                        iconColor = "text-(--attendance-blue-text)";
                       }
 
                       let formattedDate = rec.date;

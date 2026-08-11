@@ -92,14 +92,34 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
   } | null>(null);
 
   const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isChildHoveredRef = useRef(false);
 
   const handleMenuEnter = () => {
-    if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+  };
+
+  const handleChildEnter = () => {
+    handleMenuEnter();
+    isChildHoveredRef.current = true;
+  };
+
+  const handleChildLeave = () => {
+    isChildHoveredRef.current = false;
+    closeTimeoutRef.current = setTimeout(() => {
+      if (!isChildHoveredRef.current) {
+        setActiveMenu(null);
+      }
+    }, 300);
   };
 
   const handleMenuLeave = () => {
     closeTimeoutRef.current = setTimeout(() => {
-      setActiveMenu(null);
+      if (!isChildHoveredRef.current) {
+        setActiveMenu(null);
+      }
     }, 450);
   };
 
@@ -241,7 +261,7 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
 
   return (
     <>
-      <div className={`w-full lg:w-[24%] xl:w-[20%] flex-col shrink-0 h-auto lg:h-full overflow-y-auto custom-scrollbar [scrollbar-gutter:stable] relative z-40 pt-15 md:pt-18 lg:pt-20 pb-4 md:pb-6 lg:pb-8 pl-3 sm:px-4 md:pl-6 lg:pl-8 pr-3 md:pr-4 gap-4 ${className || 'hidden lg:flex'}`}>
+      <div className={`w-full lg:w-[27%] xl:w-[24%] flex-col shrink-0 h-auto lg:h-full overflow-y-auto custom-scrollbar [scrollbar-gutter:stable] relative z-40 pt-20 md:pt-23 lg:pt-25 pb-4 md:pb-6 lg:pb-8 pl-4 lg:pl-6 pr-2 lg:pr-3 gap-4 ${className || 'hidden lg:flex'}`}>
         {/* Attendance Compact Box */}
         <div className="shrink-0 flex flex-col w-full">
           <Card
@@ -299,45 +319,39 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
       </div>
 
       {/* Floating Menu Portal - Minimal Material Brutalism */}
-      {activeMenu && (
+      {activeMenu && (() => {
+        const itemCount = activeMenu.cat.links.length;
+        const cols = Math.max(1, Math.min(5, Math.ceil(itemCount / 10)));
+        const colWidth = 200;
+        const popupWidth = cols * colWidth;
+        const targetLeft = activeMenu.rect.right ? activeMenu.rect.right + 12 : 0;
+        const maxLeft = typeof window !== "undefined" ? window.innerWidth - popupWidth - 16 : targetLeft;
+        const leftPos = Math.min(targetLeft, maxLeft);
+
+        const targetTop = activeMenu.rect.top ? activeMenu.rect.top : 0;
+        const estimatedHeight = Math.ceil(itemCount / cols) * 38 + 24;
+        const maxTop = typeof window !== "undefined" ? window.innerHeight - estimatedHeight - 16 : targetTop;
+        const topPos = Math.max(16, Math.min(targetTop, maxTop));
+
+        return (
           <div
-            className={`fixed z-[999999] bg-(--bg-surface) border-0 rounded-2xl popup-shadow p-3 flex flex-col transition-all duration-200`}
+            onMouseEnter={handleChildEnter}
+            onMouseLeave={handleChildLeave}
+            className="fixed z-[999999] bg-(--bg-surface) border-0 rounded-2xl popup-shadow p-3 flex flex-col transition-all duration-200"
             style={{
               transformOrigin: "left center",
-              left: Math.min(
-                activeMenu.rect.right + 12,
-                window.innerWidth - 220,
-              ),
-              top: Math.max(
-                20,
-                Math.min(
-                  activeMenu.rect.top,
-                  window.innerHeight -
-                    Math.ceil(
-                      activeMenu.cat.links.length /
-                        (activeMenu.cat.links.length > 20
-                          ? 3
-                          : activeMenu.cat.links.length > 10
-                            ? 2
-                            : 1),
-                    ) *
-                      36 -
-                    60, // extra height for title
-                ),
-              ),
-              maxHeight: "calc(100vh - 40px)",
-              width:
-                activeMenu.cat.links.length > 20
-                  ? "600px"
-                  : activeMenu.cat.links.length > 10
-                    ? "400px"
-                    : "220px",
+              left: leftPos,
+              top: topPos,
+              width: `${popupWidth}px`,
               maxWidth: "calc(100vw - 40px)",
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <div
-              className={`grid ${activeMenu.cat.links.length > 20 ? "grid-cols-3" : activeMenu.cat.links.length > 10 ? "grid-cols-2" : "grid-cols-1"} gap-1 overflow-y-auto custom-scrollbar pt-2`}
+              className="grid gap-1 pt-1"
+              style={{
+                gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+              }}
             >
               {activeMenu.cat.links.map((link, i) => (
                 <button
@@ -359,7 +373,8 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
               ))}
             </div>
           </div>
-        )}
+        );
+      })()}
     </>
   );
 };

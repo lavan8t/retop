@@ -228,7 +228,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   }, [calendarDays]);
 
   return (
-    <div className="h-full w-full flex flex-col lg:flex-row gap-6 py-0 pl-4 pr-0 md:py-0 md:pl-6 md:pr-0 lg:py-0 lg:px-8 overflow-y-auto lg:overflow-hidden bg-(--bg-main) max-w-425 mx-auto relative">
+    <div className="h-full w-full flex flex-col lg:flex-row gap-0 py-0 px-4 md:px-6 lg:px-8 overflow-y-auto lg:overflow-hidden bg-(--bg-main) max-w-425 mx-auto relative">
       {/* Sticky Mobile Left Spotlight Button */}
       <button
         onClick={() => setIsSpotlightOpen(true)}
@@ -255,7 +255,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
       {/* CENTER PANE: Surface Level Unified Event CalendarMonth & Mobile Feed */}
       <div className="flex-none lg:flex-1 w-full flex flex-col gap-6 md:gap-8 overflow-hidden pt-1 pl-1 md:pl-0 min-h-0 relative">
-        <div className="flex flex-col items-center mb-2 lg:mb-4 px-2 w-full relative z-95 pointer-events-auto pt-15 md:pt-18 lg:pt-20">
+        <div className="flex flex-col items-center mb-2 lg:mb-4 px-2 w-full relative z-95 pointer-events-auto pt-20 md:pt-23 lg:pt-25">
           <div className="flex flex-col items-center w-full">
             <div className="flex justify-between w-full items-center mb-6 px-1 pt-4">
               <button

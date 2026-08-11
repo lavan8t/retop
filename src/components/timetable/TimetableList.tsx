@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { TimetableCourse, CourseSummary } from "../../types/vtop";
 import { TimeFormatMode } from "../../utils/formatting";
+import { Pill } from "../ui/Pill";
 
 import {
   Person,
@@ -98,30 +99,19 @@ export const TimetableList: React.FC<TimetableListProps> = React.memo(({
               <div className="col-span-5 flex flex-col gap-1.5 w-full">
                 <div className="flex items-center gap-2 flex-wrap">
                   {/* Course Code Pill */}
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-(--bg-highlight) text-(--text-main) tracking-wide">
-                    {c.code}
-                  </span>
+                  <Pill variant="accent">{c.code}</Pill>
 
                   {/* Type Badge (TH, LO, E, SS) */}
-                  <span
-                    className={`px-2.5 py-0.5 rounded-full text-xs font-mono uppercase tracking-wider ${typeInfo.bg}`}
-                  >
-                    {typeInfo.label}
-                  </span>
+                  <Pill variant="main">{typeInfo.label}</Pill>
 
                   {/* Attendance Pill next to course */}
-                  <span
-                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono font-bold ${
-                      !hasAtt
-                        ? "bg-(--bg-highlight)"
-                        : isLowAtt
-                          ? "bg-red-500/20 text-red-400"
-                          : "bg-emerald-500/20 text-emerald-400"
-                    }`}
+                  <Pill
+                    variant={!hasAtt ? "muted" : isLowAtt ? "accent" : "success"}
+                    className={isLowAtt ? "bg-red-600 text-white border-red-600" : ""}
                   >
                     <PieChart className="w-3.5 h-3.5" />
                     {hasAtt ? `${attStr}` : "N/A"}
-                  </span>
+                  </Pill>
                 </div>
 
                 {/* Course Name */}

@@ -9,6 +9,7 @@ import {
 import { getCourseAcronym, formatTimeStr, TimeFormatMode } from "../../utils/formatting";
 
 import { LocationOn } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
+import { Pill } from "../ui/Pill";
 import { useDataStore } from "../../store/dataStore";
 
 const getAttendanceEmoji = (attendanceStr?: string) => {
@@ -257,11 +258,9 @@ export const TimetableGrid = React.memo(({
                   <span className="shrink-0 text-sm">{emoji}</span>
                 </div>
                 <div className="flex items-center gap-1.5 mt-1">
-                  <span
-                    className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded flex items-center justify-center ${isLab ? "bg-purple-500/20 text-purple-400" : "bg-(--bg-surface) text-(--text-main)"}`}
-                  >
+                  <Pill variant={isLab ? "main" : "surface"}>
                     {courseBadge}
-                  </span>
+                  </Pill>
                   <span
                     className={`text-[9px] sm:text-[10px] md:text-[11px] font-bold uppercase opacity-0 group-hover/cell:opacity-100 transition-opacity duration-fast ${slotColor}`}
                   >

@@ -4,7 +4,9 @@ import { getGridPositions, DAYS } from "../../utils/timetable-slots";
 import {
   LocationOn,
   EventBusy,
+  Schedule,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
+import { Pill } from "../ui/Pill";
 import { getCourseAcronym, formatTimeStr, TimeFormatMode } from "../../utils/formatting";
 
 import { useDataStore } from "../../store/dataStore";
@@ -205,30 +207,22 @@ export const TimetableWeek = React.memo(({
                         {/* Details Column */}
                         <div className="flex-1 min-w-0 flex flex-col justify-center gap-1.5">
                           <div className="flex items-center justify-between gap-2">
-                            <span
-                              className={`text-xs font-black uppercase px-2.5 py-0.5 rounded-full font-mono ${
-                                isLab
-                                  ? "bg-purple-500/15 text-purple-500"
-                                  : "bg-(--accent-base)/15 text-(--accent-base)"
-                              }`}
-                            >
+                            <Pill variant={isLab ? "main" : "accent"}>
                               {courseBadge} · {course.type}
-                            </span>
-                            <span className="text-xs font-mono font-bold text-(--text-muted) bg-(--bg-main) px-2.5 py-0.5 rounded-full">
-                              {course.code}
-                            </span>
+                            </Pill>
+                            <Pill variant="surface">{course.code}</Pill>
                           </div>
 
                           <h4 className="text-sm font-black font-expanded text-(--text-main) leading-snug truncate">
                             {course.title}
                           </h4>
 
-                          <div className="flex items-center gap-1.5 text-xs font-bold text-(--text-muted) bg-(--bg-main) px-2.5 py-1 rounded-full w-fit">
+                          <Pill variant="main" className="w-fit">
                             <LocationOn className="w-3.5 h-3.5 text-(--accent-base) shrink-0" />
                             <span className="truncate max-w-36">
                               {course.venue}
                             </span>
-                          </div>
+                          </Pill>
                         </div>
                       </button>
                     );
@@ -302,15 +296,9 @@ export const TimetableWeek = React.memo(({
                         </div>
 
                         <div className="flex justify-between items-center w-full pt-1">
-                          <span
-                            className={`text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded-full ${
-                              isLab
-                                ? "bg-purple-500/15 text-purple-500"
-                                : "bg-(--accent-base)/15 text-(--accent-base)"
-                            }`}
-                          >
+                          <Pill variant={isLab ? "main" : "accent"}>
                             {isLab ? "P" : "L"}
-                          </span>
+                          </Pill>
                           <span className="text-xs font-bold text-(--text-muted) flex items-center gap-1 truncate max-w-[65%]">
                             <LocationOn className="w-3.5 h-3.5 text-(--accent-base) shrink-0" />
                             <span className="truncate">{course.venue}</span>

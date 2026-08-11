@@ -82,17 +82,17 @@ const getDestinationView = (link: QuickLink): ViewType | "content" => {
   if (
     lowerTitle === "curriculum" ||
     lowerTitle === "programme curriculum" ||
-    lowerUrl.includes("studentcurriculum")
+    lowerTitle === "curriculum & syllabus" ||
+    lowerUrl.includes("curriculumsyllabus")
   ) {
     return "curriculum";
   }
 
   // 4. Marks
   if (
-    lowerTitle === "marks" ||
     lowerTitle === "marks view" ||
     lowerTitle === "student marks" ||
-    lowerUrl.includes("studentmark") ||
+    lowerUrl.includes("studentmarkview") ||
     lowerUrl.includes("processviewstudentmark")
   ) {
     return "marks";
@@ -100,7 +100,6 @@ const getDestinationView = (link: QuickLink): ViewType | "content" => {
 
   // 5. Grades
   if (
-    lowerTitle === "grades" ||
     lowerTitle === "grades view" ||
     lowerTitle === "grades & history" ||
     lowerTitle === "grade history" ||
@@ -112,39 +111,37 @@ const getDestinationView = (link: QuickLink): ViewType | "content" => {
 
   // 6. Profile
   if (
-    lowerTitle === "profile" ||
-    lowerTitle === "profile view" ||
     lowerTitle === "student profile" ||
+    lowerTitle === "profile view" ||
     lowerUrl.includes("studentprofileallview")
   ) {
     return "profile";
   }
 
-  // 7. Course Page (Course Materials)
+  // 7. Course Page Consolidated (Course Materials)
   if (
-    lowerTitle.includes("course page") ||
-    lowerUrl.includes("coursepage") ||
-    lowerUrl.includes("processviewcoursepage")
+    lowerTitle === "course page consolidated" ||
+    lowerTitle === "course page (consolidated)" ||
+    lowerUrl.includes("studentcoursepage") ||
+    lowerUrl.includes("coursepageconsolidated")
   ) {
     return "coursePage";
   }
 
   // 8. Calendar
   if (
-    lowerTitle === "calendar" ||
     lowerTitle === "academic calendar" ||
     lowerTitle === "academics calendar" ||
     lowerTitle === "academic calendar preview" ||
-    lowerUrl.includes("calendarpreview") ||
-    lowerUrl.includes("processviewcalendar")
+    lowerUrl.includes("calendarpreview")
   ) {
     return "calendar";
   }
 
   // 9. Attendance
   if (
-    lowerTitle === "attendance" ||
     lowerTitle === "class attendance" ||
+    lowerTitle === "student attendance" ||
     lowerUrl.includes("studentattendance") ||
     lowerUrl.includes("processviewstudentattendance")
   ) {
@@ -155,7 +152,6 @@ const getDestinationView = (link: QuickLink): ViewType | "content" => {
   if (
     lowerTitle === "digital assignments" ||
     lowerTitle === "digital assignment upload" ||
-    lowerTitle === "assignments" ||
     lowerUrl.includes("studentda") ||
     lowerUrl.includes("processviewstudentda")
   ) {
@@ -872,7 +868,8 @@ const DashboardApp = () => {
             
               <div
                 key={currentView}
-                className="absolute inset-0 w-full h-full flex flex-col overflow-hidden">
+                className="absolute inset-0 w-full h-full flex flex-col overflow-hidden animate-page-crossfade"
+              >
                 <ContentRouter
                   currentView={currentView}
                   networkRef={networkRef}

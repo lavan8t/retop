@@ -55,6 +55,9 @@ type AppState = {
 
   daDropFile: File | null;
   setDaDropFile: (val: File | null) => void;
+
+  curriculumHideCompleted: boolean;
+  setCurriculumHideCompleted: (val: boolean) => void;
 };
 
 export const useAppStore = create<AppState>((set) => ({
@@ -115,4 +118,10 @@ export const useAppStore = create<AppState>((set) => ({
 
   daDropFile: null,
   setDaDropFile: (val) => set({ daDropFile: val }),
+
+  curriculumHideCompleted: localStorage.getItem("curriculum_hide_completed") === "true",
+  setCurriculumHideCompleted: (val) => {
+    localStorage.setItem("curriculum_hide_completed", String(val));
+    set({ curriculumHideCompleted: val });
+  },
 }));

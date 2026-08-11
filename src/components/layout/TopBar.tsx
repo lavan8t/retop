@@ -24,6 +24,7 @@ import {
   CoursePageOption,
   CourseSummary,
 } from "../../types/vtop";
+import { MaterialSwitch } from "../MaterialSwitch";
 import { SemesterDropdown } from "../timetable/SemesterDropdown";
 import { ClassGroupDropdown } from "../timetable/ClassGroupDropdown";
 import { TopBarSearch } from "./TopBarSearch";
@@ -111,7 +112,8 @@ export const TopBar: React.FC<TopBarProps> = ({
     ttViewMode, setTtViewMode,
     cpSelectedCourseId, setCpSelectedCourseId, cpOptions, cpSearchTerm, setCpSearchTerm,
     marksSemesters, marksSelectedSem, setMarksSelectedSem, marksSearchQuery, setMarksSearchQuery, isMarksModernView, setIsMarksModernView,
-    gradesSemesters, gradesSelectedSem, setGradesSelectedSem
+    gradesSemesters, gradesSelectedSem, setGradesSelectedSem,
+    curriculumHideCompleted, setCurriculumHideCompleted
   } = useAppStore();
   const {
     attSelectedSem,
@@ -336,6 +338,23 @@ export const TopBar: React.FC<TopBarProps> = ({
                   selectedId={gradesSelectedSem}
                   onChange={(id: string) => setGradesSelectedSem(id)}
                 />
+              </div>
+            )}
+
+            {currentView === "curriculum" && (
+              <div
+                key="curriculum-controls"
+                className="flex items-center gap-2 mr-1 md:mr-2 pointer-events-auto"
+              >
+                <div className="flex items-center gap-2 px-2">
+                  <span className="text-[10px] md:text-xs font-bold text-(--text-muted) uppercase">
+                    Hide Done
+                  </span>
+                  <MaterialSwitch
+                    selected={curriculumHideCompleted}
+                    onChange={(checked) => setCurriculumHideCompleted(checked)}
+                  />
+                </div>
               </div>
             )}
 

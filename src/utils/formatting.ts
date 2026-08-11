@@ -73,6 +73,24 @@ export function normalizeSemesterLabel(rawLabel: string): string {
   );
 }
 
+export function formatSemesterShorthand(label: string): string {
+  if (!label) return "";
+  const clean = normalizeSemesterLabel(label);
+  
+  const yearMatch = clean.match(/(?:20)?(\d{2})[-/](?:20)?(\d{2})/);
+  const yearStr = yearMatch ? `${yearMatch[1]}-${yearMatch[2]}` : "";
+  
+  let termStr = "";
+  if (/winter|win|ws/i.test(clean)) termStr = "WIN";
+  else if (/fall|fs/i.test(clean)) termStr = "FALL";
+  else if (/summer|sum|ss/i.test(clean)) termStr = "SUM";
+  else {
+    termStr = clean.split(/\s+/)[0]?.substring(0, 4).toUpperCase() || "";
+  }
+
+  return yearStr ? `${termStr} ${yearStr}` : clean;
+}
+
 export type TimeFormatMode = "24h" | "12h" | "12h-ampm";
 
 export function formatTimeStr(

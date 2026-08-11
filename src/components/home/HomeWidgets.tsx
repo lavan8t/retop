@@ -169,7 +169,7 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
 
   // Original Desktop Right Column View (commit b11e407)
   return (
-    <div className={`hidden lg:flex w-full lg:w-[24%] xl:w-[20%] flex-col shrink-0 h-auto lg:h-full overflow-y-auto custom-scrollbar relative z-30 pt-15 md:pt-18 lg:pt-20 pb-4 md:pb-6 lg:pb-8 pr-4 md:pr-6 lg:pr-0 gap-4 ${className || ""}`}>
+    <div className={`hidden lg:flex w-full lg:w-[27%] xl:w-[24%] flex-col shrink-0 h-auto lg:h-full overflow-y-auto custom-scrollbar relative z-30 pt-20 md:pt-23 lg:pt-25 pb-4 md:pb-6 lg:pb-8 pl-2 lg:pl-3 pr-4 lg:pr-6 gap-4 ${className || ""}`}>
       <Card
         onClick={() =>
           onNavigate({
@@ -181,54 +181,56 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
         className="group shrink-0 h-auto bg-(--bg-highlight) rounded-4xl p-5 flex flex-col relative z-30 cursor-pointer overflow-hidden border-2 border-(--border-main) shadow-(--brutal-shadow-sm) hover:shadow-(--brutal-shadow-hover) hover:bg-(--bg-surface) transition-all"
       >
         {/* Expanded Split View */}
-        <div className="flex flex-col overflow-hidden relative z-10 max-h-0 opacity-0 group-hover:max-h-[500px] group-hover:opacity-100 transition-all duration-300">
-          <div className="flex flex-col items-center w-full pb-4">
-            <div className="text-[0.625rem] font-expanded font-bold uppercase text-(--text-muted) mb-3 leading-none">
-              Credits
-            </div>
+        <div className="cgpa-expand-container overflow-hidden relative z-10">
+          <div className="overflow-hidden min-h-0">
+            <div className="flex flex-col items-center w-full pb-4">
+              <div className="text-[0.625rem] font-expanded font-bold uppercase text-(--text-muted) mb-3 leading-none">
+                Credits
+              </div>
 
-            <div className="flex flex-col items-center">
-              <div className="flex items-center gap-2 text-3xl font-black font-expanded leading-none">
-                <span>{gradedStr}</span>
-                <span className="text-xl text-(--text-muted)">+</span>
-                <div className="flex flex-col items-center">
-                  <span>{nonGradedStr}</span>
-                  <span className="text-[0.5rem] font-bold text-(--text-muted) uppercase tracking-wider -mt-0.5 leading-none">
-                    NGCR
-                  </span>
+              <div className="flex flex-col items-center">
+                <div className="flex items-center gap-2 text-3xl font-black font-expanded leading-none">
+                  <span>{gradedStr}</span>
+                  <span className="text-xl text-(--text-muted)">+</span>
+                  <div className="flex flex-col items-center">
+                    <span>{nonGradedStr}</span>
+                    <span className="text-[0.5rem] font-bold text-(--text-muted) uppercase tracking-wider -mt-0.5 leading-none">
+                      NGCR
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="w-24 h-0.75 rounded-full bg-(--text-main) my-3"></div>
+
+                <div className="text-3xl font-black font-expanded leading-none text-(--text-muted)">
+                  {stats.totalCredits}
                 </div>
               </div>
-              
-              <div className="w-24 h-0.75 rounded-full bg-(--text-main) my-3"></div>
 
-              <div className="text-3xl font-black font-expanded leading-none text-(--text-muted)">
-                {stats.totalCredits}
-              </div>
+              {stats.placement && (
+                <div
+                  className={`mt-4 text-[0.625rem] font-black uppercase text-center leading-none ${stats.placement.toLowerCase().includes("eligible") ? "text-(--att-safe)" : "text-(--att-danger)"}`}
+                >
+                  {stats.placement}
+                </div>
+              )}
             </div>
-
-            {stats.placement && (
-              <div
-                className={`mt-4 text-[0.625rem] font-black uppercase text-center leading-none ${stats.placement.toLowerCase().includes("eligible") ? "text-(--att-safe)" : "text-(--att-danger)"}`}
-              >
-                {stats.placement}
-              </div>
-            )}
           </div>
         </div>
 
         {/* Resting Combined View */}
-        <div
-          className="flex items-center justify-end overflow-hidden relative z-10 mb-3 max-h-[500px] opacity-100 group-hover:max-h-0 group-hover:opacity-0 transition-all duration-300"
-        >
-          <div className="text-right">
-            <div className="text-[0.625rem] font-expanded font-bold uppercase text-(--text-muted) leading-none">
-              Credits
-            </div>
-            <div className="text-3xl font-black font-expanded leading-none whitespace-nowrap">
-              {totalEarnedStr}{" "}
-              <span className="text-xl text-(--text-muted)">
-                / {stats.totalCredits || "..."}
-              </span>
+        <div className="cgpa-resting-container overflow-hidden relative z-10 mb-3">
+          <div className="overflow-hidden min-h-0 flex items-center justify-end">
+            <div className="text-right">
+              <div className="text-[0.625rem] font-expanded font-bold uppercase text-(--text-muted) leading-none">
+                Credits
+              </div>
+              <div className="text-3xl font-black font-expanded leading-none whitespace-nowrap">
+                {totalEarnedStr}{" "}
+                <span className="text-xl text-(--text-muted)">
+                  / {stats.totalCredits || "..."}
+                </span>
+              </div>
             </div>
           </div>
         </div>

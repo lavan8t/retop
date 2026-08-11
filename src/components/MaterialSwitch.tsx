@@ -23,18 +23,21 @@ export const MaterialSwitch = ({
       style={{
         borderWidth: "2px",
         borderStyle: "solid",
-        borderColor: selected ? "var(--accent-base)" : "var(--border-main)",
+        borderColor: selected ? "var(--accent-base)" : "var(--border-dim)",
         backgroundColor: selected ? "var(--accent-base)" : "var(--bg-surface)",
       }}
-      className={`relative inline-flex items-center w-[50px] h-[28px] shrink-0 rounded-full transition-colors duration-150 ease-out outline-none select-none ${
+      className={`relative inline-flex items-center w-[46px] h-[26px] shrink-0 rounded-full transition-colors duration-150 ease-out outline-none select-none ${
         disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
       }`}
     >
       <span
         style={{
-          transform: selected ? "translateX(24px)" : "translateX(2px)",
+          transform: selected ? "translateX(21px)" : "translateX(3px)",
+          backgroundColor: selected ? "var(--text-inverse, #ffffff)" : "var(--text-muted, #94a3b8)",
         }}
-        className="pointer-events-none inline-block w-[20px] h-[20px] rounded-full bg-white dark:bg-black transition-transform duration-150 ease-out"
+        className={`pointer-events-none inline-block ${
+          selected ? "w-[18px] h-[18px]" : "w-[14px] h-[14px]"
+        } rounded-full transition-all duration-150 ease-out shadow-xs`}
       />
     </button>
   );

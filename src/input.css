@@ -25,6 +25,58 @@
   --easing-decelerate: cubic-bezier(0, 0, 0.2, 1);
 }
 
+@keyframes pageCrossfade {
+  from {
+    opacity: 0;
+    transform: scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-page-crossfade {
+  animation: pageCrossfade 150ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes popupOpen {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-popup-open {
+  animation: popupOpen 150ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.cgpa-expand-container {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 150ms ease-out, opacity 150ms ease-out;
+}
+.group:hover .cgpa-expand-container {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.cgpa-resting-container {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition: grid-template-rows 150ms ease-out, opacity 150ms ease-out;
+}
+.group:hover .cgpa-resting-container {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+
 /* --- 1. GLOBAL RESET & VARIABLES --- */
 @layer base {
   *, ::before, ::after {
@@ -102,14 +154,14 @@
 
     /* Attendance Colors */
     --attendance-green: #16a34a;
-    --attendance-green-bg: color-mix(in srgb, #16a34a 30%, var(--bg-main));
-    --attendance-green-text: color-mix(in srgb, #16a34a 40%, var(--text-main));
-    --attendance-blue: #3b82f6;
-    --attendance-blue-bg: color-mix(in srgb, #3b82f6 30%, var(--bg-main));
-    --attendance-blue-text: color-mix(in srgb, #3b82f6 40%, var(--text-main));
-    --attendance-red: #ef4444;
-    --attendance-red-bg: color-mix(in srgb, #ef4444 30%, var(--bg-main));
-    --attendance-red-text: color-mix(in srgb, #ef4444 40%, var(--text-main));
+    --attendance-green-bg: color-mix(in srgb, #16a34a 25%, var(--bg-surface));
+    --attendance-green-text: #15803d;
+    --attendance-blue: #2563eb;
+    --attendance-blue-bg: color-mix(in srgb, #2563eb 25%, var(--bg-surface));
+    --attendance-blue-text: #1d4ed8;
+    --attendance-red: #dc2626;
+    --attendance-red-bg: color-mix(in srgb, #dc2626 25%, var(--bg-surface));
+    --attendance-red-text: #b91c1c;
 
     /* Card Colors - Professional deep tones mixed with the surface for stark Brutalist blocks */
     --card-cyan: color-mix(in srgb, #06b6d4 40%, var(--bg-surface));

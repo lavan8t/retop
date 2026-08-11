@@ -12,29 +12,57 @@ chrome.action.onClicked.addListener(() => {
   chrome.tabs.create({ url: "https://vtop.vit.ac.in/vtop/" });
 });
 
-const chromeObj = typeof chrome !== "undefined" ? (chrome as any) : undefined;
-const downloadsObj = chromeObj ? chromeObj["down" + "loads"] : undefined;
-const onDeterminingFilenameEvent = downloadsObj ? downloadsObj["onDetermining" + "Filename"] : undefined;
-if (onDeterminingFilenameEvent) {
-  onDeterminingFilenameEvent.addListener((item: any, suggest: any) => {
-    if (
+if (typeof chrome !== "undefined" && chrome.downloads?.onDeterminingFilename) {
+  chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
+    const isVtopDownload =
       item.url.includes("vtop.vit.ac.in") ||
-      (item.referrer && item.referrer.includes("vtop.vit.ac.in"))
-    ) {
-      chrome.storage.local.get(["lastDownloadInfo"], (res) => {
-        const info = res.lastDownloadInfo as { timestamp: number; type: string; courseName: string; facultyName: string } | undefined;
-        if (info && Date.now() - info.timestamp < 5000) {
-          if (info.type === "course_page") {
-            const sanitizedCourse = info.courseName.replace(/[\/\\?%*:|"<>]/g, '-').trim();
-            const sanitizedFaculty = info.facultyName.replace(/[\/\\?%*:|"<>]/g, '-').trim();
-            suggest({ filename: `VIT/course_page/${sanitizedCourse}/${sanitizedFaculty}_${item.filename}` });
-            return;
-          }
-        }
-        suggest({ filename: `VIT/curriculum/${item.filename}` });
-      });
-      return true; // indicates that we will call suggest asynchronously
+      item.url.startsWith("blob:") ||
+      (item.referrer && item.referrer.includes("vtop.vit.ac.in"));
+
+    if (!isVtopDownload) {
+      suggest();
+      return;
     }
+
+    chrome.storage.local.get(["lastDownloadInfo"], (res) => {
+      const info = res?.lastDownloadInfo as {
+        timestamp: number;
+        type: string;
+        semester?: string;
+        courseName?: string;
+        facultyName?: string;
+      } | undefined;
+
+      const sanitize = (str?: string) =>
+        (str || "")
+          .replace(/[\/\\?%*:|"<>]/g, "_")
+          .replace(/\s+/g, " ")
+          .trim();
+
+      const rawFileName = item.filename ? item.filename.replace(/^.*[\\\/]/, '') : "download.pdf";
+      const itemFileName = sanitize(rawFileName) || "download.pdf";
+
+      if (info && Date.now() - info.timestamp < 30000) {
+        const sem = sanitize(info.semester) || "General";
+        const course = sanitize(info.courseName) || "General";
+        const faculty = sanitize(info.facultyName) || "Faculty";
+
+        if (info.type === "course_page") {
+          suggest({ filename: `retop/${sem}/${course}/${faculty}/${itemFileName}` });
+          return;
+        } else if (info.type === "curriculum") {
+          suggest({ filename: `retop/${sem}/${course}/curriculum/${itemFileName}` });
+          return;
+        } else if (info.type === "daqp") {
+          suggest({ filename: `retop/${sem}/${course}/daqp/${itemFileName}` });
+          return;
+        }
+      }
+
+      suggest({ filename: `retop/downloads/${itemFileName}` });
+    });
+
+    return true; // indicates async response
   });
 }
 

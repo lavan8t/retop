@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useDataStore } from "../store/dataStore";
+import { useAppStore } from "../store/appStore";
 import { MaterialSwitch } from "../components/MaterialSwitch";
 import { VTOPNetwork } from "../utils/network";
 import {
@@ -13,6 +15,7 @@ import {
   Download,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { EmptyState } from "../components/EmptyState";
+import { Pill } from "../components/ui/Pill";
 
 interface CurriculumPageProps {
   onBack: () => void;
@@ -28,14 +31,9 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
   const [basketMaxCreditsMap, setBasketMaxCreditsMap] = useState<Record<string, Record<string, string>>>({});
   const [loadingCourses, setLoadingCourses] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [hideCompleted, setHideCompleted] = useState(() => {
-    return localStorage.getItem('curriculum_hide_completed') === 'true';
-  });
+  const { curriculumHideCompleted: hideCompleted } = useAppStore();
   const [completedCourseCodes, setCompletedCourseCodes] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    localStorage.setItem('curriculum_hide_completed', hideCompleted.toString());
-  }, [hideCompleted]);
+  const [gradeHistoryEarnedCredits, setGradeHistoryEarnedCredits] = useState<string>("");
 
   useEffect(() => {
     loadDashboard();
@@ -59,6 +57,9 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
       if (historyHtml) {
         try {
           const historyData = parseGradeHistory(historyHtml);
+          if (historyData.cgpa?.creditsEarned) {
+            setGradeHistoryEarnedCredits(historyData.cgpa.creditsEarned);
+          }
           historyData.courses.forEach(c => {
             if (c.grade !== "F" && c.grade !== "N" && c.grade !== "W" && c.grade !== "U") {
               completedCodes.add(c.code);
@@ -178,39 +179,71 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
     };
   }, [selectedId, activeBasket, basketMaxCreditsMap, allCourses, completedCourseCodes, searchQuery]);
 
+  const totalEarnedCredits = useMemo(() => {
+    return categories.reduce((sum, c) => sum + (parseFloat(c.credits) || 0), 0);
+  }, [categories]);
+
+  const categoryCourseCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    const lowerQ = searchQuery.toLowerCase();
+
+    categories.forEach((cat) => {
+      let catCourses = allCourses[cat.id] || [];
+      if (hideCompleted) {
+        catCourses = catCourses.filter((c) => !c.isCompleted && !completedCourseCodes.has(c.code));
+      }
+      if (searchQuery) {
+        catCourses = catCourses.filter(
+          (c) => c.title.toLowerCase().includes(lowerQ) || c.code.toLowerCase().includes(lowerQ),
+        );
+      }
+      counts[cat.id] = catCourses.length;
+    });
+    return counts;
+  }, [categories, allCourses, searchQuery, hideCompleted, completedCourseCodes]);
+
+  useEffect(() => {
+    if (categories.length > 0 && (!selectedId || !categories.some((c) => c.id === selectedId))) {
+      setSelectedId(categories[0].id);
+    }
+  }, [categories, selectedId]);
+
+  const { stats } = useDataStore();
+  const doneCreditsDisplay = gradeHistoryEarnedCredits
+    || (stats.credits && stats.credits !== "..." ? stats.credits : "")
+    || totalEarnedCredits;
+
   return (
-    <div className="h-full w-full overflow-y-auto custom-scrollbar bg-(--bg-main) relative">
-      <div className="fixed top-3.5 md:top-4 right-18 md:right-22 z-101 pointer-events-auto flex items-center gap-3">
-        <div className="flex items-center gap-2 px-2 hidden sm:flex">
-          <span className="text-[10px] md:text-xs font-black text-(--text-muted) uppercase tracking-wider">
-            Hide Done
-          </span>
-          <MaterialSwitch 
-            selected={hideCompleted} 
-            onChange={(checked) => setHideCompleted(checked)} />
-        </div>
-        <div className="relative group hidden sm:block">
+    <div className="h-full w-full flex flex-col gap-0 py-0 px-4 md:px-6 lg:px-8 overflow-y-auto lg:overflow-hidden bg-(--bg-main) text-(--text-main) max-w-425 mx-auto relative">
+      {/* Top Search Bar centered with increased height */}
+      <div className="w-full pt-20 md:pt-23 lg:pt-25 pb-3 px-2 md:px-4 shrink-0 flex justify-center">
+        <div className="relative group w-full max-w-4xl mx-auto">
           <input
             type="text"
-            placeholder="Search all courses..."
+            placeholder="Search all categories & courses..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-(--bg-surface) border border-(--border-dim) text-(--text-main) text-xs md:text-sm rounded-2xl pl-10 pr-4 py-2 w-48 md:w-64 focus:outline-none focus:border-(--accent-base) focus:ring-4 focus:ring-(--accent-base)/10 transition-all duration-fast placeholder:text-(--text-muted) shadow-sm" />
-          <Search className="w-4 h-4 text-(--text-muted) absolute left-3.5 top-2.5 group-focus-within:text-(--accent-base) transition-colors" />
+            className="w-full bg-(--bg-surface) border border-(--border-dim)/60 text-(--text-main) text-sm md:text-base rounded-full pl-12 pr-5 py-3.5 focus:outline-none focus:border-(--accent-base) focus:ring-4 focus:ring-(--accent-base)/10 transition-all duration-fast placeholder:text-(--text-muted)"
+          />
+          <Search className="w-5 h-5 text-(--text-muted) absolute left-4 top-3.5 group-focus-within:text-(--accent-base) transition-colors" />
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto w-full flex flex-col md:flex-row gap-6 md:gap-8 pt-20 md:pt-24 px-4 md:px-8 z-20 pointer-events-auto relative items-start">
+      {/* Body Layout: Left Sidebar + Right Course List */}
+      <div className="flex-1 flex flex-col lg:flex-row gap-0 min-h-0 overflow-hidden">
         {/* LEFT SIDEBAR: Total Credits + Vertical Category Column */}
-        <div className="w-full md:w-64 lg:w-72 shrink-0 flex flex-col gap-2.5">
+        <div className="w-full lg:w-[27%] xl:w-[24%] flex flex-col shrink-0 h-auto lg:h-full overflow-y-auto custom-scrollbar relative z-40 pb-4 md:pb-6 lg:pb-8 pl-4 lg:pl-6 pr-2 lg:pr-3 gap-1">
           {!loading && (
-            <div className="w-full p-4 bg-(--bg-surface)/60 border border-(--border-dim)/40 rounded-3xl flex flex-col items-start justify-center shadow-xs">
+            <div className="w-full p-4 bg-(--bg-surface)/60 border border-(--border-dim)/40 rounded-3xl flex flex-col items-center justify-center text-center">
               <span className="text-[10px] font-mono font-bold text-(--text-muted) uppercase tracking-wider leading-none">
                 Total Credits
               </span>
-              <span className="text-4xl font-black font-expanded text-(--text-main) mt-1 leading-none">
-                {totalCredits}
-              </span>
+              <div className="text-4xl font-black font-expanded text-(--text-main) mt-1 leading-none flex items-baseline justify-center gap-1">
+                <span>{doneCreditsDisplay}</span>
+                {totalCredits && parseFloat(totalCredits) > 0 && (
+                  <span className="text-xl font-bold opacity-50">/ {totalCredits}</span>
+                )}
+              </div>
             </div>
           )}
           {loading ? (
@@ -226,44 +259,50 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
                 onClick={() => handleSelectCategory(cat)}
                 className={`w-full p-4 rounded-3xl flex items-center justify-between gap-3 transition-all cursor-pointer border ${
                   selectedId === cat.id
-                    ? "bg-(--text-main) text-(--bg-main) border-(--text-main) shadow-md"
+                    ? "bg-(--text-main) text-(--bg-main) border-(--text-main)"
                     : "bg-(--bg-surface)/60 text-(--text-main) border-(--border-dim)/40 hover:bg-(--bg-surface)"
                 }`}>
                 <div className="flex flex-col text-left min-w-0 flex-1">
-                  <span className="text-xs md:text-sm font-black font-expanded uppercase tracking-wide truncate">
+                  <span className="text-xs md:text-sm font-black font-expanded uppercase tracking-wide break-words whitespace-normal leading-[2.4]">
                     {cat.title}
                   </span>
                 </div>
-                <div className="text-xs md:text-sm font-black font-mono shrink-0 pl-3 border-l border-current/20">
+                <div className="text-xs md:text-sm font-black font-mono shrink-0 pl-3 border-l border-current/20 flex flex-col items-end">
                   {cat.maxCredits && parseFloat(cat.maxCredits) > 0 ? (
                     <>
-                      <span>{cat.credits}</span>
-                      <span className="opacity-50"> / {cat.maxCredits}</span>
+                      <span>{cat.credits} <span className="opacity-50">/ {cat.maxCredits}</span></span>
                     </>
                   ) : (
                     <span>{cat.credits}</span>
                   )}
+                  <span className="text-[10px] opacity-70 font-bold mt-0.5">
+                    {categoryCourseCounts[cat.id] ?? 0} {categoryCourseCounts[cat.id] === 1 ? "course" : "courses"}
+                  </span>
                 </div>
               </button>
             ))
           )}
         </div>
 
-        {/* RIGHT AREA: Sub-Tabs (Baskets) on top, Basket Status, and Course List */}
-        <div className="flex-1 min-w-0 w-full flex flex-col gap-4">
-          {/* Sub-Tabs (Baskets) at top of right area */}
-          {!searchQuery && availableBaskets.length > 1 && (
-            <div className="w-full flex items-center gap-2 overflow-x-auto custom-scrollbar pb-1">
-              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-(--text-muted) shrink-0 mr-1">
-                Baskets:
-              </span>
+        {/* RIGHT AREA: Sub-Tabs (Baskets), Basket Status, and Course List */}
+        <div className="flex-1 flex flex-col min-w-0 h-auto lg:h-full px-2 md:px-4 lg:px-6">
+          <div
+            style={{
+              maskImage: "linear-gradient(to bottom, black 0%, black 90%, transparent 100%)",
+              WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 90%, transparent 100%)",
+            }}
+            className="w-full max-w-4xl h-full overflow-y-auto custom-scrollbar pb-20 pr-4 border-r border-(--border-dim)/30 flex flex-col gap-4"
+          >
+          {/* Sub-Tabs (Baskets) sticky at top of right area */}
+          {availableBaskets.length > 1 && (
+            <div className="sticky top-0 z-30 bg-(--bg-main) py-2 w-full flex items-center gap-2.5 overflow-x-auto custom-scrollbar shrink-0">
               {availableBaskets.map((basket) => (
                 <button
                   key={basket}
                   onClick={() => setSelectedBasket(basket)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all cursor-pointer border ${
+                  className={`px-4 py-2 rounded-2xl text-xs md:text-sm font-bold uppercase tracking-wider whitespace-nowrap transition-all cursor-pointer border ${
                     activeBasket === basket
-                      ? "bg-(--accent-base) text-(--text-inverse) border-(--accent-base) shadow-sm"
+                      ? "bg-(--accent-base) text-(--text-inverse) border-(--accent-base)"
                       : "bg-(--bg-surface) text-(--text-muted) border-(--border-dim)/40 hover:bg-(--bg-highlight) hover:text-(--text-main)"
                   }`}>
                   {basket}
@@ -323,34 +362,25 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
                   icon={Search} />
               </div>
             ) : (
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1">
                 {filteredCourses.map((c, i) => (
                   <div
                     key={c.code}
                     onClick={() => network.downloadSyllabus(c.code)}
                     className="group flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 md:p-5 bg-(--bg-surface) rounded-3xl hover:bg-(--bg-highlight) transition-colors cursor-pointer">
                     <div className="flex flex-col min-w-0 flex-1">
-                      <div className="flex items-center gap-2 md:gap-3 flex-wrap">
-                        <span className="font-black text-xs md:text-sm text-(--text-muted) font-mono group-hover:text-(--accent-base) transition-colors">
-                          {c.code}
-                        </span>
-                        <span className="font-expanded font-bold text-sm md:text-base lg:text-lg text-(--text-main) group-hover:text-(--accent-base) transition-colors flex items-center gap-2 flex-wrap">
-                          {c.title}
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-wider ${
-                              c.type.includes("L") || c.type.includes("P")
-                                ? "bg-purple-500/10 text-purple-500"
-                                : "bg-blue-500/10 text-accent"
-                            }`}>
-                            {c.type}
-                          </span>
-                        </span>
+                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                        <Pill variant="accent">{c.code}</Pill>
+                        <Pill variant="main">{c.type}</Pill>
+                        {c.isCompleted && (
+                          <Pill variant="success">
+                            <CheckCircle className="w-3 h-3 text-white" /> Completed
+                          </Pill>
+                        )}
                       </div>
-                      {c.isCompleted && (
-                        <div className="text-[10px] font-bold text-att-safe flex items-center gap-1 mt-1.5 uppercase">
-                          <CheckCircle className="w-3 h-3" /> Completed
-                        </div>
-                      )}
+                      <h3 className="text-base md:text-lg font-bold text-(--text-main) leading-snug group-hover:text-(--accent-base) transition-colors">
+                        {c.title}
+                      </h3>
                     </div>
 
                     <div className="flex items-center justify-between md:justify-end gap-6 shrink-0 mt-2 md:mt-0">
@@ -389,5 +419,6 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
         </div>
       </div>
     </div>
+  </div>
   );
 };

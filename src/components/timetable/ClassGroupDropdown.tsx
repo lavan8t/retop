@@ -1,75 +1,13 @@
-import React, { useState } from "react";
-import { ClassGroup } from "../../types/vtop";
-import {
-  Group,
-  KeyboardArrowDown,
-} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
-export const formatShortGroupName = (label: string) => {
-  if (!label) return "";
-  const lower = label.toLowerCase();
-  if (lower.includes("combined")) return "Combined";
-  if (lower.includes("general (semester)")) return "Gen Sem";
-  if (lower.includes("general (flexible)")) return "Gen Flex";
-  if (lower.includes("pg freshers")) return "PG Fresh";
-  if (lower.includes("research")) return "Research";
-  if (lower.includes("ug freshers")) return "UG Fresh";
-  if (lower.includes("ug industry")) return "UG Ind";
-  if (lower.includes("ug seniors")) return "UG Snr";
-  return label.length > 12 ? label.substring(0, 10) + ".." : label;
-};
+import React from "react";
+import { Dropdown } from "../ui/Dropdown";
 
 export const ClassGroupDropdown = ({ groups, selectedId, onChange }: any) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const selected =
-    groups.find((g: ClassGroup) => g.id === selectedId) || groups[0];
-
-  if (!groups || groups.length === 0) return null;
-
   return (
-    <div className="relative z-[999999]">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 md:gap-2 bg-(--md-sys-color-secondary-container) px-2 md:px-3 py-1.5 rounded-lg md:rounded-xl text-(--md-sys-color-on-secondary-container) font-bold transition-all text-[9px] sm:text-[10px] md:text-xs group"
-      >
-        <Group className="w-3 h-3 md:w-3.5 md:h-3.5 text-(--accent-base) group-hover:text-(--accent-hover) transition-colors shrink-0" />
-        <span className="uppercase truncate max-w-16 sm:max-w-24 md:max-w-32 font-expanded">
-          {selected ? formatShortGroupName(selected.label) : "Select Group"}
-        </span>
-        <KeyboardArrowDown
-          className={`w-3 h-3 md:w-3.5 md:h-3.5 transition-transform duration-fast shrink-0 ${isOpen ? "rotate-180" : ""}`}
-        />
-      </button>
-
-      {isOpen && (
-        <>
-          <div
-            onClick={() => setIsOpen(false)}
-            className="fixed inset-0 z-[999998]"
-          />
-          <div
-            className="absolute top-full right-0 mt-2 w-[60vw] min-w-50 max-w-72 md:w-72 bg-(--bg-surface) border-2 border-(--border-main) rounded-xl overflow-hidden z-[999999] origin-top-right popup-shadow transition-all duration-200 animate-in fade-in zoom-in-95"
-          >
-              <div className="max-h-64 overflow-y-auto custom-scrollbar p-1.5 md:p-2 space-y-1">
-                {groups.map((g: ClassGroup) => (
-                  <button
-                    key={g.id}
-                    onClick={() => {
-                      onChange(g.id);
-                      setIsOpen(false);
-                    }}
-                    className={`w-full text-left px-2.5 py-2 md:px-3 md:py-2.5 text-[10px] md:text-xs font-bold uppercase transition-all rounded-lg border-2 ${
-                      g.id === selectedId
-                        ? "bg-(--accent-base) text-(--text-inverse) border-(--border-main)"
-                        : "bg-transparent border-transparent text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main) hover:border-(--border-dim)"
-                    }`}
-                  >
-                    {g.label}
-                  </button>
-                ))}
-              </div>
-          </div>
-        </>
-      )}
-    </div>
+    <Dropdown
+      options={groups || []}
+      selectedId={selectedId}
+      onChange={onChange}
+      placeholder="Select Group"
+    />
   );
 };

@@ -5,19 +5,21 @@ import {
   LocationOn,
   EventBusy,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
-import { motion, AnimatePresence } from "framer-motion";
-import { getCourseAcronym, formatTimeStr } from "../../utils/formatting";
+import { getCourseAcronym, formatTimeStr, TimeFormatMode } from "../../utils/formatting";
+
 import { useDataStore } from "../../store/dataStore";
 
-export const TimetableWeek = ({
+export const TimetableWeek = React.memo(({
   courses,
   attendance,
-  use24HourTime = true,
+  use24HourTime = "12h" as TimeFormatMode,
+
   onSelectCourse,
 }: {
   courses: TimetableCourse[];
   attendance: CourseSummary[];
-  use24HourTime?: boolean;
+  use24HourTime?: TimeFormatMode;
+
   onSelectCourse?: (code: string) => void;
 }) => {
   const activeDays = useMemo(() => {
@@ -141,9 +143,9 @@ export const TimetableWeek = ({
 
         {/* Classes List */}
         <div className="flex-1 overflow-y-auto p-4 pb-32 space-y-3 custom-scrollbar relative">
-          <AnimatePresence mode="wait">
+          <>
             {mobileActiveEvents.length === 0 ? (
-              <motion.div
+              <div
                 key="empty"
                 className="flex flex-col items-center justify-center h-full text-(--text-muted) py-20"
               >
@@ -151,9 +153,9 @@ export const TimetableWeek = ({
                 <span className="font-expanded font-bold text-xs uppercase">
                   No Classes Scheduled
                 </span>
-              </motion.div>
+              </div>
             ) : (
-              <motion.div key="timeline" className="space-y-3">
+              <div key="timeline" className="space-y-3">
                 {mobileActiveEvents.map(
                   ({ startHour, endHour, course }, idx) => {
                     const isLab = course.type.includes("Lab");
@@ -165,11 +167,8 @@ export const TimetableWeek = ({
                         : "L";
 
                     return (
-                      <motion.button
+                      <button
                         data-tile="true"
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: idx * 0.03 }}
                         key={`${selectedDay}-${startHour}`}
                         onClick={(e) => {
                           const rect = e.currentTarget.getBoundingClientRect();
@@ -231,13 +230,13 @@ export const TimetableWeek = ({
                             </span>
                           </div>
                         </div>
-                      </motion.button>
+                      </button>
                     );
                   },
                 )}
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
+          </>
         </div>
       </div>
 
@@ -328,4 +327,4 @@ export const TimetableWeek = ({
       </div>
     </div>
   );
-};
+});

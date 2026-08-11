@@ -13,7 +13,7 @@ interface UpcomingClassDetail {
 }
 
 const getCsrf = () => {
-  const match = document.documentElement.innerHTML.match(/csrfValue\s*=\s*"([^"]+)"/);
+  const match = document.documentElement.outerHTML.match(/csrfValue\s*=\s*"([^"]+)"/);
   if (match) return match[1];
   return (document.querySelector('input[name="_csrf"]') as HTMLInputElement)?.value || "";
 };
@@ -67,9 +67,27 @@ export const useCoursePageData = (
   useEffect(() => {
     if (cpOptions.length > 0) return;
     let isMounted = true;
+
+    const fallbackFromTimetable = () => {
+      if (ttCourses && ttCourses.length > 0 && isMounted) {
+        const fallbackOpts: CoursePageOption[] = ttCourses.map((tc) => ({
+          code: tc.code,
+          title: tc.title,
+          classId: tc.classId || tc.code,
+          semester: selectedSem || ttSelectedSem || "VL20262701",
+          type: tc.type,
+          credits: tc.credits || "0",
+          rawText: `${tc.code} - ${tc.title} - ${tc.type}`,
+        }));
+        if (fallbackOpts.length > 0) {
+          setCpOptions(fallbackOpts);
+        }
+      }
+    };
+
     const fetchOptions = async () => {
       try {
-        let html = await network.fetchFragment("academics/common/CoursePageConsolidated");
+        let html = await network.getCoursePage();
         let parsed = parseCoursePage(html);
         if (parsed.options.length === 0) {
           html = await network.fetchFragment("academics/CoursePageConsolidated/CoursePage");
@@ -78,14 +96,17 @@ export const useCoursePageData = (
         if (!isMounted) return;
         if (parsed.options.length > 0) {
           setCpOptions(parsed.options);
+        } else {
+          fallbackFromTimetable();
         }
       } catch (err) {
-        console.error("Failed to load course options:", err);
+        console.warn("Failed to load course options from network, falling back to timetable courses:", err);
+        fallbackFromTimetable();
       }
     };
     fetchOptions();
     return () => { isMounted = false; };
-  }, [network, cpOptions.length, setCpOptions]);
+  }, [network, cpOptions.length, setCpOptions, ttCourses, selectedSem, ttSelectedSem]);
 
   useEffect(() => {
     if (!selectedOptionId || !selectedSem || cpOptions.length === 0) return;
@@ -96,24 +117,14 @@ export const useCoursePageData = (
     const fetchDetails = async () => {
       setLoading(true);
       try {
-        const body = new URLSearchParams();
-        body.append("_csrf", getCsrf());
-        body.append("authorizedID", getAuthId());
-        body.append("semester", opt.semester);
-        body.append("CourseId", opt.classId);
-        body.append("CoursType", opt.type);
-        body.append("x", new Date().toUTCString());
-
-        const res = await fetch("/vtop/academics/CoursePageConsolidated/getCourseDetail", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-            "X-Requested-With": "XMLHttpRequest",
+        const html = await network.fetchFragment(
+          "academics/CoursePageConsolidated/getCourseDetail",
+          {
+            semester: opt.semester,
+            CourseId: opt.classId,
+            CoursType: opt.type,
           },
-          body: body,
-        });
-
-        const html = await res.text();
+        );
         if (!isMounted) return;
 
         const parsedDetails = parseCoursePage(html);
@@ -128,8 +139,17 @@ export const useCoursePageData = (
         if (isMounted) setLoading(false);
       }
     };
+
     fetchDetails();
-    return () => { isMounted = false; };
+
+    const handleRefresh = () => {
+      fetchDetails();
+    };
+    window.addEventListener("retop-refresh-coursepage", handleRefresh);
+    return () => {
+      isMounted = false;
+      window.removeEventListener("retop-refresh-coursepage", handleRefresh);
+    };
   }, [selectedOptionId, selectedSem, cpOptions]);
 
   const currentOption = cpOptions.find((o) => o.classId === selectedOptionId);

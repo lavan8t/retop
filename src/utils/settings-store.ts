@@ -25,6 +25,7 @@ export interface AppSettings {
   pureBlack: boolean;
   pinnedLinks: QuickLink[];
   use24HourTime: boolean;
+  timeFormat?: "24h" | "12h" | "12h-ampm";
   animationScale: "1x" | "0.5x" | "0x";
   searchHotkey: "/" | "space" | "instant";
   calendarClassColor: string;
@@ -33,22 +34,24 @@ export interface AppSettings {
   googleClientId: string;
   dateFormat: DateFormatPattern;
   fontScale: number;
-  fontWeight: number;
+  fontWeight: "regular" | "medium" | "bold";
   skipRoleSelection: boolean;
 }
+
 
 const DEFAULT_SETTINGS: AppSettings = {
   defaultView: "modern",
   themeMode: "dark",
   vtopThemeMode: "same",
-  accentColor: "blue",
+  accentColor: "orange",
   randomAccentColor: false,
   blurCgpa: false,
   googleLinked: false,
   calendarSync: false,
   driveSync: false,
   pureBlack: false,
-  use24HourTime: true,
+  use24HourTime: false,
+  timeFormat: "12h",
   animationScale: "1x",
   searchHotkey: "/",
   calendarClassColor: "blue",
@@ -57,8 +60,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   googleClientId: "",
   dateFormat: "DD Mon YYYY",
   fontScale: 100,
-  fontWeight: 700,
+  fontWeight: "bold",
   skipRoleSelection: false,
+
   pinnedLinks: [
     { title: "Time Table", url: "studenttimetable", category: "Core" },
     { title: "Marks", url: "mark", category: "Core" },
@@ -93,33 +97,31 @@ export const MATERIAL_ACCENTS: Record<string, string> = {
 
 import { argbFromHex, hexFromArgb, Hct, SchemeVibrant, SchemeMonochrome } from "@material/material-color-utilities";
 
-export const getMaterialThemeColor = (colorKey: string, isDark: boolean = true): string => {
+export const getMaterialThemeColor = (colorKey: string, _isDark: boolean = true): string => {
   if (colorKey === "grey" || colorKey === "monochrome") {
-    return isDark ? "#27272a" : "#f4f4f5";
+    return "#27272a";
   }
   const hex = MATERIAL_ACCENTS[colorKey] || (colorKey && colorKey.startsWith("#") ? colorKey : MATERIAL_ACCENTS.blue);
   try {
     const hct = Hct.fromInt(argbFromHex(hex));
-    const containerTone = isDark ? 30 : 90;
-    const containerHct = Hct.from(hct.hue, hct.chroma, containerTone);
+    const containerHct = Hct.from(hct.hue, hct.chroma, 30);
     return hexFromArgb(containerHct.toInt());
   } catch {
     return hex;
   }
 };
 
-export const getMaterialOnThemeColor = (colorKey: string, isDark: boolean = true): string => {
+export const getMaterialOnThemeColor = (colorKey: string, _isDark: boolean = true): string => {
   if (colorKey === "grey" || colorKey === "monochrome") {
-    return isDark ? "#f4f4f5" : "#18181b";
+    return "#f4f4f5";
   }
   const hex = MATERIAL_ACCENTS[colorKey] || (colorKey && colorKey.startsWith("#") ? colorKey : MATERIAL_ACCENTS.blue);
   try {
     const hct = Hct.fromInt(argbFromHex(hex));
-    const onContainerTone = isDark ? 95 : 15;
-    const onContainerHct = Hct.from(hct.hue, hct.chroma, onContainerTone);
+    const onContainerHct = Hct.from(hct.hue, hct.chroma, 95);
     return hexFromArgb(onContainerHct.toInt());
   } catch {
-    return isDark ? "#ffffff" : "#000000";
+    return "#ffffff";
   }
 };
 
@@ -191,6 +193,15 @@ export const applyTheme = (settings: AppSettings) => {
     "outline-variant": hexFromArgb(scheme.outlineVariant)
   };
 
+  if (typeof settings.fontScale === "number" && settings.fontScale > 0) {
+    document.documentElement.style.fontSize = `${settings.fontScale}%`;
+  }
+
+  const wghtMap: Record<string, string> = { regular: "400", medium: "550", bold: "700" };
+  const wght = wghtMap[settings.fontWeight ?? "bold"] ?? "700";
+  if (root) root.style.setProperty("--app-font-wght", wght);
+  document.documentElement.style.setProperty("--app-font-wght", wght);
+
   Object.entries(sysColors).forEach(([name, val]) => {
     if (root) root.style.setProperty(`--md-sys-color-${name}`, val);
     document.documentElement.style.setProperty(`--md-sys-color-${name}`, val);
@@ -206,37 +217,67 @@ interface SettingsStore {
   updateSetting: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => void;
 }
 
+const encodeStorage = (str: string): string => {
+  try {
+    return "enc_" + btoa(encodeURIComponent(str));
+  } catch {
+    return str;
+  }
+};
+
+const decodeStorage = (str: string): string => {
+  try {
+    if (str && str.startsWith("enc_")) {
+      return decodeURIComponent(atob(str.slice(4)));
+    }
+    return str;
+  } catch {
+    return str;
+  }
+};
+
 const chromeStorage: StateStorage = {
   getItem: async (name: string): Promise<string | null> => {
     return new Promise((resolve) => {
       try {
+        const parseValue = (rawVal: any) => {
+          if (rawVal !== undefined && rawVal !== null) {
+            const strVal = typeof rawVal === "string" ? rawVal : JSON.stringify(rawVal);
+            return decodeStorage(strVal);
+          }
+          return null;
+        };
+
         if (typeof chrome !== "undefined" && chrome.runtime?.id && chrome.storage?.local) {
           chrome.storage.local.get(name, (result) => {
             if (chrome.runtime?.lastError) {
-              try { resolve(localStorage.getItem(name)); } catch { resolve(null); }
+              try { resolve(parseValue(localStorage.getItem(name))); } catch { resolve(null); }
             } else {
-              const val = (result?.[name] as string) || null;
-              if (val) resolve(val);
-              else {
-                try { resolve(localStorage.getItem(name)); } catch { resolve(null); }
+              const res = parseValue(result?.[name]);
+              if (res !== null) {
+                resolve(res);
+              } else {
+                try { resolve(parseValue(localStorage.getItem(name))); } catch { resolve(null); }
               }
             }
           });
         } else {
-          try { resolve(localStorage.getItem(name)); } catch { resolve(null); }
+          try { resolve(parseValue(localStorage.getItem(name))); } catch { resolve(null); }
         }
       } catch (e) {
-        try { resolve(localStorage.getItem(name)); } catch { resolve(null); }
+        try { resolve(decodeStorage(localStorage.getItem(name) || "")); } catch { resolve(null); }
       }
     });
   },
   setItem: async (name: string, value: string): Promise<void> => {
     return new Promise((resolve) => {
       try {
-        try { localStorage.setItem(name, value); } catch {}
+        const encoded = encodeStorage(value);
+        try { localStorage.setItem(name, encoded); } catch {}
 
         if (typeof chrome !== "undefined" && chrome.runtime?.id && chrome.storage?.local) {
-          chrome.storage.local.set({ [name]: value }, () => {
+          const payload = { [name]: encoded };
+          chrome.storage.local.set(payload, () => {
             const _err = chrome.runtime?.lastError;
             resolve();
           });
@@ -254,7 +295,7 @@ const chromeStorage: StateStorage = {
         try { localStorage.removeItem(name); } catch {}
 
         if (typeof chrome !== "undefined" && chrome.runtime?.id && chrome.storage?.local) {
-          chrome.storage.local.remove(name, () => {
+          chrome.storage.local.remove([name, "retop_settings_obj"], () => {
             const _err = chrome.runtime?.lastError;
             resolve();
           });
@@ -268,11 +309,23 @@ const chromeStorage: StateStorage = {
   },
 };
 
+let localUpdateTimer: any = null;
+let isLocallyUpdating = false;
+
+const setLocalUpdateLock = () => {
+  isLocallyUpdating = true;
+  if (localUpdateTimer) clearTimeout(localUpdateTimer);
+  localUpdateTimer = setTimeout(() => {
+    isLocallyUpdating = false;
+  }, 1000);
+};
+
 export const useSettingsStore = create<SettingsStore>()(
   persist(
     (set, get) => ({
       settings: DEFAULT_SETTINGS,
       updateSetting: (key, value) => {
+        setLocalUpdateLock();
         set((state) => {
           const newSettings = { ...state.settings, [key]: value };
           applyTheme(newSettings);
@@ -298,23 +351,27 @@ export const useSettings = () => {
 
 if (typeof chrome !== "undefined" && chrome.storage) {
   chrome.storage.onChanged.addListener((changes, namespace) => {
-    if (namespace === "local" && changes["retop-settings"]) {
-      const newValue = changes["retop-settings"].newValue;
+    if (isLocallyUpdating) return; // Ignore storage echo during active local updates
+    if (namespace === "local" && (changes["retop-settings"] || changes["retop_settings_obj"])) {
+      const changeItem = changes["retop-settings"] || changes["retop_settings_obj"];
+      const newValue = changeItem?.newValue;
       if (newValue) {
         try {
           let parsed;
           if (typeof newValue === "string") {
-            parsed = JSON.parse(newValue);
+            const decoded = decodeStorage(newValue);
+            parsed = JSON.parse(decoded);
           } else {
-            parsed = newValue; // chrome.storage sometimes parses it automatically if set as object
+            parsed = newValue;
           }
 
-          if (parsed && parsed.state && parsed.state.settings) {
+          const extractedSettings = parsed?.state?.settings || parsed?.settings || (parsed?.defaultView ? parsed : null);
+
+          if (extractedSettings) {
             const currentSettings = useSettingsStore.getState().settings;
-            // Prevent infinite loops if this tab triggered the change
-            if (JSON.stringify(currentSettings) !== JSON.stringify(parsed.state.settings)) {
-              useSettingsStore.setState({ settings: parsed.state.settings });
-              applyTheme(parsed.state.settings);
+            if (JSON.stringify(currentSettings) !== JSON.stringify(extractedSettings)) {
+              useSettingsStore.setState({ settings: extractedSettings });
+              applyTheme(extractedSettings);
             }
           }
         } catch (e) {

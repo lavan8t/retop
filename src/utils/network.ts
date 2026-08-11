@@ -5,14 +5,43 @@ import {
 } from "./cache";
 import { useAppStore } from "../store/appStore";
 
+export function extractCsrfTokenFromHTML(html: string): string | null {
+  if (!html || typeof html !== "string") return null;
+
+  // 1. Hidden input name="_csrf" value="..."
+  const inputMatch =
+    html.match(/<input[^>]*name=["']_csrf["'][^>]*value=["']([^"']+)["']/i) ||
+    html.match(/<input[^>]*value=["']([^"']+)["'][^>]*name=["']_csrf["']/i);
+  if (inputMatch && inputMatch[1] && inputMatch[1].length > 5) return inputMatch[1];
+
+  // 2. JS variable csrfValue = "..." or _csrf = "..." or _csrf: "..."
+  const jsMatch = html.match(/(?:csrfValue|_csrf)\s*[:=]\s*["']([^"']+)["']/i);
+  if (jsMatch && jsMatch[1] && jsMatch[1].length > 5) return jsMatch[1];
+
+  return null;
+}
+
+export function extractAuthIdFromHTML(html: string): string | null {
+  if (!html || typeof html !== "string") return null;
+
+  const match =
+    html.match(/<input[^>]*id=["']authorizedIDX["'][^>]*value=["']([^"']+)["']/i) ||
+    html.match(/<input[^>]*name=["']authorizedID["'][^>]*value=["']([^"']+)["']/i) ||
+    html.match(/<input[^>]*value=["']([^"']+)["'][^>]*id=["']authorizedIDX["']/i);
+  if (match && match[1] && match[1].length > 3) return match[1];
+
+  return null;
+}
+
 export async function diagnoseNetworkError(): Promise<string> {
-  // 1. Check internet connectivity first (Google ping / navigator.onLine)
+  // 1. Check internet connectivity first
   let hasInternet = typeof navigator !== "undefined" ? navigator.onLine : true;
   if (hasInternet) {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 2500);
-      await fetch("https://www.google.com/generate_204", {
+      await window.fetch("https://www.google.com/generate_204", {
+        method: "HEAD",
         mode: "no-cors",
         cache: "no-store",
         signal: controller.signal,
@@ -25,26 +54,41 @@ export async function diagnoseNetworkError(): Promise<string> {
   }
 
   if (!hasInternet) {
-    return "No internet connection";
+    return "No internet connection. Please check your network.";
   }
 
-  // 2. Internet is working, now test VTOP server responsiveness
+  // 2. Internet is working, now test VTOP server & session status
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3500);
-    const res = await fetch("/vtop/open/page", {
+    const res = await window.fetch("/vtop/open/page", {
+      method: "POST",
       cache: "no-store",
       signal: controller.signal,
     });
     clearTimeout(timeoutId);
+
     if (!res.ok) {
-      return "Please try again later. VTOP is slow or unreachable.";
+      if (res.status === 401 || res.status === 403) {
+        return "VTOP session expired. You may need to log in again.";
+      }
+      return "VTOP server is slow or unreachable. You may need to log in again.";
+    }
+
+    const html = await res.text();
+    if (
+      html.includes("login") ||
+      html.includes("authorizedID") ||
+      html.includes("vtopLogin") ||
+      html.includes("Session Expired")
+    ) {
+      return "VTOP session expired. You may need to log in again.";
     }
   } catch {
-    return "Please try again later. VTOP is slow or unreachable.";
+    return "VTOP is slow or unreachable. You may need to log in again.";
   }
 
-  return "Please try again later. VTOP is slow or unreachable.";
+  return "VTOP is slow or unreachable. You may need to log in again.";
 }
 
 export class VTOPNetwork {
@@ -52,6 +96,68 @@ export class VTOPNetwork {
   public authorizedID: string;
 
   public static has404Error = false;
+  private static hasDiagnosticRun = false;
+  private static activeInstances: Set<VTOPNetwork> = new Set();
+  private static domObserverInitialized = false;
+
+  public static handleNetworkFailure(reason?: string, isFatal = false) {
+    // Never trigger fatal lock if device is offline
+    if (typeof navigator !== "undefined" && !navigator.onLine) return;
+
+    if (isFatal) {
+      VTOPNetwork.has404Error = true;
+
+      if (!VTOPNetwork.hasDiagnosticRun) {
+        VTOPNetwork.hasDiagnosticRun = true;
+
+        diagnoseNetworkError().then((msg) => {
+          window.dispatchEvent(
+            new CustomEvent("retop-toast", {
+              detail: { message: msg, type: "error" },
+            }),
+          );
+        });
+      }
+    }
+  }
+
+  public static resetNetworkErrorState() {
+    VTOPNetwork.has404Error = false;
+    VTOPNetwork.hasDiagnosticRun = false;
+  }
+
+  private static setupDOMTokenObserver() {
+    if (typeof window !== "undefined" && !VTOPNetwork.domObserverInitialized) {
+      VTOPNetwork.domObserverInitialized = true;
+      window.addEventListener("online", () => {
+        VTOPNetwork.resetNetworkErrorState();
+      });
+    }
+  }
+
+  public syncTokensFromDOM() {
+    VTOPNetwork.setupDOMTokenObserver();
+    if (typeof document === "undefined") return;
+
+    const csrfInput = document.querySelector('input[name="_csrf"]') as HTMLInputElement;
+    const domCsrf = csrfInput?.value || (window as any).csrfValue;
+    if (domCsrf && domCsrf !== this.csrf && domCsrf.length > 5) {
+      this.csrf = domCsrf;
+      (window as any).csrfValue = domCsrf;
+    }
+
+    const authInput =
+      (document.getElementById("authorizedIDX") as HTMLInputElement) ||
+      (document.querySelector('input[name="authorizedID"]') as HTMLInputElement);
+    const domAuth = authInput?.value || (window as any).authorizedID;
+    if (domAuth && domAuth !== this.authorizedID && domAuth.length > 3) {
+      this.authorizedID = domAuth;
+      (window as any).authorizedID = domAuth;
+      try {
+        localStorage.setItem("retop_lastAuthId", domAuth);
+      } catch {}
+    }
+  }
 
   private static requestTimestamps: number[] = [];
 
@@ -106,41 +212,43 @@ export class VTOPNetwork {
     init?: RequestInit,
   ): Promise<Response> {
     if (VTOPNetwork.has404Error) {
-      throw new Error("Network requests halted due to previous 404 error.");
+      throw new Error("Network requests halted due to previous VTOP error.");
     }
 
     const urlStr =
       typeof input === "string"
         ? input
         : (input as any).url || input.toString();
+
+    const isOfflineMode =
+      (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
+      (typeof location !== "undefined" &&
+        location.hostname !== "vtop.vit.ac.in" &&
+        !location.protocol.includes("chrome-extension") &&
+        !location.protocol.includes("moz-extension"));
+
+    if (isOfflineMode) {
+      return new Response("", { status: 200 });
+    }
+
     useAppStore.getState().logNetworkRequest(urlStr);
     await this.enforceRateLimit();
 
     try {
-      const response = await fetch(input, init);
-      if (response.status === 404) {
-        VTOPNetwork.has404Error = true;
-        diagnoseNetworkError().then((msg) => {
-          window.dispatchEvent(
-            new CustomEvent("retop-toast", {
-              detail: { message: msg, type: "error" },
-            }),
-          );
-        });
-        throw new Error(`HTTP Status 404`);
+      const response = await window.fetch(input, init);
+      if (!response.ok) {
+        const isFatalEndpoint =
+          urlStr.includes("open/page") ||
+          urlStr.includes("vtopLogin");
+        const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
+
+        if (isFatalEndpoint && !isOffline && (response.status === 401 || response.status === 403)) {
+          VTOPNetwork.handleNetworkFailure(`HTTP Status ${response.status}`, true);
+        }
+        throw new Error(`HTTP Status ${response.status}`);
       }
       return response;
     } catch (err: any) {
-      if (err?.message?.includes("404") || (typeof navigator !== "undefined" && !navigator.onLine)) {
-        VTOPNetwork.has404Error = true;
-        diagnoseNetworkError().then((msg) => {
-          window.dispatchEvent(
-            new CustomEvent("retop-toast", {
-              detail: { message: msg, type: "error" },
-            }),
-          );
-        });
-      }
       throw err;
     }
   }
@@ -149,15 +257,34 @@ export class VTOPNetwork {
     endpoint: string,
     params: Record<string, string> = {}
   ): Promise<string> {
+    const isOfflineMode =
+      (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
+      (typeof location !== "undefined" &&
+        location.hostname !== "vtop.vit.ac.in" &&
+        !location.protocol.includes("chrome-extension") &&
+        !location.protocol.includes("moz-extension"));
+
+    if (isOfflineMode) {
+      return "";
+    }
+
+    // 1. Sync live tokens from DOM prior to sending request
+    this.syncTokensFromDOM();
+
     const url = endpoint.startsWith("/") ? endpoint : `/vtop/${endpoint}`;
     const body = new URLSearchParams();
 
-    // Auto-append default params
-    if (!params._csrf) body.append("_csrf", this.csrf);
-    if (!params.authorizedID) body.append("authorizedID", this.authorizedID);
+    // 2. Always use current active instance tokens
+    const activeCsrf = params._csrf || this.csrf;
+    const activeAuthId = params.authorizedID || this.authorizedID;
+
+    body.append("_csrf", activeCsrf);
+    body.append("authorizedID", activeAuthId);
 
     for (const [key, value] of Object.entries(params)) {
-      body.append(key, value);
+      if (key !== "_csrf" && key !== "authorizedID") {
+        body.append(key, value);
+      }
     }
     
     // Auto-append timestamp for cache busting if not specified
@@ -173,17 +300,41 @@ export class VTOPNetwork {
     });
 
     if (!response.ok) throw new Error(`Status ${response.status}`);
-    return await response.text();
+    const text = await response.text();
+
+    // 3. Self-healing token update from response payload
+    const newCsrf = extractCsrfTokenFromHTML(text);
+    if (newCsrf && newCsrf !== this.csrf) {
+      console.log("[VTOPNetwork] Dynamic CSRF token self-healed from API response");
+      this.updateTokens(newCsrf, null);
+    }
+    const newAuthId = extractAuthIdFromHTML(text);
+    if (newAuthId && newAuthId !== this.authorizedID) {
+      this.updateTokens(null, newAuthId);
+    }
+
+    return text;
   }
 
   constructor(csrf: string, authorizedID: string) {
     this.csrf = csrf;
     this.authorizedID = authorizedID;
+    VTOPNetwork.activeInstances.clear();
+    VTOPNetwork.activeInstances.add(this);
   }
 
   public updateTokens(csrf?: string | null, authorizedID?: string | null) {
-    if (csrf) this.csrf = csrf;
-    if (authorizedID) this.authorizedID = authorizedID;
+    if (csrf && csrf !== this.csrf && csrf.length > 5) {
+      this.csrf = csrf;
+      (window as any).csrfValue = csrf;
+    }
+    if (authorizedID && authorizedID !== this.authorizedID && authorizedID.length > 3) {
+      this.authorizedID = authorizedID;
+      (window as any).authorizedID = authorizedID;
+      try {
+        localStorage.setItem("retop_lastAuthId", authorizedID);
+      } catch {}
+    }
   }
 
   /**
@@ -235,14 +386,8 @@ export class VTOPNetwork {
           data.includes("<title>Error</title>");
 
         if (isErrorPage) {
-          VTOPNetwork.has404Error = true;
-          diagnoseNetworkError().then((msg) => {
-            window.dispatchEvent(
-              new CustomEvent("retop-toast", {
-                detail: { message: msg, type: "error" },
-              }),
-            );
-          });
+          const isFatalKey = key.includes("dashboard") || key.includes("tt_");
+          VTOPNetwork.handleNetworkFailure("404 Error Page", isFatalKey);
         } else if (
           data &&
           data.length > 50 &&
@@ -282,9 +427,23 @@ export class VTOPNetwork {
 
       const age = Date.now() - (cachedInfo.timestamp || 0);
 
-      const isOffline = (window as any).__RETOP_OFFLINE__;
+      const isOffline =
+        (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
+        (typeof location !== "undefined" &&
+          location.hostname !== "vtop.vit.ac.in" &&
+          !location.protocol.includes("chrome-extension") &&
+          !location.protocol.includes("moz-extension"));
 
-      if (!isOffline && (forceRefresh || age > EXPIRY_MS)) {
+      if (!isOffline && forceRefresh) {
+        if (this.inFlightRequests.has(userScopedKey)) {
+          return await this.inFlightRequests.get(userScopedKey)!;
+        }
+        const promise = doFetchAndCache();
+        this.inFlightRequests.set(userScopedKey, promise);
+        return await promise;
+      }
+
+      if (!isOffline && age > EXPIRY_MS) {
         if (!this.inFlightRequests.has(userScopedKey)) {
           console.log(`[VTOP Network] BG Fetch Triggered: ${userScopedKey}`);
           const promise = doFetchAndCache();
@@ -296,6 +455,22 @@ export class VTOPNetwork {
       }
 
       return cachedInfo.data;
+    }
+
+    const isOffline =
+      (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
+      (typeof location !== "undefined" &&
+        location.hostname !== "vtop.vit.ac.in" &&
+        !location.protocol.includes("chrome-extension") &&
+        !location.protocol.includes("moz-extension"));
+
+    if (isOffline) {
+      console.warn(`[VTOP Network] Offline cache miss for: ${userScopedKey}`);
+      throw new Error("OFFLINE_CACHE_MISS");
+    }
+
+    if (this.inFlightRequests.has(userScopedKey)) {
+      return await this.inFlightRequests.get(userScopedKey)!;
     }
 
     console.log(`[VTOP Network] Fetching: ${userScopedKey}`);
@@ -331,7 +506,7 @@ export class VTOPNetwork {
       Array.from(oldScript.attributes).forEach((attr) =>
         newScript.setAttribute(attr.name, attr.value),
       );
-      newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+      newScript.appendChild(document.createTextNode(oldScript.textContent || ""));
       oldScript.parentNode?.replaceChild(newScript, oldScript);
     });
   }
@@ -455,7 +630,11 @@ export class VTOPNetwork {
   }
 
   async getMarksView(forceRefresh = false): Promise<string> {
-    return this.fetchFragment("examinations/StudentMarkView");
+    return this.fetchWithCache(
+      "marks_view_initial",
+      () => this.fetchFragment("examinations/StudentMarkView"),
+      forceRefresh,
+    );
   }
 
   async getStudentMarks(
@@ -571,23 +750,26 @@ export class VTOPNetwork {
   }
 
   async getDAUploadView(classId: string, code: string): Promise<string> {
-    const url = "examinations/processDigitalAssignmentUpload";
-    const body = new URLSearchParams();
-    body.append("_csrf", this.csrf);
-    body.append("authorizedID", this.authorizedID);
-    body.append("classId", classId);
-    body.append("mode", code);
-    body.append("x", new Date().toUTCString());
+    const cacheKey = `da_upload_view_${classId}_${code}`;
+    return this.fetchWithCache(cacheKey, async () => {
+      const url = "examinations/processDigitalAssignmentUpload";
+      const body = new URLSearchParams();
+      body.append("_csrf", this.csrf);
+      body.append("authorizedID", this.authorizedID);
+      body.append("classId", classId);
+      body.append("mode", code);
+      body.append("x", new Date().toUTCString());
 
-    const response = await this.rateLimitedFetch(`/vtop/${url}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-      },
-      body: body,
+      const response = await this.rateLimitedFetch(`/vtop/${url}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        },
+        body: body,
+      });
+      if (!response.ok) throw new Error(`Status ${response.status}`);
+      return await response.text();
     });
-    if (!response.ok) throw new Error(`Status ${response.status}`);
-    return await response.text();
   }
 
   async uploadStudentDA(
@@ -615,7 +797,11 @@ export class VTOPNetwork {
   }
 
   async getGradesView(forceRefresh = false): Promise<string> {
-    return this.fetchFragment("examinations/examGradeView/StudentGradeView");
+    return this.fetchWithCache(
+      "grades_view_initial",
+      () => this.fetchFragment("examinations/examGradeView/StudentGradeView"),
+      forceRefresh,
+    );
   }
 
   async getStudentGrades(
@@ -676,25 +862,28 @@ export class VTOPNetwork {
     semesterSubId: string,
     courseId: string,
   ): Promise<string> {
-    const url = "examinations/examGradeView/getGradeViewDetails";
-    const body = new URLSearchParams();
-    body.append("_csrf", this.csrf);
-    body.append("authorizedID", this.authorizedID);
-    body.append("semesterSubId", semesterSubId);
-    body.append("courseId", courseId);
-    body.append("x", new Date().toUTCString());
+    const cacheKey = `grade_details_${semesterSubId}_${courseId}`;
+    return this.fetchWithCache(cacheKey, async () => {
+      const url = "examinations/examGradeView/getGradeViewDetails";
+      const body = new URLSearchParams();
+      body.append("_csrf", this.csrf);
+      body.append("authorizedID", this.authorizedID);
+      body.append("semesterSubId", semesterSubId);
+      body.append("courseId", courseId);
+      body.append("x", new Date().toUTCString());
 
-    const response = await this.rateLimitedFetch(`/vtop/${url}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-        "X-Requested-With": "XMLHttpRequest",
-      },
-      body: body,
+      const response = await this.rateLimitedFetch(`/vtop/${url}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+          "X-Requested-With": "XMLHttpRequest",
+        },
+        body: body,
+      });
+
+      if (!response.ok) throw new Error(`Status ${response.status}`);
+      return await response.text();
     });
-
-    if (!response.ok) throw new Error(`Status ${response.status}`);
-    return await response.text();
   }
 
   async getCoursePage(): Promise<string> {
@@ -835,7 +1024,11 @@ export class VTOPNetwork {
       if (!document.getElementById("semesterSubId")) {
         const html = await this.fetchFragment("examinations/StudentDA");
         const container = document.getElementById("main-section");
-        if (container) container.innerHTML = html;
+        if (container) {
+          container.replaceChildren();
+          const doc = new DOMParser().parseFromString(html, "text/html");
+          Array.from(doc.body.childNodes).forEach((node) => container.appendChild(node.cloneNode(true)));
+        }
       }
     }
     return document.documentElement.outerHTML;

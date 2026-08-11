@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+
 import { EmptyState } from "../components/EmptyState";
+import { OfflineNotSynced } from "../components/ui/OfflineNotSynced";
 import {
   ProgressActivity,
   CalendarMonth as CalendarIcon,
@@ -77,17 +78,17 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
 
   // Fetch Semesters
   useEffect(() => {
-    if (calSemesters.length > 0) return;
+    if (calSemesters.length> 0) return;
 
     const fetchSems = async () => {
       try {
-        const html = await network.fetchFragment(
-          "academics/common/CalendarPreview",
-          { verifyMenu: "true" },
+        const html = await network.fetchWithCache(
+          "cal_semester_list",
+          () => network.fetchFragment("academics/common/CalendarPreview", { verifyMenu: "true" })
         );
         const sems = parseCalendarSemesters(html);
         setCalSemesters(sems);
-        if (sems.length > 0 && !calSelectedSem) {
+        if (sems.length> 0 && !calSelectedSem) {
           const defaultSem =
             sems.find((s: any) => s.selected)?.id || sems[0].id;
           setCalSelectedSem(defaultSem);
@@ -109,7 +110,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
   useEffect(() => {
     if (!calSelectedSem) return;
     // Prevent fetching if we already have it cached
-    if (calAvailableMonths.length > 0 && calClassGroups.length > 0) return;
+    if (calAvailableMonths.length> 0 && calClassGroups.length> 0) return;
 
     fetchCalendarMonthsAndGroups(network, calSelectedSem);
   }, [
@@ -124,8 +125,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
   useEffect(() => {
     if (calAvailableMonths.length === 0 || !calSelectedGroup || !calSelectedSem)
       return;
-    // Prevent fetching if we already have grid data for this combo
-    if (calGridData.length > 0) return; // Simple check, relies on store to wipe data when sem/group changes
+    if (calGridData.length > 0) return;
 
     fetchCalendarGrid(
       network,
@@ -141,6 +141,19 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
     fetchCalendarGrid,
     calGridData.length,
   ]);
+
+  useEffect(() => {
+    const handleRefresh = () => {
+      const state = useDataStore.getState();
+      if (state.calSelectedSem && state.calSelectedGroup && state.calAvailableMonths.length > 0) {
+        state.fetchCalendarGrid(network, state.calSelectedSem, state.calSelectedGroup, state.calAvailableMonths, true);
+      } else if (state.calSelectedSem) {
+        state.fetchCalendarMonthsAndGroups(network, state.calSelectedSem);
+      }
+    };
+    window.addEventListener("retop-refresh-calendar", handleRefresh);
+    return () => window.removeEventListener("retop-refresh-calendar", handleRefresh);
+  }, [network]);
 
   useEffect(() => {
     if (calGridData.length === 0 || initialScrollDone.current) return;
@@ -164,12 +177,15 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
           </div>
         </div>
       ) : calAvailableMonths.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center mt-20">
-          <EmptyState 
-            msg="No Calendar Data" 
-            subMsg="The calendar grid for this semester could not be fetched or does not exist yet." 
-            icon={CalendarIcon} 
-          />
+        <div className="flex-1 flex flex-col items-center justify-center pt-15">
+          {typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__ ? (
+            <OfflineNotSynced pageName="Academic Calendar" />
+          ) : (
+            <EmptyState 
+              msg="No Calendar Data" 
+              subMsg="The calendar grid for this semester could not be fetched or does not exist yet." 
+              icon={CalendarIcon} />
+          )}
         </div>
       ) : (
         <div className="flex-1 flex flex-col min-h-0 w-full relative z-0">
@@ -181,8 +197,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                   key={day}
                   className={`text-center font-expanded font-black text-xs md:text-sm uppercase tracking-widest ${
                     i === 0 ? "text-att-danger" : "text-(--text-muted)"
-                  }`}
-                >
+                  }`}>
                   {day}
                 </div>
               ))}
@@ -194,32 +209,30 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
           {/* Grid Container */}
           <div className="flex-1 flex flex-col overflow-hidden relative z-10">
             <div className="flex-1 overflow-y-auto custom-scrollbar bg-transparent relative pb-24 pt-4">
-              <AnimatePresence mode="wait">
+              
                 {calLoadingGrid ? (
-                  <motion.div
+                  <div
                     key="loading"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="absolute inset-0 z-30 pt-4"
-                  >
+ 
+ 
+ 
+                    className="absolute inset-0 z-30 pt-4">
                     <div className="grid grid-cols-7 gap-2 md:gap-3 auto-rows-[minmax(100px,auto)] md:auto-rows-[minmax(140px,auto)] p-2">
                        {[...Array(35)].map((_, i) => <div key={i} className="bg-(--bg-surface) rounded-3xl animate-pulse" />)}
                     </div>
-                  </motion.div>
-                ) : calGridData.length > 0 ? (
-                  <motion.div
+                  </div>
+                ) : calGridData.length> 0 ? (
+                  <div
                     key="content"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={spring}
-                    className="flex flex-col relative"
-                  >
+ 
+ 
+ 
+ 
+                    className="flex flex-col relative">
                     {calGridData.map((data, mIdx) => (
                       <div key={mIdx} className="flex flex-col pb-8 pt-4">
                         <div className="flex items-center justify-start pb-4 pointer-events-none sticky top-0 z-50 pt-2">
-                          <h2 className="font-expanded font-black text-2xl md:text-3xl uppercase tracking-tighter m-0 text-(--text-main) drop-shadow-sm px-2">
+                          <h2 className="font-expanded font-black text-2xl md:text-3xl uppercase tracking-tighter m-0 text-(--text-main) px-2">
                             {data.month.label.replace(/\s*-\s*/, " ")}
                           </h2>
                         </div>
@@ -229,8 +242,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                             (_, i) => (
                               <div
                                 key={`empty-${i}`}
-                                className="bg-transparent opacity-0 pointer-events-none"
-                              />
+                                className="bg-transparent opacity-0 pointer-events-none" />
                             ),
                           )}
 
@@ -251,7 +263,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                                 backgroundColor: holidayBg,
                                 color: holidayFg,
                               };
-                              bgClass = "border-0 shadow-xs hover:opacity-90";
+                              bgClass = "border-0 hover:opacity-90";
                               textClass = "opacity-95 font-extrabold";
                               numberClass = "font-black";
                             } else if (day.isExam) {
@@ -259,7 +271,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                                 backgroundColor: examBg,
                                 color: examFg,
                               };
-                              bgClass = "border-0 shadow-xs hover:opacity-90";
+                              bgClass = "border-0 hover:opacity-90";
                               textClass = "opacity-95 font-extrabold";
                               numberClass = "font-black";
                             } else if (day.isInstructional) {
@@ -267,7 +279,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                                 backgroundColor: classBg,
                                 color: classFg,
                               };
-                              bgClass = "border-0 shadow-xs hover:opacity-90";
+                              bgClass = "border-0 hover:opacity-90";
                               textClass = "opacity-95 font-bold";
                               numberClass = "font-black";
                             } else if (day.info) {
@@ -275,7 +287,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                                 backgroundColor: eventBg,
                                 color: eventFg,
                               };
-                              bgClass = "border-0 shadow-xs hover:opacity-90";
+                              bgClass = "border-0 hover:opacity-90";
                               textClass = "opacity-95 font-bold";
                               numberClass = "font-black";
                             }
@@ -291,12 +303,10 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                                 key={idx}
                                 ref={isToday ? todayRef : null}
                                 style={cardStyle}
-                                className={`relative p-3 md:p-4 flex flex-col transition-all group rounded-3xl ${bgClass} ${borderClass}`}
-                              >
+                                className={`relative p-3 md:p-4 flex flex-col transition-all group rounded-3xl ${bgClass} ${borderClass}`}>
                                 <div className="flex justify-between items-start mb-1 md:mb-2 pt-1 md:pt-0 relative z-10">
                                   <span
-                                    className={`font-black text-sm md:text-lg lg:text-xl font-expanded leading-none transition-transform duration-fast ease-out group-hover:scale-[1.15] origin-top-left ${numberClass}`}
-                                  >
+                                    className={`font-black text-sm md:text-lg lg:text-xl font-expanded leading-none transition-transform duration-fast ease-out group-hover:scale-[1.15] origin-top-left ${numberClass}`}>
                                     {day.dayNumber}
                                   </span>
                                 </div>
@@ -305,8 +315,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                                   <div className="mt-auto relative z-10 flex flex-col gap-1 pt-2">
                                     {day.subInfo && (
                                       <span
-                                        className={`inline-flex items-center text-[9px] md:text-[10px] font-black px-2 py-1 rounded-full uppercase w-max max-w-full bg-current/15 text-current`}
-                                      >
+                                        className={`inline-flex items-center text-[9px] md:text-[10px] font-black px-2 py-1 rounded-full uppercase w-max max-w-full bg-current/15 text-current`}>
                                         <span className="whitespace-normal wrap-break-word truncate">
                                           {day.subInfo.replace(/[()]/g, "")}
                                         </span>
@@ -314,8 +323,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                                     )}
                                     <p
                                       className={`text-[10px] md:text-xs font-bold uppercase leading-tight ${textClass} wrap-break-word`}
-                                      title={day.info}
-                                    >
+                                      title={day.info}>
                                       {day.info}
                                     </p>
                                   </div>
@@ -332,15 +340,14 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                           }).map((_, i) => (
                             <div
                               key={`fill-${i}`}
-                              className="bg-transparent opacity-0 pointer-events-none"
-                            />
+                              className="bg-transparent opacity-0 pointer-events-none" />
                           ))}
                         </div>
                       </div>
                     ))}
-                  </motion.div>
+                  </div>
                 ) : null}
-              </AnimatePresence>
+              
             </div>
           </div>
         </div>

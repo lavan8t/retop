@@ -1,5 +1,8 @@
+import { getExtUrl } from "./url";
+
 let isInitialized = false;
 let shadowRoot: ShadowRoot | null = null;
+let hostObserver: MutationObserver | null = null;
 
 function safeAppend(element: HTMLElement) {
   if (document.head) document.head.appendChild(element);
@@ -25,7 +28,7 @@ export function getAppRoot(): HTMLElement | null {
 
 export function injectGlobalFonts() {
   if (!document.getElementById("retop-material-symbols-style")) {
-    const extUrl = `chrome-extension://${chrome.runtime.id}/dist/fonts`;
+    const extUrl = getExtUrl("dist/fonts");
     const style = document.createElement("style");
     style.id = "retop-material-symbols-style";
     style.textContent = `
@@ -90,7 +93,7 @@ export function injectGlobalStyles() {
   const link = document.createElement("link");
   link.id = "retop-global-css";
   link.rel = "stylesheet";
-  link.href = chrome.runtime.getURL("dist/style.css");
+  link.href = getExtUrl("dist/style.css");
   safeAppend(link);
 
   injectGlobalFonts();
@@ -123,28 +126,26 @@ export function initializeContainer() {
     parent.appendChild(host);
   }
 
-  // Ensure Shadow DOM stays on top even as page mutates or loads
-  const ensureOnTop = () => {
-    const p = document.documentElement || document.body;
-    if (p && p.lastElementChild !== host) {
-      p.appendChild(host);
-    }
-  };
-
-  ensureOnTop();
-
-  const observer = new MutationObserver(ensureOnTop);
-  if (document.documentElement) {
-    observer.observe(document.documentElement, { childList: true });
-  }
-
   if (!shadowRoot || !host.shadowRoot) {
     shadowRoot = host.shadowRoot || host.attachShadow({ mode: "open" });
+
+    const resetStyleId = "retop-shadow-reset";
+    if (!shadowRoot.querySelector(`#${resetStyleId}`)) {
+      const earlyShadowStyle = document.createElement("style");
+      earlyShadowStyle.id = resetStyleId;
+      earlyShadowStyle.textContent = `
+        *, ::before, ::after {
+          box-sizing: border-box;
+          border-color: transparent !important;
+        }
+      `;
+      shadowRoot.insertBefore(earlyShadowStyle, shadowRoot.firstChild);
+    }
 
     if (!shadowRoot.querySelector("link[href*='dist/style.css']")) {
       const cssLink = document.createElement("link");
       cssLink.rel = "stylesheet";
-      cssLink.href = chrome.runtime.getURL("dist/style.css");
+      cssLink.href = getExtUrl("dist/style.css");
       shadowRoot.appendChild(cssLink);
     }
 
@@ -165,23 +166,23 @@ export function injectSplashScreen() {
 
   const styleId = "retop-early-cloak";
   if (!document.getElementById(styleId)) {
-    const extUrl =
-      typeof chrome !== "undefined" && chrome.runtime?.id
-        ? `chrome-extension://${chrome.runtime.id}/dist/fonts`
+    const extUrlStr =
+      typeof chrome !== "undefined" && chrome.runtime && !!chrome.runtime.getURL
+        ? getExtUrl("dist/fonts")
         : "";
 
     const earlyStyle = document.createElement("style");
     earlyStyle.id = styleId;
     earlyStyle.textContent = `
       ${
-        extUrl
+        extUrlStr
           ? `
       @font-face {
         font-family: "Google Sans Flex";
         font-weight: 1 1000;
         font-stretch: 25% 151%;
         font-display: block;
-        src: url("${extUrl}/gsf.subset.woff2") format("woff2");
+        src: url("${extUrlStr}/gsf.subset.woff2") format("woff2");
         unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
       }
       `
@@ -209,24 +210,22 @@ export function injectSplashScreen() {
         transition: opacity var(--duration-slow, 0.3s) ease !important;
       }
       #retop-open-loader .retop-brand,
-      #retop-open-loader .retop-about-logo,
-      .retop-about-logo {
+      #retop-open-loader .retop-about-logo {
         display: inline-block !important;
         font-family: "Google Sans Flex", var(--font-expanded, sans-serif) !important;
         font-size: 3.5rem !important;
         letter-spacing: -0.04em !important;
         color: #f8fafc !important;
         text-transform: lowercase !important;
-        font-variation-settings: "wdth" 125, "wght" 900, "ROND" 100, "slnt" -10 !important;
         transform: skewX(-10deg) !important;
         animation: retop-logo-bounce 1.2s ease-in-out infinite alternate !important;
       }
       @keyframes retop-logo-bounce {
         0% {
-          font-variation-settings: "wdth" 125, "wght" 900, "ROND" 100, "slnt" -10 !important;
+          font-variation-settings: "wdth" 125, "wght" 900, "ROND" 100, "slnt" -10;
         }
         100% {
-          font-variation-settings: "wdth" 125, "wght" 1, "ROND" 100, "slnt" -10 !important;
+          font-variation-settings: "wdth" 125, "wght" 1, "ROND" 100, "slnt" -10;
         }
       }
     `;
@@ -235,7 +234,10 @@ export function injectSplashScreen() {
 
   const loader = document.createElement("div");
   loader.id = "retop-open-loader";
-  loader.innerHTML = `<div class="retop-brand retop-about-logo">retop</div>`;
+  const brandDiv = document.createElement("div");
+  brandDiv.className = "retop-brand retop-about-logo";
+  brandDiv.textContent = "retop";
+  loader.appendChild(brandDiv);
   document.documentElement.appendChild(loader);
 }
 
@@ -323,7 +325,7 @@ export function createHiddenForm(
 
 export function injectScriptFile(fileName: string) {
   const script = document.createElement("script");
-  script.src = chrome.runtime.getURL(fileName);
+  script.src = getExtUrl(fileName);
   script.onload = function () {
     (this as HTMLScriptElement).remove();
   };

@@ -4,8 +4,6 @@ import {
   CalendarMonth,
   KeyboardArrowDown,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
-import { motion, AnimatePresence } from "framer-motion";
-
 // SMART PARSER: Converts "Winter Semester 2025-26" -> "W'26"
 export const formatShortSemesterName = (label: string) => {
   if (!label) return "";
@@ -112,9 +110,7 @@ export const SemesterDropdown = ({ semesters, selectedId, onChange, align = "aut
   return (
     <div 
       ref={containerRef}
-      className="relative z-50"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      className="relative z-[999999]"
     >
       <button
         ref={buttonRef}
@@ -130,15 +126,10 @@ export const SemesterDropdown = ({ semesters, selectedId, onChange, align = "aut
         />
       </button>
 
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: isTop ? 6 : -6, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: isTop ? 6 : -6, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-            className={`absolute z-50 w-[60vw] min-w-50 max-w-72 md:w-72 ${positionClass} ${alignmentClass} ${originClass}`}
-          >
+      {isOpen && (
+        <div
+          className={`absolute z-[999999] w-[60vw] min-w-50 max-w-72 md:w-72 ${positionClass} ${alignmentClass} ${originClass} transition-all duration-150 animate-in fade-in zoom-in-95`}
+        >
             <div className="w-full bg-(--bg-surface) border-2 border-(--border-main) rounded-xl overflow-hidden popup-shadow">
               <div className="max-h-56 overflow-y-auto custom-scrollbar p-1.5 md:p-2 space-y-1">
                 {semesters.map((sem: Semester) => (
@@ -167,9 +158,8 @@ export const SemesterDropdown = ({ semesters, selectedId, onChange, align = "aut
                 ))}
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
     </div>
   );
 };

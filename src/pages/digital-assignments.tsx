@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useDataStore } from "../store/dataStore";
+import { useAppStore } from "../store/appStore";
 import { OfflineNotSynced } from "../components/ui/OfflineNotSynced";
 import { VTOPNetwork } from "../utils/network";
-import { motion, AnimatePresence } from "framer-motion";
+import { compressBalanced, compressMax } from "@quicktoolsone/pdf-compress";
+
 import { EmptyState } from "../components/EmptyState";
 import {
   KeyboardArrowDown,
@@ -18,7 +20,7 @@ import {
   Visibility,
   FilePresent,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
-import { SPRING_SNAPPY } from "../utils/motion";
+
 
 const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
 const ALLOWED_EXTENSIONS = ["pdf", "xls", "xlsx", "doc", "docx"];
@@ -48,7 +50,7 @@ const parseDueDateTimestamp = (dateStr?: string): number => {
     const d = new Date(dateStr);
     if (!isNaN(d.getTime())) return d.getTime();
     const parts = dateStr.trim().split(/[\s-]+/);
-    if (parts.length >= 3) {
+    if (parts.length>= 3) {
       const day = parseInt(parts[0], 10);
       const monthMap: Record<string, number> = {
         jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
@@ -102,7 +104,7 @@ const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
   }, [initialAssgnCode]);
 
   useEffect(() => {
-    if (!selectedClassId && courses.length > 0) {
+    if (!selectedClassId && courses.length> 0) {
       setSelectedClassId(courses[0].classId);
     }
   }, [courses, selectedClassId]);
@@ -112,7 +114,7 @@ const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
   }, [assignmentsMap, selectedClassId]);
 
   useEffect(() => {
-    if (!selectedAssgnCode && availableAssignments.length > 0) {
+    if (!selectedAssgnCode && availableAssignments.length> 0) {
       setSelectedAssgnCode(availableAssignments[0].code);
     }
   }, [availableAssignments, selectedAssgnCode]);
@@ -135,13 +137,13 @@ const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
     e.stopPropagation();
     setIsDraggingOver(false);
 
-    if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+    if (e.dataTransfer?.files && e.dataTransfer.files.length> 0) {
       const droppedFile = e.dataTransfer.files[0];
       if (!isAllowedFile(droppedFile)) {
         alert("Invalid file format. Allowed formats: PDF, XLS, XLSX, DOC, DOCX.");
         return;
       }
-      if (droppedFile.size > MAX_FILE_SIZE) {
+      if (droppedFile.size> MAX_FILE_SIZE && getFileExtension(droppedFile.name) !== "pdf") {
         alert("File size exceeds 4MB limit.");
         return;
       }
@@ -160,11 +162,28 @@ const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
     const assgnTitle = currentAssgn?.title || "Digital Assignment";
 
     setIsUploading(true);
-    setStatusMsg(null);
+    setStatusMsg({ type: "success", text: "Processing file..." });
 
     try {
+      let fileToUpload = selectedFile;
+      if (selectedFile.size > MAX_FILE_SIZE && getFileExtension(selectedFile.name) === "pdf") {
+        setStatusMsg({ type: "success", text: "Compressing PDF to under 4MB..." });
+        const buffer = await selectedFile.arrayBuffer();
+        let compressed = await compressBalanced(buffer);
+        if (compressed.stats.compressedSize > MAX_FILE_SIZE) {
+          compressed = await compressMax(buffer);
+        }
+        if (compressed.stats.compressedSize > MAX_FILE_SIZE) {
+          setStatusMsg({ type: "error", text: "PDF too large even after maximum compression." });
+          setIsUploading(false);
+          return;
+        }
+        fileToUpload = new File([compressed.pdf], selectedFile.name, { type: "application/pdf" });
+      }
+
+      setStatusMsg(null);
       await network.getDAUploadView(selectedClassId, selectedAssgnCode);
-      await network.uploadStudentDA(selectedClassId, selectedAssgnCode, assgnTitle, selectedFile);
+      await network.uploadStudentDA(selectedClassId, selectedAssgnCode, assgnTitle, fileToUpload);
       setStatusMsg({ type: "success", text: "Assignment uploaded successfully!" });
       setTimeout(() => {
         onSuccessUpload(selectedClassId);
@@ -181,22 +200,40 @@ const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
   const ext = selectedFile ? getFileExtension(selectedFile.name) : "";
 
   return (
-    <div className="w-full lg:w-96 shrink-0 flex flex-col gap-4">
-      {/* Dropzone Container */}
-      <div
-        onDragOver={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setIsDraggingOver(true);
-        }}
-        onDragLeave={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setIsDraggingOver(false);
-        }}
-        onDrop={handleDrop}
-        onClick={() => {
-          if (!selectedFile) {
+    <div
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDraggingOver(true);
+      }}
+      onDragLeave={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDraggingOver(false);
+      }}
+      onDrop={handleDrop}
+      className={`w-full lg:w-[450px] shrink-0 bg-(--bg-surface)/40 rounded-3xl p-6 border transition-all flex flex-col gap-5 ${
+        isDraggingOver
+          ? "border-(--accent-base) bg-(--accent-base)/10 ring-2 ring-(--accent-base)/30"
+          : "border-(--border-dim)/40 hover:border-(--border-dim)/70"
+      }`}>
+      {/* Title / Header */}
+      <div className="flex items-center justify-between pb-1 border-b border-(--border-dim)/20">
+        <h3 className="font-expanded font-black text-sm uppercase tracking-wider text-(--text-main) flex items-center gap-2">
+          <CloudUpload className="w-4 h-4 text-(--accent-base)" />
+          {selectedFile ? "Upload Assignment" : "Quick Upload"}
+        </h3>
+        {selectedFile && (
+          <span className="text-[11px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+            File Ready
+          </span>
+        )}
+      </div>
+
+      {!selectedFile ? (
+        /* Empty State Dropzone */
+        <div
+          onClick={() => {
             const input = document.createElement("input");
             input.type = "file";
             input.accept = ".pdf,.xls,.xlsx,.doc,.docx";
@@ -207,7 +244,7 @@ const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
                   alert("Invalid file format. Allowed formats: PDF, XLS, XLSX, DOC, DOCX.");
                   return;
                 }
-                if (f.size > MAX_FILE_SIZE) {
+                if (f.size > MAX_FILE_SIZE && getFileExtension(f.name) !== "pdf") {
                   alert("File size exceeds 4MB limit.");
                   return;
                 }
@@ -215,38 +252,28 @@ const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
               }
             };
             input.click();
-          }
-        }}
-        className={`w-full p-6 rounded-3xl border-2 border-dashed transition-all flex flex-col items-center justify-center text-center gap-3 cursor-pointer ${
-          isDraggingOver
-            ? "border-(--accent-base) bg-(--accent-base)/10"
-            : "border-(--border-dim) bg-(--bg-surface)/40 hover:bg-(--bg-surface)/80"
-        }`}
-      >
-        <div className="p-3.5 rounded-2xl bg-(--accent-base)/15 text-(--accent-base)">
-          <CloudUpload className="w-7 h-7" />
+          }}
+          className="w-full py-10 px-6 rounded-2xl border-2 border-dashed border-(--border-dim) bg-(--bg-main)/40 hover:bg-(--bg-main)/80 hover:border-(--accent-base)/60 transition-all flex flex-col items-center justify-center text-center gap-3 cursor-pointer">
+          <div className="p-3.5 rounded-2xl bg-(--accent-base)/15 text-(--accent-base)">
+            <CloudUpload className="w-8 h-8" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <h4 className="font-expanded font-black text-base text-(--text-main)">
+              Drag & Drop Assignment
+            </h4>
+            <span className="text-xs font-medium text-(--text-muted)">
+              Drop file here or click to browse
+            </span>
+            <span className="text-[10px] font-mono text-(--text-muted)/70 mt-1">
+              PDF, DOCX, XLSX, XLS, DOC • Max 4MB
+            </span>
+          </div>
         </div>
-        <div className="flex flex-col gap-1">
-          <h3 className="font-expanded font-black text-base text-(--text-main)">
-            {selectedFile ? "File Attached" : "Drag & Drop Assignment"}
-          </h3>
-          <span className="text-xs font-bold text-(--text-muted)">
-            {selectedFile
-              ? "Click change or select assignment details below"
-              : "Drop file here or click to browse (PDF, DOCX, XLSX • Max 4MB)"}
-          </span>
-        </div>
-      </div>
-
-      {/* File Details & Target Selection Panel */}
-      {selectedFile && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-(--bg-surface)/60 rounded-3xl p-5 border-0 flex flex-col gap-4"
-        >
+      ) : (
+        /* Attached File + Selection Controls in SAME Card */
+        <div className="flex flex-col gap-4">
           {/* File Card Banner */}
-          <div className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-(--bg-main) border border-(--border-dim)/40">
+          <div className="flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-(--bg-main) border border-(--border-dim)/40">
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <div className="p-2.5 rounded-xl bg-(--accent-base) text-(--text-inverse) shrink-0 font-mono font-black text-xs uppercase">
                 {ext}
@@ -263,8 +290,7 @@ const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
             <button
               onClick={onClearFile}
               className="p-1.5 rounded-lg text-(--text-muted) hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
-              title="Remove File"
-            >
+              title="Remove File">
               <Close className="w-4 h-4" />
             </button>
           </div>
@@ -288,8 +314,7 @@ const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
                   setSelectedClassId(e.target.value);
                   setSelectedAssgnCode("");
                 }}
-                className="w-full px-3.5 py-2 rounded-xl text-xs font-bold bg-(--bg-main) border border-(--border-dim)/40 text-(--text-main) outline-none cursor-pointer focus:border-(--accent-base)"
-              >
+                className="w-full px-3.5 py-2.5 rounded-xl text-xs font-bold bg-(--bg-main) border border-(--border-dim)/40 text-(--text-main) outline-none cursor-pointer focus:border-(--accent-base)">
                 {courses.map((c) => (
                   <option key={c.classId} value={c.classId}>
                     {c.code} - {c.title}
@@ -305,8 +330,7 @@ const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
               <select
                 value={selectedAssgnCode}
                 onChange={(e) => setSelectedAssgnCode(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-xl text-xs font-bold bg-(--bg-main) border border-(--border-dim)/40 text-(--text-main) outline-none cursor-pointer focus:border-(--accent-base)"
-              >
+                className="w-full px-3.5 py-2.5 rounded-xl text-xs font-bold bg-(--bg-main) border border-(--border-dim)/40 text-(--text-main) outline-none cursor-pointer focus:border-(--accent-base)">
                 {availableAssignments.length === 0 ? (
                   <option value="">No assignments found for course</option>
                 ) : (
@@ -327,8 +351,7 @@ const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
                 statusMsg.type === "success"
                   ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
                   : "bg-red-500/15 text-red-400 border border-red-500/30"
-              }`}
-            >
+              }`}>
               {statusMsg.type === "success" ? (
                 <CheckCircle className="w-4 h-4 shrink-0" />
               ) : (
@@ -342,12 +365,11 @@ const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
           <button
             onClick={handleUploadSubmit}
             disabled={isUploading || availableAssignments.length === 0}
-            className="w-full py-3 rounded-xl text-xs font-black uppercase tracking-wider bg-(--accent-base) text-(--text-inverse) transition-all cursor-pointer disabled:opacity-50 hover:opacity-90 flex items-center justify-center gap-2 border-0"
-          >
+            className="w-full py-3 rounded-xl text-xs font-black uppercase tracking-wider bg-(--accent-base) text-(--text-inverse) transition-all cursor-pointer disabled:opacity-50 hover:opacity-90 flex items-center justify-center gap-2 border-0">
             <CloudUpload className="w-4 h-4" />
             {isUploading ? "Uploading to VTOP..." : "Submit to VTOP"}
           </button>
-        </motion.div>
+        </div>
       )}
     </div>
   );
@@ -391,7 +413,7 @@ const CourseCard = ({ course, network, expanded, setExpanded, onSelectFile }: an
       alert("Invalid file format. Allowed formats: PDF, XLS, XLSX, DOC, DOCX.");
       return;
     }
-    if (file.size > MAX_FILE_SIZE) {
+    if (file.size> MAX_FILE_SIZE && getFileExtension(file.name) !== "pdf") {
       alert("File size exceeds 4MB limit.");
       return;
     }
@@ -420,8 +442,7 @@ const CourseCard = ({ course, network, expanded, setExpanded, onSelectFile }: an
     <div className="bg-(--bg-surface)/40 hover:bg-(--bg-surface)/70 rounded-3xl overflow-hidden transition-colors border-0 shadow-none">
       <button
         onClick={handleToggle}
-        className="w-full p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left transition-colors cursor-pointer"
-      >
+        className="w-full p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left transition-colors cursor-pointer">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1.5 flex-wrap">
             <span className="px-2.5 py-0.5 rounded-full bg-(--bg-highlight) text-(--text-main) text-xs font-mono font-bold">
@@ -430,7 +451,7 @@ const CourseCard = ({ course, network, expanded, setExpanded, onSelectFile }: an
             <span className="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-xs font-mono font-black uppercase">
               {course.type}
             </span>
-            {pendingCount > 0 && (
+            {pendingCount> 0 && (
               <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-xs font-mono font-black uppercase tracking-wider">
                 {pendingCount} Pending
               </span>
@@ -449,28 +470,22 @@ const CourseCard = ({ course, network, expanded, setExpanded, onSelectFile }: an
           <div
             className={`p-2 rounded-full bg-(--bg-main) transition-transform duration-200 ${
               expanded ? "rotate-180" : ""
-            }`}
-          >
+            }`}>
             <KeyboardArrowDown className="w-5 h-5 text-(--text-muted)" />
           </div>
         </div>
       </button>
 
-      <AnimatePresence initial={false}>
+      
         {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="overflow-hidden"
-          >
+          <div    
+            className="overflow-hidden">
             <div className="p-4 md:p-5 pt-0 border-t border-(--border-dim)/20 bg-(--bg-main)/40">
               {daLoading && !rawAssignments ? (
                 <div className="flex justify-center py-6 text-(--text-muted) font-mono font-bold text-xs animate-pulse">
                   LOADING ASSIGNMENTS...
                 </div>
-              ) : sortedAssignments && sortedAssignments.length > 0 ? (
+              ) : sortedAssignments && sortedAssignments.length> 0 ? (
                 <div className="grid grid-cols-1 gap-3 mt-3">
                   {sortedAssignments.map((assgn: any, idx: number) => {
                     const isSubmitted = Boolean(assgn.lastUpdated && assgn.lastUpdated.trim() !== "");
@@ -478,8 +493,7 @@ const CourseCard = ({ course, network, expanded, setExpanded, onSelectFile }: an
                     return (
                       <div
                         key={idx}
-                        className="bg-(--bg-surface)/60 p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 border-0"
-                      >
+                        className="bg-(--bg-surface)/60 p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 border-0">
                         <div className="flex flex-col gap-1.5 flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <h4 className="font-bold text-(--text-main) text-sm truncate">
@@ -490,8 +504,7 @@ const CourseCard = ({ course, network, expanded, setExpanded, onSelectFile }: an
                                 isSubmitted
                                   ? "bg-emerald-500/20 text-emerald-400"
                                   : "bg-amber-500/20 text-amber-400"
-                              }`}
-                            >
+                              }`}>
                               {isSubmitted ? "Submitted" : "Pending"}
                             </span>
                           </div>
@@ -517,8 +530,7 @@ const CourseCard = ({ course, network, expanded, setExpanded, onSelectFile }: an
                               <button
                                 onClick={(e) => handleDownload(e, assgn)}
                                 disabled={downloading === assgn.code}
-                                className="px-3 py-1 flex items-center gap-1.5 bg-(--bg-main) hover:bg-(--bg-highlight) rounded-xl transition-colors text-xs font-bold text-(--text-main) cursor-pointer border-0"
-                              >
+                                className="px-3 py-1 flex items-center gap-1.5 bg-(--bg-main) hover:bg-(--bg-highlight) rounded-xl transition-colors text-xs font-bold text-(--text-main) cursor-pointer border-0">
                                 <Download className="w-3.5 h-3.5 text-(--accent-base)" />
                                 {downloading === assgn.code ? "Downloading..." : "Download"}
                               </button>
@@ -529,8 +541,7 @@ const CourseCard = ({ course, network, expanded, setExpanded, onSelectFile }: an
                                 setActiveAssgn(assgn);
                                 fileInputRef.current?.click();
                               }}
-                              className="px-3.5 py-1 flex items-center gap-1.5 bg-(--accent-base) text-(--text-inverse) hover:opacity-90 rounded-xl transition-opacity text-xs font-mono font-bold uppercase cursor-pointer border-0"
-                            >
+                              className="px-3.5 py-1 flex items-center gap-1.5 bg-(--accent-base) text-(--text-inverse) hover:opacity-90 rounded-xl transition-opacity text-xs font-mono font-bold uppercase cursor-pointer border-0">
                               <Upload className="w-3.5 h-3.5" />
                               Upload
                             </button>
@@ -544,18 +555,17 @@ const CourseCard = ({ course, network, expanded, setExpanded, onSelectFile }: an
                     ref={fileInputRef}
                     style={{ display: "none" }}
                     accept=".pdf,.xls,.xlsx,.doc,.docx"
-                    onChange={handleFileInputChange}
-                  />
+                    onChange={handleFileInputChange} />
                 </div>
               ) : (
-                <div className="flex justify-center py-6 text-(--text-muted) font-bold font-mono text-xs">
-                  NO ASSIGNMENTS FOUND
+                <div className="py-6 text-center text-xs text-(--text-muted) font-medium">
+                  you're all caught up.
                 </div>
               )}
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
+      
     </div>
   );
 };
@@ -563,6 +573,7 @@ const CourseCard = ({ course, network, expanded, setExpanded, onSelectFile }: an
 export default function DigitalAssignments({ network }: { network: VTOPNetwork }) {
   const { daSemesters, daCourses, daAssignments, daLoading, status, fetchDASemesters, fetchDAAssignments } =
     useDataStore();
+  const { daDropFile, setDaDropFile } = useAppStore();
 
   const [expandedCourse, setExpandedCourse] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -575,7 +586,23 @@ export default function DigitalAssignments({ network }: { network: VTOPNetwork }
     if (status !== "Demo Mode Active" && daSemesters.length === 0) {
       fetchDASemesters(network);
     }
+    const handleRefresh = (e: Event) => {
+      const detail = (e as CustomEvent)?.detail;
+      const sem = detail?.sem || useDataStore.getState().daSelectedSem;
+      if (sem) {
+        useDataStore.getState().fetchDACourses(network, sem, true);
+      }
+    };
+    window.addEventListener("retop-refresh-da", handleRefresh);
+    return () => window.removeEventListener("retop-refresh-da", handleRefresh);
   }, [status, daSemesters.length, fetchDASemesters, network]);
+
+  useEffect(() => {
+    if (daDropFile) {
+      handleSelectFile(daDropFile);
+      setDaDropFile(null);
+    }
+  }, [daDropFile, setDaDropFile]);
 
   const handleSelectFile = (file: File, classId: string = "", assgnCode: string = "") => {
     if (classId) setTargetContext({ classId, assgnCode });
@@ -605,14 +632,13 @@ export default function DigitalAssignments({ network }: { network: VTOPNetwork }
   }, [daCourses, daAssignments]);
 
   if (status === "Offline - Not Synced") {
-    return <OfflineNotSynced />;
+    return <OfflineNotSynced pageName="Digital Assignments" />;
   }
 
   return (
     <div
       id="retop-da-page"
-      className="h-full w-full bg-(--bg-main) text-(--text-main) overflow-y-auto custom-scrollbar relative z-0"
-    >
+      className="h-full w-full bg-(--bg-main) text-(--text-main) overflow-y-auto custom-scrollbar relative z-0">
       <div className="w-full h-20 md:h-24 shrink-0" />
 
       <div className="pb-32 px-4 md:px-8 max-w-7xl mx-auto w-full flex flex-col lg:flex-row gap-6 items-start">
@@ -629,8 +655,7 @@ export default function DigitalAssignments({ network }: { network: VTOPNetwork }
           initialClassId={targetContext.classId}
           initialAssgnCode={targetContext.assgnCode}
           network={network}
-          onSuccessUpload={handleSuccessUpload}
-        />
+          onSuccessUpload={handleSuccessUpload} />
 
         {/* RIGHT COLUMN: Course Cards & Sorted Assignments */}
         <div className="flex-1 w-full flex flex-col gap-4">
@@ -649,7 +674,7 @@ export default function DigitalAssignments({ network }: { network: VTOPNetwork }
                 <div key={i} className="h-28 bg-(--bg-surface)/40 rounded-3xl animate-pulse" />
               ))}
             </div>
-          ) : sortedCourses.length > 0 ? (
+          ) : sortedCourses.length> 0 ? (
             <div className="grid grid-cols-1 gap-3">
               {sortedCourses.map((course) => (
                 <CourseCard
@@ -660,16 +685,14 @@ export default function DigitalAssignments({ network }: { network: VTOPNetwork }
                   setExpanded={setExpandedCourse}
                   onSelectFile={(file: File, classId: string, assgnCode: string) =>
                     handleSelectFile(file, classId, assgnCode)
-                  }
-                />
+                  } />
               ))}
             </div>
           ) : (
             <EmptyState
               icon={School}
               msg="No Courses Found"
-              subMsg="Could not find any courses for the selected semester."
-            />
+              subMsg="Could not find any courses for the selected semester." />
           )}
         </div>
       </div>

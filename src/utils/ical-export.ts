@@ -1,7 +1,6 @@
 import { TimetableCourse, CalendarEvent, CalendarMonthPreview } from "../types/vtop";
 import { CAMPUS_SLOTS, CAMPUS_SLOT_TIMINGS, DAYS } from "./timetable-slots";
 import { ExamGroup } from "../parsers/exam-schedule";
-import { CustomCalendarEvent } from "../store/slices/calendarSlice";
 
 /**
  * Generates an iCal (.ics) file from timetable courses and academic calendar data.
@@ -209,7 +208,6 @@ export interface ICalExportOptions {
   courses?: TimetableCourse[];
   calGridData?: { month: CalendarMonthPreview; days: CalendarEvent[]; startOffset: number }[];
   examGroups?: ExamGroup[];
-  customEvents?: CustomCalendarEvent[];
   events?: any[];
   semesterLabel?: string;
 
@@ -217,7 +215,6 @@ export interface ICalExportOptions {
   includeCalendar?: boolean;
   includeEvents?: boolean;
   includeExams?: boolean;
-  includeCustomEvents?: boolean;
 }
 
 interface MergedOccurrence {
@@ -286,14 +283,12 @@ export function generateICalFile(options: ICalExportOptions): string {
     courses = [],
     calGridData = [],
     examGroups = options.examGroups || [],
-    customEvents = options.customEvents || [],
     events = options.events || [],
     semesterLabel,
     includeTimetable = true,
     includeCalendar = true,
     includeEvents = true,
     includeExams = true,
-    includeCustomEvents = true,
   } = options;
 
   const calLookup = buildCalendarLookup(calGridData);
@@ -471,51 +466,6 @@ export function generateICalFile(options: ICalExportOptions): string {
 
         lines.push("END:VEVENT");
       }
-    }
-  }
-
-  // Export Custom Events if available
-  if (includeCustomEvents && customEvents.length > 0) {
-    for (const evt of customEvents) {
-      if (!evt.date) continue;
-      const dObj = new Date(evt.date);
-      if (isNaN(dObj.getTime())) continue;
-
-      let h = 10, m = 0;
-      if (evt.time) {
-        const parts = evt.time.split(":");
-        if (parts.length >= 2) {
-          h = parseInt(parts[0], 10);
-          m = parseInt(parts[1], 10);
-        }
-      }
-
-      const start = new Date(dObj);
-      start.setHours(h, m, 0, 0);
-      const end = new Date(start);
-      end.setHours(start.getHours() + 1, start.getMinutes(), 0, 0);
-
-      const uid = `${evt.id}@retop`;
-
-      lines.push("BEGIN:VEVENT");
-      lines.push(`DTSTAMP:${nowUTC}`);
-      lines.push(`UID:${uid}`);
-      lines.push(`DTSTART;TZID=Asia/Kolkata:${toICalDate(start)}`);
-      lines.push(`DTEND;TZID=Asia/Kolkata:${toICalDate(end)}`);
-      lines.push(`SUMMARY:${escapeIcal(`[${evt.type.toUpperCase()}] ${evt.title}`)}`);
-      lines.push(`DESCRIPTION:${escapeIcal(evt.description || evt.title)}`);
-      if (evt.venue) lines.push(`LOCATION:${escapeIcal(evt.venue)}`);
-      lines.push(`CATEGORIES:${escapeIcal(evt.type.toUpperCase())}`);
-      lines.push("STATUS:CONFIRMED");
-
-      // 15-minute reminder for custom event/quiz/assessment
-      lines.push("BEGIN:VALARM");
-      lines.push("TRIGGER:-PT15M");
-      lines.push("ACTION:DISPLAY");
-      lines.push(`DESCRIPTION:${escapeIcal(`Reminder: ${evt.title} starting in 15 minutes`)}`);
-      lines.push("END:VALARM");
-
-      lines.push("END:VEVENT");
     }
   }
 

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import { getAppRoot } from "../../utils/bridge";
 
 export const Tooltip = ({
@@ -32,7 +31,6 @@ export const Tooltip = ({
     let y = rect.top;
     let flipped = false;
 
-    // If tooltip is too close to the top, flip it to show below the element
     if (rect.top < 40) {
       y = rect.bottom;
       flipped = true;
@@ -42,7 +40,6 @@ export const Tooltip = ({
       const tooltipRect = tooltipRef.current.getBoundingClientRect();
       const halfWidth = tooltipRect.width / 2;
       
-      // Clamp X to screen edges
       if (x - halfWidth < 12) {
         x = halfWidth + 12;
       } else if (x + halfWidth > window.innerWidth - 12) {
@@ -64,11 +61,15 @@ export const Tooltip = ({
   };
 
   useEffect(() => {
+    const handleWindowBlur = () => setShow(false);
+    window.addEventListener("blur", handleWindowBlur);
+    return () => window.removeEventListener("blur", handleWindowBlur);
+  }, []);
+
+  useEffect(() => {
     if (!show) return;
 
     updatePosition();
-    
-    // Use requestAnimationFrame to let the tooltip render first so we can measure its width
     const raf = requestAnimationFrame(updatePosition);
     
     window.addEventListener("scroll", updatePosition, true);
@@ -89,34 +90,26 @@ export const Tooltip = ({
       className={`relative flex items-center justify-center ${className}`}
       onMouseEnter={handleShow}
       onMouseLeave={handleHide}
-      onFocus={handleShow}
-      onBlur={handleHide}
     >
       {children}
       {portalNode &&
         createPortal(
-          <AnimatePresence>
-            {show && coords && (
+          show && coords ? (
+            <div
+              key="tooltip-portal"
+              className="fixed z-[100000] pointer-events-none"
+              style={{ left: `${coords.x}px`, top: `${coords.y}px` }}
+            >
               <div
-                key="tooltip-portal"
-                className="fixed z-[100000] pointer-events-none"
-                style={{ left: `${coords.x}px`, top: `${coords.y}px` }}
+                ref={tooltipRef}
+                className={`absolute left-1/2 -translate-x-1/2 px-3 py-1.5 bg-(--bg-surface) text-(--text-main) text-xs font-bold rounded-full whitespace-nowrap shadow-md border border-(--border-main) transition-all duration-200 animate-in fade-in zoom-in-95 ${
+                  isFlipped ? "top-full mt-2 origin-top" : "bottom-full mb-2 origin-bottom"
+                }`}
               >
-                <motion.div
-                  ref={tooltipRef}
-                  initial={{ opacity: 0, y: isFlipped ? -4 : 4, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: isFlipped ? -4 : 4, scale: 0.95 }}
-                  transition={{ duration: 0.12, ease: "easeOut" }}
-                  className={`absolute left-1/2 -translate-x-1/2 px-3 py-1.5 bg-(--bg-surface) text-(--text-main) text-xs font-bold rounded-full whitespace-nowrap shadow-md border border-(--border-main) ${
-                    isFlipped ? "top-full mt-2 origin-top" : "bottom-full mb-2 origin-bottom"
-                  }`}
-                >
-                  {text}
-                </motion.div>
+                {text}
               </div>
-            )}
-          </AnimatePresence>,
+            </div>
+          ) : null,
           portalNode
         )}
     </div>

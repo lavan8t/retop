@@ -8,7 +8,7 @@ import {
   Keep,
   Autorenew,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
-import { motion, AnimatePresence } from "framer-motion";
+
 
 import {
   QuickLink,
@@ -18,7 +18,6 @@ import {
   SpotlightCategoryGroup,
 } from "../../types/vtop";
 import { Card } from "../ui/Card";
-import { MarqueeText } from "../common/MarqueeText";
 import { ListCard } from "./ListCard";
 import { AttendanceRow } from "./HomeRows";
 import { EmptyState } from "../EmptyState";
@@ -28,6 +27,7 @@ import { Tooltip } from "../ui/Tooltip";
 import { SpotlightSection } from "./SpotlightSection";
 
 interface QuickLinksMenuProps {
+  className?: string;
   menuCategories: MenuCategory[];
   onNavigate: (link: QuickLink) => void;
   pinnedLinks?: QuickLink[];
@@ -38,6 +38,7 @@ interface QuickLinksMenuProps {
 }
 
 export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
+  className,
   menuCategories,
   onNavigate,
   pinnedLinks = [],
@@ -99,7 +100,7 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
   const handleMenuLeave = () => {
     closeTimeoutRef.current = setTimeout(() => {
       setActiveMenu(null);
-    }, 300);
+    }, 450);
   };
 
   useEffect(() => {
@@ -109,8 +110,16 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
   }, []);
 
   useEffect(() => {
-    const handleScroll = () => setActiveMenu(null);
-    const handleClick = () => setActiveMenu(null);
+    const handleScroll = (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (target && target.closest && (target.closest(".custom-scrollbar") || target.closest(".popup-shadow"))) return;
+      setActiveMenu(null);
+    };
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && target.closest && (target.closest("#retop-search-dropdown") || target.closest(".popup-shadow"))) return;
+      setActiveMenu(null);
+    };
     window.addEventListener("scroll", handleScroll, true);
     window.addEventListener("click", handleClick);
     return () => {
@@ -232,7 +241,7 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
 
   return (
     <>
-      <div className="hidden lg:flex w-full lg:w-[26%] xl:w-[22%] flex-col shrink-0 h-auto lg:h-full overflow-y-auto custom-scrollbar relative z-40 pt-20 md:pt-24 lg:pt-28 pb-4 md:pb-6 lg:pb-8 gap-4">
+      <div className={`w-full lg:w-[24%] xl:w-[20%] flex-col shrink-0 h-auto lg:h-full overflow-y-auto custom-scrollbar [scrollbar-gutter:stable] relative z-40 pt-15 md:pt-18 lg:pt-20 pb-4 md:pb-6 lg:pb-8 pl-3 sm:px-4 md:pl-6 lg:pl-8 pr-3 md:pr-4 gap-4 ${className || 'hidden lg:flex'}`}>
         {/* Attendance Compact Box */}
         <div className="shrink-0 flex flex-col w-full">
           <Card
@@ -247,7 +256,7 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
           >
             <div className="px-5 pt-5 border-b-2 border-(--border-main) flex justify-between items-center shrink-0">
               <div className="flex flex-col">
-                <span className="text-[10px] font-expanded font-bold uppercase text-(--text-muted) mb-1">
+                <span className="text-[0.625rem] font-expanded font-bold uppercase text-(--text-muted) mb-1 leading-none">
                   Attendance
                 </span>
                 <span className="text-3xl font-black font-expanded leading-none text-(--text-main)">
@@ -290,16 +299,9 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
       </div>
 
       {/* Floating Menu Portal - Minimal Material Brutalism */}
-      <AnimatePresence>
-        {activeMenu && (
-          <motion.div
-            onMouseEnter={handleMenuEnter}
-            onMouseLeave={handleMenuLeave}
-            initial={{ opacity: 0, scaleX: 0.3, scaleY: 0.8, x: -20 }}
-            animate={{ opacity: 1, scaleX: 1, scaleY: 1, x: 0 }}
-            exit={{ opacity: 0, scaleX: 0.3, scaleY: 0.8, x: -20 }}
-            transition={{ type: "spring", stiffness: 500, damping: 30 }}
-            className={`fixed z-200 bg-(--bg-surface) border-0 rounded-2xl popup-shadow p-3 flex flex-col`}
+      {activeMenu && (
+          <div
+            className={`fixed z-[999999] bg-(--bg-surface) border-0 rounded-2xl popup-shadow p-3 flex flex-col transition-all duration-200`}
             style={{
               transformOrigin: "left center",
               left: Math.min(
@@ -356,9 +358,8 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
                 </button>
               ))}
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </>
   );
 };

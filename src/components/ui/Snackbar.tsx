@@ -1,5 +1,4 @@
 import React, { useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore, SnackbarData } from "../../store/appStore";
 import {
   Warning,
@@ -31,24 +30,8 @@ export const Snackbar: React.FC<{ snackbar: SnackbarData; onDismiss: () => void 
       : "text-(--accent-base)";
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, scale: 0.95, y: 20, x: -20 }}
-      animate={{ 
-        opacity: 1, 
-        scale: 1, 
-        y: 0, 
-        x: 0,
-        transition: { ease: "easeOut", duration: 0.225 } 
-      }}
-      exit={{ 
-        opacity: 0, 
-        scale: 0.95, 
-        y: 20, 
-        x: -20,
-        transition: { ease: "easeIn", duration: 0.195 } 
-      }}
-      className="flex items-center gap-3 px-4 py-3.5 bg-(--bg-surface) border-2 border-(--border-dim) rounded-[24px] shadow-lg popup-shadow text-xs md:text-sm font-bold text-(--text-main) pointer-events-auto min-w-[18rem] sm:min-w-[22rem] md:min-w-[26rem] max-w-[32rem] w-full"
+    <div
+      className="flex items-center gap-3 px-4 py-3.5 bg-(--bg-surface) border-2 border-(--border-dim) rounded-[24px] shadow-lg popup-shadow text-xs md:text-sm font-bold text-(--text-main) pointer-events-auto min-w-[18rem] sm:min-w-[22rem] md:min-w-[26rem] max-w-[32rem] w-full animate-in fade-in slide-in-from-bottom-4 zoom-in-95 duration-200"
     >
       <IconComponent className={`w-5 h-5 shrink-0 ${iconColor}`} />
       
@@ -65,7 +48,7 @@ export const Snackbar: React.FC<{ snackbar: SnackbarData; onDismiss: () => void 
           {snackbar.action.label}
         </button>
       )}
-    </motion.div>
+    </div>
   );
 };
 
@@ -88,11 +71,11 @@ export const SnackbarManager: React.FC = () => {
 
   return (
     <div className="fixed bottom-6 left-6 md:bottom-8 md:left-8 z-[10000] flex flex-col-reverse gap-2.5 pointer-events-none items-start max-w-[calc(100vw-3rem)]">
-      <AnimatePresence mode="popLayout">
+      <>
         {snackbars.slice(0, 3).map((sb) => (
           <Snackbar key={sb.id} snackbar={sb} onDismiss={() => removeSnackbar(sb.id)} />
         ))}
-      </AnimatePresence>
+      </>
     </div>
   );
 };

@@ -7,7 +7,7 @@
     "skipLibCheck": true,
     "jsx": "react-jsx",
     "outDir": "./dist",
-    "types": ["chrome"] 
+    "types": ["chrome", "bun", "node"] 
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "build.ts"]
 }

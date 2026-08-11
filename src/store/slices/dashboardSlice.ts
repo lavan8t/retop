@@ -8,6 +8,12 @@ import {
 import { parseEvents } from "../../parsers/events";
 import { parseSemesters } from "../../parsers/timetable";
 import { parseCalendarSemesters } from "../../parsers/calendar";
+import { parseMarksSemesters } from "../../parsers/marks";
+import { parseGradesSemesters } from "../../parsers/grades";
+import { parseDASemesters } from "../../parsers/digital-assignments";
+import { parseStudentProfile } from "../../parsers/profile";
+import { setCachedData } from "../../utils/cache";
+import { waitForIntercepted } from "../../utils/dashboardInterceptor";
 import { CourseSummary, Assignment, Event } from "../../types/vtop";
 import { UpcomingClass } from "../../utils/timetable-slots";
 import { DataState } from "../dataStore";
@@ -65,21 +71,38 @@ export const createDashboardSlice: StateCreator<DataState, [], [], DashboardSlic
     try {
       set({ status: "Syncing..." });
 
-      const statsP = network.fetchWithCache("dashboard_stats", () => network.fetchFragment("get/dashboard/current/cgpa/credits"))
-        .then(html => set({ stats: parseAcademicStats(html) }))
-        .catch(e => console.warn(e));
+      // ── Home-root strategy ──────────────────────────────────────────────────
+      // VTOP fires XHRs for stats/attendance/DA/events the moment the home
+      // page loads. We intercept those in content.ts and signal here via
+      // waitForIntercepted(). If the signal arrives within 2.5 s we parse
+      // and store directly — zero duplicate requests. If the user opened
+      // retop on a non-home page the timeout fires and we fall back to
+      // fetchWithCache (cache-first, then live fetch) as before.
 
-      const attP = network.fetchWithCache("dashboard_attendance", () => network.fetchFragment("get/dashboard/current/semester/course/details"))
-        .then(html => set({ attendance: parseCourseDetails(html) }))
-        .catch(e => console.warn(e));
+      const resolveOrFetch = async (
+        signalKey: string,
+        cacheKey: string,
+        fetcher: () => Promise<string>,
+        parser: (html: string) => any,
+        storeKey: string,
+      ) => {
+        // 1. Wait for VTOP's own home-page XHR (via interceptDashboardResponse)
+        const intercepted = await waitForIntercepted(signalKey, 2500);
+        if (intercepted) {
+          try { set({ [storeKey]: parser(intercepted) } as any); } catch (e) { console.warn(e); }
+          return;
+        }
+        // 2. Fallback: cache-first, then live fetch
+        try {
+          const html = await network.fetchWithCache(cacheKey, fetcher);
+          set({ [storeKey]: parser(html) } as any);
+        } catch (e) { console.warn(e); }
+      };
 
-      const daP = network.fetchWithCache("dashboard_da", () => network.fetchFragment("get/upcoming/digital/assignments"))
-        .then(html => set({ assignments: parseDigitalAssignments(html) }))
-        .catch(e => console.warn(e));
-
-      const eventsP = network.fetchWithCache("dashboard_events", () => network.fetchFragment("get/scheduled/events"))
-        .then(html => set({ events: parseEvents(html) }))
-        .catch(e => console.warn(e));
+      const statsP    = resolveOrFetch("dashboard_stats",      "dashboard_stats",      () => network.fetchFragment("get/dashboard/current/cgpa/credits"),                parseAcademicStats,       "stats");
+      const attP      = resolveOrFetch("dashboard_attendance", "dashboard_attendance", () => network.fetchFragment("get/dashboard/current/semester/course/details"),    parseCourseDetails,       "attendance");
+      const daP       = resolveOrFetch("dashboard_da",         "dashboard_da",         () => network.fetchFragment("get/upcoming/digital/assignments"),                  parseDigitalAssignments,  "assignments");
+      const eventsP   = resolveOrFetch("dashboard_events",     "dashboard_events",     () => network.fetchFragment("get/scheduled/events"),                             parseEvents,              "events");
 
       const timetableAndCalP = (async () => {
         try {
@@ -143,25 +166,14 @@ export const createDashboardSlice: StateCreator<DataState, [], [], DashboardSlic
 
       set({ status: "Online", lastSyncTime: Date.now() });
 
-      // Background refresh: silently update with fresh data
+      // Background refresh: silently update with fresh data (timetable/calendar/exam
+      // only — stats/attendance/DA/events are already fresh from the intercepted XHRs)
       set({ isSyncing: true });
       Promise.all([
-        network.fetchWithCache("dashboard_stats", () => network.fetchFragment("get/dashboard/current/cgpa/credits"), true),
-        network.fetchWithCache("dashboard_attendance", () => network.fetchFragment("get/dashboard/current/semester/course/details"), true),
-        network.fetchWithCache("dashboard_da", () => network.fetchFragment("get/upcoming/digital/assignments"), true),
-        network.fetchWithCache("dashboard_events", () => network.fetchFragment("get/scheduled/events"), true),
         network.fetchWithCache("tt_semester_list", () => network.fetchFragment("academics/common/StudentTimeTable"), true),
         network.fetchWithCache("cal_semester_list", () => network.fetchFragment("academics/common/CalendarPreview"), true),
         network.fetchWithCache("exam_schedule_view", () => network.getExamScheduleView(), true),
-      ]).then(([newEdu, newAtt, newDa, newEvents, newSem, newCal]) => {
-        set({
-          stats: parseAcademicStats(newEdu),
-          attendance: parseCourseDetails(newAtt),
-          assignments: parseDigitalAssignments(newDa),
-          events: parseEvents(newEvents),
-          lastSyncTime: Date.now(),
-        });
-        
+      ]).then(([newSem, newCal]) => {
         const freshSems = parseSemesters(newSem);
         const freshCalSems = parseCalendarSemesters(newCal);
         if (freshSems.length > 0) set({ ttSemesters: freshSems });
@@ -171,6 +183,7 @@ export const createDashboardSlice: StateCreator<DataState, [], [], DashboardSlic
         if (currentTtSem) {
           get().loadTimetable(network, csrf, authId, currentTtSem, true).catch(console.warn);
         }
+        set({ lastSyncTime: Date.now() });
       }).catch(console.warn).finally(() => set({ isSyncing: false }));
 
     } catch (e) {
@@ -184,7 +197,7 @@ export const createDashboardSlice: StateCreator<DataState, [], [], DashboardSlic
 
   syncDashboard: async (network, csrf, authId) => {
     const { isSyncing } = get();
-    if (isSyncing) return; // Don't double-sync
+    if (isSyncing) return;
 
     set({ isSyncing: true, status: "Syncing..." });
     try {
@@ -204,10 +217,10 @@ export const createDashboardSlice: StateCreator<DataState, [], [], DashboardSlic
         status: "Online",
       });
 
-      // Also refresh timetable
+      // Refresh timetable for current active semester
       const currentTtSem = get().ttSelectedSem;
       if (currentTtSem) {
-        await get().loadTimetable(network, csrf, authId, currentTtSem, true).catch(console.warn);
+        await get().loadTimetable(network, csrf, authId, currentTtSem, true).catch(() => {});
       }
     } catch (e) {
       set({ status: "Sync Failed" });

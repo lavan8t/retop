@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { motion } from "framer-motion";
 import { VTOPNetwork } from "../../utils/network";
 import { CourseMarks } from "../../types/vtop";
 import { parseStudentMarks } from "../../parsers/marks";
@@ -128,10 +127,8 @@ export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
   if (!isLatestSem || hasFatScore) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-(--bg-highlight) rounded-4xl p-6 shadow-none flex flex-col gap-6 shrink-0 mt-4"
+    <div
+      className="bg-(--bg-highlight) rounded-4xl p-6 shadow-none flex flex-col gap-6 shrink-0 mt-4 transition-all duration-300 animate-in fade-in slide-in-from-bottom-2"
     >
 
       {loading ? (
@@ -199,6 +196,6 @@ export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
           )}
         </div>
       )}
-    </motion.div>
+    </div>
   );
 };

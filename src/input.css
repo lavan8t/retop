@@ -28,6 +28,8 @@
 /* --- 1. GLOBAL RESET & VARIABLES --- */
 @layer base {
   *, ::before, ::after {
+    border-color: transparent;
+    transition-property: color, background-color, border-color;
     transition-duration: var(--duration-fast);
     transition-timing-function: ease-out;
   }
@@ -38,8 +40,8 @@
   }
 
   /* Zero Borders on all Retop cards, filter chips, attendance cards, CGPA cards */
-  :host *, #retop-root * {
-    border-color: transparent;
+  :host, :host *, #retop-root, #retop-root * {
+    border-color: transparent !important;
   }
 
   .border,
@@ -200,6 +202,7 @@
 /* --- 3. FONTS --- */
 #retop-root *:not(i) {
   font-family: var(--font-sans) !important;
+  font-variation-settings: "wght" var(--app-font-wght, 700) !important;
 }
 
 #retop-root svg {
@@ -396,6 +399,8 @@
 #retop-root .custom-scrollbar {
   --scrollbar-thumb-color: transparent;
   transition: --scrollbar-thumb-color var(--duration-scrollbar) ease-out;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb-color) transparent;
 }
 
 #retop-root [class*="overflow-"]:hover,
@@ -413,6 +418,14 @@
   background-color: var(--scrollbar-thumb-color) !important;
 }
 
+#retop-root .hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+#retop-root .hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* --- 6. EXTERNAL / GLOBAL COMPONENTS --- */
 @layer components {
   /* The Host Container for the React App */
@@ -423,9 +436,7 @@
   }
 
   body.show-legacy-ui #retop-host {
-    opacity: 0;
     pointer-events: none;
-    transform: scale(0.98);
   }
 
   #page-wrapper,

@@ -12,7 +12,9 @@ import {
 } from "../utils/bridge";
 import { VTOPNetwork } from "../utils/network";
 import { getCachedData, setCachedData } from "../utils/cache";
+import { getStorageData, setStorageData } from "../utils/storageAdapter";
 import { scrapeMenu, scrapeUserProfile } from "../parsers/menu";
+import { getExtUrl } from "../utils/url";
 import {
   parseAcademicStats,
   parseDigitalAssignments,
@@ -32,8 +34,8 @@ import {
   ViewType,
   SpotlightCategoryGroup,
 } from "../types/vtop";
-import { motion, AnimatePresence } from "framer-motion";
-import { SPRING_SOFT, SPRING_SNAPPY, TRANSITION_PAGE_ENTER, EASE_OUT } from "../utils/motion";
+
+
 
 import { TopBar } from "../components/layout/TopBar";
 import { TopBarSearch } from "../components/layout/TopBarSearch";
@@ -251,7 +253,7 @@ const navigateLegacy = (title: string, url?: string) => {
       return true;
     }
 
-    if (attemptsLeft > 0) {
+    if (attemptsLeft> 0) {
       setTimeout(() => attemptFindAndClick(attemptsLeft - 1), 150);
     } else {
       console.warn("Legacy link not found for:", title, url);
@@ -308,9 +310,22 @@ const DashboardApp = () => {
   const [contentTitle, setContentTitle] = useState("");
   const [hasSlideCompleted, setHasSlideCompleted] = useState(false);
 
+  const isStandalone = typeof window !== "undefined" && (
+    !!(window as any).__RETOP_OFFLINE__ ||
+    window.location.pathname.includes("offline") ||
+    window.location.hostname.includes("web.app") ||
+    window.location.hostname.includes("localhost") ||
+    window.location.hostname === "127.0.0.1" ||
+    !window.location.hostname.includes("vit.ac.in")
+  );
+
   useEffect(() => {
-    if (!isModernUI) setHasSlideCompleted(false);
-  }, [isModernUI]);
+    if (isStandalone) {
+      setHasSlideCompleted(true);
+    } else if (!isModernUI) {
+      setHasSlideCompleted(false);
+    }
+  }, [isModernUI, isStandalone]);
 
   const {
     user,
@@ -352,6 +367,90 @@ const DashboardApp = () => {
   const currentViewRef = useRef(currentView);
   currentViewRef.current = currentView;
 
+  const handleSyncCurrentView = async () => {
+    if (!networkRef.current || useDataStore.getState().isSyncing) return;
+    const net = networkRef.current;
+    const appState = useAppStore.getState();
+    const dataState = useDataStore.getState();
+    const view = appState.currentView;
+
+    useDataStore.setState({ isSyncing: true, status: "Syncing..." });
+
+    try {
+      if (view === "marks") {
+        const sem = appState.marksSelectedSem || dataState.ttSelectedSem;
+        if (sem) {
+          const isPast = appState.marksSemesters.length > 0 && sem !== appState.marksSemesters[0].id;
+          await net.getStudentMarks(sem, true, isPast);
+          window.dispatchEvent(new CustomEvent("retop-refresh-marks", { detail: { sem } }));
+        } else {
+          await net.getMarksView(true);
+        }
+      } else if (view === "grades") {
+        const sem = appState.gradesSelectedSem || dataState.ttSelectedSem;
+        if (sem) {
+          const isPast = appState.gradesSemesters.length > 0 && sem !== appState.gradesSemesters[0].id;
+          await net.getStudentGrades(sem, true, isPast);
+          window.dispatchEvent(new CustomEvent("retop-refresh-grades", { detail: { sem } }));
+        } else {
+          await net.getGradesView(true);
+        }
+      } else if (view === "timetable") {
+        const sem = dataState.ttSelectedSem;
+        if (sem && csrfRef.current && authIdRef.current) {
+          await dataState.loadTimetable(net, csrfRef.current, authIdRef.current, sem, true);
+        }
+      } else if (view === "digitalAssignments") {
+        const sem = dataState.daSelectedSem || dataState.ttSelectedSem;
+        if (sem) {
+          await net.getDACourses(sem, true);
+          window.dispatchEvent(new CustomEvent("retop-refresh-da", { detail: { sem } }));
+        }
+      } else if (view === "curriculum") {
+        await net.fetchWithCache("curriculum_dashboard", () => net.fetchFragment("academics/common/Curriculum"), true);
+        window.dispatchEvent(new CustomEvent("retop-refresh-curriculum"));
+      } else if (view === "examSchedule") {
+        const sem = dataState.examSelectedSem;
+        if (sem) {
+          await dataState.fetchExamSchedule(net, sem);
+        } else {
+          await net.getExamScheduleView();
+        }
+        window.dispatchEvent(new CustomEvent("retop-refresh-exams"));
+      } else if (view === "calendar") {
+        const sem = dataState.calSelectedSem || dataState.ttSelectedSem;
+        const group = dataState.calSelectedGroup;
+        if (sem && group && dataState.calAvailableMonths.length > 0) {
+          await dataState.fetchCalendarGrid(net, sem, group, dataState.calAvailableMonths, true);
+        } else if (sem) {
+          await dataState.fetchCalendarMonthsAndGroups(net, sem);
+        }
+        window.dispatchEvent(new CustomEvent("retop-refresh-calendar"));
+      } else if (view === "attendance") {
+        const sem = dataState.attSelectedSem || dataState.ttSelectedSem;
+        if (sem) {
+          await dataState.fetchDetailedAttendance(net, sem, true);
+        }
+        window.dispatchEvent(new CustomEvent("retop-refresh-attendance"));
+      } else if (view === "profile") {
+        await net.fetchWithCache("student_profile_data", () => net.fetchFragment("studentsRecord/StudentProfileAllView"), true);
+        window.dispatchEvent(new CustomEvent("retop-refresh-profile"));
+      } else if (view === "coursePage") {
+        window.dispatchEvent(new CustomEvent("retop-refresh-coursepage"));
+      } else {
+        if (csrfRef.current && authIdRef.current) {
+          await dataState.syncDashboard(net, csrfRef.current, authIdRef.current);
+        }
+      }
+      useDataStore.setState({ lastSyncTime: Date.now(), status: "Online" });
+    } catch (e) {
+      console.error("View sync error:", e);
+      useDataStore.setState({ status: "Sync Failed" });
+    } finally {
+      useDataStore.setState({ isSyncing: false });
+    }
+  };
+
   const pinnedLinks = settings.pinnedLinks || [];
 
   const handleTogglePin = (link: QuickLink) => {
@@ -369,7 +468,7 @@ const DashboardApp = () => {
       const newPins = pinnedLinks.filter((p) => getDestinationView(p) !== dest);
       updateSetting("pinnedLinks", newPins);
     } else {
-      if (pinnedLinks.length >= 3) {
+      if (pinnedLinks.length>= 3) {
         alert("You can only pin up to 3 custom items.");
         return;
       }
@@ -409,8 +508,8 @@ const DashboardApp = () => {
     const handleOpenSettings = () => {
       if ((window as any).__RETOP_OFFLINE__) {
         setCurrentView("settings");
-      } else if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.getURL) {
-        window.open(chrome.runtime.getURL("dist/offline.html"), "_blank");
+      } else if (typeof chrome !== "undefined" && chrome.runtime && !!chrome.runtime.getURL) {
+        window.open("https://getretop.web.app/", "_blank");
       }
     };
 
@@ -425,20 +524,18 @@ const DashboardApp = () => {
   useEffect(() => {
     applyTheme(settings);
 
-    // Apply font scaling & weight from settings
+    // Apply font scaling from settings
     if (settings.fontScale && settings.fontScale !== 100) {
       document.documentElement.style.fontSize = `${settings.fontScale}%`;
-    }
-    if (settings.fontWeight) {
-      document.documentElement.style.setProperty('--retop-font-weight', String(settings.fontWeight));
     }
     const authIdInput = document.getElementById(
       "authorizedIDX",
     ) as HTMLInputElement;
     const authId = authIdInput?.value;
-    const htmlContent = document.documentElement.innerHTML;
-    const csrfMatch = htmlContent.match(/csrfValue\s*=\s*"([^"]+)"/);
-    const csrf = (csrfMatch ? csrfMatch[1] : (window as any).csrfValue) || "";
+    const htmlContent = document.documentElement.outerHTML;
+    const domCsrfInput = document.querySelector('input[name="_csrf"]') as HTMLInputElement;
+    const csrfMatch = htmlContent.match(/csrfValue\s*=\s*"([^"]+)"/) || htmlContent.match(/name=["']_csrf["'][^>]*value=["']([^"']+)["']/);
+    const csrf = domCsrfInput?.value || (csrfMatch ? csrfMatch[1] : (window as any).csrfValue) || "";
 
     if (!authId || !csrf) {
       revealLegacyUI();
@@ -452,16 +549,30 @@ const DashboardApp = () => {
     const userProfile = scrapeUserProfile(document);
     setUser(userProfile);
     
-    // Cache for offline mode
-    if (typeof chrome !== "undefined" && chrome.storage) {
-      chrome.storage.local.get(["retop_profileImage"], (res) => {
-        chrome.storage.local.set({
-          "retop_lastAuthId": userProfile.regNo,
-          "retop_lastName": userProfile.name,
-          "retop_profileImage": userProfile.profileImgBase64 || res.retop_profileImage || "",
-        });
+    // Cache for offline mode across chrome.storage, localStorage, and IndexedDB
+    getStorageData(["retop_cached_users"]).then((res: Record<string, any>) => {
+      let users: any[] = res.retop_cached_users || [];
+      const existingIdx = users.findIndex((u: any) => u.regNo === userProfile.regNo);
+      const updatedUser = {
+        regNo: userProfile.regNo,
+        username: userProfile.regNo,
+        name: userProfile.name || (existingIdx >= 0 ? users[existingIdx].name : "Student"),
+        profileImgBase64: userProfile.profileImgBase64 || (existingIdx >= 0 ? users[existingIdx].profileImgBase64 : ""),
+        lastActive: Date.now(),
+      };
+      if (existingIdx >= 0) {
+        users[existingIdx] = updatedUser;
+      } else {
+        users.push(updatedUser);
+      }
+      setStorageData({
+        retop_lastAuthId: userProfile.regNo,
+        retop_lastName: userProfile.name,
+        retop_profileImage: userProfile.profileImgBase64 || "",
+        retop_active_user: userProfile.regNo,
+        retop_cached_users: users,
       });
-    }
+    });
 
     fetchDashboardData(networkRef.current, csrf, authId);
     fetchUserProfile(networkRef.current);
@@ -471,12 +582,12 @@ const DashboardApp = () => {
 
     if ((window as any).__RETOP_OFFLINE__) {
       getCachedData<MenuCategory[]>(`${authId}_vtop_menu`).then(cachedMenu => {
-        if (cachedMenu && cachedMenu.length > 0) {
+        if (cachedMenu && cachedMenu.length> 0) {
           setMenu(cachedMenu);
         }
       });
       getCachedData<SpotlightCategoryGroup[]>(`${authId}_vtop_spotlight`).then(cachedSpotlight => {
-        if (cachedSpotlight && cachedSpotlight.length > 0) {
+        if (cachedSpotlight && cachedSpotlight.length> 0) {
           setSpotlightCategories(cachedSpotlight);
         }
       });
@@ -485,7 +596,7 @@ const DashboardApp = () => {
       menuPoller = setInterval(() => {
         attempts++;
         const newSpotlight = scrapeSpotlight(document);
-        if (newSpotlight.length > 0) {
+        if (newSpotlight.length> 0) {
           setSpotlightCategories(newSpotlight);
           setCachedData(`${authId}_vtop_spotlight`, newSpotlight);
         }
@@ -495,14 +606,14 @@ const DashboardApp = () => {
         
         setMenu((prev) => {
           const prevCount = prev.reduce((acc, cat) => acc + cat.links.length, 0);
-          if (count > prevCount) {
+          if (count> prevCount) {
             setCachedData(`${authId}_vtop_menu`, newMenu);
             return newMenu;
           }
           return prev;
         });
         
-        if (count === 0 && attempts > 5) {
+        if (count === 0 && attempts> 5) {
           console.log("[retop] Menu items are unfetchable. Falling back to legacy UI.");
           clearInterval(menuPoller);
           revealLegacyUI();
@@ -510,7 +621,7 @@ const DashboardApp = () => {
           return;
         }
 
-        if (count >= 102 || attempts > 15) clearInterval(menuPoller);
+        if (count>= 102 || attempts> 15) clearInterval(menuPoller);
       }, 2000);
 
       feedbackPoller = setInterval(() => {
@@ -527,7 +638,7 @@ const DashboardApp = () => {
                              mainText.includes("provide feedback");
                              
           if (isFeedback) {
-            const hasInputs = document.querySelectorAll("input[type='radio'], textarea, select").length > 0;
+            const hasInputs = document.querySelectorAll("input[type='radio'], textarea, select").length> 0;
             if (hasInputs) {
               console.log("[retop] Mandatory feedback or blocking form detected in background. Triggering legacy UI.");
               clearInterval(feedbackPoller);
@@ -609,6 +720,8 @@ const DashboardApp = () => {
       window.removeEventListener("keydown", handleKeys);
       window.removeEventListener("vtop-restore-ui", restoreHandler);
       document.removeEventListener("scroll", handleScroll, true);
+      scrollHideTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
+      scrollHideTimeouts.clear();
     };
   }, []);
 
@@ -616,6 +729,26 @@ const DashboardApp = () => {
     setUIVisibility(isModernUI);
     sessionStorage.setItem("vtop-legacy-mode", (!isModernUI).toString());
   }, [isModernUI]);
+
+  useEffect(() => {
+    let pageName = "Home";
+    if (currentView === "dashboard") pageName = "Home";
+    else if (currentView === "timetable") pageName = "Timetable";
+    else if (currentView === "attendance") pageName = "Attendance";
+    else if (currentView === "marks") pageName = "Marks";
+    else if (currentView === "grades") pageName = "Grades";
+    else if (currentView === "examSchedule") pageName = "Exam Schedule";
+    else if (currentView === "curriculum") pageName = "Curriculum";
+    else if (currentView === "digitalAssignments") pageName = "Assignments";
+    else if (currentView === "coursePage") pageName = "Course Page";
+    else if (currentView === "calendar") pageName = "Calendar";
+    else if (currentView === "profile") pageName = "Profile";
+    else if (currentView === "content" && contentTitle) pageName = contentTitle;
+    // @ts-ignore - Handle settings explicitly as fallback
+    else if (currentView === "settings") pageName = "Settings";
+
+    document.title = `${pageName} - retop`;
+  }, [currentView, contentTitle]);
 
   const handleLinkClick = async (link: QuickLink, forceLegacy: boolean = false) => {
     setIsOmniboxOpen(false);
@@ -644,6 +777,14 @@ const DashboardApp = () => {
   };
 
   const handleLogout = async () => {
+    if ((window as any).__RETOP_OFFLINE__ || window.location.pathname.includes("offline") || window.location.hostname.includes("web.app")) {
+      try {
+        sessionStorage.removeItem("retop_session_unlocked");
+      } catch {}
+      window.location.reload();
+      return;
+    }
+
     try {
       await fetch("/vtop/logout", {
         method: "POST",
@@ -670,11 +811,11 @@ const DashboardApp = () => {
           body:not(.show-legacy-ui) #page-wrapper, 
           body:not(.show-legacy-ui) .container-fluid, 
           body:not(.show-legacy-ui) .wrapper, 
-          body:not(.show-legacy-ui) body > table, 
-          body:not(.show-legacy-ui) body > form {
+          body:not(.show-legacy-ui) body> table, 
+          body:not(.show-legacy-ui) body> form {
             opacity: 1 !important;
             pointer-events: auto !important;
-            transition: all var(--duration-dramatic) cubic-bezier(0.16, 1, 0.3, 1) !important;
+            transition: all 500ms cubic-bezier(0.32, 0.72, 0, 1) !important;
           }
         `}</style>
       )}
@@ -686,36 +827,22 @@ const DashboardApp = () => {
             setIsPeeking(false);
             setIsModernUI(false);
           }}
-          title="Return to Legacy UI"
-        ></div>
+          title="Return to Legacy UI"></div>
       )}
 
       {/* Main Modern UI - Always rendered to preserve state, just animated off-screen when hidden */}
-      <motion.div
-        initial={{ y: "100%", opacity: 0, scale: 0.9, rotateX: 10 }}
-        animate={{
-          y: isModernUI
-            ? isPeeking
-              ? "15%"
-              : "0%"
-            : isPeeking
-              ? "65%"
-              : "100%",
-          scale: isModernUI ? (isPeeking ? 0.96 : 1) : isPeeking ? 0.96 : 0.9,
-          rotateX: isModernUI ? (isPeeking ? -4 : 0) : isPeeking ? 4 : 10,
-          opacity: isModernUI ? 1 : isPeeking ? 1 : 0,
-          borderRadius: isPeeking ? "2rem" : "0rem",
-        }}
-        onAnimationComplete={() => {
-          if (isModernUI && !isPeeking) setHasSlideCompleted(true);
-        }}
-        transition={SPRING_SOFT}
+      <div  
         style={{
-          transformPerspective: 1500,
-          transformOrigin: "bottom center",
+          transform: isModernUI
+            ? "translateY(0%)"
+            : isPeeking
+              ? "translateY(calc(100vh - 80px))"
+              : "translateY(calc(100% + 100px))",
+          transition: "transform 500ms cubic-bezier(0.32, 0.72, 0, 1)",
         }}
-        className={`fixed inset-0 h-screen font-mono selection:bg-(--accent-base)/35 selection:text-(--text-main) flex flex-col overflow-hidden bg-(--bg-main) z-100 ${!isModernUI ? "pointer-events-none" : "pointer-events-auto"} ${isPeeking ? "shadow-[0px_-20px_60px_rgba(0,0,0,0.6)]" : ""}`}
-      >
+        className={`fixed inset-0 h-screen font-mono selection:bg-(--accent-base)/35 selection:text-(--text-main) flex flex-col overflow-hidden bg-(--bg-main) z-100 shadow-[0px_-20px_60px_rgba(0,0,0,0.6)] ${
+          !isModernUI && !isPeeking ? "pointer-events-none" : "pointer-events-auto"
+        }`}>
         <div className="flex flex-col h-full pointer-events-auto overflow-hidden">
           <TopBar
             currentView={currentView}
@@ -738,22 +865,14 @@ const DashboardApp = () => {
               }
             }}
             onSync={() => {
-              if (networkRef.current && csrfRef.current && authIdRef.current) {
-                syncDashboard(networkRef.current, csrfRef.current, authIdRef.current);
-              }
+              handleSyncCurrentView().catch(console.warn);
             }}
-            network={networkRef.current}
-          />
+            network={networkRef.current} />
           <main className="flex-1 overflow-hidden relative">
-            <AnimatePresence>
-              <motion.div
+            
+              <div
                 key={currentView}
-                className="absolute inset-0 w-full h-full flex flex-col overflow-hidden"
-                initial={hasSlideCompleted ? { opacity: 0 } : false}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={hasSlideCompleted ? TRANSITION_PAGE_ENTER : { duration: 0 }}
-              >
+                className="absolute inset-0 w-full h-full flex flex-col overflow-hidden">
                 <ContentRouter
                   currentView={currentView}
                   networkRef={networkRef}
@@ -766,29 +885,26 @@ const DashboardApp = () => {
                   upcoming={upcoming}
                   pinnedLinks={pinnedLinks}
                   handleTogglePin={handleTogglePin}
-                />
-              </motion.div>
-            </AnimatePresence>
+                  onSync={() => {
+                    handleSyncCurrentView().catch(console.warn);
+                  }} />
+              </div>
+            
           </main>
 
 
           {currentView === "timetable" && !isOmniboxOpen && (
             <FloatingViewToggle
               viewMode={ttViewMode}
-              setViewMode={setTtViewMode}
-            />
+              setViewMode={setTtViewMode} />
           )}
 
-          <AnimatePresence>
+          
             {showProfileMenu && (
               <>
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
+                <div   
                   className="fixed inset-0 z-9998 bg-transparent"
-                  onClick={() => setShowProfileMenu(false)}
-                />
+                  onClick={() => setShowProfileMenu(false)} />
                 <ProfileMenu
                   userName={user.name}
                   userRegNo={user.regNo}
@@ -799,21 +915,20 @@ const DashboardApp = () => {
                     setIsPeeking(false);
                     setIsModernUI(false);
                   }}
-                  onClose={() => setShowProfileMenu(false)}
-                />
+                  onClose={() => setShowProfileMenu(false)} />
               </>
             )}
-          </AnimatePresence>
+          
 
           <SnackbarManager />
           
           <GlobalDADropZone network={networkRef.current!} />
         </div>
-      </motion.div>
+      </div>
 
 
       
-      <AnimatePresence>
+      
         {!isModernUI && (
           <LegacyReturnButton
             onClick={() => {
@@ -821,25 +936,18 @@ const DashboardApp = () => {
               setIsModernUI(true);
             }}
             onMouseEnter={() => setIsPeeking(true)}
-            onMouseLeave={() => setIsPeeking(false)}
-          />
+            onMouseLeave={() => setIsPeeking(false)} />
         )}
-      </AnimatePresence>
+      
 
-      <AnimatePresence>
+      
         {!isModernUI && isOmniboxOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.95 }}
-            transition={SPRING_SNAPPY}
-            className="fixed top-2 left-4 md:left-8 z-[99999] w-full max-w-[360px] pointer-events-auto flex flex-col"
-          >
+          <div    
+            className="fixed top-2 left-4 md:left-8 z-[99999] w-full max-w-[360px] pointer-events-auto flex flex-col">
             {/* Backdrop to close when clicked outside */}
             <div 
               className="fixed inset-0 z-[-1] bg-transparent"
-              onClick={() => setIsOmniboxOpen(false)}
-            />
+              onClick={() => setIsOmniboxOpen(false)} />
             <div className="bg-(--bg-surface) rounded-[32px] shadow-(--brutal-shadow-hover) border-2 border-(--border-main) flex flex-col p-2 h-auto relative">
               <TopBarSearch
                 currentView={currentView}
@@ -859,12 +967,11 @@ const DashboardApp = () => {
                   setIsModernUI(true);
                   setCurrentView("dashboard");
                   setIsOmniboxOpen(false);
-                }}
-              />
+                }} />
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
+      
     </>
   );
 };

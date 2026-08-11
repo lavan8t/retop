@@ -8,9 +8,10 @@ import {
   Logout,
   Settings,
   Warning,
+  Download,
+  Upload,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { QuickLink } from "../types/vtop";
-import { motion, Variants, AnimatePresence } from "framer-motion";
 import { Tooltip } from "./ui/Tooltip";
 
 interface ProfileMenuProps {
@@ -33,6 +34,31 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
   onClose,
 }) => {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+
+  const handleExportBackup = async () => {
+    const data: Record<string, any> = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key) {
+        data[key] = localStorage.getItem(key);
+      }
+    }
+    if (typeof chrome !== "undefined" && chrome.storage?.local) {
+      await new Promise<void>((resolve) => {
+        chrome.storage.local.get(null, (items) => {
+          if (items) Object.assign(data, items);
+          resolve();
+        });
+      });
+    }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `retop_backup_${userRegNo || "data"}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const mainItems = [
     {
@@ -72,22 +98,6 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
     },
   ];
 
-  const menuVariants: Variants = {
-    hidden: { opacity: 0, scale: 0.95, y: -6 },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      y: 0,
-      transition: { duration: 0.05, ease: "easeOut" },
-    },
-    exit: {
-      opacity: 0,
-      scale: 0.95,
-      y: -6,
-      transition: { duration: 0.05, ease: "easeIn" },
-    },
-  };
-
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -99,13 +109,9 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
   }, [onClose]);
 
   return (
-    <motion.div
-      variants={menuVariants}
-      initial="hidden"
-      animate="visible"
-      exit="exit"
+    <div
       style={{ transformOrigin: "right top" }}
-      className="absolute right-0 top-0 md:right-1 md:top-1 w-70 bg-transparent border-0 z-9999 flex flex-col will-change-transform transform-gpu p-3"
+      className="absolute right-0 top-0 md:right-1 md:top-1 w-70 bg-transparent border-0 z-9999 flex flex-col p-3 transition-all duration-200"
     >
       <div className="flex-1 flex flex-col gap-2">
         {/* Profile Header */}
@@ -124,11 +130,14 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
             )}
           </div>
           <div className="w-16 h-full min-h-16 shadow-sm transition-all cursor-default bg-(--bg-main) shrink-0 z-9999 relative">
-            {userRegNo !== "..." && userRegNo ? (
+            {userRegNo !== "..." && userRegNo && (userProfileImg || !(typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__)) ? (
               <img
                 src={userProfileImg || `/vtop/users/image/?id=${userRegNo}`}
                 className="w-full h-full object-cover"
                 alt="Profile"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = "none";
+                }}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
@@ -182,19 +191,66 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
           </button>
         </Tooltip>
 
-        <Tooltip text="Get back to VTOP" className="flex-1">
-          <button
-            onClick={() => {
-              onLegacyToggle();
-              onClose();
-            }}
-            className="w-full flex items-center justify-center p-2.5 rounded-[18px] bg-(--bg-highlight) text-(--text-main) hover:text-(--accent-base) transition-colors active:scale-95 group"
-          >
-            <span className="text-md group-hover:scale-110 transition-transform font-['Times_New_Roman',Times,serif]! font-bold">
-              VTOP
-            </span>
-          </button>
-        </Tooltip>
+        {!(typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) && (
+          <Tooltip text="Get back to VTOP" className="flex-1">
+            <button
+              onClick={() => {
+                onLegacyToggle();
+                onClose();
+              }}
+              className="w-full flex items-center justify-center p-2.5 rounded-[18px] bg-(--bg-highlight) text-(--text-main) hover:text-(--accent-base) transition-colors active:scale-95 group"
+            >
+              <span className="text-md group-hover:scale-110 transition-transform font-['Times_New_Roman',Times,serif]! font-bold">
+                VTOP
+              </span>
+            </button>
+          </Tooltip>
+        )}
+
+        {(typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) && (
+          <>
+            <Tooltip text="Export Backup" className="flex-1">
+              <button
+                onClick={handleExportBackup}
+                className="w-full flex items-center justify-center p-2.5 rounded-[18px] bg-(--bg-highlight) text-(--text-main) hover:text-(--accent-base) transition-colors active:scale-95 group cursor-pointer"
+              >
+                <Download className="w-6 h-6 group-hover:-translate-y-0.5 transition-transform" />
+              </button>
+            </Tooltip>
+            <Tooltip text="Import Backup" className="flex-1">
+              <button
+                onClick={() => {
+                  const input = document.createElement("input");
+                  input.type = "file";
+                  input.accept = ".json";
+                  input.onchange = async (e: any) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    try {
+                      const text = await file.text();
+                      const json = JSON.parse(text);
+                      if (json && typeof json === "object") {
+                        for (const [k, v] of Object.entries(json)) {
+                          localStorage.setItem(k, typeof v === "string" ? v : JSON.stringify(v));
+                        }
+                        if (typeof chrome !== "undefined" && chrome.storage?.local) {
+                          chrome.storage.local.set(json);
+                        }
+                        window.location.reload();
+                      }
+                    } catch {
+                      alert("Invalid backup file");
+                    }
+                  };
+                  input.click();
+                }}
+                className="w-full flex items-center justify-center p-2.5 rounded-[18px] bg-(--bg-highlight) text-(--text-main) hover:text-(--accent-base) transition-colors active:scale-95 group cursor-pointer"
+              >
+                <Upload className="w-6 h-6 group-hover:-translate-y-0.5 transition-transform" />
+              </button>
+            </Tooltip>
+          </>
+        )}
 
         <Tooltip text="Log Out" className="flex-1">
           <button
@@ -206,13 +262,9 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
         </Tooltip>
       </div>
 
-      <AnimatePresence>
-        {showLogoutDialog && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 bg-(--bg-main)/95 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center rounded-4xl"
+      {showLogoutDialog && (
+          <div
+            className="absolute inset-0 z-50 bg-(--bg-main)/95 flex flex-col items-center justify-center p-4 text-center rounded-4xl transition-opacity duration-200"
           >
             <Warning className="w-12 h-12 text-att-danger mb-3" />
             <h3 className="text-xl font-black font-expanded text-(--text-main) uppercase mb-1">
@@ -235,9 +287,8 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
                 Confirm
               </button>
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
-    </motion.div>
+    </div>
   );
 };

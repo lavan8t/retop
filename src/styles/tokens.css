@@ -23,6 +23,70 @@
   --shadow-main: transparent;
 }
 
+/* ── Unified Font Weight System (Changes ONLY font weight, preserving width) ──── */
+:host,
+#retop-host,
+#retop-root {
+  --retop-font-weight: 700;
+  font-weight: var(--retop-font-weight, 700);
+}
+
+#retop-root,
+#retop-root p,
+#retop-root span,
+#retop-root div,
+#retop-root button,
+#retop-root input,
+#retop-root select,
+#retop-root textarea,
+#retop-root label,
+#retop-root a,
+#retop-root td,
+#retop-root th,
+#retop-root li,
+#retop-root h1,
+#retop-root h2,
+#retop-root h3,
+#retop-root h4,
+#retop-root h5,
+#retop-root h6 {
+  font-weight: var(--retop-font-weight, 700);
+}
+
+/* Map font weight utilities to scale dynamically with --retop-font-weight */
+#retop-root .font-normal {
+  font-weight: calc(var(--retop-font-weight, 700) * 0.75) !important;
+}
+
+#retop-root .font-medium {
+  font-weight: calc(var(--retop-font-weight, 700) * 0.85) !important;
+}
+
+#retop-root .font-semibold {
+  font-weight: calc(var(--retop-font-weight, 700) * 0.95) !important;
+}
+
+#retop-root .font-bold {
+  font-weight: var(--retop-font-weight, 700) !important;
+}
+
+#retop-root .font-extrabold {
+  font-weight: min(1000, calc(var(--retop-font-weight, 700) * 1.1)) !important;
+}
+
+#retop-root .font-black {
+  font-weight: min(1000, calc(var(--retop-font-weight, 700) * 1.2)) !important;
+}
+
+/* Digital ID Card Immunity - Fixed pixel font sizes mimic real ID card, unaffected by global weight/scale settings */
+#retop-root .retop-digital-id-card {
+  --retop-font-weight: 700;
+}
+
+#retop-root .retop-digital-id-card * {
+  font-variation-settings: normal;
+}
+
 [data-theme="light"] {
   --accent-base: var(--md-sys-color-primary, #3b82f6);
   --bg-main: var(--md-sys-color-background, #f8fafc);
@@ -77,19 +141,14 @@
 
 .retop-about-logo {
   display: inline-block !important;
-  font-family: "Google Sans Flex", var(--font-expanded, sans-serif) !important;
+  font-family: var(--font-expanded, sans-serif) !important;
   font-variation-settings: "wdth" 125, "wght" 900, "ROND" 100, "slnt" -10 !important;
   transform: skewX(-10deg) !important;
-  animation: retop-logo-bounce 1.2s ease-in-out infinite alternate !important;
+  transition: font-variation-settings var(--duration-fast) ease-out !important;
 }
 
-@keyframes retop-logo-bounce {
-  0% {
-    font-variation-settings: "wdth" 125, "wght" 900, "ROND" 100, "slnt" -10 !important;
-  }
-  100% {
-    font-variation-settings: "wdth" 125, "wght" 1, "ROND" 100, "slnt" -10 !important;
-  }
+.retop-about-logo:hover {
+  font-variation-settings: "wdth" 125, "wght" 1, "ROND" 100, "slnt" -10 !important;
 }
 
 /* Range slider styling — no ghosting */

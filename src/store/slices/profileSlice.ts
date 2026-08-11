@@ -34,8 +34,15 @@ export const createProfileSlice: StateCreator<DataState, [], [], ProfileSlice> =
         let profileImgBase64 = get().user.profileImgBase64;
         
         if (regNo !== "..." && !profileImgBase64) {
-          try {
-            const imgRes = await fetch(`/vtop/users/image/?id=${regNo}`);
+          const isOffline =
+            (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
+            (typeof window !== "undefined" && window.location.hostname.includes("web.app")) ||
+            (typeof window !== "undefined" && window.location.hostname === "localhost") ||
+            (typeof window !== "undefined" && window.location.protocol.includes("-extension:"));
+
+          if (!isOffline) {
+            try {
+              const imgRes = await fetch(`/vtop/users/image/?id=${regNo}`);
             const blob = await imgRes.blob();
             
             profileImgBase64 = await new Promise((resolve) => {
@@ -67,6 +74,7 @@ export const createProfileSlice: StateCreator<DataState, [], [], ProfileSlice> =
           } catch (e) {
             console.warn("Failed to fetch profile image for cache", e);
           }
+          } // <-- Closing the if (!isOffline) block
         }
 
         const newUser = {

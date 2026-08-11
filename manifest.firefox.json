@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "retop",
   "description": "uni portal done better.",
-  "version": "0.3.0",
+  "version": "0.5.0",
   "permissions": [
     "storage",
     "activeTab",
@@ -12,7 +12,10 @@
     "identity"
   ],
   "host_permissions": [
-    "https://vtop.vit.ac.in/vtop/*"
+    "https://vtop.vit.ac.in/vtop/*",
+    "https://getretop.web.app/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
   ],
   "content_scripts": [
     {
@@ -20,49 +23,73 @@
         "https://vtop.vit.ac.in/vtop/*"
       ],
       "js": [
-        "dist/content.js"
+        "content.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://getretop.web.app/*",
+        "http://localhost/*",
+        "http://127.0.0.1/*"
+      ],
+      "js": [
+        "webBridge.js"
       ],
       "run_at": "document_start"
     }
   ],
   "background": {
     "scripts": [
-      "dist/background.js"
+      "background.js"
     ]
   },
   "web_accessible_resources": [
     {
       "resources": [
-        "dist/injected.js",
-        "dist/style.css",
-        "dist/login.css",
-        "dist/offline.html",
-        "dist/fonts/gsf.subset.woff2",
-        "dist/fonts/gsf.subset2.woff2",
-        "dist/assets/vitLogo.svg"
+        "injected.js",
+        "webBridge.js",
+        "offline.js",
+        "chunk-*.js",
+        "style.css",
+        "login.css",
+        "prelogin.css",
+        "fonts/gsf.subset.woff2",
+        "fonts/gsf.subset2.woff2",
+        "fonts/material-symbols-rounded.woff2",
+        "fonts/*",
+        "assets/vitLogo.svg",
+        "pdf.js/*",
+        "pdf.js/pdf.worker.min.mjs"
       ],
       "matches": [
-        "https://vtop.vit.ac.in/*"
+        "https://vtop.vit.ac.in/*",
+        "https://getretop.web.app/*",
+        "http://localhost/*",
+        "http://127.0.0.1/*"
       ]
     }
   ],
   "browser_specific_settings": {
     "gecko": {
       "id": "retop-ext@vit.ac.in",
-      "strict_min_version": "109.0"
+      "strict_min_version": "142.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
     }
   },
   "icons": {
-    "16": "icons/icon16.png",
-    "32": "icons/icon32.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
+    "64": "icons/icon16.png",
+    "128": "icons/icon32.png",
+    "192": "icons/icon48.png",
+    "512": "icons/icon128.png"
   },
   "action": {
     "default_icon": {
-      "16": "icons/icon16.png",
-      "24": "icons/icon24.png",
-      "32": "icons/icon32.png"
+      "64": "icons/icon16.png",
+      "128": "icons/icon32.png",
+      "192": "icons/icon48.png"
     }
   }
 }

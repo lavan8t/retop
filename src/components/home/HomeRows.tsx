@@ -1,5 +1,4 @@
 import React from "react";
-import { motion, Variants } from "framer-motion";
 import {
   LocationOn,
   Schedule,
@@ -7,21 +6,13 @@ import {
 import { CourseSummary, Assignment, Event } from "../../types/vtop";
 import { UpcomingClass } from "../../utils/timetable-slots";
 import { ExamEntry } from "../../parsers/exam-schedule";
-import { formatTimeStr } from "../../utils/formatting";
-import { MarqueeText } from "../common/MarqueeText";
-import { SPRING_SNAPPY, DURATION_MODERATE, TRANSITION_FADE_IN } from "../../utils/motion";
+import { formatTimeStr, parseVtopDate, TimeFormatMode } from "../../utils/formatting";
+
 import { useSettingsStore, MATERIAL_ACCENTS, getMaterialThemeColor, getMaterialOnThemeColor } from "../../utils/settings-store";
+import { useIsDark } from "../../hooks/useTheme";
 import { useDataStore } from "../../store/dataStore";
 
-const rowVariants: Variants = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: TRANSITION_FADE_IN,
-  },
-};
-
-export const AttendanceRow = ({ course }: { course: CourseSummary }) => {
+export const AttendanceRow = React.memo(({ course }: { course: CourseSummary }) => {
   const val = parseFloat(course.attendance);
   const displayVal = isNaN(val) ? 0 : Math.round(val);
 
@@ -40,18 +31,17 @@ export const AttendanceRow = ({ course }: { course: CourseSummary }) => {
   }
 
   return (
-    <div className="relative flex items-center justify-between px-3.5 py-2.5 rounded-xl first:rounded-t-2xl last:rounded-b-2xl bg-(--bg-surface) hover:bg-(--bg-highlight) transition-colors cursor-pointer group/row select-none overflow-hidden border border-(--border-dim)/40">
+    <div className="relative flex items-center justify-between px-3.5 py-2.5 rounded-xl first:rounded-t-2xl last:rounded-b-2xl bg-(--bg-surface) hover:bg-(--bg-highlight) transition-colors cursor-pointer group/row select-none overflow-hidden border border-(--border-dim)/40 shrink-0">
       <div
         className={`absolute top-0 left-0 h-full ${barColor} transition-all duration-fast`}
         style={{ width: `${displayVal}%` }}
       />
       <div className="relative z-10 flex items-center gap-2 min-w-0 flex-1 pr-3">
-        <MarqueeText
-          text={course.name}
-          className="text-xs font-black text-(--text-main) transition-colors"
-        />
+        <span className="text-xs font-black text-(--text-main) leading-snug truncate min-w-0">
+          {course.name}
+        </span>
         {course.type && (
-          <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md bg-(--bg-main) text-(--text-muted) leading-none shrink-0 border border-(--border-dim)">
+          <span className="text-[0.5625rem] font-black uppercase px-1.5 py-0.5 rounded-md bg-(--bg-main) text-(--text-muted) leading-none shrink-0 border border-(--border-dim)">
             {course.type}
           </span>
         )}
@@ -64,24 +54,28 @@ export const AttendanceRow = ({ course }: { course: CourseSummary }) => {
       </div>
     </div>
   );
-};
+});
 
-export const ScheduleRow = ({
+export const ScheduleRow = React.memo(({
   item,
   onClick,
-  use24HourTime = true,
+  use24HourTime = "12h" as TimeFormatMode,
+
   className,
+  progress = 0,
 }: {
   item: UpcomingClass;
   onClick?: (e: React.MouseEvent, item: UpcomingClass) => void;
-  use24HourTime?: boolean;
+  use24HourTime?: TimeFormatMode;
+
   className?: string;
+  progress?: number;
 }) => {
-  const isLab = item.course?.type?.includes("Lab") || false;
   const isNow = item.status === "Now";
   const formattedTime = formatTimeStr(item.time, use24HourTime);
   const timeParts = formattedTime.split(" - ");
   const startTime = timeParts[0];
+
   const { settings } = useSettingsStore();
   const { attendance } = useDataStore();
   const attObj = (attendance || []).find(
@@ -94,336 +88,295 @@ export const ScheduleRow = ({
 
   const [isHovered, setIsHovered] = React.useState(false);
 
-  const sysDark = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const isDark = settings.themeMode === "dark" || settings.themeMode === "amoled" || (settings.themeMode === "auto" && sysDark && settings.pureBlack) || (settings.themeMode === "auto" && sysDark);
+  const isDark = useIsDark();
   const cardBg = getMaterialThemeColor(settings.calendarClassColor, isDark);
   const cardFg = getMaterialOnThemeColor(settings.calendarClassColor, isDark);
 
+  const venue = item.course?.venue || (item as any).venue || (item as any).location || "";
+  const slot = item.course?.slot || (item as any).slot || "";
+
   return (
-    <motion.div
-      layout
-      variants={rowVariants}
+    <div
       onClick={(e) => onClick?.(e, item)}
-      onHoverStart={() => setIsHovered(true)}
-      onHoverEnd={() => setIsHovered(false)}
-      className={`flex flex-col p-3 shadow-none cursor-pointer select-none overflow-hidden relative border-0 ${isNow ? "bg-(--accent-base) text-(--text-inverse)" : ""} ${className || "rounded-xl"}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={`@container flex items-center justify-between p-3 sm:p-3.5 min-h-[44px] shadow-none cursor-pointer select-none overflow-hidden relative border-0 shrink-0 ${isNow ? "bg-(--accent-base) text-(--text-inverse)" : ""} ${className || "rounded-xl"}`}
       style={{
         backgroundColor: isNow ? undefined : cardBg,
         color: isNow ? undefined : cardFg,
       }}
     >
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <motion.div
-            layout="position"
-            animate={{ width: isHovered ? 0 : "auto", opacity: isHovered ? 0 : 1, x: isHovered ? -16 : 0 }}
-            transition={SPRING_SNAPPY}
-            className="font-mono text-[11px] font-bold shrink-0 overflow-hidden whitespace-nowrap"
-          >
-            {startTime}
-          </motion.div>
-          <motion.div
-            layout="position"
-            transition={SPRING_SNAPPY}
-            className="text-sm font-black leading-tight flex-1 truncate flex items-center gap-1.5"
-          >
-            <span className="truncate">{item.course.title}</span>
-            {isCriticalAtt && (
-              <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded bg-red-500 text-white shrink-0">
-                ⚠️ {Math.round(attVal)}%
-              </span>
-            )}
-          </motion.div>
-        </div>
-        <motion.div layout="position" transition={SPRING_SNAPPY} className="text-[10px] font-bold font-mono shrink-0 px-1 py-0.5 flex items-center gap-1">
-          <LocationOn className="w-3 h-3" />
-          {item.course.venue}
-        </motion.div>
-      </div>
-      
-      <motion.div
-        layout
-        initial={{ height: 0, opacity: 0, marginTop: 0 }}
-        animate={{ height: isHovered ? "auto" : 0, opacity: isHovered ? 1 : 0, marginTop: isHovered ? 8 : 0 }}
-        transition={SPRING_SNAPPY}
-        className="flex items-center justify-between overflow-hidden"
-      >
-        <motion.div 
-          animate={{ x: isHovered ? 0 : -16 }}
-          transition={SPRING_SNAPPY}
-          className="font-mono text-[10px] font-bold opacity-80 flex items-center gap-1"
-        >
-          <Schedule className="w-3 h-3" />
-          {formattedTime}
-        </motion.div>
-        <div className={`text-[9px] font-black uppercase px-1 py-0.5 rounded leading-none shrink-0 opacity-80`}>
-          {item.course.slot}
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-};
+      {/* Depleting fill overlay level-wise based on time elapsed */}
+      {progress > 0 && progress < 1 && (
+        <div
+          className="absolute top-0 left-0 bottom-0 bg-black/35 pointer-events-none transition-all duration-500 z-0"
+          style={{ width: `${Math.round(progress * 100)}%` }}
+        />
+      )}
 
-export const AssignmentRow = ({
+      <div className="relative z-10 flex items-center justify-between gap-3 w-full">
+        {/* Left Side: Natural width time container (pushes name on hover) */}
+        <div className="flex items-center shrink-0">
+          <span className="font-mono font-bold text-xs sm:text-sm whitespace-nowrap transition-all leading-tight">
+            {isHovered ? formattedTime : startTime}
+          </span>
+        </div>
+
+        {/* Center: Main Name (No course code) */}
+        <div className="flex-1 min-w-0 px-1">
+          <span className="text-xs sm:text-sm md:text-base font-black leading-tight break-words line-clamp-2">
+            {item.course.title}
+          </span>
+        </div>
+
+        {/* Right Side: Critical badge, Slot (left of venue), Venue on right end */}
+        <div className="flex items-center gap-2 shrink-0 font-mono font-bold">
+          {isCriticalAtt && (
+            <span className="text-[0.5625rem] font-mono font-bold uppercase px-1.5 py-0.5 rounded-full bg-red-500 text-white shrink-0 leading-none">
+              ⚠️ {Math.round(attVal)}%
+            </span>
+          )}
+
+          {slot && (
+            <span className="px-2 py-0.5 rounded bg-black/15 text-xs sm:text-sm font-mono font-black uppercase tracking-wider shrink-0 leading-none">
+              {slot}
+            </span>
+          )}
+
+          {venue && (
+            <span className="text-xs sm:text-sm font-black whitespace-nowrap shrink-0 leading-none">
+              {venue}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+export const AssignmentRow = React.memo(({
   assignment,
   onClick,
   className,
+  progress = 0,
 }: {
   assignment: Assignment;
-  onClick?: () => void;
+  onClick?: (e: React.MouseEvent, assignment: Assignment) => void;
   className?: string;
+  progress?: number;
 }) => {
-  const getFormattedDates = (dateStr: string) => {
-    if (!dateStr) return { days: "", exact: "" };
-    const cleanStr = dateStr.replace(/[-/]/g, " ").trim();
-    const parts = cleanStr.split(" ");
-    let target: Date;
-    if (parts.length >= 3) {
-      const day = parseInt(parts[0], 10);
-      const month = parseInt(parts[1], 10) - 1;
-      const year = parseInt(parts[2], 10);
-      target = new Date(year, month, day);
-    } else {
-      target = new Date(cleanStr);
-    }
+  const [isHovered, setIsHovered] = React.useState(false);
 
-    const now = new Date();
+  const getDueDaysText = (dueDateStr: string) => {
+    const d = parseVtopDate(dueDateStr);
+    if (!d) return { days: "DUE SOON", exact: dueDateStr, diffDays: 99 };
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const target = new Date(d);
     target.setHours(0, 0, 0, 0);
-    now.setHours(0, 0, 0, 0);
 
-    let exact = "";
-    if (!isNaN(target.getTime())) {
-      const dayNum = target.getDate().toString().padStart(2, "0");
-      const monthName = target.toLocaleDateString("en-US", { month: "short" });
-      exact = `${dayNum} ${monthName}`;
-    } else {
-      exact = dateStr;
-    }
+    const diffDays = Math.round(
+      (target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+    );
 
-    if (isNaN(target.getTime())) return { days: `Due ${dateStr}`, exact };
+    let days = "";
+    if (diffDays < 0) days = `${Math.abs(diffDays)}d OVERDUE`;
+    else if (diffDays === 0) days = "DUE TODAY";
+    else if (diffDays === 1) days = "DUE TOMORROW";
+    else days = `DUE IN ${diffDays}d`;
 
-    const diffMs = target.getTime() - now.getTime();
-    const days = Math.round(diffMs / (1000 * 60 * 60 * 24));
-
-    let daysText = "";
-    if (days < 0) daysText = "Overdue";
-    else if (days === 0) daysText = "Due Today";
-    else if (days === 1) daysText = "Due Tomorrow";
-    else daysText = `Due in ${days} Day${days > 1 ? "s" : ""}`;
-
-    return { days: daysText, exact };
+    return { days, exact: dueDateStr, diffDays };
   };
 
-  const { days, exact } = getFormattedDates(assignment.dueDate);
+  const { days, exact, diffDays } = getDueDaysText(assignment.dueDate);
+
+  // Urgency badge styling
+  let badgeStyle = "bg-(--accent-base)/15 text-(--accent-base) border-(--accent-base)/30";
+  if (diffDays < 0) {
+    badgeStyle = "bg-red-500/15 text-red-500 border-red-500/30";
+  } else if (diffDays <= 1) {
+    badgeStyle = "bg-amber-500/15 text-amber-500 border-amber-500/30";
+  }
 
   return (
-    <motion.div
-      layout
-      variants={rowVariants}
-      onClick={onClick}
-      className={`group p-3 bg-(--bg-surface) hover:bg-(--bg-highlight) shadow-none relative transition-colors overflow-hidden border-0 ${onClick ? "cursor-pointer" : ""} ${className || "rounded-xl"}`}
+    <div
+      onClick={(e) => onClick?.(e, assignment)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={`p-3 sm:p-3.5 bg-(--bg-surface) hover:bg-(--bg-highlight) cursor-pointer select-none overflow-hidden group transition-colors relative border border-(--border-dim)/40 shrink-0 ${className || "rounded-xl"}`}
     >
-      <div className="flex flex-col relative z-10">
-        <div className="flex justify-between items-start gap-2">
-          <span className="text-sm font-black text-(--text-main) leading-tight flex-1 line-clamp-2">
+      {progress > 0 && progress < 1 && (
+        <div
+          className="absolute top-0 left-0 bottom-0 bg-(--accent-base)/20 pointer-events-none transition-all duration-500 z-0"
+          style={{ width: `${Math.round(progress * 100)}%` }}
+        />
+      )}
+      <div className="flex flex-col relative z-10 gap-1.5">
+        <div className="flex justify-between items-start gap-2 min-w-0">
+          <span className="text-xs sm:text-sm font-black text-(--text-main) leading-snug flex-1 break-words">
             {assignment.title}
           </span>
-          <span className="shrink-0 text-[10px] font-bold font-mono text-(--text-muted)">
+        </div>
+        <div className="flex items-center justify-between mt-1 gap-2">
+          <span className="text-xs font-bold font-mono text-(--text-muted) truncate shrink-0">
             {assignment.course}
           </span>
-        </div>
-        <div className="flex justify-end mt-2">
-          <span className="text-[10px] font-black font-mono text-(--accent-base) transition-all">
-            <span className="inline group-hover:hidden">{days}</span>
-            <span className="hidden group-hover:inline">{exact}</span>
+          <span className={`text-xs font-black font-mono px-2 py-0.5 rounded-md border leading-none shrink-0 transition-all ${badgeStyle}`}>
+            {isHovered ? exact : days}
           </span>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
-};
+});
 
-export const EventRow = ({ event, className }: { event: Event; className?: string }) => {
+export const EventRow = React.memo(({ event, className, progress = 0 }: { event: Event; className?: string; progress?: number }) => {
   const { settings } = useSettingsStore();
 
-  const sysDark = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const isDark = settings.themeMode === "dark" || settings.themeMode === "amoled" || (settings.themeMode === "auto" && sysDark && settings.pureBlack) || (settings.themeMode === "auto" && sysDark);
+  const isDark = useIsDark();
   const cardBg = getMaterialThemeColor(settings.calendarEventColor, isDark);
   const cardFg = getMaterialOnThemeColor(settings.calendarEventColor, isDark);
 
   return (
-    <motion.div
-      layout
-      variants={rowVariants}
-      className={`p-3 shadow-none cursor-pointer select-none relative border-0 ${className || "rounded-xl"}`}
+    <div
+      className={`p-3.5 shadow-none cursor-pointer select-none relative border-0 overflow-hidden shrink-0 ${className || "rounded-xl"}`}
       style={{
         backgroundColor: cardBg,
         color: cardFg,
       }}
     >
-      <div className="flex flex-col">
-        <div className="flex items-start justify-between gap-2">
-          <span className="text-sm font-black leading-tight flex-1">
+      {progress > 0 && progress < 1 && (
+        <div
+          className="absolute top-0 left-0 bottom-0 bg-black/35 pointer-events-none transition-all duration-500 z-0"
+          style={{ width: `${Math.round(progress * 100)}%` }}
+        />
+      )}
+      <div className="flex flex-col gap-1.5 relative z-10 w-full">
+        <div className="flex items-start justify-between gap-2 w-full">
+          <span className="text-[clamp(0.85rem,3cqw,0.95rem)] font-black leading-tight break-words flex-1">
             {event.title}
           </span>
-          <span className="shrink-0 text-[10px] font-bold opacity-80 text-right">
-            {event.organizer}
-          </span>
         </div>
-        <div className="flex justify-end mt-1">
-          <span className="shrink-0 text-[9px] font-black uppercase opacity-80 text-right">
+        <div className="flex items-center justify-between gap-2 text-xs font-mono font-bold opacity-90">
+          <span className="uppercase text-xs tracking-wider px-2 py-0.5 rounded bg-black/15 leading-none">
             {event.category}
           </span>
+          {event.organizer && (
+            <span className="leading-none text-xs">
+              {event.organizer}
+            </span>
+          )}
         </div>
       </div>
-    </motion.div>
+    </div>
   );
-};
+});
 
-export const ExamRow = ({
+export const ExamRow = React.memo(({
   exam,
   groupType,
   onClick,
   className,
+  use24HourTime = "12h" as TimeFormatMode,
+
+  progress = 0,
+  showGroupPill = true,
 }: {
   exam: ExamEntry;
   groupType?: string;
   onClick?: () => void;
   className?: string;
+  use24HourTime?: TimeFormatMode;
+
+  progress?: number;
+  showGroupPill?: boolean;
 }) => {
   const { settings } = useSettingsStore();
+  const [isHovered, setIsHovered] = React.useState(false);
 
-  const sysDark = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const isDark = settings.themeMode === "dark" || settings.themeMode === "amoled" || (settings.themeMode === "auto" && sysDark);
+  const isDark = useIsDark();
   const cardBg = getMaterialThemeColor("purple", isDark);
   const cardFg = getMaterialOnThemeColor("purple", isDark);
 
-  return (
-    <motion.div
-      layout
-      variants={rowVariants}
-      onClick={onClick}
-      className={`p-3 shadow-none select-none relative border-0 transition-all ${onClick ? "cursor-pointer" : ""} ${className || "rounded-xl"}`}
-      style={{
-        backgroundColor: cardBg,
-        color: cardFg,
-      }}
-    >
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5 flex-1 min-w-0">
-            <span className="px-1.5 py-0.5 rounded bg-black/15 text-[9px] font-black font-mono uppercase tracking-wider shrink-0">
-              {groupType || "EXAM"}
-            </span>
-            <span className="text-xs font-mono font-bold opacity-80 shrink-0">
-              {exam.courseCode}
-            </span>
-            <span className="text-sm font-black leading-tight flex-1 truncate">
-              {exam.courseTitle}
-            </span>
-          </div>
-          {exam.slot && (
-            <span className="text-[10px] font-mono font-bold shrink-0 opacity-80">
-              SLOT: {exam.slot}
-            </span>
-          )}
-        </div>
-
-        <div className="flex items-center justify-between text-[11px] font-bold opacity-90 pt-1.5 border-t border-black/10">
-          <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1 font-mono">
-              <Schedule className="w-3.5 h-3.5 opacity-80" />
-              {exam.examTime} ({exam.examSession})
-            </span>
-            {exam.venue && (
-              <span className="flex items-center gap-1">
-                <LocationOn className="w-3.5 h-3.5 opacity-80" />
-                {exam.venue} {exam.seatNo ? `(Seat: ${exam.seatNo})` : ""}
-              </span>
-            )}
-          </div>
-          {exam.reportingTime && (
-            <span className="text-[10px] font-mono font-bold opacity-80">
-              RPT: {exam.reportingTime}
-            </span>
-          )}
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
-export const CustomEventRow = ({
-  event,
-  onDelete,
-  className,
-}: {
-  event: any;
-  onDelete?: () => void;
-  className?: string;
-}) => {
-  const { settings } = useSettingsStore();
-  const sysDark =
-    typeof window !== "undefined" &&
-    window.matchMedia &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const isDark =
-    settings.themeMode === "dark" ||
-    settings.themeMode === "amoled" ||
-    (settings.themeMode === "auto" && sysDark);
-
-  const colorMap: Record<string, string> = {
-    quiz: "violet",
-    assessment: "cyan",
-    event: "amber",
-    task: "emerald",
-    note: "pink",
+  const formatExamStartTime = (rawTime?: string, rawSession?: string) => {
+    if (rawTime) {
+      const startPart = rawTime.split("-")[0].trim();
+      return formatTimeStr(startPart, use24HourTime);
+    }
+    if (rawSession) {
+      const sessionMap: Record<string, string> = {
+        FN1: "09:00 AM",
+        FN2: "10:45 AM",
+        FN: "09:00 AM",
+        AN1: "02:00 PM",
+        AN2: "03:45 PM",
+        AN: "02:00 PM",
+      };
+      const mapped = sessionMap[rawSession.toUpperCase()];
+      if (mapped) return formatTimeStr(mapped, use24HourTime);
+      return rawSession;
+    }
+    return "EXAM";
   };
 
-  const colorKey = colorMap[event.type] || "blue";
-  const cardBg = getMaterialThemeColor(colorKey, isDark);
-  const cardFg = getMaterialOnThemeColor(colorKey, isDark);
+  const displayTime = formatExamStartTime(exam.examTime, exam.examSession);
+  const hoverTime = exam.examTime ? `${exam.examTime}${exam.examSession ? ` (${exam.examSession})` : ""}` : displayTime;
 
   return (
-    <motion.div
-      layout
-      variants={rowVariants}
-      className={`p-3 shadow-none select-none relative border-0 ${className || "rounded-xl"}`}
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={`@container flex items-center justify-between p-3 sm:p-3.5 min-h-[44px] shadow-none cursor-pointer select-none overflow-hidden relative border-0 shrink-0 ${className || "rounded-xl"}`}
       style={{
         backgroundColor: cardBg,
         color: cardFg,
       }}
     >
-      <div className="flex flex-col gap-1">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-1.5 flex-1 min-w-0">
-            <span className="px-1.5 py-0.5 rounded bg-black/15 text-[9px] font-black font-mono uppercase tracking-wider shrink-0">
-              {event.type}
+      {progress > 0 && progress < 1 && (
+        <div
+          className="absolute top-0 left-0 bottom-0 bg-black/35 pointer-events-none transition-all duration-500 z-0"
+          style={{ width: `${Math.round(progress * 100)}%` }}
+        />
+      )}
+
+      <div className="relative z-10 flex items-center justify-between gap-3 w-full">
+        {/* Left Side: Natural width start time */}
+        <div className="flex items-center shrink-0">
+          <span className="font-mono font-bold text-xs sm:text-sm whitespace-nowrap transition-all leading-tight">
+            {isHovered ? hoverTime : displayTime}
+          </span>
+        </div>
+
+        {/* Center: Exam Course Title */}
+        <div className="flex-1 min-w-0 px-1">
+          <span className="text-xs sm:text-sm md:text-base font-black leading-tight break-words line-clamp-2">
+            {exam.courseTitle}
+          </span>
+        </div>
+
+        {/* Right Side: Group Pill / Slot (left of venue), Venue on right end */}
+        <div className="flex items-center gap-2 shrink-0 font-mono font-bold">
+          {showGroupPill && (
+            <span className="px-2 py-0.5 rounded bg-black/15 text-xs sm:text-sm font-black font-mono uppercase tracking-wider shrink-0 leading-none">
+              {groupType || "EXAM"}
             </span>
-            <span className="text-sm font-black leading-tight truncate">
-              {event.title}
+          )}
+
+          {exam.slot && (
+            <span className="text-xs sm:text-sm font-mono font-black uppercase tracking-wider px-2 py-0.5 rounded bg-black/15 shrink-0 leading-none">
+              {exam.slot}
             </span>
-          </div>
-          {onDelete && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-              className="text-xs opacity-60 hover:opacity-100 p-0.5 rounded transition-opacity"
-              title="Delete Custom Event"
-            >
-              ✕
-            </button>
+          )}
+
+          {exam.venue && (
+            <span className="text-xs sm:text-sm font-black whitespace-nowrap shrink-0 leading-none">
+              {exam.venue} {exam.seatNo ? `(${exam.seatNo})` : ""}
+            </span>
           )}
         </div>
-        {(event.time || event.venue) && (
-          <div className="flex items-center gap-2 text-[10px] font-mono font-bold opacity-85 mt-0.5">
-            {event.time && <span>⏰ {event.time}</span>}
-            {event.venue && <span>📍 {event.venue}</span>}
-          </div>
-        )}
       </div>
-    </motion.div>
+    </div>
   );
-};
+});

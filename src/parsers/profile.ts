@@ -63,9 +63,10 @@ function parseSectionMap(
   return map;
 }
 
+import { parseHTMLFast } from "../utils/parser-utils";
+
 export function parseStudentProfile(html: string): StudentProfile {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
+  const doc = parseHTMLFast(html);
 
   const basic: ProfileBasicInfo = {
     name: cleanText(doc.querySelector(".col-4 p")?.textContent),

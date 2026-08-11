@@ -1,3 +1,5 @@
+import { parseHTMLFast } from "../utils/parser-utils";
+
 export interface DACourse {
   classId: string;
   code: string;
@@ -17,7 +19,7 @@ export interface DAAssignment {
 }
 
 export const parseDASemesters = (html: string): { id: string; label: string }[] => {
-  const doc = new DOMParser().parseFromString(html, "text/html");
+  const doc = parseHTMLFast(html);
   const options = doc.querySelectorAll("#semesterSubId option");
 
   const semesters: { id: string; label: string }[] = [];
@@ -33,7 +35,7 @@ export const parseDASemesters = (html: string): { id: string; label: string }[] 
 };
 
 export const parseDACourses = (html: string): DACourse[] => {
-  const doc = new DOMParser().parseFromString(html, "text/html");
+  const doc = parseHTMLFast(html);
   const table = doc.querySelector(".customTable");
   if (!table) return [];
 
@@ -73,7 +75,7 @@ export const parseDACourses = (html: string): DACourse[] => {
 };
 
 export const parseDAAssignments = (html: string): DAAssignment[] => {
-  const doc = new DOMParser().parseFromString(html, "text/html");
+  const doc = parseHTMLFast(html);
   const tables = doc.querySelectorAll(".customTable");
   // Assignments are usually in the second table.
   let table = tables[1];

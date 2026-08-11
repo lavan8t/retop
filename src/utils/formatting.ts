@@ -73,24 +73,43 @@ export function normalizeSemesterLabel(rawLabel: string): string {
   );
 }
 
-export function formatTimeStr(timeStr: string, use24Hour: boolean): string {
-  if (use24Hour || !timeStr) return timeStr;
+export type TimeFormatMode = "24h" | "12h" | "12h-ampm";
 
-  // Handles "08:00 - 08:50" or single times "08:00"
+export function formatTimeStr(
+  timeStr: string,
+  mode: TimeFormatMode | boolean = "12h",
+  showAmPmParam?: boolean
+): string {
+  if (!timeStr) return "";
+
+  let formatMode: TimeFormatMode = "12h";
+  if (typeof mode === "string") {
+    formatMode = mode as TimeFormatMode;
+  } else if (mode === true) {
+    formatMode = "24h";
+  } else if (mode === false) {
+    formatMode = showAmPmParam ? "12h-ampm" : "12h";
+  }
+
+  if (formatMode === "24h") return timeStr;
+
   const convert = (t: string) => {
     const parts = t.trim().split(":");
     if (parts.length < 2) return t;
     const hour = parseInt(parts[0], 10);
     const min = parts[1];
     if (isNaN(hour)) return t;
-    
-    const ampm = hour >= 12 ? "PM" : "AM";
+
     const h12 = hour % 12 || 12;
-    return `${h12}:${min} ${ampm}`;
+    if (formatMode === "12h-ampm") {
+      const ampm = hour >= 12 ? "PM" : "AM";
+      return `${h12}:${min} ${ampm}`;
+    }
+    return `${h12}:${min}`;
   };
 
   if (timeStr.includes("-")) {
-    const [start, end] = timeStr.split("-").map(s => s.trim());
+    const [start, end] = timeStr.split("-").map((s) => s.trim());
     return `${convert(start)} - ${convert(end)}`;
   }
 
@@ -110,40 +129,45 @@ export const toTitleCase = (str: string): string => {
     .join(" ");
 };
 
+export function parseVtopDate(dateStr: string): Date | null {
+  if (!dateStr) return null;
+  const cleanStr = dateStr.replace(/[-/.]/g, " ").trim();
+  const directDate = new Date(cleanStr);
+
+  if (!isNaN(directDate.getTime())) {
+    return directDate;
+  }
+  
+  const parts = cleanStr.split(/\s+/);
+  if (parts.length >= 3) {
+    let day = parseInt(parts[0], 10);
+    let year = parseInt(parts[2], 10);
+    let monthStr = parts[1].toLowerCase();
+
+    if (parts[0].length === 4) {
+      year = parseInt(parts[0], 10);
+      day = parseInt(parts[2], 10);
+      monthStr = parts[1].toLowerCase();
+    }
+
+    const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+    let monthIndex = months.indexOf(monthStr.slice(0, 3));
+    if (monthIndex === -1 && !isNaN(parseInt(monthStr, 10))) {
+      monthIndex = parseInt(monthStr, 10) - 1;
+    }
+
+    if (!isNaN(day) && monthIndex !== -1 && !isNaN(year)) {
+      return new Date(year, monthIndex, day);
+    }
+  }
+  
+  return null;
+}
+
 export function formatDateStr(dateStr: string, pattern: string = "DD Mon YYYY"): string {
   if (!dateStr) return "";
 
-  const cleanStr = dateStr.replace(/[-/.]/g, " ").trim();
-  const directDate = new Date(cleanStr);
-  let dateObj: Date | null = null;
-
-  if (!isNaN(directDate.getTime())) {
-    dateObj = directDate;
-  } else {
-    const parts = cleanStr.split(/\s+/);
-    if (parts.length >= 3) {
-      let day = parseInt(parts[0], 10);
-      let year = parseInt(parts[2], 10);
-      let monthStr = parts[1].toLowerCase();
-
-      if (parts[0].length === 4) {
-        year = parseInt(parts[0], 10);
-        day = parseInt(parts[2], 10);
-        monthStr = parts[1].toLowerCase();
-      }
-
-      const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
-      let monthIndex = months.indexOf(monthStr.slice(0, 3));
-      if (monthIndex === -1 && !isNaN(parseInt(monthStr, 10))) {
-        monthIndex = parseInt(monthStr, 10) - 1;
-      }
-
-      if (!isNaN(day) && monthIndex !== -1 && !isNaN(year)) {
-        dateObj = new Date(year, monthIndex, day);
-      }
-    }
-  }
-
+  const dateObj = parseVtopDate(dateStr);
   if (!dateObj || isNaN(dateObj.getTime())) return dateStr;
 
   const DD = String(dateObj.getDate()).padStart(2, "0");

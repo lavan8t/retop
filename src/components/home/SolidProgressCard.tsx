@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { TrendingUp } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { Card } from "../ui/Card";
 
@@ -23,12 +22,10 @@ export const SolidProgressCard = ({ progress }: { progress: number }) => (
 
       <div className="w-full mt-1">
         <div className="w-full h-3 bg-(--bg-highlight) border-2 border-(--border-dim) rounded-full overflow-hidden mb-1">
-          <motion.div
-            className="h-full bg-(--text-main) rounded-full opacity-80"
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 1.5, ease: "circOut", delay: 0.2 }}
-          ></motion.div>
+          <div
+            className="h-full bg-(--text-main) rounded-full opacity-80 transition-all duration-1000 ease-out delay-200"
+            style={{ width: `${progress}%` }}
+          ></div>
         </div>
         <div className="flex justify-between text-[9px] font-bold font-mono text-(--text-muted) uppercase mt-1.5">
           <span>Start: Jan</span>

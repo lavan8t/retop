@@ -1,10 +1,10 @@
 import { DetailedAttendanceCourse, AttendanceRecord } from "../types/vtop";
+import { parseHTMLFast } from "../utils/parser-utils";
 
 export function parseStudentAttendance(
   html: string,
 ): DetailedAttendanceCourse[] {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
+  const doc = parseHTMLFast(html);
 
   const courses: DetailedAttendanceCourse[] = [];
   const rows = doc.querySelectorAll("#AttendanceDetailDataTable tbody tr");
@@ -79,8 +79,7 @@ export function parseStudentAttendance(
 }
 
 export function parseAttendanceDetail(html: string): AttendanceRecord[] {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
+  const doc = parseHTMLFast(html);
 
   const records: AttendanceRecord[] = [];
   const rows = doc.querySelectorAll(

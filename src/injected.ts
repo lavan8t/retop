@@ -1,15 +1,5 @@
 console.log("retop: Injected Script Loaded");
 
-// Inject recaptcha script if not present
-if (!document.querySelector('script[src*="recaptcha/api.js"]')) {
-  console.log("retop: Injecting ReCaptcha script");
-  const script = document.createElement("script");
-  script.src = "https://www.google.com/recaptcha/api.js";
-  script.async = true;
-  script.defer = true;
-  document.head.appendChild(script);
-}
-
 (window as any).onVtopCaptchaSuccess = function (token: string) {
   console.log("Captcha Solved in Main World");
   window.dispatchEvent(
@@ -17,7 +7,7 @@ if (!document.querySelector('script[src*="recaptcha/api.js"]')) {
   );
 };
 
-let checkCaptcha: number;
+let checkCaptcha: any;
 
 const initCaptcha = (key: string) => {
   if (!key) return;

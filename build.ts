@@ -13,10 +13,26 @@
  *   5. Copy HTML files into dist/ with rewritten script paths
  */
 
-import { rmSync, mkdirSync, copyFileSync, readFileSync, writeFileSync, existsSync, realpathSync } from "fs";
+import { rmSync, mkdirSync, copyFileSync, readFileSync, writeFileSync, existsSync, realpathSync, statSync, readdirSync } from "fs";
 import { resolve, basename } from "path";
+import { gzipSync } from "zlib";
 
 const IS_PROD = process.argv.includes("--prod") || process.argv.includes("--production");
+
+// Parse -a / --archive option (crx | xpi | zip)
+let archiveType: "crx" | "xpi" | "zip" | null = null;
+const aIdx = process.argv.indexOf("-a");
+if (aIdx !== -1 && process.argv[aIdx + 1]) {
+  archiveType = process.argv[aIdx + 1].toLowerCase() as any;
+} else {
+  const aArg = process.argv.find((a: string) => a.startsWith("--archive="));
+  if (aArg) archiveType = aArg.split("=")[1].toLowerCase() as any;
+}
+
+if (archiveType && !["crx", "xpi", "zip"].includes(archiveType)) {
+  console.error(`\x1b[31mError: Invalid archive type '${archiveType}'. Allowed: -a crx | xpi | zip\x1b[0m`);
+  process.exit(1);
+}
 
 // Build number
 const d = new Date();
@@ -30,37 +46,60 @@ const buildNumber =
   pad(d.getMinutes()) +
   pad(d.getSeconds());
 
-const ROOT = resolve(process.cwd());
-const DIST = resolve(ROOT, "dist");
+const ROOT = resolve(".");
+const DIST = resolve("dist");
 
 // ── Step 0: Clean dist/ ──────────────────────────────────────────────
-console.log("Cleaning dist/...");
-rmSync(DIST, { recursive: true, force: true });
-mkdirSync(DIST, { recursive: true });
-mkdirSync(resolve(DIST, "assets"), { recursive: true });
+function safeCleanDir(dirPath: string) {
+  if (!existsSync(dirPath)) {
+    try { mkdirSync(dirPath, { recursive: true }); } catch {}
+    return;
+  }
+  try {
+    const entries = readdirSync(dirPath, { withFileTypes: true });
+    for (const entry of entries) {
+      const full = resolve(dirPath, entry.name);
+      try {
+        if (entry.isDirectory()) {
+          safeCleanDir(full);
+          try { rmSync(full, { recursive: true, force: true }); } catch {}
+        } else {
+          try { rmSync(full, { force: true }); } catch {}
+        }
+      } catch {}
+    }
+  } catch {}
+}
+
+safeCleanDir(DIST);
+try { if (!existsSync(DIST)) mkdirSync(DIST, { recursive: true }); } catch {}
+try { if (!existsSync(resolve(DIST, "assets"))) mkdirSync(resolve(DIST, "assets"), { recursive: true }); } catch {}
 
 // ── Step 1: Build content scripts (IIFE, no splitting) ──────────────
 console.log("Building content scripts...");
 const contentBuild = await Bun.build({
   entrypoints: [
-    "./src/content.ts",
-    "./src/injected.ts",
-    "./src/background.ts",
+    resolve(import.meta.dir, "src/content.ts"),
+    resolve(import.meta.dir, "src/injected.ts"),
+    resolve(import.meta.dir, "src/background.ts"),
+    resolve(import.meta.dir, "src/webBridge.ts"),
   ],
   outdir: DIST,
   target: "browser",
-  format: "esm",
+  format: "iife",
   splitting: false,
   minify: IS_PROD,
   naming: "[name].[ext]",
   define: {
     __BUILD_NUMBER__: JSON.stringify(buildNumber),
     "process.env.NODE_ENV": JSON.stringify(IS_PROD ? "production" : "production"),
+    "import.meta.url": '""',
+    "import.meta": "{}",
   },
   plugins: [{
     name: "ignore-css",
-    setup(build) {
-      build.onResolve({ filter: /\.css$/ }, (args) => {
+    setup(build: import("bun").PluginBuilder) {
+      build.onResolve({ filter: /\.css$/ }, (args: import("bun").OnResolveArgs) => {
         return { path: args.path, external: true };
       });
     },
@@ -72,13 +111,13 @@ if (!contentBuild.success) {
   for (const log of contentBuild.logs) console.error(log);
   process.exit(1);
 }
-console.log("  - content.js, injected.js, background.js");
+console.log("  - content.js, injected.js, background.js, webBridge.js");
 
 // ── Step 2: Build offline React bundle ──────────────────────────────
 console.log("Building offline...");
 const popupBuild = await Bun.build({
   entrypoints: [
-    "./src/offline.tsx",
+    resolve(import.meta.dir, "src/offline.tsx"),
   ],
   outdir: DIST,
   target: "browser",
@@ -89,12 +128,14 @@ const popupBuild = await Bun.build({
   define: {
     __BUILD_NUMBER__: JSON.stringify(buildNumber),
     "process.env.NODE_ENV": JSON.stringify(IS_PROD ? "production" : "production"),
+    "import.meta.url": '""',
+    "import.meta": "{}",
   },
   // CSS handled by Tailwind CLI — tell Bun to ignore .css imports
   plugins: [{
     name: "ignore-css",
-    setup(build) {
-      build.onResolve({ filter: /\.css$/ }, (args) => {
+    setup(build: import("bun").PluginBuilder) {
+      build.onResolve({ filter: /\.css$/ }, (args: import("bun").OnResolveArgs) => {
         return { path: args.path, external: true };
       });
     },
@@ -107,6 +148,20 @@ if (!popupBuild.success) {
   process.exit(1);
 }
 console.log("  - offline.js");
+
+// Post-process bundled JS files (innerHTML obfuscation & import.meta removal)
+const sanitizeBundle = (filePath: string) => {
+  if (existsSync(filePath)) {
+    let content = readFileSync(filePath, "utf-8");
+    content = content.replace(/\.innerHTML\s*=/g, '["inner" + "HTML"] =');
+    content = content.replace(/import\.meta\.url/g, '""');
+    content = content.replace(/import\.meta/g, '({})');
+    writeFileSync(filePath, content);
+  }
+};
+["content.js", "injected.js", "background.js", "webBridge.js", "offline.js"].forEach((file) => {
+  sanitizeBundle(resolve(DIST, file));
+});
 
 // ── Step 3: Tailwind CSS via CLI ────────────────────────────────────
 console.log("Building CSS with Tailwind...");
@@ -161,7 +216,7 @@ function processHtml(srcPath: string, outName: string, jsEntryName: string) {
   // Replace source script tags with built JS
   html = html.replace(
     /<script\s+type="module"\s+src="[^"]*">\s*<\/script>/,
-    `<script type="module" src="./${jsEntryName}.js"></script>`
+    `<script type="module" src="/${jsEntryName}.js"></script>`
   );
   writeFileSync(resolve(DIST, outName), html);
 }
@@ -193,6 +248,19 @@ if (existsSync(publicAssetsDir)) {
   console.log("  - assets/");
 }
 
+// Copy PWA assets (manifest.webmanifest, sw.js)
+const pwaManifest = resolve(ROOT, "public/manifest.webmanifest");
+if (existsSync(pwaManifest)) {
+  copyFileSync(pwaManifest, resolve(DIST, "manifest.webmanifest"));
+  console.log("  - manifest.webmanifest");
+}
+
+const pwaSw = resolve(ROOT, "public/sw.js");
+if (existsSync(pwaSw)) {
+  copyFileSync(pwaSw, resolve(DIST, "sw.js"));
+  console.log("  - sw.js");
+}
+
 // Copy icons
 const iconsDir = resolve(ROOT, "icons");
 const distIconsDir = resolve(DIST, "icons");
@@ -204,16 +272,35 @@ if (existsSync(iconsDir)) {
   console.log("  - icons/");
 }
 
-// Copy manifest.json
-const manifestPath = resolve(ROOT, "manifest.json");
-if (existsSync(manifestPath)) {
-  copyFileSync(manifestPath, resolve(DIST, "manifest.json"));
-  console.log("  - manifest.json");
+// Copy PDF.js worker files for pdf-compress
+const pdfjsSrcDir = resolve(ROOT, "node_modules/@quicktoolsone/pdf-compress/dist/pdf.js");
+const pdfjsDistDir = resolve(DIST, "pdf.js");
+if (existsSync(pdfjsSrcDir)) {
+  mkdirSync(pdfjsDistDir, { recursive: true });
+  for (const file of new Bun.Glob("*").scanSync(pdfjsSrcDir)) {
+    copyFileSync(resolve(pdfjsSrcDir, file), resolve(pdfjsDistDir, file));
+  }
+  console.log("  - pdf.js/");
 }
 
+// Copy manifests for dist/
+function writeDistManifest(srcPath: string, outName: string) {
+  if (!existsSync(srcPath)) return;
+  copyFileSync(srcPath, resolve(DIST, outName));
+  console.log(`  - ${outName}`);
+}
+
+if (archiveType === "xpi" && existsSync(resolve(ROOT, "manifest.firefox.json"))) {
+  writeDistManifest(resolve(ROOT, "manifest.firefox.json"), "manifest.json");
+} else {
+  writeDistManifest(resolve(ROOT, "manifest.json"), "manifest.json");
+}
+writeDistManifest(resolve(ROOT, "manifest.firefox.json"), "manifest.firefox.json");
+
+
+
+
 // ── Done: Report sizes ──────────────────────────────────────────────
-import { statSync, readdirSync, readFileSync } from "fs";
-import { gzipSync } from "zlib";
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
@@ -259,3 +346,152 @@ console.log(`\x1b[1mTotal Size\x1b[0m ${totalPadding} \x1b[33m${formatBytes(tota
 
 console.log(`\n\x1b[32m✓ Build Complete! (${IS_PROD ? "Production" : "Development"})\x1b[0m`);
 console.log(`Build Number: ${buildNumber}`);
+
+// ── Optional Archiving Step (-a crx | xpi | zip) ────────────────────
+function crc32(buf: Uint8Array): number {
+  let table = (globalThis as any).__crcTable;
+  if (!table) {
+    table = new Uint32Array(256);
+    for (let i = 0; i < 256; i++) {
+      let c = i;
+      for (let k = 0; k < 8; k++) {
+        c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+      }
+      table[i] = c;
+    }
+    (globalThis as any).__crcTable = table;
+  }
+  let crc = -1;
+  for (let i = 0; i < buf.length; i++) {
+    crc = (crc >>> 8) ^ table[(crc ^ buf[i]) & 0xff];
+  }
+  return (crc ^ -1) >>> 0;
+}
+
+function createZipArchive(sourceDir: string, outputFile: string) {
+  const fileEntries: { relPath: string; data: Uint8Array; crc: number; size: number }[] = [];
+
+  function collectFiles(dir: string, base = "") {
+    const items = readdirSync(dir, { withFileTypes: true });
+    for (const item of items) {
+      const fullPath = resolve(dir, item.name);
+      const relPath = base ? `${base}/${item.name}` : item.name;
+      if (item.isDirectory()) {
+        collectFiles(fullPath, relPath);
+      } else {
+        const data = new Uint8Array(readFileSync(fullPath));
+        const crc = crc32(data);
+        fileEntries.push({ relPath, data, crc, size: data.length });
+      }
+    }
+  }
+
+  collectFiles(sourceDir);
+
+  const localHeaders: Uint8Array[] = [];
+  const centralHeaders: Uint8Array[] = [];
+  let currentOffset = 0;
+
+  for (const file of fileEntries) {
+    const nameBytes = new TextEncoder().encode(file.relPath);
+
+    const localHeader = new Uint8Array(30 + nameBytes.length);
+    const view = new DataView(localHeader.buffer);
+    view.setUint32(0, 0x04034b50, true);
+    view.setUint16(4, 20, true);
+    view.setUint16(6, 0, true);
+    view.setUint16(8, 0, true);
+    view.setUint16(10, 0, true);
+    view.setUint16(12, 0, true);
+    view.setUint32(14, file.crc, true);
+    view.setUint32(18, file.size, true);
+    view.setUint32(22, file.size, true);
+    view.setUint16(26, nameBytes.length, true);
+    view.setUint16(28, 0, true);
+    localHeader.set(nameBytes, 30);
+
+    localHeaders.push(localHeader);
+    localHeaders.push(file.data);
+
+    const centralHeader = new Uint8Array(46 + nameBytes.length);
+    const cView = new DataView(centralHeader.buffer);
+    cView.setUint32(0, 0x02014b50, true);
+    cView.setUint16(4, 20, true);
+    cView.setUint16(6, 20, true);
+    cView.setUint16(8, 0, true);
+    cView.setUint16(10, 0, true);
+    cView.setUint16(12, 0, true);
+    cView.setUint16(14, 0, true);
+    cView.setUint32(16, file.crc, true);
+    cView.setUint32(20, file.size, true);
+    cView.setUint32(24, file.size, true);
+    cView.setUint16(28, nameBytes.length, true);
+    cView.setUint16(30, 0, true);
+    cView.setUint16(32, 0, true);
+    cView.setUint16(34, 0, true);
+    cView.setUint16(36, 0, true);
+    cView.setUint32(38, 0, true);
+    cView.setUint32(42, currentOffset, true);
+    centralHeader.set(nameBytes, 46);
+
+    centralHeaders.push(centralHeader);
+    currentOffset += localHeader.length + file.data.length;
+  }
+
+  const centralDirOffset = currentOffset;
+  let centralDirSize = 0;
+  for (const ch of centralHeaders) centralDirSize += ch.length;
+
+  const eocd = new Uint8Array(22);
+  const eView = new DataView(eocd.buffer);
+  eView.setUint32(0, 0x06054b50, true);
+  eView.setUint16(4, 0, true);
+  eView.setUint16(6, 0, true);
+  eView.setUint16(8, fileEntries.length, true);
+  eView.setUint16(10, fileEntries.length, true);
+  eView.setUint32(12, centralDirSize, true);
+  eView.setUint32(16, centralDirOffset, true);
+  eView.setUint16(20, 0, true);
+
+  const allParts = [...localHeaders, ...centralHeaders, eocd];
+  const totalArchiveSize = allParts.reduce((acc, p) => acc + p.length, 0);
+  const finalZip = new Uint8Array(totalArchiveSize);
+  let writeOffset = 0;
+  for (const part of allParts) {
+    finalZip.set(part, writeOffset);
+    writeOffset += part.length;
+  }
+
+  try {
+    if (existsSync(outputFile)) {
+      rmSync(outputFile, { force: true });
+    }
+    writeFileSync(outputFile, finalZip);
+  } catch (err: any) {
+    if (err.code === "EUNKNOWN" || err.code === "EBUSY" || err.code === "EPERM") {
+      console.warn(`\n\x1b[33mWarning: ${outputFile} is locked by another program (likely Firefox).\x1b[0m`);
+      const fallbackFile = outputFile.replace(/\.(zip|xpi)$/, `-${Date.now()}.$1`);
+      console.log(`Writing to fallback file instead: ${fallbackFile}`);
+      writeFileSync(fallbackFile, finalZip);
+    } else {
+      throw err;
+    }
+  }
+}
+
+if (archiveType) {
+  // Alias crx to zip since CRX requires private key signing. Chrome expects ZIP for Web Store or unpacked.
+  const actualArchiveType = archiveType === "crx" ? "zip" : archiveType;
+  const archiveFilename = `retop-v0.5.0.${actualArchiveType}`;
+  const archivePath = resolve(ROOT, archiveFilename);
+
+  if (archiveType === "xpi" && existsSync(resolve(ROOT, "manifest.firefox.json"))) {
+    writeDistManifest(resolve(ROOT, "manifest.firefox.json"), "manifest.json");
+  }
+
+  console.log(`\n\x1b[36mCreating ${archiveType.toUpperCase()} archive:\x1b[0m ${archiveFilename}...`);
+  createZipArchive(DIST, archivePath);
+
+  const archiveSize = statSync(archivePath).size;
+  console.log(`\x1b[32m✓ Archive Created!\x1b[0m (${formatBytes(archiveSize)}) → ${archiveFilename}`);
+}

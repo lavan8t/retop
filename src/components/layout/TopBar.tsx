@@ -1,5 +1,4 @@
 import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
   Home,
@@ -13,6 +12,7 @@ import {
   MenuBook,
   KeyboardArrowDown,
   Refresh,
+  CloudOff,
   Star,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import {
@@ -25,7 +25,6 @@ import {
   CourseSummary,
 } from "../../types/vtop";
 import { SemesterDropdown } from "../timetable/SemesterDropdown";
-import { TRANSITION_PULSE, DURATION_SPINNER } from "../../utils/motion";
 import { ClassGroupDropdown } from "../timetable/ClassGroupDropdown";
 import { TopBarSearch } from "./TopBarSearch";
 import { Tooltip } from "../ui/Tooltip";
@@ -204,57 +203,37 @@ export const TopBar: React.FC<TopBarProps> = ({
         <div className="flex items-center h-full pointer-events-auto">
           <div className="flex flex-col justify-center h-full gap-0.5">
             <div className="flex items-center gap-2 md:gap-3">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key="topbar-search"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{
-                    opacity: 0,
-                    x: -20,
-                    transition: { duration: 0.15 },
-                  }}
-                >
-                  <TopBarSearch
-                    currentView={currentView}
-                    isOmniboxOpen={isOmniboxOpen}
-                    setIsOmniboxOpen={setIsOmniboxOpen}
-                    menuCategories={menuCategories}
-                    pinnedLinks={pinnedLinks}
-                    onNavigate={onNavigate}
-                    onTogglePin={onTogglePin}
-                    initialQuery={initialQuery}
-                    pageTitle={getPageTitle(currentView, contentTitle)}
-                    onBack={() => setCurrentView("dashboard")}
-                    status={isLoading ? "loading" : "idle"}
-                    onSync={onSync}
-                    isSyncing={isSyncing}
-                    lastSyncTime={lastSyncTime}
-                  />
-                </motion.div>
-              </AnimatePresence>
+                  <div
+                    key="topbar-search"
+                  >
+                    <TopBarSearch
+                      currentView={currentView}
+                      isOmniboxOpen={isOmniboxOpen}
+                      setIsOmniboxOpen={setIsOmniboxOpen}
+                      menuCategories={menuCategories}
+                      pinnedLinks={pinnedLinks}
+                      onNavigate={onNavigate}
+                      onTogglePin={onTogglePin}
+                      initialQuery={initialQuery}
+                      pageTitle={getPageTitle(currentView, contentTitle)}
+                      onBack={() => setCurrentView("dashboard")}
+                      status={isLoading ? "loading" : "idle"}
+                      onSync={onSync}
+                      isSyncing={isSyncing}
+                      lastSyncTime={lastSyncTime}
+                    />
+                  </div>
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2 md:gap-4 h-full pointer-events-auto">
-          <AnimatePresence mode="wait">
 
             {currentView === "timetable" && (
-              <motion.div
+              <div
                 key="timetable-controls"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20, transition: { duration: 0.15 } }}
                 className="flex items-center gap-1.5 md:gap-3 lg:gap-4 pr-0 pointer-events-auto"
               >
-                {ttLoading && (
-                  <motion.div
-                    animate={{ y: [0, -4, 0], scale: [1, 1.2, 1] }}
-                    transition={TRANSITION_PULSE}
-                    className="w-2 h-2 bg-(--accent-base) rounded-full hidden sm:block"
-                  />
-                )}
                 <SemesterDropdown
                   semesters={ttSemesters}
                   selectedId={ttSelectedSem}
@@ -296,15 +275,12 @@ export const TopBar: React.FC<TopBarProps> = ({
                     onChange={(val) => setTtViewMode(val as any)}
                   />
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {currentView === "calendar" && (
-              <motion.div
+              <div
                 key="calendar-controls"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20, transition: { duration: 0.15 } }}
                 className="flex items-center gap-2 mr-1 md:mr-2 pointer-events-auto"
               >
                 <SemesterDropdown
@@ -323,15 +299,12 @@ export const TopBar: React.FC<TopBarProps> = ({
                     }}
                   />
                 )}
-              </motion.div>
+              </div>
             )}
 
             {currentView === "marks" && (
-              <motion.div
+              <div
                 key="marks-controls"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20, transition: { duration: 0.15 } }}
                 className="flex items-center gap-2 mr-1 md:mr-2"
               >
                 <button
@@ -350,15 +323,12 @@ export const TopBar: React.FC<TopBarProps> = ({
                     setMarksSelectedSem(id);
                   }}
                 />
-              </motion.div>
+              </div>
             )}
 
             {currentView === "grades" && (
-              <motion.div
+              <div
                 key="grades-controls"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20, transition: { duration: 0.15 } }}
                 className="flex items-center gap-2 mr-1 md:mr-2 pointer-events-auto"
               >
                 <SemesterDropdown
@@ -366,15 +336,12 @@ export const TopBar: React.FC<TopBarProps> = ({
                   selectedId={gradesSelectedSem}
                   onChange={(id: string) => setGradesSelectedSem(id)}
                 />
-              </motion.div>
+              </div>
             )}
 
             {currentView === "coursePage" && (
-              <motion.div
+              <div
                 key="coursePage-controls"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20, transition: { duration: 0.15 } }}
                 className="flex items-center gap-2 mr-1 md:mr-2"
               >
                 <SemesterDropdown
@@ -385,15 +352,12 @@ export const TopBar: React.FC<TopBarProps> = ({
                     setCpSelectedCourseId("");
                   }}
                 />
-              </motion.div>
+              </div>
             )}
 
             {currentView === "digitalAssignments" && (
-              <motion.div
+              <div
                 key="digitalAssignments-controls"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20, transition: { duration: 0.15 } }}
                 className="flex items-center gap-2 mr-1 md:mr-2 pointer-events-auto"
               >
                 <SemesterDropdown
@@ -423,15 +387,12 @@ export const TopBar: React.FC<TopBarProps> = ({
                 >
                   <Refresh className={`w-4 h-4 md:w-5 md:h-5 ${daLoading && !daCourses?.length ? "animate-spin" : ""}`} />
                 </button>
-              </motion.div>
+              </div>
             )}
 
             {currentView === "examSchedule" && (
-              <motion.div
+              <div
                 key="examSchedule-controls"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20, transition: { duration: 0.15 } }}
                 className="flex items-center gap-2 mr-1 md:mr-2 pointer-events-auto"
               >
                 <SemesterDropdown
@@ -444,15 +405,12 @@ export const TopBar: React.FC<TopBarProps> = ({
                     }
                   }}
                 />
-              </motion.div>
+              </div>
             )}
 
             {currentView === "attendance" && (
-              <motion.div
+              <div
                 key="attendance-controls"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20, transition: { duration: 0.15 } }}
                 className="flex items-center gap-2 mr-1 md:mr-2"
               >
                 <SemesterDropdown
@@ -460,9 +418,8 @@ export const TopBar: React.FC<TopBarProps> = ({
                   selectedId={attSelectedSem}
                   onChange={(sem: string) => setAttSelectedSem(sem)}
                 />
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
 
           {pinnedLinks.length > 0 && (
             <div className="hidden xl:flex items-center gap-2.5 relative pointer-events-auto shrink-0">
@@ -506,27 +463,46 @@ export const TopBar: React.FC<TopBarProps> = ({
             </div>
           )}
 
-          <div className="flex items-center pointer-events-auto mr-1 md:mr-2">
-            <Tooltip text={isSyncing ? "Syncing..." : "Sync now"}>
+          <div className="hidden lg:flex items-center pointer-events-auto mr-1 md:mr-2">
+            <Tooltip
+              text={
+                (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__)
+                  ? `Offline Mode - Last saved ${
+                      lastSyncTime > 0
+                        ? (() => {
+                            const ago = Math.floor((Date.now() - lastSyncTime) / 1000);
+                            if (ago < 60) return "just now";
+                            if (ago < 3600) return `${Math.floor(ago / 60)}m ago`;
+                            return `${Math.floor(ago / 3600)}h ago`;
+                          })()
+                        : "cached"
+                    }`
+                  : isSyncing
+                  ? "Syncing..."
+                  : "Sync now"
+              }
+            >
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (onSync && !isSyncing) onSync();
+                  if (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) {
+                    window.open("https://vtop.vit.ac.in/vtop/open/page", "_blank");
+                  } else if (onSync && !isSyncing) {
+                    onSync();
+                  }
                 }}
-                disabled={isSyncing}
+                disabled={isSyncing && !(typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__)}
                 className="flex items-center gap-1.5 px-2 py-1 rounded-full hover:bg-(--bg-hover) transition-colors cursor-pointer text-left disabled:opacity-50 shrink-0"
               >
-                <motion.div
-                  animate={isSyncing ? { rotate: 360 } : {}}
-                  transition={
-                    isSyncing
-                      ? { duration: DURATION_SPINNER, repeat: Infinity, ease: "linear" }
-                      : {}
-                  }
-                  className="shrink-0 flex items-center justify-center"
+                <div
+                  className={`shrink-0 flex items-center justify-center ${isSyncing && !(typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ? "animate-spin" : ""}`}
                 >
-                  <Refresh className="w-4 h-4 md:w-5 md:h-5 text-(--text-muted) hover:text-(--text-main) transition-colors" />
-                </motion.div>
+                  {(typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ? (
+                    <CloudOff className="w-4 h-4 md:w-5 md:h-5 transition-colors" style={{ color: "var(--accent-base, #3b82f6)" }} />
+                  ) : (
+                    <Refresh className="w-4 h-4 md:w-5 md:h-5 text-(--text-muted) hover:text-(--text-main) transition-colors" />
+                  )}
+                </div>
                 {lastSyncTime > 0 && (
                   <span className="text-xs font-mono font-bold text-(--text-muted) leading-none">
                     {(() => {
@@ -546,11 +522,11 @@ export const TopBar: React.FC<TopBarProps> = ({
           <div className="relative shrink-0 flex items-center justify-center pointer-events-auto">
             <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className="flex items-center focus:outline-none group cursor-pointer transition-all hover:scale-105 active:scale-95"
+              className="flex items-center focus:outline-none group cursor-pointer transition-all"
             >
               <div className="w-10 h-10 md:w-12 md:h-12 relative flex items-center justify-center">
                 <div className="w-10 h-10 md:w-12 md:h-12 absolute inset-0 rounded-full overflow-hidden shrink-0 border-2 border-(--border-main) group-hover:border-(--accent-base) shadow-sm transition-all flex items-center justify-center bg-(--bg-highlight) z-9999">
-                  {user.regNo !== "..." ? (
+                  {user.regNo !== "..." && (user.profileImgBase64 || !(typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__)) ? (
                     <img
                       src={
                         user.profileImgBase64 ||
@@ -558,6 +534,9 @@ export const TopBar: React.FC<TopBarProps> = ({
                       }
                       className="w-full h-full object-cover"
                       alt="Profile"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = "none";
+                      }}
                     />
                   ) : (
                     <Person className="w-5 h-5 md:w-6 md:h-6 text-(--text-dim)" />

@@ -13,7 +13,6 @@ import {
   Download,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { EmptyState } from "../components/EmptyState";
-import { motion, AnimatePresence } from "framer-motion";
 
 interface CurriculumPageProps {
   onBack: () => void;
@@ -40,6 +39,11 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
 
   useEffect(() => {
     loadDashboard();
+    const handleRefresh = () => {
+      loadDashboard();
+    };
+    window.addEventListener("retop-refresh-curriculum", handleRefresh);
+    return () => window.removeEventListener("retop-refresh-curriculum", handleRefresh);
   }, []);
 
   const loadDashboard = async () => {
@@ -68,7 +72,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
 
       setTotalCredits(data.totalCredits);
       setCategories(data.categories);
-      if (data.categories.length > 0) setSelectedId(data.categories[0].id);
+      if (data.categories.length> 0) setSelectedId(data.categories[0].id);
       setLoading(false);
 
       setLoadingCourses(true);
@@ -134,7 +138,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
       });
     } else {
       result = selectedId && allCourses[selectedId] ? allCourses[selectedId] : [];
-      if (activeBasket && availableBaskets.length > 1) {
+      if (activeBasket && availableBaskets.length> 1) {
         result = result.filter(c => (c.basket || "Core") === activeBasket);
       }
     }
@@ -165,7 +169,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
       }
     });
 
-    const isFinished = completedCredits >= maxCredits;
+    const isFinished = completedCredits>= maxCredits;
 
     return {
       completed: completedCredits,
@@ -183,8 +187,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
           </span>
           <MaterialSwitch 
             selected={hideCompleted} 
-            onChange={(checked) => setHideCompleted(checked)}
-          />
+            onChange={(checked) => setHideCompleted(checked)} />
         </div>
         <div className="relative group hidden sm:block">
           <input
@@ -192,147 +195,140 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
             placeholder="Search all courses..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-(--bg-surface) border border-(--border-dim) text-(--text-main) text-xs md:text-sm rounded-2xl pl-10 pr-4 py-2 w-48 md:w-64 focus:outline-none focus:border-(--accent-base) focus:ring-4 focus:ring-(--accent-base)/10 transition-all duration-fast placeholder:text-(--text-muted) shadow-sm"
-          />
+            className="bg-(--bg-surface) border border-(--border-dim) text-(--text-main) text-xs md:text-sm rounded-2xl pl-10 pr-4 py-2 w-48 md:w-64 focus:outline-none focus:border-(--accent-base) focus:ring-4 focus:ring-(--accent-base)/10 transition-all duration-fast placeholder:text-(--text-muted) shadow-sm" />
           <Search className="w-4 h-4 text-(--text-muted) absolute left-3.5 top-2.5 group-focus-within:text-(--accent-base) transition-colors" />
         </div>
       </div>
 
-      <div className="w-full flex flex-col pt-20 md:pt-24 px-6 md:px-12 shrink-0 z-20 pointer-events-auto relative">
-        <div className="w-full pt-2 pb-8 flex items-stretch gap-2 lg:gap-4 px-2 md:px-4">
+      <div className="max-w-7xl mx-auto w-full flex flex-col md:flex-row gap-6 md:gap-8 pt-20 md:pt-24 px-4 md:px-8 z-20 pointer-events-auto relative items-start">
+        {/* LEFT SIDEBAR: Total Credits + Vertical Category Column */}
+        <div className="w-full md:w-64 lg:w-72 shrink-0 flex flex-col gap-2.5">
           {!loading && (
-            <div className="flex-[0.8] md:flex-[1.2] flex flex-col justify-center px-6 py-4 bg-(--bg-surface) rounded-3xl items-start cursor-default transition-all duration-fast">
-              <span className="text-[11px] font-black text-(--text-muted) uppercase tracking-normal leading-tight">Total<br/>Credits</span>
-              <span className="text-5xl md:text-6xl font-black font-expanded text-(--text-main) mt-1 mix-blend-luminosity opacity-90">{totalCredits}</span>
+            <div className="w-full p-4 bg-(--bg-surface)/60 border border-(--border-dim)/40 rounded-3xl flex flex-col items-start justify-center shadow-xs">
+              <span className="text-[10px] font-mono font-bold text-(--text-muted) uppercase tracking-wider leading-none">
+                Total Credits
+              </span>
+              <span className="text-4xl font-black font-expanded text-(--text-main) mt-1 leading-none">
+                {totalCredits}
+              </span>
             </div>
           )}
           {loading ? (
-            <div className="animate-pulse flex gap-2 w-full">
-              {[...Array(6)].map((_, i) => (
-                <div
-                  key={i}
-                  className="flex-1 h-24 bg-(--bg-highlight) rounded-3xl mx-1"
-                />
+            <div className="animate-pulse flex flex-col gap-2 w-full">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-16 w-full bg-(--bg-highlight) rounded-3xl" />
               ))}
             </div>
           ) : (
-            categories.filter(cat => !(cat.maxCredits && parseFloat(cat.credits) >= parseFloat(cat.maxCredits))).map((cat, i) => (
-              <motion.button
-                layout
+            categories.map((cat) => (
+              <button
                 key={cat.id}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 onClick={() => handleSelectCategory(cat)}
-                className={`transition-colors duration-fast overflow-hidden cursor-pointer flex group rounded-3xl mx-1 ${
+                className={`w-full p-4 rounded-3xl flex items-center justify-between gap-3 transition-all cursor-pointer border ${
                   selectedId === cat.id
-                    ? "flex-[2.5] bg-(--text-main) items-center justify-between px-6 py-4 shadow-xl"
-                    : "flex-1 bg-(--bg-surface) hover:bg-(--accent-base) flex-col items-center justify-center px-3 py-4 hover:shadow-lg"
-                }`}
-              >
-                {selectedId === cat.id ? (
-                  <>
-                    <motion.div layout transition={{ type: "spring", stiffness: 400, damping: 30 }} className="text-sm md:text-base lg:text-lg font-black font-expanded uppercase leading-tight text-(--bg-main) text-left w-1/2 relative z-10">
-                      {cat.title}
-                    </motion.div>
-                    <div className="flex flex-col items-end shrink-0 relative z-10">
-                      <motion.div layout transition={{ type: "spring", stiffness: 400, damping: 30 }} className="text-5xl md:text-6xl font-black font-expanded text-(--bg-main) mix-blend-overlay opacity-90 leading-none">
-                        {cat.credits}
-                      </motion.div>
-                      <span className="text-[10px] md:text-[11px] font-black uppercase text-(--bg-main) mix-blend-overlay opacity-70 mt-1 tracking-widest">Credits</span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <motion.div layout transition={{ type: "spring", stiffness: 400, damping: 30 }} className="text-xs md:text-sm font-black font-expanded uppercase leading-tight text-center text-(--text-main) group-hover:text-(--bg-main) relative z-10">
-                      {cat.title}
-                    </motion.div>
-                    <motion.div layout transition={{ type: "spring", stiffness: 400, damping: 30 }} className="text-2xl md:text-3xl font-black font-expanded mt-2 text-(--text-muted) group-hover:text-(--bg-main) mix-blend-luminosity opacity-80 group-hover:mix-blend-overlay relative z-10">
-                      {cat.credits}
-                    </motion.div>
-                  </>
-                )}
-              </motion.button>
+                    ? "bg-(--text-main) text-(--bg-main) border-(--text-main) shadow-md"
+                    : "bg-(--bg-surface)/60 text-(--text-main) border-(--border-dim)/40 hover:bg-(--bg-surface)"
+                }`}>
+                <div className="flex flex-col text-left min-w-0 flex-1">
+                  <span className="text-xs md:text-sm font-black font-expanded uppercase tracking-wide truncate">
+                    {cat.title}
+                  </span>
+                </div>
+                <div className="text-xs md:text-sm font-black font-mono shrink-0 pl-3 border-l border-current/20">
+                  {cat.maxCredits && parseFloat(cat.maxCredits) > 0 ? (
+                    <>
+                      <span>{cat.credits}</span>
+                      <span className="opacity-50"> / {cat.maxCredits}</span>
+                    </>
+                  ) : (
+                    <span>{cat.credits}</span>
+                  )}
+                </div>
+              </button>
             ))
           )}
         </div>
 
-        {!searchQuery && availableBaskets.length > 1 && (
-          <div className="w-full flex items-center gap-2 px-2 md:px-4 mb-4 overflow-x-auto custom-scrollbar pb-2">
-            {availableBaskets.map(basket => (
-              <button
-                key={basket}
-                onClick={() => setSelectedBasket(basket)}
-                className={`px-4 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-all cursor-pointer shadow-sm ${
-                  activeBasket === basket
-                    ? "bg-(--text-main) text-(--bg-main)"
-                    : "bg-(--bg-surface) text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main)"
-                }`}
-              >
-                {basket}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {basketStatus && (
-          <div className="w-full px-2 md:px-4 mb-6 z-20 relative pointer-events-auto">
-            <div className={`flex items-center justify-between p-4 rounded-3xl transition-colors ${
-              basketStatus.isFinished ? "bg-green-500/10 border border-green-500/20" : "bg-(--bg-surface) border border-(--border-dim)"
-            }`}>
-              <div className="flex flex-col">
-                <span className={`text-[10px] md:text-xs font-black uppercase tracking-widest ${
-                  basketStatus.isFinished ? "text-green-500/80" : "text-(--text-muted)"
-                }`}>Basket Credits</span>
-                <span className={`text-sm md:text-base font-bold ${
-                  basketStatus.isFinished ? "text-att-safe" : "text-(--text-main)"
-                }`}>
-                  {basketStatus.completed} <span className="opacity-50">/ {basketStatus.max}</span>
-                </span>
-              </div>
-              {basketStatus.isFinished && (
-                <div className="flex items-center gap-1.5 text-att-safe text-[10px] md:text-xs font-black uppercase tracking-widest">
-                  <CheckCircle className="w-4 h-4" /> Finished
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        <div className="w-full pb-10">
-          {loadingCourses ? (
-            <div className="flex flex-col gap-3">
-              {[...Array(8)].map((_, i) => (
-                <div
-                  key={i}
-                  className="h-20 w-full bg-(--bg-surface) animate-pulse rounded-3xl"
-                />
+        {/* RIGHT AREA: Sub-Tabs (Baskets) on top, Basket Status, and Course List */}
+        <div className="flex-1 min-w-0 w-full flex flex-col gap-4">
+          {/* Sub-Tabs (Baskets) at top of right area */}
+          {!searchQuery && availableBaskets.length > 1 && (
+            <div className="w-full flex items-center gap-2 overflow-x-auto custom-scrollbar pb-1">
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-(--text-muted) shrink-0 mr-1">
+                Baskets:
+              </span>
+              {availableBaskets.map((basket) => (
+                <button
+                  key={basket}
+                  onClick={() => setSelectedBasket(basket)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all cursor-pointer border ${
+                    activeBasket === basket
+                      ? "bg-(--accent-base) text-(--text-inverse) border-(--accent-base) shadow-sm"
+                      : "bg-(--bg-surface) text-(--text-muted) border-(--border-dim)/40 hover:bg-(--bg-highlight) hover:text-(--text-main)"
+                  }`}>
+                  {basket}
+                </button>
               ))}
             </div>
-          ) : filteredCourses.length === 0 ? (
-            <div className="mt-10">
-              <EmptyState
-                msg={
-                  hideCompleted
-                    ? "No uncompleted courses found in this basket"
-                    : "No matching courses"
-                }
-                icon={Search}
-              />
+          )}
+
+          {basketStatus && (
+            <div className="w-full z-20 relative pointer-events-auto">
+              <div
+                className={`flex items-center justify-between p-4 rounded-3xl transition-colors ${
+                  basketStatus.isFinished
+                    ? "bg-green-500/10 border border-green-500/20"
+                    : "bg-(--bg-surface) border border-(--border-dim)/40"
+                }`}>
+                <div className="flex flex-col">
+                  <span
+                    className={`text-[10px] md:text-xs font-black uppercase tracking-widest ${
+                      basketStatus.isFinished ? "text-green-500/80" : "text-(--text-muted)"
+                    }`}>
+                    Basket Credits
+                  </span>
+                  <span
+                    className={`text-sm md:text-base font-bold ${
+                      basketStatus.isFinished ? "text-att-safe" : "text-(--text-main)"
+                    }`}>
+                    {basketStatus.completed} <span className="opacity-50">/ {basketStatus.max}</span>
+                  </span>
+                </div>
+                {basketStatus.isFinished && (
+                  <div className="flex items-center gap-1.5 text-att-safe text-[10px] md:text-xs font-black uppercase tracking-widest">
+                    <CheckCircle className="w-4 h-4" /> Finished
+                  </div>
+                )}
+              </div>
             </div>
-          ) : (
-            <div className="flex flex-col gap-3 pb-24">
-              <AnimatePresence>
+          )}
+
+          <div className="w-full pb-24">
+            {loadingCourses ? (
+              <div className="flex flex-col gap-3">
+                {[...Array(8)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-20 w-full bg-(--bg-surface) animate-pulse rounded-3xl" />
+                ))}
+              </div>
+            ) : filteredCourses.length === 0 ? (
+              <div className="mt-10">
+                <EmptyState
+                  msg={
+                    hideCompleted
+                      ? "No uncompleted courses found in this basket"
+                      : "No matching courses"
+                  }
+                  icon={Search} />
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
                 {filteredCourses.map((c, i) => (
-                  <motion.div
+                  <div
                     key={c.code}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ delay: i * 0.02, duration: 0.2 }}
                     onClick={() => network.downloadSyllabus(c.code)}
-                    className="group flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 md:p-5 bg-(--bg-surface) rounded-3xl hover:bg-(--bg-highlight) transition-colors cursor-pointer"
-                  >
+                    className="group flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 md:p-5 bg-(--bg-surface) rounded-3xl hover:bg-(--bg-highlight) transition-colors cursor-pointer">
                     <div className="flex flex-col min-w-0 flex-1">
                       <div className="flex items-center gap-2 md:gap-3 flex-wrap">
                         <span className="font-black text-xs md:text-sm text-(--text-muted) font-mono group-hover:text-(--accent-base) transition-colors">
@@ -345,8 +341,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
                               c.type.includes("L") || c.type.includes("P")
                                 ? "bg-purple-500/10 text-purple-500"
                                 : "bg-blue-500/10 text-accent"
-                            }`}
-                          >
+                            }`}>
                             {c.type}
                           </span>
                         </span>
@@ -386,11 +381,11 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
                         </span>
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
                 ))}
-              </AnimatePresence>
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

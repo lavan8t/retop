@@ -1,8 +1,8 @@
 import { CourseMarks, AssessmentMark, Semester } from "../types/vtop";
+import { parseHTMLFast } from "../utils/parser-utils";
 
 export const parseMarksSemesters = (html: string): Semester[] => {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
+  const doc = parseHTMLFast(html);
   const options = doc.querySelectorAll("#semesterSubId option");
   const semesters: Semester[] = [];
 
@@ -20,8 +20,7 @@ export const parseMarksSemesters = (html: string): Semester[] => {
 }
 
 export function parseStudentMarks(html: string): CourseMarks[] {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
+  const doc = parseHTMLFast(html);
   const courses: CourseMarks[] = [];
 
   const mainTable = doc.querySelector("table.customTable");

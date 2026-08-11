@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
   Language,
@@ -32,10 +31,7 @@ import {
   getCorrectDayName,
   CAMPUS_SLOT_TIMINGS,
 } from "../utils/timetable-slots";
-import {
-  STAGGER_CONTAINER_VARIANTS,
-  STAGGER_ITEM_VARIANTS,
-} from "../utils/motion";
+
 
 interface UpcomingClassDetail {
   date: Date;
@@ -80,7 +76,7 @@ export const CoursePage = ({
     if (parts.length === 0) return { name: raw, subs: [] };
 
     // If first part is digits (Emp ID like "10234"), second part is Faculty Name
-    if (/^\d+$/.test(parts[0]) && parts.length > 1) {
+    if (/^\d+$/.test(parts[0]) && parts.length> 1) {
       const name = parts[1];
       const subs = [parts[0], ...parts.slice(2)];
       return { name, subs };
@@ -152,7 +148,7 @@ export const CoursePage = ({
           .replace(/[^a-zA-Z\s]/g, "")
           .toLowerCase()
           .split(/\s+/)
-          .filter((t) => t.length > 2);
+          .filter((t) => t.length> 2);
 
       const targetTokens = cleanTokens(assignedFacRaw);
       const groupTokens = cleanTokens(facKey);
@@ -162,7 +158,7 @@ export const CoursePage = ({
       const matchingTokens = targetTokens.filter((t) =>
         groupTokens.includes(t)
       );
-      return matchingTokens.length > 0;
+      return matchingTokens.length> 0;
     };
   }, [assignedFacRaw]);
 
@@ -188,13 +184,6 @@ export const CoursePage = ({
               No courses found for this semester
             </span>
           </div>
-        ) : loading ? (
-          <div className="h-full flex flex-col items-center justify-center group pt-24">
-            <Layers className="w-24 h-24 text-(--accent-base) animate-bounce mb-6" />
-            <span className="text-2xl text-(--text-dim) font-bold font-expanded uppercase transition-all duration-fast group-hover:font-squish animate-pulse">
-              Fetching Data...
-            </span>
-          </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-10 gap-8 flex-1 min-h-0 overflow-hidden pl-4 md:pl-8 lg:pl-12 pr-4 md:pr-8 lg:pr-12">
             {/* === STATIC LEFT PANEL === */}
@@ -210,31 +199,23 @@ export const CoursePage = ({
                         if (!e.currentTarget.contains(e.relatedTarget)) {
                           setIsCourseSelectorOpen(false);
                         }
-                      }}
-                    >
+                      }}>
                       <div
                         className="flex items-start md:items-center gap-2 cursor-pointer transition-colors w-fit group/titlebtn"
-                        onClick={() => setIsCourseSelectorOpen((p) => !p)}
-                      >
+                        onClick={() => setIsCourseSelectorOpen((p) => !p)}>
                         <h2 className="text-3xl md:text-4xl font-black font-expanded leading-none group-hover/titlebtn:text-(--accent-base) transition-colors">
                           {currentOption.title}
                         </h2>
                         <KeyboardArrowDown
                           className={`w-8 h-8 md:w-10 md:h-10 transition-transform duration-fast shrink-0 group-hover/titlebtn:text-(--accent-base) ${
                             isCourseSelectorOpen ? "rotate-180" : ""
-                          }`}
-                        />
+                          }`} />
                       </div>
 
-                      <AnimatePresence>
+                      
                         {isCourseSelectorOpen && (
-                          <motion.div
-                            initial={{ opacity: 0, y: -10, scale: 0.98 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: -10, scale: 0.98 }}
-                            transition={{ duration: 0.15 }}
-                            className="absolute top-full left-0 mt-2 w-[85vw] md:w-[24rem] bg-(--bg-surface) border-2 border-(--border-main) rounded-2xl shadow-none overflow-hidden origin-top-left z-50"
-                          >
+                          <div 
+                            className="absolute top-full left-0 mt-2 w-[85vw] md:w-[24rem] bg-(--bg-surface) border-2 border-(--border-main) rounded-2xl shadow-none overflow-hidden origin-top-left z-50">
                             <div className="max-h-[50vh] overflow-y-auto overscroll-contain custom-scrollbar p-1.5 space-y-1">
                               {cpOptions
                                 .filter(
@@ -257,8 +238,7 @@ export const CoursePage = ({
                                       opt.classId === selectedOptionId
                                         ? "bg-(--accent-base) text-(--text-inverse) border-(--border-main)"
                                         : "bg-transparent border-transparent text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main) hover:border-(--border-dim)"
-                                    }`}
-                                  >
+                                    }`}>
                                     <div className="flex justify-between items-center gap-2 w-full">
                                       <span className="font-black text-xs uppercase">
                                         {opt.code}
@@ -273,9 +253,9 @@ export const CoursePage = ({
                                   </button>
                                 ))}
                             </div>
-                          </motion.div>
+                          </div>
                         )}
-                      </AnimatePresence>
+                      
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -296,7 +276,7 @@ export const CoursePage = ({
 
                   {(courseTimetable ||
                     courseAttendance ||
-                    courseAssignments.length > 0 ||
+                    courseAssignments.length> 0 ||
                     courseMarks ||
                     courseGrade) && (
                     <div className="grid grid-cols-2 gap-4 mt-2">
@@ -308,8 +288,7 @@ export const CoursePage = ({
                             </span>
                             <span
                               className="text-sm md:text-base font-bold text-(--text-main) truncate"
-                              title={courseTimetable.faculty}
-                            >
+                              title={courseTimetable.faculty}>
                               {courseTimetable.faculty}
                             </span>
                           </div>
@@ -319,8 +298,7 @@ export const CoursePage = ({
                             </span>
                             <span
                               className="text-sm md:text-base font-bold text-(--text-main) truncate"
-                              title={`${courseTimetable.slot} • ${courseTimetable.venue}`}
-                            >
+                              title={`${courseTimetable.slot} • ${courseTimetable.venue}`}>
                               {courseTimetable.slot} • {courseTimetable.venue}
                             </span>
                           </div>
@@ -336,8 +314,7 @@ export const CoursePage = ({
                               parseFloat(courseAttendance.attendance) < 75
                                 ? "text-att-danger"
                                 : "text-(--text-main)"
-                            }`}
-                          >
+                            }`}>
                             {courseAttendance.attendance}%{" "}
                             <span className="font-bold opacity-50">
                               ({courseAttendance.attended}/
@@ -346,7 +323,7 @@ export const CoursePage = ({
                           </span>
                         </div>
                       )}
-                      {courseAssignments.length > 0 && (
+                      {courseAssignments.length> 0 && (
                         <div className="flex flex-col gap-1 bg-(--bg-surface) p-4 rounded-2xl border-none">
                           <span className="text-xs font-bold text-(--text-dim) uppercase tracking-widest">
                             Assignments
@@ -381,7 +358,7 @@ export const CoursePage = ({
 
                   {courseMarks &&
                     courseMarks.assessments &&
-                    courseMarks.assessments.length > 0 && (
+                    courseMarks.assessments.length> 0 && (
                       <div className="flex flex-col gap-3 bg-(--bg-surface) p-5 rounded-3xl border-none mt-2">
                         <div className="flex justify-between items-center">
                           <span className="text-xs font-bold text-(--text-dim) uppercase tracking-widest">
@@ -393,8 +370,7 @@ export const CoursePage = ({
                             (a: any, idx: number) => (
                               <div
                                 key={idx}
-                                className="flex justify-between items-center bg-(--bg-main) p-3 rounded-xl"
-                              >
+                                className="flex justify-between items-center bg-(--bg-main) p-3 rounded-xl">
                                 <span className="text-sm font-bold text-(--text-main)">
                                   {a.title}
                                 </span>
@@ -420,7 +396,7 @@ export const CoursePage = ({
                       </div>
                     )}
 
-                  {upcomingClasses !== null && upcomingClasses.length > 0 && (
+                  {upcomingClasses !== null && upcomingClasses.length> 0 && (
                     <div className="flex flex-col gap-3 bg-(--bg-surface) p-5 rounded-3xl border-none mt-2">
                       <div className="flex justify-between items-center">
                         <span className="text-xs font-bold text-(--text-dim) uppercase tracking-widest">
@@ -438,8 +414,7 @@ export const CoursePage = ({
                         {upcomingClasses.slice(0, 15).map((uc, i) => (
                           <div
                             key={i}
-                            className="flex justify-between items-center bg-(--bg-main) p-3 rounded-xl"
-                          >
+                            className="flex justify-between items-center bg-(--bg-main) p-3 rounded-xl">
                             <span className="text-sm font-bold text-(--text-main)">
                               {uc.date.toLocaleDateString("en-US", {
                                 weekday: "short",
@@ -451,15 +426,14 @@ export const CoursePage = ({
                               {uc.slots.map((s, idx) => (
                                 <span
                                   key={idx}
-                                  className="text-xs font-bold text-(--accent-base)"
-                                >
+                                  className="text-xs font-bold text-(--accent-base)">
                                   {s.start} - {s.end}
                                 </span>
                               ))}
                             </div>
                           </div>
                         ))}
-                        {upcomingClasses.length > 15 && (
+                        {upcomingClasses.length> 15 && (
                           <div className="flex justify-center items-center p-2 mt-1">
                             <span className="text-xs font-bold text-(--text-dim) uppercase">
                               + {upcomingClasses.length - 15} more classes
@@ -473,7 +447,7 @@ export const CoursePage = ({
               )}
 
               {/* Outcomes */}
-              {data?.outcomes && data.outcomes.length > 0 && (
+              {data?.outcomes && data.outcomes.length> 0 && (
                 <div className="flex flex-col mb-16">
                   <h3 className="font-black font-expanded text-(--text-dim) mb-6 uppercase tracking-widest text-sm text-left">
                     Course Outcomes
@@ -494,7 +468,7 @@ export const CoursePage = ({
               )}
 
               {/* Syllabus */}
-              {data?.syllabus && data.syllabus.length > 0 && (
+              {data?.syllabus && data.syllabus.length> 0 && (
                 <div className="flex flex-col mb-16">
                   <h3 className="font-black font-expanded text-(--text-dim) mb-6 uppercase tracking-widest text-sm text-left">
                     Syllabus
@@ -507,7 +481,7 @@ export const CoursePage = ({
                         .filter(Boolean)
                         .map((l) => l.replace(/^\d+\s*-\s*/, "").trim());
                       const renderTopics =
-                        lines.length > 0 ? lines : [rawTopics];
+                        lines.length> 0 ? lines : [rawTopics];
 
                       return (
                         <div key={i} className="flex flex-col gap-5">
@@ -523,8 +497,7 @@ export const CoursePage = ({
                             {renderTopics.map((topic, j) => (
                               <li
                                 key={j}
-                                className="text-sm md:text-base font-medium text-(--text-main) leading-relaxed"
-                              >
+                                className="text-sm md:text-base font-medium text-(--text-main) leading-relaxed">
                                 {topic}
                               </li>
                             ))}
@@ -537,7 +510,7 @@ export const CoursePage = ({
               )}
 
               {/* Books */}
-              {data?.books && data.books.length > 0 && (
+              {data?.books && data.books.length> 0 && (
                 <div className="flex flex-col mb-16">
                   <h3 className="font-black font-expanded text-(--text-dim) mb-6 uppercase tracking-widest text-sm text-left">
                     Suggested Books
@@ -557,7 +530,7 @@ export const CoursePage = ({
             </div>
 
             {/* === SCROLLABLE RIGHT PANEL === */}
-            <div className="lg:col-span-6 xl:col-span-6 h-full flex flex-col overflow-y-auto custom-scrollbar pt-18 md:pt-20 pb-24 pr-2 space-y-6">
+            <div className="lg:col-span-6 xl:col-span-6 h-full flex flex-col overflow-y-auto custom-scrollbar pt-18 md:pt-10 pb-24 pr-2 space-y-6">
               {/* Material 3 Search Bar & Sort Button at top of Right Panel */}
               <div className="sticky -top-1 z-20 pt-4 pb-3 bg-(--bg-main) flex items-center gap-3">
                 <div className="relative flex items-center flex-1 group">
@@ -567,13 +540,11 @@ export const CoursePage = ({
                     value={localSearchTerm}
                     onChange={(e) => setLocalSearchTerm(e.target.value)}
                     placeholder="Search course materials, topics, modules..."
-                    className="w-full pl-12 pr-10 py-3 bg-(--bg-surface) text-sm font-mono font-bold text-(--text-main) placeholder:text-(--text-muted) rounded-full border border-(--border-dim)/40 focus:border-(--accent-base) outline-none transition-colors"
-                  />
+                    className="w-full pl-12 pr-10 py-3 bg-(--bg-surface) text-sm font-mono font-bold text-(--text-main) placeholder:text-(--text-muted) rounded-full border border-(--border-dim)/40 focus:border-(--accent-base) outline-none transition-colors" />
                   {localSearchTerm && (
                     <button
                       onClick={() => setLocalSearchTerm("")}
-                      className="absolute right-3.5 p-1 rounded-full text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-highlight) transition-colors cursor-pointer border-0"
-                    >
+                      className="absolute right-3.5 p-1 rounded-full text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-highlight) transition-colors cursor-pointer border-0">
                       <Close className="w-4 h-4" />
                     </button>
                   )}
@@ -582,113 +553,110 @@ export const CoursePage = ({
                   onClick={() =>
                     setMaterialSort((s) => (s === "date" ? "module" : "date"))
                   }
-                  className="flex items-center gap-1.5 px-4 py-3 rounded-full bg-(--bg-surface) hover:bg-(--bg-highlight) transition-colors text-xs font-mono font-bold uppercase text-(--text-main) shrink-0 border border-(--border-dim)/40 cursor-pointer"
-                >
+                  className="flex items-center gap-1.5 px-4 py-3 rounded-full bg-(--bg-surface) hover:bg-(--bg-highlight) transition-colors text-xs font-mono font-bold uppercase text-(--text-main) shrink-0 border border-(--border-dim)/40 cursor-pointer">
                   <SwapVert className="w-4 h-4 text-(--accent-base)" />
                   {materialSort === "date" ? "Date" : "Module"}
                 </button>
               </div>
 
-              {/* Stagger Animated Materials List */}
-              <motion.div
-                variants={STAGGER_CONTAINER_VARIANTS}
-                initial="hidden"
-                animate="show"
-                key={localSearchTerm + materialSort + currentOption?.classId}
-                className="flex flex-col gap-10"
-              >
-                {sortedGroupedEntries.map(([facultyStr, mats]) => {
-                  const fac = formatFaculty(facultyStr);
-                  const isAssigned = isAssignedFaculty(facultyStr);
+              {loading ? (
+                <div className="flex-1 flex flex-col items-center justify-center py-24 group">
+                  <Layers className="w-16 h-16 text-(--accent-base) animate-bounce mb-4" />
+                  <span className="text-lg text-(--text-dim) font-bold font-expanded uppercase transition-all duration-fast group-hover:font-squish animate-pulse">
+                    Fetching Course Materials...
+                  </span>
+                </div>
+              ) : (
+                /* Stagger Animated Materials List */
+                <div  
+                  key={localSearchTerm + materialSort + currentOption?.classId}
+                  className="flex flex-col gap-10">
+                  {sortedGroupedEntries.map(([facultyStr, mats]) => {
+                    const fac = formatFaculty(facultyStr);
+                    const isAssigned = isAssignedFaculty(facultyStr);
 
-                  return (
-                    <motion.div
-                      key={facultyStr}
-                      variants={STAGGER_ITEM_VARIANTS}
-                      className="flex flex-col"
-                    >
-                      <div className="flex flex-col gap-2 mb-4 border-b border-(--border-dim)/30 pb-4">
-                        <div className="flex justify-between items-start gap-4 flex-wrap">
-                          <div className="flex items-center gap-3">
-                            <h3 className="text-xl md:text-2xl font-black font-expanded text-(--text-main) uppercase">
-                              {fac.name}
-                            </h3>
-                            {isAssigned && (
-                              <span className="px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-(--accent-base) text-(--text-inverse)">
-                                Assigned Faculty
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        {fac.subs.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            {fac.subs.map((s, idx) => (
-                              <span
-                                key={idx}
-                                className="text-[10px] md:text-xs font-mono font-bold text-(--text-muted) bg-(--bg-surface) px-2.5 py-1 rounded-full uppercase tracking-wider border border-(--border-dim)/30"
-                              >
-                                {s}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      <motion.div
-                        variants={STAGGER_CONTAINER_VARIANTS}
-                        className="flex flex-col gap-2"
-                      >
-                        {mats.map((mat) => {
-                          const isWebLink = (mat.category || "")
-                            .toLowerCase()
-                            .includes("web link");
-                          const Icon = isWebLink ? Language : Description;
-
-                          return (
-                            <motion.div
-                              key={mat.id}
-                              variants={STAGGER_ITEM_VARIANTS}
-                              onClick={() => {
-                                const courseName =
-                                  currentOption?.title || "Course";
-                                handleDownload(mat.id, fac.name, courseName);
-                              }}
-                              className="group flex items-center gap-4 py-3 px-3.5 rounded-2xl cursor-pointer bg-transparent hover:bg-(--bg-surface)/70 transition-colors border border-transparent hover:border-(--border-dim)/30"
-                            >
-                              <div className="w-10 h-10 rounded-full bg-(--bg-surface) flex items-center justify-center text-(--accent-base) group-hover:text-(--text-inverse) group-hover:bg-(--accent-base) transition-colors shrink-0 border border-(--border-dim)/30">
-                                <Icon className="w-5 h-5" />
-                              </div>
-                              <div className="min-w-0 flex-1 flex flex-col">
-                                <div className="flex items-center gap-2">
-                                  {mat.module !== undefined &&
-                                    mat.module !== "" && (
-                                      <span className="shrink-0 text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-(--bg-surface) text-(--text-muted) uppercase border border-(--border-dim)/30">
-                                        MOD {mat.module}
-                                      </span>
-                                    )}
-                                  <h4 className="font-bold text-(--text-main) text-sm md:text-base truncate group-hover:text-(--accent-base) transition-colors">
-                                    {mat.title}
-                                  </h4>
-                                </div>
-                                <span className="text-[10px] font-mono font-bold text-(--text-muted) uppercase mt-0.5">
-                                  {mat.uploadDate} • {mat.category}
+                    return (
+                      <div
+                        key={facultyStr} 
+                        className="flex flex-col">
+                        <div className="flex flex-col gap-2 mb-4 border-b border-(--border-dim)/30 pb-4">
+                          <div className="flex justify-between items-start gap-4 flex-wrap">
+                            <div className="flex items-center gap-3">
+                              <h3 className="text-xl md:text-2xl font-black font-expanded text-(--text-main) uppercase">
+                                {fac.name}
+                              </h3>
+                              {isAssigned && (
+                                <span className="px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-(--accent-base) text-(--text-inverse)">
+                                  Assigned Faculty
                                 </span>
+                              )}
+                            </div>
+                          </div>
+                          {fac.subs.length> 0 && (
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {fac.subs.map((s, idx) => (
+                                <span
+                                  key={idx}
+                                  className="text-[10px] md:text-xs font-mono font-bold text-(--text-muted) bg-(--bg-surface) px-2.5 py-1 rounded-full uppercase tracking-wider border border-(--border-dim)/30">
+                                  {s}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        <div 
+                          className="flex flex-col gap-2">
+                          {mats.map((mat) => {
+                            const isWebLink = (mat.category || "")
+                              .toLowerCase()
+                              .includes("web link");
+                            const Icon = isWebLink ? Language : Description;
+
+                            return (
+                              <div
+                                key={mat.id} 
+                                onClick={() => {
+                                  const courseName =
+                                    currentOption?.title || "Course";
+                                  handleDownload(mat.id, fac.name, courseName);
+                                }}
+                                className="group flex items-center gap-4 py-3 px-3.5 rounded-2xl cursor-pointer bg-transparent hover:bg-(--bg-surface)/70 transition-colors border border-transparent hover:border-(--border-dim)/30">
+                                <div className="w-10 h-10 rounded-full bg-(--bg-surface) flex items-center justify-center text-(--accent-base) group-hover:text-(--text-inverse) group-hover:bg-(--accent-base) transition-colors shrink-0 border border-(--border-dim)/30">
+                                  <Icon className="w-5 h-5" />
+                                </div>
+                                <div className="min-w-0 flex-1 flex flex-col">
+                                  <div className="flex items-center gap-2">
+                                    {mat.module !== undefined &&
+                                      mat.module !== "" && (
+                                        <span className="shrink-0 text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-(--bg-surface) text-(--text-muted) uppercase border border-(--border-dim)/30">
+                                          MOD {mat.module}
+                                        </span>
+                                      )}
+                                    <h4 className="font-bold text-(--text-main) text-sm md:text-base truncate group-hover:text-(--accent-base) transition-colors">
+                                      {mat.title}
+                                    </h4>
+                                  </div>
+                                  <span className="text-[10px] font-mono font-bold text-(--text-muted) uppercase mt-0.5">
+                                    {mat.uploadDate} • {mat.category}
+                                  </span>
+                                </div>
                               </div>
-                            </motion.div>
-                          );
-                        })}
-                      </motion.div>
-                    </motion.div>
-                  );
-                })}
-                {filteredMaterials.length === 0 && data && (
-                  <div className="py-12 flex justify-center text-(--text-dim)">
-                    <span className="font-bold uppercase text-xs">
-                      No matching files
-                    </span>
-                  </div>
-                )}
-              </motion.div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {filteredMaterials.length === 0 && data && (
+                    <div className="py-12 flex justify-center text-(--text-dim)">
+                      <span className="font-bold uppercase text-xs">
+                        No matching files
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}

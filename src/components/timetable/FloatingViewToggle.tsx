@@ -1,11 +1,9 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
-import { motion, AnimatePresence, Transition } from "framer-motion";
+import React, { useState, useEffect, useRef } from "react";
 import {
   GridView,
   List,
   CalendarMonth,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
-import { SPRING_BOUNCY } from "../../utils/motion";
 
 interface FloatingViewToggleProps {
   viewMode: "grid" | "list" | "week";
@@ -38,19 +36,16 @@ export const FloatingViewToggle: React.FC<FloatingViewToggleProps> = ({
       const diffY = currentScrollY - previousScrollY;
       const diffX = currentScrollX - previousScrollX;
 
-      // Hide if scrolling down OR scrolling left/right significantly
       if (diffY > 12 || Math.abs(diffX) > 12) {
         setIsVisible(false);
         lastScrollTop.current.set(target, currentScrollY);
         lastScrollLeft.current.set(target, currentScrollX);
       } else if (diffY < -12) {
-        // Show when scrolling back up
         setIsVisible(true);
         lastScrollTop.current.set(target, currentScrollY);
         lastScrollLeft.current.set(target, currentScrollX);
       }
 
-      // Always show if snapped back to the absolute top-left origin
       if (currentScrollY <= 10 && currentScrollX <= 10) setIsVisible(true);
     };
 
@@ -62,11 +57,6 @@ export const FloatingViewToggle: React.FC<FloatingViewToggleProps> = ({
       window.removeEventListener("scroll", handleScroll, { capture: true });
   }, []);
 
-  const syncSpring: Transition = useMemo(
-    () => SPRING_BOUNCY,
-    [],
-  );
-
   const cycleView = () => {
     if (viewMode === "grid") setViewMode("list");
     else if (viewMode === "list") setViewMode("week");
@@ -77,15 +67,11 @@ export const FloatingViewToggle: React.FC<FloatingViewToggleProps> = ({
     viewMode === "grid" ? GridView : viewMode === "list" ? List : CalendarMonth;
 
   return (
-    <AnimatePresence>
+    <>
       {isVisible && (
-        <motion.div
-          initial={{ opacity: 0, y: 20, scale: 0.9 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 20, scale: 0.9 }}
-          transition={syncSpring}
+        <div
           style={{ willChange: "transform, opacity" }}
-          className="fixed bottom-32 right-4 sm:hidden z-9990 flex"
+          className="fixed bottom-32 right-4 sm:hidden z-9990 flex transition-all duration-300 animate-in fade-in slide-in-from-bottom-5"
         >
           <button
             onClick={cycleView}
@@ -94,8 +80,8 @@ export const FloatingViewToggle: React.FC<FloatingViewToggleProps> = ({
           >
             <Icon className="w-5 h-5" />
           </button>
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 };

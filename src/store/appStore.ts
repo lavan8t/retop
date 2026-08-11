@@ -52,6 +52,9 @@ type AppState = {
   setGradesSemesters: (val: { id: string; label: string }[]) => void;
   gradesSelectedSem: string;
   setGradesSelectedSem: (val: string) => void;
+
+  daDropFile: File | null;
+  setDaDropFile: (val: File | null) => void;
 };
 
 export const useAppStore = create<AppState>((set) => ({
@@ -109,4 +112,7 @@ export const useAppStore = create<AppState>((set) => ({
   setGradesSemesters: (val) => set({ gradesSemesters: val }),
   gradesSelectedSem: "",
   setGradesSelectedSem: (val) => set({ gradesSelectedSem: val }),
+
+  daDropFile: null,
+  setDaDropFile: (val) => set({ daDropFile: val }),
 }));

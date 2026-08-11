@@ -87,8 +87,9 @@ export const createTimetableSlice: StateCreator<DataState, [], [], TimetableSlic
     } catch (e) {
       if (e instanceof Error && e.message === "OFFLINE_CACHE_MISS") {
          set({ status: "Offline - Not Synced" });
+      } else {
+         console.warn("Timetable load failed:", e);
       }
-      console.warn("Timetable load failed:", e);
       set({ ttCourses: [], upcoming: [], ttLoading: false });
     }
   },

@@ -161,29 +161,3 @@ export const calculateAttendanceForecast = (
   };
 };
 
-function _calculateBasicForecast(
-  attended: number,
-  total: number
-): AttendanceForecast {
-  const safeSkips = Math.floor(attended - 0.75 * total);
-
-  let status: "SAFE" | "WARNING" | "CRITICAL" = "SAFE";
-  if (safeSkips > 2) status = "SAFE";
-  else if (safeSkips > 0) status = "WARNING";
-  else status = "CRITICAL";
-
-  let requiredToPass = 0;
-  if (status === "CRITICAL" || (total > 0 && attended / total < 0.75)) {
-    requiredToPass = Math.ceil(3 * total - 4 * attended);
-  }
-
-  return {
-    futureScheduledClasses: 0,
-    safeSkips: Math.max(0, safeSkips),
-    requiredToPass: Math.max(0, requiredToPass),
-    classesNeededBeforeExam: 0,
-    status,
-    examStartDate: null,
-    examName: null,
-  };
-}

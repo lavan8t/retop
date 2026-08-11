@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { TimetableCourse, CourseSummary } from "../types/vtop";
+import { TimeFormatMode } from "../utils/formatting";
 import {
   Layers,
   ProgressActivity,
@@ -9,8 +10,8 @@ import { TimetableGrid } from "../components/timetable/TimetableGrid";
 import { TimetableList } from "../components/timetable/TimetableList";
 import { TimetableWeek } from "../components/timetable/TimetableWeek";
 import { OfflineNotSynced } from "../components/ui/OfflineNotSynced";
-import { motion, AnimatePresence } from "framer-motion";
-import { TRANSITION_PAGE_ENTER } from "../utils/motion";
+
+
 import { useDataStore } from "../store/dataStore";
 
 interface TimetableContentViewProps {
@@ -19,7 +20,8 @@ interface TimetableContentViewProps {
   viewMode: "grid" | "list" | "week";
   setViewMode: (mode: "grid" | "list" | "week") => void;
   attendance: CourseSummary[];
-  use24HourTime: boolean;
+  use24HourTime: TimeFormatMode;
+
 }
 
 export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
@@ -42,7 +44,7 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
   if (status === "Offline - Not Synced") {
     return (
       <div className="h-full pt-16 md:pt-20 lg:pt-24 pb-32 md:pb-12">
-        <OfflineNotSynced />
+        <OfflineNotSynced pageName="Timetable" />
       </div>
     );
   }
@@ -54,53 +56,41 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
         {/* Added pb-32 lg:pb-0 to ensure the timetable has a safe scrolling area above the mobile dock & floating pill */}
         <div className="flex-1 min-h-0 relative lg:pb-0">
           {courses.length === 0 && !loading ? (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="h-full p-4"
-            >
+            <div  
+              className="h-full p-4">
               <EmptyState 
                 msg="No Timetable Found" 
                 subMsg="If you have registered courses, please ensure VTOP is responding and try selecting a different semester." 
-                icon={Layers}
-              />
-            </motion.div>
+                icon={Layers} />
+            </div>
           ) : (
             <div className="absolute inset-0 pb-[80px] lg:pb-0 overflow-hidden">
-              <AnimatePresence>
-                <motion.div
-                  key={viewMode}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={TRANSITION_PAGE_ENTER}
-                  className="absolute inset-0 w-full h-full"
-                >
+              
+                <div
+                  key={viewMode}    
+                  className="absolute inset-0 w-full h-full">
                   {viewMode === "grid" && (
                     <TimetableGrid
                       courses={courses}
                       attendance={attendance}
                       use24HourTime={use24HourTime}
-                      onSelectCourse={() => setViewMode("list")}
-                    />
+                      onSelectCourse={() => setViewMode("list")} />
                   )}
                   {viewMode === "list" && (
                     <TimetableList
                       courses={courses}
                       attendance={attendance}
-                      use24HourTime={use24HourTime}
-                    />
+                      use24HourTime={use24HourTime} />
                   )}
                   {viewMode === "week" && (
                     <TimetableWeek
                       courses={courses}
                       attendance={attendance}
                       use24HourTime={use24HourTime}
-                      onSelectCourse={() => setViewMode("list")}
-                    />
+                      onSelectCourse={() => setViewMode("list")} />
                   )}
-                </motion.div>
-              </AnimatePresence>
+                </div>
+              
             </div>
           )}
 

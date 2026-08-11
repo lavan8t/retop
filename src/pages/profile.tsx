@@ -148,12 +148,15 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
   const line2 = words.slice(1).join(" ") || "";
 
   return (
-    <div className="group w-full max-w-74 aspect-64/100 perspective-[1000px] cursor-pointer shrink-0">
+    <div
+      className="retop-digital-id-card group w-full max-w-74 aspect-64/100 perspective-[1000px] cursor-pointer shrink-0"
+    >
       {/* Container for 3D flip */}
       <div className="relative w-full h-full transition-transform duration-300 transform-3d group-hover:transform-[rotateY(180deg)] shadow-none rounded-2xl">
         {/* FRONT SIDE */}
         <div
-          className={`absolute inset-0 backface-hidden bg-white rounded-2xl border-2 border-border-dim flex flex-col overflow-hidden text-black ${fontArial}`}
+          className={`absolute inset-0 backface-hidden rounded-2xl border-2 border-border-dim flex flex-col overflow-hidden ${fontArial}`}
+          style={{ backgroundColor: "white", color: "black" }}
         >
           {/* Header */}
           <div className="flex flex-col items-center pt-3 px-3 shrink-0">
@@ -219,7 +222,8 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
 
         {/* BACK SIDE */}
         <div
-          className={`absolute inset-0 backface-hidden transform-[rotateY(180deg)] bg-white rounded-2xl border-2 border-border-dim flex flex-col p-3 text-black text-[12px] leading-tight overflow-hidden`}
+          className={`absolute inset-0 backface-hidden transform-[rotateY(180deg)] rounded-2xl border-2 border-border-dim flex flex-col p-3 text-[12px] leading-tight overflow-hidden`}
+          style={{ backgroundColor: "white", color: "black" }}
         >
           <div className="flex gap-1">
             <span className={`italic font-bold ${fontTimes}`}>App. No:</span>{" "}
@@ -478,6 +482,25 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
     };
 
     loadProfile();
+
+    const handleRefresh = async () => {
+      setLoading(true);
+      try {
+        const html = await network.fetchWithCache(
+          "student_profile_data",
+          async () => await network.fetchFragment("studentsRecord/StudentProfileAllView"),
+          true,
+        );
+        const parsedData = parseStudentProfile(html);
+        setData(parsedData);
+      } catch (e) {
+        console.error("Failed to refresh profile:", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    window.addEventListener("retop-refresh-profile", handleRefresh);
+    return () => window.removeEventListener("retop-refresh-profile", handleRefresh);
   }, [network]);
 
   if (loading) {

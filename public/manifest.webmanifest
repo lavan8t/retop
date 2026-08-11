@@ -1,0 +1,33 @@
+{
+  "name": "retop - VTOP Reimagined",
+  "short_name": "retop",
+  "description": "Modern, ultra-fast, offline-capable interface for VTOP",
+  "start_url": "./offline.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "./icons/icon16.png",
+      "sizes": "64x64",
+      "type": "image/png"
+    },
+    {
+      "src": "./icons/icon32.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "./icons/icon48.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./icons/icon128.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

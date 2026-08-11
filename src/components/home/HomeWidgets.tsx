@@ -1,14 +1,14 @@
-import React from "react";
-import { motion } from "framer-motion";
-import { School } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
+import React, { useMemo } from "react";
+import { School, CalendarMonth } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 
 import { AppSettings } from "../../utils/settings-store";
 import { Card } from "../ui/Card";
-import { SPRING_SNAPPY } from "../../utils/motion";
-import { Assignment } from "../../types/vtop";
+import { Assignment, CourseSummary } from "../../types/vtop";
 import { AssignmentRow } from "./HomeRows";
+import { parseVtopDate } from "../../utils/formatting";
 
 interface HomeWidgetsProps {
+  className?: string;
   settings: AppSettings;
   stats: {
     cgpa: string;
@@ -17,15 +17,20 @@ interface HomeWidgetsProps {
     nonGraded?: string;
     placement?: string;
   };
+  attendance?: CourseSummary[];
   assignments: Assignment[];
   onNavigate: (link: any) => void;
+  isMobileFeed?: boolean;
 }
 
 export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
+  className,
   settings,
   stats,
+  attendance = [],
   assignments,
   onNavigate,
+  isMobileFeed = false,
 }) => {
   const totalEarnedStr = stats.credits || "...";
   const totalEarnedNum = parseFloat(stats.credits);
@@ -39,39 +44,133 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
     ? nonGradedNum.toString().replace(/\.0$/, "")
     : stats.nonGraded || "0";
 
-  const pendingAssignments = assignments
-    .filter((a) => a.status !== "submitted")
-    .sort((a, b) => {
-      const parseDate = (dStr: string) => {
-        if (!dStr) return NaN;
-        const cleanStr = dStr.replace(/[-/]/g, " ").trim();
-        const t = new Date(cleanStr).getTime();
-        if (!isNaN(t)) return t;
-        const parts = cleanStr.split(" ");
-        if (parts.length >= 3) {
-          const day = parseInt(parts[0], 10);
-          const month = parseInt(parts[1], 10) - 1;
-          const year = parseInt(parts[2], 10);
-          if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
-            return new Date(year, month, day).getTime();
-          }
-        }
-        return NaN;
-      };
-      const dateA = parseDate(a.dueDate);
-      const dateB = parseDate(b.dueDate);
-      if (isNaN(dateA) && isNaN(dateB)) return 0;
-      if (isNaN(dateA)) return 1;
-      if (isNaN(dateB)) return -1;
-      return dateA - dateB;
-    });
+  const overallAttPct = useMemo(() => {
+    if (!attendance || attendance.length === 0) return "--%";
+    const valid = attendance.filter((a) => !isNaN(parseFloat(a.attendance)));
+    if (valid.length === 0) return "--%";
+    const sum = valid.reduce((acc, a) => acc + parseFloat(a.attendance), 0);
+    return Math.round(sum / valid.length) + "%";
+  }, [attendance]);
 
+  const pendingAssignments = useMemo(() => {
+    return assignments
+      .filter((a) => a.status !== "submitted")
+      .sort((a, b) => {
+        const parseDate = (dStr: string) => {
+          const d = parseVtopDate(dStr);
+          return d ? d.getTime() : NaN;
+        };
+        const dateA = parseDate(a.dueDate);
+        const dateB = parseDate(b.dueDate);
+        if (isNaN(dateA) && isNaN(dateB)) return 0;
+        if (isNaN(dateA)) return 1;
+        if (isNaN(dateB)) return -1;
+        return dateA - dateB;
+      });
+  }, [assignments]);
+
+  // Mobile Stats Carousel Rendering (< lg)
+  if (isMobileFeed) {
+    return (
+      <div className={`flex overflow-x-auto snap-x snap-mandatory gap-3 hide-scrollbar pb-2 w-full shrink-0 ${className || ""}`}>
+        {/* 1. Attendance Card */}
+        <Card
+          onClick={() =>
+            onNavigate({
+              title: "Attendance",
+              url: "academics/Attendance",
+              category: "Academics",
+            })
+          }
+          className="group shrink-0 snap-start min-w-[240px] sm:min-w-[260px] w-[75vw] sm:w-[280px] max-w-[320px] bg-(--bg-highlight) rounded-4xl p-5 flex flex-col justify-between relative z-30 cursor-pointer overflow-hidden border-2 border-(--border-main) shadow-(--brutal-shadow-sm) hover:shadow-(--brutal-shadow-hover) hover:bg-(--bg-surface) transition-all"
+        >
+          <div className="flex justify-between items-start mb-2">
+            <span className="text-[0.625rem] font-expanded font-bold uppercase text-(--text-muted) leading-none">
+              Attendance
+            </span>
+            <span className="text-[0.625rem] font-bold font-mono text-(--accent-base) bg-(--bg-main) px-2 py-0.5 rounded-full border border-(--border-dim) leading-none">
+              Overall
+            </span>
+          </div>
+          <div className="flex items-center justify-between my-2">
+            <div className="text-3xl sm:text-4xl font-black font-expanded leading-none text-(--text-main)">
+              {overallAttPct}
+            </div>
+            <CalendarMonth className="w-8 h-8 sm:w-10 sm:h-10 text-(--text-main) opacity-80" />
+          </div>
+          <div className="text-[0.625rem] text-(--text-muted) font-bold uppercase tracking-wider flex items-center justify-between leading-none">
+            <span>View Summary</span>
+            <span className="text-sm font-black text-(--text-main)">→</span>
+          </div>
+        </Card>
+
+        {/* 2. CGPA Card */}
+        <Card
+          onClick={() =>
+            onNavigate({
+              title: "Grades View",
+              url: "examinations/StudentGradeView",
+              category: "Examinations",
+            })
+          }
+          className="group shrink-0 snap-start min-w-[240px] sm:min-w-[260px] w-[75vw] sm:w-[280px] max-w-[320px] bg-(--bg-highlight) rounded-4xl p-5 flex flex-col justify-between relative z-30 cursor-pointer overflow-hidden border-2 border-(--border-main) shadow-(--brutal-shadow-sm) hover:shadow-(--brutal-shadow-hover) hover:bg-(--bg-surface) transition-all"
+        >
+          <div className="flex justify-between items-start mb-2">
+            <span className="text-[0.625rem] font-expanded font-bold uppercase text-(--text-muted) leading-none">
+              CGPA
+            </span>
+            <School className="w-5 h-5 text-(--text-muted)" />
+          </div>
+          <div className="flex items-baseline gap-2 my-2">
+            <div
+              className={`text-3xl sm:text-4xl font-black font-expanded leading-none text-(--text-main) transition-all duration-fast ${
+                settings.blurCgpa ? "blur-md hover:blur-none" : ""
+              }`}
+            >
+              {stats.cgpa || "--"}
+            </div>
+          </div>
+          <div className="text-[0.625rem] text-(--text-muted) font-bold uppercase tracking-wider flex items-center justify-between leading-none">
+            <span>Cumulative Grade</span>
+            <span className="text-sm font-black text-(--text-main)">→</span>
+          </div>
+        </Card>
+
+        {/* 3. Credits Card */}
+        <Card
+          onClick={() =>
+            onNavigate({
+              title: "Grades View",
+              url: "examinations/StudentGradeView",
+              category: "Examinations",
+            })
+          }
+          className="group shrink-0 snap-start min-w-[240px] sm:min-w-[260px] w-[75vw] sm:w-[280px] max-w-[320px] bg-(--bg-highlight) rounded-4xl p-5 flex flex-col justify-between relative z-30 cursor-pointer overflow-hidden border-2 border-(--border-main) shadow-(--brutal-shadow-sm) hover:shadow-(--brutal-shadow-hover) hover:bg-(--bg-surface) transition-all"
+        >
+          <div className="flex justify-between items-start mb-2">
+            <span className="text-[0.625rem] font-expanded font-bold uppercase text-(--text-muted) leading-none">
+              Credits
+            </span>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black font-expanded leading-none whitespace-nowrap text-(--text-main) my-2">
+            {totalEarnedStr}{" "}
+            <span className="text-lg sm:text-xl text-(--text-muted)">
+              / {stats.totalCredits || "..."}
+            </span>
+          </div>
+          <div className="text-[0.625rem] text-(--text-muted) font-bold uppercase tracking-wider flex items-center justify-between leading-none">
+            <span>Earned Credits</span>
+            <span className="text-sm font-black text-(--text-main)">→</span>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  // Original Desktop Right Column View (commit b11e407)
   return (
-    <div className="hidden lg:flex w-full lg:w-[24%] xl:w-[20%] flex-col shrink-0 h-auto lg:h-full overflow-y-auto custom-scrollbar relative z-30 pt-20 md:pt-24 lg:pt-28 pb-4 md:pb-6 lg:pb-8 pr-4 md:pr-6 lg:pr-0 gap-4">
+    <div className={`hidden lg:flex w-full lg:w-[24%] xl:w-[20%] flex-col shrink-0 h-auto lg:h-full overflow-y-auto custom-scrollbar relative z-30 pt-15 md:pt-18 lg:pt-20 pb-4 md:pb-6 lg:pb-8 pr-4 md:pr-6 lg:pr-0 gap-4 ${className || ""}`}>
       <Card
-        initial="rest"
-        whileHover="hover"
-        animate="rest"
         onClick={() =>
           onNavigate({
             title: "Grades View",
@@ -82,16 +181,9 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
         className="group shrink-0 h-auto bg-(--bg-highlight) rounded-4xl p-5 flex flex-col relative z-30 cursor-pointer overflow-hidden border-2 border-(--border-main) shadow-(--brutal-shadow-sm) hover:shadow-(--brutal-shadow-hover) hover:bg-(--bg-surface) transition-all"
       >
         {/* Expanded Split View */}
-        <motion.div
-          variants={{
-            rest: { height: 0, opacity: 0 },
-            hover: { height: "auto", opacity: 1 },
-          }}
-          transition={{ type: "spring", stiffness: 400, damping: 30 }}
-          className="flex flex-col overflow-hidden relative z-10"
-        >
+        <div className="flex flex-col overflow-hidden relative z-10 max-h-0 opacity-0 group-hover:max-h-[500px] group-hover:opacity-100 transition-all duration-300">
           <div className="flex flex-col items-center w-full pb-4">
-            <div className="text-[10px] font-expanded font-bold uppercase text-(--text-muted) mb-3">
+            <div className="text-[0.625rem] font-expanded font-bold uppercase text-(--text-muted) mb-3 leading-none">
               Credits
             </div>
 
@@ -101,7 +193,7 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
                 <span className="text-xl text-(--text-muted)">+</span>
                 <div className="flex flex-col items-center">
                   <span>{nonGradedStr}</span>
-                  <span className="text-[8px] font-bold text-(--text-muted) uppercase tracking-wider -mt-0.5">
+                  <span className="text-[0.5rem] font-bold text-(--text-muted) uppercase tracking-wider -mt-0.5 leading-none">
                     NGCR
                   </span>
                 </div>
@@ -116,25 +208,20 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
 
             {stats.placement && (
               <div
-                className={`mt-4 text-[10px] font-black uppercase text-center ${stats.placement.toLowerCase().includes("eligible") ? "text-(--att-safe)" : "text-(--att-danger)"}`}
+                className={`mt-4 text-[0.625rem] font-black uppercase text-center leading-none ${stats.placement.toLowerCase().includes("eligible") ? "text-(--att-safe)" : "text-(--att-danger)"}`}
               >
                 {stats.placement}
               </div>
             )}
           </div>
-        </motion.div>
+        </div>
 
         {/* Resting Combined View */}
-        <motion.div
-          variants={{
-            rest: { height: "auto", opacity: 1 },
-            hover: { height: 0, opacity: 0 },
-          }}
-          transition={{ type: "spring", stiffness: 400, damping: 30 }}
-          className="flex items-center justify-end overflow-hidden relative z-10 mb-3"
+        <div
+          className="flex items-center justify-end overflow-hidden relative z-10 mb-3 max-h-[500px] opacity-100 group-hover:max-h-0 group-hover:opacity-0 transition-all duration-300"
         >
           <div className="text-right">
-            <div className="text-[10px] font-expanded font-bold uppercase text-(--text-muted)">
+            <div className="text-[0.625rem] font-expanded font-bold uppercase text-(--text-muted) leading-none">
               Credits
             </div>
             <div className="text-3xl font-black font-expanded leading-none whitespace-nowrap">
@@ -144,18 +231,16 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
               </span>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Persistent CGPA */}
-        <motion.div
-          variants={{ rest: { y: 0 }, hover: { y: 4 } }}
-          transition={SPRING_SNAPPY}
-          className="flex flex-col relative z-10"
+        <div
+          className="flex flex-col relative z-10 transition-transform duration-200"
         >
           <div className="flex items-center justify-between">
             <School className="w-10 h-10 text-(--text-main) mix-blend-overlay opacity-80" />
             <div className="text-right">
-              <div className="text-[10px] font-expanded font-bold uppercase text-(--text-muted)">
+              <div className="text-[0.625rem] font-expanded font-bold uppercase text-(--text-muted) leading-none">
                 CGPA
               </div>
               <div
@@ -165,38 +250,42 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
       </Card>
 
-      {pendingAssignments.length > 0 && (
-        <div className="flex-1 overflow-visible flex flex-col min-h-0 pb-2 mt-4">
-          <Card
-            onClick={() => onNavigate({
-              title: "Assignments",
-              url: "examinations/StudentDA",
-              category: "Examinations"
-            })}
-            className="shrink-0 bg-(--bg-highlight) rounded-4xl flex flex-col relative z-30 cursor-pointer overflow-hidden border-2 border-transparent hover:border-(--border-main) transition-all h-fit"
-          >
-            <div className="px-5 pt-5 border-b-2 border-(--border-main) flex justify-between items-center shrink-0">
-              <div className="flex flex-col">
-                <span className="text-[10px] font-expanded font-bold uppercase text-(--text-muted) mb-1">
-                  Pending Assignments
-                </span>
-              </div>
+      <div className="flex-1 overflow-visible flex flex-col min-h-0 pb-2 mt-4">
+        <Card
+          onClick={() => onNavigate({
+            title: "Assignments",
+            url: "examinations/StudentDA",
+            category: "Examinations"
+          })}
+          className="shrink-0 bg-(--bg-highlight) rounded-4xl flex flex-col relative z-30 cursor-pointer overflow-hidden border-2 border-transparent transition-all h-fit"
+        >
+          <div className="px-5 pt-5 border-b-2 border-(--border-main) flex justify-between items-center shrink-0">
+            <div className="flex flex-col">
+              <span className="text-[0.625rem] font-expanded font-bold uppercase text-(--text-muted) mb-1 leading-none">
+                Pending Assignments
+              </span>
             </div>
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-3 flex flex-col gap-0.5 rounded-2xl overflow-hidden">
-              {pendingAssignments.map((assignment, idx) => (
+          </div>
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-3 flex flex-col gap-0.5 rounded-2xl overflow-hidden">
+            {pendingAssignments.length > 0 ? (
+              pendingAssignments.map((assignment, idx) => (
                 <AssignmentRow 
                   key={idx} 
                   assignment={assignment} 
                   className="rounded-sm first:rounded-t-2xl last:rounded-b-2xl"
                 />
-              ))}
-            </div>
-          </Card>
-        </div>
-      )}
+              ))
+            ) : (
+              <div className="py-6 text-center text-xs text-(--text-muted) font-medium">
+                you're all caught up.
+              </div>
+            )}
+          </div>
+        </Card>
+      </div>
     </div>
   );
 };

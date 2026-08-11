@@ -2,9 +2,8 @@ import { useEffect, useState, useRef } from "react";
 import { useDataStore } from "../store/dataStore";
 import { VTOPNetwork } from "../utils/network";
 import { EmptyState } from "../components/EmptyState";
-import { motion, AnimatePresence } from "framer-motion";
+
 import { OfflineNotSynced } from "../components/ui/OfflineNotSynced";
-import { MarqueeText } from "../components/common/MarqueeText";
 import {
   Warning,
   CalendarMonth,
@@ -15,6 +14,8 @@ import {
   Add,
   Remove,
   Refresh,
+  ArrowUpward,
+  ArrowDownward,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { DetailedAttendanceCourse } from "../types/vtop";
 import { useCourseAttendanceForecast } from "../hooks/useCourseAttendanceForecast";
@@ -59,7 +60,7 @@ const AttendanceCalculator = ({
     projectedConducted === 0
       ? 0
       : Math.round((projectedAttended / projectedConducted) * 100);
-  const isInvalid = rawPercentage > 100;
+  const isInvalid = rawPercentage> 100;
   const percentage = isInvalid ? 100 : rawPercentage;
 
   let ringColor = "stroke-(--attendance-green)";
@@ -72,7 +73,7 @@ const AttendanceCalculator = ({
     setBunkCount(0);
   };
 
-  const hasChanged = attendCount > 0 || bunkCount > 0;
+  const hasChanged = attendCount> 0 || bunkCount> 0;
 
   const circleRadius = 60;
   const circleCircumference = 2 * Math.PI * circleRadius;
@@ -86,8 +87,7 @@ const AttendanceCalculator = ({
         <div className="flex justify-end">
           <button
             onClick={handleReset}
-            className="flex items-center gap-1 text-[10px] uppercase font-mono font-bold bg-(--bg-surface) hover:bg-(--bg-highlight) text-(--text-main) px-2.5 py-1 rounded-full transition-colors cursor-pointer border border-(--border-dim)/40"
-          >
+            className="flex items-center gap-1 text-[10px] uppercase font-mono font-bold bg-(--bg-surface) hover:bg-(--bg-highlight) text-(--text-main) px-2.5 py-1 rounded-full transition-colors cursor-pointer border border-(--border-dim)/40">
             <Refresh className="w-3 h-3 text-(--accent-base)" />
             Reset
           </button>
@@ -99,16 +99,14 @@ const AttendanceCalculator = ({
         <div className="relative w-44 h-44 flex items-center justify-center shrink-0">
           <svg
             className="absolute inset-0 w-full h-full -rotate-90"
-            viewBox="0 0 140 140"
-          >
+            viewBox="0 0 140 140">
             <circle
               cx="70"
               cy="70"
               r={circleRadius}
               className="stroke-(--bg-surface)"
               strokeWidth="15"
-              fill="none"
-            />
+              fill="none" />
             <circle
               cx="70"
               cy="70"
@@ -118,13 +116,11 @@ const AttendanceCalculator = ({
               fill="none"
               strokeDasharray={circleCircumference}
               strokeDashoffset={strokeDashoffset}
-              strokeLinecap="round"
-            />
+              strokeLinecap="round" />
           </svg>
           <div className="flex flex-col items-center z-10 text-center">
             <span
-              className={`font-mono font-black text-4xl leading-none ${ringColor.replace("stroke-", "text-")}`}
-            >
+              className={`font-mono font-black text-4xl leading-none ${ringColor.replace("stroke-", "text-")}`}>
               {percentage}%
             </span>
           </div>
@@ -168,8 +164,7 @@ const AttendanceCalculator = ({
                 : forecast.status === "WARNING"
                   ? "bg-amber-500/20 text-amber-300"
                   : "bg-red-500/20 text-red-300"
-            }`}
-          >
+            }`}>
             {forecast.status}
           </span>
         </div>
@@ -184,8 +179,7 @@ const AttendanceCalculator = ({
           <div className="flex items-center gap-3">
             <button
               onClick={decreaseAttend}
-              className="w-7 h-7 flex items-center justify-center bg-(--bg-main) rounded-full active:scale-90 transition-transform text-(--text-main) cursor-pointer border-0"
-            >
+              className="w-7 h-7 flex items-center justify-center bg-(--bg-main) rounded-full active:scale-90 transition-transform text-(--text-main) cursor-pointer border-0">
               <Remove className="w-3.5 h-3.5" />
             </button>
             <span className="font-mono font-black text-base w-5 text-center">
@@ -193,8 +187,7 @@ const AttendanceCalculator = ({
             </span>
             <button
               onClick={increaseAttend}
-              className="w-7 h-7 flex items-center justify-center bg-(--bg-main) rounded-full active:scale-90 transition-transform text-(--text-main) cursor-pointer border-0"
-            >
+              className="w-7 h-7 flex items-center justify-center bg-(--bg-main) rounded-full active:scale-90 transition-transform text-(--text-main) cursor-pointer border-0">
               <Add className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -207,8 +200,7 @@ const AttendanceCalculator = ({
           <div className="flex items-center gap-3">
             <button
               onClick={decreaseBunk}
-              className="w-7 h-7 flex items-center justify-center bg-(--bg-main) rounded-full active:scale-90 transition-transform text-(--text-main) cursor-pointer border-0"
-            >
+              className="w-7 h-7 flex items-center justify-center bg-(--bg-main) rounded-full active:scale-90 transition-transform text-(--text-main) cursor-pointer border-0">
               <Remove className="w-3.5 h-3.5" />
             </button>
             <span className="font-mono font-black text-base w-5 text-center">
@@ -216,8 +208,7 @@ const AttendanceCalculator = ({
             </span>
             <button
               onClick={increaseBunk}
-              className="w-7 h-7 flex items-center justify-center bg-(--bg-main) rounded-full active:scale-90 transition-transform text-(--text-main) cursor-pointer border-0"
-            >
+              className="w-7 h-7 flex items-center justify-center bg-(--bg-main) rounded-full active:scale-90 transition-transform text-(--text-main) cursor-pointer border-0">
               <Add className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -259,21 +250,19 @@ const CourseCard = ({
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: idx * 0.02 }}
+    <div
+ 
+ 
+ 
       className={`relative flex items-center justify-between py-2 px-3.5 rounded-xl overflow-hidden transition-all duration-fast cursor-pointer group select-none border border-(--border-dim)/40 ${
         isSelected
           ? "bg-(--accent-base)/20 border-l-4 border-l-(--accent-base) border-(--accent-base)/40"
           : "bg-(--bg-surface)/60 hover:bg-(--accent-base)/15 hover:border-(--accent-base)/50"
       }`}
-      onClick={onClick}
-    >
+      onClick={onClick}>
       <div
         className={`absolute top-0 left-0 h-full ${barColor} transition-all duration-fast opacity-50`}
-        style={{ width: `${course.percentage}%` }}
-      />
+        style={{ width: `${course.percentage}%` }} />
       <div className="relative z-10 flex items-center gap-3 min-w-0 flex-1 pr-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
@@ -289,19 +278,17 @@ const CourseCard = ({
               </span>
             )}
           </div>
-          <MarqueeText
-            text={course.courseTitle}
-            className="text-base md:text-lg font-black leading-tight font-expanded transition-colors text-(--text-main)"
-          />
+          <span className="text-base md:text-lg font-black leading-tight font-expanded transition-colors text-(--text-main) break-words">
+            {course.courseTitle}
+          </span>
         </div>
       </div>
 
       <div
-        className={`relative z-10 shrink-0 font-mono font-black text-sm md:text-base leading-none px-2.5 py-1 rounded-lg ${badgeBg}`}
-      >
+        className={`relative z-10 shrink-0 font-mono font-black text-sm md:text-base leading-none px-2.5 py-1 rounded-lg ${badgeBg}`}>
         {course.percentage}%
       </div>
-    </motion.div>
+    </div>
   );
 };
 
@@ -318,6 +305,7 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
   } = useDataStore();
 
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
 
   useEffect(() => {
     if (!attSelectedSem || !network) return;
@@ -325,7 +313,7 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
   }, [attSelectedSem, network, fetchDetailedAttendance]);
 
   useEffect(() => {
-    if (detailedAttendance && detailedAttendance.length > 0) {
+    if (detailedAttendance && detailedAttendance.length> 0) {
       const exists = detailedAttendance.some(
         (c) => `${c.courseId}-${c.classType}` === selectedCourse
       );
@@ -351,6 +339,18 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
     fetchAttendanceRecords,
   ]);
 
+  useEffect(() => {
+    const handleRefresh = () => {
+      const state = useDataStore.getState();
+      const sem = state.attSelectedSem || state.ttSelectedSem;
+      if (sem) {
+        state.fetchDetailedAttendance(network, sem, true);
+      }
+    };
+    window.addEventListener("retop-refresh-attendance", handleRefresh);
+    return () => window.removeEventListener("retop-refresh-attendance", handleRefresh);
+  }, [network]);
+
   const handleSelectCourse = (courseId: string, classType: string) => {
     const key = `${courseId}-${classType}`;
     setSelectedCourse(key);
@@ -367,8 +367,7 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
             {[...Array(6)].map((_, i) => (
               <div
                 key={i}
-                className="h-20 bg-(--bg-surface) rounded-2xl animate-pulse"
-              />
+                className="h-20 bg-(--bg-surface) rounded-2xl animate-pulse" />
             ))}
           </div>
           <div className="w-full lg:w-1/2 hidden lg:flex flex-col px-4 md:px-6 lg:px-8 space-y-6 pt-25 border-l border-(--border-dim)/20">
@@ -384,7 +383,7 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
   if (status === "Offline - Not Synced") {
     return (
       <div className="h-full pt-16 md:pt-20 lg:pt-24 pb-32 md:pb-12">
-        <OfflineNotSynced />
+        <OfflineNotSynced pageName="Attendance" />
       </div>
     );
   }
@@ -395,8 +394,7 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
         <EmptyState
           msg="No Attendance Data"
           subMsg="Attendance information is not available for the selected semester."
-          icon={Warning}
-        />
+          icon={Warning} />
       </div>
     );
   }
@@ -406,27 +404,50 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
   );
   const records = selectedCourse ? attendanceRecords[selectedCourse] : null;
 
-  return (
-    <div className="h-full w-full bg-(--bg-main) font-mono text-(--text-main) overflow-hidden relative z-0 flex">
-      <div className="flex-1 flex w-full max-w-7xl mx-auto h-full">
-        {/* Left Pane: Compact Course Cards */}
-        <div
-          className={`w-full lg:w-[42%] xl:w-[38%] flex flex-col overflow-y-auto custom-scrollbar px-4 md:px-6 ${
-            selectedCourse ? "hidden lg:flex" : "flex"
-          }`}
-        >
-          <div className="w-full h-21 md:h-25 shrink-0" />
-          <div className="space-y-2.5 pb-24 pt-4">
-            {detailedAttendance.map((course, idx) => {
-              const courseKey = `${course.courseId}-${course.classType}`;
-              const isSelected = selectedCourse === courseKey;
+  const sortedRecords = records ? [...records].sort((a, b) => {
+    const parseDate = (dStr: string) => {
+      let d = new Date(dStr);
+      if (isNaN(d.getTime()) && dStr.includes("-")) {
+        const parts = dStr.split("-");
+        if (parts.length === 3) d = new Date(`${parts[1]} ${parts[0]} ${parts[2]}`);
+      }
+      return isNaN(d.getTime()) ? 0 : d.getTime();
+    };
+    const tA = parseDate(a.date);
+    const tB = parseDate(b.date);
+    return sortOrder === "desc" ? tB - tA : tA - tB;
+  }) : null;
 
+  return (
+    <div className="h-full w-full bg-(--bg-main) text-(--text-main) overflow-hidden relative z-0 flex">
+      <div className="flex-1 flex flex-col lg:flex-row w-full max-w-7xl mx-auto h-full overflow-y-auto lg:overflow-hidden">
+        {/* Left Column: Course List */}
+        <div
+          className={`w-full lg:w-1/2 flex flex-col border-r-0 lg:border-r border-(--border-dim)/20 h-full overflow-y-auto custom-scrollbar px-4 md:px-6 lg:px-8 pb-32 lg:pb-12 ${
+            selectedCourse ? "hidden lg:flex" : "flex"
+          }`}>
+          <div className="w-full h-21 md:h-25 shrink-0" />
+
+          {/* Header */}
+          <div className="mb-6 flex flex-col gap-1">
+            <h1 className="text-2xl md:text-3xl font-black font-expanded tracking-tight text-(--text-main)">
+              Attendance
+            </h1>
+            <p className="text-xs text-(--text-muted) font-mono">
+              Track course attendance and forecast targets
+            </p>
+          </div>
+
+          {/* Courses List */}
+          <div className="flex flex-col gap-3">
+            {detailedAttendance.map((course, idx) => {
+              const key = `${course.courseId}-${course.classType}`;
               return (
                 <CourseCard
-                  key={courseKey}
+                  key={key}
                   course={course}
-                  isSelected={isSelected}
                   idx={idx}
+                  isSelected={key === selectedCourse}
                   onClick={() =>
                     handleSelectCourse(course.courseId, course.classType)
                   }
@@ -436,80 +457,83 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
           </div>
         </div>
 
-        {/* Right Pane: Course Details & Clean Calculator */}
-        <AnimatePresence mode="wait">
-          {selectedCourse && selectedCourseObj && (
-            <motion.div
-              key={selectedCourse}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className={`w-full lg:w-[58%] xl:w-[62%] shrink-0 bg-(--bg-main) lg:bg-transparent overflow-y-auto custom-scrollbar px-4 md:px-6 lg:px-8 flex flex-col border-l border-(--border-dim)/20 ${
-                !selectedCourse
-                  ? "hidden lg:flex"
-                  : "flex absolute inset-0 lg:static z-20"
-              }`}
-            >
-              <div className="w-full h-21 md:h-25 shrink-0 hidden lg:block" />
-              {/* Mobile Back Button */}
-              <div className="lg:hidden flex items-center mb-4 pt-21 md:pt-25">
-                <button
-                  onClick={() => setSelectedCourse(null)}
-                  className="flex items-center gap-2 text-(--text-main) bg-(--bg-surface) px-4 py-2 rounded-full font-bold uppercase font-mono text-xs cursor-pointer border border-(--border-dim)/40"
-                >
-                  <ArrowBack className="w-4 h-4" />
-                  Back
-                </button>
-              </div>
+        {/* Right Column: Detailed View */}
+        {selectedCourseObj && (
+          <div
+            className={`w-full lg:w-1/2 flex flex-col h-full overflow-y-auto custom-scrollbar px-4 md:px-6 lg:px-8 pb-32 lg:pb-12 ${
+              !selectedCourse
+                ? "hidden lg:flex"
+                : "flex absolute inset-0 lg:static z-20"
+            }`}>
+            <div className="w-full h-21 md:h-25 shrink-0 hidden lg:block" />
+            {/* Mobile Back Button */}
+            <div className="lg:hidden flex items-center mb-4 pt-21 md:pt-25">
+              <button
+                onClick={() => setSelectedCourse(null)}
+                className="flex items-center gap-2 text-(--text-main) bg-(--bg-surface) px-4 py-2 rounded-full font-bold uppercase font-mono text-xs cursor-pointer border border-(--border-dim)/40">
+                <ArrowBack className="w-4 h-4" />
+                Back
+              </button>
+            </div>
 
-              <div className="mb-4 lg:mt-0">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="px-2.5 py-0.5 bg-(--bg-highlight) text-(--text-main) text-[10px] font-mono font-bold uppercase rounded-md border border-(--border-dim)/40">
-                    {selectedCourseObj.courseCode}
-                  </span>
-                  <span className="px-2.5 py-0.5 bg-blue-500/20 text-blue-300 text-[10px] font-mono font-bold uppercase rounded-md">
-                    {selectedCourseObj.classType}
-                  </span>
+            <div className="mb-4 lg:mt-0">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="px-2.5 py-0.5 bg-(--bg-highlight) text-(--text-main) text-[10px] font-mono font-bold uppercase rounded-md border border-(--border-dim)/40">
+                  {selectedCourseObj.courseCode}
+                </span>
+                <span className="px-2.5 py-0.5 bg-blue-500/20 text-blue-300 text-[10px] font-mono font-bold uppercase rounded-md">
+                  {selectedCourseObj.classType}
+                </span>
+              </div>
+              <h2 className="text-xl md:text-2xl font-bold font-mono leading-snug mb-3 text-(--text-main)">
+                {selectedCourseObj.courseTitle}
+              </h2>
+              <div className="flex flex-wrap items-center gap-4 text-xs text-(--text-muted) font-mono">
+                <div className="flex items-center gap-2">
+                  <School className="w-4 h-4 text-(--text-muted)" />
+                  <span>{selectedCourseObj.faculty}</span>
                 </div>
-                <h2 className="text-xl md:text-2xl font-bold font-mono leading-snug mb-3 text-(--text-main)">
-                  {selectedCourseObj.courseTitle}
-                </h2>
-                <div className="flex flex-wrap items-center gap-4 text-xs text-(--text-muted) font-mono">
-                  <div className="flex items-center gap-2">
-                    <School className="w-4 h-4 text-(--text-muted)" />
-                    <span>{selectedCourseObj.faculty}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CalendarMonth className="w-4 h-4 text-(--text-muted)" />
-                    <span>{selectedCourseObj.classDetail}</span>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <CalendarMonth className="w-4 h-4 text-(--text-muted)" />
+                  <span>{selectedCourseObj.classDetail}</span>
                 </div>
               </div>
+            </div>
 
-              {/* Single Unified Clean Calculator & Forecast Meter */}
-              <AttendanceCalculator
-                course={selectedCourseObj}
-                historyLength={records ? records.length : null}
-              />
+            {/* Single Unified Clean Calculator & Forecast Meter */}
+            <AttendanceCalculator
+              course={selectedCourseObj}
+              historyLength={records ? records.length : null} />
 
-              {/* History Log with Dark Material You Color Shades */}
-              <div className="mb-24 flex flex-col gap-3">
+            {/* History Log with Dark Material You Color Shades */}
+            <div className="mb-24 flex flex-col gap-3">
+              <div className="flex items-center justify-between">
                 <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-(--text-muted)">
                   Attendance History
                 </h4>
+                <button
+                  onClick={() => setSortOrder((prev) => (prev === "desc" ? "asc" : "desc"))}
+                  className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-(--text-muted) hover:text-(--text-main) cursor-pointer bg-(--bg-surface) px-2.5 py-1 rounded-lg border border-(--border-dim)/40 transition-colors">
+                  <span>{sortOrder === "desc" ? "Newest First" : "Oldest First"}</span>
+                  {sortOrder === "desc" ? (
+                    <ArrowDownward className="w-3.5 h-3.5 text-(--accent-base)" />
+                  ) : (
+                    <ArrowUpward className="w-3.5 h-3.5 text-(--accent-base)" />
+                  )}
+                </button>
+              </div>
 
-                {attRecordsLoading && !records ? (
-                  <div className="flex flex-col gap-2">
-                    {[...Array(3)].map((_, i) => (
-                      <div
-                        key={i}
-                        className="h-12 bg-(--bg-surface)/40 rounded-2xl animate-pulse"
-                      />
-                    ))}
-                  </div>
-                ) : records && records.length > 0 ? (
-                  <div className="flex flex-col gap-2">
-                    {records.map((rec, rIdx) => {
+              {attRecordsLoading && !records ? (
+                <div className="flex flex-col gap-2">
+                  {[...Array(3)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="h-12 bg-(--bg-surface)/40 rounded-2xl animate-pulse" />
+                  ))}
+                </div>
+              ) : sortedRecords && sortedRecords.length > 0 ? (
+                <div className="flex flex-col gap-2">
+                  {sortedRecords.map((rec, rIdx) => {
                       const isPresent = rec.status
                         .toLowerCase()
                         .includes("present");
@@ -556,8 +580,7 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
                       return (
                         <div
                           key={rIdx}
-                          className={`flex items-center justify-between px-4 py-2.5 rounded-xl font-mono transition-colors ${historyBg}`}
-                        >
+                          className={`flex items-center justify-between px-4 py-2.5 rounded-xl font-mono transition-colors ${historyBg}`}>
                           <div className="flex items-center gap-3">
                             <span className="text-xs font-bold leading-none">
                               {formattedDate}
@@ -586,13 +609,12 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
                     msg="No Records Found"
                     subMsg="No history records found for this class."
                     icon={Warning}
-                    className="h-auto min-h-36"
-                  />
+                    className="h-auto min-h-36" />
                 )}
               </div>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
+        
       </div>
     </div>
   );

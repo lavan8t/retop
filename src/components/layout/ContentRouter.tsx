@@ -26,6 +26,7 @@ export const ContentRouter = ({
   pinnedLinks,
   handleTogglePin,
   spotlightCategories,
+  onSync,
 }: any) => {
   const appState = useAppStore();
   const dataState = useDataStore();
@@ -46,12 +47,15 @@ export const ContentRouter = ({
           menuCategories={menu}
           onNavigate={handleLinkClick}
           ttCourses={dataState.ttCourses}
-          use24HourTime={settings.use24HourTime ?? true}
+          use24HourTime={settings.timeFormat ?? "12h"}
+
           calSemesters={dataState.calSemesters?.length ? dataState.calSemesters : dataState.ttSemesters}
           calSelectedSem={dataState.calSelectedSem || dataState.ttSelectedSem}
           pinnedLinks={pinnedLinks}
           handleTogglePin={handleTogglePin}
           spotlightCategories={spotlightCategories}
+          network={networkRef.current}
+          onSync={onSync}
         />
       );
     case "timetable":
@@ -62,7 +66,8 @@ export const ContentRouter = ({
           viewMode={appState.ttViewMode}
           setViewMode={appState.setTtViewMode}
           attendance={dataState.attendance}
-          use24HourTime={settings.use24HourTime ?? true}
+          use24HourTime={settings.timeFormat ?? "12h"}
+
         />
       );
     case "curriculum":

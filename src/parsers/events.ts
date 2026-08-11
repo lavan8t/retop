@@ -1,10 +1,10 @@
 import { Event } from "../types/vtop";
+import { parseHTMLFast } from "../utils/parser-utils";
 
 export function parseEvents(html: string): Event[] {
   if (!html) return [];
 
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
+  const doc = parseHTMLFast(html);
   const events: Event[] = [];
 
   const cards = doc.querySelectorAll(".card-body.small");

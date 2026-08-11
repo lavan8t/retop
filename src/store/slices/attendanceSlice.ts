@@ -15,6 +15,7 @@ export interface AttendanceSlice {
   fetchDetailedAttendance: (
     network: VTOPNetwork,
     semId: string,
+    forceRefresh?: boolean,
   ) => Promise<void>;
 
   attendanceRecords: Record<string, AttendanceRecord[]>;
@@ -33,21 +34,26 @@ export const createAttendanceSlice: StateCreator<DataState, [], [], AttendanceSl
     set({ attSelectedSem: semId, detailedAttendance: [] }),
   detailedAttendance: [],
   attLoading: false,
-  fetchDetailedAttendance: async (network, semId) => {
+  fetchDetailedAttendance: async (network, semId, forceRefresh = false) => {
     set({ attLoading: true });
     try {
-      const html = await network.fetchWithCache(`attendance_detailed_${semId}`, async () => {
-        return await network.fetchFragment("processViewStudentAttendance", {
-          semesterSubId: semId,
-        });
-      });
+      const html = await network.fetchWithCache(
+        `attendance_detailed_${semId}`,
+        async () => {
+          return await network.fetchFragment("processViewStudentAttendance", {
+            semesterSubId: semId,
+          });
+        },
+        forceRefresh,
+      );
       const data = parseStudentAttendance(html);
       set({ detailedAttendance: data, attLoading: false });
     } catch (e) {
       if (e instanceof Error && e.message === "OFFLINE_CACHE_MISS") {
          set({ status: "Offline - Not Synced" });
+      } else {
+         console.error("Failed to fetch detailed attendance:", e);
       }
-      console.error("Failed to fetch detailed attendance:", e);
       set({ attLoading: false });
     }
   },

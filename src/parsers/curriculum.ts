@@ -1,11 +1,11 @@
 import { CurriculumCategory, CurriculumCourse } from "../types/vtop";
+import { parseHTMLFast } from "../utils/parser-utils";
 
 export function parseCurriculumDashboard(html: string): {
   totalCredits: string;
   categories: CurriculumCategory[];
 } {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
+  const doc = parseHTMLFast(html);
 
   let totalCredits = "0";
   const allElements = doc.body.getElementsByTagName("*");
@@ -77,8 +77,7 @@ export function parseCurriculumDashboard(html: string): {
 }
 
 export function parseCurriculumCategoryTable(html: string): { courses: CurriculumCourse[], basketMaxCredits: Record<string, string> } {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
+  const doc = parseHTMLFast(html);
   
   const basketMap: Record<string, string> = {};
   const basketMaxCredits: Record<string, string> = {};

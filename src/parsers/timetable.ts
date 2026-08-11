@@ -1,8 +1,8 @@
 import { Semester, TimetableCourse } from "../types/vtop";
+import { parseHTMLFast } from "../utils/parser-utils";
 
 export function parseSemesters(html: string): Semester[] {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
+  const doc = parseHTMLFast(html);
   const options = doc.querySelectorAll("#semesterSubId option");
 
   const semesters: Semester[] = [];
@@ -27,8 +27,7 @@ export function parseSemesters(html: string): Semester[] {
 }
 
 export function parseTimetable(html: string): TimetableCourse[] {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
+  const doc = parseHTMLFast(html);
 
   const courses: TimetableCourse[] = [];
 

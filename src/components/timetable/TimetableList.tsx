@@ -1,18 +1,20 @@
 import React, { useEffect, useRef } from "react";
 import { TimetableCourse, CourseSummary } from "../../types/vtop";
+import { TimeFormatMode } from "../../utils/formatting";
+
 import {
   Person,
   Schedule,
   LocationOn,
   PieChart,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
-import { motion } from "framer-motion";
 import { useDataStore } from "../../store/dataStore";
 
 interface TimetableListProps {
   courses: TimetableCourse[];
   attendance: CourseSummary[];
-  use24HourTime?: boolean;
+  use24HourTime?: TimeFormatMode;
+
 }
 
 const getTypeBadge = (type: string) => {
@@ -38,7 +40,7 @@ const getTypeBadge = (type: string) => {
   return { label: t.slice(0, 2) || "TH", bg: "bg-cyan-500/25 text-cyan-300 font-black" };
 };
 
-export const TimetableList: React.FC<TimetableListProps> = ({
+export const TimetableList: React.FC<TimetableListProps> = React.memo(({
   courses,
   attendance,
 }) => {
@@ -48,8 +50,14 @@ export const TimetableList: React.FC<TimetableListProps> = ({
   useEffect(() => {
     if (highlightedCourseCode && highlightedRef.current) {
       highlightedRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      
+      const timeout = setTimeout(() => {
+        setHighlightedCourseCode(null);
+      }, 1200);
+      
+      return () => clearTimeout(timeout);
     }
-  }, [highlightedCourseCode]);
+  }, [highlightedCourseCode, setHighlightedCourseCode]);
 
   return (
     <div className="h-full w-full bg-(--bg-main) flex flex-col overflow-hidden relative">
@@ -77,31 +85,12 @@ export const TimetableList: React.FC<TimetableListProps> = ({
           const isHighlighted = highlightedCourseCode === c.code;
 
           return (
-            <motion.div
+            <div
               key={c.code + "-" + i}
               ref={isHighlighted ? (el) => { (highlightedRef as any).current = el; } : undefined}
-              initial={{ opacity: 0, y: 6 }}
-              animate={
+              className={`rounded-2xl p-4 md:px-5 md:py-4 flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-4 items-start md:items-center border transition-all duration-300 ${
                 isHighlighted
-                  ? {
-                      opacity: [1, 0.2, 1, 0.2, 1],
-                      scale: [1, 1.02, 1, 1.02, 1],
-                    }
-                  : { opacity: 1, y: 0 }
-              }
-              transition={
-                isHighlighted
-                  ? { duration: 1.2, times: [0, 0.25, 0.5, 0.75, 1] }
-                  : { delay: i * 0.02 }
-              }
-              onAnimationComplete={() => {
-                if (isHighlighted) {
-                  setHighlightedCourseCode(null);
-                }
-              }}
-              className={`rounded-2xl p-4 md:px-5 md:py-4 flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-4 items-start md:items-center border transition-colors ${
-                isHighlighted
-                  ? "bg-(--accent-base)/25 border-(--accent-base) ring-2 ring-(--accent-base)/50"
+                  ? "bg-(--accent-base)/25 border-(--accent-base) ring-2 ring-(--accent-base)/50 scale-[1.02]"
                   : "bg-(--bg-surface)/40 hover:bg-(--bg-surface)/80 border-transparent shadow-none"
               }`}
             >
@@ -173,10 +162,10 @@ export const TimetableList: React.FC<TimetableListProps> = ({
                   {hasAtt ? `${attStr}` : "N/A"}
                 </span>
               </div>
-            </motion.div>
+            </div>
           );
         })}
       </div>
     </div>
   );
-};
+});

@@ -1,12 +1,12 @@
 import { CalendarMonthPreview, CalendarEvent, ClassGroup } from "../types/vtop";
 import { normalizeSemesterLabel } from "../utils/formatting";
+import { parseHTMLFast } from "../utils/parser-utils";
 
 export function parseCalendarSemesters(
   html: string,
 ): { id: string; label: string; selected?: boolean }[] {
   if (!html) return [];
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
+  const doc = parseHTMLFast(html);
 
   const select = doc.getElementById("semesterSubId") as HTMLSelectElement;
   if (!select) return [];
@@ -34,8 +34,7 @@ export function parseCalendarGroupsAndMonths(html: string): {
   months: CalendarMonthPreview[];
 } {
   if (!html) return { groups: [], months: [] };
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
+  const doc = parseHTMLFast(html);
 
   // Extract Class Groups
   const groupSelect = doc.getElementById("classGroupId") as HTMLSelectElement;
@@ -98,10 +97,9 @@ export function parseCalendarDays(
   monthLabel: string,
 ): CalendarEvent[] {
   if (!html) return [];
-  const parser = new DOMParser();
   // VTOP HTML anomalies check
   const cleanHtml = html.replace(/<</g, "<");
-  const doc = parser.parseFromString(cleanHtml, "text/html");
+  const doc = parseHTMLFast(cleanHtml);
 
   const cells = doc.querySelectorAll(
     "table.calendar-table tbody td, table tbody td",
@@ -115,9 +113,17 @@ export function parseCalendarDays(
     const dayNumber = spans[0]?.textContent?.trim() || "";
     if (!dayNumber || isNaN(parseInt(dayNumber))) return;
 
-    const info = spans[1]?.textContent?.trim() || "";
-    const subInfo = spans[2]?.textContent?.trim() || "";
+    // Extract all text content except the day number, ignoring extra whitespaces/newlines
+    let rawText = (cell.textContent || "").trim();
+    // Replace all whitespaces/newlines with a single space
+    rawText = rawText.replace(/\s+/g, " ");
+    // Remove the day number if it appears at the start
+    let info = rawText;
+    if (info.startsWith(dayNumber)) {
+      info = info.substring(dayNumber.length).trim();
+    }
 
+    const subInfo = "";
     const lowerInfo = info.toLowerCase();
 
     // Status heuristics based on standard VTOP nomenclature
@@ -129,8 +135,9 @@ export function parseCalendarDays(
       lowerInfo.includes("fat") ||
       lowerInfo.includes("cat");
 
-    // Build an accurate date object for "TODAY" highlighting in the UI
-    const dateObj = new Date(`${dayNumber} ${monthLabel}`);
+    // Clean month label for strict parsers like Firefox ("July - 2026" -> "July 2026")
+    const safeMonthLabel = monthLabel.replace(/[^a-zA-Z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+    const dateObj = new Date(`${dayNumber} ${safeMonthLabel}`);
 
     days.push({
       dayNumber,

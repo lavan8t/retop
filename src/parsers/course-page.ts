@@ -6,9 +6,10 @@ import {
   CoursePageData,
 } from "../types/vtop";
 
+import { parseHTMLFast } from "../utils/parser-utils";
+
 export const parseCoursePage = (html: string): CoursePageData => {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
+  const doc = parseHTMLFast(html);
 
   const options: CoursePageOption[] = [];
   const select = doc.querySelector("select#courseId");

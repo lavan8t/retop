@@ -62,9 +62,10 @@ export function isSameDayExam(examDateStr: string, targetDate: Date): boolean {
   return false;
 }
 
+import { parseHTMLFast } from "../utils/parser-utils";
+
 export function parseExamSemesters(html: string): { id: string; label: string }[] {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
+  const doc = parseHTMLFast(html);
   
   const select = doc.getElementById("semesterSubId") as HTMLSelectElement;
   if (!select) return [];
@@ -86,8 +87,7 @@ export function parseExamSemesters(html: string): { id: string; label: string }[
 }
 
 export function parseExamScheduleData(html: string): { groups: ExamGroup[]; reportingNote: string } {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
+  const doc = parseHTMLFast(html);
 
   // Extract reporting note
   let reportingNote = "";

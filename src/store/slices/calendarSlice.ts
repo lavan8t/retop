@@ -1,5 +1,6 @@
 import { StateCreator } from "zustand";
 import { VTOPNetwork } from "../../utils/network";
+import { getCachedData, setCachedData } from "../../utils/cache";
 import {
   parseCalendarDays,
   parseCalendarGroupsAndMonths,
@@ -42,10 +43,6 @@ export interface CalendarSlice {
   calLoadingMonths: boolean;
   calLoadingGrid: boolean;
 
-  customEvents: CustomCalendarEvent[];
-  addCustomEvent: (evt: Omit<CustomCalendarEvent, "id">) => void;
-  removeCustomEvent: (id: string) => void;
-
   fetchCalendarMonthsAndGroups: (
     network: VTOPNetwork,
     semId: string,
@@ -55,17 +52,9 @@ export interface CalendarSlice {
     semId: string,
     groupId: string,
     months: CalendarMonthPreview[],
+    forceFetch?: boolean,
   ) => Promise<void>;
 }
-
-const loadSavedCustomEvents = (): CustomCalendarEvent[] => {
-  try {
-    const raw = localStorage.getItem("retop-custom-calendar-events");
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-};
 
 export const createCalendarSlice: StateCreator<DataState, [], [], CalendarSlice> = (set, get) => ({
   calSemesters: [],
@@ -94,53 +83,55 @@ export const createCalendarSlice: StateCreator<DataState, [], [], CalendarSlice>
   calLoadingMonths: false,
   calLoadingGrid: false,
 
-  customEvents: loadSavedCustomEvents(),
-  addCustomEvent: (evt) => {
-    const newEvt: CustomCalendarEvent = {
-      ...evt,
-      id: `custom_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-    };
-    const updated = [...get().customEvents, newEvt];
-    localStorage.setItem("retop-custom-calendar-events", JSON.stringify(updated));
-    set({ customEvents: updated });
-  },
-  removeCustomEvent: (id) => {
-    const updated = get().customEvents.filter((e) => e.id !== id);
-    localStorage.setItem("retop-custom-calendar-events", JSON.stringify(updated));
-    set({ customEvents: updated });
-  },
-
   fetchCalendarMonthsAndGroups: async (network, semId) => {
-    set({ calLoadingMonths: true, calAvailableMonths: [], calClassGroups: [] });
+    set({ calLoadingMonths: true });
     try {
-      const cacheKey = `retop-cal-groups-${semId}`;
-      const today = new Date().toDateString();
-      const cached = localStorage.getItem(cacheKey);
+      const cacheKey = `cal_groups_${semId}`;
+      const cached = await getCachedData<{ groups: ClassGroup[]; months: CalendarMonthPreview[] }>(cacheKey);
 
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (parsed.date === today && parsed.data) {
-          const savedGroup = localStorage.getItem("retop-cal-selected-group");
-          const defaultGroup = (savedGroup && parsed.data.groups.some(
-            (g: any) => g.id === savedGroup,
-          ))
-            ? savedGroup
-            : parsed.data.groups.length > 0
-              ? parsed.data.groups[0].id
-              : "";
+      let groups: ClassGroup[] = cached?.groups || [];
+      let months: CalendarMonthPreview[] = cached?.months || [];
 
-          if (defaultGroup) {
-            localStorage.setItem("retop-cal-selected-group", defaultGroup);
-          }
-
-          set({
-            calClassGroups: parsed.data.groups,
-            calAvailableMonths: parsed.data.months,
-            calSelectedGroup: defaultGroup,
-            calLoadingMonths: false,
-          });
-          return;
+      if (!groups.length || !months.length) {
+        const rawLocal = localStorage.getItem(`retop-cal-groups-${semId}`);
+        if (rawLocal) {
+          try {
+            const parsed = JSON.parse(rawLocal);
+            const data = parsed.data || parsed;
+            if (data?.groups && data?.months) {
+              groups = data.groups;
+              months = data.months;
+            }
+          } catch {}
         }
+      }
+
+      if (groups.length > 0 && months.length > 0) {
+        const savedGroup = localStorage.getItem("retop-cal-selected-group");
+        const defaultGroup = (savedGroup && groups.some((g) => g.id === savedGroup))
+          ? savedGroup
+          : (groups.length > 1 ? groups[1].id : groups[0]?.id || "");
+
+        if (defaultGroup) {
+          localStorage.setItem("retop-cal-selected-group", defaultGroup);
+        }
+
+        set({
+          calClassGroups: groups,
+          calAvailableMonths: months,
+          calSelectedGroup: defaultGroup,
+          calLoadingMonths: false,
+        });
+      }
+
+      const isOfflineMode =
+        (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
+        !network ||
+        !network.csrf;
+
+      if (isOfflineMode) {
+        set({ calLoadingMonths: false });
+        return;
       }
 
       const body = new URLSearchParams();
@@ -160,34 +151,35 @@ export const createCalendarSlice: StateCreator<DataState, [], [], CalendarSlice>
       });
 
       const html = await res.text();
-      const { groups, months } = parseCalendarGroupsAndMonths(html);
+      const parsed = parseCalendarGroupsAndMonths(html);
 
-      if (groups.length > 0 && months.length > 0) {
+      if (parsed.groups.length > 0 && parsed.months.length > 0) {
+        await setCachedData(cacheKey, { groups: parsed.groups, months: parsed.months });
         localStorage.setItem(
-          cacheKey,
-          JSON.stringify({ date: today, data: { groups, months } }),
+          `retop-cal-groups-${semId}`,
+          JSON.stringify({ date: new Date().toDateString(), data: { groups: parsed.groups, months: parsed.months } }),
         );
+
+        const savedGroup = localStorage.getItem("retop-cal-selected-group");
+        const defaultGroup = (savedGroup && parsed.groups.some((g) => g.id === savedGroup))
+          ? savedGroup
+          : (parsed.groups.length > 1 ? parsed.groups[1].id : parsed.groups[0]?.id || "");
+
+        if (defaultGroup) {
+          localStorage.setItem("retop-cal-selected-group", defaultGroup);
+        }
+
+        set({
+          calClassGroups: parsed.groups,
+          calAvailableMonths: parsed.months,
+          calSelectedGroup: defaultGroup,
+          calLoadingMonths: false,
+        });
+      } else {
+        set({ calLoadingMonths: false });
       }
-
-      const savedGroup = localStorage.getItem("retop-cal-selected-group");
-      const defaultGroup = (savedGroup && groups.some((g) => g.id === savedGroup))
-        ? savedGroup
-        : groups.length > 0
-          ? groups[0].id
-          : "";
-
-      if (defaultGroup) {
-        localStorage.setItem("retop-cal-selected-group", defaultGroup);
-      }
-
-      set({
-        calClassGroups: groups,
-        calAvailableMonths: months,
-        calSelectedGroup: defaultGroup,
-        calLoadingMonths: false,
-      });
     } catch (e) {
-      console.error("Failed to fetch months and groups:", e);
+      console.warn("Failed to fetch months and groups:", e);
       set({ calLoadingMonths: false });
     }
   },

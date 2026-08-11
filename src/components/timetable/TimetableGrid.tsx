@@ -6,7 +6,8 @@ import {
   CAMPUS_SLOT_TIMINGS,
   CAMPUS_SLOTS,
 } from "../../utils/timetable-slots";
-import { getCourseAcronym, formatTimeStr } from "../../utils/formatting";
+import { getCourseAcronym, formatTimeStr, TimeFormatMode } from "../../utils/formatting";
+
 import { LocationOn } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { useDataStore } from "../../store/dataStore";
 
@@ -14,15 +15,17 @@ const getAttendanceEmoji = (attendanceStr?: string) => {
   return "";
 };
 
-export const TimetableGrid = ({
+export const TimetableGrid = React.memo(({
   courses,
   attendance,
-  use24HourTime = true,
+  use24HourTime = "12h" as TimeFormatMode,
+
   onSelectCourse,
 }: {
   courses: TimetableCourse[];
   attendance: CourseSummary[];
-  use24HourTime?: boolean;
+  use24HourTime?: TimeFormatMode;
+
   onSelectCourse?: (code: string) => void;
 }) => {
   const [selectedCourse, setSelectedCourse] = useState<{
@@ -320,4 +323,4 @@ export const TimetableGrid = ({
       </div>
     </>
   );
-};
+});

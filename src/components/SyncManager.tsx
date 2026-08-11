@@ -20,7 +20,7 @@ export const SyncManager = () => {
     setLoading(true);
     try {
       const allKeys = await getAllCachedKeys();
-      setKeys(allKeys.sort((a, b) => b.timestamp - a.timestamp));
+      setKeys(allKeys.sort((a: { timestamp: number }, b: { timestamp: number }) => b.timestamp - a.timestamp));
     } catch (e) {
       console.error(e);
     } finally {

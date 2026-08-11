@@ -1,8 +1,8 @@
 import { Semester, GradeCourse, GradeAssessment, GradesData } from "../types/vtop";
+import { parseHTMLFast } from "../utils/parser-utils";
 
 export function parseGradesSemesters(html: string): Semester[] {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
+  const doc = parseHTMLFast(html);
 
   const select = doc.getElementById("semesterSubId") as HTMLSelectElement;
   if (!select) return [];
@@ -23,8 +23,7 @@ export function parseGradesSemesters(html: string): Semester[] {
 }
 
 export function parseGrades(html: string): GradesData {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
+  const doc = parseHTMLFast(html);
   const courses: GradeCourse[] = [];
   let gpa = "";
 
@@ -99,8 +98,7 @@ export function parseGrades(html: string): GradesData {
 }
 
 export function parseGradeDetails(html: string): Partial<GradeCourse> {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
+  const doc = parseHTMLFast(html);
   
   const result: Partial<GradeCourse> = {};
 
@@ -113,40 +111,38 @@ export function parseGradeDetails(html: string): Partial<GradeCourse> {
     if (statsRows.length >= 3) {
       const dataCells = statsRows[2].querySelectorAll("td");
       if (dataCells.length >= 11) {
-        result.classStrength = dataCells[0].textContent?.trim() || "";
-        result.gradingStrength = dataCells[1].textContent?.trim() || "";
-        result.mean = dataCells[2].textContent?.trim() || "";
-        result.sd = dataCells[3].textContent?.trim() || "";
-        
+        result.classStrength = dataCells[0]?.textContent?.trim() || "";
+        result.gradingStrength = dataCells[1]?.textContent?.trim() || "";
+        result.mean = dataCells[2]?.textContent?.trim() || "";
+        result.sd = dataCells[3]?.textContent?.trim() || "";
+
         result.gradesRange = {
-          S: dataCells[4].textContent?.trim() || "",
-          A: dataCells[5].textContent?.trim() || "",
-          B: dataCells[6].textContent?.trim() || "",
-          C: dataCells[7].textContent?.trim() || "",
-          D: dataCells[8].textContent?.trim() || "",
-          E: dataCells[9].textContent?.trim() || "",
-          F: dataCells[10].textContent?.trim() || "",
+          S: dataCells[4]?.textContent?.trim() || "",
+          A: dataCells[5]?.textContent?.trim() || "",
+          B: dataCells[6]?.textContent?.trim() || "",
+          C: dataCells[7]?.textContent?.trim() || "",
+          D: dataCells[8]?.textContent?.trim() || "",
+          E: dataCells[9]?.textContent?.trim() || "",
+          F: dataCells[10]?.textContent?.trim() || "",
         };
       }
     }
 
     // 2. Assessments Table
     const assTable = innerTables[1];
-    const assRows = assTable.querySelectorAll("tr");
+    const assRows = assTable.querySelectorAll("tbody tr");
     const assessments: GradeAssessment[] = [];
 
-    assRows.forEach(row => {
-      // skip headers (which have th)
-      if (row.querySelector("th")) return;
+    assRows.forEach((row) => {
       const cells = row.querySelectorAll("td");
       if (cells.length >= 7) {
         assessments.push({
-          title: cells[1].textContent?.trim() || "",
-          maxMark: cells[2].textContent?.trim() || "",
-          weightage: cells[3].textContent?.trim() || "",
-          status: cells[4].textContent?.trim() || "",
-          scoredMark: cells[5].textContent?.trim() || "",
-          weightageMark: cells[6].textContent?.trim() || ""
+          title: cells[1]?.textContent?.trim() || "",
+          maxMark: cells[2]?.textContent?.trim() || "",
+          weightage: cells[3]?.textContent?.trim() || "",
+          status: cells[4]?.textContent?.trim() || "",
+          scoredMark: cells[5]?.textContent?.trim() || "",
+          weightageMark: cells[6]?.textContent?.trim() || "",
         });
       }
     });
@@ -157,8 +153,7 @@ export function parseGradeDetails(html: string): Partial<GradeCourse> {
 }
 
 export function parseGradeHistory(html: string): import("../types/vtop").GradeHistoryData {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
+  const doc = parseHTMLFast(html);
 
   const data: import("../types/vtop").GradeHistoryData = {
     courses: [],

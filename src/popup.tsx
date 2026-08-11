@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { getExtUrl } from "./utils/url";
 import { PlayArrow, Pause, CloudOff } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { applyTheme, useSettingsStore } from "./utils/settings-store";
 
@@ -82,7 +83,7 @@ const Popup = () => {
         <div
           onClick={() => {
             chrome.tabs.create({
-              url: chrome.runtime.getURL("dist/offline.html"),
+              url: "https://getretop.web.app/",
             });
             window.close();
           }}

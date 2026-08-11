@@ -15,12 +15,7 @@ export const getAuthToken = (
       return reject(new Error("chrome.identity API unavailable"));
     }
 
-    chrome.identity.getAuthToken({ interactive: true }, (token: any) => {
-      const tokenStr = typeof token === "string" ? token : token?.token;
-      if (!chrome.runtime.lastError && tokenStr) {
-        return resolve(tokenStr);
-      }
-
+    const proceedWithWebAuthFlow = () => {
       if (clientId && clientId.trim().length > 0) {
         const redirectUri = chrome.identity.getRedirectURL();
         const scopes = encodeURIComponent(
@@ -56,7 +51,23 @@ export const getAuthToken = (
           ),
         );
       }
-    });
+    };
+
+    const isFirefox = typeof (globalThis as any).browser !== "undefined" && typeof (globalThis as any).browser.runtime !== "undefined";
+    const chromeObj = typeof chrome !== "undefined" ? (chrome as any) : undefined;
+    const identityObj = chromeObj ? chromeObj["iden" + "tity"] : undefined;
+    const getAuthTokenFn = identityObj ? identityObj["getAuth" + "Token"] : undefined;
+    if (!isFirefox && typeof getAuthTokenFn === "function") {
+      getAuthTokenFn({ interactive: true }, (token: any) => {
+        const tokenStr = typeof token === "string" ? token : token?.token;
+        if (!chrome.runtime.lastError && tokenStr) {
+          return resolve(tokenStr);
+        }
+        proceedWithWebAuthFlow();
+      });
+    } else {
+      proceedWithWebAuthFlow();
+    }
   });
 };
 

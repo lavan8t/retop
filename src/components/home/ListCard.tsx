@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { Card } from "../ui/Card";
 import { NorthEast } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 
@@ -13,7 +12,6 @@ export const ListCard = ({
   children,
 }: any) => (
   <Card
-    layout
     onClick={onClick}
     borderClass={borderClass}
     className={`
@@ -42,16 +40,10 @@ export const ListCard = ({
       </div>
     </div>
 
-    <motion.div
-      variants={{
-        hidden: { opacity: 0 },
-        show: { opacity: 1, transition: { duration: 0.2 } }
-      }}
-      initial="hidden"
-      animate="show"
-      className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar bg-(--bg-highlight)"
+    <div
+      className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar bg-(--bg-highlight) transition-opacity duration-200"
     >
       {children}
-    </motion.div>
+    </div>
   </Card>
 );

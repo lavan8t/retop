@@ -1,5 +1,6 @@
 import { renderDashboard } from "./pages/app";
 import { scrapeMenu } from "./parsers/menu";
+import { saveUserPin, getUserPinRecord } from "./utils/pinSecurity";
 import {
   injectGlobalStyles,
   injectGlobalFonts,
@@ -13,6 +14,8 @@ import { createRoot } from "react-dom/client";
 import { NativePortals } from "./components/NativePortals";
 import { asciiArtTT, asciiArtSMV, asciiArtMGR } from "./components/asciiArt";
 import { autoSolveCaptcha } from "./utils/captchaSolver";
+import { getExtUrl } from "./utils/url";
+import { interceptDashboardResponse } from "./utils/dashboardInterceptor";
 
 const vtopContext = {
   csrf: "",
@@ -20,10 +23,33 @@ const vtopContext = {
 };
 
 // Apply theme immediately to prevent flashing, but strictly ignore /open/page
+const decodeStoragePayload = (str: any): string => {
+  if (typeof str !== "string") return str;
+  try {
+    if (str.startsWith("enc_")) {
+      return decodeURIComponent(atob(str.slice(4)));
+    }
+    return str;
+  } catch {
+    return str;
+  }
+};
+
+const parseSettingsPayload = (raw: any): any => {
+  if (!raw) return null;
+  try {
+    const decoded = typeof raw === "string" ? decodeStoragePayload(raw) : raw;
+    const parsed = typeof decoded === "string" ? JSON.parse(decoded) : decoded;
+    return parsed?.state?.settings || parsed?.settings || (parsed?.defaultView ? parsed : null);
+  } catch (e) {
+    return null;
+  }
+};
+
 const applyThemeFromSettings = (saved: any) => {
   try {
-    const data = typeof saved === "string" ? JSON.parse(saved) : saved;
-    const settings = data.state?.settings || data;
+    const settings = parseSettingsPayload(saved);
+    if (!settings) return;
     if (settings.themeMode) {
       let activeTheme = settings.themeMode;
       if (activeTheme === "auto") {
@@ -83,8 +109,9 @@ const isPreloginOrLoginPage =
   );
 
 const isContentPage =
-  isTopWindow &&
-  window.location.pathname.includes("/vtop/content");
+  window.location.pathname.includes("/vtop/content") ||
+  window.location.pathname.includes("/vtop/process") ||
+  window.location.pathname.includes("/vtop/main");
 
 if (isPreloginOrLoginPage || isContentPage) {
   injectSplashScreen();
@@ -93,13 +120,12 @@ if (isPreloginOrLoginPage || isContentPage) {
     const earlyLink = document.createElement("link");
     earlyLink.id = "vtop-early-theme";
     earlyLink.rel = "stylesheet";
-    earlyLink.href = chrome.runtime.getURL("dist/prelogin.css");
+    earlyLink.href = getExtUrl("dist/prelogin.css");
     (document.head || document.documentElement).appendChild(earlyLink);
   }
 }
 
-
-const originalFetch = window.fetch;
+const originalFetch = window.fetch.bind(window);
 
 let isHandlingNetworkError = false;
 
@@ -146,14 +172,14 @@ function showErrorDialog(
     font-family: 'Google Sans Flex', system-ui, sans-serif !important;
   `;
 
-  dialog.innerHTML = `
+  const parsedDoc = new DOMParser().parseFromString(`
     <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(239, 68, 68, 0.2), transparent, transparent); pointer-events: none;"></div>
     
-    <div style="margin-top: auto; width: 100%; display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 24px 48px; box-sizing: border-box; pointer-events: auto; background: linear-gradient(to top, var(--bg-main, #000) 40%, transparent); backdrop-filter: blur(2px);">
+    <div style="margin-top: auto; width: 100%; display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 24px 48px; box-sizing: border-box; pointer-events: auto; background: linear-gradient(to top, var(--bg-main, #000) 40%, transparent);">
       
       <div style="display: flex; align-items: center; gap: 16px;">
         <span class="material-symbols-rounded" style="color: #ef4444; font-size: 40px;">warning</span>
-        <div style="display: flex; flex-direction: column; text-align: left;">
+        <div style="display: flex; flex-direction: column; text-align: right;">
           <h1 style="font-size: 24px; font-weight: 900; color: var(--text-main, #fff); margin: 0; text-transform: uppercase; font-family: 'Google Sans Flex', sans-serif; line-height: 1;">${title}</h1>
           <p style="font-size: 14px; font-family: monospace; color: #f87171; margin: 6px 0 0; max-width: 600px; white-space: pre-wrap;">${message}</p>
         </div>
@@ -165,7 +191,10 @@ function showErrorDialog(
       </button>
       
     </div>
-  `;
+  `, "text/html");
+  while (parsedDoc.body.firstChild) {
+    dialog.appendChild(parsedDoc.body.firstChild);
+  }
 
   document.body.appendChild(dialog);
 
@@ -178,11 +207,17 @@ function showErrorDialog(
   }
 }
 
-window.fetch = async (...args) => {
+(window as any).fetch = async (...args: [any, any?]) => {
   try {
     const response = await originalFetch(...args);
+    const urlStr = typeof args[0] === "string" ? args[0] : (args[0] as any)?.url || "";
+    if (response.ok && urlStr) {
+      try {
+        const clone = response.clone();
+        clone.text().then((text) => interceptDashboardResponse(urlStr, text)).catch(() => {});
+      } catch (e) {}
+    }
     if (
-      response.status === 404 ||
       response.status === 401 ||
       response.status === 403
     ) {
@@ -190,8 +225,6 @@ window.fetch = async (...args) => {
     }
     return response;
   } catch (error: any) {
-    // If the browser is offline, it's a real network error
-    // If online, it's likely an aborted fetch due to page navigation
     if (!navigator.onLine) {
       handleNetworkError();
     }
@@ -204,8 +237,17 @@ XMLHttpRequest.prototype.open = function (
   this: XMLHttpRequest,
   ...args: any[]
 ) {
+  const urlStr = args[1] ? String(args[1]) : "";
   this.addEventListener("load", function () {
-    if (this.status === 404 || this.status === 401 || this.status === 403) {
+    if (this.status === 200 && urlStr) {
+      try {
+        const responseText = this.responseText;
+        if (typeof responseText === "string") {
+          interceptDashboardResponse(urlStr, responseText);
+        }
+      } catch (e) {}
+    }
+    if (this.status === 401 || this.status === 403) {
       handleNetworkError(this.status);
     }
   });
@@ -216,6 +258,28 @@ XMLHttpRequest.prototype.open = function (
   });
   return originalXhrOpen.apply(this, args as any);
 };
+
+try {
+  const originalResponseTypeDesc = Object.getOwnPropertyDescriptor(
+    XMLHttpRequest.prototype,
+    "responseType",
+  );
+  if (originalResponseTypeDesc && originalResponseTypeDesc.set) {
+    const origSet = originalResponseTypeDesc.set;
+    Object.defineProperty(XMLHttpRequest.prototype, "responseType", {
+      set: function (val: any) {
+        try {
+          origSet.call(this, val);
+        } catch (e) {
+          // Ignore invalid enum values (e.g. moz-chunked-arraybuffer in Chrome)
+        }
+      },
+      get: originalResponseTypeDesc.get,
+      configurable: true,
+      enumerable: true,
+    });
+  }
+} catch (e) {}
 
 const init = async () => {
   console.log("[retop] Initializing...");
@@ -248,13 +312,9 @@ const init = async () => {
 
   if (settingsResult) {
     try {
-      const data =
-        typeof settingsResult === "string"
-          ? JSON.parse(settingsResult as string)
-          : settingsResult;
-      const settings = data.state?.settings || data;
+      const settings = parseSettingsPayload(settingsResult);
       if (
-        settings.defaultView === "legacy" &&
+        settings?.defaultView === "legacy" &&
         sessionStorage.getItem("vtop-legacy-mode") === null
       ) {
         sessionStorage.setItem("vtop-legacy-mode", "true");
@@ -292,10 +352,13 @@ const init = async () => {
   document.body.classList.add("show-legacy-ui");
 
   // Mount native portals for injected React icons over legacy VTOP UI
-  const portalsRoot = document.createElement("div");
-  portalsRoot.id = "retop-native-portals";
-  document.body.appendChild(portalsRoot);
-  createRoot(portalsRoot).render(React.createElement(NativePortals));
+  let portalsRoot = document.getElementById("retop-native-portals");
+  if (!portalsRoot) {
+    portalsRoot = document.createElement("div");
+    portalsRoot.id = "retop-native-portals";
+    document.body.appendChild(portalsRoot);
+    createRoot(portalsRoot).render(React.createElement(NativePortals));
+  }
 
   const isRoleSelection =
     document.getElementById("stdForm") !== null ||
@@ -333,24 +396,27 @@ const init = async () => {
 
     console.log("[retop] Open/login page styled and revealed");
 
-    document.addEventListener(
-      "click",
-      (e) => {
-        const target = e.target as HTMLElement;
-        const form = target.closest("form");
-        if (form && form.id) {
-          if (form.id === "stdForm")
-            chrome.storage.local.set({ "retop-user-role": "student" });
-          if (form.id === "empForm")
-            chrome.storage.local.set({ "retop-user-role": "employee" });
-          if (form.id === "parentForm")
-            chrome.storage.local.set({ "retop-user-role": "parent" });
-          if (form.id === "alumniForm")
-            chrome.storage.local.set({ "retop-user-role": "alumni" });
-        }
-      },
-      true,
-    );
+    if (!(window as any).__retop_click_listener_attached) {
+      (window as any).__retop_click_listener_attached = true;
+      document.addEventListener(
+        "click",
+        (e) => {
+          const target = e.target as HTMLElement;
+          const form = target.closest("form");
+          if (form && form.id) {
+            if (form.id === "stdForm")
+              chrome.storage.local.set({ "retop-user-role": "student" });
+            if (form.id === "empForm")
+              chrome.storage.local.set({ "retop-user-role": "employee" });
+            if (form.id === "parentForm")
+              chrome.storage.local.set({ "retop-user-role": "parent" });
+            if (form.id === "alumniForm")
+              chrome.storage.local.set({ "retop-user-role": "alumni" });
+          }
+        },
+        true,
+      );
+    }
 
     // SKIP ROLE SELECTION: When enabled in settings, auto-select student
     // role and proceed to login, bypassing /open/page role picker.
@@ -359,8 +425,7 @@ const init = async () => {
         const skipResult = await new Promise<any>((resolve) => {
           chrome.storage.local.get("retop-settings", (res) => resolve(res["retop-settings"]));
         });
-        const skipData = typeof skipResult === "string" ? JSON.parse(skipResult) : skipResult;
-        const skipSettings = skipData?.state?.settings || skipData;
+        const skipSettings = parseSettingsPayload(skipResult);
         if (skipSettings?.skipRoleSelection) {
           const stdForm = document.getElementById("stdForm") as HTMLFormElement;
           if (stdForm) {
@@ -429,10 +494,95 @@ const init = async () => {
     }
 
     renderDashboard();
+    if (vtopContext.authId) {
+      promptOfflinePinSetup(vtopContext.authId);
+    }
   } else {
     document.body.classList.add("show-legacy-ui");
     removeSplashScreen();
   }
+};
+
+const promptOfflinePinSetup = async (regNo: string) => {
+  if (!regNo || document.getElementById("retop-offline-pin-toast")) return;
+
+  // Delay slightly so dashboard renders first
+  await new Promise((r) => setTimeout(r, 1200));
+
+  if (document.getElementById("retop-offline-pin-toast")) return;
+
+  try {
+    const record = await getUserPinRecord(regNo);
+    if (record) return;
+  } catch {}
+
+  const toast = document.createElement("div");
+  toast.id = "retop-offline-pin-toast";
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 999999;
+    background: #18181b;
+    color: #ffffff;
+    border: 2px solid #3f3f46;
+    padding: 16px 20px;
+    border-radius: 20px;
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);
+    font-family: 'Google Sans Flex', system-ui, sans-serif;
+    max-width: 340px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    animation: retopSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  `;
+
+  const toastHtml = `
+    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(59,130,246,0.15); color: #3b82f6; border: 1px solid rgba(59,130,246,0.3); display: flex; align-items: center; justify-content: center; font-weight: bold;">⚡</div>
+        <div>
+          <div style="font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">Setup Offline Mode PIN</div>
+          <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Protect & access your profile offline anytime</div>
+        </div>
+      </div>
+      <button id="retop-pin-toast-close" style="background: none; border: none; color: #94a3b8; font-size: 16px; cursor: pointer; padding: 0;">✕</button>
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <input id="retop-pin-toast-input" type="password" maxlength="4" placeholder="4 Digits" style="flex: 1; background: #09090b; border: 2px solid #3f3f46; color: #fff; text-align: center; border-radius: 12px; height: 38px; font-family: monospace; font-size: 16px; letter-spacing: 0.3em; outline: none;" />
+      <button id="retop-pin-toast-submit" style="background: #2563eb; color: #fff; border: none; font-weight: 700; font-size: 12px; border-radius: 12px; height: 38px; padding: 0 16px; cursor: pointer; white-space: nowrap;">Save PIN</button>
+    </div>
+    <div id="retop-pin-toast-status" style="font-size: 11px; color: #10b981; font-weight: 600; display: none;">✓ Security PIN Encrypted & Saved!</div>
+  `;
+  const parsedToastDoc = new DOMParser().parseFromString(toastHtml, "text/html");
+  while (parsedToastDoc.body.firstChild) {
+    toast.appendChild(parsedToastDoc.body.firstChild);
+  }
+
+  document.body.appendChild(toast);
+
+  const closeBtn = document.getElementById("retop-pin-toast-close");
+  const submitBtn = document.getElementById("retop-pin-toast-submit");
+  const inputEl = document.getElementById("retop-pin-toast-input") as HTMLInputElement;
+  const statusEl = document.getElementById("retop-pin-toast-status");
+
+  closeBtn?.addEventListener("click", () => toast.remove());
+
+  submitBtn?.addEventListener("click", async () => {
+    const val = inputEl.value.trim();
+    if (val.length === 4) {
+      await saveUserPin(regNo, val);
+      if (statusEl) statusEl.style.display = "block";
+      setTimeout(() => {
+        toast.remove();
+      }, 1800);
+    } else {
+      inputEl.style.borderColor = "#ef4444";
+      setTimeout(() => {
+        inputEl.style.borderColor = "#3f3f46";
+      }, 1000);
+    }
+  });
 };
 
 function waitForTokens(): Promise<boolean> {
@@ -470,11 +620,28 @@ const injectPreloginTheme = () => {
   const link = document.createElement("link");
   link.id = "vtop-prelogin-theme";
   link.rel = "stylesheet";
-  link.href = chrome.runtime.getURL("dist/prelogin.css");
+  link.href = getExtUrl("dist/prelogin.css");
   document.head.appendChild(link);
 
   document.addEventListener("click", (e) => {
     const target = e.target as HTMLElement;
+
+    const roleCard = target.closest(".cardStudent, .cardEmployee, .cardParent, .cardAlumni") as HTMLElement;
+    if (roleCard) {
+      const form = roleCard.querySelector("form") as HTMLFormElement;
+      if (form) {
+        try {
+          form.submit();
+          return;
+        } catch {}
+      }
+      const link = roleCard.querySelector("a") as HTMLElement;
+      if (link && target !== link) {
+        link.click();
+        return;
+      }
+    }
+
     const item = target.closest(".list-group-item, .spotlightMsgDivs li, .spotlight-background li");
     if (item) {
       const link = item.querySelector("a, button[data-spotlighttitle]") as HTMLElement;
@@ -495,7 +662,7 @@ const injectLoginTheme = () => {
   const link = document.createElement("link");
   link.id = "vtop-login-theme";
   link.rel = "stylesheet";
-  link.href = chrome.runtime.getURL("dist/login.css");
+  link.href = getExtUrl("dist/login.css");
   document.head.appendChild(link);
 
   // Remove native Person Icon Wrapper if it exists
@@ -504,16 +671,57 @@ const injectLoginTheme = () => {
     userIconWrapper.style.display = "none";
   }
 
-  const passIconWrapper = document.getElementById("basic-addon2");
-  if (passIconWrapper) {
-    // Restore the SVG with the animated retop-eye-strike
-    passIconWrapper.innerHTML = `
-      <svg id="passwordIcon" class="fa fa-eye lucide lucide-eye" onclick="javascript:toggleEye();" style="cursor: pointer; width: 24px; height: 24px; stroke: currentColor; fill: none;" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-        <circle cx="12" cy="12" r="3" />
-        <line x1="2" y1="2" x2="22" y2="22" class="retop-eye-strike" />
-      </svg>
-    `;
+  const passIconWrapper = document.getElementById("basic-addon2") || document.getElementById("passwordIcon")?.parentElement;
+  const existingEye = document.getElementById("passwordIcon");
+
+  const createEyeSvg = () => {
+    // Material Symbols "visibility" (filled, 700 weight) — rendered via innerHTML
+    // to avoid DOMParser XML namespace issue that prevents rendering in HTML documents
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = `
+      <svg id="passwordIcon" class="fa fa-eye" xmlns="http://www.w3.org/2000/svg" style="cursor: pointer; width: 24px; height: 24px; display: inline-block; vertical-align: middle;" viewBox="0 -960 960 960" fill="currentColor">
+        <path class="retop-eye-open" d="M480-320q75 0 127.5-52.5T660-500q0-75-52.5-127.5T480-680q-75 0-127.5 52.5T300-500q0 75 52.5 127.5T480-320Zm0-72q-45 0-76.5-31.5T372-500q0-45 31.5-76.5T480-608q45 0 76.5 31.5T588-500q0 45-31.5 76.5T480-392Zm0 192q-146 0-266-81.5T40-500q54-137 174-218.5T480-800q146 0 266 81.5T920-500q-54 137-174 218.5T480-200Z" />
+        <path class="retop-eye-off" style="display:none" d="m644-428-58-58q9-47-27-88t-93-32l-58-58q17-8 35.5-12t36.5-4q75 0 127.5 52.5T660-500q0 18-4 36.5T644-428Zm128 126-58-56q38-29 67.5-63.5T832-500q-50-111-150-175.5T480-740q-29 0-57 4t-55 12l-62-62q41-17 84-25.5t90-8.5q151 0 269 83.5T920-500q-23 59-60.5 109.5T772-302Zm20 246L624-222q-35 11-70.5 16.5T480-200q-151 0-269-83.5T40-500q21-53 53-98.5t73-81.5L56-792l56-56 736 736-56 56ZM222-624q-29 26-53 57t-41 67q50 111 150 175.5T480-260q22 0 43-3t39-8l-46-46q-14 5-28 7.5t-28 2.5q-75 0-127.5-52.5T300-500q0-14 2.5-28t7.5-28l-90-68Z" />
+      </svg>`;
+    const svg = wrapper.firstElementChild as SVGElement;
+
+    svg.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const passInput = (document.getElementById("password") || document.querySelector("input[type='password'], input[name='password']")) as HTMLInputElement;
+      if (passInput) {
+        const openPath = svg.querySelector(".retop-eye-open") as SVGElement;
+        const offPath = svg.querySelector(".retop-eye-off") as SVGElement;
+        if (passInput.type === "password") {
+          passInput.type = "text";
+          svg.classList.remove("fa-eye");
+          svg.classList.add("fa-eye-slash");
+          if (openPath) openPath.style.display = "none";
+          if (offPath) offPath.style.display = "";
+        } else {
+          passInput.type = "password";
+          svg.classList.remove("fa-eye-slash");
+          svg.classList.add("fa-eye");
+          if (openPath) openPath.style.display = "";
+          if (offPath) offPath.style.display = "none";
+        }
+      }
+
+      if (typeof (window as any).toggleEye === "function") {
+        try { (window as any).toggleEye(); } catch {}
+      }
+    });
+
+    return svg;
+  };
+
+  if (existingEye && existingEye.tagName.toLowerCase() !== "svg") {
+    const svg = createEyeSvg();
+    existingEye.parentNode?.replaceChild(svg, existingEye);
+  } else if (passIconWrapper && !passIconWrapper.querySelector("svg#passwordIcon")) {
+    const svg = createEyeSvg();
+    passIconWrapper.replaceChildren(svg);
   }
 
   // Replace Home link with SVG Icon globally
@@ -542,7 +750,11 @@ const injectLoginTheme = () => {
             link.tagName.toLowerCase() === "div"
           ) {
             const newBtn = document.createElement("button");
-            newBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" fill="currentColor"><path d="M126-212v-342q0-30 13-56.5t37-44.5l228-171q34-26 76-26t76 26l228 171q24 18 37 44.5t13 56.5v342q0 53-36.5 89.5T708-86h-77q-26 0-44.5-18.5T568-149v-196q0-26-18.5-44.5T505-408h-50q-26 0-44.5 18.5T392-345v196q0 26-18.5 44.5T329-86h-77q-53 0-89.5-36.5T126-212" /></svg>`;
+            const svgDoc1 = new DOMParser().parseFromString(
+              `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" fill="currentColor"><path d="M126-212v-342q0-30 13-56.5t37-44.5l228-171q34-26 76-26t76 26l228 171q24 18 37 44.5t13 56.5v342q0 53-36.5 89.5T708-86h-77q-26 0-44.5-18.5T568-149v-196q0-26-18.5-44.5T505-408h-50q-26 0-44.5 18.5T392-345v196q0 26-18.5 44.5T329-86h-77q-53 0-89.5-36.5T126-212" /></svg>`,
+              "image/svg+xml"
+            );
+            if (svgDoc1.documentElement) newBtn.appendChild(svgDoc1.documentElement);
             newBtn.className = "retop-home-icon";
             newBtn.style.border = "none";
             newBtn.style.background = "transparent";
@@ -566,7 +778,11 @@ const injectLoginTheme = () => {
               link.parentNode.replaceChild(newBtn, link);
             }
           } else {
-            link.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" fill="currentColor"><path d="M126-212v-342q0-30 13-56.5t37-44.5l228-171q34-26 76-26t76 26l228 171q24 18 37 44.5t13 56.5v342q0 53-36.5 89.5T708-86h-77q-26 0-44.5-18.5T568-149v-196q0-26-18.5-44.5T505-408h-50q-26 0-44.5 18.5T392-345v196q0 26-18.5 44.5T329-86h-77q-53 0-89.5-36.5T126-212" /></svg>`;
+            const svgDoc2 = new DOMParser().parseFromString(
+              `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" fill="currentColor"><path d="M126-212v-342q0-30 13-56.5t37-44.5l228-171q34-26 76-26t76 26l228 171q24 18 37 44.5t13 56.5v342q0 53-36.5 89.5T708-86h-77q-26 0-44.5-18.5T568-149v-196q0-26-18.5-44.5T505-408h-50q-26 0-44.5 18.5T392-345v196q0 26-18.5 44.5T329-86h-77q-53 0-89.5-36.5T126-212" /></svg>`,
+              "image/svg+xml"
+            );
+            link.replaceChildren(svgDoc2.documentElement);
             link.className = "retop-home-icon"; // completely overwrite classes
             (link as HTMLElement).style.border = "none";
             (link as HTMLElement).style.background = "transparent";
@@ -616,7 +832,21 @@ const injectLoginTheme = () => {
       mergedDiv.id = "retop-merged-footer";
       mergedDiv.className = "retop-forgot-links";
 
-      mergedDiv.innerHTML = `Forgot <a href="javascript:void(0)" onclick="javascript:resetPassword()">password</a> or <a href="javascript:void(0)" onclick="javascript:forgotUserID()">login ID</a>?`;
+      const forgotSpan = document.createElement("span");
+      forgotSpan.textContent = "Forgot ";
+      const passA = document.createElement("a");
+      passA.href = "javascript:void(0)";
+      passA.setAttribute("onclick", "javascript:resetPassword()");
+      passA.textContent = "password";
+      const orSpan = document.createElement("span");
+      orSpan.textContent = " or ";
+      const idA = document.createElement("a");
+      idA.href = "javascript:void(0)";
+      idA.setAttribute("onclick", "javascript:forgotUserID()");
+      idA.textContent = "login ID";
+      const qSpan = document.createElement("span");
+      qSpan.textContent = "?";
+      mergedDiv.append(forgotSpan, passA, orSpan, idA, qSpan);
 
       resetPassLink.remove();
       forgotUserIdLink.remove();
@@ -806,7 +1036,7 @@ const injectLoginTheme = () => {
     const vitLogo = header.querySelector("img.VITEmblem") as HTMLImageElement;
     if (vitLogo && vitLogo.id !== "retop-react-logo") {
       vitLogo.id = "retop-react-logo";
-      vitLogo.src = chrome.runtime.getURL("dist/assets/vitLogo.svg");
+      vitLogo.src = getExtUrl("dist/assets/vitLogo.svg");
     }
 
     // Remove the "VIT" text properly
@@ -818,7 +1048,7 @@ const injectLoginTheme = () => {
     // Transform the campus text to fit the new width
     const navbarText = header.querySelector(".navbar-text");
     if (navbarText && !navbarText.classList.contains("retop-campus-text")) {
-      navbarText.innerHTML = "VELLORE CAMPUS";
+      navbarText.textContent = "VELLORE CAMPUS";
       navbarText.classList.add("retop-campus-text");
     }
 
@@ -844,12 +1074,8 @@ const injectLoginTheme = () => {
     
     const asciiArt = rawArt.replace(/\r/g, "");
 
-    // Force left alignment for grid arts, except MGR which centers
-    if (pickedArt !== "MGR") {
-      asciiPre.style.setProperty("text-align", "left", "important");
-    } else {
-      asciiPre.style.removeProperty("text-align");
-    }
+    // Force right alignment for ASCII art
+    asciiPre.style.setProperty("text-align", "right", "important");
 
     if (pickedArt === "PRP") {
       asciiPre.style.letterSpacing = "0px";
@@ -1112,11 +1338,10 @@ const injectLoginTheme = () => {
 
   chrome.storage.local.get("retop-settings", (result) => {
     try {
-      const savedSettings = result["retop-settings"] as string;
+      const savedSettings = result["retop-settings"];
       if (savedSettings) {
-        // Zustand persist wraps state in { state: { ... }, version: ... }
-        const parsed = JSON.parse(savedSettings);
-        const settings = parsed.state?.settings || parsed;
+        const settings = parseSettingsPayload(savedSettings);
+        if (settings) {
 
         const MATERIAL_ACCENTS: Record<string, string> = {
           blue: "#2563eb",
@@ -1146,6 +1371,7 @@ const injectLoginTheme = () => {
           activeTheme = hour >= 6 && hour < 18 ? "light" : "dark";
         }
         document.documentElement.setAttribute("data-theme", activeTheme);
+        }
       }
     } catch (err) {
       console.warn(
@@ -1154,6 +1380,49 @@ const injectLoginTheme = () => {
       );
     }
   });
+
+  document.title = "Login - retop";
+
+  // Inject Offline Access Button (bottom-left corner)
+  if (!document.getElementById("retop-offline-btn")) {
+    const offlineBtn = document.createElement("a");
+    offlineBtn.id = "retop-offline-btn";
+    offlineBtn.href = "https://getretop.web.app/";
+    offlineBtn.target = "_blank";
+    offlineBtn.rel = "noopener noreferrer";
+    offlineBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px;flex-shrink:0;" viewBox="0 -960 960 960" fill="currentColor"><path d="m880-80-82-82q-42 29-91 45.5T600-100q-58 0-111-18t-98-52l56-56q34 24 74 37.5t79 13.5q26 0 50.5-5t48.5-15L522-372q-4 1-8.5 2t-9.5 2l-56-56q18-4 35.5-9.5T518-448L328-638q-30 38-51 82.5T244-460h-80q15-100 57.5-171T316-744L80-980l56-56 800 800-56 56ZM556-540l-56-56q36-20 74.5-37T646-660q-40-14-82-22t-84-10v80h-80v-80q-58 2-111.5 16T184-646l-58-58q60-42 130-63t144-23v-90h80v90q70 2 133.5 20T738-718l-62 62q-24-14-50-24.5T572-696q-28 10-53 22.5T472-646q26 4 50.5 12t48.5 18l-58 58q-18-8-37-13.5T436-580l-56-56 176 96Zm124 180-58-58q14-28 23-57.5t13-60.5h-78l-80-80h238q-14 100-56.5 171T680-360Z"/></svg> No internet?`;
+    offlineBtn.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      left: 24px;
+      z-index: 99999;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: transparent;
+      color: var(--text-muted, #94a3b8);
+      border: none;
+      border-radius: 9999px;
+      padding: 8px 16px;
+      font-family: 'Google Sans Flex', system-ui, sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      letter-spacing: 0.03em;
+    `;
+    offlineBtn.addEventListener("mouseenter", () => {
+      offlineBtn.style.background = "rgba(255, 255, 255, 0.1)";
+      offlineBtn.style.color = "#ffffff";
+    });
+    offlineBtn.addEventListener("mouseleave", () => {
+      offlineBtn.style.background = "transparent";
+      offlineBtn.style.color = "var(--text-muted, #94a3b8)";
+    });
+    document.body.appendChild(offlineBtn);
+  }
 };
 
 const enhanceLegacyLogin = () => {

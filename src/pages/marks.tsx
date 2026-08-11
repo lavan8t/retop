@@ -8,7 +8,7 @@ import {
   Person,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { EmptyState } from "../components/EmptyState";
-import { motion, AnimatePresence } from "framer-motion";
+
 import { useDataStore } from "../store/dataStore";
 import { OfflineNotSynced } from "../components/ui/OfflineNotSynced";
 
@@ -38,7 +38,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({
 
   useEffect(() => {
     const init = async () => {
-      if (semesters.length > 0) {
+      if (semesters.length> 0) {
         setLoading(false);
         return;
       }
@@ -57,14 +57,15 @@ export const MarksPage: React.FC<MarksPageProps> = ({
           isLatest: s.isLatest,
         }));
         setSemesters(dropdownSems);
-        if (sems.length > 0 && !selectedSem) {
+        if (sems.length> 0 && !selectedSem) {
           setSelectedSem(sems[0].id);
         }
       } catch (e) {
         if (e instanceof globalThis.Error && e.message === "OFFLINE_CACHE_MISS") {
           setOfflineMiss(true);
+        } else {
+          console.error(e);
         }
-        console.error(e);
       } finally {
         setLoading(false);
       }
@@ -99,20 +100,26 @@ export const MarksPage: React.FC<MarksPageProps> = ({
         const isPastSemester = semesters.length > 0 && selectedSem !== semesters[0].id;
         const html = await network.getStudentMarks(selectedSem, false, isPastSemester);
         const parsedMarks = parseStudentMarks(html);
-        // console.log(`[DATA_CAPTURE] Marks (${selectedSem}):`, parsedMarks);
         setMarksData(parsedMarks);
         setOfflineMiss(false);
       } catch (e) {
         if (e instanceof globalThis.Error && e.message === "OFFLINE_CACHE_MISS") {
           setOfflineMiss(true);
+        } else {
+          console.error(e);
         }
-        console.error(e);
       } finally {
         setFetchingMarks(false);
       }
     };
     fetchMarks();
-  }, [selectedSem, network]);
+
+    const handleRefresh = () => {
+      fetchMarks();
+    };
+    window.addEventListener("retop-refresh-marks", handleRefresh);
+    return () => window.removeEventListener("retop-refresh-marks", handleRefresh);
+  }, [selectedSem, network, semesters]);
 
   const filteredMarks = useMemo(() => {
     let result = marksData;
@@ -134,7 +141,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({
       const baseB = getBase(b.code);
       
       if (baseA < baseB) return -1;
-      if (baseA > baseB) return 1;
+      if (baseA> baseB) return 1;
       
       const lastA = a.code.slice(-1);
       const lastB = b.code.slice(-1);
@@ -148,17 +155,14 @@ export const MarksPage: React.FC<MarksPageProps> = ({
   if (offlineMiss) {
     return (
       <div className="h-full pt-16 md:pt-20 lg:pt-24 pb-32 md:pb-12">
-        <OfflineNotSynced />
+        <OfflineNotSynced pageName="Marks" />
       </div>
     );
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="h-full flex flex-col bg-transparent font-mono text-(--text-main) overflow-hidden"
-    >
+    <div  
+      className="h-full flex flex-col bg-transparent font-mono text-(--text-main) overflow-hidden">
       <div className="flex-1 overflow-y-auto custom-scrollbar p-2 md:p-4 pt-16 md:pt-20 lg:pt-24 pb-32 md:pb-12">
         <div className="max-w-[1380px] mx-auto space-y-6">
         {loading || fetchingMarks ? (
@@ -170,24 +174,12 @@ export const MarksPage: React.FC<MarksPageProps> = ({
         ) : filteredMarks.length === 0 ? (
           <EmptyState msg="No Marks Found" icon={Error} />
         ) : (
-          <motion.div
-            className="columns-1 xl:columns-2 gap-6"
-            initial="hidden"
-            animate="show"
-            variants={{
-              hidden: { opacity: 0 },
-              show: { opacity: 1, transition: { staggerChildren: 0.1 } },
-            }}
-          >
+          <div
+            className="columns-1 xl:columns-2 gap-6">
             {filteredMarks.map((course, idx) => (
-              <motion.div
-                key={idx}
-                variants={{
-                  hidden: { opacity: 0, y: 20 },
-                  show: { opacity: 1, y: 0 },
-                }}
-                className="bg-(--bg-surface) rounded-4xl overflow-hidden group flex flex-col break-inside-avoid mb-6"
-              >
+              <div
+                key={idx} 
+                className="bg-(--bg-surface) rounded-4xl overflow-hidden group flex flex-col break-inside-avoid mb-6">
                 <div className="px-6 py-4 bg-(--bg-highlight) flex flex-col gap-1 shrink-0 transition-colors">
                   <div className="flex justify-between items-start gap-4">
                     <div className="flex-1 min-w-0">
@@ -201,8 +193,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({
                               course.type.includes("Lab")
                                 ? "bg-purple-500 text-(--bg-main)"
                                 : "bg-(--text-main) text-(--bg-main)"
-                            }`}
-                        >
+                            }`}>
                           {course.type}
                         </span>
                       </div>
@@ -213,8 +204,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({
                     <div className="text-right shrink-0 pt-1">
                       <div
                         className="text-[10px] text-(--text-muted) font-mono flex items-center gap-1 justify-end bg-(--bg-main) px-3 py-1 rounded-full"
-                        title="Faculty"
-                      >
+                        title="Faculty">
                         <Person className="w-3 h-3" /> {course.faculty || "N/A"}
                       </div>
                     </div>
@@ -261,8 +251,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({
                         <tr>
                           <td
                             colSpan={isModernView ? 3 : 6}
-                            className="p-8 text-center text-(--text-muted) italic"
-                          >
+                            className="p-8 text-center text-(--text-muted) italic">
                             No assessments uploaded yet.
                           </td>
                         </tr>
@@ -273,12 +262,10 @@ export const MarksPage: React.FC<MarksPageProps> = ({
                           return (
                             <tr
                               key={i}
-                              className="hover:bg-(--bg-highlight) transition-colors group/row"
-                            >
+                              className="hover:bg-(--bg-highlight) transition-colors group/row">
                               <td
                                 className="p-3 pl-6 font-bold text-(--text-main) group-hover/row:text-(--accent-base) transition-colors truncate max-w-37.5"
-                                title={asm.title}
-                              >
+                                title={asm.title}>
                                 {asm.title}
                               </td>
 
@@ -286,8 +273,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({
                                 isAbsent ? (
                                   <td
                                     colSpan={2}
-                                    className="p-3 text-center border-l border-(--border-dim)"
-                                  >
+                                    className="p-3 text-center border-l border-(--border-dim)">
                                     <span className="bg-att-danger text-(--bg-main) font-black uppercase text-[10px] px-3 py-1 rounded-full">
                                       Absent
                                     </span>
@@ -309,8 +295,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({
                                           parseFloat(asm.scoredPercentage) === 0
                                             ? "text-(--text-muted)"
                                             : "text-(--text-main)"
-                                        }`}
-                                      >
+                                        }`}>
                                         {asm.scoredPercentage}
                                       </span>
                                       <span className="text-(--text-muted) font-normal text-xs ml-1">
@@ -333,8 +318,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({
                                         asm.status === "Present"
                                           ? "text-(--att-text-safe)"
                                           : "text-(--att-text-danger)"
-                                      }`}
-                                    >
+                                      }`}>
                                       {asm.status}
                                     </span>
                                   </td>
@@ -348,8 +332,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({
                                         parseFloat(asm.scoredPercentage) === 0
                                           ? "text-(--text-muted)"
                                           : "text-(--text-main)"
-                                      }`}
-                                    >
+                                      }`}>
                                       {asm.scoredPercentage}
                                     </span>
                                   </td>
@@ -362,12 +345,12 @@ export const MarksPage: React.FC<MarksPageProps> = ({
                     </tbody>
                   </table>
                 </div>
-              </motion.div>
+              </div>
             ))}
-          </motion.div>
+          </div>
         )}
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };

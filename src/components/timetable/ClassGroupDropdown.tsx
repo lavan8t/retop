@@ -4,8 +4,6 @@ import {
   Group,
   KeyboardArrowDown,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
-import { motion, AnimatePresence } from "framer-motion";
-
 export const formatShortGroupName = (label: string) => {
   if (!label) return "";
   const lower = label.toLowerCase();
@@ -28,11 +26,7 @@ export const ClassGroupDropdown = ({ groups, selectedId, onChange }: any) => {
   if (!groups || groups.length === 0) return null;
 
   return (
-    <div 
-      className="relative z-50"
-      onMouseEnter={() => setIsOpen(true)}
-      onMouseLeave={() => setIsOpen(false)}
-    >
+    <div className="relative z-[999999]">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-1.5 md:gap-2 bg-(--md-sys-color-secondary-container) px-2 md:px-3 py-1.5 rounded-lg md:rounded-xl text-(--md-sys-color-on-secondary-container) font-bold transition-all text-[9px] sm:text-[10px] md:text-xs group"
@@ -46,16 +40,15 @@ export const ClassGroupDropdown = ({ groups, selectedId, onChange }: any) => {
         />
       </button>
 
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0, y: -10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.95 }}
-              transition={{ duration: 0.2, ease: [0.34, 1.56, 0.64, 1] }}
-              className="absolute top-full right-0 mt-2 w-[60vw] min-w-50 max-w-72 md:w-72 bg-(--bg-surface) border-2 border-(--border-main) rounded-xl overflow-hidden z-50 origin-top-right popup-shadow"
-            >
+      {isOpen && (
+        <>
+          <div
+            onClick={() => setIsOpen(false)}
+            className="fixed inset-0 z-[999998]"
+          />
+          <div
+            className="absolute top-full right-0 mt-2 w-[60vw] min-w-50 max-w-72 md:w-72 bg-(--bg-surface) border-2 border-(--border-main) rounded-xl overflow-hidden z-[999999] origin-top-right popup-shadow transition-all duration-200 animate-in fade-in zoom-in-95"
+          >
               <div className="max-h-64 overflow-y-auto custom-scrollbar p-1.5 md:p-2 space-y-1">
                 {groups.map((g: ClassGroup) => (
                   <button
@@ -74,10 +67,9 @@ export const ClassGroupDropdown = ({ groups, selectedId, onChange }: any) => {
                   </button>
                 ))}
               </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+          </div>
+        </>
+      )}
     </div>
   );
 };

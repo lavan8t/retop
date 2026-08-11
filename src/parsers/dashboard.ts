@@ -1,13 +1,13 @@
 import { Assignment, CourseSummary } from "../types/vtop";
+import { parseHTMLFast } from "../utils/parser-utils";
 
 function stripTags(html: string): string {
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  return doc.body.textContent || "";
+  if (!html) return "";
+  return html.replace(/<[^>]*>/g, "").trim();
 }
 
 export function parseAcademicStats(html: string) {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
+  const doc = parseHTMLFast(html);
   
   const stats = {
     cgpa: "...",
@@ -49,10 +49,9 @@ export function parseDigitalAssignments(html: string): Assignment[] {
   )
     return [];
 
-  const parser = new DOMParser();
   // VTOP's HTML sometimes has malformed tags like <<td, so we sanitize it slightly
   const cleanHtml = html.replace(/<</g, "<");
-  const doc = parser.parseFromString(cleanHtml, "text/html");
+  const doc = parseHTMLFast(cleanHtml);
 
   // Target rows specifically inside the tbody to avoid the header <tr>
   const rows = doc.querySelectorAll("table tbody tr");
@@ -88,8 +87,7 @@ export function parseDigitalAssignments(html: string): Assignment[] {
 export function parseCourseDetails(html: string): CourseSummary[] {
   if (!html) return [];
 
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
+  const doc = parseHTMLFast(html);
   const rows = doc.querySelectorAll("table tbody tr");
   const courses: CourseSummary[] = [];
 

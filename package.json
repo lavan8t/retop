@@ -10,10 +10,9 @@
   "dependencies": {
     "@iconify/react": "^6.0.2",
     "@material/material-color-utilities": "^0.4.0",
-    "@material/web": "^2.4.1",
     "@nine-thirty-five/material-symbols-react": "^2.1.2",
+    "@quicktoolsone/pdf-compress": "^2.0.0",
     "clsx": "^2.1.1",
-    "framer-motion": "^12.34.0",
     "react": "^19.2.4",
     "react-barcode": "^1.6.1",
     "react-dom": "^19.2.4",

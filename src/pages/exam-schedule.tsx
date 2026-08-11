@@ -141,116 +141,215 @@ function parseTimeline(examTimeStr: string, reportingTimeStr: string) {
   };
 }
 
+export function parseSeatPosition(seatLocation: string = "", seatNo: string = ""): { row: number; col: number; seatNumber: number } | null {
+  const combined = `${seatLocation} ${seatNo}`.trim().toUpperCase();
+
+  // Pattern 1: R<row>C<col> (e.g. R3C4, R1C2, R7C10)
+  const rcMatch = combined.match(/R(\d+)\s*C(\d+)/i);
+  if (rcMatch) {
+    const row = parseInt(rcMatch[1], 10);
+    const col = parseInt(rcMatch[2], 10);
+    if (row >= 1 && row <= 7 && col >= 1 && col <= 10) {
+      const seatNumber = (row - 1) * 10 + col;
+      return { row, col, seatNumber };
+    }
+  }
+
+  // Pattern 2: Explicit seat number 1..70
+  const numVal = parseInt(seatNo || seatLocation.replace(/\D/g, ""), 10);
+  if (!isNaN(numVal) && numVal >= 1 && numVal <= 70) {
+    const row = Math.ceil(numVal / 10);
+    const col = ((numVal - 1) % 10) + 1;
+    return { row, col, seatNumber: numVal };
+  }
+
+  return null;
+}
+
+const ClassroomSeatingMapCard = ({ entry }: { entry: ExamEntry | null }) => {
+  if (!entry) {
+    return (
+      <div className="p-5 rounded-3xl bg-(--bg-surface) border-2 border-(--border-dim) flex flex-col items-center justify-center text-center gap-2 min-h-[220px]">
+        <EventSeat className="w-8 h-8 text-(--text-muted) opacity-40" />
+        <span className="text-xs font-bold text-(--text-muted)">
+          Hover an exam to preview your seat position
+        </span>
+      </div>
+    );
+  }
+
+  const seatPos = parseSeatPosition(entry.seatLocation, entry.seatNo);
+  const rows = [1, 2, 3, 4, 5, 6, 7];
+  const colPairs = [
+    [1, 2],
+    [3, 4],
+    [5, 6],
+    [7, 8],
+    [9, 10],
+  ];
+
+  return (
+    <div className="p-4 md:p-5 rounded-3xl bg-(--bg-surface) border-2 border-(--border-dim) flex flex-col gap-3.5 shadow-xs transition-all">
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col min-w-0 pr-2">
+          <span className="text-xs font-black font-expanded uppercase truncate text-(--text-main)">
+            {entry.courseCode} Seat Map
+          </span>
+          <span className="text-[10px] font-mono text-(--text-muted) truncate">
+            {entry.venue || "Hall"} • {seatPos ? `Row ${seatPos.row}, Col ${seatPos.col}` : entry.seatLocation || "Assigned Seat"}
+          </span>
+        </div>
+        {seatPos && (
+          <span className="px-2.5 py-1 rounded-full bg-(--accent-base) text-(--text-inverse) text-xs font-black font-mono shrink-0">
+            #{seatPos.seatNumber}
+          </span>
+        )}
+      </div>
+
+      {/* Screen / Front Indicator */}
+      <div className="w-full text-center py-1 rounded-lg bg-(--bg-main) border border-(--border-dim) text-[9px] font-mono font-bold uppercase tracking-widest text-(--text-muted)">
+        FRONT / BOARD
+      </div>
+
+      {/* 7 Rows x 10 Columns Grid with 2-Column Pairing & Aisle Gaps */}
+      <div className="flex flex-col gap-1.5 w-full my-1">
+        {rows.map((r) => (
+          <div key={r} className="flex items-center justify-between gap-1 w-full">
+            <span className="text-[9px] font-mono font-bold text-(--text-muted) w-3 text-center shrink-0">
+              R{r}
+            </span>
+            <div className="flex items-center justify-between flex-1 gap-1 md:gap-1.5">
+              {colPairs.map((pair, pIdx) => (
+                <div key={pIdx} className="flex items-center gap-0.5 md:gap-1">
+                  {pair.map((c) => {
+                    const isUserSeat = seatPos?.row === r && seatPos?.col === c;
+                    const seatNum = (r - 1) * 10 + c;
+
+                    return (
+                      <div
+                        key={c}
+                        title={`Row ${r}, Col ${c} (Seat #${seatNum})`}
+                        className={`w-4 h-4 md:w-5 md:h-5 rounded flex items-center justify-center text-[9px] md:text-[10px] font-mono font-bold transition-all ${
+                          isUserSeat
+                            ? "bg-(--accent-base) text-(--text-inverse) scale-110 shadow-xs ring-2 ring-(--accent-base)/50 z-10"
+                            : "bg-(--bg-main) border border-(--border-dim)/40 text-transparent"
+                        }`}
+                      >
+                        {isUserSeat ? seatNum : ""}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Legend Footer */}
+      <div className="flex items-center justify-between pt-2 border-t border-(--border-dim) text-[10px] font-mono text-(--text-muted)">
+        <div className="flex items-center gap-1.5">
+          <div className="w-2.5 h-2.5 rounded bg-(--accent-base)" />
+          <span>Your Seat ({seatPos ? `#${seatPos.seatNumber}` : "Assigned"})</span>
+        </div>
+        <span>Capacity: 70</span>
+      </div>
+    </div>
+  );
+};
+
 const ExamCardM3 = ({
   entry,
   groupType,
   dateFormatPattern,
+  onHover,
 }: {
   entry: ExamEntry;
   groupType: string;
   dateFormatPattern: string;
+  onHover?: (entry: ExamEntry | null) => void;
 }) => {
   const timeline = parseTimeline(entry.examTime, entry.reportingTime);
   const formattedDate = formatDateStr(entry.examDate, dateFormatPattern);
 
   return (
-    <div className="bg-(--bg-surface) border-2 border-(--border-dim) rounded-3xl p-5 md:p-6 flex flex-col gap-5 hover:border-(--accent-base)/40 transition-all shadow-xs">
-      {/* Top Header: Course Title & Date */}
-      <div className="flex flex-col md:flex-row md:items-start justify-between gap-3">
+    <div
+      onMouseEnter={() => onHover?.(entry)}
+      onMouseLeave={() => onHover?.(null)}
+      className="bg-(--bg-surface) hover:bg-(--bg-highlight) border-b border-(--border-dim)/40 last:border-b-0 p-4 md:p-5 transition-colors flex flex-col gap-3.5 cursor-pointer"
+    >
+      {/* Top Header: Course Info & Exam Date */}
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <h3 className="text-xl md:text-2xl font-black font-expanded text-(--text-main) leading-tight tracking-tight">
-            {entry.courseTitle}
-          </h3>
-
-          {/* Clean Pill Items Below Course Title (Code & Slot only) */}
-          <div className="flex flex-wrap items-center gap-2 mt-3">
-            <span className="px-3 py-1 rounded-full bg-(--bg-main) text-(--text-main) text-xs font-black font-mono border border-(--border-dim)">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="px-2.5 py-0.5 rounded-md bg-(--accent-base)/15 text-(--accent-base) text-[10px] font-black font-mono uppercase tracking-wider">
+              {groupType || "EXAM"}
+            </span>
+            <span className="px-2 py-0.5 rounded-md bg-(--bg-main) text-(--text-muted) text-[10px] font-bold font-mono">
               {entry.courseCode}
             </span>
             {entry.slot && (
-              <span className="px-3 py-1 rounded-full bg-(--bg-main) text-(--text-muted) text-xs font-bold font-mono border border-(--border-dim)">
+              <span className="px-2 py-0.5 rounded-md bg-(--bg-main) text-(--text-muted) text-[10px] font-bold font-mono">
                 {entry.slot.replace(/^SLOT:\s*/i, "")}
               </span>
             )}
           </div>
+          <h3 className="text-base md:text-lg font-black font-expanded text-(--text-main) leading-snug">
+            {entry.courseTitle}
+          </h3>
         </div>
 
-        {/* Exam Date & Session */}
-        <div className="flex flex-col items-start md:items-end shrink-0 bg-(--bg-main) px-4 py-2 rounded-2xl border border-(--border-dim)">
-          <div className="text-base md:text-lg font-black font-mono text-(--text-main)">
+        {/* Date & Session Pill */}
+        <div className="flex flex-col items-start sm:items-end shrink-0">
+          <span className="text-sm md:text-base font-black font-mono text-(--text-main)">
             {formattedDate}
-          </div>
-          <div className="text-xs font-black text-(--accent-base) uppercase tracking-widest mt-0.5">
+          </span>
+          <span className="text-[11px] font-bold font-mono text-(--accent-base) uppercase tracking-wider mt-0.5">
             {entry.examSession || "SESSION TBA"}
-          </div>
+          </span>
         </div>
       </div>
 
-      {/* Timeline Bar Section */}
-      <div className="bg-(--bg-main) p-5 rounded-2xl border border-(--border-dim) flex flex-col gap-4">
-        <div className="flex items-center justify-between relative py-1">
-          {/* Fully Rounded Connecting Timeline Line */}
-          <div className="absolute left-8 right-8 top-1/2 -translate-y-1/2 h-1.5 bg-(--border-main) rounded-full" />
-
-          {/* Left Column: Repott & Start */}
-          <div className="relative z-10 flex items-center gap-6 bg-(--bg-main) pr-3">
-            <div className="flex flex-col items-start">
-              <span className="font-mono font-black text-sm md:text-base text-(--text-main)">
-                {timeline.reportingTime}
-              </span>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-(--text-muted) mt-0.5">
-                Report
-              </span>
-            </div>
-
-            <div className="flex flex-col items-start">
-              <span className="font-mono font-black text-sm md:text-base text-(--text-main)">
-                {timeline.startTime}
-              </span>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-(--text-muted) mt-0.5">
-                Start
-              </span>
-            </div>
+      {/* Timeline Section */}
+      <div className="flex items-center justify-between gap-4 py-2 px-3.5 rounded-xl bg-(--bg-main)/60 border border-(--border-dim)/40 text-xs font-mono">
+        <div className="flex items-center gap-5">
+          <div className="flex flex-col">
+            <span className="text-[9px] font-bold text-(--text-muted) uppercase tracking-wider">Report</span>
+            <span className="font-bold text-(--text-main)">{timeline.reportingTime}</span>
           </div>
-
-          {/* Center: Total Duration */}
-          {timeline.durationText && (
-            <div className="relative z-10 hidden sm:flex flex-col items-center bg-(--bg-main) px-3">
-              <span className="px-3 py-1 rounded-full bg-(--bg-surface) text-(--text-main) text-xs font-black font-mono border border-(--border-dim) shadow-xs flex items-center gap-1">
-                <Schedule className="w-3.5 h-3.5 text-(--accent-base)" />
-                {timeline.durationText}
-              </span>
-            </div>
-          )}
-
-          {/* Right Column: End Time */}
-          <div className="relative z-10 flex flex-col items-end bg-(--bg-main) pl-3 text-right">
-            <span className="font-mono font-black text-sm md:text-base text-(--text-main)">
-              {timeline.endTime || "TBA"}
-            </span>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-(--text-muted) mt-0.5">
-              End
-            </span>
+          <div className="flex flex-col">
+            <span className="text-[9px] font-bold text-(--text-muted) uppercase tracking-wider">Start</span>
+            <span className="font-bold text-(--text-main)">{timeline.startTime}</span>
           </div>
         </div>
 
-        {/* Venue & Seat Info Below Timeline */}
-        <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-bold pt-3 border-t border-(--border-dim)">
-          <Tooltip text="Venue">
-            <div className="flex items-center gap-2 text-(--text-main)">
-              <LocationOn className="w-4 h-4 text-(--accent-base) shrink-0" />
-              <span className="font-expanded font-black text-(--text-main)">{entry.venue || "TBA"}</span>
-            </div>
-          </Tooltip>
-          {entry.seatNo && (
-            <Tooltip text="Seat Location & Number">
-              <div className="flex items-center gap-2 text-(--text-main)">
-                <EventSeat className="w-4 h-4 text-(--accent-base) shrink-0" />
-                <span className="font-expanded font-black text-(--text-main)">{entry.seatLocation} #{entry.seatNo}</span>
-              </div>
-            </Tooltip>
-          )}
+        {timeline.durationText && (
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-(--bg-surface) border border-(--border-dim)/40 text-[10px] font-bold text-(--text-main)">
+            <Schedule className="w-3.5 h-3.5 text-(--accent-base)" />
+            {timeline.durationText}
+          </div>
+        )}
+
+        <div className="flex flex-col text-right">
+          <span className="text-[9px] font-bold text-(--text-muted) uppercase tracking-wider">End</span>
+          <span className="font-bold text-(--text-main)">{timeline.endTime || "TBA"}</span>
         </div>
+      </div>
+
+      {/* Footer: Venue & Seat */}
+      <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+        <div className="flex items-center gap-1.5 text-(--text-muted)">
+          <LocationOn className="w-4 h-4 text-(--accent-base) shrink-0" />
+          <span className="font-bold text-(--text-main)">{entry.venue || "Venue TBA"}</span>
+        </div>
+        {entry.seatNo && (
+          <div className="flex items-center gap-1.5 text-(--text-muted)">
+            <EventSeat className="w-4 h-4 text-(--accent-base) shrink-0" />
+            <span className="font-bold text-(--text-main)">
+              {entry.seatLocation} #{entry.seatNo}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -270,10 +369,23 @@ export const ExamSchedulePage: React.FC<ExamSchedulePageProps> = ({ network }) =
   const { settings } = useSettingsStore();
   const dateFormatPattern = settings.dateFormat || "DD Mon YYYY";
 
+  const [hoveredExam, setHoveredExam] = React.useState<ExamEntry | null>(null);
+
   useEffect(() => {
     if (status !== "Demo Mode Active" && examSemesters.length === 0) {
       fetchExamSemesters(network);
     }
+
+    const handleRefresh = () => {
+      const sem = useDataStore.getState().examSelectedSem;
+      if (sem) {
+        useDataStore.getState().fetchExamSchedule(network, sem);
+      } else {
+        useDataStore.getState().fetchExamSemesters(network);
+      }
+    };
+    window.addEventListener("retop-refresh-exams", handleRefresh);
+    return () => window.removeEventListener("retop-refresh-exams", handleRefresh);
   }, [status, examSemesters.length, fetchExamSemesters, network]);
 
   const academicExams = parseAcademicExamDates(calGridData, dateFormatPattern);
@@ -281,23 +393,28 @@ export const ExamSchedulePage: React.FC<ExamSchedulePageProps> = ({ network }) =
     grp.entries.map((entry) => ({ entry, groupType: grp.examType })),
   );
 
+  const activeSeatingEntry = hoveredExam || allEntriesWithGroup[0]?.entry || null;
+
   if (status === "Offline - Not Synced") {
-    return <OfflineNotSynced />;
+    return <OfflineNotSynced pageName="Exam Schedule" />;
   }
 
   return (
-    <div className="h-full w-full bg-(--bg-main) text-(--text-main) overflow-hidden relative z-0 flex">
-      <div className="flex-1 flex flex-col w-full h-full overflow-y-auto">
+    <div className="h-full w-full flex flex-col lg:flex-row gap-6 py-0 pl-4 pr-0 md:py-0 md:pl-6 md:pr-0 lg:py-0 lg:px-8 overflow-y-auto lg:overflow-hidden bg-(--bg-main) text-(--text-main) max-w-425 mx-auto relative">
+      <div className="w-full flex-1 flex flex-col w-full h-full overflow-y-auto custom-scrollbar">
         <div className="w-full h-21 md:h-25 shrink-0" />
 
-        <div className="flex-1 pb-20 p-4 md:p-8 max-w-7xl mx-auto w-full">
+        <div className="flex-1 pb-20 w-full">
           {/* Two-Column Split Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 items-start relative">
             
-            {/* LEFT COLUMN */}
-            <div className="lg:col-span-4 flex flex-col gap-6 sticky top-24">
+            {/* LEFT COLUMN: Static / Sticky Sidebar with Classroom Seating Map */}
+            <div className="lg:col-span-4 flex flex-col gap-6 lg:sticky lg:top-24 lg:self-start">
               
-              {/* 1. Exam Reporting Note FIRST at Top */}
+              {/* Classroom Seating Map Card */}
+              <ClassroomSeatingMapCard entry={activeSeatingEntry} />
+
+              {/* 1. Exam Reporting Note */}
               {examReportingNote && (
                 <div className="p-5 rounded-3xl bg-(--bg-surface) border-2 border-(--border-dim) text-(--text-main) text-xs flex flex-col gap-2 shadow-xs">
                   <div className="flex items-center gap-2 text-orange-500 font-bold uppercase tracking-wider text-[11px]">
@@ -343,25 +460,26 @@ export const ExamSchedulePage: React.FC<ExamSchedulePageProps> = ({ network }) =
               ) : null}
             </div>
 
-            {/* RIGHT COLUMN: All Exam Cards */}
+            {/* RIGHT COLUMN: Streamlined Exam List */}
             <div className="lg:col-span-8 flex flex-col gap-6">
               {examLoading && allEntriesWithGroup.length === 0 ? (
-                <div className="grid grid-cols-1 gap-6">
+                <div className="flex flex-col rounded-3xl bg-(--bg-surface) border border-(--border-dim)/40 overflow-hidden divide-y divide-(--border-dim)/40">
                   {[1, 2, 3].map((i) => (
                     <div
                       key={i}
-                      className="h-48 bg-(--bg-surface) rounded-3xl border-2 border-(--border-dim) animate-pulse"
+                      className="h-36 bg-(--bg-surface) animate-pulse p-6"
                     />
                   ))}
                 </div>
               ) : allEntriesWithGroup.length > 0 ? (
-                <div className="grid grid-cols-1 gap-6">
+                <div className="flex flex-col rounded-3xl bg-(--bg-surface) border border-(--border-dim)/40 overflow-hidden shadow-xs">
                   {allEntriesWithGroup.map(({ entry, groupType }, idx) => (
                     <ExamCardM3
                       key={idx}
                       entry={entry}
                       groupType={groupType}
                       dateFormatPattern={dateFormatPattern}
+                      onHover={setHoveredExam}
                     />
                   ))}
                 </div>

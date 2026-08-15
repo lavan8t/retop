@@ -106,7 +106,7 @@ export const ScheduleRow = React.memo(({
       onClick={(e) => onClick?.(e, item)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`@container flex items-center justify-between p-3 sm:p-3.5 min-h-[44px] shadow-none cursor-pointer select-none overflow-hidden relative border-0 shrink-0 ${isNow ? "bg-(--accent-base) text-(--text-inverse)" : ""} ${className || "rounded-xl"}`}
+      className={`@container flex items-center justify-between p-2.5 sm:p-3.5 min-h-[40px] sm:min-h-[44px] shadow-none cursor-pointer select-none overflow-hidden relative border-0 shrink-0 ${isNow ? "bg-(--accent-base) text-(--text-inverse)" : ""} ${className || "rounded-xl"}`}
       style={{
         backgroundColor: isNow ? undefined : cardBg,
         color: isNow ? undefined : cardFg,
@@ -120,7 +120,8 @@ export const ScheduleRow = React.memo(({
         />
       )}
 
-      <div className="relative z-10 flex items-center justify-between gap-3 w-full">
+      {/* Desktop Layout: Single Row with Left Time, Center Title, Right Slot & Venue */}
+      <div className="hidden sm:flex relative z-10 items-center justify-between gap-3 w-full">
         {/* Left Side: Natural width time container (pushes name on hover) */}
         <div className="flex items-center shrink-0">
           <span className="font-mono font-bold text-xs sm:text-sm whitespace-nowrap transition-all leading-tight">
@@ -154,6 +155,33 @@ export const ScheduleRow = React.memo(({
 
           {venue && (
             <span className="text-xs sm:text-sm font-black whitespace-nowrap shrink-0 leading-none">
+              {venue}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Mobile Layout: 2 Rows (Row 1: Title, Row 2: Start Time & Venue Alone, Slot Hidden) */}
+      <div className="sm:hidden flex flex-col gap-1 w-full relative z-10">
+        <div className="flex items-center justify-between gap-2 min-w-0">
+          <span
+            className="text-xs font-black leading-snug wrap-break-words line-clamp-2 min-w-0 flex-1"
+          >
+            {item.course.title}
+          </span>
+          {isCriticalAtt && (
+            <span className="text-[0.5625rem] font-mono font-bold uppercase px-1.5 py-0.5 rounded-full bg-red-500 text-white shrink-0 leading-none">
+              ⚠️ {Math.round(attVal)}%
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between gap-2 text-[10px] font-mono font-bold opacity-85 leading-none">
+          <span className="whitespace-nowrap">
+            {startTime}
+          </span>
+          {venue && (
+            <span className="whitespace-nowrap font-black">
               {venue}
             </span>
           )}
@@ -213,7 +241,7 @@ export const AssignmentRow = React.memo(({
       onClick={(e) => onClick?.(e, assignment)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`p-3 sm:p-3.5 bg-(--bg-surface) hover:bg-(--bg-highlight) cursor-pointer select-none overflow-hidden group transition-colors relative border border-(--border-dim)/40 shrink-0 ${className || "rounded-xl"}`}
+      className={`p-2.5 sm:p-3.5 bg-(--bg-surface) hover:bg-(--bg-highlight) cursor-pointer select-none overflow-hidden group transition-colors relative border border-(--border-dim)/40 shrink-0 ${className || "rounded-xl"}`}
     >
       {progress > 0 && progress < 1 && (
         <div
@@ -221,20 +249,20 @@ export const AssignmentRow = React.memo(({
           style={{ width: `${Math.round(progress * 100)}%` }}
         />
       )}
-      <div className="flex flex-col relative z-10 gap-1.5">
+      <div className="flex flex-col relative z-10 gap-1 sm:gap-1.5">
         <div className="flex justify-between items-start gap-2 min-w-0">
           <span className="text-xs sm:text-sm font-black text-(--text-main) leading-snug flex-1 wrap-break-words">
             {assignment.title}
           </span>
         </div>
-        <div className="flex items-center justify-between mt-1 gap-2">
+        <div className="flex items-center justify-between gap-2 text-[10px] sm:text-xs">
           <span
             data-tooltip={assignment.course}
-            className="text-xs font-bold font-mono text-(--text-muted) truncate shrink-0"
+            className="font-bold font-mono text-(--text-muted) truncate shrink-0 max-w-[60%]"
           >
             {assignment.course}
           </span>
-          <span className={`text-xs font-black font-mono px-2.5 py-1 rounded-full border leading-none shrink-0 transition-all ${badgeStyle}`}>
+          <span className={`font-black font-mono px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full border leading-none shrink-0 transition-all ${badgeStyle}`}>
             {isHovered ? exact : days}
           </span>
         </div>
@@ -252,7 +280,7 @@ export const EventRow = React.memo(({ event, className, progress = 0 }: { event:
 
   return (
     <div
-      className={`p-3.5 shadow-none cursor-pointer select-none relative border-0 overflow-hidden shrink-0 ${className || "rounded-xl"}`}
+      className={`p-2.5 sm:p-3.5 shadow-none cursor-pointer select-none relative border-0 overflow-hidden shrink-0 ${className || "rounded-xl"}`}
       style={{
         backgroundColor: cardBg,
         color: cardFg,
@@ -264,18 +292,18 @@ export const EventRow = React.memo(({ event, className, progress = 0 }: { event:
           style={{ width: `${Math.round(progress * 100)}%` }}
         />
       )}
-      <div className="flex flex-col gap-1.5 relative z-10 w-full">
+      <div className="flex flex-col gap-1 sm:gap-1.5 relative z-10 w-full">
         <div className="flex items-start justify-between gap-2 w-full">
-          <span className="text-[clamp(0.85rem,3cqw,0.95rem)] font-black leading-tight wrap-break-words flex-1">
+          <span className="text-xs sm:text-sm font-black leading-tight wrap-break-words flex-1">
             {event.title}
           </span>
         </div>
-        <div className="flex items-center justify-between gap-2 text-xs font-mono font-bold opacity-90">
-          <span className="uppercase text-xs tracking-wider px-2.5 py-1 rounded-full bg-black/15 leading-none">
+        <div className="flex items-center justify-between gap-2 text-[10px] sm:text-xs font-mono font-bold opacity-90 leading-none">
+          <span className="uppercase tracking-wider px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-black/15">
             {event.category}
           </span>
           {event.organizer && (
-            <span className="leading-none text-xs">
+            <span className="truncate max-w-[60%]">
               {event.organizer}
             </span>
           )}
@@ -340,7 +368,7 @@ export const ExamRow = React.memo(({
       onClick={onClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`@container flex items-center justify-between p-3 sm:p-3.5 min-h-[44px] shadow-none cursor-pointer select-none overflow-hidden relative border-0 shrink-0 ${className || "rounded-xl"}`}
+      className={`@container flex items-center justify-between p-2.5 sm:p-3.5 min-h-[40px] sm:min-h-[44px] shadow-none cursor-pointer select-none overflow-hidden relative border-0 shrink-0 ${className || "rounded-xl"}`}
       style={{
         backgroundColor: cardBg,
         color: cardFg,
@@ -353,7 +381,8 @@ export const ExamRow = React.memo(({
         />
       )}
 
-      <div className="relative z-10 flex items-center justify-between gap-3 w-full">
+      {/* Desktop Layout: Single Row */}
+      <div className="hidden sm:flex relative z-10 items-center justify-between gap-3 w-full">
         {/* Left Side: Natural width start time */}
         <div className="flex items-center shrink-0">
           <span className="font-mono font-bold text-xs sm:text-sm whitespace-nowrap transition-all leading-tight">
@@ -384,6 +413,31 @@ export const ExamRow = React.memo(({
 
           {exam.venue && (
             <span className="text-xs sm:text-sm font-black whitespace-nowrap shrink-0 leading-none">
+              {exam.venue} {exam.seatNo ? `(${exam.seatNo})` : ""}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Mobile Layout: 2 Rows (Row 1: Title & Group Pill, Row 2: Time & Venue Alone, Slot Hidden) */}
+      <div className="sm:hidden flex flex-col gap-1 w-full relative z-10">
+        <div className="flex items-center justify-between gap-2 min-w-0">
+          <span className="text-xs font-black leading-snug wrap-break-words line-clamp-2 min-w-0 flex-1">
+            {exam.courseTitle}
+          </span>
+          {showGroupPill && (
+            <span className="px-1.5 py-0.5 rounded-md bg-black/15 text-[9px] font-black font-mono uppercase tracking-wider shrink-0 leading-none">
+              {groupType || "EXAM"}
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between gap-2 text-[10px] font-mono font-bold opacity-85 leading-none">
+          <span className="whitespace-nowrap">
+            {displayTime}
+          </span>
+          {exam.venue && (
+            <span className="whitespace-nowrap font-black">
               {exam.venue} {exam.seatNo ? `(${exam.seatNo})` : ""}
             </span>
           )}

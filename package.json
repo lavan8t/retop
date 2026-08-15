@@ -8,16 +8,13 @@
     "css:watch": "bunx tailwindcss -i src/input.css -o dist/style.css --watch"
   },
   "dependencies": {
-    "@iconify/react": "^6.0.2",
     "@material/material-color-utilities": "^0.4.0",
     "@nine-thirty-five/material-symbols-react": "^2.1.2",
     "@quicktoolsone/pdf-compress": "^2.0.0",
-    "clsx": "^2.1.1",
     "idb-keyval": "^6.3.0",
     "react": "^19.2.4",
     "react-barcode": "^1.6.1",
     "react-dom": "^19.2.4",
-    "tailwind-merge": "^3.6.0",
     "zustand": "^5.0.14"
   },
   "devDependencies": {

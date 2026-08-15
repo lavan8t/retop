@@ -162,6 +162,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
   const [categoryIndex, setCategoryIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const mobileInputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const [showLogoMenu, setShowLogoMenu] = useState(false);
   const logoMenuTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -429,16 +430,32 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
         if (allCategories.length === 0) return;
         if (e.key === "ArrowDown") {
           e.preventDefault();
-          setCategoryIndex((prev) => (prev + 1) % allCategories.length);
+          const nextIdx = (categoryIndex + 1) % allCategories.length;
+          setCategoryIndex(nextIdx);
+          if (activeMenu) {
+            const nextCat = allCategories[nextIdx];
+            const catEl = document.getElementById(`topbar-cat-item-${nextIdx}`);
+            const rect = catEl?.getBoundingClientRect() || dropdownRef.current?.getBoundingClientRect() || new DOMRect();
+            setActiveMenu({ cat: nextCat, rect });
+            setSelectedIndex(0);
+          }
         } else if (e.key === "ArrowUp") {
           e.preventDefault();
-          setCategoryIndex((prev) => (prev - 1 + allCategories.length) % allCategories.length);
+          const prevIdx = (categoryIndex - 1 + allCategories.length) % allCategories.length;
+          setCategoryIndex(prevIdx);
+          if (activeMenu) {
+            const prevCat = allCategories[prevIdx];
+            const catEl = document.getElementById(`topbar-cat-item-${prevIdx}`);
+            const rect = catEl?.getBoundingClientRect() || dropdownRef.current?.getBoundingClientRect() || new DOMRect();
+            setActiveMenu({ cat: prevCat, rect });
+            setSelectedIndex(0);
+          }
         } else if (e.key === "ArrowRight" || e.key === "Enter") {
           e.preventDefault();
           const targetCat = allCategories[categoryIndex];
           if (targetCat) {
             const catEl = document.getElementById(`topbar-cat-item-${categoryIndex}`);
-            const rect = catEl ? catEl.getBoundingClientRect() : new DOMRect();
+            const rect = catEl?.getBoundingClientRect() || dropdownRef.current?.getBoundingClientRect() || new DOMRect();
             setSelectedIndex(0);
             setActiveMenu({ cat: targetCat, rect });
           }
@@ -481,6 +498,16 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
   const isSearchActive = isExpanded;
 
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const [isMobileSearchClosing, setIsMobileSearchClosing] = useState(false);
+
+  const closeMobileSearch = () => {
+    setIsMobileSearchClosing(true);
+    setTimeout(() => {
+      setIsOmniboxOpen(false);
+      setIsMobileSearchClosing(false);
+      setQuery("");
+    }, 150);
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -507,7 +534,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
     <div ref={wrapperRef} className="relative flex flex-col z-50">
       {/* Unified Search Bar */}
       <div
-        className={`group flex items-center gap-3 transition-all duration-fast ease-out cursor-text md:min-w-90 pl-4 pr-3 h-12 md:h-14 rounded-[32px] relative z-10000 bg-transparent border-2 border-transparent shadow-none`}
+        className={`group flex items-center gap-3 transition-all duration-fast ease-out cursor-text min-w-60 md:min-w-72 pl-4 pr-3 h-12 md:h-14 rounded-[32px] relative z-10000 bg-transparent border-2 border-transparent shadow-none`}
       >
         <div className="relative flex items-center shrink-0">
           <Tooltip text="Return to Dashboard">
@@ -524,10 +551,10 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                   re
                 </span>
                 <div
-                  className={`relative ml-[-1px] md:ml-[-3px] mb-0.5 md:mb-0.75 flex items-center justify-center transition-all duration-300 origin-bottom-left w-1 h-1 md:w-1.5 md:h-1.5 bg-(--accent-base) rounded-full ${status === "loading" ? "animate-pulse scale-150" : isExpanded ? "scale-[2]" : ""}`}
+                  className={`relative ml-[-1px] md:ml-[-2px] mb-0.5 md:mb-0.75 flex items-center justify-center transition-all duration-300 origin-bottom-left w-2.5 h-2.5 md:w-3 md:h-3 bg-(--accent-base) rounded-full ${status === "loading" ? "animate-pulse" : ""}`}
                 >
                   <Search
-                    className={`w-0.5 h-0.5 md:w-1 md:h-1 text-(--text-inverse) transition-opacity absolute ${status === "loading" ? "opacity-0" : isExpanded ? "opacity-100" : "opacity-0"}`}
+                    className={`w-1.5 h-1.5 md:w-2 md:h-2 text-(--text-inverse) transition-opacity absolute ${status === "loading" ? "opacity-0" : "opacity-100"}`}
                     strokeWidth={4}
                   />
                 </div>
@@ -574,20 +601,33 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
         </div>
       </div>
 
-      {/* Mobile Full-Screen Overlay (< lg) */}
+      {/* Mobile Full-Screen Overlay (< lg): 150ms slide up/down animation */}
       {isSearchActive && (
-        <div className="fixed inset-0 z-100 bg-(--bg-main) flex flex-col p-4 sm:p-6 lg:hidden overflow-hidden">
-          {/* Mobile Overlay Header */}
-          <div className="flex items-center gap-2 pb-3 border-b border-(--border-dim) shrink-0">
+        <div
+          className={`fixed inset-0 z-999999 bg-(--bg-main) flex flex-col p-0 lg:hidden overflow-hidden w-screen h-screen ${
+            isMobileSearchClosing ? "animate-sheet-down" : "animate-sheet-up"
+          }`}
+        >
+          {/* Mobile Overlay Header: matches compact main topbar dimensions (h-14 px-2.5) */}
+          <div className="h-14 px-2.5 sm:px-4 flex items-center gap-2 border-b border-(--border-dim) shrink-0 bg-(--bg-main)">
             <button
-              onClick={() => setIsOmniboxOpen(false)}
-              className="p-2 -ml-1 rounded-full hover:bg-(--bg-highlight) text-(--text-main) transition-colors flex items-center justify-center shrink-0 cursor-pointer"
+              onClick={closeMobileSearch}
+              className="relative flex items-center justify-center shrink-0 cursor-pointer hover:opacity-75 transition-opacity focus:outline-none pr-1"
               aria-label="Close search"
             >
-              <ArrowBack className="w-6 h-6 text-(--text-main)" />
+              <div className="flex items-end pb-1 pr-1 pl-1">
+                <span className="font-expanded font-black text-2xl italic lowercase leading-none text-(--text-main) hover:text-(--accent-hover) transition-colors">
+                  re
+                </span>
+                <div className="relative ml-[-1px] mb-0.5 flex items-center justify-center transition-all duration-300 origin-bottom-left w-2.5 h-2.5 bg-(--accent-base) rounded-full">
+                  <Search
+                    className="w-1.5 h-1.5 text-(--text-inverse) transition-opacity absolute opacity-100"
+                    strokeWidth={4}
+                  />
+                </div>
+              </div>
             </button>
-            <div className="flex-1 relative flex items-center bg-(--bg-surface) rounded-full px-3.5 py-2 border border-(--border-dim) focus-within:border-(--accent-base)">
-              <Search className="w-5 h-5 text-(--text-muted) mr-2 shrink-0" />
+            <div className="flex-1 relative flex items-center bg-(--bg-surface) rounded-full px-4 py-1.5 border border-(--border-dim) focus-within:border-(--accent-base)">
               <input
                 ref={mobileInputRef}
                 type="text"
@@ -618,105 +658,90 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
           </div>
 
           {/* Mobile Overlay Content */}
-          <div className="flex-1 overflow-y-auto py-4 search-scrollbar space-y-5">
+          <div className="flex-1 overflow-y-auto py-3 px-4 search-scrollbar flex flex-col gap-1">
             {!query.trim() ? (
               <>
                 {/* Starred Items / Quick Links */}
                 {pinnedLinks.length > 0 && (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-1.5 text-xs font-expanded font-bold text-(--accent-base) uppercase tracking-wider px-1">
-                      <Star className="w-4 h-4 text-(--accent-base)" />
-                      <span>Starred Items / Quick Links</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      {pinnedLinks.map((link, idx) => (
-                        <div
-                          key={idx}
+                  <div className="grid grid-cols-2 gap-1 mb-1">
+                    {pinnedLinks.map((link, idx) => (
+                      <div
+                        key={idx}
+                        onClick={(e) => {
+                          const forceLegacy = e.shiftKey ? isModernUI : !isModernUI;
+                          onNavigate(link, forceLegacy);
+                          setIsOmniboxOpen(false);
+                          setQuery("");
+                        }}
+                        className="flex items-center justify-between px-4 py-3 rounded-full bg-(--bg-surface) border border-(--border-dim)/40 active:scale-[0.98] transition-all cursor-pointer text-left"
+                      >
+                        <span className="text-xs font-bold text-(--text-main) truncate pr-1">
+                          {toTitleCase(link.title)}
+                        </span>
+                        <button
                           onClick={(e) => {
-                            const forceLegacy = e.shiftKey ? isModernUI : !isModernUI;
-                            onNavigate(link, forceLegacy);
-                            setIsOmniboxOpen(false);
-                            setQuery("");
+                            e.stopPropagation();
+                            onTogglePin(link);
                           }}
-                          className="flex items-center justify-between p-3 rounded-2xl bg-(--bg-surface) border border-(--border-dim) active:scale-[0.98] transition-all cursor-pointer text-left"
+                          className="p-1 text-(--accent-base) hover:text-(--text-muted) shrink-0"
+                          title="Unpin"
                         >
-                          <span className="text-xs font-bold text-(--text-main) truncate pr-1">
-                            {toTitleCase(link.title)}
-                          </span>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onTogglePin(link);
-                            }}
-                            className="p-1 text-(--accent-base) hover:text-(--text-muted) shrink-0"
-                            title="Unpin"
-                          >
-                            <Star className="w-4 h-4 fill-current" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
+                          <Star className="w-3.5 h-3.5 fill-current" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 )}
 
-                {/* Spotlight Categories & Quick Links */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-1.5 text-xs font-expanded font-bold text-(--text-muted) uppercase tracking-wider px-1">
-                    <Keep className="w-4 h-4 text-(--text-muted)" />
-                    <span>Spotlight Categories</span>
-                  </div>
-                  <div className="space-y-3">
-                    {allCategories.map((cat, catIdx) => {
-                      const CatIcon = getCategoryIcon(cat.title);
-                      return (
-                        <div
-                          key={catIdx}
-                          className="bg-(--bg-surface) p-3.5 rounded-2xl border border-(--border-dim) space-y-2"
-                        >
-                          <div className="flex items-center gap-2 pb-2 border-b border-(--border-dim)">
-                            <CatIcon className="w-4.5 h-4.5 text-(--accent-base)" />
-                            <span className="font-expanded font-bold text-xs text-(--text-main)">
-                              {renderCategoryTitle(cat.title)}
-                            </span>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                            {cat.links.map((link, lIdx) => (
-                              <button
-                                key={lIdx}
-                                onClick={(e) => {
-                                  const forceLegacy = e.shiftKey ? isModernUI : !isModernUI;
-                                  onNavigate(link, forceLegacy);
-                                  setIsOmniboxOpen(false);
-                                  setQuery("");
-                                }}
-                                className="flex items-center justify-between p-2.5 rounded-xl bg-(--bg-main)/60 active:bg-(--bg-highlight) text-left text-xs font-bold text-(--text-muted) active:text-(--text-main) transition-colors cursor-pointer"
-                              >
-                                <span className="truncate flex-1 pr-2">
-                                  {toTitleCase(link.title)}
-                                </span>
-                                {hasRetopPage(link) && (
-                                  <span
-                                    className="re-badge inline-block text-[9px] font-black px-1 py-0.5 rounded leading-none shrink-0 bg-transparent text-(--accent-base)"
-                                    style={{
-                                      fontFamily: "var(--font-expanded)",
-                                      fontVariationSettings: "'wdth' 151, 'wght' 700, 'ROND' 100, 'slnt' -10",
-                                    }}
-                                  >
-                                    re.
-                                  </span>
-                                )}
-                              </button>
-                            ))}
-                          </div>
+                {/* Categories & Links (No section titles, no category bg cards, gap-1, fully rounded items with increased py) */}
+                <div className="flex flex-col gap-1">
+                  {allCategories.map((cat, catIdx) => {
+                    const CatIcon = getCategoryIcon(cat.title);
+                    return (
+                      <div key={catIdx} className="flex flex-col gap-1 py-1">
+                        <div className="flex items-center gap-1.5 px-2 py-0.5 opacity-70">
+                          <CatIcon className="w-3.5 h-3.5 text-(--accent-base)" />
+                          <span className="font-expanded font-bold text-[11px] text-(--text-muted)">
+                            {renderCategoryTitle(cat.title)}
+                          </span>
                         </div>
-                      );
-                    })}
-                  </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                          {cat.links.map((link, lIdx) => (
+                            <button
+                              key={lIdx}
+                              onClick={(e) => {
+                                const forceLegacy = e.shiftKey ? isModernUI : !isModernUI;
+                                onNavigate(link, forceLegacy);
+                                setIsOmniboxOpen(false);
+                                setQuery("");
+                              }}
+                              className="flex items-center justify-between px-4 py-3 rounded-full bg-(--bg-surface) hover:bg-(--bg-highlight) active:bg-(--bg-highlight) border border-(--border-dim)/30 text-left text-xs font-bold text-(--text-main) transition-colors cursor-pointer"
+                            >
+                              <span className="truncate flex-1 pr-2">
+                                {toTitleCase(link.title)}
+                              </span>
+                              {hasRetopPage(link) && (
+                                <span
+                                  className="re-badge inline-block text-[9px] font-black px-1 py-0.5 rounded leading-none shrink-0 bg-transparent text-(--accent-base)"
+                                  style={{
+                                    fontFamily: "var(--font-expanded)",
+                                    fontVariationSettings: "'wdth' 151, 'wght' 700, 'ROND' 100, 'slnt' -10",
+                                  }}
+                                >
+                                  re.
+                                </span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </>
             ) : (
               /* Mobile Search Results */
-              <div className="space-y-2">
+              <div className="flex flex-col gap-1">
                 {flattenedLinks.length === 0 ? (
                   <div className="flex flex-col items-center justify-center p-8 text-(--text-dim) space-y-2">
                     <Error className="w-10 h-10 opacity-50 text-(--accent-base)" />
@@ -739,7 +764,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                           setIsOmniboxOpen(false);
                           setQuery("");
                         }}
-                        className="flex items-center justify-between p-3 rounded-2xl bg-(--bg-surface) border border-(--border-dim) active:scale-[0.99] transition-all cursor-pointer"
+                        className="flex items-center justify-between px-4 py-3.5 rounded-full bg-(--bg-surface) border border-(--border-dim)/40 active:scale-[0.99] transition-all cursor-pointer"
                       >
                         <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
                           <span className="text-xs font-bold text-(--text-main) truncate">
@@ -766,7 +791,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                           title={isPinned ? "Unpin from Dock" : "Pin to Dock"}
                         >
                           <Star
-                            className={`w-4 h-4 ${isPinned ? "text-(--accent-base) fill-current" : "opacity-50"}`}
+                            className={`w-3.5 h-3.5 ${isPinned ? "text-(--accent-base) fill-current" : "opacity-50"}`}
                           />
                         </button>
                       </div>
@@ -782,11 +807,18 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
       {/* Desktop Search Dropdown (lg:flex) */}
       {isSearchActive && (
         <div
+          ref={dropdownRef}
           key="search-dropdown"
-          className="hidden lg:flex absolute top-full mt-2 left-0 w-full max-w-[calc(100vw-24px)] bg-(--bg-surface) border-0 rounded-3xl z-[999999] origin-top-left flex-col overflow-hidden popup-shadow p-2 transition-all duration-200 animate-popup-open"
+          className="hidden lg:flex absolute top-full mt-2 left-0 w-64 md:w-72 bg-(--bg-surface) border-0 rounded-3xl z-[999999] origin-top-left flex-col overflow-hidden popup-shadow p-2 transition-all duration-200 animate-popup-open"
         >
           <div className="p-1">
-            <div className="flex flex-col gap-1 max-h-[50vh] overflow-y-auto search-scrollbar pr-1.5">
+            <div
+              className="flex flex-col gap-1 max-h-[50vh] overflow-y-auto search-scrollbar pr-1.5 py-1.5"
+              style={{
+                maskImage: "linear-gradient(to bottom, transparent 0%, black 14px, black calc(100% - 14px), transparent 100%)",
+                WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 14px, black calc(100% - 14px), transparent 100%)",
+              }}
+            >
               {!query ? (
                 <div
                   className="space-y-1"
@@ -821,7 +853,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                             rect: e.currentTarget.getBoundingClientRect(),
                           });
                         }}
-                        className={`flex w-full items-center justify-between p-2 md:p-2.5 rounded-xl transition-all duration-fast ease-out group cursor-pointer ${isActive ? "bg-(--accent-base) text-(--text-inverse)" : "bg-transparent text-(--text-main) hover:bg-(--bg-highlight)"}`}
+                        className={`flex w-full items-center justify-start p-2 md:p-2.5 rounded-xl transition-all duration-fast ease-out group cursor-pointer ${isActive ? "bg-(--accent-base) text-(--text-inverse)" : "bg-transparent text-(--text-main) hover:bg-(--bg-highlight)"}`}
                       >
                         <div className="flex items-center gap-2.5">
                           <CatIcon
@@ -833,9 +865,6 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                             {renderCategoryTitle(cat.title)}
                           </span>
                         </div>
-                        <ChevronRight
-                          className={`w-4 h-4 transition-all ${isActive ? "opacity-100 text-(--text-inverse)" : "opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 text-(--text-muted) group-hover:text-(--accent-base)"}`}
-                        />
                       </div>
                     );
                   })}
@@ -974,11 +1003,27 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
         const cols = Math.max(1, Math.min(5, Math.ceil(itemCount / 10)));
         const colWidth = 220;
         const popupWidth = cols * colWidth;
-        const targetLeft = activeMenu.rect.right ? activeMenu.rect.right + 6 : 0;
-        const maxLeft = typeof window !== "undefined" ? window.innerWidth - popupWidth - 16 : targetLeft;
-        const leftPos = Math.min(targetLeft, maxLeft);
 
-        const targetTop = activeMenu.rect.top ? activeMenu.rect.top : 0;
+        const dropdownRect = dropdownRef.current?.getBoundingClientRect();
+        let itemRect = activeMenu.rect;
+        if (!itemRect || itemRect.right === 0 || itemRect.width === 0) {
+          const catEl = document.getElementById(`topbar-cat-item-${categoryIndex}`);
+          if (catEl) {
+            itemRect = catEl.getBoundingClientRect();
+          }
+        }
+
+        const fallbackRight = dropdownRect ? dropdownRect.right : 320;
+        const fallbackTop = dropdownRect ? dropdownRect.top : 64;
+
+        const baseRight = (itemRect && itemRect.right > 0) ? itemRect.right : fallbackRight;
+        const baseTop = (itemRect && itemRect.top > 0) ? itemRect.top : fallbackTop;
+
+        const targetLeft = baseRight + 8;
+        const maxLeft = typeof window !== "undefined" ? window.innerWidth - popupWidth - 16 : targetLeft;
+        const leftPos = Math.max(16, Math.min(targetLeft, maxLeft));
+
+        const targetTop = baseTop;
         const estimatedHeight = Math.ceil(itemCount / cols) * 38 + 24;
         const maxTop = typeof window !== "undefined" ? window.innerHeight - estimatedHeight - 16 : targetTop;
         const topPos = Math.max(16, Math.min(targetTop, maxTop));

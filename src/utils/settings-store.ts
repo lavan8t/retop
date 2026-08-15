@@ -236,76 +236,49 @@ const decodeStorage = (str: string): string => {
   }
 };
 
-const chromeStorage: StateStorage = {
-  getItem: async (name: string): Promise<string | null> => {
-    return new Promise((resolve) => {
-      try {
-        const parseValue = (rawVal: any) => {
-          if (rawVal !== undefined && rawVal !== null) {
-            const strVal = typeof rawVal === "string" ? rawVal : JSON.stringify(rawVal);
-            return decodeStorage(strVal);
-          }
-          return null;
-        };
+import { get as idbGet, set as idbSet, del as idbDel } from "idb-keyval";
 
-        if (typeof chrome !== "undefined" && chrome.runtime?.id && chrome.storage?.local) {
-          chrome.storage.local.get(name, (result) => {
-            if (chrome.runtime?.lastError) {
-              try { resolve(parseValue(localStorage.getItem(name))); } catch { resolve(null); }
-            } else {
-              const res = parseValue(result?.[name]);
-              if (res !== null) {
-                resolve(res);
-              } else {
-                try { resolve(parseValue(localStorage.getItem(name))); } catch { resolve(null); }
-              }
-            }
-          });
-        } else {
-          try { resolve(parseValue(localStorage.getItem(name))); } catch { resolve(null); }
-        }
-      } catch (e) {
-        try { resolve(decodeStorage(localStorage.getItem(name) || "")); } catch { resolve(null); }
+const indexedDBSettingsStorage: StateStorage = {
+  getItem: async (name: string): Promise<string | null> => {
+    try {
+      const rawVal = await idbGet(name);
+      if (rawVal !== undefined && rawVal !== null) {
+        const strVal = typeof rawVal === "string" ? rawVal : JSON.stringify(rawVal);
+        return decodeStorage(strVal);
       }
-    });
+      const localVal = localStorage.getItem(name);
+      return localVal ? decodeStorage(localVal) : null;
+    } catch {
+      try {
+        const localVal = localStorage.getItem(name);
+        return localVal ? decodeStorage(localVal) : null;
+      } catch {
+        return null;
+      }
+    }
   },
   setItem: async (name: string, value: string): Promise<void> => {
-    return new Promise((resolve) => {
-      try {
-        const encoded = encodeStorage(value);
-        try { localStorage.setItem(name, encoded); } catch {}
-
-        if (typeof chrome !== "undefined" && chrome.runtime?.id && chrome.storage?.local) {
-          const payload = { [name]: encoded };
-          chrome.storage.local.set(payload, () => {
-            const _err = chrome.runtime?.lastError;
-            resolve();
-          });
-        } else {
-          resolve();
-        }
-      } catch (e) {
-        resolve();
+    try {
+      const encoded = encodeStorage(value);
+      try { localStorage.setItem(name, encoded); } catch {}
+      await idbSet(name, encoded);
+      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+        try {
+          const bc = new BroadcastChannel("retop_settings_channel");
+          bc.postMessage({ type: "SETTINGS_CHANGED", key: name, value: encoded });
+          bc.close();
+        } catch {}
       }
-    });
+    } catch (e) {
+      console.warn("[Settings] IDB write error", e);
+    }
   },
   removeItem: async (name: string): Promise<void> => {
-    return new Promise((resolve) => {
-      try {
-        try { localStorage.removeItem(name); } catch {}
-
-        if (typeof chrome !== "undefined" && chrome.runtime?.id && chrome.storage?.local) {
-          chrome.storage.local.remove([name, "retop_settings_obj"], () => {
-            const _err = chrome.runtime?.lastError;
-            resolve();
-          });
-        } else {
-          resolve();
-        }
-      } catch (e) {
-        resolve();
-      }
-    });
+    try {
+      try { localStorage.removeItem(name); } catch {}
+      await idbDel(name);
+      await idbDel("retop_settings_obj");
+    } catch {}
   },
 };
 
@@ -335,7 +308,7 @@ export const useSettingsStore = create<SettingsStore>()(
     }),
     {
       name: "retop-settings",
-      storage: createJSONStorage(() => chromeStorage),
+      storage: createJSONStorage(() => indexedDBSettingsStorage),
       onRehydrateStorage: () => (state) => {
         if (state) {
           applyTheme(state.settings);
@@ -349,35 +322,30 @@ export const useSettings = () => {
   return useSettingsStore();
 };
 
-if (typeof chrome !== "undefined" && chrome.storage) {
-  chrome.storage.onChanged.addListener((changes, namespace) => {
-    if (isLocallyUpdating) return; // Ignore storage echo during active local updates
-    if (namespace === "local" && (changes["retop-settings"] || changes["retop_settings_obj"])) {
-      const changeItem = changes["retop-settings"] || changes["retop_settings_obj"];
-      const newValue = changeItem?.newValue;
-      if (newValue) {
-        try {
-          let parsed;
-          if (typeof newValue === "string") {
-            const decoded = decodeStorage(newValue);
-            parsed = JSON.parse(decoded);
-          } else {
-            parsed = newValue;
-          }
-
-          const extractedSettings = parsed?.state?.settings || parsed?.settings || (parsed?.defaultView ? parsed : null);
-
-          if (extractedSettings) {
-            const currentSettings = useSettingsStore.getState().settings;
-            if (JSON.stringify(currentSettings) !== JSON.stringify(extractedSettings)) {
-              useSettingsStore.setState({ settings: extractedSettings });
-              applyTheme(extractedSettings);
+if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+  try {
+    const bc = new BroadcastChannel("retop_settings_channel");
+    bc.onmessage = (event) => {
+      if (isLocallyUpdating) return;
+      if (event.data?.type === "SETTINGS_CHANGED") {
+        const raw = event.data.value;
+        if (raw) {
+          try {
+            const decoded = decodeStorage(raw);
+            const parsed = JSON.parse(decoded);
+            const extracted = parsed?.state?.settings || parsed?.settings || (parsed?.defaultView ? parsed : null);
+            if (extracted) {
+              const current = useSettingsStore.getState().settings;
+              if (JSON.stringify(current) !== JSON.stringify(extracted)) {
+                useSettingsStore.setState({ settings: extracted });
+                applyTheme(extracted);
+              }
             }
+          } catch (e) {
+            console.error("Failed to sync settings cross-context", e);
           }
-        } catch (e) {
-          console.error("Failed to sync settings cross-context", e);
         }
       }
-    }
-  });
+    };
+  } catch {}
 }

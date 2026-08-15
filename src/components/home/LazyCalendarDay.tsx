@@ -201,11 +201,11 @@ export const LazyCalendarDay = React.memo(
     return (
       <div
         ref={isToday ? todayRef : undefined}
-        className="@container mb-4 flex gap-2 sm:gap-3 relative select-none">
+        className="@container mb-2 sm:mb-4 flex gap-1.5 sm:gap-3 relative select-none">
         {/* Left Date Column */}
-        <div className="flex flex-col items-center shrink-0 w-10 sm:w-12 pt-1 sticky top-4 h-fit z-10 select-none">
+        <div className="flex flex-col items-center shrink-0 w-8 sm:w-12 pt-0.5 sm:pt-1 sticky top-4 h-fit z-10 select-none">
           <div
-            className={`flex items-center justify-center font-black transition-all w-9 h-9 sm:w-10 sm:h-10 rounded-full text-[clamp(0.85rem,3cqw,1.125rem)] ${
+            className={`flex items-center justify-center font-black transition-all w-7 h-7 sm:w-10 sm:h-10 rounded-full text-xs sm:text-[clamp(0.85rem,3cqw,1.125rem)] ${
               isToday
                 ? "bg-(--accent-base) text-(--text-inverse)"
                 : "bg-transparent text-(--text-main)"
@@ -213,7 +213,7 @@ export const LazyCalendarDay = React.memo(
             {d.getDate()}
           </div>
           <div
-            className={`text-[9px] font-expanded font-bold uppercase mt-0.5 ${
+            className={`text-[8px] sm:text-[9px] font-expanded font-bold uppercase mt-0.5 ${
               isToday ? "text-(--accent-base)" : "text-(--text-muted)"
             }`}>
             {d.toLocaleDateString("en-US", { weekday: "short" })}
@@ -221,34 +221,34 @@ export const LazyCalendarDay = React.memo(
 
           {/* Instructional Day: Graduate Cap Icon below date on left */}
           {calEvent && calEvent.isInstructional && !calEvent.isHoliday && (
-            <span title="Instructional Day" className="mt-1.5 flex items-center justify-center">
-              <School className="w-3.5 h-3.5 text-(--accent-base) shrink-0" />
+            <span title="Instructional Day" className="mt-1 flex items-center justify-center">
+              <School className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-(--accent-base) shrink-0" />
             </span>
           )}
 
           {/* Holiday: Red Dot below date on left */}
           {calEvent && calEvent.isHoliday && (
-            <div className="w-2.5 h-2.5 rounded-full bg-red-500 mt-1.5 shrink-0 shadow-xs" title="Holiday" />
+            <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-red-500 mt-1 shrink-0 shadow-xs" title="Holiday" />
           )}
         </div>
 
         {/* Right Content Area */}
-        <div className="flex flex-col gap-px flex-1 min-w-0 pb-4 border-l-2 border-(--border-dim) pl-4">
+        <div className="flex flex-col gap-px flex-1 min-w-0 pb-2 sm:pb-4 border-l-2 border-(--border-dim) pl-2 sm:pl-4">
           {/* Holiday text */}
           {calEvent?.isHoliday && (
-            <div className="w-full text-left py-1 text-xs md:text-sm font-bold text-(--text-main) tracking-wide select-none">
+            <div className="w-full text-left py-0.5 sm:py-1 text-xs md:text-sm font-bold text-(--text-main) tracking-wide select-none">
               {calEvent.info ? calEvent.info.replace(/^holiday\s*[:•\-]?\s*/i, "").trim() : "No Classes"}
             </div>
           )}
 
           {/* Exam Day line */}
           {dayExams.length > 0 ? (
-            <div className="w-full text-left py-1 text-xs md:text-sm font-bold text-(--accent-base) tracking-wide select-none">
+            <div className="w-full text-left py-0.5 sm:py-1 text-xs md:text-sm font-bold text-(--accent-base) tracking-wide select-none">
               {dayExams[0]?.groupType ? `${dayExams[0].groupType} Examination` : "Examination Day"}
             </div>
           ) : (
             calEvent?.info && /exam|cat\s*\d|fat|mid\s*term/i.test(calEvent.info) && (
-              <div className="w-full text-left py-1 text-xs md:text-sm font-bold text-(--accent-base) tracking-wide select-none">
+              <div className="w-full text-left py-0.5 sm:py-1 text-xs md:text-sm font-bold text-(--accent-base) tracking-wide select-none">
                 {calEvent.info.trim()}
               </div>
             )
@@ -267,9 +267,9 @@ export const LazyCalendarDay = React.memo(
               });
 
               return groups.map((group, gIdx) => (
-                <div key={`${keyPrefix}-group-${gIdx}`} className="flex flex-col gap-px rounded-2xl overflow-hidden mb-2">
+                <div key={`${keyPrefix}-group-${gIdx}`} className="flex flex-col gap-px rounded-xl sm:rounded-2xl overflow-hidden mb-1.5 sm:mb-2">
                   {group.items.map((evt, i) => {
-                    const radiusClass = "rounded-sm first:rounded-t-2xl last:rounded-b-2xl";
+                    const radiusClass = "rounded-xs sm:rounded-sm first:rounded-t-xl sm:first:rounded-t-2xl last:rounded-b-xl sm:last:rounded-b-2xl";
                     return (
                       <div key={`${keyPrefix}-${gIdx}-${i}`} className={evt.isDone || keyPrefix.includes("done") ? "opacity-40 grayscale contrast-75 saturate-0" : isToday ? "opacity-100" : "opacity-80"}>
                         {evt.type === "class" ? (

@@ -1,4 +1,5 @@
-import { getStorageData, setStorageData, getAllStorageData, isChromeExtensionValid } from "./storageAdapter";
+import { getStorageData, setStorageData, getAllStorageData } from "./storageAdapter";
+import { del as idbDel, entries as idbEntries } from "idb-keyval";
 
 const CACHE_PREFIX = "retop_cache_";
 const CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days default TTL
@@ -18,10 +19,7 @@ export const getCachedDataWithTimestamp = async <T>(key: string): Promise<{ data
       return { data: stored as T, timestamp: Date.now() };
     }
   } catch (e: any) {
-    const msg = String(e?.message || e || "");
-    if (!msg.includes("Extension context invalidated")) {
-      console.warn("[Storage Engine] Cache read failed", e);
-    }
+    console.warn("[Storage Engine] Cache read failed", e);
   }
 
   return null;
@@ -44,10 +42,7 @@ export const setCachedData = async (key: string, data: any): Promise<void> => {
       },
     });
   } catch (e: any) {
-    const msg = String(e?.message || e || "");
-    if (!msg.includes("Extension context invalidated")) {
-      console.error("[Storage Engine] Cache write failed", e);
-    }
+    console.error("[Storage Engine] Cache write failed", e);
   }
 };
 
@@ -69,34 +64,27 @@ export const getAllCachedKeys = async (): Promise<{ key: string; timestamp: numb
 
 export const removeCacheKey = async (key: string): Promise<void> => {
   const cacheKey = key.startsWith(CACHE_PREFIX) ? key : `${CACHE_PREFIX}${key}`;
-  if (isChromeExtensionValid()) {
-    try {
-      await new Promise<void>((resolve) => {
-        chrome.storage.local.remove([cacheKey, key], () => resolve());
-      });
-    } catch (e) {}
-  }
+  try {
+    await idbDel(cacheKey);
+    await idbDel(key);
+  } catch (e) {}
   try {
     localStorage.removeItem(cacheKey);
     localStorage.removeItem(key);
   } catch (e) {}
 };
 
-export const clearCache = (keyPrefix?: string): void => {
-  if (isChromeExtensionValid()) {
-    try {
-      chrome.storage.local.get(null, (items) => {
-        if (chrome.runtime.lastError) return;
-        const target = keyPrefix ? `${CACHE_PREFIX}${keyPrefix}` : CACHE_PREFIX;
-        const keysToRemove = Object.keys(items || {}).filter(
-          (k) => k.startsWith(target) || k.startsWith("retop_")
-        );
-        if (keysToRemove.length > 0) {
-          chrome.storage.local.remove(keysToRemove);
-        }
-      });
-    } catch (e) {}
-  }
+export const clearCache = async (keyPrefix?: string): Promise<void> => {
+  try {
+    const target = keyPrefix ? `${CACHE_PREFIX}${keyPrefix}` : CACHE_PREFIX;
+    const entries = await idbEntries();
+    for (const [k] of entries) {
+      const keyStr = String(k);
+      if (keyStr.startsWith(target) || keyStr.startsWith("retop_")) {
+        await idbDel(k);
+      }
+    }
+  } catch (e) {}
 
   try {
     for (let i = localStorage.length - 1; i >= 0; i--) {
@@ -107,3 +95,4 @@ export const clearCache = (keyPrefix?: string): void => {
     }
   } catch (e) {}
 };
+

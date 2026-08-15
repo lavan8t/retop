@@ -123,6 +123,12 @@ interface OfficialResourcesMenuProps {
 export const OfficialResourcesMenu: React.FC<OfficialResourcesMenuProps> = ({
   resources,
 }) => {
+  const isChennai =
+    (typeof window !== "undefined" && window.location.hostname.includes("vtopcc")) ||
+    (typeof document !== "undefined" && document.documentElement.getAttribute("data-campus") === "chennai");
+
+  if (!isChennai) return null;
+
   const [isOpen, setIsOpen] = useState(false);
   const items = resources || getOfficialResources();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -248,7 +254,7 @@ export const OfficialResourcesMenu: React.FC<OfficialResourcesMenuProps> = ({
                   )}
 
                   {/* Icon Container */}
-                  <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl bg-(--bg-highlight) flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform overflow-hidden shadow-xs border border-(--border-dim)">
+                  <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl bg-(--bg-highlight) flex items-center justify-center mb-1.5 transition-transform overflow-hidden shadow-xs border border-(--border-dim)">
                     {item.icon ? (
                       <img
                         src={item.icon}

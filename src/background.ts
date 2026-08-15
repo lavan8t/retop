@@ -1,5 +1,6 @@
 import { uploadBackup, downloadBackup } from "./utils/googleDriveSync";
 import { getExtUrl } from "./utils/url";
+import { get as idbGet, set as idbSet } from "idb-keyval";
 
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === "install") {
@@ -24,8 +25,8 @@ if (typeof chrome !== "undefined" && chrome.downloads?.onDeterminingFilename) {
       return;
     }
 
-    chrome.storage.local.get(["lastDownloadInfo"], (res) => {
-      const info = res?.lastDownloadInfo as {
+    idbGet("lastDownloadInfo").then((res: any) => {
+      const info = res as {
         timestamp: number;
         type: string;
         semester?: string;
@@ -60,6 +61,8 @@ if (typeof chrome !== "undefined" && chrome.downloads?.onDeterminingFilename) {
       }
 
       suggest({ filename: `retop/downloads/${itemFileName}` });
+    }).catch(() => {
+      suggest();
     });
 
     return true; // indicates async response
@@ -71,8 +74,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.action === "PORTAL_SCRAPED_DATA" || message.type === "PORTAL_SCRAPED_DATA") {
     const payload = message.payload || message.data;
     if (payload) {
-      // 1. Persist to extension local storage
-      chrome.storage.local.set({ "retop_last_sync_payload": payload, "retop_last_sync_time": Date.now() });
+      // 1. Persist to IndexedDB
+      idbSet("retop_last_sync_payload", payload).catch(() => {});
+      idbSet("retop_last_sync_time", Date.now()).catch(() => {});
 
       // 2. Relay incoming payload updates to any active tab running the PWA
       const pwaUrlPatterns = [

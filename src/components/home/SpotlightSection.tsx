@@ -1,19 +1,42 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import {
   Campaign,
   OpenInNew,
   Download,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { SpotlightCategoryGroup, SpotlightLinkItem } from "../../types/vtop";
+import { Card } from "../ui/Card";
 
 interface SpotlightSectionProps {
   spotlightCategories: SpotlightCategoryGroup[];
+  isMobileWidget?: boolean;
+  className?: string;
 }
 
 export const SpotlightSection: React.FC<SpotlightSectionProps> = ({
   spotlightCategories,
+  isMobileWidget = false,
+  className = "",
 }) => {
-  if (!spotlightCategories || spotlightCategories.length === 0) {
+  const [selectedCat, setSelectedCat] = useState<string>("all");
+
+  const totalItemsCount = useMemo(() => {
+    if (!spotlightCategories) return 0;
+    return spotlightCategories.reduce((sum, g) => sum + (g.items?.length || 0), 0);
+  }, [spotlightCategories]);
+
+  const displayedItems = useMemo(() => {
+    if (!spotlightCategories || spotlightCategories.length === 0) return [];
+    if (selectedCat === "all") {
+      return spotlightCategories.flatMap((g) =>
+        (g.items || []).map((item) => ({ ...item, category: g.category }))
+      );
+    }
+    const group = spotlightCategories.find((g) => g.category === selectedCat);
+    return (group?.items || []).map((item) => ({ ...item, category: group?.category || "" }));
+  }, [spotlightCategories, selectedCat]);
+
+  if (!spotlightCategories || spotlightCategories.length === 0 || totalItemsCount === 0) {
     return null;
   }
 
@@ -31,8 +54,84 @@ export const SpotlightSection: React.FC<SpotlightSectionProps> = ({
     }
   };
 
+  // Compact Mobile Widget Mode
+  if (isMobileWidget) {
+    return (
+      <Card className={`w-full bg-(--bg-highlight) rounded-4xl flex flex-col relative z-30 overflow-hidden border-2 border-(--border-main) shadow-(--brutal-shadow-sm) hover:shadow-(--brutal-shadow-hover) transition-all ${className}`}>
+        {/* Widget Header */}
+        <div className="px-5 pt-4 pb-3 border-b-2 border-(--border-main) flex justify-between items-center shrink-0">
+          <div className="flex items-center gap-2">
+            <Campaign className="w-4 h-4 text-(--accent-base)" />
+            <span className="text-[0.625rem] font-expanded font-bold uppercase text-(--text-muted) leading-none">
+              Spotlight ({totalItemsCount})
+            </span>
+          </div>
+        </div>
+
+        {/* Category Pills Filter */}
+        {spotlightCategories.length > 1 && (
+          <div className="flex items-center gap-1.5 px-4 pt-2.5 pb-1 overflow-x-auto hide-scrollbar shrink-0">
+            <button
+              onClick={() => setSelectedCat("all")}
+              className={`px-2.5 py-1 rounded-full text-[10px] font-expanded font-bold uppercase transition-colors shrink-0 cursor-pointer ${
+                selectedCat === "all"
+                  ? "bg-(--accent-base) text-(--text-inverse)"
+                  : "bg-(--bg-surface) text-(--text-muted) hover:text-(--text-main)"
+              }`}
+            >
+              All
+            </button>
+            {spotlightCategories.map((g, idx) => (
+              <button
+                key={idx}
+                onClick={() => setSelectedCat(g.category)}
+                className={`px-2.5 py-1 rounded-full text-[10px] font-expanded font-bold uppercase transition-colors shrink-0 cursor-pointer ${
+                  selectedCat === g.category
+                    ? "bg-(--accent-base) text-(--text-inverse)"
+                    : "bg-(--bg-surface) text-(--text-muted) hover:text-(--text-main)"
+                }`}
+              >
+                {g.category} ({g.items?.length || 0})
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Items List */}
+        <div className="p-3 flex flex-col gap-1 max-h-75 overflow-y-auto custom-scrollbar">
+          {displayedItems.map((item, idx) => (
+            <div
+              key={idx}
+              onClick={() => handleLinkClick(item)}
+              className="flex items-center justify-between p-2.5 rounded-xl bg-(--bg-surface) hover:bg-(--border-dim) transition-colors cursor-pointer active:scale-[0.99]"
+            >
+              <div className="flex flex-col flex-1 min-w-0 pr-2">
+                <span className="text-xs font-bold text-(--text-main) line-clamp-2 leading-snug">
+                  {item.title}
+                </span>
+                {selectedCat === "all" && item.category && (
+                  <span className="text-[9px] font-expanded font-bold text-(--text-muted) uppercase mt-0.5">
+                    {item.category}
+                  </span>
+                )}
+              </div>
+              <div className="shrink-0 text-(--text-muted) pl-1">
+                {item.isDownload ? (
+                  <Download className="w-4 h-4 text-(--accent-base)" />
+                ) : (
+                  <OpenInNew className="w-4 h-4 text-(--accent-base)" />
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    );
+  }
+
+  // Desktop Left Column View
   return (
-    <div className="w-full flex flex-col gap-3 relative mb-4">
+    <div className={`w-full flex flex-col gap-3 relative mb-4 ${className}`}>
       {/* Header Bar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">

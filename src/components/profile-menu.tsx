@@ -14,6 +14,8 @@ import {
 import { QuickLink } from "../types/vtop";
 import { Tooltip } from "./ui/Tooltip";
 
+import { entries as idbEntries, set as idbSet } from "idb-keyval";
+
 interface ProfileMenuProps {
   userName: string;
   userRegNo: string;
@@ -43,14 +45,12 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
         data[key] = localStorage.getItem(key);
       }
     }
-    if (typeof chrome !== "undefined" && chrome.storage?.local) {
-      await new Promise<void>((resolve) => {
-        chrome.storage.local.get(null, (items) => {
-          if (items) Object.assign(data, items);
-          resolve();
-        });
-      });
-    }
+    try {
+      const idbData = await idbEntries();
+      for (const [k, v] of idbData) {
+        data[String(k)] = v;
+      }
+    } catch {}
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -316,9 +316,9 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
                         for (const [k, v] of Object.entries(json)) {
                           localStorage.setItem(k, typeof v === "string" ? v : JSON.stringify(v));
                         }
-                        if (typeof chrome !== "undefined" && chrome.storage?.local) {
-                          chrome.storage.local.set(json);
-                        }
+                        await Promise.all(
+                          Object.entries(json).map(([k, v]) => idbSet(k, v))
+                        );
                         window.location.reload();
                       }
                     } catch {

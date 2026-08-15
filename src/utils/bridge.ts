@@ -299,9 +299,63 @@ export function setUIVisibility(visible: boolean) {
   }
 }
 
+export function enhanceLegacyHMenuBar() {
+  const hmenuBar = document.getElementById("top-hmenu-bar");
+  if (!hmenuBar) return;
+  const container = hmenuBar.querySelector(".d-flex.flex-nowrap");
+  if (!container || container.querySelector("#retop-hmenu-search")) return;
+
+  const searchBtn = document.createElement("a");
+  searchBtn.id = "retop-hmenu-search";
+  searchBtn.className = "btn btn-outline ps-0 fw-bold text-start text-nowrap hmenuItem";
+  searchBtn.href = "javascript:void(0);";
+  searchBtn.setAttribute("role", "button");
+  searchBtn.setAttribute("title", "Search (Press Space)");
+  searchBtn.innerHTML = `
+    <i class="bi bi-search fs-6 me-md-1 text-primary d-none d-md-inline-block"></i>
+    <span class="primaryColor1"><i class="fs-6 bi bi-search"></i>
+      <span class="d-none d-md-inline-block">Search</span>
+    </span>
+  `;
+
+  searchBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Trigger VTOP's native Space key handler
+    const spaceEvent = new KeyboardEvent("keydown", {
+      key: " ",
+      code: "Space",
+      keyCode: 32,
+      which: 32,
+      bubbles: true,
+      cancelable: true,
+    });
+    document.dispatchEvent(spaceEvent);
+    window.dispatchEvent(spaceEvent);
+
+    // Also trigger VTOP search modal if present
+    const searchModal = document.querySelector("#searchModal, #universalSearchModal, #quickSearchModal, #globalSearchModal, #quickSearch, #vtopSearchModal");
+    if (searchModal && (window as any).bootstrap?.Modal) {
+      try {
+        const modalInstance = (window as any).bootstrap.Modal.getOrCreateInstance(searchModal);
+        modalInstance.show();
+      } catch (err) {}
+    }
+  });
+
+  const brand = container.querySelector(".navbar-brand");
+  if (brand && brand.nextSibling) {
+    container.insertBefore(searchBtn, brand.nextSibling);
+  } else {
+    container.appendChild(searchBtn);
+  }
+}
+
 export function revealLegacyUI() {
   setUIVisibility(false);
   removeSplashScreen();
+  enhanceLegacyHMenuBar();
 }
 
 export function createHiddenForm(

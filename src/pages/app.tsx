@@ -563,7 +563,7 @@ const DashboardApp = () => {
     const userProfile = { ...scrapedUser, campus };
     setUser(userProfile);
     
-    // Cache for offline mode across chrome.storage, localStorage, and IndexedDB strictly scoped by regNo
+    // Cache for offline mode across IndexedDB and localStorage strictly scoped by regNo
     getStorageData(["retop_cached_users", `${userProfile.regNo}_profileImage`]).then((res: Record<string, any>) => {
       let users: any[] = res.retop_cached_users || [];
       const existingIdx = users.findIndex((u: any) => u.regNo === userProfile.regNo);
@@ -659,29 +659,34 @@ const DashboardApp = () => {
         if (count>= 102 || attempts> 15) clearInterval(menuPoller);
       }, 2000);
 
+      let feedbackAttempts = 0;
       feedbackPoller = setInterval(() => {
+        feedbackAttempts++;
         try {
-          const bodyClone = document.body.cloneNode(true) as HTMLElement;
-          const sidebars = bodyClone.querySelectorAll("nav, .sidebar, #sidebar, [class*='menu'], .hmenu");
-          sidebars.forEach(s => s.remove());
-          
-          const mainText = bodyClone.textContent?.toLowerCase() || "";
-          const isFeedback = mainText.includes("faculty feedback") || 
-                             mainText.includes("student feedback") || 
-                             mainText.includes("course feedback") ||
-                             mainText.includes("mandatory feedback") ||
-                             mainText.includes("provide feedback");
-                             
-          if (isFeedback) {
-            const hasInputs = document.querySelectorAll("input[type='radio'], textarea, select").length> 0;
-            if (hasInputs) {
-              console.log("[retop] Mandatory feedback or blocking form detected in background. Triggering legacy UI.");
-              clearInterval(feedbackPoller);
-              revealLegacyUI();
-              setIsModernUI(false);
+          const formInputs = document.querySelectorAll("input[type='radio'], textarea, select");
+          if (formInputs.length > 0) {
+            const forms = document.querySelectorAll("form");
+            for (let i = 0; i < forms.length; i++) {
+              const text = (forms[i].textContent || "").toLowerCase();
+              if (
+                text.includes("feedback") ||
+                text.includes("faculty feedback") ||
+                text.includes("student feedback") ||
+                text.includes("mandatory feedback")
+              ) {
+                console.log("[retop] Mandatory feedback form detected. Triggering legacy UI.");
+                clearInterval(feedbackPoller);
+                revealLegacyUI();
+                setIsModernUI(false);
+                return;
+              }
             }
           }
         } catch (e) {}
+
+        if (feedbackAttempts >= 5) {
+          clearInterval(feedbackPoller);
+        }
       }, 3000);
     }
 
@@ -857,16 +862,6 @@ const DashboardApp = () => {
             transition: all 500ms cubic-bezier(0.32, 0.72, 0, 1) !important;
           }
         `}</style>
-      )}
-
-      {isModernUI && (
-        <div
-          className="group fixed top-0 z-150 h-20 pl-6 md:pl-8 flex items-center gap-4 cursor-pointer pointer-events-auto"
-          onClick={() => {
-            setIsPeeking(false);
-            setIsModernUI(false);
-          }}
-          title="Return to Legacy UI"></div>
       )}
 
       {/* Main Modern UI - Always rendered to preserve state, just animated off-screen when hidden */}

@@ -8,6 +8,7 @@ import {
   Tune,
   Storage,
   Info,
+  ArrowBack,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 
 import { downloadICalFile } from "../utils/ical-export";
@@ -85,6 +86,7 @@ const COLORS = [
 
 export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
   const [activeCategory, setActiveCategory] = useState<CategoryId>("appearance");
+  const [mobileSelectedCategory, setMobileSelectedCategory] = useState<CategoryId | null>(null);
   const [isDriveSyncing, setIsDriveSyncing] = useState<boolean>(false);
   const [driveStatus, setDriveStatus] = useState<string>("");
   const [clearStatus, setClearStatus] = useState<string>("");
@@ -160,12 +162,127 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
     updateSetting("themeMode", targetMode as any);
   };
 
+  const renderSectionContent = (categoryId: CategoryId) => {
+    switch (categoryId) {
+      case "appearance":
+        return (
+          <AppearanceSection
+            settings={settings}
+            updateSetting={updateSetting}
+            handleThemeChange={handleThemeChange}
+            COLORS={COLORS}
+          />
+        );
+      case "defaults":
+        return (
+          <DefaultsSection
+            settings={settings}
+            updateSetting={updateSetting}
+          />
+        );
+      case "sync":
+        return (
+          <SyncSection
+            settings={settings}
+            updateSetting={updateSetting}
+            isDriveSyncing={isDriveSyncing}
+            driveStatus={driveStatus}
+            handleDriveBackup={handleDriveBackup}
+            handleDriveRestore={handleDriveRestore}
+            icalOptions={icalOptions}
+            setIcalOptions={setIcalOptions}
+            handleExportICal={handleExportICal}
+          />
+        );
+      case "data":
+        return (
+          <DataStorageSection
+            handleClearAllCache={handleClearAllCache}
+            clearStatus={clearStatus}
+          />
+        );
+      case "about":
+        return <AboutSection />;
+      default:
+        return null;
+    }
+  };
+
+  const currentMobileCatObj = CATEGORIES.find((c) => c.id === mobileSelectedCategory);
+
   return (
-    <div 
-      className="h-full w-full flex flex-col lg:flex-row gap-6 py-0 pl-4 pr-0 md:py-0 md:pl-6 md:pr-0 lg:py-0 lg:px-8 overflow-y-auto lg:overflow-hidden bg-(--bg-main) text-(--text-main) max-w-425 mx-auto relative">
-      <div className="w-full flex-1 flex flex-col md:flex-row gap-6 md:gap-8 min-h-0 overflow-hidden h-full">
+    <div className="h-full w-full flex flex-col md:flex-row gap-6 py-0 px-4 md:px-6 lg:px-8 overflow-y-auto md:overflow-hidden bg-(--bg-main) text-(--text-main) max-w-425 mx-auto relative custom-scrollbar">
+      {/* MOBILE DRILL-DOWN VIEW (< md screens) */}
+      <div className="flex md:hidden flex-col w-full min-h-0 pt-16 pb-24">
+        {!mobileSelectedCategory ? (
+          /* Level 1: Category Sections List */
+          <div className="flex flex-col gap-1 w-full">
+            {CATEGORIES.map((cat, i) => {
+              const CatIcon = cat.icon;
+              const isFirst = i === 0;
+              const isLast = i === CATEGORIES.length - 1;
+              const roundingClass = isFirst
+                ? "rounded-t-3xl rounded-b-xl"
+                : isLast
+                  ? "rounded-b-3xl rounded-t-xl"
+                  : "rounded-xl";
+
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => {
+                    setActiveCategory(cat.id);
+                    setMobileSelectedCategory(cat.id);
+                  }}
+                  className={`flex items-center gap-3.5 px-4 py-3.5 ${roundingClass} bg-(--bg-surface) hover:bg-(--bg-highlight) text-(--text-main) border-2 border-(--border-dim) active:scale-[0.99] transition-all cursor-pointer text-left shadow-(--brutal-shadow-sm)`}
+                >
+                  <div className="w-10 h-10 rounded-full bg-(--bg-highlight) flex items-center justify-center shrink-0 border border-(--border-dim)">
+                    <CatIcon className="w-5 h-5 text-(--accent-base)" />
+                  </div>
+                  <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                    <span className="font-expanded font-black text-sm text-(--text-main) leading-snug">
+                      {cat.label}
+                    </span>
+                    <span className="text-xs font-medium text-(--text-muted) leading-tight truncate">
+                      {cat.description}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          /* Level 2: Category Detail Page */
+          <div className="flex flex-col gap-4 w-full animate-in fade-in duration-150">
+            <div className="flex items-center gap-2 pb-3 border-b-2 border-(--border-main)">
+              <button
+                onClick={() => setMobileSelectedCategory(null)}
+                className="p-2 -ml-2 rounded-full hover:bg-(--bg-highlight) text-(--text-main) active:scale-95 transition-all flex items-center justify-center cursor-pointer shrink-0"
+                aria-label="Back to settings"
+              >
+                <ArrowBack className="w-5 h-5 text-(--text-main)" />
+              </button>
+              <div className="flex flex-col min-w-0 flex-1">
+                <h2 className="text-lg font-expanded font-black text-(--text-main) leading-tight truncate">
+                  {currentMobileCatObj?.label}
+                </h2>
+                <span className="text-xs font-medium text-(--text-muted) leading-tight truncate">
+                  {currentMobileCatObj?.description}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-6 pt-1">
+              {renderSectionContent(mobileSelectedCategory)}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* DESKTOP 2-COLUMN VIEW (md:flex) */}
+      <div className="hidden md:flex w-full flex-1 flex-row gap-6 md:gap-8 min-h-0 overflow-hidden h-full">
         {/* Left Category Sidebar */}
-        <div className="w-full md:w-72 lg:w-80 shrink-0 flex flex-col gap-1 h-fit overflow-y-auto scrollbar-none pt-18 md:pt-22 pb-6 pr-1">
+        <div className="w-72 lg:w-80 shrink-0 flex flex-col gap-1 h-fit overflow-y-auto scrollbar-none pt-18 md:pt-22 pb-6 pr-1">
           {CATEGORIES.map((cat, i) => {
             const isSelected = activeCategory === cat.id;
             const CatIcon = cat.icon;
@@ -185,15 +302,22 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
                   isSelected
                     ? "bg-(--accent-base) text-(--text-inverse) border-(--accent-base) shadow-none"
                     : "bg-(--bg-surface) text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main) border-(--border-dim)"
-                }`}>
+                }`}
+              >
                 <CatIcon
-                  className={`w-6 h-6 shrink-0 mt-0.5 transition-transform ${isSelected ? "scale-105" : ""}`} />
+                  className={`w-6 h-6 shrink-0 mt-0.5 transition-transform ${isSelected ? "scale-105" : ""}`}
+                />
                 <div className="flex flex-col gap-0.5 flex-1 min-w-0">
                   <span className="font-expanded font-black text-sm md:text-base leading-snug">
                     {cat.label}
                   </span>
                   <span
-                    className={`text-xs font-medium leading-snug ${isSelected ? "opacity-90 text-(--text-inverse)" : "text-(--text-muted)"}`}>
+                    className={`text-xs font-medium leading-snug ${
+                      isSelected
+                        ? "opacity-90 text-(--text-inverse)"
+                        : "text-(--text-muted)"
+                    }`}
+                  >
                     {cat.description}
                   </span>
                 </div>
@@ -205,42 +329,7 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
         {/* Right Topic Content Area */}
         <div className="flex-1 min-w-0 h-full overflow-y-auto custom-scrollbar pt-18 md:pt-22 pb-24 md:pb-12 pr-2">
           <div className="flex flex-col gap-6 max-w-2xl">
-            {activeCategory === "appearance" && (
-              <AppearanceSection
-                settings={settings}
-                updateSetting={updateSetting}
-                handleThemeChange={handleThemeChange}
-                COLORS={COLORS} />
-            )}
-
-            {activeCategory === "defaults" && (
-              <DefaultsSection
-                settings={settings}
-                updateSetting={updateSetting} />
-            )}
-
-            {activeCategory === "sync" && (
-              <SyncSection
-                settings={settings}
-                updateSetting={updateSetting}
-                isDriveSyncing={isDriveSyncing}
-                driveStatus={driveStatus}
-                handleDriveBackup={handleDriveBackup}
-                handleDriveRestore={handleDriveRestore}
-                icalOptions={icalOptions}
-                setIcalOptions={setIcalOptions}
-                handleExportICal={handleExportICal} />
-            )}
-
-            {activeCategory === "data" && (
-              <DataStorageSection
-                handleClearAllCache={handleClearAllCache}
-                clearStatus={clearStatus} />
-            )}
-
-            {activeCategory === "about" && (
-              <AboutSection />
-            )}
+            {renderSectionContent(activeCategory)}
           </div>
         </div>
       </div>

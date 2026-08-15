@@ -3,6 +3,7 @@ import { VTOPNetwork } from "../../utils/network";
 import { getCachedData, setCachedData } from "../../utils/cache";
 import { parseStudentProfile } from "../../parsers/profile";
 import { DataState } from "../dataStore";
+import { get as idbGet, set as idbSet } from "idb-keyval";
 
 export interface UserProfileData {
   name: string;
@@ -125,32 +126,30 @@ export const createProfileSlice: StateCreator<DataState, [], [], ProfileSlice> =
           } catch {}
         }
 
-        if (typeof chrome !== "undefined" && chrome.storage) {
-          chrome.storage.local.get(["retop_cached_users"], (res: Record<string, any>) => {
-            const raw = res?.retop_cached_users;
-            let users: any[] = Array.isArray(raw) ? raw : [];
-            const idx = users.findIndex((u: any) => u.regNo === regNo);
-            const userEntry = {
-              regNo,
-              username: regNo,
-              name: profile.basic.name,
-              profileImgBase64: profileImgBase64 || "",
-              campus,
-              lastActive: Date.now(),
-            };
-            if (idx >= 0) users[idx] = userEntry;
-            else users.push(userEntry);
+        try {
+          const raw = await idbGet("retop_cached_users");
+          let users: any[] = Array.isArray(raw) ? raw : [];
+          const idx = users.findIndex((u: any) => u.regNo === regNo);
+          const userEntry = {
+            regNo,
+            username: regNo,
+            name: profile.basic.name,
+            profileImgBase64: profileImgBase64 || "",
+            campus,
+            lastActive: Date.now(),
+          };
+          if (idx >= 0) users[idx] = userEntry;
+          else users.push(userEntry);
 
-            chrome.storage.local.set({
-              [`${regNo}_profileImage`]: profileImgBase64 || "",
-              retop_lastAuthId: regNo,
-              retop_lastName: profile.basic.name,
-              retop_last_campus: campus,
-              retop_active_user: regNo,
-              retop_cached_users: users,
-            });
-          });
-        }
+          await Promise.all([
+            idbSet(`${regNo}_profileImage`, profileImgBase64 || ""),
+            idbSet("retop_lastAuthId", regNo),
+            idbSet("retop_lastName", profile.basic.name),
+            idbSet("retop_last_campus", campus),
+            idbSet("retop_active_user", regNo),
+            idbSet("retop_cached_users", users),
+          ]);
+        } catch {}
       }
     } catch (err) {
       console.warn("Failed to fetch user profile", err);

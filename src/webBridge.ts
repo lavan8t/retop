@@ -1,7 +1,7 @@
 import { getExtUrl } from "./utils/url";
-import { set as idbSet, get as idbGet } from "idb-keyval";
+import { set as idbSet, get as idbGet, entries as idbEntries } from "idb-keyval";
 
-if (typeof chrome !== "undefined" && chrome.storage?.local) {
+if (typeof window !== "undefined") {
   try {
     localStorage.setItem("__RETOP_EXT_PRESENT__", "true");
   } catch {}
@@ -13,7 +13,7 @@ if (typeof chrome !== "undefined" && chrome.storage?.local) {
   window.postMessage({ type: "RETOP_EXT_PRESENT" }, origin);
 
   // 2. Listen for messages from background service worker (scraped data relay)
-  if (chrome.runtime?.onMessage) {
+  if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
     chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       if (message.type === "RETOP_PWA_SYNC_PAYLOAD" && message.payload) {
         const payload = message.payload;
@@ -49,44 +49,31 @@ if (typeof chrome !== "undefined" && chrome.storage?.local) {
     const { type, keys, data, requestId } = event.data;
 
     if (type === "RETOP_GET_STORAGE") {
-      let safeKeys = keys || null;
-      try { safeKeys = JSON.parse(JSON.stringify(keys)); } catch {}
-      chrome.storage.local.get(safeKeys, (res) => {
-        let safeRes = res || {};
-        try { safeRes = JSON.parse(JSON.stringify(res)); } catch {}
-        window.postMessage({ type: "RETOP_STORAGE_DATA", data: safeRes, requestId }, origin);
-      });
+      if (Array.isArray(keys)) {
+        Promise.all(keys.map(async (k) => [k, await idbGet(k)])).then((pairs) => {
+          const res: Record<string, any> = {};
+          for (const [k, v] of pairs) {
+            if (v !== undefined) res[k] = v;
+          }
+          window.postMessage({ type: "RETOP_STORAGE_DATA", data: res, requestId }, origin);
+        });
+      }
     } else if (type === "RETOP_GET_ALL_STORAGE") {
-      chrome.storage.local.get(null, (res) => {
-        let safeRes = res || {};
-        try { safeRes = JSON.parse(JSON.stringify(res)); } catch {}
-        window.postMessage({ type: "RETOP_ALL_STORAGE_DATA", data: safeRes, requestId }, origin);
+      idbEntries().then((entries) => {
+        const res: Record<string, any> = {};
+        for (const [k, v] of entries) {
+          res[String(k)] = v;
+        }
+        window.postMessage({ type: "RETOP_ALL_STORAGE_DATA", data: res, requestId }, origin);
       });
     } else if (type === "RETOP_SET_STORAGE") {
       if (data && typeof data === "object") {
-        let safeData = data;
-        try { safeData = JSON.parse(JSON.stringify(data)); } catch {}
-        chrome.storage.local.set(safeData, () => {
+        Promise.all(Object.entries(data).map(([k, v]) => idbSet(k, v))).then(() => {
           window.postMessage({ type: "RETOP_STORAGE_SAVED", success: true, requestId }, origin);
         });
       }
     }
   });
-
-  // 4. Keep web app updated whenever chrome.storage.local changes
-  if (chrome.storage.onChanged) {
-    chrome.storage.onChanged.addListener((changes, namespace) => {
-      if (namespace === "local") {
-        const updateData: Record<string, any> = {};
-        for (const [key, change] of Object.entries(changes)) {
-          if (change.newValue !== undefined) {
-            updateData[key] = change.newValue;
-          }
-        }
-        window.postMessage({ type: "RETOP_STORAGE_UPDATED", changes: updateData }, origin);
-      }
-    });
-  }
 }
 
 // 4. On /u/[id]/home routes: take over page & mount offline app UI

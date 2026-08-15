@@ -6,6 +6,7 @@ import { parseGrades } from '../parsers/grades';
 import { getGridPositions, getCorrectDayName, CAMPUS_SLOT_TIMINGS } from '../utils/timetable-slots';
 import { CoursePageData, CoursePageOption, CourseMaterial } from '../types/vtop';
 import { useDataStore } from '../store/dataStore';
+import { set as idbSet } from 'idb-keyval';
 
 interface UpcomingClassDetail {
   date: Date;
@@ -236,9 +237,7 @@ export const useCoursePageData = (
 
   const handleDownload = (fileId: string, facultyName: string, courseName: string) => {
     try {
-      chrome.storage.local.set({
-        lastDownloadInfo: { faculty: facultyName, course: courseName },
-      });
+      idbSet("lastDownloadInfo", { faculty: facultyName, course: courseName, timestamp: Date.now() }).catch(() => {});
     } catch (e) {
       console.error("Failed to set download info", e);
     }

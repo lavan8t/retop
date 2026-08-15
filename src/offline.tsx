@@ -17,6 +17,7 @@ import { asciiArtTT, asciiArtSMV, asciiArtMGR, asciiArtCC } from "./components/a
 import { getExtUrl } from "./utils/url";
 import { applyTheme } from "./utils/settings-store";
 import { GlobalOverflowTooltip } from "./components/ui/Tooltip";
+import { clear as idbClear } from "idb-keyval";
 
 
 // Resolve asset paths for both ext (chrome-extension://) and web contexts
@@ -451,9 +452,7 @@ const OfflineApp = () => {
 
   const handleResetCacheAndRedirect = async () => {
     try {
-      if (typeof chrome !== "undefined" && chrome.storage?.local) {
-        await new Promise<void>((resolve) => chrome.storage.local.clear(() => resolve()));
-      }
+      await idbClear();
       localStorage.clear();
       sessionStorage.clear();
     } catch {}
@@ -479,7 +478,7 @@ const OfflineApp = () => {
   }, [step, activeUser]);
 
   const loadCachedProfiles = async () => {
-    // Wait for webBridge to sync chrome.storage → localStorage before reading
+    // Wait for webBridge to sync IndexedDB → localStorage before reading
     await new Promise<void>((resolve) => {
       if (typeof window === "undefined") return resolve();
       // Already synced (flag set by webBridge.ts after first sync)

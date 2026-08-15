@@ -4,7 +4,7 @@
   "description": "uni portal done better.",
   "version": "0.5.0",
 
-  "permissions": ["storage", "activeTab", "unlimitedStorage", "downloads", "identity"],
+  "permissions": ["activeTab", "unlimitedStorage", "downloads", "identity"],
 
   "host_permissions": [
     "https://vtop.vit.ac.in/*",

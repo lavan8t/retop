@@ -18,7 +18,8 @@ import { LazyCalendarDay } from "../components/home/LazyCalendarDay";
 import { QuickLinksMenu } from "../components/home/QuickLinksMenu";
 import { EmptyState } from "../components/EmptyState";
 import { HomeWidgets } from "../components/home/HomeWidgets";
-import { getClassesForDate } from "../utils/timetable-helpers";
+import { SpotlightSection } from "../components/home/SpotlightSection";
+import { getClassesForDate } from "../utils/timetable-slots";
 import { PullToRefresh } from "../components/common/PullToRefresh";
 import { Add, Event, Apps, School, Close, Campaign } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { Tooltip } from "../components/ui/Tooltip";
@@ -77,8 +78,70 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onSync,
 }) => {
   const { calGridData, examGroups, fetchExamSemesters, fetchDetailedAttendance, attSelectedSem, isSyncing } = useDataStore();
-  const [isSpotlightOpen, setIsSpotlightOpen] = useState(false);
   const [isFabVisible, setIsFabVisible] = useState(true);
+  const [isMobileSpotlightOpen, setIsMobileSpotlightOpen] = useState(false);
+  const [isSpotlightClosing, setIsSpotlightClosing] = useState(false);
+  const [sheetDragY, setSheetDragY] = useState(0);
+  const touchStartYRef = useRef(0);
+  const currentDragYRef = useRef(0);
+  const isDraggingRef = useRef(false);
+  const sheetContentRef = useRef<HTMLDivElement>(null);
+
+  const closeSpotlight = () => {
+    setIsSpotlightClosing(true);
+    setTimeout(() => {
+      setIsMobileSpotlightOpen(false);
+      setIsSpotlightClosing(false);
+      setSheetDragY(0);
+    }, 150);
+  };
+
+  const handleHandleTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    touchStartYRef.current = e.touches[0].clientY;
+    currentDragYRef.current = 0;
+    isDraggingRef.current = true;
+  };
+
+  const handleHandleTouchMove = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - touchStartYRef.current;
+    if (deltaY > 0) {
+      currentDragYRef.current = deltaY;
+      setSheetDragY(deltaY);
+    }
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartYRef.current = e.touches[0].clientY;
+    currentDragYRef.current = 0;
+    isDraggingRef.current = false;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - touchStartYRef.current;
+    const isAtTop = !sheetContentRef.current || sheetContentRef.current.scrollTop <= 0;
+
+    if (deltaY > 0 && isAtTop) {
+      isDraggingRef.current = true;
+      currentDragYRef.current = deltaY;
+      setSheetDragY(deltaY);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (isDraggingRef.current) {
+      if (currentDragYRef.current > 75) {
+        closeSpotlight();
+      } else {
+        setSheetDragY(0);
+      }
+    }
+    isDraggingRef.current = false;
+  };
+
   const lastScrollTopRef = useRef(0);
   const isScrollingRef = useRef(false);
   const scrollTimeoutRef = useRef<any>(null);
@@ -101,6 +164,18 @@ export const HomeView: React.FC<HomeViewProps> = ({
         return dateA - dateB;
       });
   }, [assignments]);
+
+  const sortedAttendance = useMemo(() => {
+    if (!attendance) return [];
+    return [...attendance].sort((a, b) => {
+      const valA = parseFloat(a.attendance);
+      const valB = parseFloat(b.attendance);
+      if (isNaN(valA) && isNaN(valB)) return 0;
+      if (isNaN(valA)) return 1;
+      if (isNaN(valB)) return -1;
+      return valA - valB;
+    });
+  }, [attendance]);
 
   const overallAttPct = useMemo(() => {
     const valid = attendance.filter((a) => !isNaN(parseFloat(a.attendance)));
@@ -208,40 +283,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
   const todayRef = useRef<HTMLDivElement | null>(null);
   const nowRef = useRef<HTMLDivElement | null>(null);
-  const initialScrollDone = useRef(false);
-  useEffect(() => {
-    if (initialScrollDone.current) return;
-    const t = setTimeout(() => {
-      if (nowRef.current || todayRef.current) {
-        if (nowRef.current) {
-          nowRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
-        } else if (todayRef.current) {
-          todayRef.current.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-          });
-        }
-        initialScrollDone.current = true;
-      }
-    }, 300);
-    return () => clearTimeout(t);
-  }, [calendarDays]);
 
   return (
-    <div className="h-full w-full flex flex-col lg:flex-row gap-0 py-0 px-4 md:px-6 lg:px-8 overflow-y-auto lg:overflow-hidden bg-(--bg-main) max-w-425 mx-auto relative">
-      {/* Sticky Mobile Left Spotlight Button */}
-      <button
-        onClick={() => setIsSpotlightOpen(true)}
-        className="fixed left-0 top-[45%] z-40 lg:hidden bg-(--accent-base) text-(--text-inverse) rounded-r-2xl py-3 px-1.5 shadow-lg border border-l-0 border-(--border-dim) cursor-pointer flex flex-col items-center justify-center gap-1.5 transition-transform active:scale-95 group"
-        aria-label="Open Spotlight"
-        title="Open Spotlight"
-      >
-        <Campaign className="w-4 h-4 text-(--text-inverse) transition-transform group-hover:scale-110" />
-        <span className="[writing-mode:vertical-rl] rotate-180 text-[0.625rem] font-black uppercase tracking-wider">
-          Spotlight
-        </span>
-      </button>
-
+    <div className="h-full w-full flex flex-col lg:flex-row gap-0 py-0 px-2 md:px-6 lg:px-8 overflow-y-auto lg:overflow-hidden bg-(--bg-main) max-w-425 mx-auto relative custom-scrollbar">
       <QuickLinksMenu
         className="hidden lg:flex"
         menuCategories={menuCategories}
@@ -254,9 +298,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
       />
 
       {/* CENTER PANE: Surface Level Unified Event CalendarMonth & Mobile Feed */}
-      <div className="flex-none lg:flex-1 w-full flex flex-col gap-6 md:gap-8 overflow-hidden pt-1 pl-1 md:pl-0 min-h-0 relative">
-        <div className="flex flex-col items-center mb-2 lg:mb-4 px-2 w-full relative z-95 pointer-events-auto pt-20 md:pt-23 lg:pt-25">
+      <div className="flex-none lg:flex-1 w-full max-w-full flex flex-col gap-6 md:gap-8 overflow-visible lg:overflow-x-hidden pt-1 pl-1 md:pl-0 min-h-0 relative">
+        <div className="hidden lg:flex flex-col items-center mb-2 lg:mb-4 px-2 w-full relative z-95 pointer-events-auto pt-20 md:pt-23 lg:pt-25">
           <div className="flex flex-col items-center w-full">
+            {/* Desktop Header: Unchanged */}
             <div className="flex justify-between w-full items-center mb-6 px-1 pt-4">
               <button
                 onClick={(e) => {
@@ -342,15 +387,75 @@ export const HomeView: React.FC<HomeViewProps> = ({
           onRefresh={onSync}
           isRefreshing={isSyncing}
           onScroll={handleCalendarScroll}
-          className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-4 pr-3 pb-32 pt-15 -mt-24 -mb-12 relative z-0 pointer-events-auto empty-events-container"
-          style={{
-            maskImage:
-              "linear-gradient(to bottom, transparent, black 5%, black 15%)",
-          }}
+          className="h-auto lg:flex-1 overflow-visible lg:overflow-y-auto lg:overflow-x-hidden custom-scrollbar flex flex-col gap-4 pr-3 pb-32 pt-16 lg:pt-15 mt-0 lg:-mt-24 -mb-12 relative z-0 pointer-events-auto empty-events-container w-full max-w-full lg:[mask-image:linear-gradient(to_bottom,transparent,black_5%,black_15%)]"
         >
-          {/* MOBILE FEED HEADER (< lg screens): 1. Stats Carousel -> 2. Pending Assignments */}
-          <div className="flex lg:hidden flex-col gap-4 w-full pt-14 pb-2 px-1">
-            {/* 1. Stats Carousel */}
+          {/* MOBILE FEED HEADER (< lg screens): 1. Carousel Row (Attendance & Pending Assignments) -> 2. Merged CGPA/Credits Card -> 3. Month & Sem Title */}
+          <div className="flex lg:hidden flex-col gap-3 w-full max-w-full pt-1 pb-2 px-0 overflow-x-hidden">
+            {/* 1. Carousel Row: Attendance Card & Pending Assignments Card */}
+            {(attendance.length > 0 || pendingAssignments.length > 0) && (
+              <div className="w-full max-w-full flex overflow-x-auto snap-x snap-mandatory gap-2.5 hide-scrollbar pb-1 px-1 shrink-0">
+                {/* Card 1: Attendance Card */}
+                {attendance && attendance.length > 0 && (
+                  <Card
+                    onClick={() =>
+                      onNavigate({
+                        title: "Class Attendance",
+                        url: "studentattendance",
+                        category: "Academics",
+                      })
+                    }
+                    className="shrink-0 snap-start min-w-[270px] sm:min-w-[300px] w-[80vw] max-w-[360px] bg-(--bg-highlight) rounded-3xl flex flex-col relative z-30 cursor-pointer overflow-hidden border-2 border-(--border-main) shadow-(--brutal-shadow-sm) hover:shadow-(--brutal-shadow-hover) transition-all h-fit"
+                  >
+                    <div className="px-4 pt-3 pb-2 border-b-2 border-(--border-main) flex justify-between items-center shrink-0">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-[0.5625rem] font-expanded font-bold uppercase text-(--text-muted) leading-none">
+                          Attendance
+                        </span>
+                        <span className="text-xl font-black font-expanded leading-none text-(--text-main)">
+                          {overallAttPct}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-2.5 flex flex-col gap-0.5 rounded-2xl max-h-56 overflow-y-auto custom-scrollbar">
+                      {sortedAttendance.map((c, i) => (
+                        <AttendanceRow key={i} course={c} />
+                      ))}
+                    </div>
+                  </Card>
+                )}
+
+                {/* Card 2: Pending Assignments Card */}
+                {pendingAssignments.length > 0 && (
+                  <Card
+                    onClick={() =>
+                      onNavigate({
+                        title: "Assignments",
+                        url: "examinations/StudentDA",
+                        category: "Examinations",
+                      })
+                    }
+                    className="shrink-0 snap-start min-w-[270px] sm:min-w-[300px] w-[80vw] max-w-[360px] bg-(--bg-highlight) rounded-3xl flex flex-col relative z-30 cursor-pointer overflow-hidden border-2 border-(--border-main) shadow-(--brutal-shadow-sm) hover:shadow-(--brutal-shadow-hover) transition-all h-fit"
+                  >
+                    <div className="px-4 pt-3 pb-2 border-b-2 border-(--border-main) flex justify-between items-center shrink-0">
+                      <span className="text-[0.5625rem] font-expanded font-bold uppercase text-(--text-muted)">
+                        Pending Assignments ({pendingAssignments.length})
+                      </span>
+                    </div>
+                    <div className="p-2.5 flex flex-col gap-0.5 rounded-2xl max-h-56 overflow-y-auto custom-scrollbar">
+                      {pendingAssignments.map((assignment, idx) => (
+                        <AssignmentRow
+                          key={idx}
+                          assignment={assignment}
+                          className="rounded-sm first:rounded-t-2xl last:rounded-b-2xl"
+                        />
+                      ))}
+                    </div>
+                  </Card>
+                )}
+              </div>
+            )}
+
+            {/* 2. Merged CGPA & Credits Card */}
             <HomeWidgets
               className="w-full flex lg:hidden"
               settings={settings}
@@ -361,37 +466,32 @@ export const HomeView: React.FC<HomeViewProps> = ({
               isMobileFeed={true}
             />
 
-            {/* 2. Pending Assignments Card (full-width below stats) */}
-            {pendingAssignments.length > 0 && (
-              <Card
-                onClick={() =>
+            {/* 3. Month and Current Sem Title (Brought down right before Lazy Calendar, no tracking, regular sem case) */}
+            <div className="flex flex-col items-start w-full pt-2 pb-1 px-1">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
                   onNavigate({
-                    title: "Assignments",
-                    url: "examinations/StudentDA",
-                    category: "Examinations",
-                  })
-                }
-                className="w-full bg-(--bg-highlight) rounded-4xl flex flex-col relative z-30 cursor-pointer overflow-hidden border-2 border-(--border-main) shadow-(--brutal-shadow-sm) hover:shadow-(--brutal-shadow-hover) transition-all h-fit"
+                    title: "Academic Calendar",
+                    url: "academics/common/CalendarPreview",
+                    category: "Academics",
+                  });
+                }}
+                className="text-left flex flex-col gap-0.5 cursor-pointer focus:outline-none"
               >
-                <div className="px-5 pt-4 pb-3 border-b-2 border-(--border-main) flex justify-between items-center shrink-0">
-                  <span className="text-[0.625rem] font-expanded font-bold uppercase text-(--text-muted)">
-                    Pending Assignments ({pendingAssignments.length})
+                <span className="text-xl sm:text-2xl font-black font-expanded text-(--text-main) leading-tight">
+                  {monthDisplay.text}
+                </span>
+                {monthDisplay.semName && (
+                  <span className="text-xs font-bold text-(--text-muted) leading-normal">
+                    {monthDisplay.semName}
                   </span>
-                </div>
-                <div className="p-3 flex flex-col gap-0.5 rounded-2xl">
-                  {pendingAssignments.map((assignment, idx) => (
-                    <AssignmentRow
-                      key={idx}
-                      assignment={assignment}
-                      className="rounded-sm first:rounded-t-2xl last:rounded-b-2xl"
-                    />
-                  ))}
-                </div>
-              </Card>
-            )}
+                )}
+              </button>
+            </div>
           </div>
 
-          {/* 3. LazyCalendarDay feed starting immediately below */}
+          {/* 4. LazyCalendarDay feed */}
           {calendarDays.map((d, dIdx) => (
             <LazyCalendarDay
               key={dIdx}
@@ -423,54 +523,70 @@ export const HomeView: React.FC<HomeViewProps> = ({
         onNavigate={onNavigate}
       />
 
-      {/* Mobile Spotlight & Attendance Bottom Sheet */}
-      {isSpotlightOpen && (
-        <div
-          onClick={() => setIsSpotlightOpen(false)}
-          className="fixed inset-0 z-100 flex flex-col justify-end bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 lg:hidden"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="w-full bg-(--bg-surface) rounded-t-3xl border-t-2 border-(--border-main) px-4 pt-0 pb-6 max-h-[85vh] flex flex-col shadow-2xl relative animate-in slide-in-from-bottom duration-300 overflow-hidden"
+      {/* Mobile Sticky Left Edge Spotlight Pill Button & Bottom Sheet */}
+      {spotlightCategories && spotlightCategories.length > 0 && (
+        <>
+          <button
+            onClick={() => setIsMobileSpotlightOpen(true)}
+            className="fixed left-1.5 top-1/2 -translate-y-1/2 z-90 lg:hidden px-2 py-3.5 rounded-full bg-(--accent-base) text-(--text-inverse) shadow-lg border-2 border-(--border-main) active:scale-95 transition-all flex flex-col items-center justify-center gap-1 cursor-pointer select-none"
+            aria-label="Spotlight"
+            title="Spotlight"
           >
-            {/* Drag Handle */}
-            <div className="w-12 h-1.5 bg-(--border-dim) rounded-full mx-auto my-3 shrink-0" />
+            <Campaign className="w-4 h-4 shrink-0" />
+            <span
+              className="font-expanded font-bold text-[9px] uppercase text-center"
+              style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}
+            >
+              Spotlight
+            </span>
+          </button>
 
-            {/* Header with Title and Close Button */}
-            <div className="flex items-center justify-between px-2 pb-3 border-b border-(--border-dim) mb-3 shrink-0">
-              <div className="flex items-center gap-2">
-                <Campaign className="w-5 h-5 text-(--accent-base)" />
-                <span className="font-expanded font-black text-sm text-(--text-main) uppercase tracking-wide">
-                  Spotlight & Quick Links
-                </span>
-              </div>
-              <button
-                onClick={() => setIsSpotlightOpen(false)}
-                className="p-1.5 rounded-full hover:bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) transition-colors cursor-pointer flex items-center justify-center"
-                aria-label="Close Spotlight"
-              >
-                <Close className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Bottom Sheet Content */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
-              <QuickLinksMenu
-                className="flex flex-col w-full pt-0! pb-2! px-0! gap-4"
-                menuCategories={menuCategories}
-                onNavigate={(link) => {
-                  setIsSpotlightOpen(false);
-                  onNavigate(link);
-                }}
-                pinnedLinks={pinnedLinks}
-                handleTogglePin={handleTogglePin}
-                attendance={attendance}
-                ttCourses={ttCourses}
-                spotlightCategories={spotlightCategories}
+          {isMobileSpotlightOpen && (
+            <>
+              {/* Backdrop: No blur, 150ms fade */}
+              <div
+                className={`fixed inset-0 z-99998 bg-black/40 lg:hidden ${
+                  isSpotlightClosing ? "animate-fade-out-150" : "animate-fade-in-150"
+                }`}
+                onClick={closeSpotlight}
               />
-            </div>
-          </div>
-        </div>
+
+              {/* Bottom Sheet: 150ms slide up / slide down, touch drag dismiss */}
+              <div
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                style={{
+                  transform: sheetDragY > 0 ? `translateY(${sheetDragY}px)` : undefined,
+                  transition: isDraggingRef.current ? "none" : sheetDragY === 0 && !isSpotlightClosing ? "transform 150ms cubic-bezier(0.16, 1, 0.3, 1)" : undefined,
+                  animation: sheetDragY > 0 ? "none" : undefined,
+                }}
+                className={`fixed inset-x-0 bottom-0 z-99999 bg-(--bg-surface) border-t-2 border-(--border-main) rounded-t-3xl p-4 sm:p-5 shadow-2xl flex flex-col gap-2 max-h-[82vh] overflow-hidden lg:hidden ${
+                  isSpotlightClosing
+                    ? "animate-sheet-down"
+                    : sheetDragY > 0
+                    ? ""
+                    : "animate-sheet-up"
+                }`}
+              >
+                {/* Top Center Pill Handle */}
+                <div
+                  onTouchStart={handleHandleTouchStart}
+                  onTouchMove={handleHandleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                  className="w-full py-2 -mt-2 flex items-center justify-center cursor-grab active:cursor-grabbing select-none shrink-0 touch-none"
+                >
+                  <div className="w-12 h-1.5 bg-(--border-main) rounded-full opacity-60 pointer-events-none" />
+                </div>
+
+                {/* Scrollable Spotlight Content (No duplicate title, no cross button) */}
+                <div ref={sheetContentRef} className="overflow-y-auto flex-1 custom-scrollbar pt-1">
+                  <SpotlightSection spotlightCategories={spotlightCategories} />
+                </div>
+              </div>
+            </>
+          )}
+        </>
       )}
     </div>
   );

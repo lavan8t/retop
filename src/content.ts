@@ -7,15 +7,15 @@ import {
   getAppRoot,
   injectSplashScreen,
   removeSplashScreen,
+  enhanceLegacyHMenuBar,
 } from "./utils/bridge";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { NativePortals } from "./components/NativePortals";
-import { asciiArtTT, asciiArtSMV, asciiArtMGR, asciiArtCC } from "./components/asciiArt";
-import { autoSolveCaptcha } from "./utils/captchaSolver";
 import { getExtUrl } from "./utils/url";
 import { interceptDashboardResponse } from "./utils/dashboardInterceptor";
 import { applyTheme } from "./utils/settings-store";
+import { get as idbGet, set as idbSet } from "idb-keyval";
 
 const vtopContext = {
   csrf: "",
@@ -38,10 +38,17 @@ const decodeStoragePayload = (str: any): string => {
 const parseSettingsPayload = (raw: any): any => {
   if (!raw) return null;
   try {
-    const decoded = typeof raw === "string" ? decodeStoragePayload(raw) : raw;
-    const parsed = typeof decoded === "string" ? JSON.parse(decoded) : decoded;
-    return parsed?.state?.settings || parsed?.settings || (parsed?.defaultView ? parsed : null);
-  } catch (e) {
+    if (typeof raw === "string") {
+      const decoded = decodeStoragePayload(raw);
+      const parsed = JSON.parse(decoded);
+      return (
+        parsed?.state?.settings ||
+        parsed?.settings ||
+        (parsed?.defaultView ? parsed : null)
+      );
+    }
+    return raw?.state?.settings || raw?.settings || (raw?.defaultView ? raw : null);
+  } catch {
     return null;
   }
 };
@@ -57,22 +64,11 @@ const applyThemeFromSettings = (saved: any) => {
 };
 
 try {
-  chrome.storage.local.get("retop-settings", (result) => {
-    const saved = result["retop-settings"];
+  idbGet("retop-settings").then((saved) => {
     if (saved) {
       applyThemeFromSettings(saved);
     }
-  });
-
-  if (chrome.storage && chrome.storage.onChanged) {
-    chrome.storage.onChanged.addListener((changes, namespace) => {
-      if (namespace === "local" && (changes["retop-settings"] || changes["retop_settings_obj"])) {
-        const item = changes["retop-settings"] || changes["retop_settings_obj"];
-        const newValue = item?.newValue;
-        if (newValue) applyThemeFromSettings(newValue);
-      }
-    });
-  }
+  }).catch(() => {});
 } catch (e) {}
 
 // ── Early intercept at document_start for prelogin / open / login pages ──
@@ -277,22 +273,13 @@ const init = async () => {
   let settingsResult = null;
 
   try {
-    if (!chrome?.runtime?.id) throw new Error("Context invalidated");
     [pausedResult, settingsResult] = await Promise.all([
-      new Promise((resolve) => {
-        chrome.storage.local.get("retop-paused-until", (res) =>
-          resolve(res["retop-paused-until"]),
-        );
-      }),
-      new Promise((resolve) => {
-        chrome.storage.local.get("retop-settings", (res) =>
-          resolve(res["retop-settings"]),
-        );
-      }),
+      idbGet("retop-paused-until"),
+      idbGet("retop-settings"),
     ]);
   } catch (err) {
     console.warn(
-      "[retop] Extension context invalidated or storage error. Falling back to native VTOP.",
+      "[retop] Storage error. Falling back to native VTOP.",
     );
     document.body.style.opacity = "1";
     document.body.classList.add("show-legacy-ui");
@@ -321,15 +308,16 @@ const init = async () => {
   }
 
   // Also listen for settings trigger from the popup
-  chrome.runtime.onMessage.addListener((msg) => {
-    if (msg.action === "open_settings") {
-      const root = document.getElementById("retop-root");
-      if (root) {
-        // Find a way to navigate or fire custom event to open settings
-        window.dispatchEvent(new CustomEvent("retop-open-settings"));
+  if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
+    chrome.runtime.onMessage.addListener((msg) => {
+      if (msg.action === "open_settings") {
+        const root = document.getElementById("retop-root");
+        if (root) {
+          window.dispatchEvent(new CustomEvent("retop-open-settings"));
+        }
       }
-    }
-  });
+    });
+  }
 
   const path = window.location.pathname;
 
@@ -396,13 +384,13 @@ const init = async () => {
           const form = target.closest("form");
           if (form && form.id) {
             if (form.id === "stdForm")
-              chrome.storage.local.set({ "retop-user-role": "student" });
+              idbSet("retop-user-role", "student");
             if (form.id === "empForm")
-              chrome.storage.local.set({ "retop-user-role": "employee" });
+              idbSet("retop-user-role", "employee");
             if (form.id === "parentForm")
-              chrome.storage.local.set({ "retop-user-role": "parent" });
+              idbSet("retop-user-role", "parent");
             if (form.id === "alumniForm")
-              chrome.storage.local.set({ "retop-user-role": "alumni" });
+              idbSet("retop-user-role", "alumni");
           }
         },
         true,
@@ -413,15 +401,13 @@ const init = async () => {
     // role and proceed to login, bypassing /open/page role picker.
     if (isActuallyRoleSelectionPage) {
       try {
-        const skipResult = await new Promise<any>((resolve) => {
-          chrome.storage.local.get("retop-settings", (res) => resolve(res["retop-settings"]));
-        });
+        const skipResult = await idbGet("retop-settings");
         const skipSettings = parseSettingsPayload(skipResult);
         if (skipSettings?.skipRoleSelection) {
           const stdForm = document.getElementById("stdForm") as HTMLFormElement;
           if (stdForm) {
             console.log("[retop] skipRoleSelection enabled, auto-submitting student form");
-            chrome.storage.local.set({ "retop-user-role": "student" });
+            await idbSet("retop-user-role", "student");
             stdForm.submit();
             return;
           }
@@ -434,11 +420,7 @@ const init = async () => {
     return;
   }
 
-  const roleResult = await new Promise((resolve) => {
-    chrome.storage.local.get("retop-user-role", (res) =>
-      resolve(res["retop-user-role"]),
-    );
-  });
+  const roleResult = await idbGet("retop-user-role");
   const currentRole = roleResult || "student";
 
   if (currentRole !== "student") {
@@ -459,6 +441,7 @@ const init = async () => {
   injectSplashScreen();
   document.body.classList.remove("show-legacy-ui");
   injectGlobalStyles();
+  enhanceLegacyHMenuBar();
 
   await waitForTokens();
   initializeContainer();
@@ -481,6 +464,7 @@ const init = async () => {
       );
       document.body.classList.add("show-legacy-ui");
       removeSplashScreen();
+      enhanceLegacyHMenuBar();
       return; // Stop initialization of Retop UI completely
     }
 
@@ -488,6 +472,7 @@ const init = async () => {
   } else {
     document.body.classList.add("show-legacy-ui");
     removeSplashScreen();
+    enhanceLegacyHMenuBar();
   }
 };
 
@@ -496,7 +481,7 @@ function waitForTokens(): Promise<boolean> {
     let attempts = 0;
     const maxAttempts = 50;
 
-    const interval = setInterval(() => {
+    const check = () => {
       attempts++;
       const csrfInput = document.querySelector(
         'input[name="_csrf"]',
@@ -508,14 +493,18 @@ function waitForTokens(): Promise<boolean> {
       if (authInput && authInput.value) vtopContext.authId = authInput.value;
 
       if (!vtopContext.csrf || !vtopContext.authId) {
-        const html = document.documentElement.innerHTML;
-        if (!vtopContext.csrf) {
-          const csrfMatch = html.match(/var\s+csrfValue\s*=\s*["']([^"']+)["']/i) || html.match(/name=["']_csrf["']\s+value=["']([^"']+)["']/i);
-          if (csrfMatch) vtopContext.csrf = csrfMatch[1];
-        }
-        if (!vtopContext.authId) {
-          const idMatch = html.match(/var\s+id\s*=\s*["']([^"']+)["']/i) || html.match(/authorizedID["']?\s*,\s*value:\s*["']([^"']+)["']/i);
-          if (idMatch) vtopContext.authId = idMatch[1];
+        for (let i = 0; i < document.scripts.length; i++) {
+          const text = document.scripts[i].textContent;
+          if (!text) continue;
+          if (!vtopContext.csrf) {
+            const csrfMatch = text.match(/var\s+csrfValue\s*=\s*["']([^"']+)["']/i);
+            if (csrfMatch) vtopContext.csrf = csrfMatch[1];
+          }
+          if (!vtopContext.authId) {
+            const idMatch = text.match(/var\s+id\s*=\s*["']([^"']+)["']/i) || text.match(/authorizedID["']?\s*,\s*value:\s*["']([^"']+)["']/i);
+            if (idMatch) vtopContext.authId = idMatch[1];
+          }
+          if (vtopContext.csrf && vtopContext.authId) break;
         }
       }
 
@@ -523,11 +512,21 @@ function waitForTokens(): Promise<boolean> {
         clearInterval(interval);
         resolve(!!vtopContext.csrf);
       }
-    }, 100);
+    };
+
+    const interval = setInterval(check, 100);
+    check();
   });
 }
 
 const enhancePreloginRoleCards = () => {
+  const roleRow = document.querySelector(".row.row-cols-2.row-cols-sm-4") as HTMLElement;
+  if (roleRow) {
+    roleRow.classList.remove("py-3");
+    roleRow.style.setProperty("padding-top", "0px", "important");
+    roleRow.style.setProperty("padding-bottom", "0px", "important");
+  }
+
   const roleConfigs = [
     {
       selectors: [".cardStudent", "#stdForm"],
@@ -676,6 +675,9 @@ const injectPreloginTheme = () => {
 
   injectGlobalFonts();
 
+  const isChennai = window.location.hostname.includes("vtopcc");
+  document.documentElement.setAttribute("data-campus", isChennai ? "chennai" : "vellore");
+
   const link = document.createElement("link");
   link.id = "vtop-prelogin-theme";
   link.rel = "stylesheet";
@@ -683,8 +685,10 @@ const injectPreloginTheme = () => {
   document.head.appendChild(link);
 
   enhancePreloginHeader();
-  enhancePreloginRoleCards();
-  enhancePreloginInfoAndApps();
+  if (isChennai) {
+    enhancePreloginRoleCards();
+    enhancePreloginInfoAndApps();
+  }
 
   document.addEventListener("click", (e) => {
     const target = e.target as HTMLElement;
@@ -1137,16 +1141,17 @@ const injectLoginTheme = () => {
     const availableArts = artTypes.filter(type => type !== lastArt);
     const pickedArt = availableArts.length ? availableArts[Math.floor(Math.random() * availableArts.length)] : artTypes[0];
     localStorage.setItem("retop_last_ascii_art", pickedArt);
-    
-    let rawArt = asciiArtTT;
-    if (pickedArt === "CC") rawArt = asciiArtCC.trim() ? asciiArtCC : asciiArtTT;
-    else if (pickedArt === "SMV") rawArt = asciiArtSMV;
-    else if (pickedArt === "MGR") rawArt = asciiArtMGR;
-    
-    const asciiArt = rawArt.replace(/\r/g, "");
 
-    // Force right alignment for ASCII art
-    asciiPre.style.setProperty("text-align", "right", "important");
+    import("./components/asciiArt").then(({ asciiArtTT, asciiArtSMV, asciiArtMGR, asciiArtCC }) => {
+      let rawArt = asciiArtTT;
+      if (pickedArt === "CC") rawArt = asciiArtCC.trim() ? asciiArtCC : asciiArtTT;
+      else if (pickedArt === "SMV") rawArt = asciiArtSMV;
+      else if (pickedArt === "MGR") rawArt = asciiArtMGR;
+      
+      const asciiArt = rawArt.replace(/\r/g, "");
+
+      // Force right alignment for ASCII art
+      asciiPre.style.setProperty("text-align", "right", "important");
 
     if (pickedArt === "CC") {
       asciiPre.style.letterSpacing = "0px";
@@ -1386,6 +1391,7 @@ const injectLoginTheme = () => {
     document.addEventListener("mouseleave", () => {
       lastMouseX = -1000;
     });
+    });
   }
 
   // Apply Floating Labels to Username and Password
@@ -1409,9 +1415,8 @@ const injectLoginTheme = () => {
   applyFloatingLabel("username");
   applyFloatingLabel("password");
 
-  chrome.storage.local.get("retop-settings", (result) => {
+  idbGet("retop-settings").then((savedSettings) => {
     try {
-      const savedSettings = result["retop-settings"];
       if (savedSettings) {
         applyThemeFromSettings(savedSettings);
       }
@@ -1421,7 +1426,7 @@ const injectLoginTheme = () => {
         err,
       );
     }
-  });
+  }).catch(() => {});
 
   const isChennaiHost = window.location.hostname.includes("vtopcc");
   document.title = isChennaiHost ? "retop Chennai - Login" : "Login - retop";
@@ -1479,20 +1484,17 @@ const enhanceLegacyLogin = () => {
     document.querySelector("input[name='uname']")) as HTMLInputElement;
 
   if (usernameInput) {
-    chrome.storage.local.get("retop-saved-username", (result) => {
-      const savedUser = result["retop-saved-username"] as string;
+    idbGet("retop-saved-username").then((savedUser) => {
       if (savedUser && !usernameInput.value) {
-        usernameInput.value = savedUser;
+        usernameInput.value = savedUser as string;
         usernameInput.dispatchEvent(new Event("input", { bubbles: true }));
         usernameInput.dispatchEvent(new Event("change", { bubbles: true }));
       }
-    });
+    }).catch(() => {});
 
     const saveUser = () => {
       if (usernameInput.value) {
-        chrome.storage.local.set({
-          "retop-saved-username": usernameInput.value,
-        });
+        idbSet("retop-saved-username", usernameInput.value).catch(() => {});
       }
     };
 
@@ -1520,6 +1522,9 @@ const enhanceLegacyLogin = () => {
     if (captchaImg && captchaInput) {
       clearInterval(findAndSolve);
       console.log("[retop-captcha] CAPTCHA img & input found in DOM. Initializing solver...", captchaImg, captchaInput);
+
+      // Clear polling interval immediately once CAPTCHA elements are found
+      clearInterval(findAndSolve);
 
       // Check for reCAPTCHA / hCaptcha presence
       const recaptchaElem = document.querySelector(
@@ -1577,6 +1582,7 @@ const enhanceLegacyLogin = () => {
 
       const solve = async (imgElement: HTMLImageElement) => {
         try {
+          const { autoSolveCaptcha } = await import("./utils/captchaSolver");
           const solvedText = await autoSolveCaptcha(imgElement);
           if (solvedText && captchaInput) {
             captchaInput.value = solvedText;
@@ -1592,9 +1598,9 @@ const enhanceLegacyLogin = () => {
       // Solve the initial load
       await solve(captchaImg);
 
-      // Attach observer to the wrapper block, not the image.
-      // VTOP uses innerHTML to replace the image, which destroys the old image node.
-      if (captchaBlock) {
+      // Attach single observer to the wrapper block
+      if (captchaBlock && !(captchaBlock as any).__retop_observed) {
+        (captchaBlock as any).__retop_observed = true;
         const observer = new MutationObserver((mutations) => {
           mutations.forEach((mutation) => {
             if (mutation.addedNodes && mutation.addedNodes.length > 0) {

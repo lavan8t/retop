@@ -7,7 +7,10 @@ import {
   CalendarMonth as CalendarIcon,
   ChevronLeft,
   ChevronRight,
+  GridView,
+  List,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
+import { SegmentedControl } from "../components/ui/SegmentedControl";
 import { VTOPNetwork } from "../utils/network";
 
 import {
@@ -19,6 +22,7 @@ import {
 import { CalendarMonthPreview, CalendarEvent, ClassGroup } from "../types/vtop";
 
 import { useDataStore } from "../store/dataStore";
+import { useAppStore } from "../store/appStore";
 import {
   useSettingsStore,
   getMaterialThemeColor,
@@ -56,6 +60,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
   const examBg = getMaterialThemeColor("orange", isDark);
   const examFg = getMaterialOnThemeColor("orange", isDark);
 
+  const { calViewMode, setCalViewMode } = useAppStore();
   const {
     calSemesters,
     setCalSemesters,
@@ -167,12 +172,12 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
   }, [calGridData]);
 
   return (
-    <div className="h-full w-full flex flex-col bg-(--bg-main) font-mono text-(--text-main) overflow-hidden px-4 md:px-8 max-w-425 mx-auto">
+    <div className="h-full w-full flex flex-col bg-(--bg-main) font-mono text-(--text-main) overflow-hidden px-1 sm:px-3 md:px-6 max-w-425 mx-auto">
       {calLoadingMonths ? (
         <div className="flex-1 flex flex-col pt-32 pb-8 px-2 animate-pulse min-h-0 h-full overflow-hidden">
-          <div className="flex-1 grid grid-cols-7 gap-2 md:gap-3 auto-rows-[minmax(100px,auto)] md:auto-rows-[minmax(140px,auto)]">
+          <div className="flex-1 grid grid-cols-7 gap-1 sm:gap-1.5 md:gap-2 auto-rows-[minmax(38px,auto)] sm:auto-rows-[minmax(50px,auto)] md:auto-rows-[minmax(64px,auto)]">
             {[...Array(28)].map((_, i) => (
-              <div key={i} className="bg-(--bg-surface) rounded-3xl" />
+              <div key={i} className="bg-(--bg-surface) rounded-xl sm:rounded-2xl" />
             ))}
           </div>
         </div>
@@ -189,160 +194,273 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
         </div>
       ) : (
         <div className="flex-1 flex flex-col min-h-0 w-full relative z-0">
-          {/* Fixed Top Weekdays (Opaque background + fade below) */}
-          <div className="w-full bg-(--bg-main) pt-18 md:pt-21 relative z-20 pb-1">
-            <div className="grid grid-cols-7 w-full">
-              {WEEKDAYS.map((day, i) => (
-                <div
-                  key={day}
-                  className={`text-center font-expanded font-black text-xs md:text-sm uppercase tracking-widest ${
-                    i === 0 ? "text-att-danger" : "text-(--text-muted)"
-                  }`}>
-                  {day}
-                </div>
-              ))}
+          {/* Fixed Top Weekdays (Only in Grid View) */}
+          {calViewMode === "grid" && (
+            <div className="w-full bg-(--bg-main) pt-16 md:pt-20 relative z-20 pb-1">
+              <div className="grid grid-cols-7 gap-1 sm:gap-1.5 md:gap-2 px-0.5 w-full">
+                {WEEKDAYS.map((day, i) => (
+                  <div
+                    key={day}
+                    className={`text-center font-expanded font-black text-[10px] sm:text-xs md:text-sm uppercase tracking-normal sm:tracking-widest ${
+                      i === 0 ? "text-att-danger" : "text-(--text-muted)"
+                    }`}>
+                    {day}
+                  </div>
+                ))}
+              </div>
+              {/* Fade below */}
+              <div className="absolute top-full left-0 right-0 h-4 bg-linear-to-b from-(--bg-main) to-transparent pointer-events-none" />
             </div>
-            {/* Fade below the weekdays to mask the grid as it scrolls up */}
-            <div className="absolute top-full left-0 right-0 h-6 bg-linear-to-b from-(--bg-main) to-transparent pointer-events-none" />
-          </div>
+          )}
 
-          {/* Grid Container */}
+          {/* Grid or List Container */}
           <div className="flex-1 flex flex-col overflow-hidden relative z-10">
-            <div className="flex-1 overflow-y-auto custom-scrollbar bg-transparent relative pb-24 pt-4">
+            <div className={`flex-1 overflow-y-auto custom-scrollbar bg-transparent relative pb-24 ${calViewMode === "list" ? "pt-16 md:pt-20 px-1 sm:px-2" : "pt-2 md:pt-4"}`}>
               
                 {calLoadingGrid ? (
                   <div
                     key="loading"
- 
- 
- 
                     className="absolute inset-0 z-30 pt-4">
-                    <div className="grid grid-cols-7 gap-2 md:gap-3 auto-rows-[minmax(100px,auto)] md:auto-rows-[minmax(140px,auto)] p-2">
-                       {[...Array(35)].map((_, i) => <div key={i} className="bg-(--bg-surface) rounded-3xl animate-pulse" />)}
-                    </div>
+                    {calViewMode === "list" ? (
+                      <div className="flex flex-col gap-3 p-1 sm:p-2">
+                        {[...Array(10)].map((_, i) => (
+                          <div key={i} className="h-18 bg-(--bg-surface) rounded-2xl animate-pulse" />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-7 gap-1 sm:gap-1.5 md:gap-2 auto-rows-[minmax(38px,auto)] sm:auto-rows-[minmax(50px,auto)] md:auto-rows-[minmax(64px,auto)] p-0.5 sm:p-1">
+                        {[...Array(35)].map((_, i) => <div key={i} className="bg-(--bg-surface) rounded-xl sm:rounded-2xl animate-pulse" />)}
+                      </div>
+                    )}
                   </div>
-                ) : calGridData.length> 0 ? (
+                ) : calGridData.length > 0 ? (
                   <div
                     key="content"
- 
- 
- 
- 
                     className="flex flex-col relative">
                     {calGridData.map((data, mIdx) => (
-                      <div key={mIdx} className="flex flex-col pb-8 pt-4">
-                        <div className="flex items-center justify-start pb-4 pointer-events-none sticky top-0 z-50 pt-2">
-                          <h2 className="font-expanded font-black text-2xl md:text-3xl uppercase tracking-tighter m-0 text-(--text-main) px-2">
+                      <div key={mIdx} className="flex flex-col pb-6 md:pb-8 pt-2 md:pt-4">
+                        <div className="flex items-center justify-start pb-2 md:pb-4 pointer-events-none sticky top-0 z-50 pt-1 md:pt-2 bg-(--bg-main)/90 backdrop-blur-xs">
+                          <h2 className="font-expanded font-black text-lg sm:text-2xl md:text-3xl uppercase tracking-tighter m-0 text-(--text-main) px-1 sm:px-2">
                             {data.month.label.replace(/\s*-\s*/, " ")}
                           </h2>
                         </div>
-                        {/* Month Grid */}
-                        <div className="grid grid-cols-7 gap-2 md:gap-3 auto-rows-[minmax(100px,auto)] md:auto-rows-[minmax(140px,auto)] p-2">
-                          {Array.from({ length: data.startOffset }).map(
-                            (_, i) => (
-                              <div
-                                key={`empty-${i}`}
-                                className="bg-transparent opacity-0 pointer-events-none" />
-                            ),
-                          )}
 
-                          {data.days.map((day, idx) => {
-                            const isToday =
-                              new Date().toDateString() ===
-                              new Date(day.dateObj).toDateString();
+                        {calViewMode === "list" ? (
+                          /* List View for Month: Timeline layout matching Home Lazy Calendar */
+                          <div className="flex flex-col gap-1 p-0.5 sm:p-1">
+                            {data.days.map((day, idx) => {
+                              const isToday =
+                                new Date().toDateString() ===
+                                new Date(day.dateObj).toDateString();
 
-                            let cardStyle: React.CSSProperties = {};
-                            let bgClass =
-                              "bg-(--bg-surface) hover:bg-(--bg-highlight)";
-                            let borderClass = "";
-                            let textClass = "text-(--text-muted)";
-                            let numberClass = "text-(--text-main)";
+                              const dateObj = new Date(day.dateObj);
+                              const weekday = !isNaN(dateObj.getTime())
+                                ? WEEKDAYS[dateObj.getDay()]
+                                : "";
 
-                            if (day.isHoliday) {
-                              cardStyle = {
-                                backgroundColor: holidayBg,
-                                color: holidayFg,
-                              };
-                              bgClass = "border-0 hover:opacity-90";
-                              textClass = "opacity-95 font-extrabold";
-                              numberClass = "font-black";
-                            } else if (day.isExam) {
-                              cardStyle = {
-                                backgroundColor: examBg,
-                                color: examFg,
-                              };
-                              bgClass = "border-0 hover:opacity-90";
-                              textClass = "opacity-95 font-extrabold";
-                              numberClass = "font-black";
-                            } else if (day.isInstructional) {
-                              cardStyle = {
-                                backgroundColor: classBg,
-                                color: classFg,
-                              };
-                              bgClass = "border-0 hover:opacity-90";
-                              textClass = "opacity-95 font-bold";
-                              numberClass = "font-black";
-                            } else if (day.info) {
-                              cardStyle = {
-                                backgroundColor: eventBg,
-                                color: eventFg,
-                              };
-                              bgClass = "border-0 hover:opacity-90";
-                              textClass = "opacity-95 font-bold";
-                              numberClass = "font-black";
-                            }
+                              let cardStyle: React.CSSProperties = {};
+                              let bgClass = "bg-(--bg-surface) hover:bg-(--bg-highlight)";
+                              let titleClass = "text-(--text-main)";
 
-                            if (isToday) {
-                              bgClass += " z-10 shadow-lg ring-2 ring-(--accent-base)";
-                              numberClass =
-                                "text-(--text-inverse) bg-(--accent-base) w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center -ml-1 -mt-1 font-black";
-                            }
+                              if (day.isHoliday) {
+                                cardStyle = {
+                                  backgroundColor: holidayBg,
+                                  color: holidayFg,
+                                };
+                                bgClass = "border-0 hover:opacity-90";
+                                titleClass = "font-black";
+                              } else if (day.isExam) {
+                                cardStyle = {
+                                  backgroundColor: examBg,
+                                  color: examFg,
+                                };
+                                bgClass = "border-0 hover:opacity-90";
+                                titleClass = "font-black";
+                              } else if (day.isInstructional) {
+                                cardStyle = {
+                                  backgroundColor: classBg,
+                                  color: classFg,
+                                };
+                                bgClass = "border-0 hover:opacity-90";
+                                titleClass = "font-black";
+                              } else if (day.info) {
+                                cardStyle = {
+                                  backgroundColor: eventBg,
+                                  color: eventFg,
+                                };
+                                bgClass = "border-0 hover:opacity-90";
+                                titleClass = "font-black";
+                              }
 
-                            return (
-                              <div
-                                key={idx}
-                                ref={isToday ? todayRef : null}
-                                style={cardStyle}
-                                className={`relative p-3 md:p-4 flex flex-col transition-all group rounded-3xl ${bgClass} ${borderClass}`}>
-                                <div className="flex justify-between items-start mb-1 md:mb-2 pt-1 md:pt-0 relative z-10">
-                                  <span
-                                    className={`font-black text-sm md:text-lg lg:text-xl font-expanded leading-none transition-transform duration-fast ease-out group-hover:scale-[1.15] origin-top-left ${numberClass}`}>
-                                    {day.dayNumber}
-                                  </span>
-                                </div>
+                              const hasDetails = Boolean(
+                                day.info || day.subInfo || day.isHoliday || day.isExam || day.isInstructional
+                              );
 
-                                {day.info && (
-                                  <div className="mt-auto relative z-10 flex flex-col gap-1 pt-2">
-                                    {day.subInfo && (
-                                      <span
-                                        className={`inline-flex items-center text-[9px] md:text-[10px] font-black px-2 py-1 rounded-full uppercase w-max max-w-full bg-current/15 text-current`}>
-                                        <span className="whitespace-normal wrap-break-word truncate">
+                              return (
+                                <div
+                                  key={idx}
+                                  ref={isToday ? todayRef : null}
+                                  className={`${!hasDetails ? "hidden sm:flex" : "flex"} gap-2 sm:gap-3 relative select-none items-stretch`}
+                                >
+                                  {/* Left Date Column */}
+                                  <div className="flex flex-col items-center shrink-0 w-8 sm:w-10 pt-1 sticky top-4 h-fit">
+                                    <div
+                                      className={`flex items-center justify-center font-black transition-all w-7 h-7 sm:w-8 sm:h-8 rounded-full text-xs sm:text-sm ${
+                                        isToday
+                                          ? "bg-(--accent-base) text-(--text-inverse)"
+                                          : "bg-transparent text-(--text-main)"
+                                      }`}
+                                    >
+                                      {day.dayNumber}
+                                    </div>
+                                    <div
+                                      className={`text-[8px] sm:text-[9px] font-expanded font-bold uppercase mt-0.5 ${
+                                        isToday ? "text-(--accent-base)" : "text-(--text-muted)"
+                                      }`}
+                                    >
+                                      {weekday}
+                                    </div>
+                                  </div>
+
+                                  {/* Right Content Area: Card with full color same as Grid */}
+                                  <div className="flex flex-col flex-1 min-w-0 border-l-2 border-(--border-dim) pl-2 sm:pl-3 pb-1">
+                                    <div
+                                      style={cardStyle}
+                                      className={`p-2 sm:p-2.5 rounded-xl sm:rounded-2xl flex items-center justify-between gap-2 transition-all ${bgClass}`}
+                                    >
+                                      <span className={`text-xs sm:text-sm font-bold leading-snug wrap-break-word ${titleClass}`}>
+                                        {day.info || (day.isInstructional ? "Instructional Day" : day.isHoliday ? "Holiday" : day.isExam ? "Exam Day" : "Regular Day")}
+                                      </span>
+                                      {day.subInfo && (
+                                        <span className="text-[8px] sm:text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase shrink-0 bg-current/15 text-current">
                                           {day.subInfo.replace(/[()]/g, "")}
                                         </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          /* Grid View for Month: Colored day numbers on mobile, full event info on desktop */
+                          <div className="grid grid-cols-7 gap-1 sm:gap-1.5 md:gap-2 auto-rows-[minmax(38px,auto)] sm:auto-rows-[minmax(70px,auto)] md:auto-rows-[minmax(90px,auto)] lg:auto-rows-[minmax(105px,auto)] p-0.5 sm:p-1">
+                            {Array.from({ length: data.startOffset }).map(
+                              (_, i) => (
+                                <div
+                                  key={`empty-${i}`}
+                                  className="bg-transparent opacity-0 pointer-events-none" />
+                              ),
+                            )}
+
+                            {data.days.map((day, idx) => {
+                              const isToday =
+                                new Date().toDateString() ===
+                                new Date(day.dateObj).toDateString();
+
+                              let cardStyle: React.CSSProperties = {};
+                              let bgClass =
+                                "bg-(--bg-surface) hover:bg-(--bg-highlight)";
+                              let textClass = "opacity-95 font-bold";
+                              let numberClass = "text-(--text-main)";
+
+                              if (day.isHoliday) {
+                                cardStyle = {
+                                  backgroundColor: holidayBg,
+                                  color: holidayFg,
+                                };
+                                bgClass = "border-0 hover:opacity-90";
+                                textClass = "opacity-95 font-extrabold";
+                                numberClass = "font-black";
+                              } else if (day.isExam) {
+                                cardStyle = {
+                                  backgroundColor: examBg,
+                                  color: examFg,
+                                };
+                                bgClass = "border-0 hover:opacity-90";
+                                textClass = "opacity-95 font-extrabold";
+                                numberClass = "font-black";
+                              } else if (day.isInstructional) {
+                                cardStyle = {
+                                  backgroundColor: classBg,
+                                  color: classFg,
+                                };
+                                bgClass = "border-0 hover:opacity-90";
+                                textClass = "opacity-95 font-bold";
+                                numberClass = "font-black";
+                              } else if (day.info) {
+                                cardStyle = {
+                                  backgroundColor: eventBg,
+                                  color: eventFg,
+                                };
+                                bgClass = "border-0 hover:opacity-90";
+                                textClass = "opacity-95 font-bold";
+                                numberClass = "font-black";
+                              }
+
+                              if (isToday) {
+                                bgClass += " z-10 shadow-md ring-2 ring-(--accent-base)";
+                                numberClass =
+                                  "text-(--text-inverse) bg-(--accent-base) w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center font-black text-xs sm:text-sm sm:-ml-1 sm:-mt-1";
+                              }
+
+                              return (
+                                <div
+                                  key={idx}
+                                  ref={isToday ? todayRef : null}
+                                  style={cardStyle}
+                                  title={day.info ? `${day.info}${day.subInfo ? ` (${day.subInfo})` : ""}` : undefined}
+                                  className={`relative p-1 sm:p-2.5 md:p-3.5 flex flex-col transition-all group rounded-xl sm:rounded-2xl md:rounded-3xl ${bgClass}`}>
+                                  {/* Mobile: Centered day number */}
+                                  <div className="flex sm:hidden items-center justify-center my-auto">
+                                    <span
+                                      className={`font-black text-xs font-expanded leading-none transition-transform duration-fast ease-out group-hover:scale-110 ${numberClass}`}>
+                                      {day.dayNumber}
+                                    </span>
+                                  </div>
+
+                                  {/* Desktop: Number at top, item name & subInfo below */}
+                                  <div className="hidden sm:flex flex-col h-full w-full">
+                                    <div className="flex justify-between items-start mb-1 relative z-10">
+                                      <span
+                                        className={`font-black text-sm md:text-base lg:text-lg font-expanded leading-none transition-transform duration-fast ease-out group-hover:scale-[1.12] origin-top-left ${numberClass}`}>
+                                        {day.dayNumber}
+                                      </span>
+                                    </div>
+
+                                    {day.info && (
+                                      <span
+                                        className={`text-xs md:text-sm leading-tight wrap-break-word line-clamp-2 md:line-clamp-3 relative z-10 ${textClass}`}>
+                                        {day.info}
                                       </span>
                                     )}
-                                    <p
-                                      className={`text-[10px] md:text-xs font-bold uppercase leading-tight ${textClass} wrap-break-word`}
-                                      title={day.info}>
-                                      {day.info}
-                                    </p>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
 
-                          {Array.from({
-                            length:
-                              (7 -
-                                ((data.startOffset + data.days.length) % 7)) %
-                              7,
-                          }).map((_, i) => (
-                            <div
-                              key={`fill-${i}`}
-                              className="bg-transparent opacity-0 pointer-events-none" />
-                          ))}
-                        </div>
+                                    {day.subInfo && (
+                                      <div className="mt-auto pt-1 relative z-10">
+                                        <span className="inline-flex items-center text-[9px] md:text-[10px] font-black px-2 py-0.5 rounded-full uppercase w-max max-w-full bg-current/15 text-current">
+                                          <span className="whitespace-normal wrap-break-word truncate">
+                                            {day.subInfo.replace(/[()]/g, "")}
+                                          </span>
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+
+                            {Array.from({
+                              length:
+                                (7 -
+                                  ((data.startOffset + data.days.length) % 7)) %
+                                7,
+                            }).map((_, i) => (
+                              <div
+                                key={`fill-${i}`}
+                                className="bg-transparent opacity-0 pointer-events-none" />
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

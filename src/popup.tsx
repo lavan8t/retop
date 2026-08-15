@@ -5,6 +5,8 @@ import { PlayArrow, Pause } from "@nine-thirty-five/material-symbols-react/round
 import { NoInternetIcon } from "./components/icons/NoInternetIcon";
 import { applyTheme, useSettingsStore } from "./utils/settings-store";
 
+import { get as idbGet, set as idbSet, del as idbDel } from "idb-keyval";
+
 const Popup = () => {
   const [isHalted, setIsHalted] = useState(false);
   const { settings, updateSetting } = useSettingsStore();
@@ -14,28 +16,22 @@ const Popup = () => {
   }, [settings]);
 
   useEffect(() => {
-    chrome.storage.local.get("retop-paused-until", (res) => {
-      const pausedUntil = res["retop-paused-until"] as string;
-      if (pausedUntil && Date.now() < parseInt(pausedUntil, 10)) {
+    idbGet("retop-paused-until").then((pausedUntil) => {
+      if (pausedUntil && Date.now() < parseInt(pausedUntil as string, 10)) {
         setIsHalted(true);
       }
-    });
+    }).catch(() => {});
   }, []);
 
-  const toggleHalt = () => {
+  const toggleHalt = async () => {
     if (isHalted) {
-      chrome.storage.local.remove("retop-paused-until", () => {
-        setIsHalted(false);
-        reloadVtopTabs();
-      });
+      await idbDel("retop-paused-until");
+      setIsHalted(false);
+      reloadVtopTabs();
     } else {
-      chrome.storage.local.set(
-        { "retop-paused-until": (Date.now() + 60 * 60 * 1000).toString() },
-        () => {
-          setIsHalted(true);
-          reloadVtopTabs();
-        },
-      );
+      await idbSet("retop-paused-until", (Date.now() + 60 * 60 * 1000).toString());
+      setIsHalted(true);
+      reloadVtopTabs();
     }
   };
 

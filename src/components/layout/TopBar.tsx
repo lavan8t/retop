@@ -13,6 +13,7 @@ import {
   KeyboardArrowDown,
   Refresh,
   Star,
+  MoreVert,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { NoInternetIcon } from "../icons/NoInternetIcon";
 import {
@@ -109,8 +110,14 @@ export const TopBar: React.FC<TopBarProps> = ({
   network,
 }) => {
   const [isStarOpen, setIsStarOpen] = React.useState(false);
+  const [isMobileControlsOpen, setIsMobileControlsOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsMobileControlsOpen(false);
+  }, [currentView]);
   const {
     ttViewMode, setTtViewMode,
+    calViewMode, setCalViewMode,
     cpSelectedCourseId, setCpSelectedCourseId, cpOptions, cpSearchTerm, setCpSearchTerm,
     marksSemesters, marksSelectedSem, setMarksSelectedSem, marksSearchQuery, setMarksSearchQuery, isMarksModernView, setIsMarksModernView,
     gradesSemesters, gradesSelectedSem, setGradesSelectedSem,
@@ -202,36 +209,38 @@ export const TopBar: React.FC<TopBarProps> = ({
         }}
       />
 
-      <header className="h-16 md:h-18 bg-transparent fixed w-full top-0 z-100 px-4 md:px-8 flex items-center justify-between shrink-0 transition-all pointer-events-none">
-        <div className="flex items-center h-full pointer-events-auto">
-          <div className="flex flex-col justify-center h-full gap-0.5">
-            <div className="flex items-center gap-2 md:gap-3">
-                  <div
-                    key="topbar-search"
-                  >
-                    <TopBarSearch
-                      currentView={currentView}
-                      isOmniboxOpen={isOmniboxOpen}
-                      setIsOmniboxOpen={setIsOmniboxOpen}
-                      menuCategories={menuCategories}
-                      pinnedLinks={pinnedLinks}
-                      onNavigate={onNavigate}
-                      onTogglePin={onTogglePin}
-                      initialQuery={initialQuery}
-                      pageTitle={getPageTitle(currentView, contentTitle)}
-                      onBack={() => setCurrentView("dashboard")}
-                      status={isLoading ? "loading" : "idle"}
-                      onSync={onSync}
-                      isSyncing={isSyncing}
-                      lastSyncTime={lastSyncTime}
-                    />
-                  </div>
+      <header className="h-14 sm:h-16 md:h-18 bg-transparent fixed w-full top-0 z-100 px-2.5 sm:px-4 md:px-8 flex items-center justify-between shrink-0 transition-all pointer-events-none">
+        <div className="flex items-center h-full pointer-events-auto min-w-0 flex-1">
+          <div className="flex flex-col justify-center h-full gap-0.5 min-w-0 w-full">
+            <div className="flex items-center gap-2 md:gap-3 min-w-0 w-full">
+              <div
+                key="topbar-search"
+                className="min-w-0 w-full sm:w-auto"
+              >
+                <TopBarSearch
+                  currentView={currentView}
+                  isOmniboxOpen={isOmniboxOpen}
+                  setIsOmniboxOpen={setIsOmniboxOpen}
+                  menuCategories={menuCategories}
+                  pinnedLinks={pinnedLinks}
+                  onNavigate={onNavigate}
+                  onTogglePin={onTogglePin}
+                  initialQuery={initialQuery}
+                  pageTitle={getPageTitle(currentView, contentTitle)}
+                  onBack={() => setCurrentView("dashboard")}
+                  status={isLoading ? "loading" : "idle"}
+                  onSync={onSync}
+                  isSyncing={isSyncing}
+                  lastSyncTime={lastSyncTime}
+                />
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 md:gap-4 h-full pointer-events-auto">
-
+        <div className="flex items-center gap-2 md:gap-4 h-full pointer-events-auto shrink-0">
+          {/* Desktop inline page controls (hidden on mobile) */}
+          <div className="hidden sm:flex items-center gap-2 md:gap-4 h-full pointer-events-auto">
             {currentView === "timetable" && (
               <div
                 key="timetable-controls"
@@ -302,6 +311,33 @@ export const TopBar: React.FC<TopBarProps> = ({
                     }}
                   />
                 )}
+
+                <div className="flex bg-transparent rounded-full border-2 border-(--border-main) shadow-(--brutal-shadow-sm) items-center">
+                  <SegmentedControl
+                    options={[
+                      {
+                        label: (
+                          <div className="flex items-center gap-1.5">
+                            <GridView className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Grid</span>
+                          </div>
+                        ),
+                        value: "grid",
+                      },
+                      {
+                        label: (
+                          <div className="flex items-center gap-1.5">
+                            <List className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">List</span>
+                          </div>
+                        ),
+                        value: "list",
+                      },
+                    ]}
+                    value={calViewMode}
+                    onChange={(val) => setCalViewMode(val as any)}
+                  />
+                </div>
               </div>
             )}
 
@@ -440,6 +476,202 @@ export const TopBar: React.FC<TopBarProps> = ({
                 />
               </div>
             )}
+          </div>
+
+          {/* Mobile 3-Dot Options Menu */}
+          {[
+            "timetable",
+            "calendar",
+            "marks",
+            "grades",
+            "curriculum",
+            "coursePage",
+            "digitalAssignments",
+            "examSchedule",
+            "attendance",
+          ].includes(currentView) && (
+            <div className="sm:hidden relative flex items-center">
+              <button
+                onClick={() => setIsMobileControlsOpen(!isMobileControlsOpen)}
+                className="p-1 rounded-full bg-transparent text-(--text-muted) hover:text-(--text-main) active:scale-95 transition-all flex items-center justify-center cursor-pointer"
+                aria-label="Options"
+              >
+                <MoreVert className="w-5 h-5" />
+              </button>
+
+              {isMobileControlsOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-99998 bg-black/60 backdrop-blur-xs transition-opacity"
+                    onClick={() => setIsMobileControlsOpen(false)}
+                  />
+                  <div className="fixed inset-x-0 bottom-0 z-99999 bg-(--bg-surface) border-t-2 border-(--border-main) rounded-t-3xl p-4 sm:p-5 shadow-2xl flex flex-col gap-3 animate-sheet-up max-h-[85vh] overflow-y-auto">
+                    {/* Bottom Sheet Drag Handle */}
+                    <div className="w-12 h-1.5 bg-(--border-main) rounded-full mx-auto -mt-1 mb-1 opacity-60" />
+
+                    {currentView === "timetable" && (
+                      <div className="flex flex-col gap-3">
+                        <div className="flex bg-transparent rounded-full border-2 border-(--border-main) shadow-(--brutal-shadow-sm) items-center">
+                          <SegmentedControl
+                            options={[
+                              { label: <div className="flex items-center gap-1.5"><GridView className="w-3.5 h-3.5" /><span>Grid</span></div>, value: "grid" },
+                              { label: <div className="flex items-center gap-1.5"><List className="w-3.5 h-3.5" /><span>List</span></div>, value: "list" },
+                              { label: <div className="flex items-center gap-1.5"><CalendarMonth className="w-3.5 h-3.5" /><span>Week</span></div>, value: "week" },
+                            ]}
+                            value={ttViewMode}
+                            onChange={(val) => setTtViewMode(val as any)}
+                          />
+                        </div>
+                        <SemesterDropdown
+                          semesters={ttSemesters}
+                          selectedId={ttSelectedSem}
+                          onChange={(id: string) => {
+                            onTimetableSemChange?.(id);
+                            setIsMobileControlsOpen(false);
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {currentView === "calendar" && (
+                      <div className="flex flex-col gap-3">
+                        <div className="flex bg-transparent rounded-full border-2 border-(--border-main) shadow-(--brutal-shadow-sm) items-center">
+                          <SegmentedControl
+                            options={[
+                              { label: <div className="flex items-center gap-1.5"><GridView className="w-3.5 h-3.5" /><span>Grid</span></div>, value: "grid" },
+                              { label: <div className="flex items-center gap-1.5"><List className="w-3.5 h-3.5" /><span>List</span></div>, value: "list" },
+                            ]}
+                            value={calViewMode}
+                            onChange={(val) => setCalViewMode(val as any)}
+                          />
+                        </div>
+                        <SemesterDropdown
+                          semesters={calSemesters}
+                          selectedId={calSelectedSem}
+                          onChange={(id: string) => {
+                            setCalSelectedSem(id);
+                            setIsMobileControlsOpen(false);
+                          }}
+                        />
+                        {calClassGroups.length > 0 && (
+                          <ClassGroupDropdown
+                            groups={calClassGroups}
+                            selectedId={calSelectedGroup}
+                            onChange={(id: string) => {
+                              setCalSelectedGroup(id);
+                              setIsMobileControlsOpen(false);
+                            }}
+                          />
+                        )}
+                      </div>
+                    )}
+
+                    {currentView === "marks" && (
+                      <div className="flex flex-col gap-3">
+                        <SemesterDropdown
+                          semesters={marksSemesters}
+                          selectedId={marksSelectedSem}
+                          onChange={(id: string) => {
+                            setMarksSelectedSem(id);
+                            setIsMobileControlsOpen(false);
+                          }}
+                        />
+                        <div className="flex items-center justify-between py-1">
+                          <span className="text-xs font-bold text-(--text-main)">Modern View</span>
+                          <MaterialSwitch
+                            selected={isMarksModernView}
+                            onChange={(checked) => setIsMarksModernView(checked)}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {currentView === "grades" && (
+                      <SemesterDropdown
+                        semesters={gradesSemesters}
+                        selectedId={gradesSelectedSem}
+                        onChange={(id: string) => {
+                          setGradesSelectedSem(id);
+                          setIsMobileControlsOpen(false);
+                        }}
+                      />
+                    )}
+
+                    {currentView === "curriculum" && (
+                      <div className="flex items-center justify-between py-1">
+                        <span className="text-xs font-bold text-(--text-main)">Hide Completed</span>
+                        <MaterialSwitch
+                          selected={curriculumHideCompleted}
+                          onChange={(checked) => setCurriculumHideCompleted(checked)}
+                        />
+                      </div>
+                    )}
+
+                    {currentView === "coursePage" && (
+                      <SemesterDropdown
+                        semesters={ttSemesters}
+                        selectedId={cpSelectedSem}
+                        onChange={(sem: string) => {
+                          setCpSelectedSem(sem);
+                          setCpSelectedCourseId("");
+                          setIsMobileControlsOpen(false);
+                        }}
+                      />
+                    )}
+
+                    {currentView === "digitalAssignments" && (
+                      <div className="flex flex-col gap-3">
+                        <SemesterDropdown
+                          semesters={daSemesters}
+                          selectedId={daSelectedSem}
+                          onChange={(id: string) => {
+                            setDaSelectedSem(id);
+                            if (network) fetchDACourses(network, id);
+                            setIsMobileControlsOpen(false);
+                          }}
+                        />
+                        <button
+                          onClick={() => {
+                            if (daSelectedSem && network) fetchDACourses(network, daSelectedSem, true);
+                            else if (network) fetchDASemesters(network, true);
+                            setIsMobileControlsOpen(false);
+                          }}
+                          disabled={daLoading}
+                          className="flex items-center justify-center gap-2 py-2.5 px-4 bg-(--bg-highlight) rounded-xl text-xs font-bold text-(--text-main) border border-(--border-dim) cursor-pointer"
+                        >
+                          <Refresh className={`w-4 h-4 ${daLoading ? "animate-spin" : ""}`} />
+                          <span>Refresh</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {currentView === "examSchedule" && (
+                      <SemesterDropdown
+                        semesters={examSemesters}
+                        selectedId={examSelectedSem}
+                        onChange={(id: string) => {
+                          setExamSelectedSem(id);
+                          if (network) fetchExamSchedule(network, id);
+                          setIsMobileControlsOpen(false);
+                        }}
+                      />
+                    )}
+
+                    {currentView === "attendance" && (
+                      <SemesterDropdown
+                        semesters={ttSemesters}
+                        selectedId={attSelectedSem}
+                        onChange={(sem: string) => {
+                          setAttSelectedSem(sem);
+                          setIsMobileControlsOpen(false);
+                        }}
+                      />
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
 
           {pinnedLinks.length > 0 && (
             <div className="hidden xl:flex items-center gap-2.5 relative pointer-events-auto shrink-0">
@@ -540,11 +772,14 @@ export const TopBar: React.FC<TopBarProps> = ({
             </Tooltip>
           </div>
 
-          <div className="flex items-center pointer-events-auto mr-1 md:mr-2">
-            <OfficialResourcesMenu />
-          </div>
+          {((typeof window !== "undefined" && window.location.hostname.includes("vtopcc")) ||
+            (typeof document !== "undefined" && document.documentElement.getAttribute("data-campus") === "chennai")) && (
+            <div className="flex items-center pointer-events-auto mr-1 md:mr-2">
+              <OfficialResourcesMenu />
+            </div>
+          )}
 
-          <div className="relative shrink-0 flex items-center justify-center pointer-events-auto">
+          <div className={`relative shrink-0 flex items-center justify-center pointer-events-auto ${isOmniboxOpen ? "hidden lg:flex" : ""}`}>
             <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
               className="flex items-center focus:outline-none group cursor-pointer transition-all"
@@ -552,7 +787,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             >
               <div className="w-10 h-10 md:w-12 md:h-12 relative flex items-center justify-center">
                 <div
-                  className={`w-10 h-10 md:w-12 md:h-12 absolute inset-0 rounded-full overflow-hidden shrink-0 border-2 border-(--border-main) group-hover:border-(--accent-base) shadow-sm transition-all duration-200 ease-out flex items-center justify-center bg-(--bg-highlight) z-9999 ${
+                  className={`w-10 h-10 md:w-12 md:h-12 absolute inset-0 rounded-full overflow-hidden shrink-0 border-2 border-(--border-main) group-hover:border-(--accent-base) shadow-sm transition-all duration-200 ease-out flex items-center justify-center bg-(--bg-highlight) ${
                     showProfileMenu
                       ? "opacity-0 scale-90 pointer-events-none"
                       : "opacity-100 scale-100"

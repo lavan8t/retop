@@ -14,14 +14,11 @@ export type SnackbarData = {
   type?: 'default' | 'error' | 'success';
 };
 
-export type NetworkLog = { url: string; timestamp: number; key?: string };
-
 type AppState = {
   isModernUI: boolean;
   isPeeking: boolean;
   currentView: ViewType;
   snackbars: SnackbarData[];
-  networkLogs: NetworkLog[];
   setIsModernUI: (val: boolean) => void;
   setIsPeeking: (val: boolean) => void;
   setCurrentView: (val: ViewType) => void;
@@ -31,6 +28,9 @@ type AppState = {
 
   ttViewMode: "grid" | "list" | "week";
   setTtViewMode: (val: "grid" | "list" | "week") => void;
+
+  calViewMode: "grid" | "list";
+  setCalViewMode: (val: "grid" | "list") => void;
 
   cpOptions: CoursePageOption[];
   setCpOptions: (val: CoursePageOption[]) => void;
@@ -65,7 +65,6 @@ export const useAppStore = create<AppState>((set) => ({
   isPeeking: false,
   currentView: (sessionStorage.getItem("vtop-retop-view") as ViewType) || "dashboard",
   snackbars: [],
-  networkLogs: [],
   setIsModernUI: (val) => set({ isModernUI: val }),
   setIsPeeking: (val) => set({ isPeeking: val }),
   setCurrentView: (val) => {
@@ -87,13 +86,13 @@ export const useAppStore = create<AppState>((set) => ({
     set((state) => ({
       snackbars: state.snackbars.filter((s) => s.id !== id),
     })),
-  logNetworkRequest: (url, key) =>
-    set((state) => ({
-      networkLogs: [{ url, timestamp: Date.now(), key }, ...state.networkLogs].slice(0, 50),
-    })),
+  logNetworkRequest: () => {},
 
   ttViewMode: "grid",
   setTtViewMode: (val) => set({ ttViewMode: val }),
+
+  calViewMode: "grid",
+  setCalViewMode: (val) => set({ calViewMode: val }),
 
   cpOptions: [],
   setCpOptions: (val) => set({ cpOptions: val }),

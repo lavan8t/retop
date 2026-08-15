@@ -17,7 +17,6 @@ import { waitForIntercepted } from "../../utils/dashboardInterceptor";
 import { CourseSummary, Assignment, Event } from "../../types/vtop";
 import { UpcomingClass } from "../../utils/timetable-slots";
 import { DataState } from "../dataStore";
-import dummyData from "../../dummy_data.json";
 
 export interface DashboardSlice {
   status: string;
@@ -239,20 +238,25 @@ export const createDashboardSlice: StateCreator<DataState, [], [], DashboardSlic
     }
   },
 
-  enableDemoMode: () => {
-    set({
-      status: "Demo Mode Active",
-      user: { name: "Demo User", regNo: "22ABC1234" },
-      stats: dummyData.stats as any,
-      attendance: dummyData.attendance as any,
-      assignments: dummyData.assignments as any,
-      events: dummyData.events as any,
-      upcoming: [], 
-      ttCourses: dummyData.ttCourses as any,
-      ttSelectedSem: dummyData.ttSemesters[0]?.id || "sem1",
-      ttSemesters: dummyData.ttSemesters as any,
-      calSemesters: dummyData.calSemesters as any,
-      calSelectedSem: dummyData.calSemesters[0]?.id || "sem1",
-    });
+  enableDemoMode: async () => {
+    try {
+      const { default: dummyData } = await import("../../dummy_data.json");
+      set({
+        status: "Demo Mode Active",
+        user: { name: "Demo User", regNo: "22ABC1234" },
+        stats: dummyData.stats as any,
+        attendance: dummyData.attendance as any,
+        assignments: dummyData.assignments as any,
+        events: dummyData.events as any,
+        upcoming: [], 
+        ttCourses: dummyData.ttCourses as any,
+        ttSelectedSem: dummyData.ttSemesters[0]?.id || "sem1",
+        ttSemesters: dummyData.ttSemesters as any,
+        calSemesters: dummyData.calSemesters as any,
+        calSelectedSem: dummyData.calSemesters[0]?.id || "sem1",
+      });
+    } catch (e) {
+      console.warn("Failed loading demo data", e);
+    }
   },
 });

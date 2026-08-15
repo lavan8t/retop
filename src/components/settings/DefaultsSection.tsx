@@ -152,35 +152,7 @@ export const DefaultsSection: React.FC<DefaultsSectionProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex flex-col gap-1">
-              <span className="text-sm font-bold text-(--text-main)">
-                Font Weight
-              </span>
-              <span className="text-xs text-(--text-muted)">
-                Body text weight across the app
-              </span>
-            </div>
-            <div className="flex items-center gap-1 p-1 rounded-xl bg-(--bg-main) border border-(--border-dim)">
-              {(["regular", "medium", "bold"] as const).map((fw) => {
-                const label = fw.charAt(0).toUpperCase() + fw.slice(1);
-                const isActive = (settings.fontWeight ?? "bold") === fw;
-                return (
-                  <button
-                    key={fw}
-                    onClick={() => updateSetting("fontWeight", fw)}
-                    className={`px-3 py-1.5 rounded-lg text-xs transition-all cursor-pointer ${
-                      isActive
-                        ? "bg-(--accent-base) text-(--text-inverse) font-black"
-                        : "text-(--text-muted) hover:text-(--text-main) font-bold"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+
 
           <div className="flex items-center justify-between gap-4">
             <div className="flex flex-col gap-1">

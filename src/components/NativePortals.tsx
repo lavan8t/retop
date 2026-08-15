@@ -178,28 +178,6 @@ export const NativePortals: React.FC = () => {
 
   return (
     <>
-      {/* Card Icons */}
-      {targets.stdIconContainer && (
-        <PortalInject container={targets.stdIconContainer}>
-          <School size="42px" />
-        </PortalInject>
-      )}
-      {targets.empIconContainer && (
-        <PortalInject container={targets.empIconContainer}>
-          <Badge size="42px" />
-        </PortalInject>
-      )}
-      {targets.parentIconContainer && (
-        <PortalInject container={targets.parentIconContainer}>
-          <FamilyRestroom size="42px" />
-        </PortalInject>
-      )}
-      {targets.alumniIconContainer && (
-        <PortalInject container={targets.alumniIconContainer}>
-          <WorkspacePremium size="42px" />
-        </PortalInject>
-      )}
-
       {/* Bolt Icons */}
       {targets.boltContainers.map((container, i) => (
         <PortalInject key={`bolt-${i}`} container={container}>

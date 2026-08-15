@@ -104,10 +104,13 @@ export const createDashboardSlice: StateCreator<DataState, [], [], DashboardSlic
       const daP       = resolveOrFetch("dashboard_da",         "dashboard_da",         () => network.fetchFragment("get/upcoming/digital/assignments"),                  parseDigitalAssignments,  "assignments");
       const eventsP   = resolveOrFetch("dashboard_events",     "dashboard_events",     () => network.fetchFragment("get/scheduled/events"),                             parseEvents,              "events");
 
+      const isChennai = typeof window !== "undefined" && window.location.hostname.includes("vtopcc");
+      const ttEndpoint = isChennai ? "academics/common/StudentTimeTableChn" : "academics/common/StudentTimeTable";
+
       const timetableAndCalP = (async () => {
         try {
           const [semHTML, calHTML] = await Promise.all([
-            network.fetchWithCache("tt_semester_list", () => network.fetchFragment("academics/common/StudentTimeTable")),
+            network.fetchWithCache("tt_semester_list", () => network.fetchFragment(ttEndpoint)),
             network.fetchWithCache("cal_semester_list", () => network.fetchFragment("academics/common/CalendarPreview")),
           ]);
 
@@ -115,17 +118,24 @@ export const createDashboardSlice: StateCreator<DataState, [], [], DashboardSlic
           const calSems = parseCalendarSemesters(calHTML);
 
           if (sems.length > 0 || calSems.length > 0) {
+            const filterNonIndustry = <T extends { id: string; label: string; selected?: boolean; isLatest?: boolean }>(list: T[]): T[] => {
+              const nonInd = list.filter((s) => !/industry|\(ind\)|_ind/i.test(s.label) && !/industry|\(ind\)|_ind/i.test(s.id));
+              return nonInd.length > 0 ? nonInd : list;
+            };
+
             const savedCalSem = localStorage.getItem("retop-cal-selected-sem");
+            const calPool = filterNonIndustry(calSems);
             const calDefault =
               savedCalSem && calSems.some((s) => s.id === savedCalSem)
                 ? savedCalSem
-                : calSems.find((s) => s.selected)?.id || calSems[0]?.id || "";
+                : calPool.find((s) => s.selected)?.id || calPool[0]?.id || "";
 
             const savedTtSem = localStorage.getItem("retop-tt-selected-sem");
+            const ttPool = filterNonIndustry(sems);
             const ttDefault =
               savedTtSem && sems.some((s) => s.id === savedTtSem)
                 ? savedTtSem
-                : sems.find((s) => s.isLatest)?.id || sems[0]?.id || "";
+                : ttPool.find((s) => s.isLatest)?.id || ttPool[0]?.id || "";
 
             set({
               ttSemesters: sems,
@@ -170,7 +180,7 @@ export const createDashboardSlice: StateCreator<DataState, [], [], DashboardSlic
       // only — stats/attendance/DA/events are already fresh from the intercepted XHRs)
       set({ isSyncing: true });
       Promise.all([
-        network.fetchWithCache("tt_semester_list", () => network.fetchFragment("academics/common/StudentTimeTable"), true),
+        network.fetchWithCache("tt_semester_list", () => network.fetchFragment(ttEndpoint), true),
         network.fetchWithCache("cal_semester_list", () => network.fetchFragment("academics/common/CalendarPreview"), true),
         network.fetchWithCache("exam_schedule_view", () => network.getExamScheduleView(), true),
       ]).then(([newSem, newCal]) => {

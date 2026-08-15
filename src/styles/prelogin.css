@@ -60,14 +60,16 @@ nav.navbar,
   box-shadow: none !important;
 }
 
-/* VIT Emblem: Black in Light theme, White in Dark theme */
+/* VIT Emblem / Vector Logo: Black in Light theme, White in Dark theme */
 img.VITEmblem,
-.VITEmblem {
-  max-height: 38px !important;
-  height: 38px !important;
+.VITEmblem,
+#vtop-prelogin-logo {
+  max-height: 42px !important;
+  height: 42px !important;
   width: auto !important;
   object-fit: contain !important;
   display: inline-block !important;
+  vertical-align: middle !important;
   visibility: visible !important;
   opacity: 1 !important;
   filter: brightness(0) invert(1) !important; /* White in Dark mode */
@@ -75,28 +77,32 @@ img.VITEmblem,
 
 html[data-theme="light"] img.VITEmblem,
 html[data-theme="light"] .VITEmblem,
+html[data-theme="light"] #vtop-prelogin-logo,
 [data-theme="light"] img.VITEmblem,
-[data-theme="light"] .VITEmblem {
+[data-theme="light"] .VITEmblem,
+[data-theme="light"] #vtop-prelogin-logo {
   filter: brightness(0) !important; /* Black in Light mode */
 }
 
-/* VIT Text: Times New Roman Bold */
-.VITLogoStyle,
-.VITLogoStyle span.h1,
-.VITLogoStyle .h1 {
-  font-family: 'Times New Roman', Times, serif !important;
-  font-weight: bold !important;
-  color: var(--text-main) !important;
+/* Hide legacy text since vector logo already contains text */
+.VITLogoStyle {
+  display: none !important;
 }
 
-/* Navbar text: Vellore Campus — 1.5x bigger text size */
+/* Navbar text: Chennai Campus / Vellore Campus (Right of logo) */
 .navbar-text,
 .navbar-text.text-light,
-span.navbar-text {
+span.navbar-text,
+.retop-campus-text {
   color: var(--text-main) !important;
   font-family: 'Google Sans Flex', system-ui, sans-serif !important;
-  font-variation-settings: "wght" 500 !important;
-  font-size: 1.35rem !important; /* 1.5x bigger */
+  font-variation-settings: "wght" 700 !important;
+  font-size: 1.15rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  display: inline-block !important;
+  vertical-align: middle !important;
+  margin-left: 14px !important;
 }
 
 /* ── Typography — all text on the page ─────────────────────────────── */
@@ -107,7 +113,7 @@ p, span, strong, b, a, div, li, label, small {
 }
 
 .primaryTextColor1, .text-primary {
-  color: var(--accent-base) !important;
+  color: var(--text-main) !important;
 }
 
 .text-dark, .text-dark.fw-bold, .fg-black, .fw-bold {
@@ -119,7 +125,7 @@ p, span, strong, b, a, div, li, label, small {
 }
 
 .text-info {
-  color: var(--accent-base) !important;
+  color: var(--text-main) !important;
 }
 
 .text-muted, .small, small {
@@ -133,7 +139,7 @@ strong.h2, .h2.primaryTextColor1 {
 }
 
 strong.h2 b {
-  color: var(--accent-base) !important;
+  color: var(--text-main) !important;
 }
 
 /* Description paragraph */
@@ -183,7 +189,9 @@ input[type="submit"] {
 button[type="submit"]:hover,
 .btn-primary:hover,
 input[type="submit"]:hover {
-  opacity: 0.9 !important;
+  background-color: color-mix(in srgb, var(--accent-base) 80%, black) !important;
+  filter: brightness(0.88) !important;
+  opacity: 1 !important;
   box-shadow: none !important;
 }
 
@@ -196,12 +204,15 @@ input[type="submit"]:hover {
   background-color: var(--bg-surface) !important;
   background-image: none !important;
   border: none !important;
-  border-radius: 16px !important;
-  padding: 16px 20px !important;
-  min-height: 90px !important;
+  border-radius: 20px !important;
+  padding: 0 !important;
+  min-height: 84px !important;
   box-shadow: none !important;
   overflow: hidden !important;
   cursor: pointer !important;
+  display: flex !important;
+  align-items: stretch !important;
+  justify-content: center !important;
   transition: background-color var(--duration-font-var) ease !important;
 }
 
@@ -210,6 +221,7 @@ input[type="submit"]:hover {
 .cardParent:hover,
 .cardAlumni:hover {
   background-color: var(--bg-highlight) !important;
+  border: none !important;
   transform: none !important;
   box-shadow: none !important;
 }
@@ -226,7 +238,7 @@ input[type="submit"]:hover {
 .cardEmployee form,
 .cardParent form,
 .cardAlumni form {
-  display: block !important;
+  display: flex !important;
   width: 100% !important;
   height: 100% !important;
   margin: 0 !important;
@@ -237,104 +249,69 @@ input[type="submit"]:hover {
 .cardEmployee a,
 .cardParent a,
 .cardAlumni a {
-  display: block !important;
+  display: flex !important;
+  align-items: center !important;
   width: 100% !important;
   height: 100% !important;
-  position: relative !important;
+  padding: 18px 22px !important;
+  text-decoration: none !important;
 }
 
-.cardStudent a::after,
-.cardEmployee a::after,
-.cardParent a::after,
-.cardAlumni a::after {
-  content: "" !important;
-  position: absolute !important;
-  top: -16px !important;
-  bottom: -16px !important;
-  left: -20px !important;
-  right: -20px !important;
-  z-index: 10 !important;
-  cursor: pointer !important;
-}
-
-.cardStudent .d-flex,
-.cardEmployee .d-flex,
-.cardParent .d-flex,
-.cardAlumni .d-flex {
-  position: relative !important;
-  min-height: 60px !important;
-}
-
-/* Icon container div: Positioned at Bottom-Left Corner (bottom: -2px) */
-.cardStudent .w-50,
-.cardEmployee .w-50,
-.cardParent .w-50,
-.cardAlumni .w-50 {
-  position: absolute !important;
-  left: 0px !important;
-  bottom: -2px !important;
-  width: auto !important;
+.retop-role-card-inner {
   display: flex !important;
-  align-items: flex-end !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  min-height: 48px !important;
+}
+
+.retop-role-icon-col {
+  display: flex !important;
+  align-items: center !important;
   justify-content: flex-start !important;
-  padding: 0 !important;
-  margin: 0 !important;
 }
 
-/* No background fill for icons, clean raw icon styling */
-.retop-inline-icon {
-  display: inline-flex !important;
-  align-items: flex-end !important;
-  justify-content: flex-start !important;
-  background: transparent !important;
-  background-color: transparent !important;
-  border-radius: 0 !important;
-  width: auto !important;
-  height: auto !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  pointer-events: none !important;
-}
-
-.retop-inline-icon svg,
-.retop-inline-icon svg path {
-  fill: var(--accent-base) !important;
-  color: var(--accent-base) !important;
-  width: 42px !important;
-  height: 42px !important;
-}
-
-/* Title text: Positioned at Top-Right Corner */
-.cardStudent .flex-grow-1,
-.cardEmployee .flex-grow-1,
-.cardParent .flex-grow-1,
-.cardAlumni .flex-grow-1 {
+.retop-role-text-col {
   display: flex !important;
   flex-direction: column !important;
   align-items: flex-end !important;
-  justify-content: flex-start !important;
+  justify-content: center !important;
   text-align: right !important;
-  width: 100% !important;
 }
 
-.cardStudent .fw-bold,
-.cardEmployee .fw-bold,
-.cardParent .fw-bold,
-.cardAlumni .fw-bold {
+.retop-role-text-col p {
   color: var(--text-main) !important;
   font-variation-settings: "wdth" 125, "wght" 700 !important;
-  font-size: 1.15rem !important;
+  font-size: 1.25rem !important;
   text-align: right !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
+
+.retop-role-svg,
+.retop-role-svg path {
+  fill: var(--text-main) !important;
+  color: var(--text-main) !important;
+  width: 40px !important;
+  height: 40px !important;
+}
+
+.goldIcons,
+.goldIcons i,
+.goldIcons .bi {
+  color: var(--text-muted) !important;
+}
+
 
 /* ── Spotlight Section (Compact & Clean Hover) ─────────────────────── */
 .card.border-0.shadow-lg,
 .card.border-0 {
-  background-color: var(--bg-surface) !important;
+  background-color: transparent !important;
+  background: transparent !important;
   border: none !important;
-  border-radius: 16px !important;
   box-shadow: none !important;
-  overflow: hidden !important;
+  padding: 0 !important;
+  overflow: visible !important;
 }
 
 .spotlightHeader,
@@ -467,10 +444,106 @@ html[data-theme="light"] .btn-close,
   filter: none !important;
 }
 
-/* ── App Download Section ──────────────────────────────────────────── */
-.col.text-center .fw-bold.text-primary {
-  color: var(--accent-base) !important;
-  font-variation-settings: "wght" 600 !important;
+/* ── Ranking Badges (VIT Info Card — Grid Aligned Big Numbers) ──────── */
+.retop-rankings-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 16px 14px !important;
+  width: 100% !important;
+}
+
+@media (min-width: 576px) {
+  .retop-rankings-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+.retop-rank-tile {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  padding: 0 !important;
+  min-width: 0 !important;
+}
+
+.retop-rank-big-num {
+  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
+  font-variation-settings: "wdth" 125, "wght" 900 !important;
+  font-size: 1.55rem !important;
+  color: var(--text-main) !important;
+  line-height: 1.1 !important;
+  letter-spacing: -0.02em !important;
+  margin-bottom: 3px !important;
+  white-space: nowrap !important;
+}
+
+.retop-rank-subtext {
+  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
+  font-variation-settings: "wght" 500 !important;
+  font-size: 0.78rem !important;
+  color: var(--text-muted) !important;
+  line-height: 1.25 !important;
+}
+
+/* ── App Download Section (Larger Badges & Right Positioned) ────────── */
+.col.text-center,
+.retop-apps-grid .col {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+.col.text-center .fw-bold.text-primary,
+.retop-apps-grid .fw-bold.text-primary {
+  color: var(--text-main) !important;
+  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
+  font-variation-settings: "wght" 700 !important;
+  font-size: 0.95rem !important;
+  margin-bottom: 8px !important;
+  text-align: center !important;
+}
+
+.col.text-center a,
+.retop-apps-grid a {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  margin: 4px auto !important;
+  text-align: center !important;
+}
+
+.col.text-center img,
+.retop-apps-grid img {
+  width: auto !important;
+  max-width: 165px !important;
+  object-fit: contain !important;
+  margin: 0 auto !important;
+  display: block !important;
+  transition: transform var(--duration-fast) ease !important;
+}
+
+/* Apple badge optical height balance */
+.col.text-center img[src*="appstore"],
+.col.text-center img[src*="apple"],
+.retop-apps-grid img[src*="appstore"],
+.retop-apps-grid img[src*="apple"] {
+  height: 52px !important;
+}
+
+.col.text-center img[src*="gplay"],
+.col.text-center img[src*="play"],
+.retop-apps-grid img[src*="gplay"],
+.retop-apps-grid img[src*="play"] {
+  height: 44px !important;
+}
+
+.col.text-center img:hover,
+.retop-apps-grid img:hover {
+  transform: scale(1.04) !important;
 }
 
 /* ── Footer ────────────────────────────────────────────────────────── */

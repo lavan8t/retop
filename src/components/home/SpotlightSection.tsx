@@ -60,7 +60,7 @@ export const SpotlightSection: React.FC<SpotlightSectionProps> = ({
                     className="group flex items-center justify-between p-3 bg-(--bg-highlight) hover:bg-(--border-dim) border-0 transition-all cursor-pointer rounded-sm first:rounded-t-2xl last:rounded-b-2xl"
                   >
                     <div className="flex flex-col flex-1 min-w-0 pr-2">
-                      <span className="text-xs font-black text-(--text-main) group-hover:text-(--accent-base) transition-colors break-words">
+                      <span className="text-xs font-black text-(--text-main) group-hover:text-(--accent-base) transition-colors wrap-break-words">
                         {item.title}
                       </span>
                     </div>

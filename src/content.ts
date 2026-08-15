@@ -1,6 +1,5 @@
 import { renderDashboard } from "./pages/app";
 import { scrapeMenu } from "./parsers/menu";
-import { saveUserPin, getUserPinRecord } from "./utils/pinSecurity";
 import {
   injectGlobalStyles,
   injectGlobalFonts,
@@ -12,10 +11,11 @@ import {
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { NativePortals } from "./components/NativePortals";
-import { asciiArtTT, asciiArtSMV, asciiArtMGR } from "./components/asciiArt";
+import { asciiArtTT, asciiArtSMV, asciiArtMGR, asciiArtCC } from "./components/asciiArt";
 import { autoSolveCaptcha } from "./utils/captchaSolver";
 import { getExtUrl } from "./utils/url";
 import { interceptDashboardResponse } from "./utils/dashboardInterceptor";
+import { applyTheme } from "./utils/settings-store";
 
 const vtopContext = {
   csrf: "",
@@ -50,34 +50,10 @@ const applyThemeFromSettings = (saved: any) => {
   try {
     const settings = parseSettingsPayload(saved);
     if (!settings) return;
-    if (settings.themeMode) {
-      let activeTheme = settings.themeMode;
-      if (activeTheme === "auto") {
-        const hour = new Date().getHours();
-        activeTheme = hour >= 6 && hour < 18 ? "light" : "dark";
-      }
-      document.documentElement.setAttribute("data-theme", activeTheme);
-    }
-    const MATERIAL_ACCENTS: Record<string, string> = {
-      blue: "#2563eb",
-      indigo: "#4f46e5",
-      purple: "#9333ea",
-      pink: "#db2777",
-      red: "#dc2626",
-      orange: "#ea580c",
-      yellow: "#ca8a04",
-      lime: "#65a30d",
-      green: "#16a34a",
-      cyan: "#0891b2",
-    };
-    let baseColor =
-      MATERIAL_ACCENTS[settings.accentColor] || MATERIAL_ACCENTS.blue;
-    if (settings.randomAccentColor) {
-      const hue = Math.floor(Math.random() * 360);
-      baseColor = `hsl(${hue}, 70%, 45%)`;
-    }
-    document.documentElement.style.setProperty("--accent-base", baseColor);
-  } catch (err) {}
+    applyTheme(settings);
+  } catch (err) {
+    console.warn("[retop] Failed to apply theme:", err);
+  }
 };
 
 try {
@@ -90,8 +66,9 @@ try {
 
   if (chrome.storage && chrome.storage.onChanged) {
     chrome.storage.onChanged.addListener((changes, namespace) => {
-      if (namespace === "local" && changes["retop-settings"]) {
-        const newValue = changes["retop-settings"].newValue;
+      if (namespace === "local" && (changes["retop-settings"] || changes["retop_settings_obj"])) {
+        const item = changes["retop-settings"] || changes["retop_settings_obj"];
+        const newValue = item?.newValue;
         if (newValue) applyThemeFromSettings(newValue);
       }
     });
@@ -103,9 +80,11 @@ const isTopWindow = window.self === window.top;
 const isPreloginOrLoginPage =
   isTopWindow && (
     window.location.pathname.includes("/vtop/open/page") ||
+    window.location.pathname.includes("/vtop/open/login") ||
     window.location.pathname.includes("/vtop/vtopLogin") ||
     window.location.pathname.includes("/vtop/login") ||
-    window.location.pathname.includes("/vtop/prelogin")
+    window.location.pathname.includes("/vtop/prelogin") ||
+    window.location.pathname.includes("/vtop/init/page")
   );
 
 const isContentPage =
@@ -121,6 +100,16 @@ if (isPreloginOrLoginPage || isContentPage) {
     earlyLink.id = "vtop-early-theme";
     earlyLink.rel = "stylesheet";
     earlyLink.href = getExtUrl("dist/prelogin.css");
+    (document.head || document.documentElement).appendChild(earlyLink);
+  } else if (
+    window.location.pathname.includes("/vtop/login") ||
+    window.location.pathname.includes("/vtop/vtopLogin") ||
+    window.location.pathname.includes("/vtop/open/login")
+  ) {
+    const earlyLink = document.createElement("link");
+    earlyLink.id = "vtop-early-theme";
+    earlyLink.rel = "stylesheet";
+    earlyLink.href = getExtUrl("dist/login.css");
     (document.head || document.documentElement).appendChild(earlyLink);
   }
 }
@@ -369,9 +358,11 @@ const init = async () => {
 
   const isLoginPage =
     path.includes("/vtop/open/page") ||
+    path.includes("/vtop/open/login") ||
     path.includes("/vtop/vtopLogin") ||
     path.includes("/vtop/login") ||
     path.includes("/vtop/prelogin") ||
+    path.includes("/vtop/init/page") ||
     isRoleSelection;
 
   if (isLoginPage) {
@@ -494,95 +485,10 @@ const init = async () => {
     }
 
     renderDashboard();
-    if (vtopContext.authId) {
-      promptOfflinePinSetup(vtopContext.authId);
-    }
   } else {
     document.body.classList.add("show-legacy-ui");
     removeSplashScreen();
   }
-};
-
-const promptOfflinePinSetup = async (regNo: string) => {
-  if (!regNo || document.getElementById("retop-offline-pin-toast")) return;
-
-  // Delay slightly so dashboard renders first
-  await new Promise((r) => setTimeout(r, 1200));
-
-  if (document.getElementById("retop-offline-pin-toast")) return;
-
-  try {
-    const record = await getUserPinRecord(regNo);
-    if (record) return;
-  } catch {}
-
-  const toast = document.createElement("div");
-  toast.id = "retop-offline-pin-toast";
-  toast.style.cssText = `
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    z-index: 999999;
-    background: #18181b;
-    color: #ffffff;
-    border: 2px solid #3f3f46;
-    padding: 16px 20px;
-    border-radius: 20px;
-    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);
-    font-family: 'Google Sans Flex', system-ui, sans-serif;
-    max-width: 340px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    animation: retopSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  `;
-
-  const toastHtml = `
-    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(59,130,246,0.15); color: #3b82f6; border: 1px solid rgba(59,130,246,0.3); display: flex; align-items: center; justify-content: center; font-weight: bold;">⚡</div>
-        <div>
-          <div style="font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">Setup Offline Mode PIN</div>
-          <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Protect & access your profile offline anytime</div>
-        </div>
-      </div>
-      <button id="retop-pin-toast-close" style="background: none; border: none; color: #94a3b8; font-size: 16px; cursor: pointer; padding: 0;">✕</button>
-    </div>
-    <div style="display: flex; gap: 8px; align-items: center;">
-      <input id="retop-pin-toast-input" type="password" maxlength="4" placeholder="4 Digits" style="flex: 1; background: #09090b; border: 2px solid #3f3f46; color: #fff; text-align: center; border-radius: 12px; height: 38px; font-family: monospace; font-size: 16px; letter-spacing: 0.3em; outline: none;" />
-      <button id="retop-pin-toast-submit" style="background: #2563eb; color: #fff; border: none; font-weight: 700; font-size: 12px; border-radius: 12px; height: 38px; padding: 0 16px; cursor: pointer; white-space: nowrap;">Save PIN</button>
-    </div>
-    <div id="retop-pin-toast-status" style="font-size: 11px; color: #10b981; font-weight: 600; display: none;">✓ Security PIN Encrypted & Saved!</div>
-  `;
-  const parsedToastDoc = new DOMParser().parseFromString(toastHtml, "text/html");
-  while (parsedToastDoc.body.firstChild) {
-    toast.appendChild(parsedToastDoc.body.firstChild);
-  }
-
-  document.body.appendChild(toast);
-
-  const closeBtn = document.getElementById("retop-pin-toast-close");
-  const submitBtn = document.getElementById("retop-pin-toast-submit");
-  const inputEl = document.getElementById("retop-pin-toast-input") as HTMLInputElement;
-  const statusEl = document.getElementById("retop-pin-toast-status");
-
-  closeBtn?.addEventListener("click", () => toast.remove());
-
-  submitBtn?.addEventListener("click", async () => {
-    const val = inputEl.value.trim();
-    if (val.length === 4) {
-      await saveUserPin(regNo, val);
-      if (statusEl) statusEl.style.display = "block";
-      setTimeout(() => {
-        toast.remove();
-      }, 1800);
-    } else {
-      inputEl.style.borderColor = "#ef4444";
-      setTimeout(() => {
-        inputEl.style.borderColor = "#3f3f46";
-      }, 1000);
-    }
-  });
 };
 
 function waitForTokens(): Promise<boolean> {
@@ -595,12 +501,23 @@ function waitForTokens(): Promise<boolean> {
       const csrfInput = document.querySelector(
         'input[name="_csrf"]',
       ) as HTMLInputElement;
-      const authInput = document.getElementById(
-        "authorizedIDX",
-      ) as HTMLInputElement;
+      const authInput = (document.getElementById("authorizedIDX") ||
+        document.getElementById("authorizedID")) as HTMLInputElement;
 
-      if (csrfInput) vtopContext.csrf = csrfInput.value;
-      if (authInput) vtopContext.authId = authInput.value;
+      if (csrfInput && csrfInput.value) vtopContext.csrf = csrfInput.value;
+      if (authInput && authInput.value) vtopContext.authId = authInput.value;
+
+      if (!vtopContext.csrf || !vtopContext.authId) {
+        const html = document.documentElement.innerHTML;
+        if (!vtopContext.csrf) {
+          const csrfMatch = html.match(/var\s+csrfValue\s*=\s*["']([^"']+)["']/i) || html.match(/name=["']_csrf["']\s+value=["']([^"']+)["']/i);
+          if (csrfMatch) vtopContext.csrf = csrfMatch[1];
+        }
+        if (!vtopContext.authId) {
+          const idMatch = html.match(/var\s+id\s*=\s*["']([^"']+)["']/i) || html.match(/authorizedID["']?\s*,\s*value:\s*["']([^"']+)["']/i);
+          if (idMatch) vtopContext.authId = idMatch[1];
+        }
+      }
 
       if (vtopContext.csrf || attempts >= maxAttempts) {
         clearInterval(interval);
@@ -609,6 +526,148 @@ function waitForTokens(): Promise<boolean> {
     }, 100);
   });
 }
+
+const enhancePreloginRoleCards = () => {
+  const roleConfigs = [
+    {
+      selectors: [".cardStudent", "#stdForm"],
+      name: "Student",
+      svg: `<svg class="retop-role-svg" xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 -960 960 960" fill="currentColor"><path d="M480-120 200-272v-240L40-600l440-240 440 240v320h-80V-556l-80 44v240L480-120Z"/></svg>`,
+    },
+    {
+      selectors: [".cardEmployee", "#empForm"],
+      name: "Employee",
+      svg: `<svg class="retop-role-svg" xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 -960 960 960" fill="currentColor"><path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h240l80 80h320q33 0 56.5 23.5T880-640v400q0 33-23.5 56.5T800-160H160Z"/></svg>`,
+    },
+    {
+      selectors: [".cardParent", "#parentForm"],
+      name: "Parent",
+      svg: `<svg class="retop-role-svg" xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 -960 960 960" fill="currentColor"><path d="M480-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM160-160v-112q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440q66 0 130 15.5T736-378q29 15 46.5 43.5T800-272v112H160Z"/></svg>`,
+    },
+    {
+      selectors: [".cardAlumni", "#alumniForm"],
+      name: "Alumni",
+      svg: `<svg class="retop-role-svg" xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 -960 960 960" fill="currentColor"><path d="m354-287 126-76 126 77-33-144 111-96-146-13-58-136-58 135-146 13 111 97-33 143ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z"/></svg>`,
+    },
+  ];
+
+  roleConfigs.forEach((cfg) => {
+    for (const sel of cfg.selectors) {
+      const card = document.querySelector(sel)?.closest(".cardStudent, .cardEmployee, .cardParent, .cardAlumni") as HTMLElement;
+      if (card) {
+        const link = card.querySelector("a") as HTMLElement;
+        if (link) {
+          link.innerHTML = `
+            <div class="retop-role-card-inner">
+              <div class="retop-role-icon-col">${cfg.svg}</div>
+              <div class="retop-role-text-col"><p>${cfg.name}</p></div>
+            </div>
+          `;
+          card.onclick = (e) => {
+            if (e.target !== link && !link.contains(e.target as Node)) {
+              link.click();
+            }
+          };
+        }
+        break;
+      }
+    }
+  });
+};
+
+const enhancePreloginInfoAndApps = () => {
+  // 1. Format the VIT Rankings Info Card as a transparent modern grid with big numbers
+  const infoCard = document.querySelector(".card.border-0.shadow-lg, .spotlightHeader")?.closest(".card") as HTMLElement;
+  if (infoCard) {
+    infoCard.querySelector(".card-header")?.remove();
+
+    const cardBody = infoCard.querySelector(".card-body") as HTMLElement;
+    if (cardBody) {
+      cardBody.style.maxHeight = "";
+      cardBody.style.overflowY = "";
+      cardBody.classList.remove("custom-scrollbar");
+      cardBody.classList.add("p-0");
+
+      const stats = [
+        { badge: "#691", desc: "QS World 2026" },
+        { badge: "Top 150", desc: "QS Asia 2025" },
+        { badge: "#142", desc: "QS Engg & Tech (#9 India)" },
+        { badge: "#396", desc: "QS Sustainability (#8 India)" },
+        { badge: "#65", desc: "THE Interdisciplinary (#2 India)" },
+        { badge: "#173", desc: "THE Young Univ 2025" },
+        { badge: "#687", desc: "US News 2024 (#6 India)" },
+        { badge: "Top 500", desc: "Shanghai ARWU 2024" },
+        { badge: "Top 20", desc: "NIRF 2025 (Univ, Research)" },
+        { badge: "A++", desc: "NAAC Grade (3.66 / 4.0)" },
+      ];
+
+      cardBody.innerHTML = `
+        <div class="retop-rankings-grid">
+          ${stats
+            .map(
+              (s) => `
+            <div class="retop-rank-tile">
+              <div class="retop-rank-big-num">${s.badge}</div>
+              <div class="retop-rank-subtext">${s.desc}</div>
+            </div>
+          `
+            )
+            .join("")}
+        </div>
+      `;
+    }
+  }
+
+  // 2. Relocate and enhance the mobile app download cards to sit right of the VIT info card
+  const appsSection = document.querySelector(".row.row-cols-2.row-cols-sm-4.py-3.justify-content-center") as HTMLElement;
+  const targetCol = document.querySelector(".col-12.col-md-6.order-1.order-md-2") as HTMLElement;
+
+  if (appsSection && targetCol && !targetCol.contains(appsSection)) {
+    targetCol.appendChild(appsSection);
+    appsSection.className = "row row-cols-1 row-cols-sm-3 g-3 p-4 bg-transparent rounded-3xl border-0 shadow-none";
+  }
+};
+
+const enhancePreloginHeader = () => {
+  const isChennai = window.location.hostname.includes("vtopcc");
+  document.title = isChennai ? "retop Chennai" : "retop";
+
+  const header =
+    document.getElementById("vtopOpenPageHeader") ||
+    document.querySelector("nav.navbar") ||
+    document.querySelector(".headerBackgroundColor");
+
+  if (header) {
+    const emblem = (header.querySelector("img.VITEmblem, .navbar-brand img") ||
+      header.querySelector("img")) as HTMLImageElement;
+    if (emblem) {
+      emblem.src = getExtUrl("dist/assets/vitLogo.svg");
+      emblem.id = "vtop-prelogin-logo";
+      emblem.style.maxHeight = "44px";
+      emblem.style.height = "44px";
+      emblem.style.width = "auto";
+    }
+
+    const vitText = header.querySelector(".VITLogoStyle");
+    if (vitText) {
+      vitText.remove();
+    }
+
+    const campusLabel = isChennai ? "CHENNAI CAMPUS" : "VELLORE CAMPUS";
+    let navbarText = header.querySelector(".navbar-text") as HTMLElement;
+    if (!navbarText) {
+      navbarText = document.createElement("span");
+      navbarText.className = "navbar-text text-light";
+      const brand =
+        header.querySelector(".navbar-brand") ||
+        header.querySelector(".container-fluid") ||
+        header;
+      brand.appendChild(navbarText);
+    }
+    navbarText.textContent = campusLabel;
+    navbarText.classList.add("retop-campus-text");
+  }
+};
 
 const injectPreloginTheme = () => {
   if (document.getElementById("vtop-prelogin-theme")) return;
@@ -622,6 +681,10 @@ const injectPreloginTheme = () => {
   link.rel = "stylesheet";
   link.href = getExtUrl("dist/prelogin.css");
   document.head.appendChild(link);
+
+  enhancePreloginHeader();
+  enhancePreloginRoleCards();
+  enhancePreloginInfoAndApps();
 
   document.addEventListener("click", (e) => {
     const target = e.target as HTMLElement;
@@ -1046,11 +1109,17 @@ const injectLoginTheme = () => {
     }
 
     // Transform the campus text to fit the new width
-    const navbarText = header.querySelector(".navbar-text");
-    if (navbarText && !navbarText.classList.contains("retop-campus-text")) {
-      navbarText.textContent = "VELLORE CAMPUS";
-      navbarText.classList.add("retop-campus-text");
+    const isChennai = window.location.hostname.includes("vtopcc");
+    const campusLabel = isChennai ? "CHENNAI CAMPUS" : "VELLORE CAMPUS";
+
+    let navbarText = header.querySelector(".navbar-text") as HTMLElement;
+    if (!navbarText) {
+      navbarText = document.createElement("span");
+      navbarText.className = "navbar-text text-light";
+      header.querySelector(".container-fluid")?.appendChild(navbarText);
     }
+    navbarText.textContent = campusLabel;
+    navbarText.classList.add("retop-campus-text");
 
     // Footer logic moved to the right side
   }
@@ -1062,38 +1131,42 @@ const injectLoginTheme = () => {
 
     const asciiPre = document.createElement("pre");
     asciiPre.id = "retop-ascii-art";
-    const artTypes = ["TT", "SMV", "MGR"];
+    const isChennaiHost = window.location.hostname.includes("vtopcc");
+    const artTypes = isChennaiHost ? ["CC"] : ["TT", "SMV", "MGR"];
     const lastArt = localStorage.getItem("retop_last_ascii_art") || "";
     const availableArts = artTypes.filter(type => type !== lastArt);
-    const pickedArt = availableArts.length ? availableArts[Math.floor(Math.random() * availableArts.length)] : "TT";
+    const pickedArt = availableArts.length ? availableArts[Math.floor(Math.random() * availableArts.length)] : artTypes[0];
     localStorage.setItem("retop_last_ascii_art", pickedArt);
     
     let rawArt = asciiArtTT;
-    if (pickedArt === "SMV") rawArt = asciiArtSMV;
-    if (pickedArt === "MGR") rawArt = asciiArtMGR;
+    if (pickedArt === "CC") rawArt = asciiArtCC.trim() ? asciiArtCC : asciiArtTT;
+    else if (pickedArt === "SMV") rawArt = asciiArtSMV;
+    else if (pickedArt === "MGR") rawArt = asciiArtMGR;
     
     const asciiArt = rawArt.replace(/\r/g, "");
 
     // Force right alignment for ASCII art
     asciiPre.style.setProperty("text-align", "right", "important");
 
-    if (pickedArt === "PRP") {
+    if (pickedArt === "CC") {
       asciiPre.style.letterSpacing = "0px";
       asciiPre.style.setProperty("margin-right", "0px", "important");
-      asciiPre.style.setProperty("font-size", "5px", "important");
-      // Use 4.5px line-height to counter Windows 125%/150% DPI scaling rounding artifacts
-      // which cause 1px gaps every ~4 lines at tiny font sizes.
-      asciiPre.style.setProperty("line-height", "4.5px", "important");
+      asciiPre.style.setProperty("font-size", "4px", "important");
+      asciiPre.style.setProperty("line-height", "4px", "important");
     } else if (pickedArt === "SMV") {
       asciiPre.style.letterSpacing = "0px";
       asciiPre.style.setProperty("margin-right", "0px", "important");
-      asciiPre.style.setProperty("font-size", "4.2px", "important");
+      asciiPre.style.setProperty("font-size", "4px", "important");
       asciiPre.style.setProperty("line-height", "4px", "important");
     } else if (pickedArt === "MGR") {
       asciiPre.style.letterSpacing = "0px";
       asciiPre.style.setProperty("margin-right", "0px", "important");
       asciiPre.style.setProperty("font-size", "4.8px", "important");
-      asciiPre.style.setProperty("line-height", "4.4px", "important");
+      asciiPre.style.setProperty("line-height", "4px", "important");
+    } else {
+      asciiPre.style.letterSpacing = "0px";
+      asciiPre.style.setProperty("font-size", "7px", "important");
+      asciiPre.style.setProperty("line-height", "7px", "important");
     }
     asciiPre.textContent = asciiArt;
     wrapper.appendChild(asciiPre);
@@ -1133,16 +1206,23 @@ const injectLoginTheme = () => {
     let charW = 4.2; // default approx width of monospace char for 7px font
     let charH = 7;   // default line-height matches font size
     
-    if (pickedArt === "PRP") {
+    if (pickedArt === "CC") {
+      charW = 2.4;
+      charH = 4;
+    } else if (pickedArt === "PRP") {
       charW = 3;
       charH = 4.5;
     } else if (pickedArt === "SMV") {
-      charW = 2.5; // ~40% smaller than 4.2
+      charW = 2.4;
       charH = 4;
     } else if (pickedArt === "MGR") {
       charW = 2.9;
-      charH = 4.4;
+      charH = 4;
     }
+
+    const getLineOffsetX = (preW: number, lineLen: number) => {
+      return Math.max(0, preW - lineLen * charW);
+    };
 
     const updateHoverPuddle = (
       x: number,
@@ -1179,13 +1259,6 @@ const injectLoginTheme = () => {
         const charY = Math.floor(currentY / charH);
         let onWater = false;
 
-        const getLineOffsetX = (lineLen: number) => {
-          if (pickedArt === "MGR") {
-            return Math.max(0, rect.width - lineLen * charW);
-          }
-          return 0;
-        };
-
         // Check current char and surrounding chars for leniency (radius increased for sparse arts like MGR)
         for (
           let cy = Math.max(0, charY - 3);
@@ -1193,7 +1266,7 @@ const injectLoginTheme = () => {
           cy++
         ) {
           const line = originalLines[cy];
-          const offsetX = getLineOffsetX(line.length);
+          const offsetX = getLineOffsetX(rect.width, line.length);
           const charX = Math.floor((currentX - offsetX) / charW);
 
           for (
@@ -1250,7 +1323,7 @@ const injectLoginTheme = () => {
           for (let y = 0; y < originalLines.length; y++) {
             const line = originalLines[y];
             const py = y * charH;
-            const offsetX = pickedArt === "MGR" ? Math.max(0, preWidth - line.length * charW) : 0;
+            const offsetX = getLineOffsetX(preWidth, line.length);
 
             let newLine = "";
             for (let x = 0; x < line.length; x++) {
@@ -1340,38 +1413,7 @@ const injectLoginTheme = () => {
     try {
       const savedSettings = result["retop-settings"];
       if (savedSettings) {
-        const settings = parseSettingsPayload(savedSettings);
-        if (settings) {
-
-        const MATERIAL_ACCENTS: Record<string, string> = {
-          blue: "#2563eb",
-          indigo: "#4f46e5",
-          purple: "#9333ea",
-          pink: "#db2777",
-          red: "#dc2626",
-          orange: "#ea580c",
-          yellow: "#ca8a04",
-          lime: "#65a30d",
-          green: "#16a34a",
-          cyan: "#0891b2",
-        };
-
-        let baseColor =
-          MATERIAL_ACCENTS[settings.accentColor] || MATERIAL_ACCENTS.blue;
-
-        if (settings.randomAccentColor) {
-          const hue = Math.floor(Math.random() * 360);
-          baseColor = `hsl(${hue}, 70%, 45%)`;
-        }
-
-        document.documentElement.style.setProperty("--accent-base", baseColor);
-        let activeTheme = settings.themeMode;
-        if (activeTheme === "auto") {
-          const hour = new Date().getHours();
-          activeTheme = hour >= 6 && hour < 18 ? "light" : "dark";
-        }
-        document.documentElement.setAttribute("data-theme", activeTheme);
-        }
+        applyThemeFromSettings(savedSettings);
       }
     } catch (err) {
       console.warn(
@@ -1381,7 +1423,8 @@ const injectLoginTheme = () => {
     }
   });
 
-  document.title = "Login - retop";
+  const isChennaiHost = window.location.hostname.includes("vtopcc");
+  document.title = isChennaiHost ? "retop Chennai - Login" : "Login - retop";
 
   // Inject Offline Access Button (bottom-left corner)
   if (!document.getElementById("retop-offline-btn")) {
@@ -1390,7 +1433,7 @@ const injectLoginTheme = () => {
     offlineBtn.href = "https://getretop.web.app/";
     offlineBtn.target = "_blank";
     offlineBtn.rel = "noopener noreferrer";
-    offlineBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px;flex-shrink:0;" viewBox="0 -960 960 960" fill="currentColor"><path d="m880-80-82-82q-42 29-91 45.5T600-100q-58 0-111-18t-98-52l56-56q34 24 74 37.5t79 13.5q26 0 50.5-5t48.5-15L522-372q-4 1-8.5 2t-9.5 2l-56-56q18-4 35.5-9.5T518-448L328-638q-30 38-51 82.5T244-460h-80q15-100 57.5-171T316-744L80-980l56-56 800 800-56 56ZM556-540l-56-56q36-20 74.5-37T646-660q-40-14-82-22t-84-10v80h-80v-80q-58 2-111.5 16T184-646l-58-58q60-42 130-63t144-23v-90h80v90q70 2 133.5 20T738-718l-62 62q-24-14-50-24.5T572-696q-28 10-53 22.5T472-646q26 4 50.5 12t48.5 18l-58 58q-18-8-37-13.5T436-580l-56-56 176 96Zm124 180-58-58q14-28 23-57.5t13-60.5h-78l-80-80h238q-14 100-56.5 171T680-360Z"/></svg> No internet?`;
+    offlineBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px;flex-shrink:0;" viewBox="0 0 960 960" fill="currentColor"><path d="M780,843L743,879Q723,898 696,898Q669,898 649,877Q628,857 628,829.5Q628,802 649,782L684,746L649,710Q628,691 628,663Q628,635 649,615Q669,594 696.5,594Q724,594 744,615L780,651L816,616Q835,596 863,595Q891,594 911.5,614.5Q932,635 932,662.5Q932,690 911,710L876,746L911,783Q931,803 931.5,830Q932,857 911,877Q891,898 863.5,898Q836,898 816,877L780,843ZM480,926Q387,926 306,891Q225,856 164.5,795.5Q104,735 69,654Q34,573 34,480Q34,387 69,306Q104,225 164.5,164.5Q225,104 306,69Q387,34 480,34Q567,34 645,66Q723,98 783.5,153Q844,208 881.5,282.5Q919,357 925,441Q927,471 906.5,491Q886,511 856,511Q828,511 809,491Q790,471 786,442Q784,433 782.5,423.5Q781,414 779,404L651,404Q653,421 654,436.5Q655,452 655,469Q655,486 642,498.5Q629,511 612,511Q595,511 583.5,498.5Q572,486 571,469Q571,452 570.5,435.5Q570,419 567,404L392,404Q389,423 387.5,442Q386,461 386,480Q386,499 387.5,518Q389,537 392,556L500,556Q516,556 528.5,568Q541,580 541,597.5Q541,615 529,626.5Q517,638 500,638L411,638Q423,679 440,716.5Q457,754 478,791Q491,791 502,789.5Q513,788 515,786Q543,782 566,798.5Q589,815 594,843Q599,871 582.5,894Q566,917 538,922Q523,924 508.5,925Q494,926 480,926ZM179,556L308,556Q305,537 303.5,518Q302,499 302,480Q302,461 303.5,442Q305,423 308,404L179,404Q175,422 172.5,441.5Q170,461 170,480Q170,499 172.5,518.5Q175,538 179,556ZM214,323L324,323Q333,287 344.5,253Q356,219 375,188Q322,205 281.5,240Q241,275 214,323ZM375,772Q356,742 344.5,707.5Q333,673 324,638L214,638Q241,685 282,720Q323,755 375,772ZM411,323L548,323Q536,282 518.5,244.5Q501,207 478,171Q456,206 439,244.5Q422,283 411,323ZM635,323L745,323Q718,275 676.5,240Q635,205 582,188Q601,219 613.5,253Q626,287 635,323Z"/></svg> No internet?`;
     offlineBtn.style.cssText = `
       position: fixed;
       bottom: 20px;

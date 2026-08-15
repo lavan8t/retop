@@ -21,6 +21,21 @@
   --text-muted: var(--md-sys-color-on-surface-variant, #94a3b8);
   --text-dim: color-mix(in srgb, var(--md-sys-color-on-surface-variant, #94a3b8) 70%, transparent);
   --shadow-main: transparent;
+
+  /* Extended Palette (Same as AMOLED) */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+  --color-purple: #a855f7;
+  --color-cyan: #06b6d4;
+
+  --card-cyan: color-mix(in srgb, #06b6d4 35%, #000000);
+  --card-lime: color-mix(in srgb, #10b981 35%, #000000);
+  --card-yellow: color-mix(in srgb, #f59e0b 35%, #000000);
+  --card-blue: color-mix(in srgb, #3b82f6 35%, #000000);
+  --card-red: color-mix(in srgb, #ef4444 35%, #000000);
+  --card-purple: color-mix(in srgb, #a855f7 35%, #000000);
 }
 
 /* ── Unified Font Weight System (Changes ONLY font weight, preserving width) ──── */
@@ -111,6 +126,21 @@
   --text-muted: #a3a3a3;
   --text-dim: #737373;
   --shadow-main: transparent;
+
+  /* Extended Palette (Identical to Dark) */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+  --color-purple: #a855f7;
+  --color-cyan: #06b6d4;
+
+  --card-cyan: color-mix(in srgb, #06b6d4 35%, #000000);
+  --card-lime: color-mix(in srgb, #10b981 35%, #000000);
+  --card-yellow: color-mix(in srgb, #f59e0b 35%, #000000);
+  --card-blue: color-mix(in srgb, #3b82f6 35%, #000000);
+  --card-red: color-mix(in srgb, #ef4444 35%, #000000);
+  --card-purple: color-mix(in srgb, #a855f7 35%, #000000);
 }
 
 /* Material 3 Selection & Shadow DOM Text Selection styling */
@@ -136,19 +166,21 @@
   display: inline-block !important;
   font-family: var(--font-expanded, sans-serif) !important;
   font-variation-settings: "wdth" 151, "wght" 700, "ROND" 100, "slnt" -10 !important;
-  transform: skewX(-10deg) !important;
 }
 
+#retop-root .retop-about-logo,
 .retop-about-logo {
   display: inline-block !important;
-  font-family: var(--font-expanded, sans-serif) !important;
+  font-family: "Google Sans Flex", var(--font-expanded, sans-serif) !important;
   font-variation-settings: "wdth" 125, "wght" 900, "ROND" 100, "slnt" -10 !important;
-  transform: skewX(-10deg) !important;
-  transition: font-variation-settings var(--duration-fast) ease-out !important;
+  letter-spacing: -0.04em !important;
+  line-height: 1 !important;
+  transition: font-variation-settings var(--duration-font-var) ease-out, color var(--duration-fast) ease !important;
 }
 
+#retop-root .retop-about-logo:hover,
 .retop-about-logo:hover {
-  font-variation-settings: "wdth" 125, "wght" 1, "ROND" 100, "slnt" -10 !important;
+  font-variation-settings: "wdth" 125, "wght" 100, "ROND" 100, "slnt" -10 !important;
 }
 
 /* Range slider styling — no ghosting */

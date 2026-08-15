@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { getExtUrl } from "./utils/url";
-import { PlayArrow, Pause, CloudOff } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
+import { PlayArrow, Pause } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
+import { NoInternetIcon } from "./components/icons/NoInternetIcon";
 import { applyTheme, useSettingsStore } from "./utils/settings-store";
 
 const Popup = () => {
@@ -39,7 +40,7 @@ const Popup = () => {
   };
 
   const reloadVtopTabs = () => {
-    chrome.tabs.query({ url: "*://vtop.vit.ac.in/*" }, (tabs) => {
+    chrome.tabs.query({ url: "*://*.vit.ac.in/*" }, (tabs) => {
       tabs.forEach((tab) => {
         if (tab.id) {
           chrome.tabs.reload(tab.id);
@@ -98,7 +99,7 @@ const Popup = () => {
             </span>
           </div>
           <span style={{ fontSize: "24px", display: "flex" }}>
-            <CloudOff width="1em" height="1em" />
+            <NoInternetIcon width="1em" height="1em" />
           </span>
         </div>
 

@@ -1,8 +1,4 @@
-/**
- * Multi-environment Storage Adapter for Retop.
- * Provides unified reading and writing across chrome.storage.local, localStorage, and web bridge.
- * Ensures complete compatibility for both Chrome Extension and PWA Web App (getretop.web.app).
- */
+import { get as idbGet, set as idbSet, del as idbDel, entries as idbEntries } from "idb-keyval";
 
 export const isChromeExtensionValid = (): boolean => {
   try {
@@ -57,7 +53,7 @@ export const requestStorageFromBridge = async (keys?: string[], timeoutMs = 600)
 export const getStorageData = async (keys: string[]): Promise<Record<string, any>> => {
   const result: Record<string, any> = {};
 
-  // 1. Read from localStorage as universal base
+  // 1. Read from localStorage as universal fast base
   for (const key of keys) {
     try {
       const raw = localStorage.getItem(key);
@@ -73,7 +69,29 @@ export const getStorageData = async (keys: string[]): Promise<Record<string, any
     }
   }
 
-  // 2. Overlay with chrome.storage.local if extension runtime is valid and active
+  // 2. Read from IndexedDB for persistent/offline-first storage
+  if (typeof indexedDB !== "undefined") {
+    try {
+      await Promise.all(
+        keys.map(async (key) => {
+          if (result[key] === undefined) {
+            const val = await idbGet(key);
+            if (val !== undefined && val !== null) {
+              try {
+                result[key] = typeof val === "string" ? JSON.parse(val) : val;
+              } catch {
+                result[key] = val;
+              }
+            }
+          }
+        })
+      );
+    } catch (e) {
+      // IndexedDB read fallback
+    }
+  }
+
+  // 3. Overlay with chrome.storage.local if extension runtime is valid and active
   if (isChromeExtensionValid()) {
     try {
       await new Promise<void>((resolve) => {
@@ -97,8 +115,7 @@ export const getStorageData = async (keys: string[]): Promise<Record<string, any
     }
   }
 
-  // 3. Query bridge for any keys still missing (covers offline.html + web.app + localhost
-  //    where chrome context exists via webBridge but data may not be in chrome.storage yet)
+  // 4. Query bridge for any keys still missing (covers offline.html + web.app + localhost)
   if (typeof window !== "undefined") {
     const missingKeys = keys.filter((k) => result[k] === undefined);
     if (missingKeys.length > 0) {
@@ -128,7 +145,18 @@ export const setStorageData = async (data: Record<string, any>): Promise<void> =
     }
   }
 
-  // 2. Sync to chrome.storage.local if extension runtime is present & valid
+  // 2. Sync to IndexedDB (unlimited storage for offline PWA)
+  if (typeof indexedDB !== "undefined") {
+    try {
+      await Promise.all(
+        Object.entries(data).map(([key, val]) => idbSet(key, val))
+      );
+    } catch (e) {
+      console.warn("[Storage Adapter] IndexedDB write failed", e);
+    }
+  }
+
+  // 3. Sync to chrome.storage.local if extension runtime is present & valid
   if (isChromeExtensionValid()) {
     try {
       await new Promise<void>((resolve) => {
@@ -140,7 +168,7 @@ export const setStorageData = async (data: Record<string, any>): Promise<void> =
       // Ignore extension context invalidation
     }
   } else if (typeof window !== "undefined") {
-    // 3. Post message to extension content script bridge if present on web app page
+    // 4. Post message to extension content script bridge if present on web app page
     try {
       window.postMessage({ type: "RETOP_SET_STORAGE", data }, window.location.origin);
     } catch (e) {}
@@ -164,11 +192,26 @@ export const getAllStorageData = async (): Promise<Record<string, any>> => {
       // Fallback below
     }
   }
+
+  // 2. If in browser/PWA context, read from IndexedDB
+  if (typeof indexedDB !== "undefined") {
+    try {
+      const entries = await idbEntries();
+      if (entries.length > 0) {
+        const idbData: Record<string, any> = {};
+        for (const [k, v] of entries) {
+          idbData[String(k)] = v;
+        }
+        return idbData;
+      }
+    } catch (e) {}
+  }
   
-  // 2. If in web app context, fetch ALL via bridge
+  // 3. If in web app context, fetch ALL via bridge
   if (typeof window !== "undefined") {
     return await requestStorageFromBridge(undefined, 600);
   }
   
   return {};
 };
+

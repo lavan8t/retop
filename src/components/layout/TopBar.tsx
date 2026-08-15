@@ -12,9 +12,9 @@ import {
   MenuBook,
   KeyboardArrowDown,
   Refresh,
-  CloudOff,
   Star,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
+import { NoInternetIcon } from "../icons/NoInternetIcon";
 import {
   QuickLink,
   Semester,
@@ -28,6 +28,7 @@ import { MaterialSwitch } from "../MaterialSwitch";
 import { SemesterDropdown } from "../timetable/SemesterDropdown";
 import { ClassGroupDropdown } from "../timetable/ClassGroupDropdown";
 import { TopBarSearch } from "./TopBarSearch";
+import { OfficialResourcesMenu } from "../resources/OfficialResourcesMenu";
 import { Tooltip } from "../ui/Tooltip";
 import { SegmentedControl } from "../ui/SegmentedControl";
 import { getCategoryIcon } from "../../utils/icons";
@@ -505,7 +506,8 @@ export const TopBar: React.FC<TopBarProps> = ({
                 onClick={(e) => {
                   e.stopPropagation();
                   if (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) {
-                    window.open("https://vtop.vit.ac.in/vtop/open/page", "_blank");
+                    const isChennai = window.location.hostname.includes("vtopcc");
+                    window.open(isChennai ? "https://vtopcc.vit.ac.in/vtop/open/page" : "https://vtop.vit.ac.in/vtop/open/page", "_blank");
                   } else if (onSync && !isSyncing) {
                     onSync();
                   }
@@ -517,7 +519,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                   className={`shrink-0 flex items-center justify-center ${isSyncing && !(typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ? "animate-spin" : ""}`}
                 >
                   {(typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ? (
-                    <CloudOff className="w-4 h-4 md:w-5 md:h-5 transition-colors" style={{ color: "var(--accent-base, #3b82f6)" }} />
+                    <NoInternetIcon className="w-4 h-4 md:w-5 md:h-5 transition-colors" style={{ color: "var(--accent-base, #3b82f6)" }} />
                   ) : (
                     <Refresh className="w-4 h-4 md:w-5 md:h-5 text-(--text-muted) hover:text-(--text-main) transition-colors" />
                   )}
@@ -538,19 +540,27 @@ export const TopBar: React.FC<TopBarProps> = ({
             </Tooltip>
           </div>
 
+          <div className="flex items-center pointer-events-auto mr-1 md:mr-2">
+            <OfficialResourcesMenu />
+          </div>
+
           <div className="relative shrink-0 flex items-center justify-center pointer-events-auto">
             <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
               className="flex items-center focus:outline-none group cursor-pointer transition-all"
+              aria-label="Toggle profile menu"
             >
               <div className="w-10 h-10 md:w-12 md:h-12 relative flex items-center justify-center">
-                <div className="w-10 h-10 md:w-12 md:h-12 absolute inset-0 rounded-full overflow-hidden shrink-0 border-2 border-(--border-main) group-hover:border-(--accent-base) shadow-sm transition-all flex items-center justify-center bg-(--bg-highlight) z-9999">
-                  {user.regNo !== "..." && (user.profileImgBase64 || !(typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__)) ? (
+                <div
+                  className={`w-10 h-10 md:w-12 md:h-12 absolute inset-0 rounded-full overflow-hidden shrink-0 border-2 border-(--border-main) group-hover:border-(--accent-base) shadow-sm transition-all duration-200 ease-out flex items-center justify-center bg-(--bg-highlight) z-9999 ${
+                    showProfileMenu
+                      ? "opacity-0 scale-90 pointer-events-none"
+                      : "opacity-100 scale-100"
+                  }`}
+                >
+                  {user.regNo !== "..." && user.profileImgBase64 ? (
                     <img
-                      src={
-                        user.profileImgBase64 ||
-                        `/vtop/users/image/?id=${user.regNo}`
-                      }
+                      src={user.profileImgBase64}
                       className="w-full h-full object-cover"
                       alt="Profile"
                       onError={(e) => {

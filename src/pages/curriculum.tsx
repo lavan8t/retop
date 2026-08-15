@@ -263,7 +263,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
                     : "bg-(--bg-surface)/60 text-(--text-main) border-(--border-dim)/40 hover:bg-(--bg-surface)"
                 }`}>
                 <div className="flex flex-col text-left min-w-0 flex-1">
-                  <span className="text-xs md:text-sm font-black font-expanded uppercase tracking-wide break-words whitespace-normal leading-[2.4]">
+                  <span className="text-xs md:text-sm font-black font-expanded uppercase tracking-wide wrap-break-word whitespace-normal leading-[2.4]">
                     {cat.title}
                   </span>
                 </div>

@@ -59,7 +59,7 @@
   display: grid;
   grid-template-rows: 0fr;
   opacity: 0;
-  transition: grid-template-rows 150ms ease-out, opacity 150ms ease-out;
+  transition: grid-template-rows 350ms cubic-bezier(0.2, 0, 0, 1), opacity 280ms ease-out;
 }
 .group:hover .cgpa-expand-container {
   grid-template-rows: 1fr;
@@ -70,7 +70,7 @@
   display: grid;
   grid-template-rows: 1fr;
   opacity: 1;
-  transition: grid-template-rows 150ms ease-out, opacity 150ms ease-out;
+  transition: grid-template-rows 350ms cubic-bezier(0.2, 0, 0, 1), opacity 280ms ease-out;
 }
 .group:hover .cgpa-resting-container {
   grid-template-rows: 0fr;
@@ -163,12 +163,12 @@
     --attendance-red-bg: color-mix(in srgb, #dc2626 25%, var(--bg-surface));
     --attendance-red-text: #b91c1c;
 
-    /* Card Colors - Professional deep tones mixed with the surface for stark Brutalist blocks */
-    --card-cyan: color-mix(in srgb, #06b6d4 40%, var(--bg-surface));
-    --card-lime: color-mix(in srgb, #10b981 40%, var(--bg-surface));
-    --card-yellow: color-mix(in srgb, #f59e0b 40%, var(--bg-surface));
-    --card-blue: color-mix(in srgb, #3b82f6 40%, var(--bg-surface));
-    --card-red: color-mix(in srgb, #ef4444 40%, var(--bg-surface));
+    /* Card Colors - Shared pure vibrant tones for both Dark and AMOLED */
+    --card-cyan: color-mix(in srgb, #06b6d4 35%, #000000);
+    --card-lime: color-mix(in srgb, #10b981 35%, #000000);
+    --card-yellow: color-mix(in srgb, #f59e0b 35%, #000000);
+    --card-blue: color-mix(in srgb, #3b82f6 35%, #000000);
+    --card-red: color-mix(in srgb, #ef4444 35%, #000000);
 
     /* Professional Attendance Status Colors */
     --att-safe: var(--md-sys-color-primary);
@@ -462,6 +462,30 @@
 
 #retop-root [class*="overflow-"]:hover::-webkit-scrollbar-thumb:hover,
 #retop-root .custom-scrollbar:hover::-webkit-scrollbar-thumb:hover {
+  background-color: var(--accent-base) !important;
+}
+
+/* Always-visible scrollbar for search menu to indicate scrollable content */
+#retop-root .search-scrollbar,
+#retop-root .always-visible-scrollbar {
+  --scrollbar-thumb-color: color-mix(in srgb, var(--text-muted, #94a3b8) 40%, transparent);
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb-color) transparent;
+}
+
+#retop-root .search-scrollbar:hover,
+#retop-root .always-visible-scrollbar:hover {
+  --scrollbar-thumb-color: color-mix(in srgb, var(--text-muted, #94a3b8) 75%, transparent);
+}
+
+#retop-root .search-scrollbar::-webkit-scrollbar-thumb,
+#retop-root .always-visible-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb-color) !important;
+  border-radius: 9999px;
+}
+
+#retop-root .search-scrollbar:hover::-webkit-scrollbar-thumb:hover,
+#retop-root .always-visible-scrollbar:hover::-webkit-scrollbar-thumb:hover {
   background-color: var(--accent-base) !important;
 }
 

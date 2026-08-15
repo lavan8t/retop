@@ -15,9 +15,9 @@ chrome.action.onClicked.addListener(() => {
 if (typeof chrome !== "undefined" && chrome.downloads?.onDeterminingFilename) {
   chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
     const isVtopDownload =
-      item.url.includes("vtop.vit.ac.in") ||
+      item.url.includes("vit.ac.in") ||
       item.url.startsWith("blob:") ||
-      (item.referrer && item.referrer.includes("vtop.vit.ac.in"));
+      (item.referrer && item.referrer.includes("vit.ac.in"));
 
     if (!isVtopDownload) {
       suggest();
@@ -66,8 +66,37 @@ if (typeof chrome !== "undefined" && chrome.downloads?.onDeterminingFilename) {
   });
 }
 
-// Handle Google Drive sync requests from content scripts where chrome.identity is restricted
+// Handle Google Drive sync and Portal-to-PWA data relay
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message.action === "PORTAL_SCRAPED_DATA" || message.type === "PORTAL_SCRAPED_DATA") {
+    const payload = message.payload || message.data;
+    if (payload) {
+      // 1. Persist to extension local storage
+      chrome.storage.local.set({ "retop_last_sync_payload": payload, "retop_last_sync_time": Date.now() });
+
+      // 2. Relay incoming payload updates to any active tab running the PWA
+      const pwaUrlPatterns = [
+        "https://getretop.web.app/*",
+        "http://localhost/*",
+        "http://127.0.0.1/*"
+      ];
+      chrome.tabs.query({ url: pwaUrlPatterns }, (tabs) => {
+        if (tabs && tabs.length > 0) {
+          for (const tab of tabs) {
+            if (tab.id !== undefined) {
+              chrome.tabs.sendMessage(tab.id, {
+                type: "RETOP_PWA_SYNC_PAYLOAD",
+                payload,
+              }).catch(() => {});
+            }
+          }
+        }
+      });
+    }
+    sendResponse({ success: true });
+    return true;
+  }
+
   if (message.action === "UPLOAD_DRIVE_BACKUP") {
     uploadBackup(message.settingsData, message.clientId)
       .then(() => sendResponse({ success: true }))

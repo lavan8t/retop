@@ -178,12 +178,12 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
             category: "Examinations",
           })
         }
-        className="group shrink-0 h-auto bg-(--bg-highlight) rounded-4xl p-5 flex flex-col relative z-30 cursor-pointer overflow-hidden border-2 border-(--border-main) shadow-(--brutal-shadow-sm) hover:shadow-(--brutal-shadow-hover) hover:bg-(--bg-surface) transition-all"
+        className="group shrink-0 h-auto bg-(--bg-highlight) rounded-4xl p-5 flex flex-col relative z-30 cursor-pointer overflow-hidden border-2 border-(--border-main) shadow-(--brutal-shadow-sm) hover:shadow-(--brutal-shadow-hover) hover:bg-(--bg-surface) transition-all duration-300 ease-out"
       >
         {/* Expanded Split View */}
         <div className="cgpa-expand-container overflow-hidden relative z-10">
-          <div className="overflow-hidden min-h-0">
-            <div className="flex flex-col items-center w-full pb-4">
+          <div className="overflow-hidden min-h-0 pb-4">
+            <div className="flex flex-col items-center w-full">
               <div className="text-[0.625rem] font-expanded font-bold uppercase text-(--text-muted) mb-3 leading-none">
                 Credits
               </div>
@@ -219,8 +219,8 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
         </div>
 
         {/* Resting Combined View */}
-        <div className="cgpa-resting-container overflow-hidden relative z-10 mb-3">
-          <div className="overflow-hidden min-h-0 flex items-center justify-end">
+        <div className="cgpa-resting-container overflow-hidden relative z-10">
+          <div className="overflow-hidden min-h-0 flex items-center justify-end pb-3">
             <div className="text-right">
               <div className="text-[0.625rem] font-expanded font-bold uppercase text-(--text-muted) leading-none">
                 Credits
@@ -237,7 +237,7 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
 
         {/* Persistent CGPA */}
         <div
-          className="flex flex-col relative z-10 transition-transform duration-200"
+          className="flex flex-col relative z-10 transition-transform duration-300 ease-out"
         >
           <div className="flex items-center justify-between">
             <School className="w-10 h-10 text-(--text-main) mix-blend-overlay opacity-80" />

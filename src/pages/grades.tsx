@@ -298,7 +298,7 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                                                 : ""
                                             }`}>
                                             <td
-                                              className={`py-1.5 px-3 truncate max-w-[120px] ${
+                                              className={`py-1.5 px-3 truncate max-w-30 ${
                                                 isTotal
                                                   ? "font-black uppercase text-xs text-(--text-main)"
                                                   : "font-bold text-(--text-main)"
@@ -388,7 +388,7 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                   </h2>
                 </div>
                 <div className="overflow-x-auto custom-scrollbar rounded-4xl bg-(--bg-surface) shadow-none border-2 border-(--border-main) mb-12">
-                  <table className="w-full text-left text-sm min-w-[600px]">
+                  <table className="w-full text-left text-sm min-w-150">
                     <thead className="bg-(--bg-highlight) text-[10px] font-bold text-(--text-muted) uppercase">
                       <tr>
                         <th className="p-4 pl-6 whitespace-nowrap">Credits Reg</th>
@@ -436,7 +436,7 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                   </h2>
                 </div>
                 <div className="overflow-x-auto custom-scrollbar rounded-4xl bg-(--bg-surface) shadow-none border-2 border-(--border-main) mb-12">
-                  <table className="w-full text-left text-sm min-w-[500px]">
+                  <table className="w-full text-left text-sm min-w-125">
                     <thead className="bg-(--bg-highlight) text-[10px] font-bold text-(--text-muted) uppercase">
                       <tr>
                         <th className="p-4 pl-6">Curriculum Distribution Type</th>
@@ -469,7 +469,7 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                   </h2>
                 </div>
                 <div className="overflow-x-auto custom-scrollbar rounded-4xl bg-(--bg-surface) shadow-none border-2 border-(--border-main) mb-12">
-                  <table className="w-full text-left text-sm min-w-[600px]">
+                  <table className="w-full text-left text-sm min-w-150">
                     <thead className="bg-(--bg-highlight) text-[10px] font-bold text-(--text-muted) uppercase">
                       <tr>
                         <th className="p-4 pl-6">Basket Title</th>
@@ -511,7 +511,7 @@ export const GradesPage: React.FC<GradesPageProps> = ({
               </div>
               <div>
                 <div className="overflow-x-auto custom-scrollbar pb-4">
-                  <table className="w-full text-left text-sm min-w-[500px] border-separate border-spacing-y-2">
+                  <table className="w-full text-left text-sm min-w-125 border-separate border-spacing-y-2">
                     <tbody className="font-mono">
                       {[...historyData.courses].reverse().map((course, idx) => {
                         const gradeColorClass = getGradeColor(course.grade);
@@ -540,7 +540,7 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                             </td>
                             <td className="p-5 text-center">
                               <span
-                                className={`inline-flex w-8 h-8 rounded-lg items-center justify-center font-black text-sm leading-none pt-[2px] shadow-none mx-auto ${gradeColorClass}`}>
+                                className={`inline-flex w-8 h-8 rounded-lg items-center justify-center font-black text-sm leading-none pt-0.5 shadow-none mx-auto ${gradeColorClass}`}>
                                 {course.grade}
                               </span>
                             </td>

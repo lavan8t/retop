@@ -19,7 +19,7 @@ export const BentoBlock = ({
 
   return (
     <div
-      className={`relative p-5 md:p-6 bg-(--bg-surface) text-(--text-main) rounded-4xl transition-all duration-fast flex flex-col justify-between gap-4 overflow-hidden break-words whitespace-normal min-h-[140px] max-h-max ${span} ${className}`}
+      className={`relative p-5 md:p-6 bg-(--bg-surface) text-(--text-main) rounded-4xl transition-all duration-fast flex flex-col justify-between gap-4 overflow-hidden wrap-break-words whitespace-normal min-h-[140px] max-h-max ${span} ${className}`}
     >
       <div className="relative z-10 flex flex-col justify-between h-full gap-4 w-full">
         {Icon ? (
@@ -32,11 +32,11 @@ export const BentoBlock = ({
                 </div>
               )}
               {value ? (
-                <div className="text-2xl md:text-3xl font-black font-expanded leading-none w-full break-words whitespace-normal py-1">
+                <div className="text-2xl md:text-3xl font-black font-expanded leading-none w-full wrap-break-words whitespace-normal py-1">
                   {value}
                 </div>
               ) : (
-                <div className="w-full flex flex-col items-end justify-end text-sm md:text-base font-black font-expanded gap-1 break-words whitespace-normal">
+                <div className="w-full flex flex-col items-end justify-end text-sm md:text-base font-black font-expanded gap-1 wrap-break-words whitespace-normal">
                   {children}
                 </div>
               )}
@@ -50,11 +50,11 @@ export const BentoBlock = ({
               </div>
             )}
             {value ? (
-              <div className="text-2xl md:text-3xl font-black font-expanded leading-none w-full break-words whitespace-normal">
+              <div className="text-2xl md:text-3xl font-black font-expanded leading-none w-full wrap-break-words whitespace-normal">
                 {value}
               </div>
             ) : (
-              <div className="w-full flex flex-col justify-end text-sm md:text-base font-black font-expanded gap-1 break-words whitespace-normal">
+              <div className="w-full flex flex-col justify-end text-sm md:text-base font-black font-expanded gap-1 wrap-break-words whitespace-normal">
                 {children}
               </div>
             )}

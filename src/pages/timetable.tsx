@@ -56,7 +56,9 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
         {/* Added pb-32 lg:pb-0 to ensure the timetable has a safe scrolling area above the mobile dock & floating pill */}
         <div className="flex-1 min-h-0 relative lg:pb-0">
           {courses.length === 0 && !loading ? (
-            <div  
+            <div
+ 
+ 
               className="h-full p-4">
               <EmptyState 
                 msg="No Timetable Found" 
@@ -64,10 +66,14 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
                 icon={Layers} />
             </div>
           ) : (
-            <div className="absolute inset-0 pb-[80px] lg:pb-0 overflow-hidden">
+            <div className="absolute inset-0 pb-20 lg:pb-0 overflow-hidden">
               
                 <div
-                  key={viewMode}    
+                  key={viewMode}
+ 
+ 
+ 
+ 
                   className="absolute inset-0 w-full h-full">
                   {viewMode === "grid" && (
                     <TimetableGrid

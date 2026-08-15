@@ -4,6 +4,7 @@ export interface QuickLink {
   title: string;
   url: string;
   category: string;
+  subheading?: string;
 }
 
 export interface SpotlightLinkItem {

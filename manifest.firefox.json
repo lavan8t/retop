@@ -12,7 +12,9 @@
     "identity"
   ],
   "host_permissions": [
-    "https://vtop.vit.ac.in/vtop/*",
+    "https://*.vit.ac.in/*",
+    "https://vtop.vit.ac.in/*",
+    "https://vtopcc.vit.ac.in/*",
     "https://getretop.web.app/*",
     "http://localhost/*",
     "http://127.0.0.1/*"
@@ -20,7 +22,9 @@
   "content_scripts": [
     {
       "matches": [
-        "https://vtop.vit.ac.in/vtop/*"
+        "https://*.vit.ac.in/*",
+        "https://vtop.vit.ac.in/*",
+        "https://vtopcc.vit.ac.in/*"
       ],
       "js": [
         "content.js"
@@ -63,7 +67,9 @@
         "pdf.js/pdf.worker.min.mjs"
       ],
       "matches": [
+        "https://*.vit.ac.in/*",
         "https://vtop.vit.ac.in/*",
+        "https://vtopcc.vit.ac.in/*",
         "https://getretop.web.app/*",
         "http://localhost/*",
         "http://127.0.0.1/*"

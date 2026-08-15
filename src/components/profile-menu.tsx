@@ -98,15 +98,77 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
     },
   ];
 
+  const [focusedIndex, setFocusedIndex] = useState(0);
+
+  const isOffline = typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__;
+  const bottomActionsCount = isOffline ? 4 : 3; // Settings, (VTOP or Export/Import), Logout
+  const totalItems = mainItems.length + bottomActionsCount;
+
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (showLogoutDialog) {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          setShowLogoutDialog(false);
+        }
+        return;
+      }
+
       if (e.key === "Escape") {
+        e.preventDefault();
         onClose();
+        return;
+      }
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setFocusedIndex((prev) => (prev + 1) % totalItems);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setFocusedIndex((prev) => (prev - 1 + totalItems) % totalItems);
+      } else if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        if (focusedIndex < mainItems.length) {
+          const item = mainItems[focusedIndex];
+          onNavigate({
+            title: item.targetTitle || item.title,
+            url: item.url,
+            category: item.cat,
+          });
+          onClose();
+        } else {
+          const bottomIdx = focusedIndex - mainItems.length;
+          if (bottomIdx === 0) {
+            // Settings
+            onNavigate({
+              title: "Settings",
+              url: "#settings",
+              category: "System",
+            });
+            onClose();
+          } else if (!isOffline && bottomIdx === 1) {
+            // VTOP Toggle
+            onLegacyToggle();
+            onClose();
+          } else if (isOffline && bottomIdx === 1) {
+            // Export
+            handleExportBackup();
+          } else if (isOffline && bottomIdx === 2) {
+            // Import
+            const input = document.createElement("input");
+            input.type = "file";
+            input.accept = ".json";
+            input.click();
+          } else {
+            // Logout
+            setShowLogoutDialog(true);
+          }
+        }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+  }, [onClose, showLogoutDialog, focusedIndex, totalItems, mainItems, onNavigate, onLegacyToggle, isOffline]);
 
   return (
     <div
@@ -130,9 +192,9 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
             )}
           </div>
           <div className="w-16 h-full min-h-16 shadow-sm transition-all cursor-default bg-(--bg-main) shrink-0 z-9999 relative">
-            {userRegNo !== "..." && userRegNo && (userProfileImg || !(typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__)) ? (
+            {userRegNo !== "..." && userProfileImg ? (
               <img
-                src={userProfileImg || `/vtop/users/image/?id=${userRegNo}`}
+                src={userProfileImg}
                 className="w-full h-full object-cover"
                 alt="Profile"
                 onError={(e) => {
@@ -148,35 +210,41 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
         </div>
 
         <div className="flex flex-col bg-(--bg-surface) rounded-3xl overflow-hidden border-2 border-(--border-dim) popup-shadow">
-          {mainItems.map((item, i) => (
-            <button
-              key={i}
-              onClick={() => {
-                onNavigate({
-                  title: item.targetTitle || item.title,
-                  url: item.url,
-                  category: item.cat,
-                });
-                onClose();
-              }}
-              className={`flex w-full items-center justify-start px-4 py-3 bg-(--bg-surface) hover:bg-(--bg-highlight) transition-colors group text-(--text-main)
-                ${i !== mainItems.length - 1 ? "border-b-2 border-(--border-dim)" : ""}
-              `}
-            >
-              <div className="flex items-center gap-3">
-                <item.icon className="w-4 h-4 transition-colors text-(--text-muted) group-hover:text-(--text-main) shrink-0" />
-                <span className="text-xs font-bold text-left transition-colors text-(--text-main)">
-                  {item.title}
-                </span>
-              </div>
-            </button>
-          ))}
+          {mainItems.map((item, i) => {
+            const isHighlighted = focusedIndex === i;
+            return (
+              <button
+                key={i}
+                onMouseEnter={() => setFocusedIndex(i)}
+                onClick={() => {
+                  onNavigate({
+                    title: item.targetTitle || item.title,
+                    url: item.url,
+                    category: item.cat,
+                  });
+                  onClose();
+                }}
+                className={`flex w-full items-center justify-start px-4 py-3 transition-colors group text-(--text-main) cursor-pointer outline-none
+                  ${isHighlighted ? "bg-(--bg-highlight)" : "bg-(--bg-surface) hover:bg-(--bg-highlight)"}
+                  ${i !== mainItems.length - 1 ? "border-b-2 border-(--border-dim)" : ""}
+                `}
+              >
+                <div className="flex items-center gap-3">
+                  <item.icon className={`w-4 h-4 transition-colors shrink-0 ${isHighlighted ? "text-(--accent-base)" : "text-(--text-muted) group-hover:text-(--text-main)"}`} />
+                  <span className="text-xs font-bold text-left transition-colors text-(--text-main)">
+                    {item.title}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
       <div className="flex gap-1.5 bg-(--bg-surface) rounded-3xl border-2 border-(--border-dim) p-1.5 shrink-0 popup-shadow">
         <Tooltip text="Settings" className="flex-1">
           <button
+            onMouseEnter={() => setFocusedIndex(mainItems.length)}
             onClick={() => {
               onNavigate({
                 title: "Settings",
@@ -185,7 +253,11 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
               });
               onClose();
             }}
-            className="w-full flex items-center justify-center p-2.5 rounded-[18px] bg-(--bg-highlight) text-(--text-main) hover:text-(--accent-base) transition-colors active:scale-95 group"
+            className={`w-full flex items-center justify-center p-2.5 rounded-[18px] transition-colors active:scale-95 group outline-none ${
+              focusedIndex === mainItems.length
+                ? "bg-(--accent-base) text-(--text-inverse)"
+                : "bg-(--bg-highlight) text-(--text-main) hover:text-(--accent-base)"
+            }`}
           >
             <Settings className="w-6 h-6 group-hover:rotate-90 transition-transform duration-700 ease-out" />
           </button>
@@ -194,11 +266,16 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
         {!(typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) && (
           <Tooltip text="Get back to VTOP" className="flex-1">
             <button
+              onMouseEnter={() => setFocusedIndex(mainItems.length + 1)}
               onClick={() => {
                 onLegacyToggle();
                 onClose();
               }}
-              className="w-full flex items-center justify-center p-2.5 rounded-[18px] bg-(--bg-highlight) text-(--text-main) hover:text-(--accent-base) transition-colors active:scale-95 group"
+              className={`w-full flex items-center justify-center p-2.5 rounded-[18px] transition-colors active:scale-95 group outline-none ${
+                focusedIndex === mainItems.length + 1
+                  ? "bg-(--accent-base) text-(--text-inverse)"
+                  : "bg-(--bg-highlight) text-(--text-main) hover:text-(--accent-base)"
+              }`}
             >
               <span className="text-md group-hover:scale-110 transition-transform font-['Times_New_Roman',Times,serif]! font-bold">
                 VTOP
@@ -211,14 +288,20 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
           <>
             <Tooltip text="Export Backup" className="flex-1">
               <button
+                onMouseEnter={() => setFocusedIndex(mainItems.length + 1)}
                 onClick={handleExportBackup}
-                className="w-full flex items-center justify-center p-2.5 rounded-[18px] bg-(--bg-highlight) text-(--text-main) hover:text-(--accent-base) transition-colors active:scale-95 group cursor-pointer"
+                className={`w-full flex items-center justify-center p-2.5 rounded-[18px] transition-colors active:scale-95 group cursor-pointer outline-none ${
+                  focusedIndex === mainItems.length + 1
+                    ? "bg-(--accent-base) text-(--text-inverse)"
+                    : "bg-(--bg-highlight) text-(--text-main) hover:text-(--accent-base)"
+                }`}
               >
                 <Download className="w-6 h-6 group-hover:-translate-y-0.5 transition-transform" />
               </button>
             </Tooltip>
             <Tooltip text="Import Backup" className="flex-1">
               <button
+                onMouseEnter={() => setFocusedIndex(mainItems.length + 2)}
                 onClick={() => {
                   const input = document.createElement("input");
                   input.type = "file";
@@ -244,7 +327,11 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
                   };
                   input.click();
                 }}
-                className="w-full flex items-center justify-center p-2.5 rounded-[18px] bg-(--bg-highlight) text-(--text-main) hover:text-(--accent-base) transition-colors active:scale-95 group cursor-pointer"
+                className={`w-full flex items-center justify-center p-2.5 rounded-[18px] transition-colors active:scale-95 group cursor-pointer outline-none ${
+                  focusedIndex === mainItems.length + 2
+                    ? "bg-(--accent-base) text-(--text-inverse)"
+                    : "bg-(--bg-highlight) text-(--text-main) hover:text-(--accent-base)"
+                }`}
               >
                 <Upload className="w-6 h-6 group-hover:-translate-y-0.5 transition-transform" />
               </button>
@@ -254,8 +341,13 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
 
         <Tooltip text="Log Out" className="flex-1">
           <button
+            onMouseEnter={() => setFocusedIndex(totalItems - 1)}
             onClick={() => setShowLogoutDialog(true)}
-            className="w-full flex items-center justify-center p-2.5 rounded-[18px] bg-(--bg-highlight) text-(--text-main) hover:text-(--accent-base) transition-colors active:scale-95 group"
+            className={`w-full flex items-center justify-center p-2.5 rounded-[18px] transition-colors active:scale-95 group outline-none ${
+              focusedIndex === totalItems - 1
+                ? "bg-(--accent-base) text-(--text-inverse)"
+                : "bg-(--bg-highlight) text-(--text-main) hover:text-(--accent-base)"
+            }`}
           >
             <Logout className="w-6 h-6 group-hover:translate-x-1.5 transition-transform duration-500 ease-out" />
           </button>

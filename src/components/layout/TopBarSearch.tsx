@@ -159,6 +159,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
     };
   }, []);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [categoryIndex, setCategoryIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const mobileInputRef = useRef<HTMLInputElement>(null);
   const [showLogoMenu, setShowLogoMenu] = useState(false);
@@ -378,25 +379,71 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
   useEffect(() => {
     if (!isExpanded) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (query && e.key === "ArrowDown") {
-        e.preventDefault();
-        setSelectedIndex((prev) => (prev + 1) % flattenedLinks.length);
-      } else if (query && e.key === "ArrowUp") {
-        e.preventDefault();
-        setSelectedIndex(
-          (prev) => (prev - 1 + flattenedLinks.length) % flattenedLinks.length,
-        );
-      } else if (query && e.key === "Enter" && flattenedLinks[selectedIndex]) {
-        e.preventDefault();
-        const selLink = flattenedLinks[selectedIndex];
-        const forceLegacy = e.shiftKey ? isModernUI : !isModernUI;
-        onNavigate(selLink, forceLegacy);
-        setIsOmniboxOpen(false);
-      } else if (e.key === "Escape") {
-        e.preventDefault();
-        if (activeMenu) {
+      // 1. Query mode (filtering links)
+      if (query.trim()) {
+        if (flattenedLinks.length === 0) return;
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          setSelectedIndex((prev) => (prev + 1) % flattenedLinks.length);
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          setSelectedIndex(
+            (prev) => (prev - 1 + flattenedLinks.length) % flattenedLinks.length,
+          );
+        } else if (e.key === "Enter" && flattenedLinks[selectedIndex]) {
+          e.preventDefault();
+          const selLink = flattenedLinks[selectedIndex];
+          const forceLegacy = e.shiftKey ? isModernUI : !isModernUI;
+          onNavigate(selLink, forceLegacy);
+          setIsOmniboxOpen(false);
+          setQuery("");
+        } else if (e.key === "Escape") {
+          e.preventDefault();
+          setIsOmniboxOpen(false);
+        }
+        return;
+      }
+
+      // 2. Browse mode (categories / submenus)
+      if (activeMenu) {
+        const links = activeMenu.cat.links;
+        if (links.length === 0) return;
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          setSelectedIndex((prev) => (prev + 1) % links.length);
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          setSelectedIndex((prev) => (prev - 1 + links.length) % links.length);
+        } else if (e.key === "ArrowLeft" || e.key === "Escape") {
+          e.preventDefault();
           setActiveMenu(null);
-        } else {
+        } else if (e.key === "Enter" && links[selectedIndex]) {
+          e.preventDefault();
+          const selLink = links[selectedIndex];
+          const forceLegacy = e.shiftKey ? isModernUI : !isModernUI;
+          onNavigate(selLink, forceLegacy);
+          setActiveMenu(null);
+          setIsOmniboxOpen(false);
+        }
+      } else {
+        if (allCategories.length === 0) return;
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          setCategoryIndex((prev) => (prev + 1) % allCategories.length);
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          setCategoryIndex((prev) => (prev - 1 + allCategories.length) % allCategories.length);
+        } else if (e.key === "ArrowRight" || e.key === "Enter") {
+          e.preventDefault();
+          const targetCat = allCategories[categoryIndex];
+          if (targetCat) {
+            const catEl = document.getElementById(`topbar-cat-item-${categoryIndex}`);
+            const rect = catEl ? catEl.getBoundingClientRect() : new DOMRect();
+            setSelectedIndex(0);
+            setActiveMenu({ cat: targetCat, rect });
+          }
+        } else if (e.key === "Escape") {
+          e.preventDefault();
           setIsOmniboxOpen(false);
         }
       }
@@ -407,6 +454,8 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
     query,
     flattenedLinks,
     selectedIndex,
+    categoryIndex,
+    allCategories,
     isExpanded,
     onNavigate,
     setIsOmniboxOpen,
@@ -414,26 +463,43 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
     isModernUI,
   ]);
 
+  // Auto-scroll active item into view
+  useEffect(() => {
+    if (!isExpanded) return;
+    if (query.trim()) {
+      const el = document.getElementById(`search-result-item-${selectedIndex}`);
+      el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    } else if (activeMenu) {
+      const el = document.getElementById(`home-popup-item-${selectedIndex}`);
+      el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    } else {
+      const el = document.getElementById(`topbar-cat-item-${categoryIndex}`);
+      el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  }, [isExpanded, query, activeMenu, selectedIndex, categoryIndex]);
+
   const isSearchActive = isExpanded;
 
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      const path = event.composedPath ? event.composedPath() : [event.target as Node];
       if (
         wrapperRef.current &&
-        !wrapperRef.current.contains(event.target as Node)
+        !wrapperRef.current.contains(event.target as Node) &&
+        !path.includes(wrapperRef.current)
       ) {
         setIsOmniboxOpen(false);
       }
     };
 
     if (isExpanded) {
-      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside, true);
     }
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside, true);
     };
   }, [isExpanded, setIsOmniboxOpen]);
 
@@ -552,7 +618,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
           </div>
 
           {/* Mobile Overlay Content */}
-          <div className="flex-1 overflow-y-auto py-4 custom-scrollbar space-y-5">
+          <div className="flex-1 overflow-y-auto py-4 search-scrollbar space-y-5">
             {!query.trim() ? (
               <>
                 {/* Starred Items / Quick Links */}
@@ -720,7 +786,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
           className="hidden lg:flex absolute top-full mt-2 left-0 w-full max-w-[calc(100vw-24px)] bg-(--bg-surface) border-0 rounded-3xl z-[999999] origin-top-left flex-col overflow-hidden popup-shadow p-2 transition-all duration-200 animate-popup-open"
         >
           <div className="p-1">
-            <div className="flex flex-col gap-1 max-h-[50vh] overflow-y-auto custom-scrollbar pr-1.5">
+            <div className="flex flex-col gap-1 max-h-[50vh] overflow-y-auto search-scrollbar pr-1.5">
               {!query ? (
                 <div
                   className="space-y-1"
@@ -729,7 +795,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                 >
                   {allCategories.map((cat, catIdx) => {
                     const CatIcon = getCategoryIcon(cat.title);
-                    const isActive = activeMenu?.cat.title === cat.title;
+                    const isActive = activeMenu?.cat.title === cat.title || (!activeMenu && catIdx === categoryIndex);
                     return (
                       <div
                         key={catIdx}
@@ -737,6 +803,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                         onMouseEnter={(e) => {
                           handleMenuEnter();
                           if (!isExpanded || query.trim() !== "") return;
+                          setCategoryIndex(catIdx);
                           setSelectedIndex(0);
                           setActiveMenu({
                             cat,
@@ -747,6 +814,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                         onClick={(e) => {
                           e.stopPropagation();
                           if (!isExpanded || query.trim() !== "") return;
+                          setCategoryIndex(catIdx);
                           setSelectedIndex(0);
                           setActiveMenu({
                             cat,
@@ -803,6 +871,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                         )}
                         <div className="relative w-full mb-1 group">
                           <button
+                            id={`search-result-item-${i}`}
                             onMouseDown={(e) => {
                               e.preventDefault();
                               const forceLegacy = e.shiftKey ? isModernUI : !isModernUI;

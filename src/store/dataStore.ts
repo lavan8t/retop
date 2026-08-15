@@ -18,3 +18,7 @@ export const useDataStore = create<DataState>()((set, get, api) => ({
   ...createDASlice(set, get, api),
   ...createExamScheduleSlice(set, get, api),
 }));
+
+export { usePortalStore, indexedDBStorage } from "./portalStore";
+export type { PortalState } from "./portalStore";
+

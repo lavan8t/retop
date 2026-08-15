@@ -63,10 +63,10 @@ export function normalizeSemesterLabel(rawLabel: string): string {
     rawLabel
       // Decode HTML entities that VTOP sometimes returns in raw HTML
       .replace(/&amp;/g, "&")
-      // Strip " - VLR", "(VLR)", or " VLR" from the end of the string
-      .replace(/\s*-\s*VLR\s*$/i, "")
-      .replace(/\s*\(\s*VLR\s*\)\s*$/i, "")
-      .replace(/\s*VLR\s*$/i, "")
+      // Strip " - VLR", "(VLR)", " - CHN", "(CHN)", etc.
+      .replace(/\s*-\s*(?:VLR|CHN)\s*$/i, "")
+      .replace(/\s*\(\s*(?:VLR|CHN)\s*\)\s*$/i, "")
+      .replace(/\s*(?:VLR|CHN)\s*$/i, "")
       // Fix weird spacing VTOP sometimes adds
       .replace(/\s+/g, " ")
       .trim()
@@ -84,11 +84,18 @@ export function formatSemesterShorthand(label: string): string {
   if (/winter|win|ws/i.test(clean)) termStr = "WIN";
   else if (/fall|fs/i.test(clean)) termStr = "FALL";
   else if (/summer|sum|ss/i.test(clean)) termStr = "SUM";
+  else if (/tri\s*semester|tri\s*sem/i.test(clean)) termStr = "TRI";
   else {
     termStr = clean.split(/\s+/)[0]?.substring(0, 4).toUpperCase() || "";
   }
 
-  return yearStr ? `${termStr} ${yearStr}` : clean;
+  let tag = "";
+  if (/industry|ind/i.test(clean)) tag = " (Ind)";
+  else if (/llm/i.test(clean)) tag = " (LLM)";
+  else if (/law/i.test(clean)) tag = " (Law)";
+  else if (/i\s*year|1st\s*year/i.test(clean)) tag = " (1st Yr)";
+
+  return yearStr ? `${termStr} ${yearStr}${tag}` : clean;
 }
 
 export type TimeFormatMode = "24h" | "12h" | "12h-ampm";

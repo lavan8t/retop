@@ -41,6 +41,7 @@ import { TopBar } from "../components/layout/TopBar";
 import { TopBarSearch } from "../components/layout/TopBarSearch";
 import { ContentRouter } from "../components/layout/ContentRouter";
 import { GlobalDADropZone } from "../components/ui/GlobalDADropZone";
+import { GlobalOverflowTooltip } from "../components/ui/Tooltip";
 
 import { FloatingViewToggle } from "../components/timetable/FloatingViewToggle";
 import {
@@ -51,6 +52,7 @@ import {
 import { useSettings, applyTheme } from "../utils/settings-store";
 import { LegacyReturnButton } from "../components/LegacyReturnButton";
 import { SnackbarManager } from "../components/ui/Snackbar";
+import { UpdatesWidget } from "../components/ui/UpdatesWidget";
 
 
 const getDestinationView = (link: QuickLink): ViewType | "content" => {
@@ -245,11 +247,24 @@ const navigateLegacy = (title: string, url?: string) => {
   const attemptFindAndClick = (attemptsLeft: number) => {
     const target = findLegacyTarget(title, url);
     if (target) {
-      target.click();
+      const href = target.getAttribute("href") || "";
+      const onclick = target.getAttribute("onclick") || "";
+      if (href.toLowerCase().startsWith("javascript:")) {
+        const jsCode = href.slice(11);
+        window.dispatchEvent(
+          new CustomEvent("retop-execute-legacy", { detail: { code: jsCode } })
+        );
+      } else if (onclick) {
+        window.dispatchEvent(
+          new CustomEvent("retop-execute-legacy", { detail: { code: onclick } })
+        );
+      } else {
+        target.click();
+      }
       return true;
     }
 
-    if (attemptsLeft> 0) {
+    if (attemptsLeft > 0) {
       setTimeout(() => attemptFindAndClick(attemptsLeft - 1), 150);
     } else {
       console.warn("Legacy link not found for:", title, url);
@@ -542,19 +557,25 @@ const DashboardApp = () => {
     authIdRef.current = authId;
     networkRef.current = new VTOPNetwork(csrf, authId);
 
-    const userProfile = scrapeUserProfile(document);
+    const isChennai = window.location.hostname.includes("vtopcc");
+    const campus: "chennai" | "vellore" = isChennai ? "chennai" : "vellore";
+    const scrapedUser = scrapeUserProfile(document);
+    const userProfile = { ...scrapedUser, campus };
     setUser(userProfile);
     
-    // Cache for offline mode across chrome.storage, localStorage, and IndexedDB
-    getStorageData(["retop_cached_users"]).then((res: Record<string, any>) => {
+    // Cache for offline mode across chrome.storage, localStorage, and IndexedDB strictly scoped by regNo
+    getStorageData(["retop_cached_users", `${userProfile.regNo}_profileImage`]).then((res: Record<string, any>) => {
       let users: any[] = res.retop_cached_users || [];
       const existingIdx = users.findIndex((u: any) => u.regNo === userProfile.regNo);
+      const userCachedImg = res[`${userProfile.regNo}_profileImage`] || (existingIdx >= 0 ? users[existingIdx].profileImgBase64 : "");
+
       const updatedUser = {
         regNo: userProfile.regNo,
         username: userProfile.regNo,
         name: userProfile.name || (existingIdx >= 0 ? users[existingIdx].name : "Student"),
-        profileImgBase64: userProfile.profileImgBase64 || (existingIdx >= 0 ? users[existingIdx].profileImgBase64 : ""),
+        profileImgBase64: userProfile.profileImgBase64 || userCachedImg || "",
         lastActive: Date.now(),
+        campus,
       };
       if (existingIdx >= 0) {
         users[existingIdx] = updatedUser;
@@ -564,10 +585,28 @@ const DashboardApp = () => {
       setStorageData({
         retop_lastAuthId: userProfile.regNo,
         retop_lastName: userProfile.name,
-        retop_profileImage: userProfile.profileImgBase64 || "",
+        [`${userProfile.regNo}_profileImage`]: updatedUser.profileImgBase64,
+        retop_profileImage: updatedUser.profileImgBase64,
         retop_active_user: userProfile.regNo,
+        retop_last_campus: campus,
         retop_cached_users: users,
       });
+
+      // Relay scraped portal data to background worker for PWA sync
+      if (typeof chrome !== "undefined" && chrome.runtime?.sendMessage) {
+        try {
+          chrome.runtime.sendMessage({
+            action: "PORTAL_SCRAPED_DATA",
+            payload: {
+              user: userProfile,
+              lastAuthId: userProfile.regNo,
+              campus,
+              cachedUsers: users,
+              timestamp: Date.now(),
+            },
+          }).catch(() => {});
+        } catch {}
+      }
     });
 
     fetchDashboardData(networkRef.current, csrf, authId);
@@ -743,8 +782,12 @@ const DashboardApp = () => {
     // @ts-ignore - Handle settings explicitly as fallback
     else if (currentView === "settings") pageName = "Settings";
 
-    document.title = `${pageName} - retop`;
-  }, [currentView, contentTitle]);
+    const isChennai =
+      (typeof window !== "undefined" && window.location.hostname.includes("vtopcc")) ||
+      (user as any)?.campus === "chennai";
+    const brand = isChennai ? "retop Chennai" : "retop";
+    document.title = `${pageName} - ${brand}`;
+  }, [currentView, contentTitle, user]);
 
   const handleLinkClick = async (link: QuickLink, forceLegacy: boolean = false) => {
     setIsOmniboxOpen(false);
@@ -899,7 +942,10 @@ const DashboardApp = () => {
           
             {showProfileMenu && (
               <>
-                <div   
+                <div
+ 
+ 
+ 
                   className="fixed inset-0 z-9998 bg-transparent"
                   onClick={() => setShowProfileMenu(false)} />
                 <ProfileMenu
@@ -918,8 +964,10 @@ const DashboardApp = () => {
           
 
           <SnackbarManager />
+          <UpdatesWidget />
           
           <GlobalDADropZone network={networkRef.current!} />
+          <GlobalOverflowTooltip />
         </div>
       </div>
 
@@ -939,13 +987,17 @@ const DashboardApp = () => {
 
       
         {!isModernUI && isOmniboxOpen && (
-          <div    
-            className="fixed top-2 left-4 md:left-8 z-[99999] w-full max-w-[360px] pointer-events-auto flex flex-col">
+          <div
+ 
+ 
+ 
+ 
+            className="fixed top-2 left-4 md:left-8 z-99999 w-full max-w-90 pointer-events-auto flex flex-col">
             {/* Backdrop to close when clicked outside */}
             <div 
               className="fixed inset-0 z-[-1] bg-transparent"
               onClick={() => setIsOmniboxOpen(false)} />
-            <div className="bg-(--bg-surface) rounded-[32px] shadow-(--brutal-shadow-hover) border-2 border-(--border-main) flex flex-col p-2 h-auto relative">
+            <div className="bg-(--bg-surface) rounded-4xl shadow-(--brutal-shadow-hover) border-2 border-(--border-main) flex flex-col p-2 h-auto relative">
               <TopBarSearch
                 currentView={currentView}
                 isOmniboxOpen={isOmniboxOpen}

@@ -12,10 +12,11 @@ import {
 import { renderDashboard } from "./pages/app";
 import { getStorageData, setStorageData } from "./utils/storageAdapter";
 import { getUserPinRecord, saveUserPin, verifyUserPin } from "./utils/pinSecurity";
-import { asciiArtTT, asciiArtSMV, asciiArtMGR } from "./components/asciiArt";
+import { asciiArtTT, asciiArtSMV, asciiArtMGR, asciiArtCC } from "./components/asciiArt";
 
 import { getExtUrl } from "./utils/url";
 import { applyTheme } from "./utils/settings-store";
+import { GlobalOverflowTooltip } from "./components/ui/Tooltip";
 
 
 // Resolve asset paths for both ext (chrome-extension://) and web contexts
@@ -32,13 +33,14 @@ const VIT_LOGO_URL = getAssetUrl("/assets/vitLogo.svg");
 
 // Pick ASCII art deterministically per session
 const pickAsciiArt = (): { art: string; type: string } => {
-  const artTypes = ["TT", "SMV", "MGR"] as const;
+  const isChennai = typeof window !== "undefined" && window.location.hostname.includes("vtopcc");
+  const artTypes = isChennai ? (["CC"] as const) : (["TT", "SMV", "MGR", "CC"] as const);
   const last = localStorage.getItem("retop_last_ascii_art") || "";
   const available = artTypes.filter((t) => t !== last);
-  const picked = available[Math.floor(Math.random() * available.length)] || "TT";
+  const picked = available.length ? available[Math.floor(Math.random() * available.length)] : artTypes[0];
   localStorage.setItem("retop_last_ascii_art", picked);
-  const artMap = { TT: asciiArtTT, SMV: asciiArtSMV, MGR: asciiArtMGR };
-  return { art: artMap[picked].replace(/\r/g, ""), type: picked };
+  const artMap: Record<string, string> = { TT: asciiArtTT, SMV: asciiArtSMV, MGR: asciiArtMGR, CC: asciiArtCC.trim() ? asciiArtCC : asciiArtTT };
+  return { art: (artMap[picked] || asciiArtTT).replace(/\r/g, ""), type: picked };
 };
 
 const GSF: React.CSSProperties = {
@@ -57,6 +59,7 @@ export interface CachedUser {
   name: string;
   profileImgBase64?: string;
   lastActive: number;
+  campus?: "vellore" | "chennai";
 }
 
 /* ── Account Switcher Dropdown (semester-dropdown style) ─────────────── */
@@ -72,19 +75,31 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ users, activeUser, on
   const containerRef = useRef<HTMLDivElement>(null);
 
   const activeLabel = activeUser.username || activeUser.regNo;
+  const activeCampus = activeUser.campus === "chennai" ? "Chennai" : "Vellore";
 
   useEffect(() => {
     if (!isOpen) return;
-    const onOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setIsOpen(false);
+    const onOutside = (e: MouseEvent | TouchEvent) => {
+      const path = e.composedPath ? e.composedPath() : [e.target as Node];
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node) &&
+        !path.includes(containerRef.current)
+      ) {
+        setIsOpen(false);
+      }
     };
-    document.addEventListener("mousedown", onOutside);
-    return () => document.removeEventListener("mousedown", onOutside);
+    document.addEventListener("mousedown", onOutside, true);
+    document.addEventListener("touchstart", onOutside, true);
+    return () => {
+      document.removeEventListener("mousedown", onOutside, true);
+      document.removeEventListener("touchstart", onOutside, true);
+    };
   }, [isOpen]);
 
   return (
-    <div ref={containerRef} className="relative w-full max-w-[260px] mx-auto">
-      {/* Trigger button — shows active username */}
+    <div ref={containerRef} className="relative w-full max-w-[280px] mx-auto">
+      {/* Trigger button — shows active username & campus */}
       <button
         type="button"
         onClick={() => setIsOpen((o) => !o)}
@@ -97,8 +112,11 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ users, activeUser, on
             <AccountCircle className="w-3.5 h-3.5" />
           </div>
         )}
-        <div className="flex-1 text-left min-w-0">
+        <div className="flex-1 text-left min-w-0 flex items-center gap-1.5">
           <div className="text-xs font-bold text-white leading-snug truncate" style={GSF}>{activeLabel}</div>
+          <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 shrink-0">
+            {activeCampus}
+          </span>
         </div>
         <svg
           width="16"
@@ -124,6 +142,7 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ users, activeUser, on
               {users.map((u) => {
                 const isSelected = u.regNo === activeUser.regNo;
                 const itemLabel = u.username || u.regNo;
+                const itemCampus = u.campus === "chennai" ? "Chennai" : "Vellore";
                 return (
                   <button
                     key={u.regNo}
@@ -138,16 +157,18 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ users, activeUser, on
                     {u.profileImgBase64 ? (
                       <img src={u.profileImgBase64} alt={itemLabel} className="w-5 h-5 rounded-full object-cover shrink-0" />
                     ) : (
-                      <AccountCircle className={`w-5 h-5 shrink-0 ${isSelected ? "text-white" : "text-slate-500"}`} />
+                      <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-slate-300 shrink-0">
+                        <AccountCircle className="w-3.5 h-3.5" />
+                      </div>
                     )}
-                    <div className="min-w-0 flex-1 text-left">
-                      <div className="text-xs font-bold truncate" style={GSF}>{itemLabel}</div>
+                    <div className="flex-1 min-w-0 flex items-center justify-between gap-1">
+                      <span className="text-xs truncate">{itemLabel}</span>
+                      <span className={`text-[8px] font-bold uppercase tracking-wider px-1 py-0.2 rounded ${
+                        isSelected ? "bg-white/20 text-white" : "bg-blue-500/10 text-blue-400"
+                      }`}>
+                        {itemCampus}
+                      </span>
                     </div>
-                    {isSelected && (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    )}
                   </button>
                 );
               })}
@@ -450,9 +471,12 @@ const OfflineApp = () => {
     let pageName = "Offline Cache";
     if (step === "PIN_LOCK") pageName = "Login";
     else if (step === "UNLOCKED") pageName = "Home";
-    else if (step === "NO_CACHE") pageName = "No Data";
-    document.title = `${pageName} - retop`;
-  }, [step]);
+    const isChennai =
+      (typeof window !== "undefined" && window.location.hostname.includes("vtopcc")) ||
+      (activeUser as any)?.campus === "chennai";
+    const brand = isChennai ? "retop Chennai" : "retop";
+    document.title = `${pageName} - ${brand}`;
+  }, [step, activeUser]);
 
   const loadCachedProfiles = async () => {
     // Wait for webBridge to sync chrome.storage → localStorage before reading
@@ -832,9 +856,9 @@ const OfflineApp = () => {
             style={{ filter: "brightness(0) invert(1)" }}
             alt="VIT Emblem" />
           <div
-            className="text-[#f8fafc] text-base font-bold tracking-widest uppercase mt-1"
+            className="text-[#f8fafc] text-base font-bold uppercase mt-1"
             style={{ fontFamily: "'Times New Roman', serif" }}>
-            VELLORE CAMPUS
+            {activeUser?.campus === "chennai" ? "CHENNAI CAMPUS" : "VELLORE CAMPUS"}
           </div>
         </div>
       </div>
@@ -896,7 +920,7 @@ const OfflineApp = () => {
             </div>
           </div>
         )}
-      
+      <GlobalOverflowTooltip />
     </div>
   );
 };

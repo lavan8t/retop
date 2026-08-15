@@ -51,3 +51,23 @@ window.addEventListener("vtop-trigger-verify", () => {
     (window as any).grecaptcha.execute();
   }
 });
+
+window.addEventListener("retop-execute-legacy", (e: any) => {
+  const { code, selector } = e.detail || {};
+  if (selector) {
+    const el = document.querySelector(selector) as HTMLElement;
+    if (el) {
+      el.click();
+      return;
+    }
+  }
+  if (code) {
+    try {
+      const fn = new Function(code);
+      fn();
+    } catch (err) {
+      console.error("retop: Failed executing legacy action in main world:", err);
+    }
+  }
+});
+

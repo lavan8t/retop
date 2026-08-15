@@ -212,7 +212,7 @@ const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
         setIsDraggingOver(false);
       }}
       onDrop={handleDrop}
-      className={`w-full lg:w-[450px] shrink-0 bg-(--bg-surface)/40 rounded-3xl p-6 border transition-all flex flex-col gap-5 ${
+      className={`w-full lg:w-112.5 shrink-0 bg-(--bg-surface)/40 rounded-3xl p-6 border transition-all flex flex-col gap-5 ${
         isDraggingOver
           ? "border-(--accent-base) bg-(--accent-base)/10 ring-2 ring-(--accent-base)/30"
           : "border-(--border-dim)/40 hover:border-(--border-dim)/70"
@@ -478,7 +478,11 @@ const CourseCard = ({ course, network, expanded, setExpanded, onSelectFile }: an
 
       
         {expanded && (
-          <div    
+          <div
+ 
+ 
+ 
+ 
             className="overflow-hidden">
             <div className="p-4 md:p-5 pt-0 border-t border-(--border-dim)/20 bg-(--bg-main)/40">
               {daLoading && !rawAssignments ? (

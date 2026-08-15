@@ -75,7 +75,7 @@ const BentoBlock = ({
 
   return (
     <div
-      className={`relative p-5 md:p-6 bg-(--bg-surface) text-(--text-main) rounded-4xl transition-all duration-fast flex flex-col justify-between gap-4 overflow-hidden break-words whitespace-normal min-h-[140px] max-h-max ${span} ${className}`}
+      className={`relative p-5 md:p-6 bg-(--bg-surface) text-(--text-main) rounded-4xl transition-all duration-fast flex flex-col justify-between gap-4 overflow-hidden wrap-break-word whitespace-normal min-h-35 max-h-max ${span} ${className}`}
     >
       <div className="relative z-10 flex flex-col justify-between h-full gap-4 w-full">
         {Icon ? (
@@ -88,11 +88,11 @@ const BentoBlock = ({
                 </div>
               )}
               {value ? (
-                <div className="text-2xl md:text-3xl font-black font-expanded leading-none w-full break-words whitespace-normal py-1">
+                <div className="text-2xl md:text-3xl font-black font-expanded leading-none w-full wrap-break-word whitespace-normal py-1">
                   {value}
                 </div>
               ) : (
-                <div className="w-full flex flex-col items-end justify-end text-sm md:text-base font-black font-expanded gap-1 break-words whitespace-normal">
+                <div className="w-full flex flex-col items-end justify-end text-sm md:text-base font-black font-expanded gap-1 wrap-break-word whitespace-normal">
                   {children}
                 </div>
               )}
@@ -106,11 +106,11 @@ const BentoBlock = ({
               </div>
             )}
             {value ? (
-              <div className="text-xl md:text-2xl lg:text-3xl font-black font-expanded leading-tight w-full break-words whitespace-normal text-right">
+              <div className="text-xl md:text-2xl lg:text-3xl font-black font-expanded leading-tight w-full wrap-break-word whitespace-normal text-right">
                 {value}
               </div>
             ) : (
-              <div className="w-full h-full flex flex-col justify-end text-sm md:text-base font-black font-expanded gap-1 break-words whitespace-normal text-right">
+              <div className="w-full h-full flex flex-col justify-end text-sm md:text-base font-black font-expanded gap-1 wrap-break-word whitespace-normal text-right">
                 {children}
               </div>
             )}
@@ -147,6 +147,12 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
   const line1 = words[0] || "";
   const line2 = words.slice(1).join(" ") || "";
 
+  const isChennai =
+    (data as any).campus === "chennai" ||
+    (typeof window !== "undefined" && window.location.hostname.includes("vtopcc")) ||
+    (typeof window !== "undefined" && (window as any)._retopCampus === "chennai");
+  const campusName = isChennai ? "CHENNAI" : "VELLORE";
+
   return (
     <div
       className="retop-digital-id-card group w-full max-w-74 aspect-64/100 perspective-[1000px] cursor-pointer shrink-0"
@@ -167,12 +173,12 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
             <h3
               className={`text-[17px] font-extrabold scale-x-120 text-black ${fontTimes}`}
             >
-              VELLORE CAMPUS
+              {campusName} CAMPUS
             </h3>
           </div>
 
           <div className="flex-1 flex flex-col justify-center top-1 items-center px-4 w-full">
-            <div className={`overflow-hidden flex items-center justify-center z-10 transition-all w-[108px] h-[165px]`}>
+            <div className={`overflow-hidden flex items-center justify-center z-10 transition-all w-27 h-41.25`}>
               {data.basic.photoUrl ? (
                 <img
                   src={data.basic.photoUrl}
@@ -247,13 +253,27 @@ const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
           <div
             className={`font-bold ml-2 text-[11px] leading-snug ${fontArial}`}
           >
-            Vellore Institute of Technology,
-            <br />
-            Vellore - 632 014, Tamilnadu, India.
-            <br />
-            Ph : 0416 224 3091
-            <br />
-            Fax : 0416 224 3092
+            {isChennai ? (
+              <>
+                Vellore Institute of Technology,
+                <br />
+                Vandalur - Kelambakkam Road,
+                <br />
+                Chennai - 600 127, Tamilnadu, India.
+                <br />
+                Ph : 044 3993 1555
+              </>
+            ) : (
+              <>
+                Vellore Institute of Technology,
+                <br />
+                Vellore - 632 014, Tamilnadu, India.
+                <br />
+                Ph : 0416 224 3091
+                <br />
+                Fax : 0416 224 3092
+              </>
+            )}
           </div>
 
           <div className={`mt-1.5 italic font-bold ${fontTimes}`}>
@@ -506,7 +526,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
   if (loading) {
     return (
       <div className="h-full overflow-y-auto bg-(--bg-main) p-4 md:p-8 pt-20 md:pt-24 lg:pt-28 custom-scrollbar">
-        <div className="max-w-[1380px] mx-auto flex flex-col gap-12 md:gap-20 animate-pulse pb-20">
+        <div className="max-w-345 mx-auto flex flex-col gap-12 md:gap-20 animate-pulse pb-20">
           <div className="w-full max-w-74 mx-auto aspect-64/100 bg-(--bg-surface) rounded-2xl" />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-4">
             <div className="md:col-span-2 h-40 bg-(--bg-surface)" />
@@ -524,7 +544,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
 
   return (
     <div className="h-full w-full overflow-y-auto bg-(--bg-main) p-4 md:p-8 pt-20 md:pt-24 lg:pt-28 font-mono custom-scrollbar">
-      <div className="max-w-[1380px] mx-auto flex flex-col pb-20">
+      <div className="max-w-345 mx-auto flex flex-col pb-20">
         {/* BENTO GRID */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4 grid-flow-dense">
           {/* 1. Digital ID Card (Top Left) */}
@@ -534,10 +554,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
 
           {/* 2. Program & School */}
           <BentoBlock span="md:col-span-2 lg:col-span-2" icon={School}>
-            <div className="text-lg md:text-xl font-black leading-tight break-words whitespace-normal text-right">
+            <div className="text-lg md:text-xl font-black leading-tight wrap-break-words whitespace-normal text-right">
               {data.basic.program}
             </div>
-            <div className="opacity-70 text-sm mt-1 break-words whitespace-normal text-right">
+            <div className="opacity-70 text-sm mt-1 wrap-break-words whitespace-normal text-right">
               {data.basic.school}
             </div>
           </BentoBlock>
@@ -556,7 +576,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
 
           {/* 4. Proctor Information */}
           {(isValid(data.proctor.name) || isValid(data.proctor.mobile)) && (
-            <div className="relative md:col-span-2 lg:col-span-2 bg-(--bg-surface) text-(--text-main) rounded-4xl transition-all duration-fast flex overflow-hidden min-h-[140px] max-h-max break-words whitespace-normal">
+            <div className="relative md:col-span-2 lg:col-span-2 bg-(--bg-surface) text-(--text-main) rounded-4xl transition-all duration-fast flex overflow-hidden min-h-35 max-h-max wrap-break-words whitespace-normal">
               {data.proctor.photoUrl && (
                 <div className="relative z-10 w-[30%] shrink-0">
                   <img
@@ -573,17 +593,17 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
                 <div className="transition-all duration-fast origin-right w-full flex flex-col justify-between text-sm md:text-base font-black font-expanded gap-4">
                   <div className="flex flex-col items-end justify-start gap-1 flex-1 min-w-0">
                     {isValid(data.proctor.name) && (
-                      <div className="text-xl md:text-2xl leading-tight break-words whitespace-normal">
+                      <div className="text-xl md:text-2xl leading-tight wrap-break-words whitespace-normal">
                         {data.proctor.name}
                       </div>
                     )}
                     {isValid(data.proctor.designation) && (
-                      <div className="opacity-70 mt-1 break-words whitespace-normal">
+                      <div className="opacity-70 mt-1 wrap-break-words whitespace-normal">
                         {data.proctor.designation}
                       </div>
                     )}
                     {isValid(data.proctor.school) && (
-                      <div className="opacity-50 text-[10px] md:text-xs mt-1 break-words whitespace-normal">
+                      <div className="opacity-50 text-[10px] md:text-xs mt-1 wrap-break-words whitespace-normal">
                         {data.proctor.school}{" "}
                         {isValid(data.proctor.dept) && `/ ${data.proctor.dept}`}
                       </div>
@@ -597,12 +617,12 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
                       </div>
                     )}
                     {isValid(data.proctor.email) && (
-                      <div className="opacity-70 normal-case lowercase mt-1 break-words whitespace-normal">
+                      <div className="opacity-70 lowercase mt-1 wrap-break-words whitespace-normal">
                         <CopyableText text={data.proctor.email} />
                       </div>
                     )}
                     {isValid(data.proctor.cabin) && (
-                      <div className="opacity-50 text-[10px] md:text-xs mt-1 mb-1 break-words whitespace-normal">
+                      <div className="opacity-50 text-[10px] md:text-xs mt-1 mb-1 wrap-break-words whitespace-normal">
                         Cabin: {data.proctor.cabin}
                       </div>
                     )}
@@ -617,21 +637,21 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
             <BentoBlock icon={Domain} span="md:col-span-2 lg:col-span-4">
               <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-end sm:items-end py-1 w-full text-right">
                 <div className="flex items-end justify-end gap-3 shrink-0">
-                  <span className="text-6xl md:text-7xl font-black font-expanded leading-tight break-words whitespace-normal text-right">
+                  <span className="text-6xl md:text-7xl font-black font-expanded leading-tight wrap-break-words whitespace-normal text-right">
                     {data.hostel.room}
                   </span>
-                  <span className="text-2xl md:text-3xl opacity-60 pb-1 break-words whitespace-normal text-right">
+                  <span className="text-2xl md:text-3xl opacity-60 pb-1 wrap-break-words whitespace-normal text-right">
                     {data.hostel.block}
                   </span>
                 </div>
                 <div className="flex flex-col sm:items-end text-right flex-1 min-w-0">
                   {isValid(data.hostel.mess) && (
-                    <div className="text-xl md:text-2xl leading-tight text-wrap break-words break-all sm:break-words">
+                    <div className="text-xl md:text-2xl leading-tight text-wrap wrap-break-words break-all sm:wrap-break-words">
                       {data.hostel.mess}
                     </div>
                   )}
                   {isValid(data.hostel.bedType) && (
-                    <div className="text-sm md:text-base opacity-60 mt-1 uppercase font-black font-expanded text-wrap break-words text-right">
+                    <div className="text-sm md:text-base opacity-60 mt-1 uppercase font-black font-expanded text-wrap wrap-break-words text-right">
                       {data.hostel.bedType} Bed
                     </div>
                   )}
@@ -653,10 +673,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
               title="Academic Program"
               span="md:col-span-2 lg:col-span-2"
             >
-              <div className="text-xl leading-tight break-words whitespace-normal text-right">
+              <div className="text-xl leading-tight wrap-break-words whitespace-normal text-right">
                 {data.education.degree} - {data.education.branch}
               </div>
-              <div className="opacity-70 mt-2 break-words whitespace-normal text-right">
+              <div className="opacity-70 mt-2 wrap-break-words whitespace-normal text-right">
                 {data.education.qualification}
               </div>
               <div className="opacity-50 text-[10px] md:text-xs mt-1 text-right">
@@ -676,10 +696,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
               title="Previous Education"
               span="md:col-span-2 lg:col-span-2"
             >
-              <div className="text-lg md:text-xl leading-tight break-words whitespace-normal text-right">
+              <div className="text-lg md:text-xl leading-tight wrap-break-words whitespace-normal text-right">
                 {data.education.school}
               </div>
-              <div className="opacity-70 text-sm mt-2 break-words whitespace-normal text-right">
+              <div className="opacity-70 text-sm mt-2 wrap-break-words whitespace-normal text-right">
                 {data.education.board}{" "}
                 {isValid(data.education.medium) &&
                   `/ Medium: ${data.education.medium}`}
@@ -727,7 +747,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
                 </div>
               )}
               {isValid(data.personal.email) && (
-                <div className="text-sm md:text-base opacity-70 normal-case lowercase mt-1 w-full text-right text-wrap wrap-break-word">
+                <div className="text-sm md:text-base opacity-70 lowercase mt-1 w-full text-right text-wrap wrap-break-word">
                   <CopyableText text={data.personal.email} />
                 </div>
               )}
@@ -740,17 +760,17 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
             <BentoBlock icon={LocationOn} span="md:col-span-2 lg:col-span-4">
               <div className="flex flex-col md:flex-row gap-6 w-full text-right justify-end">
                 {isValid(data.currentAddress.street) && (
-                  <div className="flex flex-col items-end flex-1 text-right break-words whitespace-normal">
+                  <div className="flex flex-col items-end flex-1 text-right wrap-break-words whitespace-normal">
                     <div className="opacity-50 text-[10px] md:text-xs mb-1 uppercase font-black font-expanded">
                       Current Address
                     </div>
-                    <div className="text-lg md:text-xl leading-tight break-words whitespace-normal">
+                    <div className="text-lg md:text-xl leading-tight wrap-break-words whitespace-normal">
                       {data.currentAddress.street}
                     </div>
-                    <div className="opacity-70 text-sm mt-2 break-words whitespace-normal">
+                    <div className="opacity-70 text-sm mt-2 wrap-break-words whitespace-normal">
                       {data.currentAddress.area}, {data.currentAddress.city}
                     </div>
-                    <div className="opacity-50 text-[10px] md:text-xs mt-1 mb-2 break-words whitespace-normal">
+                    <div className="opacity-50 text-[10px] md:text-xs mt-1 mb-2 wrap-break-words whitespace-normal">
                       {data.currentAddress.state}, {data.currentAddress.country}{" "}
                       - {data.currentAddress.pincode}
                     </div>
@@ -762,17 +782,17 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
                   </div>
                 )}
                 {isValid(data.permanentAddress.street) && (
-                  <div className="flex flex-col items-end flex-1 text-right break-words whitespace-normal">
+                  <div className="flex flex-col items-end flex-1 text-right wrap-break-words whitespace-normal">
                     <div className="opacity-50 text-[10px] md:text-xs mb-1 uppercase font-black font-expanded">
                       Permanent Address
                     </div>
-                    <div className="text-lg md:text-xl leading-tight break-words whitespace-normal">
+                    <div className="text-lg md:text-xl leading-tight wrap-break-words whitespace-normal">
                       {data.permanentAddress.street}
                     </div>
-                    <div className="opacity-70 text-sm mt-2 break-words whitespace-normal">
+                    <div className="opacity-70 text-sm mt-2 wrap-break-words whitespace-normal">
                       {data.permanentAddress.area}, {data.permanentAddress.city}
                     </div>
-                    <div className="opacity-50 text-[10px] md:text-xs mt-1 mb-2 break-words whitespace-normal">
+                    <div className="opacity-50 text-[10px] md:text-xs mt-1 mb-2 wrap-break-words whitespace-normal">
                       {data.permanentAddress.state},{" "}
                       {data.permanentAddress.country} -{" "}
                       {data.permanentAddress.pincode}
@@ -791,10 +811,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
           {/* 13. Parent Profile */}
           {isValid(data.family.father.name) && (
             <BentoBlock title="Parent" span="md:col-span-2 lg:col-span-2">
-              <div className="text-2xl md:text-3xl leading-tight break-words whitespace-normal text-right">
+              <div className="text-2xl md:text-3xl leading-tight wrap-break-words whitespace-normal text-right">
                 {data.family.father.name}
               </div>
-              <div className="opacity-70 text-sm mt-2 break-words whitespace-normal text-right">
+              <div className="opacity-70 text-sm mt-2 wrap-break-words whitespace-normal text-right">
                 {[
                   data.family.father.designation,
                   data.family.father.organization,
@@ -802,7 +822,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
                   .filter(isValid)
                   .join(" at ") || "No Work Info"}
               </div>
-              <div className="opacity-50 text-[10px] md:text-xs mt-1 break-words whitespace-normal text-right">
+              <div className="opacity-50 text-[10px] md:text-xs mt-1 wrap-break-words whitespace-normal text-right">
                 {data.family.father.qualification} /{" "}
                 {data.family.father.occupation}{" "}
                 {isValid(data.family.father.income) &&
@@ -815,12 +835,12 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
                   </div>
                 )}
                 {isValid(data.family.father.email) && (
-                  <div className="opacity-70 normal-case lowercase mt-1 break-words whitespace-normal text-right">
+                  <div className="opacity-70 lowercase mt-1 wrap-break-words whitespace-normal text-right">
                     <CopyableText text={data.family.father.email} />
                   </div>
                 )}
                 {isValid(data.family.father.address.city) && (
-                  <div className="opacity-50 text-[10px] md:text-xs mt-1 mb-2 break-words whitespace-normal text-right">
+                  <div className="opacity-50 text-[10px] md:text-xs mt-1 mb-2 wrap-break-words whitespace-normal text-right">
                     {data.family.father.address.city},{" "}
                     {data.family.father.address.state}
                   </div>
@@ -832,10 +852,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
           {/* 14. Mother Profile */}
           {isValid(data.family.mother.name) && (
             <BentoBlock title="Mother" span="md:col-span-2 lg:col-span-2">
-              <div className="text-2xl md:text-3xl leading-tight break-words whitespace-normal text-right">
+              <div className="text-2xl md:text-3xl leading-tight wrap-break-words whitespace-normal text-right">
                 {data.family.mother.name}
               </div>
-              <div className="opacity-70 text-sm mt-2 break-words whitespace-normal text-right">
+              <div className="opacity-70 text-sm mt-2 wrap-break-words whitespace-normal text-right">
                 {[
                   data.family.mother.designation,
                   data.family.mother.organization,
@@ -843,7 +863,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
                   .filter(isValid)
                   .join(" at ") || "No Work Info"}
               </div>
-              <div className="opacity-50 text-[10px] md:text-xs mt-1 break-words whitespace-normal text-right">
+              <div className="opacity-50 text-[10px] md:text-xs mt-1 wrap-break-words whitespace-normal text-right">
                 {data.family.mother.qualification} /{" "}
                 {data.family.mother.occupation}{" "}
                 {isValid(data.family.mother.income) &&
@@ -856,12 +876,12 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
                   </div>
                 )}
                 {isValid(data.family.mother.email) && (
-                  <div className="opacity-70 normal-case lowercase mt-1 break-words whitespace-normal text-right">
+                  <div className="opacity-70 lowercase mt-1 wrap-break-words whitespace-normal text-right">
                     <CopyableText text={data.family.mother.email} />
                   </div>
                 )}
                 {isValid(data.family.mother.address.city) && (
-                  <div className="opacity-50 text-[10px] md:text-xs mt-1 mb-2 break-words whitespace-normal text-right">
+                  <div className="opacity-50 text-[10px] md:text-xs mt-1 mb-2 wrap-break-words whitespace-normal text-right">
                     {data.family.mother.address.city},{" "}
                     {data.family.mother.address.state}
                   </div>
@@ -895,7 +915,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
                 <div className="opacity-50 text-[10px] mb-1">
                   Local Guardian
                 </div>
-                <div className="font-bold text-sm break-words whitespace-normal text-right">
+                <div className="font-bold text-sm wrap-break-words whitespace-normal text-right">
                   {data.family.guardian}
                 </div>
               </div>

@@ -261,7 +261,7 @@ const CourseCard = ({
               <Pill variant="error">Debarred</Pill>
             )}
           </div>
-          <span className="text-base md:text-lg font-black leading-tight font-expanded transition-colors text-(--color-on-surface) break-words">
+          <span className="text-base md:text-lg font-black leading-tight font-expanded transition-colors text-(--color-on-surface) wrap-break-word">
             {course.courseTitle}
           </span>
         </div>

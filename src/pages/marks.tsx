@@ -161,10 +161,12 @@ export const MarksPage: React.FC<MarksPageProps> = ({
   }
 
   return (
-    <div  
+    <div
+ 
+ 
       className="h-full flex flex-col bg-transparent font-mono text-(--text-main) overflow-hidden">
       <div className="flex-1 overflow-y-auto custom-scrollbar p-2 md:p-4 pt-16 md:pt-20 lg:pt-24 pb-32 md:pb-12">
-        <div className="max-w-[1380px] mx-auto space-y-6">
+        <div className="max-w-345 mx-auto space-y-6">
         {loading || fetchingMarks ? (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 animate-pulse">
             {[...Array(4)].map((_, i) => (
@@ -178,7 +180,8 @@ export const MarksPage: React.FC<MarksPageProps> = ({
             className="columns-1 xl:columns-2 gap-6">
             {filteredMarks.map((course, idx) => (
               <div
-                key={idx} 
+                key={idx}
+ 
                 className="bg-(--bg-surface) rounded-4xl overflow-hidden group flex flex-col break-inside-avoid mb-6">
                 <div className="px-6 py-4 bg-(--bg-highlight) flex flex-col gap-1 shrink-0 transition-colors">
                   <div className="flex justify-between items-start gap-4">

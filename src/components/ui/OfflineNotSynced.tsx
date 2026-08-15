@@ -1,5 +1,5 @@
 import React from "react";
-import { CloudOff } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
+import { NoInternetIcon } from "../icons/NoInternetIcon";
 
 interface OfflineNotSyncedProps {
   pageName?: string;
@@ -11,7 +11,7 @@ export const OfflineNotSynced = ({ pageName = "Data" }: OfflineNotSyncedProps) =
       className="flex flex-col items-center justify-center h-full min-h-[400px] gap-6 text-center p-6 animate-in fade-in zoom-in-95 duration-300"
     >
       <div className="bg-(--bg-surface) p-8 rounded-full border-4 border-(--border-main) shadow-(--brutal-shadow-sm)">
-        <CloudOff size={64} className="text-(--text-muted) animate-pulse" />
+        <NoInternetIcon size={64} className="text-(--text-muted) animate-pulse" />
       </div>
       <div className="space-y-2">
         <h2 className="text-3xl font-bold text-(--text-main) tracking-tight">

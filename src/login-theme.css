@@ -582,8 +582,8 @@ input:not(:placeholder-shown) ~ .retop-floating-label {
 
 .btn-primary:hover,
 .btn-success:hover {
-  background-color: color-mix(in srgb, var(--accent-base) 80%, white) !important;
-  filter: brightness(1.15) !important;
+  background-color: color-mix(in srgb, var(--accent-base) 80%, black) !important;
+  filter: brightness(0.88) !important;
   transform: none !important;
   box-shadow: none !important;
 }
@@ -618,15 +618,10 @@ input:not(:placeholder-shown) ~ .retop-floating-label {
 .retop-forgot-links a {
   color: var(--text-main) !important;
   text-transform: none !important;
-  font-size: 0.95rem !important;
-  font-variation-settings: "wght" 600 !important;
-  letter-spacing: normal !important;
-  display: inline !important;
-  margin: 0 !important;
-  text-decoration: underline !important;
-  text-underline-offset: 4px !important;
-  text-decoration-color: var(--border-main) !important;
   transition: all var(--duration-normal) !important;
+  text-decoration: underline !important;
+  text-decoration-color: transparent !important;
+  text-underline-offset: 4px;
 }
 
 .retop-forgot-links a:hover {
@@ -664,19 +659,20 @@ input:not(:placeholder-shown) ~ .retop-floating-label {
   width: 100% !important;
 }
 
-/* Captcha Input */
+/* Captcha Input - Expanded width to fit typed content comfortably */
 #retop-captcha-container #captchaStr {
-  width: 140px !important;
+  width: 175px !important;
+  min-width: 165px !important;
   flex: 0 0 auto !important;
   height: 48px !important;
   font-size: 1.25rem !important;
   text-align: center !important;
-  letter-spacing: 0.2em !important;
+  letter-spacing: 0.15em !important;
   font-variation-settings: "wght" 800 !important;
   border-radius: 0.75rem !important;
   margin: 0 !important;
   text-transform: uppercase !important;
-  box-shadow: var(--shadow-main) !important;
+  box-shadow: none !important;
 }
 
 #retop-captcha-container #captchaStr::placeholder {
@@ -899,4 +895,4 @@ img[src*="spinner" i],
   text-decoration: none !important;
 }
 
-/* Hover effect moved to unified block above */
+

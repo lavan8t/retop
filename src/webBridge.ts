@@ -1,4 +1,5 @@
 import { getExtUrl } from "./utils/url";
+import { set as idbSet, get as idbGet } from "idb-keyval";
 
 if (typeof chrome !== "undefined" && chrome.storage?.local) {
   try {
@@ -11,7 +12,38 @@ if (typeof chrome !== "undefined" && chrome.storage?.local) {
   window.postMessage({ type: "RETOP_EXT_SYNC_COMPLETE", data: {} }, origin);
   window.postMessage({ type: "RETOP_EXT_PRESENT" }, origin);
 
-  // 2. Listen for window.postMessage requests from page scripts (offline.js / storageAdapter)
+  // 2. Listen for messages from background service worker (scraped data relay)
+  if (chrome.runtime?.onMessage) {
+    chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+      if (message.type === "RETOP_PWA_SYNC_PAYLOAD" && message.payload) {
+        const payload = message.payload;
+        const persistState = {
+          state: {
+            data: payload,
+            lastSynced: Date.now(),
+          },
+          version: 0,
+        };
+
+        // Write directly to PWA's IndexedDB store under the Zustand persist key
+        idbSet("portal-app-storage", JSON.stringify(persistState))
+          .then(() => {
+            // Also notify live React app via CustomEvent and postMessage
+            window.dispatchEvent(new CustomEvent("retop-pwa-synced", { detail: payload }));
+            window.postMessage({ type: "RETOP_PWA_SYNCED", payload }, origin);
+            sendResponse({ success: true });
+          })
+          .catch((err) => {
+            console.error("[Bridge Script] Failed writing to IndexedDB:", err);
+            sendResponse({ success: false, error: String(err) });
+          });
+
+        return true; // Keep channel open for async response
+      }
+    });
+  }
+
+  // 3. Listen for window.postMessage requests from page scripts (offline.js / storageAdapter)
   window.addEventListener("message", (event) => {
     if (event.source !== window || !event.data || typeof event.data !== "object") return;
     const { type, keys, data, requestId } = event.data;
@@ -41,7 +73,7 @@ if (typeof chrome !== "undefined" && chrome.storage?.local) {
     }
   });
 
-  // 3. Keep web app updated whenever chrome.storage.local changes
+  // 4. Keep web app updated whenever chrome.storage.local changes
   if (chrome.storage.onChanged) {
     chrome.storage.onChanged.addListener((changes, namespace) => {
       if (namespace === "local") {

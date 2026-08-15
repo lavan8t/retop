@@ -28,6 +28,12 @@ export const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
   const line1 = words[0] || "";
   const line2 = words.slice(1).join(" ") || "";
 
+  const isChennai =
+    (data as any).campus === "chennai" ||
+    (typeof window !== "undefined" && window.location.hostname.includes("vtopcc")) ||
+    (typeof window !== "undefined" && (window as any)._retopCampus === "chennai");
+  const campusName = isChennai ? "CHENNAI" : "VELLORE";
+
   return (
     <div
       className="retop-digital-id-card group w-full max-w-74 aspect-64/100 perspective-[1000px] cursor-pointer shrink-0"
@@ -46,7 +52,7 @@ export const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
             <h3
               className={`text-[17px] font-extrabold scale-x-120 text-black ${fontTimes}`}
             >
-              VELLORE CAMPUS
+              {campusName} CAMPUS
             </h3>
           </div>
 
@@ -124,13 +130,27 @@ export const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
           <div
             className={`font-bold ml-2 text-[11px] leading-snug ${fontArial}`}
           >
-            Vellore Institute of Technology,
-            <br />
-            Vellore - 632 014, Tamilnadu, India.
-            <br />
-            Ph : 0416 224 3091
-            <br />
-            Fax : 0416 224 3092
+            {isChennai ? (
+              <>
+                Vellore Institute of Technology,
+                <br />
+                Vandalur - Kelambakkam Road,
+                <br />
+                Chennai - 600 127, Tamilnadu, India.
+                <br />
+                Ph : 044 3993 1555
+              </>
+            ) : (
+              <>
+                Vellore Institute of Technology,
+                <br />
+                Vellore - 632 014, Tamilnadu, India.
+                <br />
+                Ph : 0416 224 3091
+                <br />
+                Fax : 0416 224 3092
+              </>
+            )}
           </div>
 
           <div className={`mt-1.5 italic font-bold ${fontTimes}`}>

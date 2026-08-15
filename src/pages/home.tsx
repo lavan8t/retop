@@ -272,6 +272,23 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 {monthDisplay.text}
               </button>
 
+              {!calSelectedSem && calSemesters.length > 0 && (
+                <div className="flex items-center gap-1.5 overflow-x-auto max-w-[60%]">
+                  {calSemesters.filter((s) => !/industry|\(ind\)/i.test(s.label)).slice(0, 3).map((sem) => (
+                    <button
+                      key={sem.id}
+                      onClick={() => {
+                        useDataStore.getState().setCalSelectedSem(sem.id);
+                        useDataStore.getState().setTtSelectedSem(sem.id);
+                      }}
+                      className="text-[11px] font-bold px-3 py-1 rounded-full bg-(--bg-highlight) text-(--text-main) hover:bg-(--accent-base) hover:text-(--bg-main) transition-all cursor-pointer whitespace-nowrap shadow-xs border border-(--border-main)"
+                    >
+                      {sem.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               {monthDisplay.semName ? (
                 <div className="flex justify-end items-start h-8 relative z-20 pt-1">
                   <style>{`
@@ -289,15 +306,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
                       </span>
                     </div>
 
-                    <div className="relative text-right flex flex-col w-full min-w-[120px]">
-                      <div className="relative text-sm md:text-base leading-none font-expanded sem-text">
-                        <span
-                          className="text-(--text-main) whitespace-nowrap inline-block transition-opacity duration-200 group-hover/sem:opacity-50"
-                        >
+                    <div className="relative text-right flex flex-col w-full min-w-30">
+                      <div className="relative text-sm md:text-base leading-none font-expanded sem-text select-none">
+                        <span className="text-(--text-main) whitespace-nowrap inline-block transition-opacity duration-200 group-hover/sem:opacity-30">
                           {monthDisplay.semName}
                         </span>
                         <span
-                          className="absolute left-0 top-0 overflow-hidden whitespace-nowrap text-(--text-main) pointer-events-none origin-left opacity-0 scale-x-0 group-hover/sem:opacity-100 group-hover/sem:scale-x-100 transition-all duration-200"
+                          className="absolute left-0 top-0 overflow-hidden whitespace-nowrap text-(--text-main) pointer-events-none origin-left"
                           style={{ width: `${progress}%` } as any}
                         >
                           {monthDisplay.semName}
@@ -441,7 +456,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             {/* Bottom Sheet Content */}
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
               <QuickLinksMenu
-                className="flex flex-col w-full !pt-0 !pb-2 !px-0 gap-4"
+                className="flex flex-col w-full pt-0! pb-2! px-0! gap-4"
                 menuCategories={menuCategories}
                 onNavigate={(link) => {
                   setIsSpotlightOpen(false);

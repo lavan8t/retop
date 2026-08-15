@@ -160,7 +160,7 @@ const SeatMapPopoverCard = ({
         left: `${coords.left}px`,
         transformOrigin: coords.transformOrigin,
       }}
-      className="z-[999999] p-3.5 rounded-2xl bg-(--bg-surface) border-2 border-(--border-main) popup-shadow shadow-2xl flex flex-col gap-2.5 w-[260px] text-(--text-main) pointer-events-none transition-all duration-150 ease-in-out animate-popup-open"
+      className="z-999999 p-3.5 rounded-2xl bg-(--bg-surface) border-2 border-(--border-main) popup-shadow shadow-2xl flex flex-col gap-2.5 w-65 text-(--text-main) pointer-events-none transition-all duration-150 ease-in-out animate-popup-open"
     >
       <div className="w-full text-center py-0.5 rounded bg-(--bg-main) border border-(--border-dim)/40 text-[8px] font-mono font-bold uppercase text-(--text-muted)">
         FRONT / BOARD

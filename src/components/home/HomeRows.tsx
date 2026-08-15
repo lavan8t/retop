@@ -37,7 +37,10 @@ export const AttendanceRow = React.memo(({ course }: { course: CourseSummary }) 
         style={{ width: `${displayVal}%` }}
       />
       <div className="relative z-10 flex items-center gap-2 min-w-0 flex-1 pr-3">
-        <span className="text-xs font-black text-(--text-main) leading-snug truncate min-w-0">
+        <span
+          data-tooltip={course.name}
+          className="text-xs font-black text-(--text-main) leading-snug truncate min-w-0"
+        >
           {course.name}
         </span>
         {course.type && (
@@ -77,14 +80,17 @@ export const ScheduleRow = React.memo(({
   const startTime = timeParts[0];
 
   const { settings } = useSettingsStore();
-  const { attendance } = useDataStore();
+  const { attendance, stats } = useDataStore();
+  const cgpaVal = parseFloat(stats?.cgpa || "0");
+  const isNinePointer = !isNaN(cgpaVal) && cgpaVal >= 9.0;
+
   const attObj = (attendance || []).find(
     (a: any) =>
       a.code === item.course?.code ||
       (item.course?.title && a.name && item.course.title.includes(a.name)),
   );
   const attVal = attObj ? parseFloat(attObj.attendance) : NaN;
-  const isCriticalAtt = !isNaN(attVal) && attVal <= 75;
+  const isCriticalAtt = !isNinePointer && !isNaN(attVal) && attVal <= 75;
 
   const [isHovered, setIsHovered] = React.useState(false);
 
@@ -124,7 +130,10 @@ export const ScheduleRow = React.memo(({
 
         {/* Center: Main Name (No course code) */}
         <div className="flex-1 min-w-0 px-1">
-          <span className="text-xs sm:text-sm md:text-base font-black leading-tight break-words line-clamp-2">
+          <span
+            data-tooltip={item.course.title}
+            className="text-xs sm:text-sm md:text-base font-black leading-tight wrap-break-words line-clamp-2"
+          >
             {item.course.title}
           </span>
         </div>
@@ -138,7 +147,7 @@ export const ScheduleRow = React.memo(({
           )}
 
           {slot && (
-            <span className="px-2 py-0.5 rounded bg-black/15 text-xs sm:text-sm font-mono font-black uppercase tracking-wider shrink-0 leading-none">
+            <span className="px-2.5 py-1 rounded-full bg-black/15 text-xs sm:text-sm font-mono font-black uppercase tracking-wider shrink-0 leading-none">
               {slot}
             </span>
           )}
@@ -214,15 +223,18 @@ export const AssignmentRow = React.memo(({
       )}
       <div className="flex flex-col relative z-10 gap-1.5">
         <div className="flex justify-between items-start gap-2 min-w-0">
-          <span className="text-xs sm:text-sm font-black text-(--text-main) leading-snug flex-1 break-words">
+          <span className="text-xs sm:text-sm font-black text-(--text-main) leading-snug flex-1 wrap-break-words">
             {assignment.title}
           </span>
         </div>
         <div className="flex items-center justify-between mt-1 gap-2">
-          <span className="text-xs font-bold font-mono text-(--text-muted) truncate shrink-0">
+          <span
+            data-tooltip={assignment.course}
+            className="text-xs font-bold font-mono text-(--text-muted) truncate shrink-0"
+          >
             {assignment.course}
           </span>
-          <span className={`text-xs font-black font-mono px-2 py-0.5 rounded-md border leading-none shrink-0 transition-all ${badgeStyle}`}>
+          <span className={`text-xs font-black font-mono px-2.5 py-1 rounded-full border leading-none shrink-0 transition-all ${badgeStyle}`}>
             {isHovered ? exact : days}
           </span>
         </div>
@@ -254,12 +266,12 @@ export const EventRow = React.memo(({ event, className, progress = 0 }: { event:
       )}
       <div className="flex flex-col gap-1.5 relative z-10 w-full">
         <div className="flex items-start justify-between gap-2 w-full">
-          <span className="text-[clamp(0.85rem,3cqw,0.95rem)] font-black leading-tight break-words flex-1">
+          <span className="text-[clamp(0.85rem,3cqw,0.95rem)] font-black leading-tight wrap-break-words flex-1">
             {event.title}
           </span>
         </div>
         <div className="flex items-center justify-between gap-2 text-xs font-mono font-bold opacity-90">
-          <span className="uppercase text-xs tracking-wider px-2 py-0.5 rounded bg-black/15 leading-none">
+          <span className="uppercase text-xs tracking-wider px-2.5 py-1 rounded-full bg-black/15 leading-none">
             {event.category}
           </span>
           {event.organizer && (
@@ -351,7 +363,7 @@ export const ExamRow = React.memo(({
 
         {/* Center: Exam Course Title */}
         <div className="flex-1 min-w-0 px-1">
-          <span className="text-xs sm:text-sm md:text-base font-black leading-tight break-words line-clamp-2">
+          <span className="text-xs sm:text-sm md:text-base font-black leading-tight wrap-break-words line-clamp-2">
             {exam.courseTitle}
           </span>
         </div>
@@ -359,13 +371,13 @@ export const ExamRow = React.memo(({
         {/* Right Side: Group Pill / Slot (left of venue), Venue on right end */}
         <div className="flex items-center gap-2 shrink-0 font-mono font-bold">
           {showGroupPill && (
-            <span className="px-2 py-0.5 rounded bg-black/15 text-xs sm:text-sm font-black font-mono uppercase tracking-wider shrink-0 leading-none">
+            <span className="px-2.5 py-1 rounded-full bg-black/15 text-xs sm:text-sm font-black font-mono uppercase tracking-wider shrink-0 leading-none">
               {groupType || "EXAM"}
             </span>
           )}
 
           {exam.slot && (
-            <span className="text-xs sm:text-sm font-mono font-black uppercase tracking-wider px-2 py-0.5 rounded bg-black/15 shrink-0 leading-none">
+            <span className="text-xs sm:text-sm font-mono font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-black/15 shrink-0 leading-none">
               {exam.slot}
             </span>
           )}

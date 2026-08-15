@@ -223,7 +223,7 @@ export class VTOPNetwork {
     const isOfflineMode =
       (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
       (typeof location !== "undefined" &&
-        location.hostname !== "vtop.vit.ac.in" &&
+        !location.hostname.includes("vit.ac.in") &&
         !location.protocol.includes("chrome-extension") &&
         !location.protocol.includes("moz-extension"));
 
@@ -260,7 +260,7 @@ export class VTOPNetwork {
     const isOfflineMode =
       (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
       (typeof location !== "undefined" &&
-        location.hostname !== "vtop.vit.ac.in" &&
+        !location.hostname.includes("vit.ac.in") &&
         !location.protocol.includes("chrome-extension") &&
         !location.protocol.includes("moz-extension"));
 
@@ -430,7 +430,7 @@ export class VTOPNetwork {
       const isOffline =
         (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
         (typeof location !== "undefined" &&
-          location.hostname !== "vtop.vit.ac.in" &&
+          !location.hostname.includes("vit.ac.in") &&
           !location.protocol.includes("chrome-extension") &&
           !location.protocol.includes("moz-extension"));
 
@@ -460,7 +460,7 @@ export class VTOPNetwork {
     const isOffline =
       (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
       (typeof location !== "undefined" &&
-        location.hostname !== "vtop.vit.ac.in" &&
+        !location.hostname.includes("vit.ac.in") &&
         !location.protocol.includes("chrome-extension") &&
         !location.protocol.includes("moz-extension"));
 
@@ -607,7 +607,8 @@ export class VTOPNetwork {
     return this.fetchWithCache(
       cacheKey,
       async () => {
-        const url = "academics/common/StudentTimeTable";
+        const isChennai = typeof window !== "undefined" && window.location.hostname.includes("vtopcc");
+        const url = isChennai ? "academics/common/StudentTimeTableChn" : "academics/common/StudentTimeTable";
         const body = new URLSearchParams();
         body.append("semesterSubId", semesterSubId);
         body.append("authorizedID", this.authorizedID);
@@ -1107,11 +1108,12 @@ export class VTOPNetwork {
   }
 
   async uploadDA(action: string, formData: FormData): Promise<boolean> {
+    const origin = typeof window !== "undefined" && window.location.origin.includes("vit.ac.in") ? window.location.origin : "https://vtop.vit.ac.in";
     const path = action.startsWith("http")
       ? action
       : action.startsWith("/")
-        ? `https://vtop.vit.ac.in${action}`
-        : `https://vtop.vit.ac.in/vtop/${action}`;
+        ? `${origin}${action}`
+        : `${origin}/vtop/${action}`;
 
     const response = await this.rateLimitedFetch(path, {
       method: "POST",
@@ -1139,7 +1141,8 @@ export class VTOPNetwork {
     endpoint: string,
     params: Record<string, string>,
   ) {
-    const url = `https://vtop.vit.ac.in/vtop/${endpoint}`;
+    const origin = typeof window !== "undefined" && window.location.origin.includes("vit.ac.in") ? window.location.origin : "https://vtop.vit.ac.in";
+    const url = `${origin}/vtop/${endpoint}`;
     const body = new URLSearchParams();
 
     const domCsrf = document.querySelector(

@@ -652,7 +652,7 @@ const enhancePreloginHeader = () => {
       vitText.remove();
     }
 
-    const campusLabel = isChennai ? "CHENNAI CAMPUS" : "VELLORE CAMPUS";
+    const campusLabel = isChennai ? "Chennai Campus" : "Vellore Campus";
     let navbarText = header.querySelector(".navbar-text") as HTMLElement;
     if (!navbarText) {
       navbarText = document.createElement("span");
@@ -1114,7 +1114,7 @@ const injectLoginTheme = () => {
 
     // Transform the campus text to fit the new width
     const isChennai = window.location.hostname.includes("vtopcc");
-    const campusLabel = isChennai ? "CHENNAI CAMPUS" : "VELLORE CAMPUS";
+    const campusLabel = isChennai ? "Chennai Campus" : "Vellore Campus";
 
     let navbarText = header.querySelector(".navbar-text") as HTMLElement;
     if (!navbarText) {

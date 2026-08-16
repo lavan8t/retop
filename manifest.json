@@ -50,9 +50,10 @@
         "prelogin.css",
         "fonts/gsf.subset.woff2",
         "fonts/gsf.subset2.woff2",
-        "fonts/material-symbols-rounded.woff2",
         "fonts/*",
         "assets/vitLogo.svg",
+        "assets/vit_emblem.svg",
+        "assets/*",
         "pdf.js/*",
         "pdf.js/pdf.worker.min.mjs"
       ],

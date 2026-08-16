@@ -174,7 +174,7 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ users, activeUser, on
 /* ── Emblem Star Vector Component ────────────────────────────────────── */
 export const EmblemStar: React.FC<{ type?: "left" | "right"; className?: string; style?: React.CSSProperties }> = ({
   type = "left",
-  className = "w-10 h-10 drop-shadow-md",
+  className = "w-9 h-9",
   style,
 }) => {
   if (type === "right") {
@@ -213,6 +213,7 @@ interface StarPinInputProps {
   error?: boolean;
   prompt?: string;
   autoFocus?: boolean;
+  maxDigits?: number;
 }
 
 const StarPinInput: React.FC<StarPinInputProps> = ({
@@ -222,6 +223,7 @@ const StarPinInput: React.FC<StarPinInputProps> = ({
   error = false,
   prompt = "Enter your PIN",
   autoFocus = true,
+  maxDigits = 10,
 }) => {
   const hiddenInputRef = useRef<HTMLInputElement>(null);
 
@@ -237,10 +239,10 @@ const StarPinInput: React.FC<StarPinInputProps> = ({
 
       if (/^[0-9]$/.test(e.key)) {
         e.preventDefault();
-        if (value.length < 4) {
+        if (value.length < maxDigits) {
           const newVal = value + e.key;
           onChange(newVal);
-          if (newVal.length === 4 && onSubmit) {
+          if (onSubmit) {
             onSubmit(newVal);
           }
         }
@@ -249,7 +251,7 @@ const StarPinInput: React.FC<StarPinInputProps> = ({
         onChange(value.slice(0, -1));
       } else if (e.key === "Enter") {
         e.preventDefault();
-        if (value.length === 4 && onSubmit) {
+        if (value.length >= 4 && onSubmit) {
           onSubmit(value);
         }
       }
@@ -257,12 +259,12 @@ const StarPinInput: React.FC<StarPinInputProps> = ({
 
     window.addEventListener("keydown", onGlobalKeyDown);
     return () => window.removeEventListener("keydown", onGlobalKeyDown);
-  }, [value, onChange, onSubmit, autoFocus]);
+  }, [value, onChange, onSubmit, autoFocus, maxDigits]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value.replace(/[^0-9]/g, "").slice(0, 4);
+    const raw = e.target.value.replace(/[^0-9]/g, "").slice(0, maxDigits);
     onChange(raw);
-    if (raw.length === 4 && onSubmit) {
+    if (onSubmit) {
       onSubmit(raw);
     }
   };
@@ -274,7 +276,7 @@ const StarPinInput: React.FC<StarPinInputProps> = ({
   return (
     <div
       onClick={handleContainerClick}
-      className={`relative w-full py-10 px-6 sm:py-12 flex flex-col items-center justify-center cursor-pointer select-none transition-all duration-200 min-h-[130px] ${
+      className={`relative w-full py-10 px-4 sm:px-6 flex flex-col items-center justify-center cursor-pointer select-none transition-all duration-200 min-h-[130px] ${
         error ? "animate-pin-shake" : ""
       }`}
     >
@@ -284,7 +286,7 @@ const StarPinInput: React.FC<StarPinInputProps> = ({
         type="password"
         inputMode="numeric"
         pattern="[0-9]*"
-        maxLength={4}
+        maxLength={maxDigits}
         value={value}
         onChange={handleInputChange}
         className="sr-only opacity-0 absolute pointer-events-none"
@@ -298,27 +300,24 @@ const StarPinInput: React.FC<StarPinInputProps> = ({
             {prompt}
           </p>
           <span className="text-[11px] text-zinc-500 font-medium font-sans">
-            Type 4-digit code to unlock
+            Type 4–10 digit PIN to unlock
           </span>
         </div>
       ) : (
-        <div className="flex items-center justify-center gap-7 sm:gap-9 transition-all duration-300">
+        <div className="flex items-center justify-center gap-3.5 sm:gap-5 flex-wrap max-w-full transition-all duration-300 ease-out">
           {Array.from({ length: value.length }).map((_, idx) => {
             const isLeft = idx % 2 === 0;
             return (
               <div
                 key={idx}
-                className="transform transition-all duration-200 ease-out animate-star-pop"
+                className="star-pin-slot animate-star-pin"
               >
                 <EmblemStar
                   type={isLeft ? "left" : "right"}
-                  className="w-11 h-11 sm:w-13 sm:h-13 transition-all duration-150"
+                  className="w-8 h-8 sm:w-10 sm:h-10 transition-colors duration-150"
                   style={{
                     color: error ? "#ef4444" : "var(--accent-base, #60a5fa)",
-                    filter: error
-                      ? "drop-shadow(0 0 15px rgba(239,68,68,0.6))"
-                      : "drop-shadow(0 0 15px var(--accent-base, #60a5fa))",
-                  } as React.CSSProperties}
+                  }}
                 />
               </div>
             );
@@ -655,10 +654,11 @@ const OfflineApp = () => {
   const handleUnlock = async (overridePin?: string) => {
     if (!activeUser) return;
     const pinToVerify = overridePin !== undefined ? overridePin : pinInput;
+    if (!pinToVerify || pinToVerify.length < 4) return;
 
     if (!hasPinSet) {
-      // If PIN is not set yet, require 4-digit PIN setup before unlocking
-      if (pinToVerify.length === 4) {
+      // If PIN is not set yet, require 4-10 digit PIN setup before unlocking
+      if (pinToVerify.length >= 4 && pinToVerify.length <= 10) {
         await saveUserPin(activeUser.regNo, pinToVerify);
         setHasPinSet(true);
       } else {
@@ -668,8 +668,10 @@ const OfflineApp = () => {
     } else {
       const isValid = await verifyUserPin(activeUser.regNo, pinToVerify);
       if (!isValid) {
-        setPinError(true);
-        setTimeout(() => setPinError(false), 600);
+        if (pinToVerify.length >= 10 || overridePin === undefined) {
+          setPinError(true);
+          setTimeout(() => setPinError(false), 600);
+        }
         return;
       }
     }
@@ -689,7 +691,7 @@ const OfflineApp = () => {
   };
 
   const handleSaveNewPin = async () => {
-    if (!activeUser || newPin.length !== 4) return;
+    if (!activeUser || newPin.length < 4 || newPin.length > 10) return;
     await saveUserPin(activeUser.regNo, newPin);
     setHasPinSet(true);
     setIsSettingPin(false);
@@ -866,12 +868,12 @@ const OfflineApp = () => {
                   <div className="bg-[#18181b] rounded-3xl p-6 space-y-4 text-center border-0 shadow-2xl">
                     <h4 className="text-xs font-bold text-white flex items-center justify-center gap-2 uppercase tracking-wider">
                       <Key className="w-4 h-4" style={{ color: "var(--accent-base, #60a5fa)" }} />
-                      <span>{hasPinSet ? "Update 4-Digit PIN" : "Setup 4-Digit Offline PIN"}</span>
+                      <span>{hasPinSet ? "Update Security PIN" : "Setup Offline PIN"}</span>
                     </h4>
                     <p className="text-xs text-zinc-400 text-center">
                       {hasPinSet
-                        ? "Enter a new 4-digit PIN to update your offline encryption passcode."
-                        : "Please create a 4-digit Security PIN to protect & access your offline data."}
+                        ? "Enter a new 4–10 digit PIN to update your offline encryption passcode."
+                        : "Please create a 4–10 digit Security PIN to protect & access your offline data."}
                     </p>
                     <StarPinInput
                       value={newPin}
@@ -881,7 +883,7 @@ const OfflineApp = () => {
                     <div className="flex gap-2.5 pt-1">
                       <button
                         onClick={handleSaveNewPin}
-                        disabled={newPin.length !== 4}
+                        disabled={newPin.length < 4 || newPin.length > 10}
                         className="flex-1 text-white font-bold text-xs py-3 rounded-full transition-all cursor-pointer hover:brightness-110 disabled:opacity-50"
                         style={{ backgroundColor: "var(--accent-base, #2563eb)" }}>
                         Save Encrypted PIN

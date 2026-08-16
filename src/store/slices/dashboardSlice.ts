@@ -173,6 +173,19 @@ export const createDashboardSlice: StateCreator<DataState, [], [], DashboardSlic
 
       await Promise.allSettled([statsP, attP, daP, eventsP, timetableAndCalP]);
 
+      const isOffline =
+        (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
+        (typeof navigator !== "undefined" && !navigator.onLine) ||
+        (typeof location !== "undefined" &&
+          !location.hostname.includes("vit.ac.in") &&
+          !location.protocol.includes("chrome-extension") &&
+          !location.protocol.includes("moz-extension"));
+
+      if (isOffline) {
+        set({ status: "Offline", isSyncing: false, lastSyncTime: Date.now() });
+        return;
+      }
+
       set({ status: "Online", lastSyncTime: Date.now() });
 
       // Background refresh: silently update with fresh data (timetable/calendar/exam
@@ -197,9 +210,9 @@ export const createDashboardSlice: StateCreator<DataState, [], [], DashboardSlic
 
     } catch (e) {
       if (e instanceof Error && e.message === "OFFLINE_CACHE_MISS") {
-        set({ status: "Offline - Not Synced" });
+        set({ status: "Offline - Not Synced", isSyncing: false });
       } else {
-        set({ status: "Sync Failed" });
+        set({ status: "Sync Failed", isSyncing: false });
       }
     }
   },

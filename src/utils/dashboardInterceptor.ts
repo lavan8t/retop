@@ -16,6 +16,18 @@ const interceptSignals: Map<string, Array<(html: string) => void>> = new Map();
  *  Resolves with the HTML text if intercepted within `timeoutMs`, else "".
  */
 export function waitForIntercepted(key: string, timeoutMs = 2500): Promise<string> {
+  const isOffline =
+    (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
+    (typeof navigator !== "undefined" && !navigator.onLine) ||
+    (typeof location !== "undefined" &&
+      !location.hostname.includes("vit.ac.in") &&
+      !location.protocol.includes("chrome-extension") &&
+      !location.protocol.includes("moz-extension"));
+
+  if (isOffline) {
+    return Promise.resolve("");
+  }
+
   return new Promise((resolve) => {
     const listeners = interceptSignals.get(key) ?? [];
     listeners.push(resolve);

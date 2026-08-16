@@ -429,12 +429,17 @@ export class VTOPNetwork {
 
       const isOffline =
         (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
+        (typeof navigator !== "undefined" && !navigator.onLine) ||
         (typeof location !== "undefined" &&
           !location.hostname.includes("vit.ac.in") &&
           !location.protocol.includes("chrome-extension") &&
           !location.protocol.includes("moz-extension"));
 
-      if (!isOffline && forceRefresh) {
+      if (isOffline) {
+        return cachedInfo.data;
+      }
+
+      if (forceRefresh) {
         if (this.inFlightRequests.has(userScopedKey)) {
           return await this.inFlightRequests.get(userScopedKey)!;
         }
@@ -443,7 +448,7 @@ export class VTOPNetwork {
         return await promise;
       }
 
-      if (!isOffline && age > EXPIRY_MS) {
+      if (age > EXPIRY_MS) {
         if (!this.inFlightRequests.has(userScopedKey)) {
           console.log(`[VTOP Network] BG Fetch Triggered: ${userScopedKey}`);
           const promise = doFetchAndCache();
@@ -459,12 +464,18 @@ export class VTOPNetwork {
 
     const isOffline =
       (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
+      (typeof navigator !== "undefined" && !navigator.onLine) ||
       (typeof location !== "undefined" &&
         !location.hostname.includes("vit.ac.in") &&
         !location.protocol.includes("chrome-extension") &&
         !location.protocol.includes("moz-extension"));
 
     if (isOffline) {
+      // One final attempt: check un-prefixed key in cache
+      const unPrefixed = await getCachedDataWithTimestamp<string>(key);
+      if (unPrefixed && unPrefixed.data) {
+        return unPrefixed.data;
+      }
       console.warn(`[VTOP Network] Offline cache miss for: ${userScopedKey}`);
       throw new Error("OFFLINE_CACHE_MISS");
     }

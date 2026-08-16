@@ -5,40 +5,21 @@ export interface PinRecord {
   hash: string;
 }
 
-/**
- * Converts ArrayBuffer or TypedArray to Hex string
- */
-function bufferToHex(buffer: ArrayBuffer | ArrayBufferView): string {
-  const bytes = ArrayBuffer.isView(buffer)
-    ? new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength)
-    : new Uint8Array(buffer);
-  return Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-/**
- * Converts Hex string to Uint8Array
- */
-function hexToBytes(hex: string): Uint8Array {
-  const bytes = new Uint8Array(hex.length / 2);
-  for (let i = 0; i < hex.length; i += 2) {
-    bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
-  }
-  return bytes;
-}
+const toHex = (buf: ArrayBuffer | ArrayBufferView): string => {
+  const bytes = ArrayBuffer.isView(buf)
+    ? new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength)
+    : new Uint8Array(buf);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+};
 
 /**
  * Computes a salted SHA-256 hash of a 4-digit PIN + regNo
  */
 export async function hashPin(pin: string, regNo: string, existingSalt?: string): Promise<PinRecord> {
-  const salt = existingSalt || bufferToHex(crypto.getRandomValues(new Uint8Array(16)).buffer);
-  const encoder = new TextEncoder();
-  const data = encoder.encode(`retop_${regNo.toLowerCase()}_${pin}_${salt}`);
+  const salt = existingSalt || toHex(crypto.getRandomValues(new Uint8Array(16)));
+  const data = new TextEncoder().encode(`retop_${regNo.toLowerCase()}_${pin}_${salt}`);
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hash = bufferToHex(hashBuffer);
-
-  return { salt, hash };
+  return { salt, hash: toHex(hashBuffer) };
 }
 
 /**

@@ -54,13 +54,13 @@ export const createProfileSlice: StateCreator<DataState, [], [], ProfileSlice> =
         const isChennai = typeof window !== "undefined" && window.location.hostname.includes("vtopcc");
         const campus: "chennai" | "vellore" = isChennai ? "chennai" : "vellore";
         
-        // 1. Check existing stored base64 (Zustand -> LocalStorage -> Chrome Storage)
+        // 1. Check existing stored base64 (Zustand -> IndexedDB)
         let profileImgBase64 = get().user.profileImgBase64;
         if (!profileImgBase64 || !profileImgBase64.startsWith("data:image")) {
           try {
-            const localStored = localStorage.getItem(`${regNo}_profileImage`);
-            if (localStored && localStored.startsWith("data:image")) {
-              profileImgBase64 = localStored;
+            const stored = await idbGet(`${regNo}_profileImage`);
+            if (stored && typeof stored === "string" && stored.startsWith("data:image")) {
+              profileImgBase64 = stored;
             }
           } catch {}
         }
@@ -122,7 +122,7 @@ export const createProfileSlice: StateCreator<DataState, [], [], ProfileSlice> =
         setCachedData(`${regNo}_user_basic_profile`, newUser);
         if (profileImgBase64) {
           try {
-            localStorage.setItem(`${regNo}_profileImage`, profileImgBase64);
+            await idbSet(`${regNo}_profileImage`, profileImgBase64);
           } catch {}
         }
 

@@ -134,9 +134,9 @@ export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
       {loading ? (
         <div className="h-24 animate-pulse bg-(--bg-main) rounded-2xl"></div>
       ) : errorMsg || (!courseMarks && marksData.length > 0) ? (
-        <div className="p-4 rounded-2xl bg-red-500/10 flex items-start gap-3">
-          <Error className="w-5 h-5 text-att-danger shrink-0" />
-          <p className="text-sm font-bold text-red-400/80">
+        <div className="p-4 rounded-2xl bg-(--att-danger-container) flex items-start gap-3">
+          <Error className="w-5 h-5 text-(--att-danger) shrink-0" />
+          <p className="text-sm font-bold text-(--att-danger)">
             {errorMsg || "Internal marks not available for this course yet."}
           </p>
         </div>

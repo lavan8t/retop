@@ -1,4 +1,4 @@
-import { ProgressActivity } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
+import { VitEmblemLoader } from "../common/VitEmblemLoader";
 import { HomeView } from "../../pages/home";
 import { TimetableContentView } from "../../pages/timetable";
 import { CurriculumPage } from "../../pages/curriculum";
@@ -130,9 +130,9 @@ export const ContentRouter = ({
 
     case "content":
       return (
-        <div className="flex flex-col items-center justify-center h-full text-(--text-muted) font-mono animate-pulse pointer-events-auto">
-          <ProgressActivity className="w-16 h-16 text-(--accent-base) animate-spin mb-4" />
-          <span className="text-xl font-bold font-expanded mb-0">
+        <div className="flex flex-col items-center justify-center h-full text-(--text-muted) font-mono pointer-events-auto">
+          <VitEmblemLoader size={72} className="mb-4 text-(--accent-base)" />
+          <span className="text-xl font-bold font-expanded mb-0 tracking-wider">
             LAUNCHING LEGACY SYSTEM...
           </span>
         </div>

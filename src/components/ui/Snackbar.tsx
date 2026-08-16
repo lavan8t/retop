@@ -24,9 +24,9 @@ export const Snackbar: React.FC<{ snackbar: SnackbarData; onDismiss: () => void 
 
   const iconColor =
     snackbar.type === "error"
-      ? "text-red-500"
+      ? "text-(--att-danger)"
       : snackbar.type === "success"
-      ? "text-emerald-500"
+      ? "text-(--att-safe)"
       : "text-(--accent-base)";
 
   return (

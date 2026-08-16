@@ -255,15 +255,16 @@ body {
   width: 280px !important;
   max-width: 80vw !important;
   text-align: center !important;
-  font-family: 'Times New Roman', serif !important;
-  font-weight: bold !important;
+  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
+  font-weight: 400 !important;
+  font-variation-settings: "wght" 400 !important;
   font-size: 0.95rem !important;
   color: var(--text-main) !important;
   margin-top: 0.5rem !important;
-  text-transform: uppercase !important;
+  text-transform: none !important;
   position: relative;
   z-index: 10;
-  letter-spacing: 0.05em;
+  letter-spacing: normal !important;
 }
 
 /* Base Header Font Styling */

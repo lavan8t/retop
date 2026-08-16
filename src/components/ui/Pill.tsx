@@ -17,9 +17,9 @@ export const Pill: React.FC<PillProps> = ({
     accent: "bg-(--accent-base) text-(--text-inverse) border border-(--accent-base)",
     surface: "bg-(--bg-surface) text-(--text-main) border border-(--border-dim)/60",
     main: "bg-(--bg-main) text-(--text-main) border border-(--border-dim)/60",
-    success: "bg-green-600 text-white border border-green-600",
-    warning: "bg-amber-600 text-white border border-amber-600",
-    error: "bg-red-600 text-white border border-red-600",
+    success: "bg-(--att-safe-container) text-(--att-safe) border border-(--att-safe)/30",
+    warning: "bg-(--att-warn-container) text-(--att-warn) border border-(--att-warn)/30",
+    error: "bg-(--att-danger-container) text-(--att-danger) border border-(--att-danger)/30",
     muted: "bg-(--bg-highlight) text-(--text-muted) border border-(--border-dim)/40",
     outline: "bg-transparent text-(--text-main) border border-(--border-dim)",
   };

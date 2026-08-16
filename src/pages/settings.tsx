@@ -147,11 +147,13 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
 
   const handleClearAllCache = async () => {
     try {
-      await clearCache();
-      setClearStatus("Cache cleared successfully!");
+      const { user } = useDataStore.getState();
+      const currentRegNo = user?.regNo && user.regNo !== "..." ? user.regNo : undefined;
+      await clearCache(currentRegNo);
+      setClearStatus("Account cache cleared successfully!");
       setTimeout(() => setClearStatus(""), 3000);
     } catch (e) {
-      setClearStatus("Failed to clear cache.");
+      setClearStatus("Failed to clear account cache.");
     }
   };
 

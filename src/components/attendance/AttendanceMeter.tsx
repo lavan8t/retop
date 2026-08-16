@@ -21,14 +21,14 @@ export const AttendanceMeter: React.FC<AttendanceMeterProps> = ({ courseCode }) 
     examName,
   } = forecast;
 
-  let accentColor = "text-emerald-400";
+  let accentColor = "text-(--att-safe)";
   let copy = `Safe! Can skip ${safeSkips} class${safeSkips !== 1 ? "es" : ""}.`;
 
   if (status === "WARNING") {
-    accentColor = "text-amber-400";
+    accentColor = "text-(--att-warn)";
     copy = `Caution! Only ${safeSkips} safe skip${safeSkips !== 1 ? "s" : ""} left.`;
   } else if (status === "CRITICAL") {
-    accentColor = "text-red-400";
+    accentColor = "text-(--att-danger)";
     copy =
       safeSkips === 0
         ? `Must attend ${classesNeededBeforeExam || requiredToPass} class${
@@ -77,7 +77,7 @@ export const AttendanceMeter: React.FC<AttendanceMeterProps> = ({ courseCode }) 
               <span className="text-[9px] uppercase font-mono font-bold text-(--text-muted) tracking-wider mb-0.5">
                 Safe Skips
               </span>
-              <span className="text-xl font-mono font-black text-emerald-400">
+              <span className="text-xl font-mono font-black text-(--att-safe)">
                 {safeSkips}
               </span>
             </div>
@@ -86,7 +86,7 @@ export const AttendanceMeter: React.FC<AttendanceMeterProps> = ({ courseCode }) 
               <span className="text-[9px] uppercase font-mono font-bold text-(--text-muted) tracking-wider mb-0.5">
                 Needed @ 75%
               </span>
-              <span className="text-xl font-mono font-black text-amber-400">
+              <span className="text-xl font-mono font-black text-(--att-warn)">
                 {classesNeededBeforeExam}
               </span>
             </div>

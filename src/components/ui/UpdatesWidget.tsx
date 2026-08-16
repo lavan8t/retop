@@ -114,37 +114,6 @@ export const UpdatesWidget: React.FC = () => {
       });
     }
 
-    // 3. Marks & Grades Snapshot Changes
-    try {
-      const cachedMarks = localStorage.getItem("retop_recent_marks_alert");
-      if (cachedMarks) {
-        const parsed = JSON.parse(cachedMarks);
-        if (parsed?.courseCode) {
-          list.push({
-            id: `marks-${parsed.courseCode}-${parsed.title || ""}`,
-            type: "marks",
-            title: `New Marks: ${parsed.courseCode}`,
-            subtitle: parsed.title || "Assessment Evaluated",
-            detail: parsed.score ? `Score: ${parsed.score}` : undefined,
-            actionView: "marks",
-          });
-        }
-      }
-
-      if (stats?.cgpa && stats.cgpa !== "..." && stats.cgpa !== "0") {
-        const lastCgpa = localStorage.getItem("retop_last_seen_cgpa");
-        if (lastCgpa && lastCgpa !== stats.cgpa) {
-          list.push({
-            id: `grades-cgpa-${stats.cgpa}`,
-            type: "grades",
-            title: "Grade Update: CGPA Changed",
-            subtitle: `New CGPA: ${stats.cgpa} (was ${lastCgpa})`,
-            actionView: "grades",
-          });
-        }
-      }
-    } catch {}
-
     return list.filter((item) => !dismissedIds.has(item.id)).slice(0, 3);
   }, [ttCourses, assignments, stats, dismissedIds, now]);
 
@@ -152,24 +121,24 @@ export const UpdatesWidget: React.FC = () => {
 
   const typeStyles = {
     class: {
-      badge: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+      badge: "bg-(--md-sys-color-info-container) text-(--color-info) border border-(--color-info)/20",
       icon: School,
-      iconColor: "text-blue-400",
+      iconColor: "text-(--color-info)",
     },
     assessment: {
-      badge: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+      badge: "bg-(--att-warn-container) text-(--att-warn) border border-(--att-warn)/20",
       icon: Description,
-      iconColor: "text-amber-400",
+      iconColor: "text-(--att-warn)",
     },
     marks: {
-      badge: "bg-purple-500/10 text-purple-400 border-purple-500/20",
+      badge: "bg-(--accent-base)/10 text-(--accent-base) border border-(--accent-base)/20",
       icon: CheckCircle,
-      iconColor: "text-purple-400",
+      iconColor: "text-(--accent-base)",
     },
     grades: {
-      badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+      badge: "bg-(--att-safe-container) text-(--att-safe) border border-(--att-safe)/20",
       icon: CheckCircle,
-      iconColor: "text-emerald-400",
+      iconColor: "text-(--att-safe)",
     },
   };
 

@@ -231,9 +231,9 @@ export const AssignmentRow = React.memo(({
   // Urgency badge styling
   let badgeStyle = "bg-(--accent-base)/15 text-(--accent-base) border-(--accent-base)/30";
   if (diffDays < 0) {
-    badgeStyle = "bg-red-500/15 text-red-500 border-red-500/30";
+    badgeStyle = "bg-(--att-danger-container) text-(--att-danger) border-(--att-danger)/30";
   } else if (diffDays <= 1) {
-    badgeStyle = "bg-amber-500/15 text-amber-500 border-amber-500/30";
+    badgeStyle = "bg-(--att-warn-container) text-(--att-warn) border-(--att-warn)/30";
   }
 
   return (

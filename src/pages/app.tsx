@@ -13,6 +13,7 @@ import {
 import { VTOPNetwork } from "../utils/network";
 import { getCachedData, setCachedData } from "../utils/cache";
 import { getStorageData, setStorageData } from "../utils/storageAdapter";
+import { del as idbDel } from "idb-keyval";
 import { scrapeMenu, scrapeUserProfile } from "../parsers/menu";
 import { getExtUrl } from "../utils/url";
 import {
@@ -275,6 +276,7 @@ const navigateLegacy = (title: string, url?: string) => {
   attemptFindAndClick(33);
 };
 import { useAppStore } from "../store/appStore";
+import { ErrorBoundary } from "../components/common/ErrorBoundary";
 
 export function renderDashboard() {
   initializeContainer();
@@ -282,13 +284,17 @@ export function renderDashboard() {
   if (rootEl) {
     if ((rootEl as any)._reactRoot) {
       (rootEl as any)._reactRoot.render(
+        <ErrorBoundary>
           <DashboardApp />
+        </ErrorBoundary>
       );
     } else {
       const root = createRoot(rootEl);
       (rootEl as any)._reactRoot = root;
       root.render(
+        <ErrorBoundary>
           <DashboardApp />
+        </ErrorBoundary>
       );
     }
   }
@@ -542,11 +548,17 @@ const DashboardApp = () => {
     const authIdInput = document.getElementById(
       "authorizedIDX",
     ) as HTMLInputElement;
-    const authId = authIdInput?.value;
+    let authId = authIdInput?.value;
     const htmlContent = document.documentElement.outerHTML;
     const domCsrfInput = document.querySelector('input[name="_csrf"]') as HTMLInputElement;
     const csrfMatch = htmlContent.match(/csrfValue\s*=\s*"([^"]+)"/) || htmlContent.match(/name=["']_csrf["'][^>]*value=["']([^"']+)["']/);
-    const csrf = domCsrfInput?.value || (csrfMatch ? csrfMatch[1] : (window as any).csrfValue) || "";
+    let csrf = domCsrfInput?.value || (csrfMatch ? csrfMatch[1] : (window as any).csrfValue) || "";
+
+    const isOffline = !!(window as any).__RETOP_OFFLINE__;
+    if ((!authId || !csrf) && isOffline) {
+      authId = authId || localStorage.getItem("retop_active_user") || localStorage.getItem("retop_lastAuthId") || "offline_user";
+      csrf = csrf || "offline_csrf";
+    }
 
     if (!authId || !csrf) {
       revealLegacyUI();
@@ -617,13 +629,21 @@ const DashboardApp = () => {
 
     if ((window as any).__RETOP_OFFLINE__) {
       getCachedData<MenuCategory[]>(`${authId}_vtop_menu`).then(cachedMenu => {
-        if (cachedMenu && cachedMenu.length> 0) {
+        if (cachedMenu && cachedMenu.length > 0) {
           setMenu(cachedMenu);
+        } else {
+          getCachedData<MenuCategory[]>("vtop_menu").then(m => {
+            if (m && m.length > 0) setMenu(m);
+          });
         }
       });
       getCachedData<SpotlightCategoryGroup[]>(`${authId}_vtop_spotlight`).then(cachedSpotlight => {
-        if (cachedSpotlight && cachedSpotlight.length> 0) {
+        if (cachedSpotlight && cachedSpotlight.length > 0) {
           setSpotlightCategories(cachedSpotlight);
+        } else {
+          getCachedData<SpotlightCategoryGroup[]>("vtop_spotlight").then(s => {
+            if (s && s.length > 0) setSpotlightCategories(s);
+          });
         }
       });
     } else {
@@ -631,13 +651,19 @@ const DashboardApp = () => {
       menuPoller = setInterval(() => {
         attempts++;
         const newSpotlight = scrapeSpotlight(document);
-        if (newSpotlight.length> 0) {
+        if (newSpotlight.length > 0) {
           setSpotlightCategories(newSpotlight);
           setCachedData(`${authId}_vtop_spotlight`, newSpotlight);
+          setCachedData("vtop_spotlight", newSpotlight);
         }
 
         const newMenu = scrapeMenu(document);
         const count = newMenu.reduce((acc, cat) => acc + cat.links.length, 0);
+        if (count > 0) {
+          setMenu(newMenu);
+          setCachedData(`${authId}_vtop_menu`, newMenu);
+          setCachedData("vtop_menu", newMenu);
+        }
         
         setMenu((prev) => {
           const prevCount = prev.reduce((acc, cat) => acc + cat.links.length, 0);
@@ -843,7 +869,11 @@ const DashboardApp = () => {
     } catch (e) {
       console.error("Logout error", e);
     } finally {
-      localStorage.removeItem("retop_lastAuthId");
+      try {
+        localStorage.removeItem("retop_lastAuthId");
+        await idbDel("retop_lastAuthId");
+        await idbDel("retop_active_user");
+      } catch {}
       window.location.href = "/vtop/open/page";
     }
   };

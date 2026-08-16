@@ -106,8 +106,7 @@ export const TimetableList: React.FC<TimetableListProps> = React.memo(({
 
                   {/* Attendance Pill next to course */}
                   <Pill
-                    variant={!hasAtt ? "muted" : isLowAtt ? "accent" : "success"}
-                    className={isLowAtt ? "bg-red-600 text-white border-red-600" : ""}
+                    variant={!hasAtt ? "muted" : isLowAtt ? "error" : "success"}
                   >
                     <PieChart className="w-3.5 h-3.5" />
                     {hasAtt ? `${attStr}` : "N/A"}
@@ -145,8 +144,8 @@ export const TimetableList: React.FC<TimetableListProps> = React.memo(({
                     !hasAtt
                       ? "bg-(--bg-highlight) text-(--text-muted)"
                       : isLowAtt
-                        ? "bg-red-500/20 text-red-400"
-                        : "bg-emerald-500/20 text-emerald-400"
+                        ? "bg-(--att-danger-container) text-(--att-danger)"
+                        : "bg-(--att-safe-container) text-(--att-safe)"
                   }`}
                 >
                   {hasAtt ? `${attStr}` : "N/A"}

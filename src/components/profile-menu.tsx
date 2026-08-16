@@ -39,12 +39,6 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
 
   const handleExportBackup = async () => {
     const data: Record<string, any> = {};
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key) {
-        data[key] = localStorage.getItem(key);
-      }
-    }
     try {
       const idbData = await idbEntries();
       for (const [k, v] of idbData) {
@@ -313,9 +307,6 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
                       const text = await file.text();
                       const json = JSON.parse(text);
                       if (json && typeof json === "object") {
-                        for (const [k, v] of Object.entries(json)) {
-                          localStorage.setItem(k, typeof v === "string" ? v : JSON.stringify(v));
-                        }
                         await Promise.all(
                           Object.entries(json).map(([k, v]) => idbSet(k, v))
                         );

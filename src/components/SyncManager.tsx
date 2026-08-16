@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { getAllCachedKeys, removeCacheKey } from "../utils/cache";
+import { useDataStore } from "../store/dataStore";
 
 const formatTimeAgo = (timestamp: number) => {
   const seconds = Math.floor((Date.now() - timestamp) / 1000);
@@ -15,11 +16,12 @@ const formatTimeAgo = (timestamp: number) => {
 export const SyncManager = () => {
   const [keys, setKeys] = useState<{ key: string; timestamp: number }[]>([]);
   const [loading, setLoading] = useState(true);
+  const user = useDataStore((s) => s.user);
 
   const fetchKeys = async () => {
     setLoading(true);
     try {
-      const allKeys = await getAllCachedKeys();
+      const allKeys = await getAllCachedKeys(user?.regNo && user.regNo !== "..." ? user.regNo : undefined);
       setKeys(allKeys.sort((a: { timestamp: number }, b: { timestamp: number }) => b.timestamp - a.timestamp));
     } catch (e) {
       console.error(e);

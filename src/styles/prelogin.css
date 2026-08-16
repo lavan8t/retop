@@ -96,10 +96,11 @@ span.navbar-text,
 .retop-campus-text {
   color: var(--text-main) !important;
   font-family: 'Google Sans Flex', system-ui, sans-serif !important;
-  font-variation-settings: "wght" 700 !important;
-  font-size: 1.15rem !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.05em !important;
+  font-variation-settings: "wght" 400 !important;
+  font-weight: 400 !important;
+  font-size: 1.05rem !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
   display: inline-block !important;
   vertical-align: middle !important;
   margin-left: 14px !important;

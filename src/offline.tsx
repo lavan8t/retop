@@ -19,22 +19,10 @@ import { asciiArtTT, asciiArtSMV, asciiArtMGR, asciiArtCC } from "./components/a
 import { getExtUrl } from "./utils/url";
 import { applyTheme } from "./utils/settings-store";
 import { GlobalOverflowTooltip } from "./components/ui/Tooltip";
+import { VitLogo } from "./components/VitLogo";
 import { VitEmblemLoader } from "./components/common/VitEmblemLoader";
 import { ErrorBoundary } from "./components/common/ErrorBoundary";
 import { clear as idbClear, set as idbSet } from "idb-keyval";
-
-
-// Resolve asset paths for both ext (chrome-extension://) and web contexts
-const getAssetUrl = (path: string): string => {
-  try {
-    if (typeof chrome !== "undefined" && chrome.runtime && !!chrome.runtime.getURL) {
-      return getExtUrl(`dist/${path}`);
-    }
-  } catch {}
-  return `/${path}`;
-};
-
-const VIT_LOGO_URL = getAssetUrl("/assets/vitLogo.svg");
 
 const pickAsciiArt = (): { art: string; type: string } => {
   const isChennai = typeof window !== "undefined" && window.location.hostname.includes("vtopcc");
@@ -103,35 +91,36 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ users, activeUser, on
   }, [isOpen]);
 
   return (
-    <div ref={containerRef} className="relative w-full max-w-[280px] mx-auto">
-      {/* Trigger button — fully rounded custom dropdown pill */}
+    <div ref={containerRef} className="relative w-full max-w-[320px] mx-auto">
+      {/* Trigger button — solid fill bg, no border, higher padding */}
       <button
         type="button"
         onClick={() => setIsOpen((o) => !o)}
-        className="w-full flex items-center justify-between gap-2.5 bg-[#121214] border border-zinc-800 hover:border-zinc-700 rounded-full px-4 py-2.5 transition-all cursor-pointer group shadow-md"
+        className="w-full flex items-center justify-between gap-3 bg-[#18181b] hover:bg-[#222226] rounded-full px-5 py-3.5 sm:px-6 sm:py-4 transition-all cursor-pointer group shadow-lg border-0"
         style={GSF}>
-        <div className="flex items-center gap-2.5 min-w-0">
+        <div className="flex items-center gap-3 min-w-0">
           {activeUser.profileImgBase64 ? (
-            <img src={activeUser.profileImgBase64} alt={activeLabel} className="w-5 h-5 rounded-full object-cover border border-blue-500/40 shrink-0" />
+            <img src={activeUser.profileImgBase64} alt={activeLabel} className="w-6 h-6 rounded-full object-cover shrink-0" />
           ) : (
-            <div className="w-5 h-5 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
-              <AccountCircle className="w-3.5 h-3.5" />
+            <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0">
+              <AccountCircle className="w-4 h-4" />
             </div>
           )}
-          <span className="text-xs font-bold text-white font-mono leading-none truncate" style={GSF}>{activeLabel}</span>
+          <span className="text-xs sm:text-sm font-bold text-white font-mono leading-none truncate" style={GSF}>{activeLabel}</span>
         </div>
         <KeyboardArrowDown
-          className={`w-4 h-4 text-blue-400 shrink-0 transition-transform duration-150 ${isOpen ? "rotate-180 text-white" : ""}`}
+          className={`w-5 h-5 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+          style={{ color: "var(--accent-base, #60a5fa)" }}
         />
       </button>
 
-      {/* Dropdown menu — custom rounded-3xl container */}
+      {/* Dropdown menu — solid fill bg, no border, higher padding, shadow-2xl */}
       {isOpen && (
         <div
-          className="absolute z-50 left-0 right-0 top-full pt-2 animate-in fade-in slide-in-from-top-1 duration-100"
+          className="absolute z-50 left-0 right-0 top-full pt-2 animate-in fade-in slide-in-from-top-1 duration-150"
           style={{ willChange: "transform, opacity" }}>
-          <div className="w-full bg-[#121214] border-2 border-zinc-800 rounded-3xl overflow-hidden shadow-2xl p-1.5 space-y-1">
-            <div className="max-h-52 overflow-y-auto space-y-1 custom-scrollbar p-0.5">
+          <div className="w-full bg-[#18181b] rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.85)] p-2 space-y-1.5 border-0">
+            <div className="max-h-56 overflow-y-auto space-y-1 custom-scrollbar p-1">
               {users.map((u) => {
                 const isSelected = u.regNo.toLowerCase() === activeUser.regNo.toLowerCase();
                 const itemLabel = cleanUserString(u.username) || cleanUserString(u.regNo);
@@ -140,35 +129,38 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ users, activeUser, on
                     key={u.regNo}
                     type="button"
                     onClick={() => { onSelect(u); setIsOpen(false); }}
-                    className={`w-full flex items-center justify-between gap-2.5 px-3.5 py-2.5 rounded-2xl transition-all cursor-pointer text-left font-mono ${
+                    className={`w-full flex items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-3.5 rounded-2xl transition-all cursor-pointer text-left font-mono ${
                       isSelected
-                        ? "bg-blue-600 text-white font-bold shadow-sm"
-                        : "text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                        ? "text-white font-bold shadow-md"
+                        : "text-zinc-300 hover:bg-zinc-800/80 hover:text-white"
                     }`}
-                    style={GSF}>
-                    <div className="flex items-center gap-2.5 min-w-0">
+                    style={{
+                      ...GSF,
+                      backgroundColor: isSelected ? "var(--accent-base, #2563eb)" : undefined,
+                    }}>
+                    <div className="flex items-center gap-3 min-w-0">
                       {u.profileImgBase64 ? (
-                        <img src={u.profileImgBase64} alt={itemLabel} className="w-5 h-5 rounded-full object-cover shrink-0" />
+                        <img src={u.profileImgBase64} alt={itemLabel} className="w-6 h-6 rounded-full object-cover shrink-0" />
                       ) : (
-                        <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-zinc-300 shrink-0">
-                          <AccountCircle className="w-3.5 h-3.5" />
+                        <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-zinc-300 shrink-0">
+                          <AccountCircle className="w-4 h-4" />
                         </div>
                       )}
-                      <span className="text-xs truncate">{itemLabel}</span>
+                      <span className="text-xs sm:text-sm truncate">{itemLabel}</span>
                     </div>
-                    {isSelected && <Check className="w-4 h-4 shrink-0 text-white" />}
+                    {isSelected && <Check className="w-5 h-5 shrink-0 text-white" />}
                   </button>
                 );
               })}
             </div>
             {/* Import option as footer */}
-            <div className="border-t border-zinc-800/80 pt-1 mt-1">
+            <div className="border-t border-zinc-800/80 pt-1.5 mt-1">
               <button
                 type="button"
                 onClick={() => { onImport(); setIsOpen(false); }}
-                className="w-full flex items-center gap-2.5 px-3.5 py-2 rounded-2xl text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all cursor-pointer text-xs font-bold text-left"
+                className="w-full flex items-center gap-3 px-4 py-3 sm:px-5 sm:py-3.5 rounded-2xl text-zinc-400 hover:text-white hover:bg-zinc-800/80 transition-all cursor-pointer text-xs font-bold text-left"
                 style={GSF}>
-                <Add className="w-4 h-4 text-blue-400 shrink-0" />
+                <Add className="w-5 h-5 shrink-0" style={{ color: "var(--accent-base, #60a5fa)" }} />
                 <span>Import backup JSON</span>
               </button>
             </div>
@@ -180,9 +172,10 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ users, activeUser, on
 };
 
 /* ── Emblem Star Vector Component ────────────────────────────────────── */
-export const EmblemStar: React.FC<{ type?: "left" | "right"; className?: string }> = ({
+export const EmblemStar: React.FC<{ type?: "left" | "right"; className?: string; style?: React.CSSProperties }> = ({
   type = "left",
-  className = "w-10 h-10 text-blue-400 drop-shadow-md",
+  className = "w-10 h-10 drop-shadow-md",
+  style,
 }) => {
   if (type === "right") {
     return (
@@ -190,6 +183,7 @@ export const EmblemStar: React.FC<{ type?: "left" | "right"; className?: string 
         viewBox="112 110.8 10 9"
         fill="currentColor"
         className={className}
+        style={style}
       >
         <polygon
           points="116.91,117.121 113.45,118.501 114.95,115.311 113.45,112.111 116.91,113.501 120.359,112.111 118.87,115.311 120.359,118.501"
@@ -202,6 +196,7 @@ export const EmblemStar: React.FC<{ type?: "left" | "right"; className?: string 
       viewBox="20 110.8 10 9"
       fill="currentColor"
       className={className}
+      style={style}
     >
       <polygon
         points="24.61,117.121 21.15,118.501 22.66,115.311 21.15,112.111 24.61,113.501 28.07,112.111 26.58,115.311 28.07,118.501"
@@ -279,7 +274,7 @@ const StarPinInput: React.FC<StarPinInputProps> = ({
   return (
     <div
       onClick={handleContainerClick}
-      className={`relative w-full py-8 px-4 flex flex-col items-center justify-center cursor-pointer select-none transition-all duration-200 min-h-[110px] ${
+      className={`relative w-full py-10 px-6 sm:py-12 flex flex-col items-center justify-center cursor-pointer select-none transition-all duration-200 min-h-[130px] ${
         error ? "animate-pin-shake" : ""
       }`}
     >
@@ -307,7 +302,7 @@ const StarPinInput: React.FC<StarPinInputProps> = ({
           </span>
         </div>
       ) : (
-        <div className="flex items-center justify-center gap-6 sm:gap-8 transition-all duration-300">
+        <div className="flex items-center justify-center gap-7 sm:gap-9 transition-all duration-300">
           {Array.from({ length: value.length }).map((_, idx) => {
             const isLeft = idx % 2 === 0;
             return (
@@ -317,9 +312,13 @@ const StarPinInput: React.FC<StarPinInputProps> = ({
               >
                 <EmblemStar
                   type={isLeft ? "left" : "right"}
-                  className={`w-10 h-10 sm:w-12 sm:h-12 transition-all duration-150 ${
-                    error ? "text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.6)]" : "text-blue-400 drop-shadow-[0_0_15px_rgba(96,165,250,0.5)]"
-                  }`}
+                  className="w-11 h-11 sm:w-13 sm:h-13 transition-all duration-150"
+                  style={{
+                    color: error ? "#ef4444" : "var(--accent-base, #60a5fa)",
+                    filter: error
+                      ? "drop-shadow(0 0 15px rgba(239,68,68,0.6))"
+                      : "drop-shadow(0 0 15px var(--accent-base, #60a5fa))",
+                  } as React.CSSProperties}
                 />
               </div>
             );
@@ -768,12 +767,12 @@ const OfflineApp = () => {
   return (
     <div className="min-h-screen w-screen bg-[#09090b] text-[#f8fafc] flex flex-col lg:flex-row overflow-x-hidden selection:bg-blue-600 selection:text-white" style={GSF}>
       {/* Left 50% Column: Form (.container-fluid / #loginBox) */}
-      <div className="w-full lg:w-1/2 min-h-screen flex flex-col justify-center items-center px-6 py-10 lg:px-16 z-10">
-        <div className="w-full max-w-md space-y-6">
+      <div className="w-full lg:w-1/2 min-h-[55vh] lg:min-h-screen flex flex-col justify-center items-center px-4 py-8 sm:px-8 lg:px-16 z-10">
+        <div className="w-full max-w-md space-y-6 mx-auto">
           {/* Header matching login-theme.css .card-header h4 */}
           <div className="text-left space-y-1">
             <h1
-              className="text-5xl font-black lowercase tracking-tighter text-white select-none inline-block cursor-default"
+              className="text-4xl sm:text-5xl font-black lowercase tracking-tighter text-white select-none inline-block cursor-default"
               style={{
                 fontFamily: "'Google Sans Flex', system-ui, sans-serif",
                 fontVariationSettings: '"wdth" 151, "wght" 800, "GRAD" 100, "ROND" 100, "slnt" -10',
@@ -787,7 +786,7 @@ const OfflineApp = () => {
               }}>
               retop
             </h1>
-            <p className="text-slate-400 text-base font-medium" style={GSF}>offline access portal</p>
+            <p className="text-slate-400 text-sm sm:text-base font-medium" style={GSF}>offline access portal</p>
           </div>
 
           {step === "NO_CACHE" && (
@@ -804,12 +803,13 @@ const OfflineApp = () => {
               <div className="flex flex-col gap-3 pt-2">
                 <a
                   href="https://vtop.vit.ac.in/vtop/login"
-                  className="w-full h-10 bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs rounded-full transition-all shadow-md active:scale-98 cursor-pointer flex items-center justify-center gap-2">
+                  className="w-full h-11 bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs rounded-full transition-all shadow-md active:scale-98 cursor-pointer flex items-center justify-center gap-2">
                   Go to VTOP
                 </a>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full h-10 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-full transition-all shadow-md active:scale-98 cursor-pointer flex items-center justify-center gap-2">
+                  className="w-full h-11 text-white font-bold text-xs rounded-full transition-all shadow-md active:scale-98 cursor-pointer flex items-center justify-center gap-2 hover:brightness-110"
+                  style={{ backgroundColor: "var(--accent-base, #2563eb)" }}>
                   <Upload className="w-4 h-4" />
                   <span>Import Backup File</span>
                 </button>
@@ -819,7 +819,7 @@ const OfflineApp = () => {
 
           {/* Step 2: PIN LOCK SCREEN & MULTI-USER SELECTOR */}
           {step === "PIN_LOCK" && activeUser && (
-            <div className="space-y-5">
+            <div className="space-y-6">
               {/* Account Switcher Dropdown */}
               <AccountDropdown
                 users={usersIndex}
@@ -856,16 +856,16 @@ const OfflineApp = () => {
                     <div className="flex items-center justify-center text-xs pt-1">
                       <button
                         onClick={() => setShowForgotPinModal(true)}
-                        className="px-4 py-1.5 rounded-full bg-transparent hover:bg-[#18181b] border border-transparent hover:border-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs font-medium transition-all cursor-pointer"
+                        className="px-5 py-2 rounded-full bg-transparent hover:bg-[#18181b] border border-transparent hover:border-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs font-medium transition-all cursor-pointer"
                         style={GSF}>
                         Forgot PIN?
                       </button>
                     </div>
                   </>
                 ) : (
-                  <div className="bg-[#121214] border-2 border-zinc-800 rounded-3xl p-5 space-y-4 text-center">
+                  <div className="bg-[#18181b] rounded-3xl p-6 space-y-4 text-center border-0 shadow-2xl">
                     <h4 className="text-xs font-bold text-white flex items-center justify-center gap-2 uppercase tracking-wider">
-                      <Key className="w-4 h-4 text-blue-400" />
+                      <Key className="w-4 h-4" style={{ color: "var(--accent-base, #60a5fa)" }} />
                       <span>{hasPinSet ? "Update 4-Digit PIN" : "Setup 4-Digit Offline PIN"}</span>
                     </h4>
                     <p className="text-xs text-zinc-400 text-center">
@@ -878,17 +878,18 @@ const OfflineApp = () => {
                       onChange={setNewPin}
                       onSubmit={handleSaveNewPin}
                       prompt={hasPinSet ? "Enter new PIN" : "Create PIN"} />
-                    <div className="flex gap-2 pt-1">
+                    <div className="flex gap-2.5 pt-1">
                       <button
                         onClick={handleSaveNewPin}
                         disabled={newPin.length !== 4}
-                        className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold text-xs py-2.5 rounded-full transition-all cursor-pointer">
+                        className="flex-1 text-white font-bold text-xs py-3 rounded-full transition-all cursor-pointer hover:brightness-110 disabled:opacity-50"
+                        style={{ backgroundColor: "var(--accent-base, #2563eb)" }}>
                         Save Encrypted PIN
                       </button>
                       {hasPinSet && (
                         <button
                           onClick={() => setIsSettingPin(false)}
-                          className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold text-xs py-2.5 rounded-full border border-zinc-700 transition-all cursor-pointer">
+                          className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold text-xs py-3 rounded-full transition-all cursor-pointer border-0">
                           Cancel
                         </button>
                       )}
@@ -907,15 +908,17 @@ const OfflineApp = () => {
       {/* Right 50% Column: Hero Branding (#vtopOpenPageHeader) */}
       <div
         id="vtopOpenPageHeader"
-        className="w-full lg:w-1/2 min-h-screen border-t lg:border-t-0 lg:border-l-3 border-slate-800 flex flex-col justify-center items-center p-8 relative overflow-hidden order-first lg:order-last z-10">
+        className="w-full lg:w-1/2 min-h-[220px] lg:min-h-screen border-b lg:border-b-0 lg:border-l border-zinc-800/80 flex flex-col justify-center items-center py-10 px-6 sm:px-12 relative overflow-hidden order-first lg:order-last z-10 shrink-0">
         <div className="relative z-10 text-center flex flex-col items-center max-w-sm w-full">
-          <div className="mb-4 flex items-center justify-center p-2 overflow-visible">
-            <VitEmblemLoader size={240} className="overflow-visible" />
+          <div className="mb-3 flex items-center justify-center p-2 text-white">
+            <VitLogo
+              className="h-16 sm:h-20 md:h-24 w-auto max-w-[260px] sm:max-w-[340px] text-white drop-shadow-md"
+            />
           </div>
           <div
-            className="text-[#f8fafc] text-base font-normal mt-1"
-            style={{ fontFamily: "'Google Sans Flex', system-ui, sans-serif" }}>
-            {activeUser?.campus === "chennai" ? "Chennai Campus" : "Vellore Campus"}
+            className="text-[#f8fafc] text-sm sm:text-base tracking-[0.15em] mt-2 uppercase font-bold"
+            style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+            {activeUser?.campus === "chennai" ? "CHENNAI CAMPUS" : "VELLORE CAMPUS"}
           </div>
         </div>
       </div>
@@ -923,13 +926,13 @@ const OfflineApp = () => {
       {/* Exact ASCII Art Wrapper matching login-theme.css */}
       <div
         id="retop-right-footer-wrapper"
+        className="hidden lg:flex"
         style={{
           position: "fixed",
           bottom: 0,
           right: 0,
           width: "100vw",
           height: "100vh",
-          display: "flex",
           flexDirection: "column",
           alignItems: "flex-end",
           justifyContent: "flex-end",

@@ -255,16 +255,15 @@ body {
   width: 280px !important;
   max-width: 80vw !important;
   text-align: center !important;
-  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
-  font-weight: 400 !important;
-  font-variation-settings: "wght" 400 !important;
-  font-size: 0.95rem !important;
+  font-family: "Times New Roman", Times, serif !important;
+  font-weight: 700 !important;
+  font-size: 1rem !important;
+  letter-spacing: 0.15em !important;
   color: var(--text-main) !important;
   margin-top: 0.5rem !important;
-  text-transform: none !important;
+  text-transform: uppercase !important;
   position: relative;
   z-index: 10;
-  letter-spacing: normal !important;
 }
 
 /* Base Header Font Styling */
@@ -798,32 +797,21 @@ input:not(:placeholder-shown) ~ .retop-floating-label {
   font-variation-settings: "wdth" 151, "wght" 800 !important;
 }
 
-/* Global VTOP Loader Replacement (Brutalist Spinner) */
+/* Global VTOP Loader Replacement */
+#processLoader {
+  background-color: color-mix(in srgb, var(--bg-main) 75%, transparent) !important;
+  backdrop-filter: blur(8px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+#processLoader img,
 img[src*="loader" i],
 img[src*="ajax" i],
 img[src*="loading" i],
-img[src*="spinner" i],
-#processLoader img {
-  content: "" !important; /* Hides the native GIF in WebKit */
-  display: inline-block !important;
-  width: 32px !important;
-  height: 32px !important;
-  background-color: var(--accent-base) !important;
-  animation: retop-flip 1.2s infinite ease-in-out !important;
-  border: 2px solid var(--text-main) !important;
-  box-shadow: 3px 3px 0px var(--shadow-main) !important;
-  padding: 0 !important;
-  border-radius: 4px !important;
-}
-
-#processLoader {
-  background-color: color-mix(in srgb, var(--bg-main) 60%, transparent) !important;
-}
-
-@keyframes retop-flip {
-  0% { transform: perspective(120px) rotateX(0deg) rotateY(0deg); }
-  50% { transform: perspective(120px) rotateX(-180.1deg) rotateY(0deg); }
-  100% { transform: perspective(120px) rotateX(-180deg) rotateY(-179.9deg); }
+img[src*="spinner" i] {
+  display: none !important;
 }
 
 /* Footer and ASCII Art Wrapper */

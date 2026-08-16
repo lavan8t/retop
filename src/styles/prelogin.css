@@ -95,12 +95,11 @@ html[data-theme="light"] #vtop-prelogin-logo,
 span.navbar-text,
 .retop-campus-text {
   color: var(--text-main) !important;
-  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
-  font-variation-settings: "wght" 400 !important;
-  font-weight: 400 !important;
+  font-family: "Times New Roman", Times, serif !important;
+  font-weight: 700 !important;
   font-size: 1.05rem !important;
-  text-transform: none !important;
-  letter-spacing: normal !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.15em !important;
   display: inline-block !important;
   vertical-align: middle !important;
   margin-left: 14px !important;

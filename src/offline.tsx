@@ -7,6 +7,8 @@ import {
   Upload,
   Key,
   CheckCircle,
+  Check,
+  KeyboardArrowDown,
   Error as ErrorIcon,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { renderDashboard } from "./pages/app";
@@ -52,6 +54,11 @@ const GSF_MONO: React.CSSProperties = {
   letterSpacing: "0.3em",
 };
 
+export const cleanUserString = (str?: string) => {
+  if (!str) return "";
+  return str.replace(/\s*\(offline\)/gi, "").replace(/\)+$/, "").trim();
+};
+
 export interface CachedUser {
   regNo: string;
   username?: string;
@@ -61,7 +68,7 @@ export interface CachedUser {
   campus?: "vellore" | "chennai";
 }
 
-/* ── Account Switcher Dropdown (semester-dropdown style) ─────────────── */
+/* ── Account Switcher Dropdown (retop custom dropdown style) ─────────────── */
 interface AccountDropdownProps {
   users: CachedUser[];
   activeUser: CachedUser;
@@ -73,8 +80,7 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ users, activeUser, on
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const activeLabel = activeUser.username || activeUser.regNo;
-  const activeCampus = activeUser.campus === "chennai" ? "Chennai" : "Vellore";
+  const activeLabel = cleanUserString(activeUser.username) || cleanUserString(activeUser.regNo);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -98,89 +104,72 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ users, activeUser, on
 
   return (
     <div ref={containerRef} className="relative w-full max-w-[280px] mx-auto">
-      {/* Trigger button — shows active username & campus */}
+      {/* Trigger button — fully rounded custom dropdown pill */}
       <button
         type="button"
         onClick={() => setIsOpen((o) => !o)}
-        className="w-full flex items-center gap-2.5 bg-[#18181b] border border-slate-800 hover:border-slate-700 rounded-xl px-3 py-2 transition-colors cursor-pointer group"
+        className="w-full flex items-center justify-between gap-2.5 bg-[#121214] border border-zinc-800 hover:border-zinc-700 rounded-full px-4 py-2.5 transition-all cursor-pointer group shadow-md"
         style={GSF}>
-        {activeUser.profileImgBase64 ? (
-          <img src={activeUser.profileImgBase64} alt={activeLabel} className="w-5 h-5 rounded-full object-cover border border-blue-500/50 shrink-0" />
-        ) : (
-          <div className="w-5 h-5 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
-            <AccountCircle className="w-3.5 h-3.5" />
-          </div>
-        )}
-        <div className="flex-1 text-left min-w-0 flex items-center gap-1.5">
-          <div className="text-xs font-bold text-white leading-snug truncate" style={GSF}>{activeLabel}</div>
-          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 shrink-0">
-            {activeCampus}
-          </span>
+        <div className="flex items-center gap-2.5 min-w-0">
+          {activeUser.profileImgBase64 ? (
+            <img src={activeUser.profileImgBase64} alt={activeLabel} className="w-5 h-5 rounded-full object-cover border border-blue-500/40 shrink-0" />
+          ) : (
+            <div className="w-5 h-5 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
+              <AccountCircle className="w-3.5 h-3.5" />
+            </div>
+          )}
+          <span className="text-xs font-bold text-white font-mono leading-none truncate" style={GSF}>{activeLabel}</span>
         </div>
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={`shrink-0 text-slate-400 transition-transform duration-100 ${isOpen ? "rotate-180 text-white" : ""}`}>
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
+        <KeyboardArrowDown
+          className={`w-4 h-4 text-blue-400 shrink-0 transition-transform duration-150 ${isOpen ? "rotate-180 text-white" : ""}`}
+        />
       </button>
 
-      {/* Dropdown menu — pure CSS smooth transition */}
+      {/* Dropdown menu — custom rounded-3xl container */}
       {isOpen && (
         <div
-          className="absolute z-50 left-0 right-0 top-full pt-1.5 animate-in fade-in slide-in-from-top-1 duration-100"
+          className="absolute z-50 left-0 right-0 top-full pt-2 animate-in fade-in slide-in-from-top-1 duration-100"
           style={{ willChange: "transform, opacity" }}>
-          <div className="w-full bg-[#18181b] border border-slate-800 rounded-xl overflow-hidden shadow-2xl p-1 space-y-0.5">
-            <div className="max-h-52 overflow-y-auto space-y-0.5">
+          <div className="w-full bg-[#121214] border-2 border-zinc-800 rounded-3xl overflow-hidden shadow-2xl p-1.5 space-y-1">
+            <div className="max-h-52 overflow-y-auto space-y-1 custom-scrollbar p-0.5">
               {users.map((u) => {
-                const isSelected = u.regNo === activeUser.regNo;
-                const itemLabel = u.username || u.regNo;
-                const itemCampus = u.campus === "chennai" ? "Chennai" : "Vellore";
+                const isSelected = u.regNo.toLowerCase() === activeUser.regNo.toLowerCase();
+                const itemLabel = cleanUserString(u.username) || cleanUserString(u.regNo);
                 return (
                   <button
                     key={u.regNo}
                     type="button"
                     onClick={() => { onSelect(u); setIsOpen(false); }}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors cursor-pointer text-left ${
+                    className={`w-full flex items-center justify-between gap-2.5 px-3.5 py-2.5 rounded-2xl transition-all cursor-pointer text-left font-mono ${
                       isSelected
-                        ? "bg-blue-600 text-white font-bold"
-                        : "text-slate-300 hover:bg-[#27272a] hover:text-white"
+                        ? "bg-blue-600 text-white font-bold shadow-sm"
+                        : "text-zinc-300 hover:bg-zinc-800 hover:text-white"
                     }`}
                     style={GSF}>
-                    {u.profileImgBase64 ? (
-                      <img src={u.profileImgBase64} alt={itemLabel} className="w-5 h-5 rounded-full object-cover shrink-0" />
-                    ) : (
-                      <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-slate-300 shrink-0">
-                        <AccountCircle className="w-3.5 h-3.5" />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0 flex items-center justify-between gap-1">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      {u.profileImgBase64 ? (
+                        <img src={u.profileImgBase64} alt={itemLabel} className="w-5 h-5 rounded-full object-cover shrink-0" />
+                      ) : (
+                        <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-zinc-300 shrink-0">
+                          <AccountCircle className="w-3.5 h-3.5" />
+                        </div>
+                      )}
                       <span className="text-xs truncate">{itemLabel}</span>
-                      <span className={`text-[8px] font-bold uppercase tracking-wider px-1 py-0.2 rounded ${
-                        isSelected ? "bg-white/20 text-white" : "bg-blue-500/10 text-blue-400"
-                      }`}>
-                        {itemCampus}
-                      </span>
                     </div>
+                    {isSelected && <Check className="w-4 h-4 shrink-0 text-white" />}
                   </button>
                 );
               })}
             </div>
             {/* Import option as footer */}
-            <div className="border-t border-slate-800/80 pt-1">
+            <div className="border-t border-zinc-800/80 pt-1 mt-1">
               <button
                 type="button"
                 onClick={() => { onImport(); setIsOpen(false); }}
-                className="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#27272a] transition-colors cursor-pointer text-xs text-left"
+                className="w-full flex items-center gap-2.5 px-3.5 py-2 rounded-2xl text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all cursor-pointer text-xs font-bold text-left"
                 style={GSF}>
-                <Add className="w-4 h-4 shrink-0" />
-                <span className="font-bold">Import backup JSON</span>
+                <Add className="w-4 h-4 text-blue-400 shrink-0" />
+                <span>Import backup JSON</span>
               </button>
             </div>
           </div>
@@ -573,6 +562,31 @@ const OfflineApp = () => {
       }
     }
 
+    // Sanitize and deduplicate cached users by clean registration number
+    const cleanUsersMap = new Map<string, CachedUser>();
+    for (const rawUser of users) {
+      const regNo = cleanUserString(rawUser.regNo);
+      if (!regNo) continue;
+      const key = regNo.toUpperCase();
+      const existing = cleanUsersMap.get(key);
+      const username = cleanUserString(rawUser.username) || regNo;
+      const name = cleanUserString(rawUser.name) || existing?.name || "Student";
+      const profileImgBase64 = rawUser.profileImgBase64 || existing?.profileImgBase64 || "";
+      const lastActive = Math.max(rawUser.lastActive || 0, existing?.lastActive || 0);
+
+      cleanUsersMap.set(key, {
+        regNo,
+        username,
+        name,
+        profileImgBase64,
+        lastActive,
+      });
+    }
+    users = Array.from(cleanUsersMap.values());
+    if (users.length > 0) {
+      idbSet("retop_cached_users", users).catch(() => {});
+    }
+
     setUsersIndex(users);
 
     if (users.length === 0) {
@@ -699,7 +713,7 @@ const OfflineApp = () => {
 
     const header = document.createElement("div");
     header.className = "navbar-text text-light small fw-bold";
-    header.textContent = `${user.regNo} (Offline) - ${user.name || "Offline"} )`;
+    header.textContent = `${user.regNo} - ${user.name || "Student"}`;
     document.body.appendChild(header);
 
     if (user.profileImgBase64) {

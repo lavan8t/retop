@@ -577,29 +577,44 @@ const DashboardApp = () => {
     
     // Cache for offline mode across IndexedDB and localStorage strictly scoped by regNo
     getStorageData(["retop_cached_users", `${userProfile.regNo}_profileImage`]).then((res: Record<string, any>) => {
-      let users: any[] = res.retop_cached_users || [];
-      const existingIdx = users.findIndex((u: any) => u.regNo === userProfile.regNo);
-      const userCachedImg = res[`${userProfile.regNo}_profileImage`] || (existingIdx >= 0 ? users[existingIdx].profileImgBase64 : "");
+      const rawUsers: any[] = res.retop_cached_users || [];
+      const cleanReg = (r?: string) => (r || "").replace(/\s*\(offline\)/gi, "").trim();
+      const cleanUsersMap = new Map<string, any>();
+      for (const u of rawUsers) {
+        const cr = cleanReg(u.regNo);
+        if (!cr) continue;
+        const key = cr.toUpperCase();
+        const existing = cleanUsersMap.get(key);
+        cleanUsersMap.set(key, {
+          ...u,
+          regNo: cr,
+          username: cleanReg(u.username) || cr,
+          name: cleanReg(u.name) || existing?.name || "Student",
+          lastActive: Math.max(u.lastActive || 0, existing?.lastActive || 0),
+        });
+      }
+
+      const currentReg = cleanReg(userProfile.regNo);
+      const existingUser = cleanUsersMap.get(currentReg.toUpperCase());
+      const userCachedImg = res[`${currentReg}_profileImage`] || existingUser?.profileImgBase64 || "";
 
       const updatedUser = {
-        regNo: userProfile.regNo,
-        username: userProfile.regNo,
-        name: userProfile.name || (existingIdx >= 0 ? users[existingIdx].name : "Student"),
+        regNo: currentReg,
+        username: currentReg,
+        name: cleanReg(userProfile.name) || existingUser?.name || "Student",
         profileImgBase64: userProfile.profileImgBase64 || userCachedImg || "",
         lastActive: Date.now(),
         campus,
       };
-      if (existingIdx >= 0) {
-        users[existingIdx] = updatedUser;
-      } else {
-        users.push(updatedUser);
-      }
+      cleanUsersMap.set(currentReg.toUpperCase(), updatedUser);
+      const users = Array.from(cleanUsersMap.values());
+
       setStorageData({
-        retop_lastAuthId: userProfile.regNo,
-        retop_lastName: userProfile.name,
-        [`${userProfile.regNo}_profileImage`]: updatedUser.profileImgBase64,
+        retop_lastAuthId: currentReg,
+        retop_lastName: updatedUser.name,
+        [`${currentReg}_profileImage`]: updatedUser.profileImgBase64,
         retop_profileImage: updatedUser.profileImgBase64,
-        retop_active_user: userProfile.regNo,
+        retop_active_user: currentReg,
         retop_last_campus: campus,
         retop_cached_users: users,
       });

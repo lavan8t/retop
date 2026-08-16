@@ -330,13 +330,15 @@ export function scrapeUserProfile(doc: Document) {
     doc.querySelector("#navbarDropdown .navbar-text")?.textContent?.trim() ||
     "";
 
-  // Clean tags like "(STUDENT)", "(FACULTY)", "(PARENT)"
-  const clean = navText.replace(/\(STUDENT\)|\(FACULTY\)|\(PARENT\)|\(EMPLOYEE\)|\(ALUMNI\)/gi, "").trim();
+  // Clean tags like "(STUDENT)", "(FACULTY)", "(PARENT)", "(OFFLINE)"
+  const clean = navText.replace(/\(STUDENT\)|\(FACULTY\)|\(PARENT\)|\(EMPLOYEE\)|\(ALUMNI\)|\(OFFLINE\)/gi, "").trim();
   const parts = clean.split("-").map((s) => s.trim()).filter(Boolean);
 
   const authInput = (doc.getElementById("authorizedIDX") as HTMLInputElement)?.value;
-  const regNo = parts[0] || authInput || "Student";
-  const name = parts[1] || regNo;
+  const rawRegNo = parts[0] || authInput || "Student";
+  const regNo = rawRegNo.replace(/\s*\(offline\)/gi, "").trim();
+  const rawName = parts[1] || regNo;
+  const name = rawName.replace(/\s*\(offline\)/gi, "").replace(/\)+$/, "").trim();
 
   const isChennai =
     (typeof window !== "undefined" && window.location.hostname.includes("vtopcc")) ||

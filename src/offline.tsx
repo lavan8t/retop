@@ -17,7 +17,9 @@ import { asciiArtTT, asciiArtSMV, asciiArtMGR, asciiArtCC } from "./components/a
 import { getExtUrl } from "./utils/url";
 import { applyTheme } from "./utils/settings-store";
 import { GlobalOverflowTooltip } from "./components/ui/Tooltip";
-import { clear as idbClear } from "idb-keyval";
+import { VitEmblemLoader } from "./components/common/VitEmblemLoader";
+import { ErrorBoundary } from "./components/common/ErrorBoundary";
+import { clear as idbClear, set as idbSet } from "idb-keyval";
 
 
 // Resolve asset paths for both ext (chrome-extension://) and web contexts
@@ -32,14 +34,10 @@ const getAssetUrl = (path: string): string => {
 
 const VIT_LOGO_URL = getAssetUrl("/assets/vitLogo.svg");
 
-// Pick ASCII art deterministically per session
 const pickAsciiArt = (): { art: string; type: string } => {
   const isChennai = typeof window !== "undefined" && window.location.hostname.includes("vtopcc");
   const artTypes = isChennai ? (["CC"] as const) : (["TT", "SMV", "MGR", "CC"] as const);
-  const last = localStorage.getItem("retop_last_ascii_art") || "";
-  const available = artTypes.filter((t) => t !== last);
-  const picked = available.length ? available[Math.floor(Math.random() * available.length)] : artTypes[0];
-  localStorage.setItem("retop_last_ascii_art", picked);
+  const picked = artTypes[Math.floor(Math.random() * artTypes.length)];
   const artMap: Record<string, string> = { TT: asciiArtTT, SMV: asciiArtSMV, MGR: asciiArtMGR, CC: asciiArtCC.trim() ? asciiArtCC : asciiArtTT };
   return { art: (artMap[picked] || asciiArtTT).replace(/\r/g, ""), type: picked };
 };
@@ -115,7 +113,7 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ users, activeUser, on
         )}
         <div className="flex-1 text-left min-w-0 flex items-center gap-1.5">
           <div className="text-xs font-bold text-white leading-snug truncate" style={GSF}>{activeLabel}</div>
-          <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 shrink-0">
+          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 shrink-0">
             {activeCampus}
           </span>
         </div>
@@ -478,26 +476,6 @@ const OfflineApp = () => {
   }, [step, activeUser]);
 
   const loadCachedProfiles = async () => {
-    // Wait for webBridge to sync IndexedDB → localStorage before reading
-    await new Promise<void>((resolve) => {
-      if (typeof window === "undefined") return resolve();
-      // Already synced (flag set by webBridge.ts after first sync)
-      if (localStorage.getItem("__RETOP_EXT_PRESENT__") === "true") return resolve();
-
-      const onSync = (e: MessageEvent) => {
-        if (e.data?.type === "RETOP_EXT_SYNC_COMPLETE") {
-          window.removeEventListener("message", onSync);
-          clearTimeout(timer);
-          resolve();
-        }
-      };
-      window.addEventListener("message", onSync);
-      const timer = setTimeout(() => {
-        window.removeEventListener("message", onSync);
-        resolve();
-      }, 1000);
-    });
-
     const res = await getStorageData([
       "retop_cached_users",
       "retop_lastAuthId",
@@ -546,6 +524,53 @@ const OfflineApp = () => {
         ...u,
         username: u.username || (u.regNo === lastAuthId ? savedUsername : u.regNo),
       }));
+    }
+
+    // Comprehensive IndexedDB fallback scan if users list is still empty
+    if (users.length === 0) {
+      try {
+        const { getAllStorageData } = await import("./utils/storageAdapter");
+        const allData = await getAllStorageData();
+        const portalData = allData["portal-app-storage"]?.state?.data || allData["portal-app-storage"]?.data;
+        if (portalData?.user?.regNo) {
+          const u = portalData.user;
+          users.push({
+            regNo: u.regNo,
+            username: u.regNo,
+            name: u.name || "Student",
+            profileImgBase64: u.profileImgBase64 || "",
+            lastActive: Date.now(),
+            campus: u.campus || "vellore",
+          });
+        } else if (allData["retop_lastAuthId"]) {
+          users.push({
+            regNo: allData["retop_lastAuthId"],
+            username: allData["retop-saved-username"] || allData["retop_lastAuthId"],
+            name: allData["retop_lastName"] || "Student",
+            profileImgBase64: allData["retop_profileImage"] || "",
+            lastActive: Date.now(),
+          });
+        } else {
+          // Scan for any cached user keys like "21BCE0001_dashboard_stats"
+          for (const k of Object.keys(allData)) {
+            const cleanKey = k.replace(/^retop_cache_/, "");
+            const match = cleanKey.match(/^([A-Za-z0-9]{8,12})_/);
+            if (match && match[1] && !match[1].toLowerCase().startsWith("retop")) {
+              const reg = match[1];
+              if (!users.some((u) => u.regNo.toLowerCase() === reg.toLowerCase())) {
+                users.push({
+                  regNo: reg,
+                  username: reg,
+                  name: "Student",
+                  lastActive: Date.now(),
+                });
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("[retop] Storage recovery scan failed", e);
+      }
     }
 
     setUsersIndex(users);
@@ -660,6 +685,9 @@ const OfflineApp = () => {
       localStorage.setItem("retop_lastAuthId", user.regNo);
       if (user.name) localStorage.setItem("retop_lastName", user.name);
       if (user.profileImgBase64) localStorage.setItem("retop_profileImage", user.profileImgBase64);
+      idbSet("retop_lastAuthId", user.regNo).catch(() => {});
+      idbSet("retop_active_user", user.regNo).catch(() => {});
+      if (user.profileImgBase64) idbSet(`${user.regNo}_profileImage`, user.profileImgBase64).catch(() => {});
     } catch (e) {}
 
     document.body.replaceChildren();
@@ -691,14 +719,7 @@ const OfflineApp = () => {
   if (step === "LOADING") {
     return (
       <div className="h-screen w-screen bg-[#09090b] flex flex-col items-center justify-center text-white" style={GSF}>
-        <h1 
-          className="text-5xl md:text-6xl font-black lowercase tracking-tighter text-white select-none inline-block cursor-default"
-          style={{
-            fontFamily: "'Google Sans Flex', system-ui, sans-serif",
-            fontVariationSettings: '"wdth" 75, "wght" 1000'
-          }}>
-          retop
-        </h1>
+        <VitEmblemLoader size={72} className="text-(--accent-base)" />
       </div>
     );
   }
@@ -849,15 +870,13 @@ const OfflineApp = () => {
         id="vtopOpenPageHeader"
         className="w-full lg:w-1/2 min-h-screen border-t lg:border-t-0 lg:border-l-3 border-slate-800 flex flex-col justify-center items-center p-8 relative overflow-hidden order-first lg:order-last z-10">
         <div className="relative z-10 text-center flex flex-col items-center max-w-sm w-full">
-          <img
-            src="/assets/vitLogo.svg"
-            className="VITEmblem w-48 max-w-[70vw] h-auto mb-3"
-            style={{ filter: "brightness(0) invert(1)" }}
-            alt="VIT Emblem" />
+          <div className="mb-4 flex items-center justify-center p-2 overflow-visible">
+            <VitEmblemLoader size={240} className="overflow-visible" />
+          </div>
           <div
-            className="text-[#f8fafc] text-base font-bold uppercase mt-1"
-            style={{ fontFamily: "'Times New Roman', serif" }}>
-            {activeUser?.campus === "chennai" ? "CHENNAI CAMPUS" : "VELLORE CAMPUS"}
+            className="text-[#f8fafc] text-base font-normal mt-1"
+            style={{ fontFamily: "'Google Sans Flex', system-ui, sans-serif" }}>
+            {activeUser?.campus === "chennai" ? "Chennai Campus" : "Vellore Campus"}
           </div>
         </div>
       </div>
@@ -929,7 +948,11 @@ export const initializeOfflineMode = () => {
   container.id = "offline-root";
   document.body.appendChild(container);
   const root = createRoot(container);
-  root.render(<OfflineApp />);
+  root.render(
+    <ErrorBoundary>
+      <OfflineApp />
+    </ErrorBoundary>
+  );
 };
 
 // Auto-initialize when loaded as a standalone script (injected by webBridge)

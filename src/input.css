@@ -6,105 +6,124 @@
   --font-sans: "Google Sans Flex", system-ui, sans-serif;
   --font-expanded: "Google Sans Flex", system-ui, sans-serif;
   
-  /* Unified Animation Timings */
-  --duration-fast: 100ms;
-  --duration-normal: 200ms;
-  --duration-slow: 350ms;
-  --duration-instant: 50ms;
-  --duration-host: 500ms;
-  --duration-dramatic: 400ms;
+  /* Unified Snappy Animation Timings & Physics */
+  --duration-instant: calc(50ms * var(--anim-scale, 1));
+  --duration-fast: calc(100ms * var(--anim-scale, 1));
+  --duration-normal: calc(150ms * var(--anim-scale, 1));
+  --duration-slow: calc(250ms * var(--anim-scale, 1));
+  --duration-dramatic: calc(300ms * var(--anim-scale, 1));
+  --duration-host: calc(400ms * var(--anim-scale, 1));
   --duration-marquee: 12s;
   --duration-progress: 1.5s;
-  --duration-icon-hover: 700ms;
-  --duration-icon-action: 500ms;
-  --duration-font-var: 150ms;
-  --duration-scrollbar: 200ms;
-  --duration-shadow: 100ms;
-  --easing-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-icon-hover: calc(300ms * var(--anim-scale, 1));
+  --duration-icon-action: calc(200ms * var(--anim-scale, 1));
+  --duration-font-var: calc(100ms * var(--anim-scale, 1));
+  --duration-scrollbar: calc(150ms * var(--anim-scale, 1));
+  --duration-shadow: calc(100ms * var(--anim-scale, 1));
+  --easing-snappy: cubic-bezier(0.16, 1, 0.3, 1);
+  --easing-standard: cubic-bezier(0.2, 0, 0, 1);
   --easing-overshoot: cubic-bezier(0.34, 1.56, 0.64, 1);
   --easing-decelerate: cubic-bezier(0, 0, 0.2, 1);
 }
 
 @keyframes pageCrossfade {
-  from {
+  0% {
     opacity: 0;
-    transform: scale(0.995);
+    transform: scale(0.99) translateZ(0);
   }
-  to {
+  100% {
     opacity: 1;
-    transform: scale(1);
+    transform: scale(1) translateZ(0);
   }
 }
 
 .animate-page-crossfade {
-  animation: pageCrossfade 150ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: pageCrossfade var(--duration-fast, 100ms) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
 }
 
 @keyframes popupOpen {
-  from {
+  0% {
     opacity: 0;
-    transform: scale(0.96) translateY(-4px);
+    transform: scale(0.94) translateY(-4px) translateZ(0);
   }
-  to {
+  70% {
+    transform: scale(1.015) translateY(0) translateZ(0);
+  }
+  100% {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: scale(1) translateY(0) translateZ(0);
   }
 }
 
 .animate-popup-open {
-  animation: popupOpen 150ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: popupOpen var(--duration-normal, 140ms) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
 }
 
 @keyframes sheetSlideUp {
-  from {
-    transform: translateY(100%);
+  0% {
+    transform: translateY(100%) translateZ(0);
   }
-  to {
-    transform: translateY(0);
+  75% {
+    transform: translateY(-2px) translateZ(0);
+  }
+  100% {
+    transform: translateY(0) translateZ(0);
   }
 }
 
 @keyframes sheetSlideDown {
-  from {
-    transform: translateY(0);
+  0% {
+    transform: translateY(0) translateZ(0);
   }
-  to {
-    transform: translateY(100%);
+  100% {
+    transform: translateY(100%) translateZ(0);
   }
 }
 
 @keyframes backdropFadeIn {
-  from {
+  0% {
     opacity: 0;
   }
-  to {
+  100% {
     opacity: 1;
   }
 }
 
 @keyframes backdropFadeOut {
-  from {
+  0% {
     opacity: 1;
   }
-  to {
+  100% {
     opacity: 0;
   }
 }
 
 .animate-sheet-up {
-  animation: sheetSlideUp 150ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: sheetSlideUp var(--duration-normal, 150ms) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform;
 }
 
 .animate-sheet-down {
-  animation: sheetSlideDown 150ms cubic-bezier(0.4, 0, 1, 1) forwards;
+  animation: sheetSlideDown var(--duration-fast, 100ms) cubic-bezier(0.4, 0, 1, 1) forwards;
+  will-change: transform;
 }
 
 .animate-fade-in-150 {
-  animation: backdropFadeIn 150ms ease-out forwards;
+  animation: backdropFadeIn var(--duration-normal, 150ms) ease-out forwards;
 }
 
 .animate-fade-out-150 {
-  animation: backdropFadeOut 150ms ease-in forwards;
+  animation: backdropFadeOut var(--duration-fast, 100ms) ease-in forwards;
+}
+
+/* Fast Spring Press Interactions */
+.press-spring,
+button:not(:disabled):active,
+a:active,
+[role="button"]:active {
+  transition: transform var(--duration-instant, 50ms) cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .cgpa-expand-container {
@@ -303,6 +322,260 @@
   --card-yellow: #d97706;
   --card-blue: #2563eb;
   --card-red: #dc2626;
+}
+
+/* VIT Emblem Constant Theme Color (Solid White in dark/amoled, Solid Black in light) */
+.vit-emblem-loader,
+.vit-emblem-splash {
+  color: #000000;
+  opacity: 1 !important;
+  overflow: visible !important;
+}
+.vit-emblem-loader svg,
+.vit-emblem-splash svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible !important;
+}
+.vit-emblem-loader svg path,
+.vit-emblem-loader svg polygon,
+.vit-emblem-loader svg g,
+.vit-emblem-splash svg path,
+.vit-emblem-splash svg polygon,
+.vit-emblem-splash svg g {
+  fill: currentColor;
+}
+[data-theme="dark"] .vit-emblem-loader,
+[data-theme="amoled"] .vit-emblem-loader,
+[data-theme="dark"] .vit-emblem-splash,
+[data-theme="amoled"] .vit-emblem-splash,
+.dark .vit-emblem-loader,
+.dark .vit-emblem-splash {
+  color: #ffffff !important;
+}
+[data-theme="light"] .vit-emblem-loader,
+[data-theme="light"] .vit-emblem-splash {
+  color: #000000 !important;
+}
+
+/* ============================================================
+   VIT SEAL INSTITUTIONAL PURE CSS ENTRANCE ANIMATION (1.8s)
+   - Plays once (forwards)
+   - Zero rotation, zero scaling, zero pulsing, zero 3D transforms
+   - Pure opacity, translateY, and stroke-dash reveal
+   ============================================================ */
+
+/* 1. Ribbon and Tamil Motto rise together FIRST */
+.vit-emblem-loader svg #moto_ribbon,
+.vit-emblem-splash svg #moto_ribbon,
+.vit-emblem-loader svg #moto_tamil_text,
+.vit-emblem-splash svg #moto_tamil_text,
+.vit-emblem-loader svg #moto-ribbon,
+.vit-emblem-splash svg #moto-ribbon,
+.vit-emblem-loader svg #moto-tamil-text,
+.vit-emblem-splash svg #moto-tamil-text {
+  opacity: 0;
+  transform-box: fill-box;
+  transform: translateY(25px);
+  animation: vit-ribbon-rise 0.25s cubic-bezier(0.16, 1, 0.3, 1) 0s both;
+}
+
+/* 2. Outer Circle draws stroke */
+.vit-emblem-loader svg #outer_circle,
+.vit-emblem-splash svg #outer_circle,
+.vit-emblem-loader svg #outer-circle,
+.vit-emblem-splash svg #outer-circle {
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 1.8px !important;
+  stroke-dasharray: 460;
+  stroke-dashoffset: 460;
+  animation: vit-draw-outer 0.30s ease-out 0.25s both;
+}
+
+/* 3. Inner Circle draws stroke */
+.vit-emblem-loader svg #inner_circle,
+.vit-emblem-splash svg #inner_circle,
+.vit-emblem-loader svg #inner-circle,
+.vit-emblem-splash svg #inner-circle {
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 1.8px !important;
+  stroke-dasharray: 360;
+  stroke-dashoffset: 360;
+  animation: vit-draw-inner 0.30s ease-out 0.40s both;
+}
+
+/* 4. Fort rises inside masked inner circle */
+.vit-emblem-loader svg #fort,
+.vit-emblem-splash svg #fort {
+  transform-box: fill-box;
+  transform: translateY(105px);
+  animation: vit-fort-rise 0.50s cubic-bezier(0.16, 1, 0.3, 1) 0.60s both;
+}
+
+/* 5. VIT center drops down */
+.vit-emblem-loader svg #vit_center,
+.vit-emblem-splash svg #vit_center,
+.vit-emblem-loader svg #vit-center,
+.vit-emblem-splash svg #vit-center {
+  opacity: 0;
+  transform-box: fill-box;
+  transform: translateY(-35px);
+  animation: vit-text-drop 0.22s cubic-bezier(0.16, 1, 0.3, 1) 0.75s both;
+}
+
+/* 6. Landscape lines rise */
+.vit-emblem-loader svg #left_lines,
+.vit-emblem-splash svg #left_lines,
+.vit-emblem-loader svg #right_lines,
+.vit-emblem-splash svg #right_lines,
+.vit-emblem-loader svg #left-lines,
+.vit-emblem-splash svg #right-lines {
+  opacity: 0;
+  transform-box: fill-box;
+  transform: translateY(20px);
+  animation: vit-lines-rise 0.25s cubic-bezier(0.16, 1, 0.3, 1) 0.95s both;
+}
+
+/* 7. Institute Circle Text appears */
+.vit-emblem-loader svg #vellore_insititute_of_technology_circle_text,
+.vit-emblem-splash svg #vellore_insititute_of_technology_circle_text,
+.vit-emblem-loader svg #institute_name,
+.vit-emblem-splash svg #institute_name,
+.vit-emblem-loader svg #institute-name,
+.vit-emblem-splash svg #institute-name {
+  opacity: 0;
+  animation: vit-institute-fade 0.25s ease-out 1.15s both;
+}
+
+/* 8. Stars stamp in as the final element, then rotate continuously */
+.vit-emblem-loader svg #left_star,
+.vit-emblem-splash svg #left_star,
+.vit-emblem-loader svg #left-star,
+.vit-emblem-splash svg #left-star {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  will-change: transform;
+  animation:
+    vit-left-star-stamp 0.24s cubic-bezier(0.12, 0.9, 0.2, 1) 1.35s forwards,
+    vit-spin-cw 6s linear 1.59s infinite;
+}
+
+.vit-emblem-loader svg #right_star,
+.vit-emblem-splash svg #right_star,
+.vit-emblem-loader svg #right-star,
+.vit-emblem-splash svg #right-star {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  will-change: transform;
+  animation:
+    vit-right-star-stamp 0.24s cubic-bezier(0.12, 0.9, 0.2, 1) 1.50s forwards,
+    vit-spin-ccw 6s linear 1.74s infinite;
+}
+
+@keyframes vit-spin-cw {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes vit-spin-ccw {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+
+/* --- KEYFRAMES --- */
+@keyframes vit-draw-outer {
+  from { stroke-dashoffset: 460; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes vit-draw-inner {
+  from { stroke-dashoffset: 360; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes vit-fort-rise {
+  from {
+    transform: translateY(105px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes vit-text-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-35px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes vit-lines-rise {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes vit-left-star-stamp {
+  0% {
+    opacity: 1;
+    transform: translate(-35px, -15px) scale(3.8);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+@keyframes vit-right-star-stamp {
+  0% {
+    opacity: 1;
+    transform: translate(35px, -15px) scale(3.8);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+@keyframes vit-ribbon-rise {
+  from {
+    opacity: 0;
+    transform: translateY(25px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes vit-motto-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes vit-institute-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* --- 3. FONTS --- */
@@ -632,4 +905,3 @@
   padding-top: 10rem;
   opacity: 0.5;
 }
-

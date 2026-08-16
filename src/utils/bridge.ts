@@ -1,4 +1,5 @@
 import { getExtUrl } from "./url";
+import { VIT_EMBLEM_SVG_RAW } from "../components/common/VitEmblemSvg";
 
 let isInitialized = false;
 let shadowRoot: ShadowRoot | null = null;
@@ -194,7 +195,7 @@ export function injectSplashScreen() {
         opacity: 0 !important;
         visibility: hidden !important;
       }
-      /* Branded loader overlay attached to html */
+      /* Emblem loader overlay attached to html */
       #retop-open-loader {
         position: fixed !important;
         inset: 0 !important;
@@ -204,29 +205,16 @@ export function injectSplashScreen() {
         justify-content: center !important;
         flex-direction: column !important;
         background: #09090b !important;
-        font-family: "Google Sans Flex", system-ui, sans-serif !important;
         visibility: visible !important;
         opacity: 1 !important;
-        transition: opacity var(--duration-slow, 0.3s) ease !important;
+        transition: opacity 150ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+        pointer-events: none !important;
       }
-      #retop-open-loader .retop-brand,
-      #retop-open-loader .retop-about-logo {
-        display: inline-block !important;
-        font-family: "Google Sans Flex", var(--font-expanded, sans-serif) !important;
-        font-size: 3.5rem !important;
-        letter-spacing: -0.04em !important;
-        color: #f8fafc !important;
-        text-transform: lowercase !important;
-        transform: skewX(-10deg) !important;
-        animation: retop-logo-bounce 1.2s ease-in-out infinite alternate !important;
-      }
-      @keyframes retop-logo-bounce {
-        0% {
-          font-variation-settings: "wdth" 125, "wght" 900, "ROND" 100, "slnt" -10;
-        }
-        100% {
-          font-variation-settings: "wdth" 125, "wght" 1, "ROND" 100, "slnt" -10;
-        }
+      #retop-open-loader .vit-emblem-splash {
+        width: 72px !important;
+        height: 72px !important;
+        pointer-events: none !important;
+        user-select: none !important;
       }
     `;
     (document.head || document.documentElement).appendChild(earlyStyle);
@@ -234,10 +222,7 @@ export function injectSplashScreen() {
 
   const loader = document.createElement("div");
   loader.id = "retop-open-loader";
-  const brandDiv = document.createElement("div");
-  brandDiv.className = "retop-brand retop-about-logo";
-  brandDiv.textContent = "retop";
-  loader.appendChild(brandDiv);
+  loader.innerHTML = `<div class="vit-emblem-splash" style="width:72px;height:72px;display:flex;align-items:center;justify-content:center;">${VIT_EMBLEM_SVG_RAW}</div>`;
   document.documentElement.appendChild(loader);
 }
 
@@ -254,7 +239,7 @@ export function removeSplashScreen() {
         document.body.style.opacity = "1";
         document.body.style.visibility = "visible";
       }
-    }, 300);
+    }, 150);
   } else {
     if (cloak) cloak.remove();
     if (document.body) {

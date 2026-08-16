@@ -179,130 +179,153 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ users, activeUser, on
   );
 };
 
-/* ── 4-Digit Discrete Box PIN Input Component ────────────────────────── */
-interface PinBoxesProps {
+/* ── Emblem Star Vector Component ────────────────────────────────────── */
+export const EmblemStar: React.FC<{ type?: "left" | "right"; className?: string }> = ({
+  type = "left",
+  className = "w-10 h-10 text-blue-400 drop-shadow-md",
+}) => {
+  if (type === "right") {
+    return (
+      <svg
+        viewBox="112 110.8 10 9"
+        fill="currentColor"
+        className={className}
+      >
+        <polygon
+          points="116.91,117.121 113.45,118.501 114.95,115.311 113.45,112.111 116.91,113.501 120.359,112.111 118.87,115.311 120.359,118.501"
+        />
+      </svg>
+    );
+  }
+  return (
+    <svg
+      viewBox="20 110.8 10 9"
+      fill="currentColor"
+      className={className}
+    >
+      <polygon
+        points="24.61,117.121 21.15,118.501 22.66,115.311 21.15,112.111 24.61,113.501 28.07,112.111 26.58,115.311 28.07,118.501"
+      />
+    </svg>
+  );
+};
+
+/* ── Star-Based PIN Input Component ───────────────────────────────────── */
+interface StarPinInputProps {
   value: string;
   onChange: (val: string) => void;
   onSubmit?: (pinVal?: string) => void;
   error?: boolean;
+  prompt?: string;
+  autoFocus?: boolean;
 }
 
-const PinBoxes: React.FC<PinBoxesProps> = ({ value, onChange, onSubmit, error }) => {
-  const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
+const StarPinInput: React.FC<StarPinInputProps> = ({
+  value,
+  onChange,
+  onSubmit,
+  error = false,
+  prompt = "Enter your PIN",
+  autoFocus = true,
+}) => {
+  const hiddenInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Auto-focus first empty box on mount
-    const firstEmpty = Math.min(value.length, 3);
-    inputsRef.current[firstEmpty]?.focus();
+    if (autoFocus) {
+      hiddenInputRef.current?.focus();
+    }
 
     const onGlobalKeyDown = (e: KeyboardEvent) => {
-      // Ignore if user is typing in another input/textarea or using modifier keys
       const activeEl = document.activeElement;
-      if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")) return;
+      if (activeEl && activeEl !== hiddenInputRef.current && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-
-      const targetIdx = Math.min(value.length, 3);
-      inputsRef.current[targetIdx]?.focus();
 
       if (/^[0-9]$/.test(e.key)) {
         e.preventDefault();
-        const arr = value.split("");
-        arr[targetIdx] = e.key;
-        const newVal = arr.join("").slice(0, 4);
-        onChange(newVal);
-
-        if (newVal.length === 4) {
-          if (onSubmit) onSubmit(newVal);
-        } else if (targetIdx < 3) {
-          inputsRef.current[targetIdx + 1]?.focus();
+        if (value.length < 4) {
+          const newVal = value + e.key;
+          onChange(newVal);
+          if (newVal.length === 4 && onSubmit) {
+            onSubmit(newVal);
+          }
+        }
+      } else if (e.key === "Backspace") {
+        e.preventDefault();
+        onChange(value.slice(0, -1));
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (value.length === 4 && onSubmit) {
+          onSubmit(value);
         }
       }
     };
 
     window.addEventListener("keydown", onGlobalKeyDown);
     return () => window.removeEventListener("keydown", onGlobalKeyDown);
-  }, [value, onChange, onSubmit]);
+  }, [value, onChange, onSubmit, autoFocus]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>, idx: number) => {
-    const raw = e.target.value.replace(/[^0-9]/g, "");
-    if (!raw) {
-      const arr = value.split("");
-      arr[idx] = "";
-      onChange(arr.join(""));
-      return;
-    }
-
-    const char = raw.slice(-1);
-    const arr = value.split("");
-    arr[idx] = char;
-    const newVal = arr.join("").slice(0, 4);
-    onChange(newVal);
-
-    if (newVal.length === 4) {
-      if (onSubmit) onSubmit(newVal);
-    } else if (idx < 3) {
-      inputsRef.current[idx + 1]?.focus();
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/[^0-9]/g, "").slice(0, 4);
+    onChange(raw);
+    if (raw.length === 4 && onSubmit) {
+      onSubmit(raw);
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, idx: number) => {
-    if (e.key === "Backspace") {
-      if (!value[idx] && idx> 0) {
-        inputsRef.current[idx - 1]?.focus();
-        const arr = value.split("");
-        arr[idx - 1] = "";
-        onChange(arr.join(""));
-      }
-    } else if (e.key === "Enter") {
-      if (onSubmit) onSubmit(value);
-    } else if (e.key === "ArrowLeft" && idx> 0) {
-      inputsRef.current[idx - 1]?.focus();
-    } else if (e.key === "ArrowRight" && idx < 3) {
-      inputsRef.current[idx + 1]?.focus();
-    }
-  };
-
-  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    e.preventDefault();
-    const pasted = e.clipboardData.getData("text").replace(/[^0-9]/g, "").slice(0, 4);
-    if (pasted) {
-      onChange(pasted);
-      if (pasted.length === 4 && onSubmit) {
-        onSubmit(pasted);
-      } else {
-        const targetIdx = Math.min(pasted.length, 3);
-        inputsRef.current[targetIdx]?.focus();
-      }
-    }
+  const handleContainerClick = () => {
+    hiddenInputRef.current?.focus();
   };
 
   return (
-    <div className="flex items-center justify-center gap-3 py-2">
-      {[0, 1, 2, 3].map((idx) => {
-        const val = value[idx] || "";
-        return (
-          <input
-            key={idx}
-            ref={(el) => { inputsRef.current[idx] = el; }}
-            type="password"
-            maxLength={1}
-            value={val}
-            onChange={(e) => handleChange(e, idx)}
-            onKeyDown={(e) => handleKeyDown(e, idx)}
-            onPaste={handlePaste}
-            className={`w-12 h-14 text-center text-2xl font-bold bg-[#18181b] border-2 rounded-xl text-white outline-none transition-all shadow-md ${
-              error
-                ? "border-red-500 bg-red-500/10 focus:border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.4)]"
-                : val
-                ? "border-blue-500 bg-[#27272a] focus:border-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.3)]"
-                : "border-slate-700 hover:border-slate-500 focus:border-blue-500 focus:bg-[#27272a]"
-            }`}
-            style={{
-              fontFamily: "'Google Sans Flex', system-ui, sans-serif",
-              fontVariationSettings: '"wdth" 100, "wght" 700',
-            }} />
-        );
-      })}
+    <div
+      onClick={handleContainerClick}
+      className={`relative w-full py-8 px-4 flex flex-col items-center justify-center cursor-pointer select-none transition-all duration-200 min-h-[110px] ${
+        error ? "animate-pin-shake" : ""
+      }`}
+    >
+      {/* Hidden input for mobile keyboard support and accessibility */}
+      <input
+        ref={hiddenInputRef}
+        type="password"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        maxLength={4}
+        value={value}
+        onChange={handleInputChange}
+        className="sr-only opacity-0 absolute pointer-events-none"
+        aria-label="PIN input"
+        autoFocus={autoFocus}
+      />
+
+      {value.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-1.5 animate-in fade-in duration-200">
+          <p className="text-base sm:text-lg font-bold text-zinc-400 tracking-wide font-mono uppercase" style={GSF}>
+            {prompt}
+          </p>
+          <span className="text-[11px] text-zinc-500 font-medium font-sans">
+            Type 4-digit code to unlock
+          </span>
+        </div>
+      ) : (
+        <div className="flex items-center justify-center gap-6 sm:gap-8 transition-all duration-300">
+          {Array.from({ length: value.length }).map((_, idx) => {
+            const isLeft = idx % 2 === 0;
+            return (
+              <div
+                key={idx}
+                className="transform transition-all duration-200 ease-out animate-star-pop"
+              >
+                <EmblemStar
+                  type={isLeft ? "left" : "right"}
+                  className={`w-10 h-10 sm:w-12 sm:h-12 transition-all duration-150 ${
+                    error ? "text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.6)]" : "text-blue-400 drop-shadow-[0_0_15px_rgba(96,165,250,0.5)]"
+                  }`}
+                />
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
@@ -809,50 +832,52 @@ const OfflineApp = () => {
                 className="space-y-4">
                 {!isSettingPin ? (
                   <>
-                    <PinBoxes
+                    <StarPinInput
                       value={pinInput}
                       onChange={setPinInput}
                       onSubmit={(p) => handleUnlock(p)}
-                      error={pinError} />
+                      error={pinError}
+                      prompt="Enter your PIN" />
 
                     {pinError && (
-                      <div className="text-red-400 text-xs font-medium bg-red-500/10 border border-red-500/20 p-3 rounded-xl flex items-center gap-2">
+                      <div className="text-red-400 text-xs font-medium bg-red-500/10 border border-red-500/20 p-3 rounded-2xl flex items-center justify-center gap-2 text-center animate-in fade-in duration-150">
                         <ErrorIcon className="w-4 h-4 shrink-0" />
                         <span>Incorrect Security PIN. Please try again.</span>
                       </div>
                     )}
 
                     {pinSuccessMsg && (
-                      <div className="text-emerald-400 text-xs font-medium bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-xl flex items-center gap-2">
+                      <div className="text-emerald-400 text-xs font-medium bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-2xl flex items-center justify-center gap-2 text-center animate-in fade-in duration-150">
                         <CheckCircle className="w-4 h-4 shrink-0" />
                         <span>{pinSuccessMsg}</span>
                       </div>
                     )}
 
-                    <div className="flex items-center justify-start text-xs pt-1">
+                    <div className="flex items-center justify-center text-xs pt-1">
                       <button
                         onClick={() => setShowForgotPinModal(true)}
-                        className="px-3.5 py-1.5 rounded-full bg-transparent hover:bg-[#18181b] border border-transparent hover:border-slate-800 text-slate-400 hover:text-slate-200 text-xs font-medium transition-all cursor-pointer"
+                        className="px-4 py-1.5 rounded-full bg-transparent hover:bg-[#18181b] border border-transparent hover:border-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs font-medium transition-all cursor-pointer"
                         style={GSF}>
                         Forgot PIN?
                       </button>
                     </div>
                   </>
                 ) : (
-                  <div className="bg-[#18181b] border-2 border-slate-800 rounded-2xl p-4 space-y-3 text-center">
+                  <div className="bg-[#121214] border-2 border-zinc-800 rounded-3xl p-5 space-y-4 text-center">
                     <h4 className="text-xs font-bold text-white flex items-center justify-center gap-2 uppercase tracking-wider">
                       <Key className="w-4 h-4 text-blue-400" />
                       <span>{hasPinSet ? "Update 4-Digit PIN" : "Setup 4-Digit Offline PIN"}</span>
                     </h4>
-                    <p className="text-xs text-slate-400 text-left">
+                    <p className="text-xs text-zinc-400 text-center">
                       {hasPinSet
                         ? "Enter a new 4-digit PIN to update your offline encryption passcode."
                         : "Please create a 4-digit Security PIN to protect & access your offline data."}
                     </p>
-                    <PinBoxes
+                    <StarPinInput
                       value={newPin}
                       onChange={setNewPin}
-                      onSubmit={handleSaveNewPin} />
+                      onSubmit={handleSaveNewPin}
+                      prompt={hasPinSet ? "Enter new PIN" : "Create PIN"} />
                     <div className="flex gap-2 pt-1">
                       <button
                         onClick={handleSaveNewPin}
@@ -863,7 +888,7 @@ const OfflineApp = () => {
                       {hasPinSet && (
                         <button
                           onClick={() => setIsSettingPin(false)}
-                          className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs py-2.5 rounded-full border border-slate-700 transition-all cursor-pointer">
+                          className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold text-xs py-2.5 rounded-full border border-zinc-700 transition-all cursor-pointer">
                           Cancel
                         </button>
                       )}

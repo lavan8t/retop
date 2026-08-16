@@ -578,6 +578,35 @@ a:active,
   to { opacity: 1; }
 }
 
+@keyframes star-pin-pop {
+  0% {
+    transform: scale(2.2);
+    opacity: 0.4;
+  }
+  60% {
+    transform: scale(0.9);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-star-pop {
+  animation: star-pin-pop 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes pin-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-10px); }
+  40%, 80% { transform: translateX(10px); }
+}
+
+.animate-pin-shake {
+  animation: pin-shake 0.4s ease-in-out both;
+}
+
 /* --- 3. FONTS --- */
 #retop-root *:not(i) {
   font-family: var(--font-sans) !important;

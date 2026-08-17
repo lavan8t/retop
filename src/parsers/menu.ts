@@ -1,115 +1,60 @@
 import { MenuCategory, QuickLink } from "../types/vtop";
 
+const MENU_TITLE_CANONICAL: Record<string, string> = {
+  "class attendance": "Attendance",
+  "student attendance": "Attendance",
+  "attendance": "Attendance",
+  "course page consolidated": "Course Page",
+  "course page (consolidated)": "Course Page",
+  "course page": "Course Page",
+  "student course page": "Course Page",
+  "digital assignment": "Assignments",
+  "digital assignment upload": "Assignments",
+  "student da": "Assignments",
+  "studentda": "Assignments",
+  "grades view": "Grades & History",
+  "grade history": "Grades & History",
+  "grades & history": "Grades & History",
+  "grade view": "Grades & History",
+  "student grade view": "Grades & History",
+  "student grade history": "Grades & History",
+  "grades": "Grades & History",
+  "student profile": "Profile",
+  "profile view": "Profile",
+  "profile": "Profile",
+  "student profile all view": "Profile",
+  "marks view": "Marks",
+  "student marks": "Marks",
+  "student mark view": "Marks",
+  "marks": "Marks",
+  "timetable": "Timetable",
+  "time table": "Timetable",
+  "class timetable": "Timetable",
+  "student time table chn": "Timetable",
+  "student timetable": "Timetable",
+  "academic calendar": "Calendar",
+  "academics calendar": "Calendar",
+  "calendar": "Calendar",
+  "calendar preview": "Calendar",
+  "exam schedule": "Exam Schedule",
+  "examinations schedule": "Exam Schedule",
+  "stud exam schedule": "Exam Schedule",
+  "curriculum": "Curriculum",
+  "programme curriculum": "Curriculum",
+  "curriculum & syllabus": "Curriculum",
+  "my curriculum": "Curriculum",
+};
+
 const sanitizeMenuTitle = (title: string, categoryTitle?: string): string => {
   let clean = title.trim();
-
-  // Strip leading numbers/bullets (e.g. "1. ", "• ", "- ", "› ")
   clean = clean.replace(/^[0-9]+[\.\)]\s*/, "").replace(/^[-•›»:\*]+\s*/, "").trim();
 
-  // Remove redundant category prefix if present
   if (categoryTitle) {
-    const catPattern = new RegExp(`^${categoryTitle}\\s*[-:/|]\\s*`, "i");
-    clean = clean.replace(catPattern, "").trim();
+    clean = clean.replace(new RegExp(`^${categoryTitle}\\s*[-:/|]\\s*`, "i"), "").trim();
   }
-
-  // Remove common generic section prefixes
   clean = clean.replace(/^(examinations|academics|general|services|reports|information|student)\s*[-:/|]\s*/i, "").trim();
 
-  const lower = clean.toLowerCase();
-
-  if (
-    lower === "class attendance" ||
-    lower === "student attendance" ||
-    lower === "attendance"
-  ) {
-    return "Attendance";
-  }
-
-  if (
-    lower.includes("course page consolidated") ||
-    lower.includes("course page (consolidated)") ||
-    lower === "course page" ||
-    lower === "student course page"
-  ) {
-    return "Course Page";
-  }
-
-  if (
-    lower.includes("digital assignment") ||
-    lower.includes("digital assignment upload") ||
-    lower === "student da" ||
-    lower === "studentda"
-  ) {
-    return "Assignments";
-  }
-
-  if (
-    lower === "grades view" ||
-    lower === "grade history" ||
-    lower === "grades & history" ||
-    lower === "grade view" ||
-    lower === "student grade view" ||
-    lower === "student grade history" ||
-    lower === "grades"
-  ) {
-    return "Grades & History";
-  }
-
-  if (
-    lower === "student profile" ||
-    lower === "profile view" ||
-    lower === "profile" ||
-    lower === "student profile all view"
-  ) {
-    return "Profile";
-  }
-
-  if (
-    lower === "marks view" ||
-    lower === "student marks" ||
-    lower === "student mark view" ||
-    lower === "marks"
-  ) {
-    return "Marks";
-  }
-
-  if (
-    lower === "timetable" ||
-    lower === "time table" ||
-    lower === "class timetable" ||
-    lower === "student time table chn" ||
-    lower === "student timetable"
-  ) {
-    return "Timetable";
-  }
-
-  if (
-    lower === "academic calendar" ||
-    lower === "academics calendar" ||
-    lower === "calendar" ||
-    lower === "calendar preview"
-  ) {
-    return "Calendar";
-  }
-
-  if (
-    lower === "exam schedule" ||
-    lower === "examinations schedule" ||
-    lower === "stud exam schedule"
-  ) {
-    return "Exam Schedule";
-  }
-
-  if (
-    lower === "curriculum" ||
-    lower === "programme curriculum" ||
-    lower === "curriculum & syllabus" ||
-    lower === "my curriculum"
-  ) {
-    return "Curriculum";
-  }
-
-  return clean;
+  return MENU_TITLE_CANONICAL[clean.toLowerCase()] || clean;
 };
 
 // Helper to extract actionable URL from data attributes or onclick handlers
@@ -155,9 +100,7 @@ const IGNORED_TITLES = new Set([
 
 // Helper to clean and format title text
 function cleanElementText(el: Element): string {
-  const clone = el.cloneNode(true) as HTMLElement;
-  clone.querySelectorAll(".retop-menu-badge, .badge, .label, i, svg, small, b.header, span.header, span.sub-header, .dropdown-header").forEach((b) => b.remove());
-  let text = clone.textContent || "";
+  let text = el.textContent || "";
   text = text.replace(/[\u00a0\s]+/g, " ").trim();
   return text;
 }

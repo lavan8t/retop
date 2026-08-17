@@ -7,8 +7,6 @@ console.log("retop: Injected Script Loaded");
   );
 };
 
-let checkCaptcha: any;
-
 const initCaptcha = (key: string) => {
   if (!key) return;
 
@@ -19,24 +17,30 @@ const initCaptcha = (key: string) => {
     document.body.appendChild(container);
   }
 
-  checkCaptcha = setInterval(() => {
-    if ((window as any).grecaptcha && (window as any).grecaptcha.render) {
-      clearInterval(checkCaptcha);
-      if (!container.hasAttribute("data-rendered")) {
-        container.setAttribute("data-rendered", "true");
-        try {
-          (window as any).grecaptcha.render("retop-captcha-container", {
-            sitekey: key,
-            callback: "onVtopCaptchaSuccess",
-            size: "invisible",
-          });
-          console.log("ReCaptcha Rendered Successfully");
-        } catch (err) {
-          console.error("Captcha Render Failed:", err);
-        }
+  const tryRender = () => {
+    const gre = (window as any).grecaptcha;
+    if (gre && gre.render && container && !container.hasAttribute("data-rendered")) {
+      container.setAttribute("data-rendered", "true");
+      try {
+        gre.render("retop-captcha-container", {
+          sitekey: key,
+          callback: "onVtopCaptchaSuccess",
+          size: "invisible",
+        });
+        console.log("ReCaptcha Rendered Successfully");
+      } catch (err) {
+        console.error("Captcha Render Failed:", err);
       }
+      return true;
     }
-  }, 100);
+    return false;
+  };
+
+  if (!tryRender()) {
+    const timer = setInterval(() => {
+      if (tryRender()) clearInterval(timer);
+    }, 100);
+  }
 };
 
 if ((window as any).__vtopCaptchaSitekey) {

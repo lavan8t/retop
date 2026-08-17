@@ -95,11 +95,6 @@ export const hasRetopPage = (link: QuickLink | string): boolean => {
   return exactFullTitles.includes(title);
 };
 
-const fuzzyMatch = (str: string, pattern: string) => {
-  pattern = pattern.split("").reduce((a, b) => a + ".*" + b);
-  return new RegExp(pattern).test(str);
-};
-
 const renderCategoryTitle = (catTitle: string) => {
   const titleStr = toTitleCase(catTitle);
   if (titleStr.toLowerCase().includes("retop")) {
@@ -144,22 +139,6 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
   const [isLogoHovered, setIsLogoHovered] = useState(false);
   const [query, setQuery] = useState(initialQuery);
   const deferredQuery = useDeferredValue(query);
-  const [isShiftPressed, setIsShiftPressed] = useState(false);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Shift") setIsShiftPressed(true);
-    };
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === "Shift") setIsShiftPressed(false);
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-    };
-  }, []);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [categoryIndex, setCategoryIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -299,85 +278,64 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
 
   const flattenedLinks = useMemo(() => {
     const allLinks = allCategories.flatMap((c) => c.links);
+    const lowerQ = deferredQuery.toLowerCase().trim();
 
-    let sortedMatches = allLinks;
+    if (!lowerQ) {
+      const seen = new Set<string>();
+      const retopLinks: QuickLink[] = [];
+      const otherLinks: QuickLink[] = [];
 
-    if (deferredQuery.trim()) {
-      const lowerQ = deferredQuery.toLowerCase().trim();
-      const matches: { link: QuickLink; score: number }[] = [];
-
-      const itemAliases: Record<string, string[]> = {
-        "time table": ["timetable", "time table", "schedule", "class schedule", "slots", "weekly timetable"],
-        "class attendance": ["attendance", "class attendance", "attendance view", "my attendance"],
-        "assignments": ["digital assignments", "digital assignment", "da", "da upload", "assignment", "assignments", "digital assignment upload"],
-        "marks view": ["marks", "marks view", "cat marks", "assessment marks", "test marks", "exam marks"],
-        "grades view": ["grades", "grades view", "grade history", "cgpa", "gpa", "history", "gpa calculator", "grade calculator"],
-        "academic calendar": ["academic calendar", "calendar", "events", "academics calendar", "calendar preview"],
-        "student profile": ["profile", "student profile", "digital id", "id card", "my profile"],
-        "curriculum": ["curriculum", "syllabus", "curriculum syllabus", "course syllabus"],
-        "exam schedule": ["exam schedule", "exams", "fat", "cat", "exam", "fat schedule", "cat schedule", "exam timetable"],
-        "course page consolidated": ["course page", "course page consolidated", "consolidated course page", "course", "courses", "course material", "materials", "class material", "subject material", "course page (consolidated)"],
-      };
-
-      allLinks.forEach((link) => {
-        const titleLower = link.title.toLowerCase().trim();
-        const urlLower = link.url.toLowerCase().trim();
-        let score = 0;
-
-        const aliases = itemAliases[titleLower] || [];
-
-        if (titleLower === lowerQ || aliases.some((a) => a === lowerQ)) {
-          score = 100;
-        } else if (titleLower.startsWith(lowerQ) || aliases.some((a) => a.startsWith(lowerQ))) {
-          score = 85;
-        } else if (
-          titleLower.includes(lowerQ) ||
-          aliases.some((a) => a.includes(lowerQ)) ||
-          urlLower.includes(lowerQ)
-        ) {
-          score = 65;
-        } else if (fuzzyMatch(titleLower, lowerQ)) {
-          score = 20;
+      for (const link of allLinks) {
+        const key = `${link.title.toLowerCase()}:${link.url.toLowerCase()}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          if (hasRetopPage(link)) retopLinks.push(link);
+          else otherLinks.push(link);
         }
-
-        if (score > 0) matches.push({ link, score });
-      });
-
-      sortedMatches = matches
-        .sort((a, b) => b.score - a.score)
-        .map((m) => m.link)
-        .slice(0, 15);
+      }
+      return [...retopLinks, ...otherLinks];
     }
 
+    const itemAliases: Record<string, string[]> = {
+      "time table": ["timetable", "time table", "schedule", "class schedule", "slots", "weekly timetable"],
+      "class attendance": ["attendance", "class attendance", "attendance view", "my attendance"],
+      "assignments": ["digital assignments", "digital assignment", "da", "da upload", "assignment", "assignments", "digital assignment upload"],
+      "marks view": ["marks", "marks view", "cat marks", "assessment marks", "test marks", "exam marks"],
+      "grades view": ["grades", "grades view", "grade history", "cgpa", "gpa", "history", "gpa calculator", "grade calculator"],
+      "academic calendar": ["academic calendar", "calendar", "events", "academics calendar", "calendar preview"],
+      "student profile": ["profile", "student profile", "digital id", "id card", "my profile"],
+      "curriculum": ["curriculum", "syllabus", "curriculum syllabus", "course syllabus"],
+      "exam schedule": ["exam schedule", "exams", "fat", "cat", "exam", "fat schedule", "cat schedule", "exam timetable"],
+      "course page consolidated": ["course page", "course page consolidated", "consolidated course page", "course", "courses", "course material", "materials", "class material", "subject material", "course page (consolidated)"],
+    };
+
+    const scored: { link: QuickLink; score: number }[] = [];
     const seen = new Set<string>();
-    const deduplicatedMatches: QuickLink[] = [];
 
-    sortedMatches.forEach((link) => {
+    for (const link of allLinks) {
       const key = `${link.title.toLowerCase().trim()}:${link.url.toLowerCase().trim()}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        deduplicatedMatches.push(link);
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      const titleLower = link.title.toLowerCase().trim();
+      const urlLower = link.url.toLowerCase().trim();
+      const aliases = itemAliases[titleLower] || [];
+
+      let score = 0;
+      if (titleLower === lowerQ || aliases.includes(lowerQ)) score = 100;
+      else if (titleLower.startsWith(lowerQ) || aliases.some((a) => a.startsWith(lowerQ))) score = 85;
+      else if (titleLower.includes(lowerQ) || aliases.some((a) => a.includes(lowerQ)) || urlLower.includes(lowerQ)) score = 65;
+
+      if (score > 0) {
+        if (hasRetopPage(link)) score += 10;
+        scored.push({ link, score });
       }
-    });
-
-    const grouped = new Map<string, QuickLink[]>();
-    deduplicatedMatches.forEach((link) => {
-      const cat = hasRetopPage(link) ? "Made for retop" : (link.category || "Other");
-      if (!grouped.has(cat)) grouped.set(cat, []);
-      grouped.get(cat)!.push(link);
-    });
-
-    const finalLinks: QuickLink[] = [];
-    if (grouped.has("Made for retop")) {
-      finalLinks.push(...grouped.get("Made for retop")!);
     }
-    grouped.forEach((links, catKey) => {
-      if (catKey !== "Made for retop") {
-        finalLinks.push(...links);
-      }
-    });
 
-    return finalLinks;
+    return scored
+      .sort((a, b) => b.score - a.score)
+      .map((s) => s.link)
+      .slice(0, 15);
   }, [deferredQuery, allCategories]);
 
   useEffect(() => {
@@ -852,7 +810,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
         <div
           ref={dropdownRef}
           key="search-dropdown"
-          className="hidden lg:flex absolute top-full mt-2 left-0 w-64 md:w-72 bg-(--bg-surface) border-0 rounded-3xl z-[999999] origin-top-left flex-col overflow-hidden popup-shadow p-2 transition-all duration-200 animate-popup-open"
+          className="hidden lg:flex absolute top-full mt-2 left-0 w-64 md:w-72 bg-(--bg-surface) border-0 rounded-3xl z-999999 origin-top-left flex-col overflow-hidden popup-shadow px-2 transition-all duration-200 animate-popup-open"
         >
           <div className="p-1">
             <div
@@ -1011,30 +969,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
               )}
             </div>
             <div className="w-full text-center py-2 px-3 text-[10px] font-bold text-(--text-muted) border-t-2 border-(--border-dim) bg-(--bg-surface) shrink-0 mt-1">
-              {isShiftPressed ? (
-                <>
-                  Press Shift + Enter to open in{" "}
-                  {isModernUI ? (
-                    <span className="!font-['Times_New_Roman',Times,serif] font-bold text-(--text-main) !text-[12px]">
-                      VTOP
-                    </span>
-                  ) : (
-                    <span
-                      className="font-logo retop-logo inline-block lowercase text-(--accent-base)"
-                      style={{
-                        fontFamily: "var(--font-expanded)",
-                        fontVariationSettings: "'wdth' 125, 'wght' 900, 'ROND' 100, 'slnt' -10",
-                      }}
-                    >
-                      retop
-                    </span>
-                  )}
-                </>
-              ) : (
-                <>
-                  <span className="font-mono font-bold text-(--accent-base)">Shift + Enter</span> for {isModernUI ? "VTOP" : "retop"} &nbsp;•&nbsp; <span className="font-mono font-bold text-(--text-muted)">Enter</span> for {isModernUI ? "retop" : "VTOP"}
-                </>
-              )}
+              <span className="font-mono font-bold text-(--accent-base)">Shift + Enter</span> for {isModernUI ? "VTOP" : "retop"} &nbsp;•&nbsp; <span className="font-mono font-bold text-(--text-muted)">Enter</span> for {isModernUI ? "retop" : "VTOP"}
             </div>
           </div>
         </div>

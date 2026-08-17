@@ -692,37 +692,9 @@ export class VTOPNetwork {
     return this.fetchWithCache(
       cacheKey,
       async () => {
-        // Set active semester session
-        const sessionBody = new URLSearchParams();
-        sessionBody.append("_csrf", this.csrf);
-        sessionBody.append("authorizedID", this.authorizedID);
-        sessionBody.append("semesterSubId", semesterSubId);
-
-        await this.rateLimitedFetch(`/vtop/examinations/StudentDA`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          },
-          body: sessionBody,
+        return this.fetchVtopApi("examinations/doDigitalAssignment", {
+          semesterSubId,
         });
-
-        // Fetch courses for semester
-        const url = "examinations/doDigitalAssignment";
-        const body = new URLSearchParams();
-        body.append("_csrf", this.csrf);
-        body.append("authorizedID", this.authorizedID);
-        body.append("semesterSubId", semesterSubId);
-
-        const response = await this.rateLimitedFetch(`/vtop/${url}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          },
-          body: body,
-        });
-
-        if (!response.ok) throw new Error(`Status ${response.status}`);
-        return await response.text();
       },
       forceRefresh,
       isPastSemester ? Infinity : undefined,
@@ -738,23 +710,9 @@ export class VTOPNetwork {
     return this.fetchWithCache(
       cacheKey,
       async () => {
-        const url = "examinations/processDigitalAssignment";
-        const body = new URLSearchParams();
-        body.append("_csrf", this.csrf);
-        body.append("authorizedID", this.authorizedID);
-        body.append("classId", classId);
-        body.append("x", new Date().toUTCString());
-
-        const response = await this.rateLimitedFetch(`/vtop/${url}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          },
-          body: body,
+        return this.fetchVtopApi("examinations/processDigitalAssignment", {
+          classId,
         });
-
-        if (!response.ok) throw new Error(`Status ${response.status}`);
-        return await response.text();
       },
       forceRefresh,
       isPastSemester ? Infinity : undefined,
@@ -764,23 +722,10 @@ export class VTOPNetwork {
   async getDAUploadView(classId: string, code: string): Promise<string> {
     const cacheKey = `da_upload_view_${classId}_${code}`;
     return this.fetchWithCache(cacheKey, async () => {
-      const url = "examinations/processDigitalAssignmentUpload";
-      const body = new URLSearchParams();
-      body.append("_csrf", this.csrf);
-      body.append("authorizedID", this.authorizedID);
-      body.append("classId", classId);
-      body.append("mode", code);
-      body.append("x", new Date().toUTCString());
-
-      const response = await this.rateLimitedFetch(`/vtop/${url}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-        },
-        body: body,
+      return this.fetchVtopApi("examinations/processDigitalAssignmentUpload", {
+        classId,
+        mode: code,
       });
-      if (!response.ok) throw new Error(`Status ${response.status}`);
-      return await response.text();
     });
   }
 

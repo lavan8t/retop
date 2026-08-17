@@ -9,7 +9,6 @@ import {
   Person,
   Category,
   Send,
-  Refresh,
   Warning,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { VTOPNetwork } from "../utils/network";
@@ -621,26 +620,13 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
       <div className="pt-20 md:pt-23 lg:pt-25" />
 
       {/* Header */}
-      <div className="flex items-center justify-between pb-4 border-b border-(--border-dim)/40">
-        <div>
-          <h1 className="text-xl md:text-2xl font-expanded font-black text-(--text-main)">
-            Late Hour Permission
-          </h1>
-          <p className="text-xs text-(--text-muted) mt-0.5">
-            Apply and track hostel late hour campus permissions
-          </p>
-        </div>
-        {activeTab === "status" && (
-          <button
-            onClick={loadStatus}
-            disabled={statusLoading}
-            className="p-2 rounded-xl bg-(--bg-surface) hover:bg-(--bg-highlight) text-(--text-muted) transition-colors cursor-pointer border border-(--border-dim)/40"
-            title="Refresh Status">
-            <Refresh
-              className={`w-4 h-4 ${statusLoading ? "animate-spin text-(--accent-base)" : ""}`}
-            />
-          </button>
-        )}
+      <div className="pb-4 border-b border-(--border-dim)/40">
+        <h1 className="text-xl md:text-2xl font-expanded font-black text-(--text-main)">
+          Late Hour Permission
+        </h1>
+        <p className="text-xs text-(--text-muted) mt-0.5">
+          Apply and track hostel late hour campus permissions
+        </p>
       </div>
 
       {/* Segmented Tab Bar */}

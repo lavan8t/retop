@@ -209,15 +209,15 @@ export const TopBar: React.FC<TopBarProps> = ({
     <>
       {/* Top Fade Mask */}
       <div
-        className="fixed top-0 left-0 right-0 h-16 md:h-24 bg-linear-to-b from-(--bg-main) via-(--bg-main) to-transparent z-90 pointer-events-none"
+        className="fixed top-0 left-0 right-0 h-24 md:h-28 lg:h-32 pointer-events-none select-none"
         style={{
-          maskImage: "linear-gradient(to bottom, black 40%, transparent 100%)",
-          WebkitMaskImage:
-            "linear-gradient(to bottom, black 40%, transparent 100%)",
+          zIndex: 40,
+          background:
+            "linear-gradient(to bottom, var(--bg-main) 0%, var(--bg-main) 45%, color-mix(in srgb, var(--bg-main) 70%, transparent) 75%, transparent 100%)",
         }}
       />
 
-      <header className="h-14 sm:h-16 md:h-18 bg-transparent fixed w-full top-0 z-100 px-2.5 sm:px-4 md:px-8 flex items-center justify-between shrink-0 transition-all pointer-events-none">
+      <header className="h-14 sm:h-16 md:h-18 bg-transparent fixed w-full top-0 z-50 px-2.5 sm:px-4 md:px-8 flex items-center justify-between shrink-0 transition-all pointer-events-none">
         <div className="flex items-center h-full pointer-events-auto min-w-0 flex-1">
           <div className="flex flex-col justify-center h-full gap-0.5 min-w-0 w-full">
             <div className="flex items-center gap-2 md:gap-3 min-w-0 w-full">

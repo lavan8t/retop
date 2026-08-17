@@ -24,11 +24,29 @@ import { VitEmblemLoader } from "./components/common/VitEmblemLoader";
 import { ErrorBoundary } from "./components/common/ErrorBoundary";
 import { clear as idbClear, set as idbSet } from "idb-keyval";
 
-const pickAsciiArt = (): { art: string; type: string } => {
-  const isChennai = typeof window !== "undefined" && window.location.hostname.includes("vtopcc");
-  const artTypes = isChennai ? (["CC"] as const) : (["TT", "SMV", "MGR", "CC"] as const);
-  const picked = artTypes[Math.floor(Math.random() * artTypes.length)];
-  const artMap: Record<string, string> = { TT: asciiArtTT, SMV: asciiArtSMV, MGR: asciiArtMGR, CC: asciiArtCC.trim() ? asciiArtCC : asciiArtTT };
+const pickAsciiArt = (campus?: "chennai" | "vellore"): { art: string; type: string } => {
+  const isChennai =
+    campus === "chennai" ||
+    (typeof window !== "undefined" && window.location.hostname.includes("vtopcc")) ||
+    (typeof localStorage !== "undefined" && localStorage.getItem("retop_last_campus") === "chennai");
+
+  const artTypes = isChennai ? (["CC"] as const) : (["TT", "SMV", "MGR"] as const);
+  const lastArt = typeof localStorage !== "undefined" ? localStorage.getItem("retop_last_ascii_art") || "" : "";
+  const availableArts = artTypes.filter((type) => type !== lastArt);
+  const picked = availableArts.length
+    ? availableArts[Math.floor(Math.random() * availableArts.length)]
+    : artTypes[Math.floor(Math.random() * artTypes.length)];
+
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem("retop_last_ascii_art", picked);
+  }
+
+  const artMap: Record<string, string> = {
+    TT: asciiArtTT,
+    SMV: asciiArtSMV,
+    MGR: asciiArtMGR,
+    CC: asciiArtCC.trim() ? asciiArtCC : asciiArtTT,
+  };
   return { art: (artMap[picked] || asciiArtTT).replace(/\r/g, ""), type: picked };
 };
 
@@ -331,19 +349,29 @@ const StarPinInput: React.FC<StarPinInputProps> = ({
 
 const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*";
 
-const AsciiPanel: React.FC = () => {
+const AsciiPanel: React.FC<{ campus?: "chennai" | "vellore" }> = ({ campus }) => {
   const preRef = useRef<HTMLPreElement>(null);
-  const { art, type } = useRef(pickAsciiArt()).current;
+  const [artData, setArtData] = useState(() => pickAsciiArt(campus));
+  const { art, type } = artData;
+
+  useEffect(() => {
+    setArtData(pickAsciiArt(campus));
+  }, [campus]);
+
   const originalLines = useRef(art.split("\n"));
+  useEffect(() => {
+    originalLines.current = art.split("\n");
+  }, [art]);
+
   const ripples = useRef<{ x: number; y: number; t: number }[]>([]);
   const rafRef = useRef<number>(0);
   const lastMouse = useRef({ x: -9999, y: -9999, t: 0 });
 
-  const charW = type === "SMV" ? 2.5 : type === "MGR" ? 2.9 : 4.2;
-  const charH = type === "SMV" ? 4 : type === "MGR" ? 4.4 : 7;
+  const charW = type === "CC" ? 2.5 : type === "SMV" ? 2.5 : type === "MGR" ? 2.9 : 4.2;
+  const charH = type === "CC" ? 4 : type === "SMV" ? 4 : type === "MGR" ? 4.4 : 7;
 
-  const fontSize = type === "SMV" ? "4.2px" : type === "MGR" ? "4.8px" : "7px";
-  const lineH = type === "SMV" ? "4px" : type === "MGR" ? "4.4px" : "7px";
+  const fontSize = type === "CC" ? "4px" : type === "SMV" ? "4.2px" : type === "MGR" ? "4.8px" : "7px";
+  const lineH = type === "CC" ? "4px" : type === "SMV" ? "4px" : type === "MGR" ? "4.4px" : "7px";
   const marginRight = type === "TT" ? "-15vw" : "0px";
 
   useEffect(() => {
@@ -354,6 +382,11 @@ const AsciiPanel: React.FC = () => {
     pre.style.setProperty("line-height", lineH, "important");
     pre.style.setProperty("letter-spacing", "0px", "important");
     pre.style.setProperty("margin-right", marginRight, "important");
+  }, [fontSize, lineH, marginRight]);
+
+  useEffect(() => {
+    const pre = preRef.current;
+    if (!pre) return;
 
     const onMove = (e: MouseEvent) => {
       const rect = pre.getBoundingClientRect();
@@ -363,9 +396,9 @@ const AsciiPanel: React.FC = () => {
       const dx = x - lastMouse.current.x;
       const dy = y - lastMouse.current.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist> 6 || ripples.current.length === 0) {
+      if (dist > 6 || ripples.current.length === 0) {
         ripples.current.push({ x, y, t: now });
-        if (ripples.current.length> 20) ripples.current.shift();
+        if (ripples.current.length > 20) ripples.current.shift();
       }
       lastMouse.current = { x, y, t: now };
     };
@@ -402,7 +435,7 @@ const AsciiPanel: React.FC = () => {
               wave += Math.cos(dw * 0.1) * Math.pow(Math.max(0, 1 - dw / 30), 2) * Math.pow(Math.max(0, 1 - age / 900), 2);
             }
           }
-          newLine += Math.abs(wave)> 0.2 ? CHARS[Math.floor(Math.random() * CHARS.length)] : char;
+          newLine += Math.abs(wave) > 0.2 ? CHARS[Math.floor(Math.random() * CHARS.length)] : char;
         }
         out += newLine + "\n";
       }
@@ -416,7 +449,7 @@ const AsciiPanel: React.FC = () => {
       document.removeEventListener("mousemove", onMove);
       cancelAnimationFrame(animFrame);
     };
-  }, []);
+  }, [charW, charH]);
 
   return (
     <pre
@@ -974,7 +1007,7 @@ const OfflineApp = () => {
           pointerEvents: "none",
           zIndex: 1,
         }}>
-        <AsciiPanel />
+        <AsciiPanel campus={activeUser?.campus} />
       </div>
 
       {/* Forgot PIN Confirmation Modal */}

@@ -805,7 +805,28 @@ export class VTOPNetwork {
       body: formData,
     });
     if (!response.ok) throw new Error(`Status ${response.status}`);
-    return await response.text();
+    const html = await response.text();
+    const newCsrf = extractCsrfTokenFromHTML(html);
+    if (newCsrf) this.csrf = newCsrf;
+    return html;
+  }
+
+  async submitDAUploadOtp(otp: string): Promise<string> {
+    const url = "examinations/doDAssignmentOtpUpload";
+    const formData = new FormData();
+    formData.append("_csrf", this.csrf);
+    formData.append("authorizedID", this.authorizedID);
+    formData.append("otpEmail", otp.trim());
+
+    const response = await this.rateLimitedFetch(`/vtop/${url}`, {
+      method: "POST",
+      body: formData,
+    });
+    if (!response.ok) throw new Error(`Status ${response.status}`);
+    const html = await response.text();
+    const newCsrf = extractCsrfTokenFromHTML(html);
+    if (newCsrf) this.csrf = newCsrf;
+    return html;
   }
 
   async getGradesView(forceRefresh = false): Promise<string> {
@@ -1134,23 +1155,32 @@ export class VTOPNetwork {
     return response.ok;
   }
 
-  async downloadQP(code: string, classId: string) {
-    await this.downloadWithBlob("examinations/doDownloadQuestion/", {
-      code: code,
-      classIdNumber: classId,
-    });
+  async downloadQP(code: string, classId: string, defaultFilename?: string) {
+    await this.downloadWithBlob(
+      "examinations/doDownloadQuestion/",
+      {
+        code: code,
+        classIdNumber: classId,
+      },
+      defaultFilename || `${classId}_${code}_QuestionPaper.pdf`,
+    );
   }
 
-  async downloadStudentDA(classId: string, code: string) {
-    await this.downloadWithBlob("examinations/downloadSTudentDA/", {
-      code1: code,
-      classId1: classId,
-    });
+  async downloadStudentDA(classId: string, code: string, defaultFilename?: string) {
+    await this.downloadWithBlob(
+      "examinations/downloadSTudentDA/",
+      {
+        code1: code,
+        classId1: classId,
+      },
+      defaultFilename || `${classId}_${code}_Submission.pdf`,
+    );
   }
 
   private async downloadWithBlob(
     endpoint: string,
     params: Record<string, string>,
+    defaultFilename = "download.pdf",
   ) {
     const origin = typeof window !== "undefined" && window.location.origin.includes("vit.ac.in") ? window.location.origin : "https://vtop.vit.ac.in";
     const url = `${origin}/vtop/${endpoint}`;
@@ -1187,7 +1217,7 @@ export class VTOPNetwork {
       a.href = blobUrl;
 
       const disposition = response.headers.get("Content-Disposition");
-      let filename = "download.pdf";
+      let filename = defaultFilename;
       if (disposition && disposition.includes("filename=")) {
         const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(
           disposition,
@@ -1202,7 +1232,7 @@ export class VTOPNetwork {
       setTimeout(() => {
         window.URL.revokeObjectURL(blobUrl);
         document.body.removeChild(a);
-      }, 100);
+      }, 1000);
     } catch (e) {
       console.error("Download Error:", e);
       alert("Failed to download file. Please check console.");

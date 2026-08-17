@@ -15,7 +15,8 @@ export interface DAAssignment {
   weightage: string;
   dueDate: string;
   lastUpdated: string;
-  code: string; // The editCode (e.g., 'CS1')
+  code: string; // The assignment code (e.g., 'CS1', 'AST02')
+  hasQP?: boolean;
 }
 
 export const parseDASemesters = (html: string): { id: string; label: string }[] => {
@@ -80,8 +81,6 @@ export const parseDAAssignments = (html: string): DAAssignment[] => {
   // Assignments are usually in the second table.
   let table = tables[1];
   if (!table) {
-    // If only one table, it might be the assignments table if first table was missing for some reason.
-    // Check if it has Sl.No. and Title
     table = tables[0];
     if (!table || !table.textContent?.includes("Weightage %")) {
       return [];
@@ -99,11 +98,43 @@ export const parseDAAssignments = (html: string): DAAssignment[] => {
       const maxMark = cells[2].textContent?.trim() || "";
       const weightage = cells[3].textContent?.trim() || "";
       const dueDate = cells[4].textContent?.trim() || "";
-      const lastUpdated = cells[6].textContent?.trim() || "";
+      const lastUpdated = cells[6]?.textContent?.trim() || "";
       
-      // Look for the editCode from the button dataset
-      const btn = cells[7].querySelector("button[name='editAssignment']");
-      const code = btn ? (btn.getAttribute("data-editcode") || "") : "";
+      // Question Paper (QP) check in cells[5]
+      const qpCell = cells[5];
+      const hasQP = Boolean(
+        qpCell && (
+          qpCell.querySelector("button, a, [data-code]") ||
+          qpCell.innerHTML.includes("downloadQuestion") ||
+          (qpCell.textContent?.trim() && !["-", "N/A", ""].includes(qpCell.textContent.trim()))
+        )
+      );
+
+      // Extract code from any possible element across cells 7, 8, 5
+      let code = "";
+      const editBtn = cells[7]?.querySelector("[data-editcode]");
+      const subBtn = cells[7]?.querySelector("[data-subcode]");
+      const hiddenCode = cells[7]?.querySelector("input[name='code'], input[name='mCode']");
+      const dlStudentBtn = cells[8]?.querySelector("[data-code]");
+      const dlQpBtn = cells[5]?.querySelector("[data-code]");
+
+      if (editBtn) {
+        code = editBtn.getAttribute("data-editcode") || "";
+      } else if (subBtn) {
+        code = subBtn.getAttribute("data-subcode") || "";
+      } else if (hiddenCode) {
+        code = (hiddenCode as HTMLInputElement).value || hiddenCode.getAttribute("value") || "";
+      } else if (dlStudentBtn) {
+        code = dlStudentBtn.getAttribute("data-code") || "";
+      } else if (dlQpBtn) {
+        code = dlQpBtn.getAttribute("data-code") || "";
+      }
+
+      // Fallback code from title if not found (e.g., AST01, CS1)
+      if (!code && title) {
+        const match = title.match(/\b([A-Z]{2,4}\d{1,2}|CS\d|AST\d|DA\d|EXP\d)\b/i);
+        if (match) code = match[1].toUpperCase();
+      }
 
       assignments.push({
         slNo,
@@ -112,7 +143,8 @@ export const parseDAAssignments = (html: string): DAAssignment[] => {
         weightage,
         dueDate,
         lastUpdated,
-        code
+        code,
+        hasQP,
       });
     }
   });

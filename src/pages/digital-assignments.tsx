@@ -17,10 +17,8 @@ import {
   Error as ErrorIcon,
   Close,
   CloudUpload,
-  Visibility,
-  FilePresent,
+  Lock,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
-
 
 const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
 const ALLOWED_EXTENSIONS = ["pdf", "xls", "xlsx", "doc", "docx"];
@@ -50,7 +48,7 @@ const parseDueDateTimestamp = (dateStr?: string): number => {
     const d = new Date(dateStr);
     if (!isNaN(d.getTime())) return d.getTime();
     const parts = dateStr.trim().split(/[\s-]+/);
-    if (parts.length>= 3) {
+    if (parts.length >= 3) {
       const day = parseInt(parts[0], 10);
       const monthMap: Record<string, number> = {
         jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
@@ -65,6 +63,89 @@ const parseDueDateTimestamp = (dateStr?: string): number => {
   } catch (e) {}
   return Infinity;
 };
+
+/**
+ * Checks VTOP response for success, OTP prompt, or errors.
+ */
+function checkDAUploadResponse(html: string): {
+  success: boolean;
+  requiresOtp: boolean;
+  emailHint?: string;
+  otpPrefix?: string;
+  error?: string;
+} {
+  // 1. Check for OTP form
+  if (
+    html.includes("daUploadOtpAlert") ||
+    html.includes("doDAssignmentOtpUpload") ||
+    html.includes("otpEmail")
+  ) {
+    const emailMatch = html.match(
+      /sent to your email ID\s*<span[^>]*>([\s\S]*?)<\/span>/i,
+    );
+    const emailHint = emailMatch
+      ? emailMatch[1].replace(/<[^>]+>/g, "").trim()
+      : "";
+
+    const prefixMatch = html.match(
+      /id=["']otpIdCode["'][^>]*>([\s\S]*?)<\/output>/i,
+    );
+    const otpPrefix = prefixMatch
+      ? prefixMatch[1].replace(/<[^>]+>/g, "").trim()
+      : "SDA -";
+
+    return {
+      success: false,
+      requiresOtp: true,
+      emailHint,
+      otpPrefix,
+    };
+  }
+
+  // 2. Check for explicit success in hidden input or text
+  const successInputMatch = html.match(
+    /id=["']success["'][^>]*value=["']([^"']*)["']/i,
+  );
+  const successVal = successInputMatch ? successInputMatch[1].trim() : "";
+
+  const jsonBomMatch = html.match(
+    /id=["']jsonBom["'][^>]*value=["']([^"']*)["']/i,
+  );
+  const jsonBomVal = jsonBomMatch ? jsonBomMatch[1].trim() : "";
+
+  if (successVal && successVal.length > 0) {
+    return { success: true, requiresOtp: false };
+  }
+
+  if (html.toLowerCase().includes("uploaded successfully")) {
+    return { success: true, requiresOtp: false };
+  }
+
+  if (jsonBomVal && jsonBomVal.length > 0) {
+    return { success: false, requiresOtp: false, error: jsonBomVal };
+  }
+
+  const alertMatch = html.match(
+    /<span[^>]*style=["'][^"']*color:\s*red[^"']*["'][^>]*>([\s\S]*?)<\/span>/i,
+  );
+  if (alertMatch && alertMatch[1].trim()) {
+    return {
+      success: false,
+      requiresOtp: false,
+      error: alertMatch[1].replace(/<[^>]+>/g, "").trim(),
+    };
+  }
+
+  if (html.includes("customTable") || html.includes("fixedTableContainer")) {
+    return { success: true, requiresOtp: false };
+  }
+
+  return {
+    success: false,
+    requiresOtp: false,
+    error: "Upload completed or returned unexpected response.",
+  };
+}
 
 interface LeftUploadPanelProps {
   selectedFile: File | null;
@@ -95,6 +176,14 @@ const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  // OTP State
+  const [otpState, setOtpState] = useState<{
+    requiresOtp: boolean;
+    emailHint: string;
+    otpPrefix: string;
+    otpVal: string;
+  } | null>(null);
+
   useEffect(() => {
     if (initialClassId) setSelectedClassId(initialClassId);
   }, [initialClassId]);
@@ -104,7 +193,7 @@ const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
   }, [initialAssgnCode]);
 
   useEffect(() => {
-    if (!selectedClassId && courses.length> 0) {
+    if (!selectedClassId && courses.length > 0) {
       setSelectedClassId(courses[0].classId);
     }
   }, [courses, selectedClassId]);
@@ -114,7 +203,7 @@ const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
   }, [assignmentsMap, selectedClassId]);
 
   useEffect(() => {
-    if (!selectedAssgnCode && availableAssignments.length> 0) {
+    if (!selectedAssgnCode && availableAssignments.length > 0) {
       setSelectedAssgnCode(availableAssignments[0].code);
     }
   }, [availableAssignments, selectedAssgnCode]);
@@ -137,16 +226,18 @@ const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
     e.stopPropagation();
     setIsDraggingOver(false);
 
-    if (e.dataTransfer?.files && e.dataTransfer.files.length> 0) {
+    if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
       const droppedFile = e.dataTransfer.files[0];
       if (!isAllowedFile(droppedFile)) {
         alert("Invalid file format. Allowed formats: PDF, XLS, XLSX, DOC, DOCX.");
         return;
       }
-      if (droppedFile.size> MAX_FILE_SIZE && getFileExtension(droppedFile.name) !== "pdf") {
+      if (droppedFile.size > MAX_FILE_SIZE && getFileExtension(droppedFile.name) !== "pdf") {
         alert("File size exceeds 4MB limit.");
         return;
       }
+      setOtpState(null);
+      setStatusMsg(null);
       onSelectFile(droppedFile);
     }
   };
@@ -181,17 +272,64 @@ const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
         fileToUpload = new File([compressed.pdf], selectedFile.name, { type: "application/pdf" });
       }
 
-      setStatusMsg(null);
+      setStatusMsg({ type: "success", text: "Uploading to VTOP..." });
       await network.getDAUploadView(selectedClassId, selectedAssgnCode);
-      await network.uploadStudentDA(selectedClassId, selectedAssgnCode, assgnTitle, fileToUpload);
-      setStatusMsg({ type: "success", text: "Assignment uploaded successfully!" });
-      setTimeout(() => {
-        onSuccessUpload(selectedClassId);
-        onClearFile();
+      const responseHtml = await network.uploadStudentDA(selectedClassId, selectedAssgnCode, assgnTitle, fileToUpload);
+      
+      const checkResult = checkDAUploadResponse(responseHtml);
+
+      if (checkResult.requiresOtp) {
+        setOtpState({
+          requiresOtp: true,
+          emailHint: checkResult.emailHint || "",
+          otpPrefix: checkResult.otpPrefix || "SDA -",
+          otpVal: "",
+        });
         setStatusMsg(null);
-      }, 1500);
+      } else if (checkResult.success) {
+        setStatusMsg({ type: "success", text: "Assignment uploaded successfully!" });
+        setTimeout(() => {
+          onSuccessUpload(selectedClassId);
+          onClearFile();
+          setStatusMsg(null);
+          setOtpState(null);
+        }, 1500);
+      } else {
+        setStatusMsg({ type: "error", text: checkResult.error || "Upload failed. Please try again." });
+      }
     } catch (err: any) {
       setStatusMsg({ type: "error", text: err?.message || "Upload failed. Please try again." });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleOtpSubmit = async () => {
+    if (!otpState || !otpState.otpVal.trim()) return;
+
+    setIsUploading(true);
+    setStatusMsg({ type: "success", text: "Verifying OTP with VTOP..." });
+
+    try {
+      const responseHtml = await network.submitDAUploadOtp(otpState.otpVal.trim());
+      const checkResult = checkDAUploadResponse(responseHtml);
+
+      if (checkResult.success) {
+        setStatusMsg({ type: "success", text: "Verified & uploaded successfully!" });
+        setTimeout(() => {
+          onSuccessUpload(selectedClassId);
+          onClearFile();
+          setStatusMsg(null);
+          setOtpState(null);
+        }, 1500);
+      } else {
+        setStatusMsg({
+          type: "error",
+          text: checkResult.error || "OTP verification failed. Please check the code and try again.",
+        });
+      }
+    } catch (err: any) {
+      setStatusMsg({ type: "error", text: err?.message || "Failed to verify OTP." });
     } finally {
       setIsUploading(false);
     }
@@ -220,17 +358,112 @@ const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
       {/* Title / Header */}
       <div className="flex items-center justify-between pb-1 border-b border-(--border-dim)/20">
         <h3 className="font-expanded font-black text-sm uppercase tracking-wider text-(--text-main) flex items-center gap-2">
-          <CloudUpload className="w-4 h-4 text-(--accent-base)" />
-          {selectedFile ? "Upload Assignment" : "Quick Upload"}
+          {otpState ? (
+            <>
+              <Lock className="w-4 h-4 text-(--accent-base)" />
+              OTP Verification
+            </>
+          ) : selectedFile ? (
+            <>
+              <CloudUpload className="w-4 h-4 text-(--accent-base)" />
+              Upload Assignment
+            </>
+          ) : (
+            <>
+              <CloudUpload className="w-4 h-4 text-(--accent-base)" />
+              Quick Upload
+            </>
+          )}
         </h3>
-        {selectedFile && (
+        {otpState ? (
+          <span className="text-[11px] font-mono font-bold text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
+            OTP Required
+          </span>
+        ) : selectedFile ? (
           <span className="text-[11px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
             File Ready
           </span>
-        )}
+        ) : null}
       </div>
 
-      {!selectedFile ? (
+      {otpState ? (
+        /* OTP Verification View */
+        <div className="flex flex-col gap-4">
+          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex flex-col gap-2">
+            <div className="flex items-center gap-2 text-amber-400 font-bold text-xs">
+              <Lock className="w-4 h-4 shrink-0" />
+              <span>Authentication Code Sent</span>
+            </div>
+            <p className="text-xs text-(--text-muted) leading-relaxed">
+              Updating an existing submission requires OTP verification. Enter the 6-digit OTP sent to your student email
+              {otpState.emailHint ? (
+                <> (<strong className="text-(--text-main)">{otpState.emailHint}</strong>)</>
+              ) : null}.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-(--text-muted)">
+              Enter 6-Digit OTP
+            </label>
+            <div className="flex items-center gap-2">
+              <div className="px-3.5 py-2.5 rounded-xl bg-(--bg-main) border border-(--border-dim)/40 text-xs font-mono font-bold text-(--text-muted) select-none shrink-0">
+                {otpState.otpPrefix}
+              </div>
+              <input
+                type="text"
+                autoFocus
+                maxLength={6}
+                value={otpState.otpVal}
+                onChange={(e) =>
+                  setOtpState({
+                    ...otpState,
+                    otpVal: e.target.value.replace(/[^0-9]/g, ""),
+                  })
+                }
+                placeholder="123456"
+                className="flex-1 px-3.5 py-2.5 rounded-xl text-base font-mono font-bold tracking-widest bg-(--bg-main) border border-(--border-dim)/40 text-(--text-main) outline-none focus:border-(--accent-base)"
+              />
+            </div>
+          </div>
+
+          {/* Status Message */}
+          {statusMsg && (
+            <div
+              className={`p-3 rounded-xl font-bold text-xs flex items-center gap-2 ${
+                statusMsg.type === "success"
+                  ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                  : "bg-red-500/15 text-red-400 border border-red-500/30"
+              }`}>
+              {statusMsg.type === "success" ? (
+                <CheckCircle className="w-4 h-4 shrink-0" />
+              ) : (
+                <ErrorIcon className="w-4 h-4 shrink-0" />
+              )}
+              <span>{statusMsg.text}</span>
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              onClick={() => {
+                setOtpState(null);
+                setStatusMsg(null);
+              }}
+              disabled={isUploading}
+              className="flex-1 py-3 rounded-xl text-xs font-bold uppercase bg-(--bg-main) hover:bg-(--bg-highlight) text-(--text-muted) transition-colors cursor-pointer border border-(--border-dim)/40">
+              Cancel
+            </button>
+            <button
+              onClick={handleOtpSubmit}
+              disabled={isUploading || otpState.otpVal.length < 4}
+              className="flex-1 py-3 rounded-xl text-xs font-black uppercase bg-(--accent-base) text-(--text-inverse) transition-all cursor-pointer disabled:opacity-50 hover:opacity-90 flex items-center justify-center gap-2 border-0">
+              <CheckCircle className="w-4 h-4" />
+              {isUploading ? "Verifying..." : "Verify OTP"}
+            </button>
+          </div>
+        </div>
+      ) : !selectedFile ? (
         /* Empty State Dropzone */
         <div
           onClick={() => {
@@ -248,6 +481,8 @@ const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
                   alert("File size exceeds 4MB limit.");
                   return;
                 }
+                setOtpState(null);
+                setStatusMsg(null);
                 onSelectFile(f);
               }
             };
@@ -288,7 +523,11 @@ const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
               </div>
             </div>
             <button
-              onClick={onClearFile}
+              onClick={() => {
+                setOtpState(null);
+                setStatusMsg(null);
+                onClearFile();
+              }}
               className="p-1.5 rounded-lg text-(--text-muted) hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
               title="Remove File">
               <Close className="w-4 h-4" />
@@ -336,7 +575,7 @@ const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
                 ) : (
                   availableAssignments.map((a) => (
                     <option key={a.code} value={a.code}>
-                      {a.title} (Due: {a.dueDate || "N/A"})
+                      {a.title} {a.dueDate ? `(Due: ${a.dueDate})` : ""} {a.lastUpdated ? "• Re-upload" : ""}
                     </option>
                   ))
                 )}
@@ -365,7 +604,7 @@ const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
           <button
             onClick={handleUploadSubmit}
             disabled={isUploading || availableAssignments.length === 0}
-            className="w-full py-3 rounded-xl text-xs font-black uppercase tracking-wider bg-(--accent-base) text-(--text-inverse) transition-all cursor-pointer disabled:opacity-50 hover:opacity-90 flex items-center justify-center gap-2 border-0">
+            className="w-full py-3 rounded-xl text-xs font-black uppercase bg-(--accent-base) text-(--text-inverse) transition-all cursor-pointer disabled:opacity-50 hover:opacity-90 flex items-center justify-center gap-2 border-0">
             <CloudUpload className="w-4 h-4" />
             {isUploading ? "Uploading to VTOP..." : "Submit to VTOP"}
           </button>
@@ -380,7 +619,8 @@ const CourseCard = ({ course, network, expanded, setExpanded, onSelectFile }: an
   const rawAssignments = daAssignments[course.classId];
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeAssgn, setActiveAssgn] = useState<any>(null);
-  const [downloading, setDownloading] = useState<string | null>(null);
+  const [downloadingDA, setDownloadingDA] = useState<string | null>(null);
+  const [downloadingQP, setDownloadingQP] = useState<string | null>(null);
 
   // Sort assignments: pending first, then by due date timestamp ascending
   const sortedAssignments = useMemo(() => {
@@ -393,15 +633,27 @@ const CourseCard = ({ course, network, expanded, setExpanded, onSelectFile }: an
     });
   }, [rawAssignments]);
 
-  const handleDownload = (e: React.MouseEvent, assgn: any) => {
+  const handleDownloadStudentDA = async (e: React.MouseEvent, assgn: any) => {
     e.stopPropagation();
     try {
-      setDownloading(assgn.code);
-      network.downloadStudentDA(course.classId, assgn.code);
-      setTimeout(() => setDownloading(null), 2000);
+      setDownloadingDA(assgn.code);
+      await network.downloadStudentDA(course.classId, assgn.code, `${course.code}_${assgn.code}_Submission.pdf`);
     } catch (err) {
-      alert("Failed to download DA.");
-      setDownloading(null);
+      alert("Failed to download assignment submission.");
+    } finally {
+      setDownloadingDA(null);
+    }
+  };
+
+  const handleDownloadQP = async (e: React.MouseEvent, assgn: any) => {
+    e.stopPropagation();
+    try {
+      setDownloadingQP(assgn.code);
+      await network.downloadQP(assgn.code, course.classId, `${course.code}_${assgn.code}_QP.pdf`);
+    } catch (err) {
+      alert("Failed to download question paper.");
+    } finally {
+      setDownloadingQP(null);
     }
   };
 
@@ -413,7 +665,7 @@ const CourseCard = ({ course, network, expanded, setExpanded, onSelectFile }: an
       alert("Invalid file format. Allowed formats: PDF, XLS, XLSX, DOC, DOCX.");
       return;
     }
-    if (file.size> MAX_FILE_SIZE && getFileExtension(file.name) !== "pdf") {
+    if (file.size > MAX_FILE_SIZE && getFileExtension(file.name) !== "pdf") {
       alert("File size exceeds 4MB limit.");
       return;
     }
@@ -451,7 +703,7 @@ const CourseCard = ({ course, network, expanded, setExpanded, onSelectFile }: an
             <span className="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-xs font-mono font-black uppercase">
               {course.type}
             </span>
-            {pendingCount> 0 && (
+            {pendingCount > 0 && (
               <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-xs font-mono font-black uppercase tracking-wider">
                 {pendingCount} Pending
               </span>
@@ -476,100 +728,109 @@ const CourseCard = ({ course, network, expanded, setExpanded, onSelectFile }: an
         </div>
       </button>
 
-      
-        {expanded && (
-          <div
- 
- 
- 
- 
-            className="overflow-hidden">
-            <div className="p-4 md:p-5 pt-0 border-t border-(--border-dim)/20 bg-(--bg-main)/40">
-              {daLoading && !rawAssignments ? (
-                <div className="flex justify-center py-6 text-(--text-muted) font-mono font-bold text-xs animate-pulse">
-                  LOADING ASSIGNMENTS...
-                </div>
-              ) : sortedAssignments && sortedAssignments.length> 0 ? (
-                <div className="grid grid-cols-1 gap-3 mt-3">
-                  {sortedAssignments.map((assgn: any, idx: number) => {
-                    const isSubmitted = Boolean(assgn.lastUpdated && assgn.lastUpdated.trim() !== "");
+      {expanded && (
+        <div className="overflow-hidden">
+          <div className="p-4 md:p-5 pt-0 border-t border-(--border-dim)/20 bg-(--bg-main)/40">
+            {daLoading && !rawAssignments ? (
+              <div className="flex justify-center py-6 text-(--text-muted) font-mono font-bold text-xs animate-pulse">
+                LOADING ASSIGNMENTS...
+              </div>
+            ) : sortedAssignments && sortedAssignments.length > 0 ? (
+              <div className="grid grid-cols-1 gap-3 mt-3">
+                {sortedAssignments.map((assgn: any, idx: number) => {
+                  const isSubmitted = Boolean(assgn.lastUpdated && assgn.lastUpdated.trim() !== "");
 
-                    return (
-                      <div
-                        key={idx}
-                        className="bg-(--bg-surface)/60 p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 border-0">
-                        <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h4 className="font-bold text-(--text-main) text-sm truncate">
-                              {assgn.title}
-                            </h4>
-                            <span
-                              className={`text-[10px] font-mono font-black uppercase px-2.5 py-0.5 rounded-full shrink-0 ${
-                                isSubmitted
-                                  ? "bg-emerald-500/20 text-emerald-400"
-                                  : "bg-amber-500/20 text-amber-400"
-                              }`}>
-                              {isSubmitted ? "Submitted" : "Pending"}
-                            </span>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-(--text-muted)">
-                            <span className="bg-(--bg-main) px-2.5 py-0.5 rounded-md">
-                              Max: <strong className="text-(--text-main)">{assgn.maxMark}</strong>
-                            </span>
-                            <span className="bg-(--bg-main) px-2.5 py-0.5 rounded-md">
-                              Weightage: <strong className="text-(--text-main)">{assgn.weightage}</strong>
-                            </span>
-                          </div>
+                  return (
+                    <div
+                      key={idx}
+                      className="bg-(--bg-surface)/60 p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 border-0">
+                      <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="font-bold text-(--text-main) text-sm truncate">
+                            {assgn.title}
+                          </h4>
+                          <span
+                            className={`text-[10px] font-mono font-black uppercase px-2.5 py-0.5 rounded-full shrink-0 ${
+                              isSubmitted
+                                ? "bg-emerald-500/20 text-emerald-400"
+                                : "bg-amber-500/20 text-amber-400"
+                            }`}>
+                            {isSubmitted ? "Submitted" : "Pending"}
+                          </span>
                         </div>
-
-                        <div className="shrink-0 flex flex-col items-start md:items-end gap-1 text-xs font-mono text-(--text-muted)">
-                          <div>
-                            Due: <span className="text-(--text-main) font-bold">{assgn.dueDate || "N/A"}</span>
-                          </div>
-                          <div className="text-[11px] text-(--text-muted)">
-                            Updated: {assgn.lastUpdated || "Not Uploaded"}
-                          </div>
-                          <div className="flex items-center gap-2 mt-1">
-                            {isSubmitted && (
-                              <button
-                                onClick={(e) => handleDownload(e, assgn)}
-                                disabled={downloading === assgn.code}
-                                className="px-3 py-1 flex items-center gap-1.5 bg-(--bg-main) hover:bg-(--bg-highlight) rounded-xl transition-colors text-xs font-bold text-(--text-main) cursor-pointer border-0">
-                                <Download className="w-3.5 h-3.5 text-(--accent-base)" />
-                                {downloading === assgn.code ? "Downloading..." : "Download"}
-                              </button>
-                            )}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setActiveAssgn(assgn);
-                                fileInputRef.current?.click();
-                              }}
-                              className="px-3.5 py-1 flex items-center gap-1.5 bg-(--accent-base) text-(--text-inverse) hover:opacity-90 rounded-xl transition-opacity text-xs font-mono font-bold uppercase cursor-pointer border-0">
-                              <Upload className="w-3.5 h-3.5" />
-                              Upload
-                            </button>
-                          </div>
+                        <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-(--text-muted)">
+                          <span className="bg-(--bg-main) px-2.5 py-0.5 rounded-md">
+                            Max: <strong className="text-(--text-main)">{assgn.maxMark}</strong>
+                          </span>
+                          <span className="bg-(--bg-main) px-2.5 py-0.5 rounded-md">
+                            Weightage: <strong className="text-(--text-main)">{assgn.weightage}</strong>
+                          </span>
                         </div>
                       </div>
-                    );
-                  })}
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    style={{ display: "none" }}
-                    accept=".pdf,.xls,.xlsx,.doc,.docx"
-                    onChange={handleFileInputChange} />
-                </div>
-              ) : (
-                <div className="py-6 text-center text-xs text-(--text-muted) font-medium">
-                  you're all caught up.
-                </div>
-              )}
-            </div>
+
+                      <div className="shrink-0 flex flex-col items-start md:items-end gap-1 text-xs font-mono text-(--text-muted)">
+                        <div>
+                          Due: <span className="text-(--text-main) font-bold">{assgn.dueDate || "N/A"}</span>
+                        </div>
+                        <div className="text-[11px] text-(--text-muted)">
+                          Updated: {assgn.lastUpdated || "Not Uploaded"}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          {/* QP Download Button */}
+                          {assgn.hasQP && (
+                            <button
+                              onClick={(e) => handleDownloadQP(e, assgn)}
+                              disabled={downloadingQP === assgn.code}
+                              title="Download Question Paper"
+                              className="px-3 py-1 flex items-center gap-1.5 bg-(--bg-main) hover:bg-(--bg-highlight) rounded-xl transition-colors text-xs font-bold text-(--text-main) cursor-pointer border border-(--border-dim)/40">
+                              <Description className="w-3.5 h-3.5 text-(--accent-base)" />
+                              {downloadingQP === assgn.code ? "Downloading..." : "QP"}
+                            </button>
+                          )}
+
+                          {/* Student Submission Download Button */}
+                          {isSubmitted && (
+                            <button
+                              onClick={(e) => handleDownloadStudentDA(e, assgn)}
+                              disabled={downloadingDA === assgn.code}
+                              title="Download Your Submission"
+                              className="px-3 py-1 flex items-center gap-1.5 bg-(--bg-main) hover:bg-(--bg-highlight) rounded-xl transition-colors text-xs font-bold text-(--text-main) cursor-pointer border border-(--border-dim)/40">
+                              <Download className="w-3.5 h-3.5 text-(--accent-base)" />
+                              {downloadingDA === assgn.code ? "Downloading..." : "Download"}
+                            </button>
+                          )}
+
+                          {/* Upload / Re-upload Button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveAssgn(assgn);
+                              fileInputRef.current?.click();
+                            }}
+                            className="px-3.5 py-1 flex items-center gap-1.5 bg-(--accent-base) text-(--text-inverse) hover:opacity-90 rounded-xl transition-opacity text-xs font-mono font-bold uppercase cursor-pointer border-0">
+                            <Upload className="w-3.5 h-3.5" />
+                            {isSubmitted ? "Re-upload" : "Upload"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  style={{ display: "none" }}
+                  accept=".pdf,.xls,.xlsx,.doc,.docx"
+                  onChange={handleFileInputChange} />
+              </div>
+            ) : (
+              <div className="py-6 text-center text-xs text-(--text-muted) font-medium">
+                you're all caught up.
+              </div>
+            )}
           </div>
-        )}
-      
+        </div>
+      )}
     </div>
   );
 };
@@ -646,7 +907,7 @@ export default function DigitalAssignments({ network }: { network: VTOPNetwork }
       <div className="w-full h-20 md:h-24 shrink-0" />
 
       <div className="pb-32 px-4 md:px-8 max-w-7xl mx-auto w-full flex flex-col lg:flex-row gap-6 items-start">
-        {/* LEFT COLUMN: Drag & Drop + File Attachment & Upload Target Panel */}
+        {/* LEFT COLUMN: Drag & Drop + File Attachment & Upload Target Panel (with OTP handling) */}
         <LeftUploadPanel
           selectedFile={selectedFile}
           onClearFile={() => {
@@ -678,7 +939,7 @@ export default function DigitalAssignments({ network }: { network: VTOPNetwork }
                 <div key={i} className="h-28 bg-(--bg-surface)/40 rounded-3xl animate-pulse" />
               ))}
             </div>
-          ) : sortedCourses.length> 0 ? (
+          ) : sortedCourses.length > 0 ? (
             <div className="grid grid-cols-1 gap-3">
               {sortedCourses.map((course) => (
                 <CourseCard

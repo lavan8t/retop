@@ -522,6 +522,25 @@ const DashboardApp = () => {
     }
   }, [status]);
 
+  const navigateToView = (view: ViewType, replace: boolean = false) => {
+    if (view === currentView) return;
+    if (replace) {
+      window.history.replaceState({ view }, "", window.location.pathname + window.location.search);
+    } else {
+      window.history.pushState({ view }, "", window.location.pathname + window.location.search);
+    }
+    setCurrentView(view);
+    sessionStorage.setItem("vtop-retop-view", view);
+  };
+
+  const handleBack = () => {
+    if (window.history.state?.view && window.history.state.view !== "dashboard") {
+      window.history.back();
+    } else {
+      navigateToView("dashboard");
+    }
+  };
+
   useEffect(() => {
     if (window.location.hash) {
       window.history.replaceState(
@@ -547,7 +566,7 @@ const DashboardApp = () => {
 
     const handleOpenSettings = () => {
       if ((window as any).__RETOP_OFFLINE__) {
-        setCurrentView("settings");
+        navigateToView("settings");
       } else if (typeof chrome !== "undefined" && chrome.runtime && !!chrome.runtime.getURL) {
         window.open("https://getretop.web.app/", "_blank");
       }
@@ -786,6 +805,17 @@ const DashboardApp = () => {
       };
 
       if (isInput(targetEl)) return;
+
+      if (e.key === "Backspace") {
+        if (isOmniboxOpenRef.current) return;
+        const currentV = useAppStore.getState().currentView;
+        if (currentV !== "dashboard") {
+          e.preventDefault();
+          handleBack();
+        }
+        return;
+      }
+
       if (isOmniboxOpenRef.current) {
         if (e.key !== "Escape" && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
           e.preventDefault();
@@ -879,7 +909,7 @@ const DashboardApp = () => {
 
     if (link.url === "#settings" || link.title.toLowerCase() === "settings") {
       setIsModernUI(true);
-      setCurrentView("settings");
+      navigateToView("settings");
       return;
     }
 
@@ -896,7 +926,7 @@ const DashboardApp = () => {
 
     if (!networkRef.current) return;
     setIsModernUI(true);
-    setCurrentView(dest);
+    navigateToView(dest as ViewType);
   };
 
   const handleLogout = async () => {
@@ -970,7 +1000,8 @@ const DashboardApp = () => {
             handleLogout={handleLogout}
             isOmniboxOpen={isOmniboxOpen}
             setIsOmniboxOpen={setIsOmniboxOpen}
-            setCurrentView={setCurrentView}
+            setCurrentView={navigateToView}
+            onBack={handleBack}
             pinnedLinks={pinnedLinks}
             menuCategories={menu}
             onTogglePin={handleTogglePin}

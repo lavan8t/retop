@@ -55,6 +55,7 @@ interface TopBarProps {
   onTimetableSemChange?: (semId: string) => void;
   onSync?: () => void;
   network?: any; // Add network prop
+  onBack?: () => void;
 }
 
 const getPageTitle = (view: string, dynamicTitle?: string) => {
@@ -110,6 +111,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   onTimetableSemChange,
   onSync,
   network,
+  onBack,
 }) => {
   const [isStarOpen, setIsStarOpen] = React.useState(false);
   const [isMobileControlsOpen, setIsMobileControlsOpen] = React.useState(false);
@@ -240,7 +242,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                   onTogglePin={onTogglePin}
                   initialQuery={initialQuery}
                   pageTitle={getPageTitle(currentView, contentTitle)}
-                  onBack={() => setCurrentView("dashboard")}
+                  onBack={onBack || (() => setCurrentView("dashboard"))}
                   status={isLoading ? "loading" : "idle"}
                   onSync={onSync}
                   isSyncing={isSyncing}

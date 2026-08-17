@@ -495,7 +495,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
     <div ref={wrapperRef} className="relative flex flex-col z-50">
       {/* Unified Search Bar */}
       <div
-        className={`group flex items-center gap-3 transition-all duration-fast ease-out cursor-text min-w-60 md:min-w-72 pl-4 pr-3 h-12 md:h-14 rounded-[32px] relative z-10000 bg-transparent border-2 border-transparent shadow-none`}
+        className={`group flex items-center gap-1.5 transition-all duration-fast ease-out cursor-text min-w-60 md:min-w-72 pl-1 sm:pl-2 pr-3 h-12 md:h-14 rounded-[32px] relative z-10000 bg-transparent border-2 border-transparent shadow-none`}
       >
         <div className="relative flex items-center shrink-0">
           <Tooltip text={isHome ? "Go to VTOP" : "Return to Dashboard"}>
@@ -513,12 +513,12 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
               }}
               onMouseEnter={() => setIsLogoHovered(true)}
               onMouseLeave={() => setIsLogoHovered(false)}
-              className="relative flex items-center justify-start shrink-0 cursor-pointer hover:opacity-90 transition-opacity focus:outline-none w-[66px] md:w-[76px] h-9 pl-1 md:pl-2 select-none overflow-visible"
+              className="relative flex items-center justify-end shrink-0 cursor-pointer hover:opacity-90 transition-opacity focus:outline-none w-[64px] md:w-[72px] h-9 pr-0.5 select-none overflow-visible"
             >
-              <div className="relative flex items-center h-full w-full">
+              <div className="relative flex items-center justify-end h-full w-full">
                 {/* 1. "re." Branding (re text + dot) */}
                 <div
-                  className={`absolute inset-0 flex items-end pb-1 transition-all duration-200 ${
+                  className={`absolute right-0 inset-y-0 flex items-end justify-end pb-1 transition-all duration-200 ${
                     isHome && isLogoHovered
                       ? "opacity-0 -translate-y-1 scale-90 pointer-events-none"
                       : "opacity-100 translate-y-0 scale-100"
@@ -548,7 +548,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                 {/* 2. "VTOP" Hover State (Home only) */}
                 {isHome && (
                   <div
-                    className={`absolute inset-0 flex items-center transition-all duration-200 ${
+                    className={`absolute right-0 inset-y-0 flex items-center justify-end transition-all duration-200 ${
                       isLogoHovered
                         ? "opacity-100 translate-y-0 scale-100"
                         : "opacity-0 translate-y-1 scale-90 pointer-events-none"
@@ -570,7 +570,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
             toTitleCase(flattenedLinks[0].title)
               .toLowerCase()
               .startsWith(query.toLowerCase()) && (
-              <div className="absolute left-2 top-0 bottom-0 flex items-center pointer-events-none w-full overflow-hidden">
+              <div className="absolute left-0 top-0 bottom-0 flex items-center pointer-events-none w-full overflow-hidden">
                 <span className="text-lg md:text-xl font-bold text-transparent whitespace-pre">
                   {query}
                 </span>
@@ -597,7 +597,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
               if (!isExpanded) setIsOmniboxOpen(true);
             }}
             onFocus={() => setIsOmniboxOpen(true)}
-            className="w-full bg-transparent text-lg md:text-xl font-bold text-(--text-main) focus:outline-none placeholder:text-(--text-main) placeholder:opacity-100 min-w-0 text-left pl-2 relative z-10 normal-case"
+            className="w-full bg-transparent text-lg md:text-xl font-bold text-(--text-main) focus:outline-none placeholder:text-(--text-main) placeholder:opacity-100 min-w-0 text-left pl-0 relative z-10 normal-case"
           />
         </div>
       </div>

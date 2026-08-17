@@ -1,5 +1,6 @@
 import { renderDashboard } from "./pages/app";
 import { scrapeMenu } from "./parsers/menu";
+import { injectLegacyMenuSearch } from "./components/legacy/injectLegacyMenuSearch";
 import {
   injectGlobalStyles,
   injectGlobalFonts,
@@ -573,10 +574,11 @@ const init = async () => {
     }
 
     renderDashboard();
+    injectLegacyMenuSearch();
   } else {
     document.body.classList.add("show-legacy-ui");
     removeSplashScreen();
-    cleanupLegacyHMenuBar();
+    injectLegacyMenuSearch();
   }
 };
 

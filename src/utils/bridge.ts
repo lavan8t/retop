@@ -1,5 +1,6 @@
 import { getExtUrl } from "./url";
 import { VIT_EMBLEM_SVG_RAW } from "../components/common/VitEmblemSvg";
+import { VIT_EMBLEM_ANIMATION_CSS } from "../components/common/vitEmblemStyles";
 
 let isInitialized = false;
 let shadowRoot: ShadowRoot | null = null;
@@ -135,9 +136,19 @@ export function initializeContainer() {
       const earlyShadowStyle = document.createElement("style");
       earlyShadowStyle.id = resetStyleId;
       earlyShadowStyle.textContent = `
+        :host {
+          all: initial;
+          display: block;
+        }
         *, ::before, ::after {
           box-sizing: border-box;
           border-color: transparent !important;
+        }
+        #retop-root {
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+          background: transparent;
         }
       `;
       shadowRoot.insertBefore(earlyShadowStyle, shadowRoot.firstChild);
@@ -211,18 +222,19 @@ export function injectSplashScreen() {
         pointer-events: none !important;
       }
       #retop-open-loader .vit-emblem-splash {
-        width: 72px !important;
-        height: 72px !important;
+        width: 210px !important;
+        height: 210px !important;
         pointer-events: none !important;
         user-select: none !important;
       }
+      ${VIT_EMBLEM_ANIMATION_CSS}
     `;
     (document.head || document.documentElement).appendChild(earlyStyle);
   }
 
   const loader = document.createElement("div");
   loader.id = "retop-open-loader";
-  loader.innerHTML = `<div class="vit-emblem-splash" style="width:72px;height:72px;display:flex;align-items:center;justify-content:center;">${VIT_EMBLEM_SVG_RAW}</div>`;
+  loader.innerHTML = `<div class="vit-emblem-splash" style="width:210px;height:210px;display:flex;align-items:center;justify-content:center;">${VIT_EMBLEM_SVG_RAW}</div>`;
   document.documentElement.appendChild(loader);
 }
 
@@ -231,14 +243,23 @@ export function removeSplashScreen() {
   const cloak = document.getElementById("retop-early-cloak");
 
   if (loader) {
-    loader.style.opacity = "0";
+    const splash = loader.querySelector(".vit-emblem-splash") || loader;
+    splash.classList.add("vit-emblem-fast-finish");
+
+    // Speed up and finish all strokes/animations in 150ms
     setTimeout(() => {
-      loader.remove();
-      if (cloak) cloak.remove();
-      if (document.body) {
-        document.body.style.opacity = "1";
-        document.body.style.visibility = "visible";
-      }
+      // Last 50ms: stay still and fade away smoothly
+      loader.style.transition = "opacity 50ms ease-out";
+      loader.style.opacity = "0";
+
+      setTimeout(() => {
+        loader.remove();
+        if (cloak) cloak.remove();
+        if (document.body) {
+          document.body.style.opacity = "1";
+          document.body.style.visibility = "visible";
+        }
+      }, 50);
     }, 150);
   } else {
     if (cloak) cloak.remove();
@@ -284,63 +305,19 @@ export function setUIVisibility(visible: boolean) {
   }
 }
 
-export function enhanceLegacyHMenuBar() {
-  const hmenuBar = document.getElementById("top-hmenu-bar");
-  if (!hmenuBar) return;
-  const container = hmenuBar.querySelector(".d-flex.flex-nowrap");
-  if (!container || container.querySelector("#retop-hmenu-search")) return;
-
-  const searchBtn = document.createElement("a");
-  searchBtn.id = "retop-hmenu-search";
-  searchBtn.className = "btn btn-outline ps-0 fw-bold text-start text-nowrap hmenuItem";
-  searchBtn.href = "javascript:void(0);";
-  searchBtn.setAttribute("role", "button");
-  searchBtn.setAttribute("title", "Search (Press Space)");
-  searchBtn.innerHTML = `
-    <i class="bi bi-search fs-6 me-md-1 text-primary d-none d-md-inline-block"></i>
-    <span class="primaryColor1"><i class="fs-6 bi bi-search"></i>
-      <span class="d-none d-md-inline-block">Search</span>
-    </span>
-  `;
-
-  searchBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    // Trigger VTOP's native Space key handler
-    const spaceEvent = new KeyboardEvent("keydown", {
-      key: " ",
-      code: "Space",
-      keyCode: 32,
-      which: 32,
-      bubbles: true,
-      cancelable: true,
-    });
-    document.dispatchEvent(spaceEvent);
-    window.dispatchEvent(spaceEvent);
-
-    // Also trigger VTOP search modal if present
-    const searchModal = document.querySelector("#searchModal, #universalSearchModal, #quickSearchModal, #globalSearchModal, #quickSearch, #vtopSearchModal");
-    if (searchModal && (window as any).bootstrap?.Modal) {
-      try {
-        const modalInstance = (window as any).bootstrap.Modal.getOrCreateInstance(searchModal);
-        modalInstance.show();
-      } catch (err) {}
-    }
-  });
-
-  const brand = container.querySelector(".navbar-brand");
-  if (brand && brand.nextSibling) {
-    container.insertBefore(searchBtn, brand.nextSibling);
-  } else {
-    container.appendChild(searchBtn);
-  }
+export function cleanupLegacyHMenuBar() {
+  document.getElementById("vtop-search-menu-btn")?.remove();
+  document.getElementById("MG_SEARCH")?.remove();
+  document.getElementById("retop-hmenu-search-toggle")?.remove();
+  document.getElementById("retop-vtop-search-menu")?.remove();
 }
 
 export function revealLegacyUI() {
   setUIVisibility(false);
   removeSplashScreen();
-  enhanceLegacyHMenuBar();
+  import("../components/legacy/injectLegacyMenuSearch").then(({ injectLegacyMenuSearch }) => {
+    injectLegacyMenuSearch();
+  }).catch(() => {});
 }
 
 export function createHiddenForm(

@@ -6,7 +6,13 @@ function stripTags(html: string): string {
   return html.replace(/<[^>]*>/g, "").trim();
 }
 
-export function parseAcademicStats(html: string) {
+export function parseAcademicStats(html: any) {
+  if (html && typeof html === "object" && !html.nodeType) {
+    return html;
+  }
+  if (!html || typeof html !== "string") {
+    return { cgpa: "...", credits: "...", totalCredits: "...", nonGraded: "...", placement: "..." };
+  }
   const doc = parseHTMLFast(html);
   
   const stats = {
@@ -40,9 +46,11 @@ export function parseProctorMessage(html: string) {
   return stripTags(html).replace(/\s+/g, " ").trim();
 }
 
-export function parseDigitalAssignments(html: string): Assignment[] {
+export function parseDigitalAssignments(html: any): Assignment[] {
+  if (Array.isArray(html)) return html;
   if (
     !html ||
+    typeof html !== "string" ||
     html.includes("No Data") ||
     html.includes("No Records") ||
     html.trim() === ""
@@ -59,12 +67,6 @@ export function parseDigitalAssignments(html: string): Assignment[] {
 
   rows.forEach((row) => {
     const cols = row.querySelectorAll("td");
-
-    // According to the new HTML structure:
-    // th[0] = Index (#) -> Ignored by querySelectorAll("td")
-    // td[0] = Course Name
-    // td[1] = Title
-    // td[2] = Last Date
 
     if (cols.length < 3) return;
 
@@ -84,8 +86,9 @@ export function parseDigitalAssignments(html: string): Assignment[] {
   return assignments;
 }
 
-export function parseCourseDetails(html: string): CourseSummary[] {
-  if (!html) return [];
+export function parseCourseDetails(html: any): CourseSummary[] {
+  if (Array.isArray(html)) return html;
+  if (!html || typeof html !== "string") return [];
 
   const doc = parseHTMLFast(html);
   const rows = doc.querySelectorAll("table tbody tr");

@@ -1,7 +1,38 @@
 import { getExtUrl } from "./utils/url";
-import { set as idbSet, get as idbGet, entries as idbEntries } from "idb-keyval";
+import { set as idbSet } from "idb-keyval";
 
 if (typeof window !== "undefined") {
+  // Signal to the web application that the extension is active
+  try {
+    localStorage.setItem("__RETOP_EXT_PRESENT__", "true");
+  } catch {}
+  (window as any).__RETOP_EXTENSION_INSTALLED__ = true;
+  (window as any).__RETOP_EXTENSION_VERSION__ = "0.5.0";
+  document.documentElement.setAttribute("data-retop-extension", "true");
+
+  window.dispatchEvent(new CustomEvent("retop-extension-ready", { detail: { version: "0.5.0" } }));
+  document.dispatchEvent(new CustomEvent("retop-extension-ready", { detail: { version: "0.5.0" } }));
+  window.postMessage({ type: "RETOP_EXT_PRESENT", version: "0.5.0" }, "*");
+
+  // Proactively fetch all cached extension storage to hydrate the web app
+  if (typeof chrome !== "undefined" && chrome.runtime?.sendMessage) {
+    try {
+      chrome.runtime.sendMessage({ action: "GET_ALL_SYNC_DATA" }, (res) => {
+        if (res && res.data && typeof res.data === "object") {
+          Promise.all(
+            Object.entries(res.data).map(async ([k, v]) => {
+              try {
+                await idbSet(k, v);
+                if (typeof v === "string") localStorage.setItem(k, v);
+                else localStorage.setItem(k, JSON.stringify(v));
+              } catch {}
+            })
+          ).catch(() => {});
+        }
+      });
+    } catch {}
+  }
+
   // Listen for messages from background service worker (scraped data relay)
   if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
     chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -17,17 +48,34 @@ if (typeof window !== "undefined") {
       }
     });
   }
-}
 
-// 4. On /u/[id]/home routes: take over page & mount offline app UI
-const isOfflineRoute = /\/u\/[^/]+\/home(\/|$)/.test(window.location.pathname);
+  const checkIsOfflineRoute = () => {
+    const path = window.location.pathname.toLowerCase();
+    const hash = window.location.hash.toLowerCase();
+    const search = window.location.search.toLowerCase();
 
-if (isOfflineRoute && typeof chrome !== "undefined" && typeof chrome.runtime?.getURL === "function") {
+    return (
+      /\/u\/[^/]+(\/home|\/|$)/.test(path) ||
+      path.includes("/offline") ||
+      path.includes("/app") ||
+      path.includes("/dashboard") ||
+      hash.includes("offline") ||
+      hash.includes("/u/") ||
+      search.includes("offline=true")
+    );
+  };
+
   const takeover = () => {
-    // Clean placeholder styles from offline-shell.html
-    document.querySelectorAll("head style, head link").forEach((el) => el.remove());
+    if ((window as any).__RETOP_TAKEOVER_DONE__) return;
+    (window as any).__RETOP_TAKEOVER_DONE__ = true;
+    (window as any).__RETOP_OFFLINE__ = true;
+
+    // Clean placeholder styles from landing page
+    document.querySelectorAll("head style, head link:not([rel='manifest'])").forEach((el) => el.remove());
     document.body.innerHTML = "";
     document.documentElement.setAttribute("data-theme", "dark");
+    document.documentElement.style.background = "#09090b";
+    document.body.style.background = "#09090b";
 
     // Inject fonts & ext stylesheets
     const injectLink = (href: string) => {
@@ -65,9 +113,65 @@ if (isOfflineRoute && typeof chrome !== "undefined" && typeof chrome.runtime?.ge
     document.head.appendChild(script);
   };
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", takeover, { once: true });
-  } else {
-    takeover();
+  if (typeof chrome !== "undefined" && typeof chrome.runtime?.getURL === "function") {
+    // 1. Check current route
+    if (checkIsOfflineRoute()) {
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", takeover, { once: true });
+      } else {
+        takeover();
+      }
+    }
+
+    // 2. Intercept clicks on "Go to Retop" / "Launch" / "Offline" buttons
+    document.addEventListener(
+      "click",
+      (e) => {
+        const target = (e.target as HTMLElement)?.closest?.("a, button, [role='button'], [data-retop-launch]");
+        if (!target) return;
+
+        const text = (target.textContent || "").trim().toLowerCase();
+        const href = (target.getAttribute("href") || "").toLowerCase();
+        const isLaunchTarget =
+          target.hasAttribute("data-retop-launch") ||
+          target.id === "retop-launch" ||
+          target.id === "go-to-retop" ||
+          text.includes("go to retop") ||
+          text.includes("open retop") ||
+          text.includes("launch retop") ||
+          text.includes("launch app") ||
+          text.includes("open app") ||
+          text.includes("offline mode") ||
+          href.includes("offline") ||
+          href.includes("/u/") ||
+          href.includes("/app");
+
+        if (isLaunchTarget) {
+          e.preventDefault();
+          e.stopPropagation();
+          takeover();
+        }
+      },
+      true,
+    );
+
+    // 3. Listen for postMessage from page
+    window.addEventListener("message", (e) => {
+      if (
+        e.data === "RETOP_LAUNCH_OFFLINE" ||
+        e.data?.type === "RETOP_LAUNCH_OFFLINE" ||
+        e.data?.action === "GO_TO_RETOP"
+      ) {
+        takeover();
+      }
+    });
+
+    // 4. Handle SPA navigation
+    window.addEventListener("popstate", () => {
+      if (checkIsOfflineRoute()) takeover();
+    });
+    window.addEventListener("hashchange", () => {
+      if (checkIsOfflineRoute()) takeover();
+    });
   }
 }

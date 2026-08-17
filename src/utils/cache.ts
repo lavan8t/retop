@@ -35,6 +35,23 @@ export const getCachedDataWithTimestamp = async <T>(key: string): Promise<{ data
       }
     }
 
+    if (stored === undefined || stored === null) {
+      const allData = await getAllStorageData();
+      const cleanTarget = unPrefixed.toLowerCase();
+      for (const [k, v] of Object.entries(allData)) {
+        const lowerK = k.toLowerCase();
+        if (
+          lowerK === cleanTarget ||
+          lowerK === `retop_cache_${cleanTarget}` ||
+          lowerK.endsWith(`_${cleanTarget}`) ||
+          lowerK.endsWith(`_${key.toLowerCase()}`)
+        ) {
+          stored = v;
+          break;
+        }
+      }
+    }
+
     if (stored !== undefined && stored !== null) {
       if (typeof stored === "object" && stored.timestamp && stored.data !== undefined) {
         const age = Date.now() - stored.timestamp;
@@ -44,9 +61,12 @@ export const getCachedDataWithTimestamp = async <T>(key: string): Promise<{ data
       return { data: stored as T, timestamp: Date.now() };
     }
 
-    // Fallback: Check Zustand PWA sync storage ("portal-app-storage") in IndexedDB
-    const portalRes = await getStorageData(["portal-app-storage"]);
-    const portalPayload = portalRes["portal-app-storage"]?.state?.data || portalRes["portal-app-storage"]?.data;
+    // Fallback: Check Zustand PWA sync storage ("portal-app-storage" / "retop_last_sync_payload") in IndexedDB
+    const portalRes = await getStorageData(["portal-app-storage", "retop_last_sync_payload"]);
+    const portalPayload =
+      portalRes["portal-app-storage"]?.state?.data ||
+      portalRes["portal-app-storage"]?.data ||
+      portalRes["retop_last_sync_payload"];
     if (portalPayload && typeof portalPayload === "object") {
       const matchKey = unPrefixed.toLowerCase();
       if (matchKey.includes("stat") && portalPayload.stats) {

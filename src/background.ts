@@ -1,4 +1,4 @@
-import { uploadBackup, downloadBackup } from "./utils/googleDriveSync";
+import { uploadBackup, downloadBackup, getAuthToken } from "./utils/googleDriveSync";
 import { getExtUrl } from "./utils/url";
 import { get as idbGet, set as idbSet } from "idb-keyval";
 
@@ -101,6 +101,41 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
 
+  if (message.action === "GET_ALL_SYNC_DATA" || message.type === "GET_ALL_SYNC_DATA") {
+    if (typeof chrome !== "undefined" && chrome.storage?.local) {
+      chrome.storage.local.get(null, (items) => {
+        sendResponse({ success: true, data: items || {} });
+      });
+    } else {
+      sendResponse({ success: false, data: {} });
+    }
+    return true;
+  }
+
+  if (message.action === "GET_STORAGE" || message.type === "GET_STORAGE") {
+    const keys = message.keys;
+    if (typeof chrome !== "undefined" && chrome.storage?.local) {
+      chrome.storage.local.get(keys || null, (items) => {
+        sendResponse({ success: true, data: items || {} });
+      });
+    } else {
+      sendResponse({ success: false, data: {} });
+    }
+    return true;
+  }
+
+  if (message.action === "SET_STORAGE" || message.type === "SET_STORAGE") {
+    const data = message.data;
+    if (data && typeof chrome !== "undefined" && chrome.storage?.local) {
+      chrome.storage.local.set(data, () => {
+        sendResponse({ success: true });
+      });
+    } else {
+      sendResponse({ success: false });
+    }
+    return true;
+  }
+
   if (message.action === "UPLOAD_DRIVE_BACKUP") {
     uploadBackup(message.settingsData, message.clientId)
       .then(() => sendResponse({ success: true }))
@@ -113,5 +148,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       .then((data) => sendResponse({ success: true, data }))
       .catch((err) => sendResponse({ success: false, error: err?.message || String(err) }));
     return true; // Keep channel open for async response
+  }
+
+  if (message.action === "SIGN_IN_GOOGLE" || message.action === "GET_AUTH_TOKEN") {
+    getAuthToken(message.clientId)
+      .then((token) => sendResponse({ success: true, token }))
+      .catch((err) => sendResponse({ success: false, error: err?.message || String(err) }));
+    return true;
   }
 });

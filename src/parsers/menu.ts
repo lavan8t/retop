@@ -329,20 +329,39 @@ export function scrapeMenu(doc: Document): MenuCategory[] {
 }
 
 export function scrapeUserProfile(doc: Document) {
+  const authInput = (doc.getElementById("authorizedIDX") as HTMLInputElement)?.value ||
+    (doc.getElementById("authorizedID") as HTMLInputElement)?.value || "";
+
   const navText =
     doc.querySelector(".navbar-text.text-light.small.fw-bold")?.textContent?.trim() ||
     doc.querySelector("#navbarDropdown .navbar-text")?.textContent?.trim() ||
+    doc.querySelector(".navbar-text")?.textContent?.trim() ||
     "";
 
   // Clean tags like "(STUDENT)", "(FACULTY)", "(PARENT)", "(OFFLINE)"
-  const clean = navText.replace(/\(STUDENT\)|\(FACULTY\)|\(PARENT\)|\(EMPLOYEE\)|\(ALUMNI\)|\(OFFLINE\)/gi, "").trim();
-  const parts = clean.split("-").map((s) => s.trim()).filter(Boolean);
+  const clean = navText
+    .replace(/\(STUDENT\)|\(FACULTY\)|\(PARENT\)|\(EMPLOYEE\)|\(ALUMNI\)|\(OFFLINE\)/gi, "")
+    .trim();
 
-  const authInput = (doc.getElementById("authorizedIDX") as HTMLInputElement)?.value;
-  const rawRegNo = parts[0] || authInput || "Student";
-  const regNo = rawRegNo.replace(/\s*\(offline\)/gi, "").trim();
-  const rawName = parts[1] || regNo;
-  const name = rawName.replace(/\s*\(offline\)/gi, "").replace(/\)+$/, "").trim();
+  let regNo = authInput.replace(/\s*\(offline\)/gi, "").trim();
+  let name = "";
+
+  if (clean.includes("-")) {
+    const parts = clean.split("-").map((s) => s.trim()).filter(Boolean);
+    if (!regNo && parts[0]) regNo = parts[0];
+    if (parts[1]) name = parts[1];
+  } else if (clean.includes("(") && clean.includes(")")) {
+    const match = clean.match(/^([^(]+)\s*\(([^)]+)\)/);
+    if (match) {
+      name = match[1].trim();
+      if (!regNo) regNo = match[2].trim();
+    }
+  } else if (clean) {
+    name = clean;
+  }
+
+  if (!regNo) regNo = "Student";
+  if (!name) name = regNo !== "Student" ? regNo : "Student";
 
   const isChennai =
     (typeof window !== "undefined" && window.location.hostname.includes("vtopcc")) ||
@@ -353,8 +372,11 @@ export function scrapeUserProfile(doc: Document) {
   const rawImg =
     doc.querySelector("img#retop-profile-image-mock")?.getAttribute("src") ||
     doc.querySelector("img.img_icon_size, img.img_stamp_size")?.getAttribute("src") ||
+    doc.querySelector("#navbarDropdown img, #profileDropdown img, .profile-picture img")?.getAttribute("src") ||
+    doc.querySelector("img[src*='StudentPhoto'], img[src*='studentPhoto'], img[src*='Photo'], img[src*='photo'], img[src*='process/profilePhoto']")?.getAttribute("src") ||
     undefined;
-  const profileImgBase64 = rawImg && rawImg.startsWith("data:image") ? rawImg : undefined;
+
+  const profileImgBase64 = rawImg && (rawImg.startsWith("data:image") || rawImg.startsWith("blob:") || rawImg.startsWith("http") || rawImg.startsWith("/")) ? rawImg : undefined;
 
   return { name, regNo, profileImgBase64, campus };
 }

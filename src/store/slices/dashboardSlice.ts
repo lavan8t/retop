@@ -12,7 +12,7 @@ import { parseMarksSemesters } from "../../parsers/marks";
 import { parseGradesSemesters } from "../../parsers/grades";
 import { parseDASemesters } from "../../parsers/digital-assignments";
 import { parseStudentProfile } from "../../parsers/profile";
-import { setCachedData } from "../../utils/cache";
+import { getCachedData, setCachedData } from "../../utils/cache";
 import { waitForIntercepted } from "../../utils/dashboardInterceptor";
 import { CourseSummary, Assignment, Event } from "../../types/vtop";
 import { UpcomingClass } from "../../utils/timetable-slots";
@@ -68,16 +68,101 @@ export const createDashboardSlice: StateCreator<DataState, [], [], DashboardSlic
 
   fetchDashboardData: async (network, csrf, authId) => {
     try {
-      set({ status: "Syncing..." });
+      const isOffline =
+        (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
+        (typeof navigator !== "undefined" && !navigator.onLine) ||
+        (typeof location !== "undefined" &&
+          !location.hostname.includes("vit.ac.in") &&
+          !location.protocol.includes("chrome-extension") &&
+          !location.protocol.includes("moz-extension"));
 
-      // ── Home-root strategy ──────────────────────────────────────────────────
-      // VTOP fires XHRs for stats/attendance/DA/events the moment the home
-      // page loads. We intercept those in content.ts and signal here via
-      // waitForIntercepted(). If the signal arrives within 2.5 s we parse
-      // and store directly — zero duplicate requests. If the user opened
-      // retop on a non-home page the timeout fires and we fall back to
-      // fetchWithCache (cache-first, then live fetch) as before.
+      set({ status: isOffline ? "Offline" : "Syncing..." });
 
+      // ── Instant Cache Hydration ─────────────────────────────────────────────
+      // Immediately hydrate store from local cache with zero latency so UI renders instantly
+      try {
+        const [cachedStats, cachedAtt, cachedDA, cachedEvents] = await Promise.all([
+          getCachedData<string>(authId ? `${authId}_dashboard_stats` : "dashboard_stats"),
+          getCachedData<string>(authId ? `${authId}_dashboard_attendance` : "dashboard_attendance"),
+          getCachedData<string>(authId ? `${authId}_dashboard_da` : "dashboard_da"),
+          getCachedData<string>(authId ? `${authId}_dashboard_events` : "dashboard_events"),
+        ]);
+
+        const instantUpdates: any = {};
+        if (cachedStats) {
+          try { instantUpdates.stats = parseAcademicStats(cachedStats); } catch {}
+        }
+        if (cachedAtt) {
+          try { instantUpdates.attendance = parseCourseDetails(cachedAtt); } catch {}
+        }
+        if (cachedDA) {
+          try { instantUpdates.assignments = parseDigitalAssignments(cachedDA); } catch {}
+        }
+        if (cachedEvents) {
+          try { instantUpdates.events = parseEvents(cachedEvents); } catch {}
+        }
+
+        if (Object.keys(instantUpdates).length > 0) {
+          set(instantUpdates);
+        }
+      } catch (e) {
+        console.warn("[retop] Instant cache load failed:", e);
+      }
+
+      const isChennai = typeof window !== "undefined" && window.location.hostname.includes("vtopcc");
+      const ttEndpoint = isChennai ? "academics/common/StudentTimeTableChn" : "academics/common/StudentTimeTable";
+
+      if (isOffline) {
+        // In offline mode, read timetable & calendar from cache immediately without waiting for XHR interception
+        try {
+          const [semHTML, calHTML] = await Promise.all([
+            getCachedData<string>(authId ? `${authId}_tt_semester_list` : "tt_semester_list"),
+            getCachedData<string>(authId ? `${authId}_cal_semester_list` : "cal_semester_list"),
+          ]);
+
+          if (semHTML || calHTML) {
+            const sems = parseSemesters(semHTML || "");
+            const calSems = parseCalendarSemesters(calHTML || "");
+
+            const filterNonIndustry = <T extends { id: string; label: string; selected?: boolean; isLatest?: boolean }>(list: T[]): T[] => {
+              const nonInd = list.filter((s) => !/industry|\(ind\)|_ind/i.test(s.label) && !/industry|\(ind\)|_ind/i.test(s.id));
+              return nonInd.length > 0 ? nonInd : list;
+            };
+
+            const savedCalSem = localStorage.getItem("retop-cal-selected-sem");
+            const calPool = filterNonIndustry(calSems);
+            const calDefault =
+              savedCalSem && calSems.some((s) => s.id === savedCalSem)
+                ? savedCalSem
+                : calPool.find((s) => s.selected)?.id || calPool[0]?.id || "";
+
+            const savedTtSem = localStorage.getItem("retop-tt-selected-sem");
+            const ttPool = filterNonIndustry(sems);
+            const ttDefault =
+              savedTtSem && sems.some((s) => s.id === savedTtSem)
+                ? savedTtSem
+                : ttPool.find((s) => s.isLatest)?.id || ttPool[0]?.id || "";
+
+            set({
+              ttSemesters: sems,
+              ttSelectedSem: ttDefault,
+              cpSelectedSem: ttDefault,
+              calSemesters: calSems,
+              calSelectedSem: calDefault,
+              attSelectedSem: ttDefault,
+            });
+
+            if (ttDefault) {
+              await get().loadTimetable(network, csrf, authId, ttDefault).catch(() => {});
+            }
+          }
+        } catch {}
+
+        set({ status: "Offline", isSyncing: false, lastSyncTime: Date.now() });
+        return;
+      }
+
+      // ── Background Fresh Sync Strategy ──────────────────────────────────────
       const resolveOrFetch = async (
         signalKey: string,
         cacheKey: string,
@@ -86,14 +171,18 @@ export const createDashboardSlice: StateCreator<DataState, [], [], DashboardSlic
         storeKey: string,
       ) => {
         // 1. Wait for VTOP's own home-page XHR (via interceptDashboardResponse)
-        const intercepted = await waitForIntercepted(signalKey, 2500);
+        const intercepted = await waitForIntercepted(signalKey, 1500);
         if (intercepted) {
-          try { set({ [storeKey]: parser(intercepted) } as any); } catch (e) { console.warn(e); }
+          try {
+            const parsed = parser(intercepted);
+            set({ [storeKey]: parsed } as any);
+            await setCachedData(cacheKey, intercepted);
+          } catch (e) { console.warn(e); }
           return;
         }
-        // 2. Fallback: cache-first, then live fetch
+        // 2. Fallback: live fetch with cache update
         try {
-          const html = await network.fetchWithCache(cacheKey, fetcher);
+          const html = await network.fetchWithCache(cacheKey, fetcher, true);
           set({ [storeKey]: parser(html) } as any);
         } catch (e) { console.warn(e); }
       };
@@ -102,9 +191,6 @@ export const createDashboardSlice: StateCreator<DataState, [], [], DashboardSlic
       const attP      = resolveOrFetch("dashboard_attendance", "dashboard_attendance", () => network.fetchFragment("get/dashboard/current/semester/course/details"),    parseCourseDetails,       "attendance");
       const daP       = resolveOrFetch("dashboard_da",         "dashboard_da",         () => network.fetchFragment("get/upcoming/digital/assignments"),                  parseDigitalAssignments,  "assignments");
       const eventsP   = resolveOrFetch("dashboard_events",     "dashboard_events",     () => network.fetchFragment("get/scheduled/events"),                             parseEvents,              "events");
-
-      const isChennai = typeof window !== "undefined" && window.location.hostname.includes("vtopcc");
-      const ttEndpoint = isChennai ? "academics/common/StudentTimeTableChn" : "academics/common/StudentTimeTable";
 
       const timetableAndCalP = (async () => {
         try {
@@ -173,19 +259,6 @@ export const createDashboardSlice: StateCreator<DataState, [], [], DashboardSlic
 
       await Promise.allSettled([statsP, attP, daP, eventsP, timetableAndCalP]);
 
-      const isOffline =
-        (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
-        (typeof navigator !== "undefined" && !navigator.onLine) ||
-        (typeof location !== "undefined" &&
-          !location.hostname.includes("vit.ac.in") &&
-          !location.protocol.includes("chrome-extension") &&
-          !location.protocol.includes("moz-extension"));
-
-      if (isOffline) {
-        set({ status: "Offline", isSyncing: false, lastSyncTime: Date.now() });
-        return;
-      }
-
       set({ status: "Online", lastSyncTime: Date.now() });
 
       // Background refresh: silently update with fresh data (timetable/calendar/exam
@@ -253,20 +326,40 @@ export const createDashboardSlice: StateCreator<DataState, [], [], DashboardSlic
 
   enableDemoMode: async () => {
     try {
-      const { default: dummyData } = await import("../../dummy_data.json");
       set({
         status: "Demo Mode Active",
         user: { name: "Demo User", regNo: "22ABC1234" },
-        stats: dummyData.stats as any,
-        attendance: dummyData.attendance as any,
-        assignments: dummyData.assignments as any,
-        events: dummyData.events as any,
-        upcoming: [], 
-        ttCourses: dummyData.ttCourses as any,
-        ttSelectedSem: dummyData.ttSemesters[0]?.id || "sem1",
-        ttSemesters: dummyData.ttSemesters as any,
-        calSemesters: dummyData.calSemesters as any,
-        calSelectedSem: dummyData.calSemesters[0]?.id || "sem1",
+        stats: { cgpa: "9.42", creditsEarned: "78", rank: "12/850" } as any,
+        attendance: [
+          {
+            code: "CSE3001",
+            title: "Software Engineering",
+            type: "ETH",
+            attended: 28,
+            total: 30,
+            percentage: "93.33",
+            faculty: "Dr. Faculty",
+            slot: "A1+TA1",
+          },
+          {
+            code: "CSE3002",
+            title: "Database Management Systems",
+            type: "ETH",
+            attended: 26,
+            total: 30,
+            percentage: "86.67",
+            faculty: "Dr. Faculty",
+            slot: "B1+TB1",
+          },
+        ] as any,
+        assignments: [],
+        events: [],
+        upcoming: [],
+        ttCourses: [] as any,
+        ttSelectedSem: "demo",
+        ttSemesters: [{ id: "demo", label: "Winter Semester 2026-27" }] as any,
+        calSemesters: [{ id: "demo", label: "Winter Semester 2026-27" }] as any,
+        calSelectedSem: "demo",
       });
     } catch (e) {
       console.warn("Failed loading demo data", e);

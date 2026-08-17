@@ -445,6 +445,8 @@ const AsciiPanel: React.FC = () => {
 
 const OfflineApp = () => {
   const [step, setStep] = useState<"LOADING" | "NO_CACHE" | "PIN_LOCK" | "UNLOCKED">("LOADING");
+  const [loaderFinishing, setLoaderFinishing] = useState<boolean>(false);
+  const [loaderFading, setLoaderFading] = useState<boolean>(false);
   const [usersIndex, setUsersIndex] = useState<CachedUser[]>([]);
   const [activeUser, setActiveUser] = useState<CachedUser | null>(null);
   const [hasPinSet, setHasPinSet] = useState<boolean>(false);
@@ -610,8 +612,18 @@ const OfflineApp = () => {
 
     setUsersIndex(users);
 
+    const finishLoading = (onComplete: () => void) => {
+      setLoaderFinishing(true);
+      setTimeout(() => {
+        setLoaderFading(true);
+        setTimeout(() => {
+          onComplete();
+        }, 50);
+      }, 150);
+    };
+
     if (users.length === 0) {
-      setStep("NO_CACHE");
+      finishLoading(() => setStep("NO_CACHE"));
     } else {
       const activeRegNo = (res.retop_active_user as string) || lastAuthId || users[0].regNo;
       const targetUser = users.find((u) => u.regNo === activeRegNo) || users[0];
@@ -626,9 +638,9 @@ const OfflineApp = () => {
 
       if (isUnlocked) {
         setActiveUser(targetUser);
-        launchDashboard(targetUser);
+        finishLoading(() => launchDashboard(targetUser));
       } else {
-        selectUser(targetUser);
+        finishLoading(() => selectUser(targetUser));
       }
     }
   };
@@ -721,11 +733,26 @@ const OfflineApp = () => {
 
     try {
       localStorage.setItem("retop_lastAuthId", user.regNo);
+      localStorage.setItem("retop_active_user", user.regNo);
       if (user.name) localStorage.setItem("retop_lastName", user.name);
-      if (user.profileImgBase64) localStorage.setItem("retop_profileImage", user.profileImgBase64);
-      idbSet("retop_lastAuthId", user.regNo).catch(() => {});
-      idbSet("retop_active_user", user.regNo).catch(() => {});
-      if (user.profileImgBase64) idbSet(`${user.regNo}_profileImage`, user.profileImgBase64).catch(() => {});
+      if (user.profileImgBase64) {
+        localStorage.setItem("retop_profileImage", user.profileImgBase64);
+        localStorage.setItem(`${user.regNo}_profileImage`, user.profileImgBase64);
+      } else {
+        localStorage.removeItem("retop_profileImage");
+      }
+      setStorageData({
+        retop_lastAuthId: user.regNo,
+        retop_active_user: user.regNo,
+        retop_lastName: user.name || "Student",
+        [`${user.regNo}_profileImage`]: user.profileImgBase64 || "",
+        [`${user.regNo}_user_basic_profile`]: {
+          name: user.name || "Student",
+          regNo: user.regNo,
+          profileImgBase64: user.profileImgBase64 || "",
+          campus: user.campus || "vellore",
+        },
+      });
     } catch (e) {}
 
     document.body.replaceChildren();
@@ -756,8 +783,14 @@ const OfflineApp = () => {
 
   if (step === "LOADING") {
     return (
-      <div className="h-screen w-screen bg-[#09090b] flex flex-col items-center justify-center text-white" style={GSF}>
-        <VitEmblemLoader size={72} className="text-(--accent-base)" />
+      <div
+        className="h-screen w-screen bg-[#09090b] flex flex-col items-center justify-center text-white transition-opacity duration-50 ease-out"
+        style={{
+          ...GSF,
+          opacity: loaderFading ? 0 : 1,
+        }}
+      >
+        <VitEmblemLoader size={210} className="text-(--accent-base)" finishing={loaderFinishing} />
       </div>
     );
   }

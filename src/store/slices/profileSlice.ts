@@ -3,7 +3,7 @@ import { VTOPNetwork } from "../../utils/network";
 import { getCachedData, setCachedData } from "../../utils/cache";
 import { parseStudentProfile } from "../../parsers/profile";
 import { DataState } from "../dataStore";
-import { get as idbGet, set as idbSet } from "idb-keyval";
+import { getStorageData, setStorageData } from "../../utils/storageAdapter";
 
 export interface UserProfileData {
   name: string;
@@ -18,7 +18,12 @@ export interface ProfileSlice {
   fetchUserProfile: (network: VTOPNetwork) => Promise<void>;
 }
 
-export const createProfileSlice: StateCreator<DataState, [], [], ProfileSlice> = (set, get) => ({
+export const createProfileSlice: StateCreator<
+  DataState,
+  [],
+  [],
+  ProfileSlice
+> = (set, get) => ({
   user: { name: "Student", regNo: "..." },
   setUser: (user) => set({ user }),
 
@@ -27,17 +32,20 @@ export const createProfileSlice: StateCreator<DataState, [], [], ProfileSlice> =
       const currentAuthId = network.authorizedID || get().user.regNo;
       if (currentAuthId && currentAuthId !== "...") {
         // Fast restore from user-scoped profile cache
-        getCachedData<UserProfileData>(`${currentAuthId}_user_basic_profile`).then((cached) => {
-          if (cached && cached.regNo === currentAuthId) {
-            set((state) => ({
-              user: {
-                ...state.user,
-                ...cached,
-                profileImgBase64: cached.profileImgBase64 || state.user.profileImgBase64,
-              },
-            }));
-          }
-        });
+        getCachedData<UserProfileData>(`${currentAuthId}_user_basic_profile`).then(
+          (cached) => {
+            if (cached && cached.regNo === currentAuthId) {
+              set((state) => ({
+                user: {
+                  ...state.user,
+                  ...cached,
+                  profileImgBase64:
+                    cached.profileImgBase64 || state.user.profileImgBase64,
+                },
+              }));
+            }
+          },
+        );
       }
 
       const html = await network.fetchWithCache(
@@ -51,83 +59,73 @@ export const createProfileSlice: StateCreator<DataState, [], [], ProfileSlice> =
       const profile = parseStudentProfile(html);
       if (profile?.basic?.name) {
         const regNo = profile.basic.regNo || currentAuthId || get().user.regNo;
-        const isChennai = typeof window !== "undefined" && window.location.hostname.includes("vtopcc");
+        const isChennai =
+          typeof window !== "undefined" &&
+          window.location.hostname.includes("vtopcc");
         const campus: "chennai" | "vellore" = isChennai ? "chennai" : "vellore";
-        
-        // 1. Check existing stored base64 (Zustand -> IndexedDB)
-        let profileImgBase64 = get().user.profileImgBase64;
+
+        // 1. Prioritize freshly scraped photo from profile page, then active user state if regNo matches
+        let profileImgBase64: string | undefined = profile.basic.photoUrl;
+        if (!profileImgBase64 && get().user.regNo === regNo) {
+          profileImgBase64 = get().user.profileImgBase64;
+        }
+
+        // 2. Check existing stored base64 image strictly for THIS user
         if (!profileImgBase64 || !profileImgBase64.startsWith("data:image")) {
           try {
-            const stored = await idbGet(`${regNo}_profileImage`);
-            if (stored && typeof stored === "string" && stored.startsWith("data:image")) {
-              profileImgBase64 = stored;
+            const rawStored = await getStorageData([`${regNo}_profileImage`]);
+            if (
+              rawStored[`${regNo}_profileImage`] &&
+              typeof rawStored[`${regNo}_profileImage`] === "string"
+            ) {
+              profileImgBase64 = rawStored[`${regNo}_profileImage`];
             }
           } catch {}
         }
 
-        // 2. Only fetch over network IF NO BASE64 IS STORED FOR THIS USER
+        // 3. Fetch over network if not available and online
         if (!profileImgBase64 && regNo !== "...") {
           const isOffline =
-            (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
-            (typeof window !== "undefined" && window.location.hostname.includes("web.app")) ||
-            (typeof window !== "undefined" && window.location.hostname === "localhost") ||
-            (typeof window !== "undefined" && window.location.protocol.includes("-extension:"));
+            (typeof window !== "undefined" &&
+              (window as any).__RETOP_OFFLINE__) ||
+            (typeof window !== "undefined" &&
+              window.location.hostname.includes("web.app")) ||
+            (typeof window !== "undefined" &&
+              window.location.hostname === "localhost") ||
+            (typeof window !== "undefined" &&
+              window.location.protocol.includes("-extension:"));
 
           if (!isOffline) {
             try {
-              const imgRes = await fetch(`/vtop/users/image/?id=${encodeURIComponent(regNo)}`);
+              const imgRes = await fetch(
+                `/vtop/users/image/?id=${encodeURIComponent(regNo)}`,
+              );
               if (imgRes.ok) {
                 const blob = await imgRes.blob();
                 profileImgBase64 = await new Promise<string>((resolve) => {
-                  const url = URL.createObjectURL(blob);
-                  const img = new Image();
-                  img.onload = () => {
-                    const canvas = document.createElement("canvas");
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    const ctx = canvas.getContext("2d");
-                    if (ctx) {
-                      ctx.drawImage(img, 0, 0);
-                      resolve(canvas.toDataURL("image/webp", 0.85));
-                    } else {
-                      const reader = new FileReader();
-                      reader.onloadend = () => resolve(reader.result as string);
-                      reader.readAsDataURL(blob);
-                    }
-                    URL.revokeObjectURL(url);
-                  };
-                  img.onerror = () => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result as string);
-                    reader.readAsDataURL(blob);
-                    URL.revokeObjectURL(url);
-                  };
-                  img.src = url;
+                  const reader = new FileReader();
+                  reader.onloadend = () => resolve(reader.result as string);
+                  reader.onerror = () => resolve("");
+                  reader.readAsDataURL(blob);
                 });
               }
-            } catch (e) {
-              console.warn("Failed to convert profile image to base64", e);
-            }
+            } catch {}
           }
         }
 
         const newUser: UserProfileData = {
           name: profile.basic.name,
-          regNo: regNo,
+          regNo: profile.basic.regNo || regNo,
           profileImgBase64: profileImgBase64 || "",
           campus,
         };
 
         set({ user: newUser });
         setCachedData(`${regNo}_user_basic_profile`, newUser);
-        if (profileImgBase64) {
-          try {
-            await idbSet(`${regNo}_profileImage`, profileImgBase64);
-          } catch {}
-        }
 
         try {
-          const raw = await idbGet("retop_cached_users");
+          const rawStore = await getStorageData(["retop_cached_users"]);
+          const raw = rawStore["retop_cached_users"];
           let users: any[] = Array.isArray(raw) ? raw : [];
           const idx = users.findIndex((u: any) => u.regNo === regNo);
           const userEntry = {
@@ -141,14 +139,15 @@ export const createProfileSlice: StateCreator<DataState, [], [], ProfileSlice> =
           if (idx >= 0) users[idx] = userEntry;
           else users.push(userEntry);
 
-          await Promise.all([
-            idbSet(`${regNo}_profileImage`, profileImgBase64 || ""),
-            idbSet("retop_lastAuthId", regNo),
-            idbSet("retop_lastName", profile.basic.name),
-            idbSet("retop_last_campus", campus),
-            idbSet("retop_active_user", regNo),
-            idbSet("retop_cached_users", users),
-          ]);
+          await setStorageData({
+            [`${regNo}_profileImage`]: profileImgBase64 || "",
+            retop_lastAuthId: regNo,
+            retop_lastName: profile.basic.name,
+            retop_profileImage: profileImgBase64 || "",
+            retop_last_campus: campus,
+            retop_active_user: regNo,
+            retop_cached_users: users,
+          });
         } catch {}
       }
     } catch (err) {

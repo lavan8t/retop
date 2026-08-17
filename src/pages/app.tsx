@@ -615,81 +615,109 @@ const DashboardApp = () => {
     const campus: "chennai" | "vellore" = isChennai ? "chennai" : "vellore";
 
     if (isOffline) {
-      const offlineUser = {
-        regNo: authId,
-        username: authId,
-        name: localStorage.getItem("retop_lastName") || "Student",
-        profileImgBase64: localStorage.getItem("retop_profileImage") || "",
-        campus,
-      };
-      setUser(offlineUser);
+      getStorageData([
+        `${authId}_profileImage`,
+        `${authId}_user_basic_profile`,
+        "retop_cached_users",
+      ]).then((res) => {
+        const cachedProfile = res[`${authId}_user_basic_profile`];
+        const cachedImg = res[`${authId}_profileImage`];
+        const cachedUsers = (res.retop_cached_users || []) as any[];
+        const foundUser = cachedUsers.find(
+          (u) => (u.regNo || "").toUpperCase() === authId.toUpperCase(),
+        );
+
+        const offlineUser = {
+          regNo: authId,
+          username: authId,
+          name:
+            cachedProfile?.name ||
+            foundUser?.name ||
+            localStorage.getItem("retop_lastName") ||
+            "Student",
+          profileImgBase64: cachedImg || foundUser?.profileImgBase64 || "",
+          campus,
+        };
+        setUser(offlineUser);
+      });
     } else {
       const scrapedUser = scrapeUserProfile(document);
       const userProfile = { ...scrapedUser, campus };
-      if (userProfile.regNo) {
-        setUser(userProfile);
-        
-        // Cache for offline mode across IndexedDB and localStorage strictly scoped by regNo
-        getStorageData(["retop_cached_users", `${userProfile.regNo}_profileImage`]).then((res: Record<string, any>) => {
-          const rawUsers: any[] = res.retop_cached_users || [];
-          const cleanReg = (r?: string) => (r || "").replace(/\s*\(offline\)/gi, "").trim();
-          const cleanUsersMap = new Map<string, any>();
-          for (const u of rawUsers) {
-            const cr = cleanReg(u.regNo);
-            if (!cr) continue;
-            const key = cr.toUpperCase();
-            const existing = cleanUsersMap.get(key);
-            cleanUsersMap.set(key, {
-              ...u,
-              regNo: cr,
-              username: cleanReg(u.username) || cr,
-              name: cleanReg(u.name) || existing?.name || "Student",
-              lastActive: Math.max(u.lastActive || 0, existing?.lastActive || 0),
-            });
-          }
+      const currentReg =
+        userProfile.regNo && userProfile.regNo !== "Student"
+          ? userProfile.regNo
+          : authId;
 
-          const currentReg = cleanReg(userProfile.regNo);
-          const existingUser = cleanUsersMap.get(currentReg.toUpperCase());
-          const userCachedImg = res[`${currentReg}_profileImage`] || existingUser?.profileImgBase64 || "";
-
-          const updatedUser = {
-            regNo: currentReg,
-            username: currentReg,
-            name: cleanReg(userProfile.name) || existingUser?.name || "Student",
-            profileImgBase64: userProfile.profileImgBase64 || userCachedImg || "",
-            lastActive: Date.now(),
-            campus,
-          };
-          cleanUsersMap.set(currentReg.toUpperCase(), updatedUser);
-          const users = Array.from(cleanUsersMap.values());
-
-          setStorageData({
-            retop_lastAuthId: currentReg,
-            retop_lastName: updatedUser.name,
-            [`${currentReg}_profileImage`]: updatedUser.profileImgBase64,
-            retop_profileImage: updatedUser.profileImgBase64,
-            retop_active_user: currentReg,
-            retop_last_campus: campus,
-            retop_cached_users: users,
+      getStorageData([
+        "retop_cached_users",
+        `${currentReg}_profileImage`,
+        `${currentReg}_user_basic_profile`,
+      ]).then((res: Record<string, any>) => {
+        const rawUsers: any[] = res.retop_cached_users || [];
+        const cleanReg = (r?: string) =>
+          (r || "").replace(/\s*\(offline\)/gi, "").trim();
+        const cleanUsersMap = new Map<string, any>();
+        for (const u of rawUsers) {
+          const cr = cleanReg(u.regNo);
+          if (!cr) continue;
+          const key = cr.toUpperCase();
+          const existing = cleanUsersMap.get(key);
+          cleanUsersMap.set(key, {
+            ...u,
+            regNo: cr,
+            username: cleanReg(u.username) || cr,
+            name: cleanReg(u.name) || existing?.name || "Student",
+            lastActive: Math.max(u.lastActive || 0, existing?.lastActive || 0),
           });
+        }
 
-          // Relay scraped portal data to background worker for PWA sync
-          if (typeof chrome !== "undefined" && chrome.runtime?.sendMessage) {
-            try {
-              chrome.runtime.sendMessage({
-                action: "PORTAL_SCRAPED_DATA",
-                payload: {
-                  user: userProfile,
-                  lastAuthId: userProfile.regNo,
-                  campus,
-                  cachedUsers: users,
-                  timestamp: Date.now(),
-                },
-              }).catch(() => {});
-            } catch {}
-          }
+        const existingUser = cleanUsersMap.get(currentReg.toUpperCase());
+        const userCachedImg =
+          res[`${currentReg}_profileImage`] || existingUser?.profileImgBase64 || "";
+
+        const updatedUser = {
+          regNo: currentReg,
+          username: currentReg,
+          name:
+            cleanReg(userProfile.name) ||
+            existingUser?.name ||
+            res[`${currentReg}_user_basic_profile`]?.name ||
+            "Student",
+          profileImgBase64: userProfile.profileImgBase64 || userCachedImg || "",
+          lastActive: Date.now(),
+          campus,
+        };
+        cleanUsersMap.set(currentReg.toUpperCase(), updatedUser);
+        const users = Array.from(cleanUsersMap.values());
+
+        setUser(updatedUser);
+
+        setStorageData({
+          retop_lastAuthId: currentReg,
+          retop_lastName: updatedUser.name,
+          [`${currentReg}_profileImage`]: updatedUser.profileImgBase64,
+          retop_profileImage: updatedUser.profileImgBase64,
+          retop_active_user: currentReg,
+          retop_last_campus: campus,
+          retop_cached_users: users,
         });
-      }
+
+        // Relay scraped portal data to background worker for PWA sync
+        if (typeof chrome !== "undefined" && chrome.runtime?.sendMessage) {
+          try {
+            chrome.runtime.sendMessage({
+              action: "PORTAL_SCRAPED_DATA",
+              payload: {
+                user: updatedUser,
+                lastAuthId: currentReg,
+                campus,
+                cachedUsers: users,
+                timestamp: Date.now(),
+              },
+            }).catch(() => {});
+          } catch {}
+        }
+      });
     }
 
     fetchDashboardData(networkRef.current, csrf, authId);

@@ -1100,7 +1100,7 @@ export class VTOPNetwork {
     return response.ok;
   }
 
-  async downloadQP(code: string, classId: string, defaultFilename?: string) {
+  async downloadQP(classId: string, code: string, defaultFilename?: string) {
     await this.downloadWithBlob(
       "examinations/doDownloadQuestion/",
       {

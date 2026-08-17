@@ -649,7 +649,7 @@ const CourseCard = ({ course, network, expanded, setExpanded, onSelectFile }: an
     e.stopPropagation();
     try {
       setDownloadingQP(assgn.code);
-      await network.downloadQP(assgn.code, course.classId, `${course.code}_${assgn.code}_QP.pdf`);
+      await network.downloadQP(course.classId, assgn.code, `${course.code}_${assgn.code}_QP.pdf`);
     } catch (err) {
       alert("Failed to download question paper.");
     } finally {
@@ -680,7 +680,7 @@ const CourseCard = ({ course, network, expanded, setExpanded, onSelectFile }: an
       setExpanded(null);
     } else {
       setExpanded(course.classId);
-      if (!rawAssignments) {
+      if (!rawAssignments || rawAssignments.length === 0) {
         fetchDAAssignments(network, course.classId);
       }
     }
@@ -689,6 +689,8 @@ const CourseCard = ({ course, network, expanded, setExpanded, onSelectFile }: an
   const pendingCount = rawAssignments
     ? rawAssignments.filter((a: any) => !a.lastUpdated || a.lastUpdated.trim() === "").length
     : 0;
+
+  const isCourseLoading = daLoading && !rawAssignments;
 
   return (
     <div className="bg-(--bg-surface)/40 hover:bg-(--bg-surface)/70 rounded-3xl overflow-hidden transition-colors border-0 shadow-none">
@@ -731,7 +733,7 @@ const CourseCard = ({ course, network, expanded, setExpanded, onSelectFile }: an
       {expanded && (
         <div className="overflow-hidden">
           <div className="p-4 md:p-5 pt-0 border-t border-(--border-dim)/20 bg-(--bg-main)/40">
-            {daLoading && !rawAssignments ? (
+            {isCourseLoading ? (
               <div className="flex justify-center py-6 text-(--text-muted) font-mono font-bold text-xs animate-pulse">
                 LOADING ASSIGNMENTS...
               </div>
@@ -825,7 +827,7 @@ const CourseCard = ({ course, network, expanded, setExpanded, onSelectFile }: an
               </div>
             ) : (
               <div className="py-6 text-center text-xs text-(--text-muted) font-medium">
-                you're all caught up.
+                No digital assignments found for this course.
               </div>
             )}
           </div>

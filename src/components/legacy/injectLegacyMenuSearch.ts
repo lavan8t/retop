@@ -9,25 +9,27 @@ export function injectLegacyMenuSearch(): void {
 
   if (document.getElementById("retop-legacy-menu-search-wrapper")) return;
 
+  // Find the menu navbar row
+  const navList = hmenuBar.querySelector("#navbarSupportedContent ul.navbar-nav, .navbar-nav");
   const containerFluid = hmenuBar.querySelector(".container-fluid") || hmenuBar;
 
-  const wrapper = document.createElement("div");
-  wrapper.id = "retop-legacy-menu-search-wrapper";
-  wrapper.className = "d-inline-flex align-items-center ms-2 me-auto position-relative";
-  wrapper.style.cssText = "min-width: 220px; max-width: 320px; z-index: 1050;";
+  const liWrapper = document.createElement("li");
+  liWrapper.id = "retop-legacy-menu-search-wrapper";
+  liWrapper.className = "nav-item d-flex align-items-center ms-lg-auto my-1 position-relative";
+  liWrapper.style.cssText = "min-width: 220px; max-width: 340px; z-index: 1050;";
 
-  wrapper.innerHTML = `
-    <div class="input-group input-group-sm w-100" style="border-radius: 9999px; overflow: hidden; background: rgba(125, 125, 125, 0.08); border: 1px solid rgba(125, 125, 125, 0.2);">
-      <span class="input-group-text bg-transparent border-0 py-1 ps-2 pe-1 text-muted">
-        <i class="fa fa-search small"></i>
+  liWrapper.innerHTML = `
+    <div class="input-group input-group-sm w-100 retop-legacy-search-box" style="border-radius: 9999px; overflow: hidden; background: var(--vtop-search-bg, rgba(125, 125, 125, 0.1)); border: 1px solid var(--vtop-search-border, rgba(125, 125, 125, 0.25)); transition: all 0.15s ease;">
+      <span class="input-group-text bg-transparent border-0 py-1 ps-2.5 pe-1 text-muted">
+        <i class="fa fa-search small" style="font-size: 11px;"></i>
       </span>
       <input
         type="text"
         id="retop-legacy-menu-search-input"
         class="form-control form-control-sm bg-transparent border-0 shadow-none ps-1 py-1 text-reset"
-        placeholder="Search menu ( / or Ctrl+K )"
+        placeholder="Search menu ( Press Space )"
         autocomplete="off"
-        style="font-size: 12px; font-weight: 500;"
+        style="font-size: 12px; font-weight: 600; color: inherit;"
       />
       <button
         type="button"
@@ -40,30 +42,29 @@ export function injectLegacyMenuSearch(): void {
     </div>
     <div
       id="retop-legacy-menu-search-dropdown"
-      class="dropdown-menu shadow-lg p-1 position-absolute w-100 mt-1 custom-scrollbar"
-      style="display: none; max-height: 360px; overflow-y: auto; z-index: 1055; top: 100%; left: 0; min-width: 280px; border-radius: 12px;"
+      class="dropdown-menu shadow-lg p-1.5 position-absolute w-100 mt-1 custom-scrollbar"
+      style="display: none; max-height: min(450px, calc(100vh - 130px)); overflow-y: auto; z-index: 1055; top: 100%; right: 0; min-width: 290px; border-radius: 14px;"
     >
     </div>
   `;
 
-  // Insert safely after quickLinks or prepend to navbar
-  const quickLinks = document.getElementById("quickLinks");
-  if (quickLinks) {
-    quickLinks.after(wrapper);
+  // Insert into navbar-nav or container
+  if (navList) {
+    navList.appendChild(liWrapper);
   } else {
-    containerFluid.prepend(wrapper);
+    containerFluid.appendChild(liWrapper);
   }
 
-  const input = wrapper.querySelector("#retop-legacy-menu-search-input") as HTMLInputElement;
-  const clearBtn = wrapper.querySelector("#retop-legacy-menu-search-clear") as HTMLButtonElement;
-  const dropdown = wrapper.querySelector("#retop-legacy-menu-search-dropdown") as HTMLDivElement;
+  const input = liWrapper.querySelector("#retop-legacy-menu-search-input") as HTMLInputElement;
+  const clearBtn = liWrapper.querySelector("#retop-legacy-menu-search-clear") as HTMLButtonElement;
+  const dropdown = liWrapper.querySelector("#retop-legacy-menu-search-dropdown") as HTMLDivElement;
 
   let activeIndex = -1;
   let currentMatches: QuickLink[] = [];
 
   const triggerLegacyClick = (link: QuickLink) => {
     // 1. Search for matching anchor in DOM
-    const anchors = Array.from(document.querySelectorAll<HTMLElement>("a[data-url], #top-hmenu-bar a, .hmenubox a"));
+    const anchors = Array.from(document.querySelectorAll<HTMLElement>("a[data-url], #top-hmenu-bar a, .hmenubox a, [id^='MG'] a"));
     let target = anchors.find((a) => {
       const u = a.getAttribute("data-url") || a.getAttribute("href") || "";
       return u.toLowerCase().includes(link.url.toLowerCase());
@@ -139,32 +140,32 @@ export function injectLegacyMenuSearch(): void {
       if (score > 0) matches.push({ link, score });
     }
 
-    currentMatches = matches.sort((a, b) => b.score - a.score).map((m) => m.link).slice(0, 12);
+    currentMatches = matches.sort((a, b) => b.score - a.score).map((m) => m.link).slice(0, 16);
     activeIndex = currentMatches.length > 0 ? 0 : -1;
 
     if (currentMatches.length === 0) {
-      dropdown.innerHTML = `<div class="p-2 text-muted text-center small">No menu items found for "<strong>${query}</strong>"</div>`;
+      dropdown.innerHTML = `<div class="p-3 text-muted text-center small">No menu items matching "<strong>${query}</strong>"</div>`;
       dropdown.style.display = "block";
       return;
     }
 
     dropdown.innerHTML = currentMatches
       .map((link, idx) => {
-        const catBadge = link.category ? `<span class="badge bg-secondary-subtle text-secondary-emphasis border me-1" style="font-size: 9px;">${link.category}</span>` : "";
-        const subBadge = link.subheading ? `<small class="text-muted ms-1">(${link.subheading})</small>` : "";
+        const catBadge = link.category ? `<span class="badge bg-primary-subtle text-primary border me-1.5" style="font-size: 9px; font-weight: 700; padding: 2px 6px;">${link.category}</span>` : "";
+        const subBadge = link.subheading ? `<small class="text-muted ms-1" style="font-size: 10.5px;">(${link.subheading})</small>` : "";
         return `
           <a
             href="#"
             data-index="${idx}"
-            class="dropdown-item d-flex align-items-center justify-content-between py-1.5 px-2 rounded ${idx === 0 ? "active" : ""}"
-            style="font-size: 12px; text-decoration: none;"
+            class="dropdown-item d-flex align-items-center justify-content-between py-2 px-2.5 rounded-3 mb-0.5 ${idx === 0 ? "active" : ""}"
+            style="font-size: 12.5px; text-decoration: none; transition: background 0.1s ease;"
           >
             <div class="text-truncate me-2">
               ${catBadge}
-              <span class="fw-semibold">${link.title}</span>
+              <span class="fw-bold">${link.title}</span>
               ${subBadge}
             </div>
-            <i class="fa fa-angle-right text-muted small"></i>
+            <i class="fa fa-chevron-right text-muted" style="font-size: 10px;"></i>
           </a>
         `;
       })
@@ -172,7 +173,6 @@ export function injectLegacyMenuSearch(): void {
 
     dropdown.style.display = "block";
 
-    // Attach click listeners to rendered dropdown items
     dropdown.querySelectorAll("a[data-index]").forEach((item) => {
       item.addEventListener("click", (e) => {
         e.preventDefault();
@@ -239,12 +239,12 @@ export function injectLegacyMenuSearch(): void {
 
   // Close dropdown on outside click
   document.addEventListener("click", (e) => {
-    if (!wrapper.contains(e.target as Node)) {
+    if (!liWrapper.contains(e.target as Node)) {
       dropdown.style.display = "none";
     }
   });
 
-  // Global hotkeys to focus legacy menu search (/ or Ctrl+K)
+  // Hotkey: Space opens legacy menu search when on legacy VTOP
   window.addEventListener("keydown", (e: KeyboardEvent) => {
     const target = (e.composedPath ? e.composedPath()[0] : e.target) as HTMLElement;
     const isInput =
@@ -256,10 +256,18 @@ export function injectLegacyMenuSearch(): void {
 
     if (isInput) return;
 
-    if (e.key === "/" || (e.ctrlKey && e.key.toLowerCase() === "k") || (e.metaKey && e.key.toLowerCase() === "k")) {
-      e.preventDefault();
-      input.focus();
-      input.select();
+    if (e.code === "Space" || e.key === " " || e.key === "/" || (e.ctrlKey && e.key.toLowerCase() === "k")) {
+      const isLegacyVisible =
+        document.body.classList.contains("show-legacy-ui") ||
+        document.documentElement.classList.contains("show-legacy-ui") ||
+        document.body.style.display === "block";
+
+      if (isLegacyVisible) {
+        e.preventDefault();
+        input.focus();
+        input.select();
+      }
     }
   });
 }
+

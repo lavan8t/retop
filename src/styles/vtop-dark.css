@@ -63,7 +63,55 @@ html[data-theme="amoled"] .headerBackgroundColor {
   color: var(--vtop-dark-text) !important;
 }
 
-/* Horizontal Menu Bar */
+/* Horizontal Menu Bar & Menu Row Search */
+#top-hmenu-bar .retop-legacy-search-box:focus-within {
+  border-color: var(--accent-base, #3b82f6) !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25) !important;
+}
+
+/* Revamped Old Menu Panes (MG0001 - MG0015, Overlay Windows) */
+.overlay-window,
+.hmenubox,
+.WhiteBackground,
+[id^="MG"] {
+  max-height: calc(100vh - 120px) !important;
+  overflow-y: auto !important;
+  border-radius: 16px !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2) !important;
+}
+
+.overlay-window .list-group-item,
+.hmenubox .list-group-item,
+[id^="MG"] .list-group-item {
+  border-radius: 8px !important;
+  margin-bottom: 2px !important;
+  transition: all 0.1s ease !important;
+}
+
+/* Custom Scrollbars for Menu & Search Dropdowns */
+.overlay-window::-webkit-scrollbar,
+.hmenubox::-webkit-scrollbar,
+[id^="MG"]::-webkit-scrollbar,
+#retop-legacy-menu-search-dropdown::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+}
+
+.overlay-window::-webkit-scrollbar-thumb,
+.hmenubox::-webkit-scrollbar-thumb,
+[id^="MG"]::-webkit-scrollbar-thumb,
+#retop-legacy-menu-search-dropdown::-webkit-scrollbar-thumb {
+  background: rgba(125, 125, 125, 0.35) !important;
+  border-radius: 9999px !important;
+}
+
+.overlay-window::-webkit-scrollbar-thumb:hover,
+.hmenubox::-webkit-scrollbar-thumb:hover,
+[id^="MG"]::-webkit-scrollbar-thumb:hover,
+#retop-legacy-menu-search-dropdown::-webkit-scrollbar-thumb:hover {
+  background: rgba(125, 125, 125, 0.6) !important;
+}
+
 html[data-theme="dark"] #top-hmenu-bar,
 html[data-theme="amoled"] #top-hmenu-bar,
 html[data-theme="dark"] .horizontal-menu-color,
@@ -86,13 +134,15 @@ html[data-theme="amoled"] #top-hmenu-bar .hmenuItem:hover {
   color: #ffffff !important;
 }
 
-/* Dropdown Menu Panes in HMenu */
+/* Dropdown Menu Panes in HMenu (Dark / AMOLED) */
 html[data-theme="dark"] .hmenubox,
 html[data-theme="amoled"] .hmenubox,
 html[data-theme="dark"] .overlay-window,
 html[data-theme="amoled"] .overlay-window,
 html[data-theme="dark"] .WhiteBackground,
 html[data-theme="amoled"] .WhiteBackground,
+html[data-theme="dark"] [id^="MG"],
+html[data-theme="amoled"] [id^="MG"],
 html[data-theme="dark"] #retop-legacy-menu-search-dropdown,
 html[data-theme="amoled"] #retop-legacy-menu-search-dropdown {
   background-color: var(--vtop-dark-surface) !important;
@@ -100,11 +150,20 @@ html[data-theme="amoled"] #retop-legacy-menu-search-dropdown {
   border: 1px solid var(--vtop-dark-border) !important;
 }
 
+html[data-theme="dark"] .overlay-window .list-group-item,
+html[data-theme="amoled"] .overlay-window .list-group-item,
+html[data-theme="dark"] [id^="MG"] .list-group-item,
+html[data-theme="amoled"] [id^="MG"] .list-group-item,
 html[data-theme="dark"] #retop-legacy-menu-search-dropdown .dropdown-item,
 html[data-theme="amoled"] #retop-legacy-menu-search-dropdown .dropdown-item {
+  background-color: transparent !important;
   color: var(--vtop-dark-text) !important;
 }
 
+html[data-theme="dark"] .overlay-window .list-group-item:hover,
+html[data-theme="amoled"] .overlay-window .list-group-item:hover,
+html[data-theme="dark"] [id^="MG"] .list-group-item:hover,
+html[data-theme="amoled"] [id^="MG"] .list-group-item:hover,
 html[data-theme="dark"] #retop-legacy-menu-search-dropdown .dropdown-item:hover,
 html[data-theme="amoled"] #retop-legacy-menu-search-dropdown .dropdown-item:hover,
 html[data-theme="dark"] #retop-legacy-menu-search-dropdown .dropdown-item.active,

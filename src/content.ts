@@ -7,15 +7,29 @@ import {
   getAppRoot,
   injectSplashScreen,
   removeSplashScreen,
-  enhanceLegacyHMenuBar,
+  cleanupLegacyHMenuBar,
 } from "./utils/bridge";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { NativePortals } from "./components/NativePortals";
+import { VIT_EMBLEM_SVG_RAW } from "./components/common/VitEmblemSvg";
 import { getExtUrl } from "./utils/url";
 import { interceptDashboardResponse } from "./utils/dashboardInterceptor";
 import { applyTheme } from "./utils/settings-store";
-import { get as idbGet, set as idbSet } from "idb-keyval";
+import { get as idbGet, set as idbSet, entries as idbEntries } from "idb-keyval";
+
+// Mirror IndexedDB cache to chrome.storage.local for offline tab access
+if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local && typeof indexedDB !== "undefined") {
+  idbEntries().then((entries) => {
+    if (entries && entries.length > 0) {
+      const payload: Record<string, any> = {};
+      for (const [k, v] of entries) {
+        if (typeof k === "string") payload[k] = v;
+      }
+      chrome.storage.local.set(payload).catch(() => {});
+    }
+  }).catch(() => {});
+}
 
 const vtopContext = {
   csrf: "",
@@ -71,42 +85,84 @@ try {
   }).catch(() => {});
 } catch (e) {}
 
-// ── Early intercept at document_start for prelogin / open / login pages ──
+// ── Early intercept at document_start for all VTOP pages ──
 const isTopWindow = window.self === window.top;
-const isPreloginOrLoginPage =
-  isTopWindow && (
-    window.location.pathname.includes("/vtop/open/page") ||
-    window.location.pathname.includes("/vtop/open/login") ||
-    window.location.pathname.includes("/vtop/vtopLogin") ||
-    window.location.pathname.includes("/vtop/login") ||
-    window.location.pathname.includes("/vtop/prelogin") ||
-    window.location.pathname.includes("/vtop/init/page")
-  );
+const isVtopDomain =
+  typeof window !== "undefined" &&
+  (window.location.hostname.includes("vtop") ||
+   window.location.hostname.includes("localhost") ||
+   window.location.pathname.includes("/vtop"));
 
-const isContentPage =
-  window.location.pathname.includes("/vtop/content") ||
-  window.location.pathname.includes("/vtop/process") ||
-  window.location.pathname.includes("/vtop/main");
+if (isTopWindow && isVtopDomain) {
+  const p = window.location.pathname;
+  const isPreloginOrLogin =
+    p.includes("/vtop/open/page") ||
+    p.includes("/vtop/open/login") ||
+    p.includes("/vtop/login") ||
+    p.includes("/vtop/vtopLogin") ||
+    p.includes("/vtop/prelogin") ||
+    p.includes("/vtop/init/page");
 
-if (isPreloginOrLoginPage || isContentPage) {
-  injectSplashScreen();
+  if (isPreloginOrLogin) {
+    injectSplashScreen();
 
-  if (window.location.pathname.includes("/vtop/open/page")) {
-    const earlyLink = document.createElement("link");
-    earlyLink.id = "vtop-early-theme";
-    earlyLink.rel = "stylesheet";
-    earlyLink.href = getExtUrl("dist/prelogin.css");
-    (document.head || document.documentElement).appendChild(earlyLink);
-  } else if (
-    window.location.pathname.includes("/vtop/login") ||
-    window.location.pathname.includes("/vtop/vtopLogin") ||
-    window.location.pathname.includes("/vtop/open/login")
-  ) {
-    const earlyLink = document.createElement("link");
-    earlyLink.id = "vtop-early-theme";
-    earlyLink.rel = "stylesheet";
-    earlyLink.href = getExtUrl("dist/login.css");
-    (document.head || document.documentElement).appendChild(earlyLink);
+    if (p.includes("/vtop/open/page") || p.includes("/vtop/prelogin")) {
+      const earlyLink = document.createElement("link");
+      earlyLink.id = "vtop-early-theme";
+      earlyLink.rel = "stylesheet";
+      earlyLink.href = getExtUrl("dist/prelogin.css");
+      (document.head || document.documentElement).appendChild(earlyLink);
+    } else {
+      const earlyLink = document.createElement("link");
+      earlyLink.id = "vtop-early-theme";
+      earlyLink.rel = "stylesheet";
+      earlyLink.href = getExtUrl("dist/login.css");
+      (document.head || document.documentElement).appendChild(earlyLink);
+    }
+  } else if (p.includes("/vtop/content") || p.includes("/vtop/main")) {
+    // Authenticated page: inject splash to cover load flicker, removed after retop mounts
+    injectSplashScreen();
+  }
+}
+
+// Enhance native VTOP processLoader whenever it appears
+function enhanceProcessLoader(el: HTMLElement) {
+  if (document.getElementById("retop-open-loader")) {
+    // Splash screen is already handling early load
+    return;
+  }
+  if (!el.querySelector(".vit-emblem-splash")) {
+    el.innerHTML = `<div class="vit-emblem-splash" style="width:210px;height:210px;display:flex;align-items:center;justify-content:center;">${VIT_EMBLEM_SVG_RAW}</div>`;
+  }
+}
+
+if (typeof document !== "undefined") {
+  const initProcessLoaderObserver = () => {
+    const existing = document.getElementById("processLoader");
+    if (existing) enhanceProcessLoader(existing);
+
+    const observer = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        for (const node of m.addedNodes) {
+          if (node instanceof HTMLElement) {
+            if (node.id === "processLoader") {
+              enhanceProcessLoader(node);
+            } else {
+              const nested = node.querySelector?.("#processLoader") as HTMLElement | null;
+              if (nested) enhanceProcessLoader(nested);
+            }
+          }
+        }
+      }
+    });
+
+    observer.observe(document.documentElement || document.body, { childList: true, subtree: true });
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initProcessLoaderObserver, { once: true });
+  } else {
+    initProcessLoaderObserver();
   }
 }
 
@@ -308,15 +364,19 @@ const init = async () => {
   }
 
   // Also listen for settings trigger from the popup
-  if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
-    chrome.runtime.onMessage.addListener((msg) => {
-      if (msg.action === "open_settings") {
-        const root = document.getElementById("retop-root");
-        if (root) {
-          window.dispatchEvent(new CustomEvent("retop-open-settings"));
+  try {
+    if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
+      chrome.runtime.onMessage.addListener((msg) => {
+        if (msg.action === "open_settings") {
+          const root = document.getElementById("retop-root");
+          if (root) {
+            window.dispatchEvent(new CustomEvent("retop-open-settings"));
+          }
         }
-      }
-    });
+      });
+    }
+  } catch (e) {
+    // Extension context invalidated (e.g. after reload) — safe to ignore
   }
 
   const path = window.location.pathname;
@@ -328,52 +388,102 @@ const init = async () => {
   document.body.style.visibility = "visible";
   document.body.classList.add("show-legacy-ui");
 
-  // Mount native portals for injected React icons over legacy VTOP UI
-  let portalsRoot = document.getElementById("retop-native-portals");
-  if (!portalsRoot) {
-    portalsRoot = document.createElement("div");
-    portalsRoot.id = "retop-native-portals";
-    document.body.appendChild(portalsRoot);
-    createRoot(portalsRoot).render(React.createElement(NativePortals));
+  const checkIsAuthPage = () => {
+    return (
+      path.includes("/vtop/content") ||
+      path.includes("/vtop/main") ||
+      path.includes("/vtop/process") ||
+      document.getElementById("authorizedIDX") !== null ||
+      document.getElementById("authorizedID") !== null ||
+      document.getElementById("top-hmenu-bar") !== null ||
+      document.getElementById("vtop-header") !== null
+    );
+  };
+
+  // Mount native portals ONLY on unauthenticated prelogin pages
+  if (!checkIsAuthPage()) {
+    let portalsRoot = document.getElementById("retop-native-portals");
+    if (!portalsRoot) {
+      portalsRoot = document.createElement("div");
+      portalsRoot.id = "retop-native-portals";
+      document.body.appendChild(portalsRoot);
+      createRoot(portalsRoot).render(React.createElement(NativePortals));
+    }
+  } else {
+    document.getElementById("retop-native-portals")?.remove();
   }
 
-  const isRoleSelection =
-    document.getElementById("stdForm") !== null ||
-    document.getElementById("empForm") !== null ||
-    (path.includes("/vtop/login") &&
-      document.getElementById("username") === null &&
-      document.getElementById("captchaBlock") === null);
+  const detectStructure = (): "role_selection" | "login" | "unknown" => {
+    if (checkIsAuthPage()) return "unknown";
 
-  const isLoginPage =
-    path.includes("/vtop/open/page") ||
-    path.includes("/vtop/open/login") ||
-    path.includes("/vtop/vtopLogin") ||
-    path.includes("/vtop/login") ||
-    path.includes("/vtop/prelogin") ||
-    path.includes("/vtop/init/page") ||
-    isRoleSelection;
+    const hasStdForm = document.getElementById("stdForm") !== null;
+    const hasEmpForm = document.getElementById("empForm") !== null;
+    const hasParentForm = document.getElementById("parentForm") !== null;
+    const hasAlumniForm = document.getElementById("alumniForm") !== null;
+    const hasRoleCards = document.querySelector(".cardStudent, .cardEmployee, .cardParent, .cardAlumni") !== null;
 
-  if (isLoginPage) {
-    // CSS was already injected at document_start. Now the DOM is ready:
-    // remove the loader and uncloak the page.
-    //
-    // PAGE DETECTION FIX: VTOP sometimes serves /open/page (role selection)
-    // content at /vtop/login URL. Detect actual page content by checking
-    // for DOM elements unique to each page, not just the URL path.
-    const isActuallyRoleSelectionPage =
-      isRoleSelection ||
-      document.querySelector(".spotlight-background, .spotlightMsgDivs, #stdForm") !== null;
+    const hasUsername = document.getElementById("username") !== null || document.getElementById("uname") !== null;
+    const hasPassword = document.getElementById("password") !== null || document.getElementById("passwd") !== null;
+    const hasCaptcha = document.getElementById("captchaBlock") !== null || document.getElementById("captchaStr") !== null || document.getElementById("captchaCheck") !== null || document.getElementById("imgCaptcha") !== null;
 
-    if (path.includes("/vtop/open/page") || isActuallyRoleSelectionPage) {
+    if (hasUsername || (hasPassword && hasCaptcha)) {
+      return "login";
+    }
+
+    if (hasStdForm || hasEmpForm || hasParentForm || hasAlumniForm || hasRoleCards) {
+      return "role_selection";
+    }
+
+    if (path.includes("/vtop/open/page") || path.includes("/vtop/prelogin")) {
+      return "role_selection";
+    }
+
+    if (path.includes("/vtop/login") || path.includes("/vtop/vtopLogin") || path.includes("/vtop/open/login") || path.includes("/vtop/init/page")) {
+      return "login";
+    }
+
+    return "unknown";
+  };
+
+  const initialStructure = detectStructure();
+  const isLoginPageOrRole =
+    !checkIsAuthPage() &&
+    (initialStructure === "role_selection" ||
+      initialStructure === "login" ||
+      path.includes("/vtop/open/page") ||
+      path.includes("/vtop/open/login") ||
+      path.includes("/vtop/vtopLogin") ||
+      path.includes("/vtop/login") ||
+      path.includes("/vtop/prelogin") ||
+      path.includes("/vtop/init/page"));
+
+  if (isLoginPageOrRole) {
+    if (initialStructure === "role_selection") {
       injectPreloginTheme();
     } else {
       injectLoginTheme();
       enhanceLegacyLogin();
     }
 
+    // Observe DOM mutations to seamlessly swap themes if VTOP changes page structure without a reload
+    const structureObserver = new MutationObserver(() => {
+      if (checkIsAuthPage()) {
+        structureObserver.disconnect();
+        return;
+      }
+      const current = detectStructure();
+      if (current === "role_selection" && !document.getElementById("vtop-prelogin-theme")) {
+        injectPreloginTheme();
+      } else if (current === "login" && !document.getElementById("vtop-login-theme")) {
+        injectLoginTheme();
+        enhanceLegacyLogin();
+      }
+    });
+    structureObserver.observe(document.body, { childList: true, subtree: true });
+
     removeSplashScreen();
 
-    console.log("[retop] Open/login page styled and revealed");
+    console.log(`[retop] Structure detected: ${initialStructure}. Styled and revealed.`);
 
     if (!(window as any).__retop_click_listener_attached) {
       (window as any).__retop_click_listener_attached = true;
@@ -397,9 +507,8 @@ const init = async () => {
       );
     }
 
-    // SKIP ROLE SELECTION: When enabled in settings, auto-select student
-    // role and proceed to login, bypassing /open/page role picker.
-    if (isActuallyRoleSelectionPage) {
+    // SKIP ROLE SELECTION: When enabled in settings, auto-select student role
+    if (initialStructure === "role_selection") {
       try {
         const skipResult = await idbGet("retop-settings");
         const skipSettings = parseSettingsPayload(skipResult);
@@ -438,10 +547,15 @@ const init = async () => {
   }
 
   // --- Authenticated Pages Only ---
-  injectSplashScreen();
+  document.getElementById("vtop-prelogin-theme")?.remove();
+  document.getElementById("vtop-login-theme")?.remove();
+  document.getElementById("vtop-early-theme")?.remove();
+
   document.body.classList.remove("show-legacy-ui");
-  injectGlobalStyles();
-  enhanceLegacyHMenuBar();
+  // @font-face declarations MUST be in the main document to work across shadow DOM —
+  // inject fonts only, NOT style.css (which would break native VTOP header/menu).
+  injectGlobalFonts();
+  cleanupLegacyHMenuBar();
 
   await waitForTokens();
   initializeContainer();
@@ -449,30 +563,20 @@ const init = async () => {
   if (vtopContext.authId && vtopContext.csrf) {
     console.log("[retop] Session Active. Verifying menu items...");
 
-    // Wait up to 5 seconds to ensure at least 1 menu item is fetchable
+    // Fast check for DOM menu items (up to 1s max)
     let menuCount = 0;
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 10; i++) {
       const newMenu = scrapeMenu(document);
       menuCount = newMenu.reduce((acc, cat) => acc + cat.links.length, 0);
       if (menuCount > 0) break;
-      await new Promise((r) => setTimeout(r, 100));
-    }
-
-    if (menuCount === 0) {
-      console.log(
-        "[retop] No menu items fetchable. Falling back to native VTOP.",
-      );
-      document.body.classList.add("show-legacy-ui");
-      removeSplashScreen();
-      enhanceLegacyHMenuBar();
-      return; // Stop initialization of Retop UI completely
+      await new Promise((r) => setTimeout(r, 80));
     }
 
     renderDashboard();
   } else {
     document.body.classList.add("show-legacy-ui");
     removeSplashScreen();
-    enhanceLegacyHMenuBar();
+    cleanupLegacyHMenuBar();
   }
 };
 
@@ -575,49 +679,66 @@ const enhancePreloginRoleCards = () => {
 };
 
 const enhancePreloginInfoAndApps = () => {
-  // 1. Format the VIT Rankings Info Card as a transparent modern grid with big numbers
-  const infoCard = document.querySelector(".card.border-0.shadow-lg, .spotlightHeader")?.closest(".card") as HTMLElement;
-  if (infoCard) {
-    infoCard.querySelector(".card-header")?.remove();
+  const openHeader = document.getElementById("vtopOpenPageHeader");
+  if (!openHeader) return;
 
-    const cardBody = infoCard.querySelector(".card-body") as HTMLElement;
-    if (cardBody) {
-      cardBody.style.maxHeight = "";
-      cardBody.style.overflowY = "";
-      cardBody.classList.remove("custom-scrollbar");
-      cardBody.classList.add("p-0");
+  const isChennai = window.location.hostname.includes("vtopcc");
 
-      const stats = [
-        { badge: "#691", desc: "QS World 2026" },
-        { badge: "Top 150", desc: "QS Asia 2025" },
-        { badge: "#142", desc: "QS Engg & Tech (#9 India)" },
-        { badge: "#396", desc: "QS Sustainability (#8 India)" },
-        { badge: "#65", desc: "THE Interdisciplinary (#2 India)" },
-        { badge: "#173", desc: "THE Young Univ 2025" },
-        { badge: "#687", desc: "US News 2024 (#6 India)" },
-        { badge: "Top 500", desc: "Shanghai ARWU 2024" },
-        { badge: "Top 20", desc: "NIRF 2025 (Univ, Research)" },
-        { badge: "A++", desc: "NAAC Grade (3.66 / 4.0)" },
-      ];
+  // 1. Format the VIT Rankings Info Card ONLY on Chennai campus (vtopcc.vit.ac.in)
+  // On Vellore campus (vtop.vit.ac.in), keep the native Spotlight list intact!
+  if (isChennai) {
+    const infoCard = document.querySelector(".card.border-0.shadow-lg, .spotlightHeader")?.closest(".card") as HTMLElement;
+    if (infoCard) {
+      infoCard.querySelector(".card-header")?.remove();
 
-      cardBody.innerHTML = `
-        <div class="retop-rankings-grid">
-          ${stats
-            .map(
-              (s) => `
-            <div class="retop-rank-tile">
-              <div class="retop-rank-big-num">${s.badge}</div>
-              <div class="retop-rank-subtext">${s.desc}</div>
-            </div>
-          `
-            )
-            .join("")}
-        </div>
-      `;
+      const cardBody = infoCard.querySelector(".card-body") as HTMLElement;
+      if (cardBody) {
+        cardBody.style.maxHeight = "";
+        cardBody.style.overflowY = "";
+        cardBody.classList.remove("custom-scrollbar");
+        cardBody.classList.add("p-0");
+
+        const stats = [
+          { badge: "#691", desc: "QS World 2026" },
+          { badge: "Top 150", desc: "QS Asia 2025" },
+          { badge: "#142", desc: "QS Engg & Tech (#9 India)" },
+          { badge: "#396", desc: "QS Sustainability (#8 India)" },
+          { badge: "#65", desc: "THE Interdisciplinary (#2 India)" },
+          { badge: "#173", desc: "THE Young Univ 2025" },
+          { badge: "#687", desc: "US News 2024 (#6 India)" },
+          { badge: "Top 500", desc: "Shanghai ARWU 2024" },
+          { badge: "Top 20", desc: "NIRF 2025 (Univ, Research)" },
+          { badge: "A++", desc: "NAAC Grade (3.66 / 4.0)" },
+        ];
+
+        cardBody.innerHTML = `
+          <div class="retop-rankings-grid">
+            ${stats
+              .map(
+                (s) => `
+              <div class="retop-rank-tile">
+                <div class="retop-rank-big-num">${s.badge}</div>
+                <div class="retop-rank-subtext">${s.desc}</div>
+              </div>
+            `
+              )
+              .join("")}
+          </div>
+        `;
+      }
+    }
+  } else {
+    // Vellore campus: ensure Spotlight card body has proper scrollbar
+    const spotlightCard = document.querySelector(".spotlightHeader")?.closest(".card") as HTMLElement;
+    if (spotlightCard) {
+      const cardBody = spotlightCard.querySelector(".card-body") as HTMLElement;
+      if (cardBody) {
+        cardBody.classList.add("custom-scrollbar");
+      }
     }
   }
 
-  // 2. Relocate and enhance the mobile app download cards to sit right of the VIT info card
+  // 2. Relocate and enhance the mobile app download cards to sit right of the main card
   const appsSection = document.querySelector(".row.row-cols-2.row-cols-sm-4.py-3.justify-content-center") as HTMLElement;
   const targetCol = document.querySelector(".col-12.col-md-6.order-1.order-md-2") as HTMLElement;
 
@@ -628,50 +749,69 @@ const enhancePreloginInfoAndApps = () => {
 };
 
 const enhancePreloginHeader = () => {
+  const header = document.getElementById("vtopOpenPageHeader");
+  if (!header) return;
+
   const isChennai = window.location.hostname.includes("vtopcc");
   document.title = isChennai ? "retop Chennai" : "retop";
 
-  const header =
-    document.getElementById("vtopOpenPageHeader") ||
-    document.querySelector("nav.navbar") ||
-    document.querySelector(".headerBackgroundColor");
-
-  if (header) {
-    const emblem = (header.querySelector("img.VITEmblem, .navbar-brand img") ||
-      header.querySelector("img")) as HTMLImageElement;
-    if (emblem) {
-      emblem.src = getExtUrl("dist/assets/vitLogo.svg");
-      emblem.id = "vtop-prelogin-logo";
-      emblem.style.maxHeight = "44px";
-      emblem.style.height = "44px";
-      emblem.style.width = "auto";
-    }
-
-    const vitText = header.querySelector(".VITLogoStyle");
-    if (vitText) {
-      vitText.remove();
-    }
-
-    const campusLabel = isChennai ? "CHENNAI CAMPUS" : "VELLORE CAMPUS";
-    let navbarText = header.querySelector(".navbar-text") as HTMLElement;
-    if (!navbarText) {
-      navbarText = document.createElement("span");
-      navbarText.className = "navbar-text text-light";
-      const brand =
-        header.querySelector(".navbar-brand") ||
-        header.querySelector(".container-fluid") ||
-        header;
-      brand.appendChild(navbarText);
-    }
-    navbarText.textContent = campusLabel;
-    navbarText.classList.add("retop-campus-text");
+  const emblem = (header.querySelector("img.VITEmblem, .navbar-brand img") ||
+    header.querySelector("img")) as HTMLImageElement;
+  if (emblem) {
+    emblem.src = getExtUrl("dist/assets/vitLogo.svg");
+    emblem.id = "vtop-prelogin-logo";
+    emblem.style.maxHeight = "44px";
+    emblem.style.height = "44px";
+    emblem.style.width = "auto";
   }
+
+  const vitText = header.querySelector(".VITLogoStyle");
+  if (vitText) {
+    vitText.remove();
+  }
+
+  const campusLabel = isChennai ? "CHENNAI CAMPUS" : "VELLORE CAMPUS";
+  let navbarText = header.querySelector(".navbar-text") as HTMLElement;
+  if (!navbarText) {
+    navbarText = document.createElement("span");
+    navbarText.className = "navbar-text text-light";
+    const brand =
+      header.querySelector(".navbar-brand") ||
+      header.querySelector(".container-fluid") ||
+      header;
+    brand.appendChild(navbarText);
+  }
+  navbarText.textContent = campusLabel;
+  navbarText.classList.add("retop-campus-text");
 };
 
 const injectPreloginTheme = () => {
+  if (
+    document.getElementById("authorizedIDX") ||
+    document.getElementById("authorizedID") ||
+    document.getElementById("top-hmenu-bar") ||
+    document.getElementById("vtop-header")
+  ) {
+    return;
+  }
+
+  // Remove conflicting login stylesheets
+  const existingLogin = document.getElementById("vtop-login-theme");
+  if (existingLogin) existingLogin.remove();
+
+  const earlyLink = document.getElementById("vtop-early-theme");
+  if (earlyLink) earlyLink.remove();
+
+  // Reset any huge inline margin-top computed by native VTOP scripts
+  if (document.body) {
+    document.body.style.marginTop = "60px";
+    document.body.style.paddingTop = "0px";
+    document.body.style.paddingLeft = "0px";
+  }
+
   if (document.getElementById("vtop-prelogin-theme")) return;
 
-  console.log("[retop] Injecting prelogin theme for /open/page");
+  console.log("[retop] Injecting prelogin theme based on DOM structure");
 
   injectGlobalFonts();
 
@@ -684,44 +824,79 @@ const injectPreloginTheme = () => {
   link.href = getExtUrl("dist/prelogin.css");
   document.head.appendChild(link);
 
-  enhancePreloginHeader();
-  if (isChennai) {
-    enhancePreloginRoleCards();
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      enhancePreloginHeader();
+      enhancePreloginInfoAndApps();
+    });
+  } else {
+    enhancePreloginHeader();
     enhancePreloginInfoAndApps();
   }
 
-  document.addEventListener("click", (e) => {
-    const target = e.target as HTMLElement;
-
-    const roleCard = target.closest(".cardStudent, .cardEmployee, .cardParent, .cardAlumni") as HTMLElement;
-    if (roleCard) {
-      const form = roleCard.querySelector("form") as HTMLFormElement;
-      if (form) {
-        try {
-          form.submit();
-          return;
-        } catch {}
-      }
-      const link = roleCard.querySelector("a") as HTMLElement;
-      if (link && target !== link) {
-        link.click();
+  if (!(window as any).__retop_prelogin_click_attached) {
+    (window as any).__retop_prelogin_click_attached = true;
+    document.addEventListener("click", (e) => {
+      // Guard: never intercept clicks on authenticated pages
+      if (
+        document.getElementById("authorizedIDX") ||
+        document.getElementById("authorizedID") ||
+        document.getElementById("top-hmenu-bar") ||
+        document.getElementById("vtop-header")
+      ) {
         return;
       }
-    }
 
-    const item = target.closest(".list-group-item, .spotlightMsgDivs li, .spotlight-background li");
-    if (item) {
-      const link = item.querySelector("a, button[data-spotlighttitle]") as HTMLElement;
-      if (link && target !== link && !link.contains(target)) {
-        link.click();
+      const target = e.target as HTMLElement;
+
+      const roleCard = target.closest(".cardStudent, .cardEmployee, .cardParent, .cardAlumni") as HTMLElement;
+      if (roleCard) {
+        const form = roleCard.querySelector("form") as HTMLFormElement;
+        if (form) {
+          try {
+            form.submit();
+            return;
+          } catch {}
+        }
+        const link = roleCard.querySelector("a") as HTMLElement;
+        if (link && target !== link) {
+          link.click();
+          return;
+        }
       }
-    }
-  });
+
+      const item = target.closest(".cardStudent, .cardEmployee, .cardParent, .cardAlumni, #vtopOpenPageHeader ~ * .list-group-item");
+      if (item) {
+        const link = item.querySelector("a, button[data-spotlighttitle]") as HTMLElement;
+        if (link && target !== link && !link.contains(target)) {
+          link.click();
+        }
+      }
+    });
+  }
 
   console.log("[retop] prelogin.css URL:", link.href);
 };
 
 const injectLoginTheme = () => {
+  if (
+    document.getElementById("authorizedIDX") ||
+    document.getElementById("authorizedID") ||
+    document.getElementById("top-hmenu-bar") ||
+    document.getElementById("vtop-header")
+  ) {
+    return;
+  }
+
+  // Remove conflicting prelogin stylesheets
+  const existingPrelogin = document.getElementById("vtop-prelogin-theme");
+  if (existingPrelogin) existingPrelogin.remove();
+
+  const earlyLink = document.getElementById("vtop-early-theme");
+  if (earlyLink && earlyLink.getAttribute("href")?.includes("prelogin.css")) {
+    earlyLink.remove();
+  }
+
   if (document.getElementById("vtop-login-theme")) return;
 
   injectGlobalFonts();

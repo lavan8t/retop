@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "./styles/fonts.css";
 @import "./styles/tokens.css";
+@import "./styles/vtop-dark.css";
 
 @theme {
   --font-sans: "Google Sans Flex", system-ui, sans-serif;
@@ -126,40 +127,8 @@ a:active,
   transition: transform var(--duration-instant, 50ms) cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.cgpa-expand-container {
-  display: grid;
-  grid-template-rows: 0fr;
-  opacity: 0;
-  transition: grid-template-rows 150ms cubic-bezier(0.16, 1, 0.3, 1), opacity 150ms ease-out;
-}
-.credits-hover-group:hover .cgpa-expand-container,
-.group\/credits:hover .cgpa-expand-container {
-  grid-template-rows: 1fr;
-  opacity: 1;
-}
-
-.cgpa-resting-container {
-  display: grid;
-  grid-template-rows: 1fr;
-  opacity: 1;
-  transition: grid-template-rows 150ms cubic-bezier(0.16, 1, 0.3, 1), opacity 150ms ease-out;
-}
-.credits-hover-group:hover .cgpa-resting-container,
-.group\/credits:hover .cgpa-resting-container {
-  grid-template-rows: 0fr;
-  opacity: 0;
-}
-
 /* --- 1. GLOBAL RESET & VARIABLES --- */
 @layer base {
-  *, ::before, ::after {
-    border-color: transparent;
-    transition-property: color, background-color, border-color;
-    transition-duration: var(--duration-fast);
-    transition-timing-function: ease-out;
-  }
-
-
   .popup-shadow {
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
   }
@@ -295,6 +264,27 @@ a:active,
   }
 }
 
+/* Disable hover animations, font-squish, and transforms on mobile / touch view */
+@media (hover: none), (max-width: 768px) {
+  #retop-root *:hover,
+  #retop-root .group:hover * {
+    animation-play-state: paused !important;
+  }
+  
+  #retop-root .hover\:font-squish:hover,
+  #retop-root .group:hover .group-hover\:font-squish,
+  #retop-root .retop-logo:hover {
+    font-variation-settings: normal !important;
+    transform: none !important;
+  }
+
+  #retop-root [class*="hover:-translate"],
+  #retop-root [class*="hover:translate"],
+  #retop-root [class*="hover:scale"] {
+    transform: none !important;
+  }
+}
+
 /* --- 2. THEMES --- */
 #retop-root[data-theme="amoled"] {
   --bg-main: #000000;
@@ -324,10 +314,10 @@ a:active,
   --card-red: #dc2626;
 }
 
-/* VIT Emblem Constant Theme Color (Solid White in dark/amoled, Solid Black in light) */
+/* VIT Emblem Dynamic Accent Theme Color */
 .vit-emblem-loader,
 .vit-emblem-splash {
-  color: #000000;
+  color: var(--accent-base, #60a5fa);
   opacity: 1 !important;
   overflow: visible !important;
 }
@@ -345,18 +335,6 @@ a:active,
 .vit-emblem-splash svg polygon,
 .vit-emblem-splash svg g {
   fill: currentColor;
-}
-[data-theme="dark"] .vit-emblem-loader,
-[data-theme="amoled"] .vit-emblem-loader,
-[data-theme="dark"] .vit-emblem-splash,
-[data-theme="amoled"] .vit-emblem-splash,
-.dark .vit-emblem-loader,
-.dark .vit-emblem-splash {
-  color: #ffffff !important;
-}
-[data-theme="light"] .vit-emblem-loader,
-[data-theme="light"] .vit-emblem-splash {
-  color: #000000 !important;
 }
 
 /* ============================================================
@@ -578,6 +556,45 @@ a:active,
   to { opacity: 1; }
 }
 
+/* Fast completion trigger: finishes in 150ms, holds still for 50ms fade */
+.vit-emblem-fast-finish,
+.vit-emblem-loader.vit-emblem-fast-finish,
+.vit-emblem-splash.vit-emblem-fast-finish {
+  transition: opacity 50ms ease-out !important;
+}
+.vit-emblem-fast-finish svg path,
+.vit-emblem-fast-finish svg polygon,
+.vit-emblem-fast-finish svg g,
+.vit-emblem-fast-finish svg circle,
+.vit-emblem-fast-finish svg #outer_circle,
+.vit-emblem-fast-finish svg #outer-circle,
+.vit-emblem-fast-finish svg #inner_circle,
+.vit-emblem-fast-finish svg #inner-circle,
+.vit-emblem-fast-finish svg #moto_ribbon,
+.vit-emblem-fast-finish svg #moto-ribbon,
+.vit-emblem-fast-finish svg #moto_tamil_text,
+.vit-emblem-fast-finish svg #moto-tamil-text,
+.vit-emblem-fast-finish svg #fort,
+.vit-emblem-fast-finish svg #vit_center,
+.vit-emblem-fast-finish svg #vit-center,
+.vit-emblem-fast-finish svg #left_lines,
+.vit-emblem-fast-finish svg #right_lines,
+.vit-emblem-fast-finish svg #left-lines,
+.vit-emblem-fast-finish svg #right-lines,
+.vit-emblem-fast-finish svg #vellore_insititute_of_technology_circle_text,
+.vit-emblem-fast-finish svg #institute_name,
+.vit-emblem-fast-finish svg #institute-name,
+.vit-emblem-fast-finish svg #left_star,
+.vit-emblem-fast-finish svg #left-star,
+.vit-emblem-fast-finish svg #right_star,
+.vit-emblem-fast-finish svg #right-star {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+  stroke-dashoffset: 0 !important;
+  transition: opacity 150ms ease-out, transform 150ms cubic-bezier(0.16, 1, 0.3, 1), stroke-dashoffset 150ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
 @keyframes star-pin-enter {
   0% {
     opacity: 0;
@@ -614,10 +631,51 @@ a:active,
   animation: pin-shake 0.4s ease-in-out both;
 }
 
+/* --- CGPA & Credits Card Interactive Hover Expand / Collapse --- */
+.cgpa-card-group .cgpa-expand-section {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  margin-bottom: 0;
+  pointer-events: none;
+  transition: grid-template-rows 300ms cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 200ms ease,
+              margin-bottom 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cgpa-card-group:hover .cgpa-expand-section,
+.cgpa-card-group.is-hovered .cgpa-expand-section {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  margin-bottom: 1rem;
+  pointer-events: auto;
+}
+
+.cgpa-card-group .cgpa-resting-section {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  margin-bottom: 0.75rem;
+  transition: grid-template-rows 300ms cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 200ms ease,
+              margin-bottom 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cgpa-card-group:hover .cgpa-resting-section,
+.cgpa-card-group.is-hovered .cgpa-resting-section {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  margin-bottom: 0;
+  pointer-events: none;
+}
+
 /* --- 3. FONTS --- */
-#retop-root *:not(i) {
+#retop-root {
+  font-variation-settings: "wght" var(--app-font-wght, 700);
+}
+
+#retop-root *:not(i):not(.sem-text):not(.font-expanded):not(.font-logo):not(.retop-logo):not(.font-signature):not(.font-squish):not(.retop-about-logo) {
   font-family: var(--font-sans) !important;
-  font-variation-settings: "wght" var(--app-font-wght, 700) !important;
 }
 
 #retop-root svg {
@@ -879,7 +937,8 @@ a:active,
   }
 
   #page-wrapper,
-  .container-fluid,
+  #page_outline,
+  #vtop-body-content,
   .wrapper,
   body > table,
   body > form {
@@ -889,7 +948,8 @@ a:active,
   }
 
   body:not(.show-legacy-ui) #page-wrapper,
-  body:not(.show-legacy-ui) .container-fluid,
+  body:not(.show-legacy-ui) #page_outline,
+  body:not(.show-legacy-ui) #vtop-body-content,
   body:not(.show-legacy-ui) .wrapper,
   body:not(.show-legacy-ui) body > table,
   body:not(.show-legacy-ui) body > form {

@@ -209,16 +209,16 @@ export const TopBar: React.FC<TopBarProps> = ({
     <>
       {/* Top Fade Mask */}
       <div
-        className="fixed top-0 left-0 right-0 h-24 sm:h-28 md:h-32 lg:h-36 pointer-events-none select-none z-[45]"
+        className="fixed top-0 left-0 right-0 h-16 sm:h-18 md:h-20 lg:h-22 pointer-events-none select-none z-[45]"
         style={{
           background:
-            "linear-gradient(180deg, var(--bg-main) 0%, var(--bg-main) 40%, color-mix(in srgb, var(--bg-main) 85%, transparent) 65%, color-mix(in srgb, var(--bg-main) 40%, transparent) 85%, transparent 100%)",
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
+            "linear-gradient(180deg, var(--bg-main) 0%, var(--bg-main) 50%, color-mix(in srgb, var(--bg-main) 70%, transparent) 75%, transparent 100%)",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
           maskImage:
-            "linear-gradient(180deg, black 0%, black 50%, rgba(0, 0, 0, 0.5) 75%, transparent 100%)",
+            "linear-gradient(180deg, black 0%, black 50%, rgba(0, 0, 0, 0.4) 80%, transparent 100%)",
           WebkitMaskImage:
-            "linear-gradient(180deg, black 0%, black 50%, rgba(0, 0, 0, 0.5) 75%, transparent 100%)",
+            "linear-gradient(180deg, black 0%, black 50%, rgba(0, 0, 0, 0.4) 80%, transparent 100%)",
         }}
       />
 

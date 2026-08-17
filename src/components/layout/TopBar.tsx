@@ -83,6 +83,8 @@ const getPageTitle = (view: string, dynamicTitle?: string) => {
       return "Digital Assignments";
     case "examSchedule":
       return "Exam Schedule";
+    case "lateHour":
+      return "Late Hour Permission";
     case "content":
       return dynamicTitle || "Content";
     default:
@@ -687,6 +689,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               profile: { title: "Student Profile", url: "studentsRecord/StudentProfileAllView", category: "Made for retop" },
               curriculum: { title: "Curriculum", url: "academics/common/CurriculumSyllabus", category: "Made for retop" },
               examSchedule: { title: "Exam Schedule", url: "examinations/StudExamSchedule", category: "Made for retop" },
+              lateHour: { title: "Late Hour Permission", url: "hostels/late/hour/student/request/1", category: "Made for retop" },
             };
             const currentLink = VIEW_LINKS[currentView];
             const isCurrentPinned = currentLink

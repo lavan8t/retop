@@ -1208,4 +1208,88 @@ export class VTOPNetwork {
       alert("Failed to download file. Please check console.");
     }
   }
+
+  // ── Late Hour Permission ──────────────────────────────────────────────────
+
+  /** Step 1: Landing page (no caching — needs fresh CSRF each time) */
+  async getLateHourView(): Promise<string> {
+    return this.fetchVtopApi("hostels/late/hour/student/request/1", { verifyMenu: "true" });
+  }
+
+  /** Step 2: Open request form */
+  async getLateHourRequestForm(): Promise<string> {
+    return this.fetchVtopApi("hostels/late/hour/student/request/2", { apply: "" });
+  }
+
+  /** Step 3: Get faculties for a costCentreId */
+  async getLateHourFaculties(costCentreId: string): Promise<string> {
+    return this.fetchVtopApi("hostels/late/hour/student/request/3", {
+      costCentreId,
+    });
+  }
+
+  /** Step 4: Get rooms for a roomTypeId */
+  async getLateHourAcademicBlocks(roomTypeId: string): Promise<string> {
+    return this.fetchVtopApi("hostels/late/hour/student/request/4", {
+      roomTypeId,
+    });
+  }
+
+  /** Step 5: Get venues for a buildingId + roomTypeId */
+  async getLateHourVenues(buildingId: string, roomTypeId: string): Promise<string> {
+    return this.fetchVtopApi("hostels/late/hour/student/request/5", {
+      buildingId,
+      roomTypeId,
+    });
+  }
+
+  /** Step 6: Get available from-times for a date + event type */
+  async getLateHourTimes(
+    lateHourFromDate: string,
+    lateHourEventId: string,
+    buildingId: string,
+    venue: string,
+    roomTypeId: string,
+  ): Promise<string> {
+    return this.fetchVtopApi("hostels/late/hour/student/request/6", {
+      lateHourFromDate,
+      lateHourEventId,
+      buildingId,
+      venue,
+      roomTypeId,
+    });
+  }
+
+  /** Step 7: Get to-times once fromTime is selected */
+  async getLateHourToTimes(
+    fromTime: string,
+    lateHourFromDate: string,
+    lateHourEventId: string,
+  ): Promise<string> {
+    return this.fetchVtopApi("hostels/late/hour/student/request/7", {
+      fromTime,
+      lateHourFromDate,
+      lateHourEventId,
+    });
+  }
+
+  /** Step 8: Submit the request */
+  async submitLateHourRequest(formData: Record<string, string>): Promise<string> {
+    return this.fetchVtopApi("hostels/late/hour/student/request/8", {
+      ...formData,
+    });
+  }
+
+  /** Step 9: Current request status */
+  async getLateHourStatus(): Promise<string> {
+    return this.fetchVtopApi("hostels/late/hour/student/request/9", { status: "" });
+  }
+
+  /** Step 11: Permissions history */
+  async getLateHourHistory(): Promise<string> {
+    const cacheKey = "late_hour_history";
+    return this.fetchWithCache(cacheKey, () =>
+      this.fetchVtopApi("hostels/late/hour/student/request/11", { history: "" }),
+    );
+  }
 }

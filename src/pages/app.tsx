@@ -54,6 +54,7 @@ import { useSettings, applyTheme } from "../utils/settings-store";
 import { LegacyReturnButton } from "../components/LegacyReturnButton";
 import { SnackbarManager } from "../components/ui/Snackbar";
 import { UpdatesWidget } from "../components/ui/UpdatesWidget";
+import { Search } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 
 
 const getDestinationView = (link: QuickLink): ViewType | "content" => {
@@ -171,6 +172,26 @@ const getDestinationView = (link: QuickLink): ViewType | "content" => {
     return "examSchedule";
   }
 
+  // 12. Late Hour Permission
+  if (
+    lowerTitle === "late hour permission" ||
+    lowerTitle === "late hour" ||
+    lowerUrl.includes("hostels/late/hour")
+  ) {
+    return "lateHour";
+  }
+
+  // 13. Keep Notes
+  if (
+    lowerTitle === "keep notes" ||
+    lowerTitle === "notes" ||
+    lowerTitle === "quick notes" ||
+    lowerUrl.includes("retop/notes") ||
+    lowerUrl.includes("notes")
+  ) {
+    return "notes";
+  }
+
   // Default: Open in legacy content mode (with re. theme)
   return "content";
 };
@@ -191,6 +212,8 @@ const getSavedView = (): ViewType => {
     "calendar",
     "attendance",
     "digitalAssignments",
+    "examSchedule",
+    "lateHour",
   ];
   return validViews.includes(saved as ViewType)
     ? (saved as ViewType)
@@ -571,70 +594,84 @@ const DashboardApp = () => {
 
     const isChennai = window.location.hostname.includes("vtopcc");
     const campus: "chennai" | "vellore" = isChennai ? "chennai" : "vellore";
-    const scrapedUser = scrapeUserProfile(document);
-    const userProfile = { ...scrapedUser, campus };
-    setUser(userProfile);
-    
-    // Cache for offline mode across IndexedDB and localStorage strictly scoped by regNo
-    getStorageData(["retop_cached_users", `${userProfile.regNo}_profileImage`]).then((res: Record<string, any>) => {
-      const rawUsers: any[] = res.retop_cached_users || [];
-      const cleanReg = (r?: string) => (r || "").replace(/\s*\(offline\)/gi, "").trim();
-      const cleanUsersMap = new Map<string, any>();
-      for (const u of rawUsers) {
-        const cr = cleanReg(u.regNo);
-        if (!cr) continue;
-        const key = cr.toUpperCase();
-        const existing = cleanUsersMap.get(key);
-        cleanUsersMap.set(key, {
-          ...u,
-          regNo: cr,
-          username: cleanReg(u.username) || cr,
-          name: cleanReg(u.name) || existing?.name || "Student",
-          lastActive: Math.max(u.lastActive || 0, existing?.lastActive || 0),
-        });
-      }
 
-      const currentReg = cleanReg(userProfile.regNo);
-      const existingUser = cleanUsersMap.get(currentReg.toUpperCase());
-      const userCachedImg = res[`${currentReg}_profileImage`] || existingUser?.profileImgBase64 || "";
-
-      const updatedUser = {
-        regNo: currentReg,
-        username: currentReg,
-        name: cleanReg(userProfile.name) || existingUser?.name || "Student",
-        profileImgBase64: userProfile.profileImgBase64 || userCachedImg || "",
-        lastActive: Date.now(),
+    if (isOffline) {
+      const offlineUser = {
+        regNo: authId,
+        username: authId,
+        name: localStorage.getItem("retop_lastName") || "Student",
+        profileImgBase64: localStorage.getItem("retop_profileImage") || "",
         campus,
       };
-      cleanUsersMap.set(currentReg.toUpperCase(), updatedUser);
-      const users = Array.from(cleanUsersMap.values());
+      setUser(offlineUser);
+    } else {
+      const scrapedUser = scrapeUserProfile(document);
+      const userProfile = { ...scrapedUser, campus };
+      if (userProfile.regNo) {
+        setUser(userProfile);
+        
+        // Cache for offline mode across IndexedDB and localStorage strictly scoped by regNo
+        getStorageData(["retop_cached_users", `${userProfile.regNo}_profileImage`]).then((res: Record<string, any>) => {
+          const rawUsers: any[] = res.retop_cached_users || [];
+          const cleanReg = (r?: string) => (r || "").replace(/\s*\(offline\)/gi, "").trim();
+          const cleanUsersMap = new Map<string, any>();
+          for (const u of rawUsers) {
+            const cr = cleanReg(u.regNo);
+            if (!cr) continue;
+            const key = cr.toUpperCase();
+            const existing = cleanUsersMap.get(key);
+            cleanUsersMap.set(key, {
+              ...u,
+              regNo: cr,
+              username: cleanReg(u.username) || cr,
+              name: cleanReg(u.name) || existing?.name || "Student",
+              lastActive: Math.max(u.lastActive || 0, existing?.lastActive || 0),
+            });
+          }
 
-      setStorageData({
-        retop_lastAuthId: currentReg,
-        retop_lastName: updatedUser.name,
-        [`${currentReg}_profileImage`]: updatedUser.profileImgBase64,
-        retop_profileImage: updatedUser.profileImgBase64,
-        retop_active_user: currentReg,
-        retop_last_campus: campus,
-        retop_cached_users: users,
-      });
+          const currentReg = cleanReg(userProfile.regNo);
+          const existingUser = cleanUsersMap.get(currentReg.toUpperCase());
+          const userCachedImg = res[`${currentReg}_profileImage`] || existingUser?.profileImgBase64 || "";
 
-      // Relay scraped portal data to background worker for PWA sync
-      if (typeof chrome !== "undefined" && chrome.runtime?.sendMessage) {
-        try {
-          chrome.runtime.sendMessage({
-            action: "PORTAL_SCRAPED_DATA",
-            payload: {
-              user: userProfile,
-              lastAuthId: userProfile.regNo,
-              campus,
-              cachedUsers: users,
-              timestamp: Date.now(),
-            },
-          }).catch(() => {});
-        } catch {}
+          const updatedUser = {
+            regNo: currentReg,
+            username: currentReg,
+            name: cleanReg(userProfile.name) || existingUser?.name || "Student",
+            profileImgBase64: userProfile.profileImgBase64 || userCachedImg || "",
+            lastActive: Date.now(),
+            campus,
+          };
+          cleanUsersMap.set(currentReg.toUpperCase(), updatedUser);
+          const users = Array.from(cleanUsersMap.values());
+
+          setStorageData({
+            retop_lastAuthId: currentReg,
+            retop_lastName: updatedUser.name,
+            [`${currentReg}_profileImage`]: updatedUser.profileImgBase64,
+            retop_profileImage: updatedUser.profileImgBase64,
+            retop_active_user: currentReg,
+            retop_last_campus: campus,
+            retop_cached_users: users,
+          });
+
+          // Relay scraped portal data to background worker for PWA sync
+          if (typeof chrome !== "undefined" && chrome.runtime?.sendMessage) {
+            try {
+              chrome.runtime.sendMessage({
+                action: "PORTAL_SCRAPED_DATA",
+                payload: {
+                  user: userProfile,
+                  lastAuthId: userProfile.regNo,
+                  campus,
+                  cachedUsers: users,
+                  timestamp: Date.now(),
+                },
+              }).catch(() => {});
+            } catch {}
+          }
+        });
       }
-    });
+    }
 
     fetchDashboardData(networkRef.current, csrf, authId);
     fetchUserProfile(networkRef.current);
@@ -823,6 +860,7 @@ const DashboardApp = () => {
     else if (currentView === "digitalAssignments") pageName = "Assignments";
     else if (currentView === "coursePage") pageName = "Course Page";
     else if (currentView === "calendar") pageName = "Calendar";
+    else if (currentView === "notes") pageName = "Notes";
     else if (currentView === "profile") pageName = "Profile";
     else if (currentView === "content" && contentTitle) pageName = contentTitle;
     // @ts-ignore - Handle settings explicitly as fallback
@@ -981,25 +1019,18 @@ const DashboardApp = () => {
 
           
             {showProfileMenu && (
-              <>
-                <div
- 
- 
- 
-                  className="fixed inset-0 z-9998 bg-transparent"
-                  onClick={() => setShowProfileMenu(false)} />
-                <ProfileMenu
-                  userName={user.name}
-                  userRegNo={user.regNo}
-                  userProfileImg={user.profileImgBase64}
-                  onNavigate={handleLinkClick}
-                  onLogout={handleLogout}
-                  onLegacyToggle={() => {
-                    setIsPeeking(false);
-                    setIsModernUI(false);
-                  }}
-                  onClose={() => setShowProfileMenu(false)} />
-              </>
+              <ProfileMenu
+                userName={user.name}
+                userRegNo={user.regNo}
+                userProfileImg={user.profileImgBase64}
+                onNavigate={handleLinkClick}
+                onLogout={handleLogout}
+                onLegacyToggle={() => {
+                  setIsPeeking(false);
+                  setIsModernUI(false);
+                }}
+                onClose={() => setShowProfileMenu(false)}
+              />
             )}
           
 
@@ -1011,56 +1042,16 @@ const DashboardApp = () => {
         </div>
       </div>
 
-
-      
-      
-        {!isModernUI && (
-          <LegacyReturnButton
-            onClick={() => {
-              setIsPeeking(false);
-              setIsModernUI(true);
-            }}
-            onMouseEnter={() => setIsPeeking(true)}
-            onMouseLeave={() => setIsPeeking(false)} />
-        )}
-      
-
-      
-        {!isModernUI && isOmniboxOpen && (
-          <div
- 
- 
- 
- 
-            className="fixed top-2 left-4 md:left-8 z-99999 w-full max-w-90 pointer-events-auto flex flex-col">
-            {/* Backdrop to close when clicked outside */}
-            <div 
-              className="fixed inset-0 z-[-1] bg-transparent"
-              onClick={() => setIsOmniboxOpen(false)} />
-            <div className="bg-(--bg-surface) rounded-4xl shadow-(--brutal-shadow-hover) border-2 border-(--border-main) flex flex-col p-2 h-auto relative">
-              <TopBarSearch
-                currentView={currentView}
-                isOmniboxOpen={isOmniboxOpen}
-                setIsOmniboxOpen={setIsOmniboxOpen}
-                menuCategories={menu}
-                pinnedLinks={pinnedLinks}
-                onNavigate={(link: any) => {
-                  handleLinkClick(link);
-                  setIsModernUI(true);
-                  setIsPeeking(false);
-                }}
-                onTogglePin={handleTogglePin}
-                initialQuery={omniboxInitial}
-                pageTitle="Search Retop..."
-                onBack={() => {
-                  setIsModernUI(true);
-                  setCurrentView("dashboard");
-                  setIsOmniboxOpen(false);
-                }} />
-            </div>
-          </div>
-        )}
-      
+      {!isModernUI && (
+        <LegacyReturnButton
+          onClick={() => {
+            setIsPeeking(false);
+            setIsModernUI(true);
+          }}
+          onMouseEnter={() => setIsPeeking(true)}
+          onMouseLeave={() => setIsPeeking(false)}
+        />
+      )}
     </>
   );
 };

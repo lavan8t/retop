@@ -139,7 +139,9 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
   isSyncing = false,
   lastSyncTime = 0,
 }) => {
-  const { isModernUI } = useAppStore();
+  const { isModernUI, setIsModernUI } = useAppStore();
+  const isHome = currentView === "dashboard" || currentView === "home" || !currentView;
+  const [isLogoHovered, setIsLogoHovered] = useState(false);
   const [query, setQuery] = useState(initialQuery);
   const deferredQuery = useDeferredValue(query);
   const [isShiftPressed, setIsShiftPressed] = useState(false);
@@ -275,6 +277,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
       { title: "Student Profile", url: "studentsRecord/StudentProfileAllView", category: "Made for retop" },
       { title: "Curriculum", url: "academics/common/CurriculumSyllabus", category: "Made for retop" },
       { title: "Exam Schedule", url: "examinations/StudExamSchedule", category: "Made for retop" },
+      { title: "Late Hour Permission", url: "hostels/late/hour/student/request/1", category: "Made for retop" },
     ];
 
     const madeForRetopCat: MenuCategory = {
@@ -537,27 +540,67 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
         className={`group flex items-center gap-3 transition-all duration-fast ease-out cursor-text min-w-60 md:min-w-72 pl-4 pr-3 h-12 md:h-14 rounded-[32px] relative z-10000 bg-transparent border-2 border-transparent shadow-none`}
       >
         <div className="relative flex items-center shrink-0">
-          <Tooltip text="Return to Dashboard">
+          <Tooltip text={isHome ? "Go to VTOP" : "Return to Dashboard"}>
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 (e.currentTarget as HTMLElement).blur();
-                if (onBack) onBack();
+                if (isHome) {
+                  if (typeof window !== "undefined" && !(window as any).__RETOP_OFFLINE__) {
+                    setIsModernUI(false);
+                  }
+                } else {
+                  if (onBack) onBack();
+                }
               }}
-              className="relative flex items-center justify-center shrink-0 cursor-pointer hover:opacity-75 transition-opacity focus:outline-none"
+              onMouseEnter={() => setIsLogoHovered(true)}
+              onMouseLeave={() => setIsLogoHovered(false)}
+              className="relative flex items-center justify-start shrink-0 cursor-pointer hover:opacity-90 transition-opacity focus:outline-none w-[66px] md:w-[76px] h-9 pl-1 md:pl-2 select-none overflow-visible"
             >
-              <div className="flex items-end pb-1 pr-1 pl-1 md:pl-2">
-                <span className="font-expanded font-black text-2xl md:text-3xl italic lowercase leading-none text-(--text-main) hover:text-(--accent-hover) transition-colors">
-                  re
-                </span>
+              <div className="relative flex items-center h-full w-full">
+                {/* 1. "re." Branding (re text + dot) */}
                 <div
-                  className={`relative ml-[-1px] md:ml-[-2px] mb-0.5 md:mb-0.75 flex items-center justify-center transition-all duration-300 origin-bottom-left w-2.5 h-2.5 md:w-3 md:h-3 bg-(--accent-base) rounded-full ${status === "loading" ? "animate-pulse" : ""}`}
+                  className={`absolute inset-0 flex items-end pb-1 transition-all duration-200 ${
+                    isHome && isLogoHovered
+                      ? "opacity-0 -translate-y-1 scale-90 pointer-events-none"
+                      : "opacity-100 translate-y-0 scale-100"
+                  }`}
                 >
-                  <Search
-                    className={`w-1.5 h-1.5 md:w-2 md:h-2 text-(--text-inverse) transition-opacity absolute ${status === "loading" ? "opacity-0" : "opacity-100"}`}
-                    strokeWidth={4}
-                  />
+                  <span className="font-expanded font-black text-2xl md:text-3xl italic lowercase leading-none text-(--text-main) hover:text-(--accent-hover)">
+                    re
+                  </span>
+                  <div
+                    className={`relative ml-[-1.5px] md:ml-[-2.5px] mb-0.5 md:mb-0.75 flex items-center justify-center transition-all duration-300 origin-bottom-left rounded-full bg-(--accent-base) shrink-0 ${
+                      isSearchActive
+                        ? "w-4.5 h-4.5 md:w-5 md:h-5"
+                        : "w-2.5 h-2.5 md:w-3 md:h-3"
+                    }`}
+                  >
+                    <Search
+                      className={`text-(--text-inverse) transition-all duration-200 absolute ${
+                        isSearchActive
+                          ? "opacity-100 scale-100 w-2.5 h-2.5 md:w-3 md:h-3"
+                          : "opacity-0 scale-0 w-1.5 h-1.5 pointer-events-none"
+                      }`}
+                      strokeWidth={3.5}
+                    />
+                  </div>
                 </div>
+
+                {/* 2. "VTOP" Hover State (Home only) */}
+                {isHome && (
+                  <div
+                    className={`absolute inset-0 flex items-center transition-all duration-200 ${
+                      isLogoHovered
+                        ? "opacity-100 translate-y-0 scale-100"
+                        : "opacity-0 translate-y-1 scale-90 pointer-events-none"
+                    }`}
+                  >
+                    <span className="font-['Times_New_Roman',Times,serif]! font-bold text-xl md:text-2xl leading-none text-(--text-main) hover:text-(--accent-hover)">
+                      VTOP
+                    </span>
+                  </div>
+                )}
               </div>
             </button>
           </Tooltip>

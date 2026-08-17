@@ -128,11 +128,11 @@ export const ContentRouter = ({
     case "examSchedule":
       return <ExamSchedulePage network={networkRef.current} />;
 
+
     case "content":
       return (
         <div className="flex flex-col items-center justify-center h-full text-(--text-muted) font-mono pointer-events-auto">
-          <VitEmblemLoader size={72} className="mb-4 text-(--accent-base)" />
-          <span className="text-xl font-bold font-expanded mb-0 tracking-wider">
+          <span className="text-sm font-bold font-expanded tracking-wider animate-pulse text-(--text-muted)">
             LAUNCHING LEGACY SYSTEM...
           </span>
         </div>

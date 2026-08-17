@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { School, CalendarMonth } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 
 import { AppSettings } from "../../utils/settings-store";
@@ -124,10 +124,14 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
     );
   }
 
+  const [isCgpaHovered, setIsCgpaHovered] = useState(false);
+
   // Original Desktop Right Column View (commit b11e407)
   return (
     <div className={`hidden lg:flex w-full lg:w-[27%] xl:w-[24%] flex-col shrink-0 h-auto lg:h-full overflow-y-auto custom-scrollbar relative z-30 pt-20 md:pt-23 lg:pt-25 pb-4 md:pb-6 lg:pb-8 pl-2 lg:pl-3 pr-4 lg:pr-6 gap-4 ${className || ""}`}>
       <Card
+        onMouseEnter={() => setIsCgpaHovered(true)}
+        onMouseLeave={() => setIsCgpaHovered(false)}
         onClick={() =>
           onNavigate({
             title: "Grades View",
@@ -135,13 +139,13 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
             category: "Examinations",
           })
         }
-        className="shrink-0 h-auto bg-(--bg-highlight) rounded-4xl p-5 flex flex-col relative z-30 cursor-pointer overflow-hidden border-2 border-(--border-main) shadow-(--brutal-shadow-sm) hover:shadow-(--brutal-shadow-hover) hover:bg-(--bg-surface) transition-all duration-300 ease-out"
+        className={`cgpa-card-group group shrink-0 h-auto bg-(--bg-highlight) rounded-4xl p-5 flex flex-col relative z-30 cursor-pointer overflow-hidden border-2 border-(--border-main) hover:border-(--accent-base) hover:bg-(--bg-surface) transition-all duration-300 ease-out ${isCgpaHovered ? "is-hovered" : ""}`}
       >
         {/* Credits Hover Target */}
-        <div className="credits-hover-group group/credits flex flex-col">
+        <div className="flex flex-col">
           {/* Expanded Split View */}
-          <div className="cgpa-expand-container overflow-hidden relative z-10">
-            <div className="overflow-hidden min-h-0 pb-4">
+          <div className="cgpa-expand-section overflow-hidden relative z-10">
+            <div className="overflow-hidden min-h-0">
               <div className="flex flex-col items-center w-full">
                 <div className="text-[0.625rem] font-expanded font-bold uppercase text-(--text-muted) mb-3 leading-none">
                   Credits
@@ -178,8 +182,8 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
           </div>
 
           {/* Resting Combined View */}
-          <div className="cgpa-resting-container overflow-hidden relative z-10">
-            <div className="overflow-hidden min-h-0 flex items-center justify-end pb-3">
+          <div className="cgpa-resting-section overflow-hidden relative z-10">
+            <div className="overflow-hidden min-h-0 flex items-center justify-end">
               <div className="text-right">
                 <div className="text-[0.625rem] font-expanded font-bold uppercase text-(--text-muted) leading-none">
                   Credits
@@ -197,10 +201,10 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
 
         {/* Persistent CGPA */}
         <div
-          className="flex flex-col relative z-10 transition-transform duration-300 ease-out"
+          className="flex flex-col relative z-10 transition-transform duration-300 ease-out group-hover:translate-y-1"
         >
           <div className="flex items-center justify-between">
-            <School className="w-10 h-10 text-(--text-main) mix-blend-overlay opacity-80" />
+            <School className="w-10 h-10 text-(--text-main) mix-blend-overlay opacity-80 transition-transform duration-300 group-hover:scale-110" />
             <div className="text-right">
               <div className="text-[0.625rem] font-expanded font-bold uppercase text-(--text-muted) leading-none">
                 CGPA
@@ -215,7 +219,7 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
         </div>
       </Card>
 
-      <div className="flex-1 overflow-visible flex flex-col min-h-0 pb-2 mt-4">
+      <div className="flex-1 overflow-visible flex flex-col min-h-0 pb-2 mt-4 gap-4">
         <Card
           onClick={() => onNavigate({
             title: "Assignments",

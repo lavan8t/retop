@@ -627,16 +627,6 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
     <div className="h-full w-full flex flex-col overflow-y-auto custom-scrollbar bg-(--bg-main) text-(--text-main) px-4 md:px-8 lg:px-12">
       <div className="pt-20 md:pt-23 lg:pt-25" />
 
-      {/* Header */}
-      <div className="pb-4 border-b border-(--border-dim)/40">
-        <h1 className="text-xl md:text-2xl font-expanded font-black text-(--text-main)">
-          Late Hour Permission
-        </h1>
-        <p className="text-xs text-(--text-muted) mt-0.5">
-          Apply and track hostel late hour campus permissions
-        </p>
-      </div>
-
       {/* Segmented Tab Bar - LEFT ALIGNED */}
       <div className="flex items-center gap-1.5 p-1 bg-(--bg-surface) rounded-2xl border border-(--border-dim)/40 my-4 self-start">
         {tabs.map((t) => {

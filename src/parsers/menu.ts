@@ -288,35 +288,96 @@ export function scrapeMenu(doc: Document): MenuCategory[] {
     });
   }
 
-  // Strategy 3: Horizontal navbar / Legacy (a.hmenuItem)
+  // Strategy 3: Horizontal navbar / Legacy (#top-hmenu-bar / a.hmenuItem)
   if (categories.length === 0) {
-    const categoryAnchors = doc.querySelectorAll("a.hmenuItem, a.hmenuitem");
-    categoryAnchors.forEach((categoryAnchor) => {
-      let title = cleanElementText(categoryAnchor);
-      if (!title || IGNORED_TITLES.has(title.toLowerCase())) return;
+    const categoryAnchors = doc.querySelectorAll(
+      "#top-hmenu-bar a.hmenuItem, #top-hmenu-bar a.hmenuitem, a.hmenuItem, a.hmenuitem, #top-hmenu-bar a[data-bs-toggle='collapse'][href^='#MG'], a[href^='#MG']"
+    );
+    const seenCategoryIds = new Set<string>();
 
+    categoryAnchors.forEach((categoryAnchor) => {
       const href = categoryAnchor.getAttribute("href");
       if (!href || !href.startsWith("#")) return;
+      const containerId = href.substring(1);
+      if (seenCategoryIds.has(containerId)) return;
 
-      const container = doc.getElementById(href.substring(1));
+      const container = doc.getElementById(containerId);
       if (!container) return;
 
-      const links: QuickLink[] = [];
-      container.querySelectorAll("a").forEach((a) => {
-        const url = extractUrlFromAnchor(a as HTMLElement);
-        if (!url || visitedUrls.has(url)) return;
-
-        const rawTitle = cleanElementText(a);
-        const linkTitle = sanitizeMenuTitle(rawTitle, title);
-
-        if (linkTitle && !IGNORED_TITLES.has(linkTitle.toLowerCase())) {
-          visitedUrls.add(url);
-          links.push({ title: linkTitle, url, category: title });
+      // Extract title from category header or anchor text
+      let title = cleanElementText(categoryAnchor);
+      if (!title || title === "☰") {
+        const headerInside = container.querySelector(".fw-bold.h5, .h5, .card-header");
+        if (headerInside) {
+          title = cleanElementText(headerInside);
         }
-      });
+      }
+
+      if (!title || IGNORED_TITLES.has(title.toLowerCase())) return;
+      seenCategoryIds.add(containerId);
+
+      const links: QuickLink[] = [];
+
+      // Scan through all list-groups or sections inside the container
+      const listGroups = container.querySelectorAll(".list-group");
+      if (listGroups.length > 0) {
+        listGroups.forEach((group) => {
+          let currentSubheading: string | undefined = undefined;
+          const children = Array.from(group.children);
+
+          children.forEach((child) => {
+            // Check if this child is a section title header (e.g. "General", "Proctor", "Course Registration")
+            if (
+              child.classList.contains("card-title") ||
+              child.classList.contains("card-header") ||
+              child.querySelector(".card-title, .card-header") ||
+              (child.tagName === "DIV" && child.classList.contains("list-group-item") && !child.hasAttribute("data-url"))
+            ) {
+              const subTitle = cleanElementText(child);
+              if (subTitle && !IGNORED_TITLES.has(subTitle.toLowerCase())) {
+                currentSubheading = subTitle;
+              }
+              return;
+            }
+
+            // Check if child is an anchor or contains an anchor
+            const anchor = child.tagName === "A" ? (child as HTMLElement) : child.querySelector("a[data-url], a[href]");
+            if (anchor) {
+              const url = extractUrlFromAnchor(anchor as HTMLElement);
+              if (!url || visitedUrls.has(url)) return;
+
+              const rawTitle = cleanElementText(anchor);
+              const linkTitle = sanitizeMenuTitle(rawTitle, title);
+
+              if (linkTitle && !IGNORED_TITLES.has(linkTitle.toLowerCase())) {
+                visitedUrls.add(url);
+                links.push({
+                  title: linkTitle,
+                  url,
+                  category: title,
+                  subheading: currentSubheading,
+                });
+              }
+            }
+          });
+        });
+      } else {
+        container.querySelectorAll("a").forEach((a) => {
+          const url = extractUrlFromAnchor(a as HTMLElement);
+          if (!url || visitedUrls.has(url)) return;
+
+          const rawTitle = cleanElementText(a);
+          const linkTitle = sanitizeMenuTitle(rawTitle, title);
+
+          if (linkTitle && !IGNORED_TITLES.has(linkTitle.toLowerCase())) {
+            visitedUrls.add(url);
+            links.push({ title: linkTitle, url, category: title });
+          }
+        });
+      }
 
       if (links.length > 0) {
-        categories.push({ id: href.substring(1), title, links });
+        categories.push({ id: containerId, title, links });
       }
     });
   }

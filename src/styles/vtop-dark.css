@@ -134,6 +134,32 @@ html[data-theme="amoled"] #top-hmenu-bar .hmenuItem:hover {
   color: #ffffff !important;
 }
 
+/* Dropdown Menu Panes in HMenu (Light Theme Defaults) */
+#retop-legacy-menu-search-dropdown {
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+}
+
+#retop-legacy-menu-search-dropdown .dropdown-item {
+  color: #334155 !important;
+  transition: all 0.1s ease !important;
+}
+
+#retop-legacy-menu-search-dropdown .dropdown-item:hover {
+  background-color: rgba(59, 130, 246, 0.08) !important;
+  color: #1d4ed8 !important;
+}
+
+#retop-legacy-menu-search-dropdown .dropdown-item.active {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+}
+
+#retop-legacy-menu-search-dropdown .dropdown-item.active * {
+  color: #ffffff !important;
+}
+
 /* Dropdown Menu Panes in HMenu (Dark / AMOLED) */
 html[data-theme="dark"] .hmenubox,
 html[data-theme="amoled"] .hmenubox,
@@ -165,10 +191,19 @@ html[data-theme="amoled"] .overlay-window .list-group-item:hover,
 html[data-theme="dark"] [id^="MG"] .list-group-item:hover,
 html[data-theme="amoled"] [id^="MG"] .list-group-item:hover,
 html[data-theme="dark"] #retop-legacy-menu-search-dropdown .dropdown-item:hover,
-html[data-theme="amoled"] #retop-legacy-menu-search-dropdown .dropdown-item:hover,
+html[data-theme="amoled"] #retop-legacy-menu-search-dropdown .dropdown-item:hover {
+  background-color: var(--vtop-dark-surface-2) !important;
+  color: #ffffff !important;
+}
+
 html[data-theme="dark"] #retop-legacy-menu-search-dropdown .dropdown-item.active,
 html[data-theme="amoled"] #retop-legacy-menu-search-dropdown .dropdown-item.active {
-  background-color: var(--vtop-dark-surface-2) !important;
+  background-color: var(--accent-base, #3b82f6) !important;
+  color: #ffffff !important;
+}
+
+html[data-theme="dark"] #retop-legacy-menu-search-dropdown .dropdown-item.active *,
+html[data-theme="amoled"] #retop-legacy-menu-search-dropdown .dropdown-item.active * {
   color: #ffffff !important;
 }
 

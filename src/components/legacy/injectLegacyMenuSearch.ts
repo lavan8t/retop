@@ -15,11 +15,11 @@ export function injectLegacyMenuSearch(): void {
 
   const liWrapper = document.createElement("li");
   liWrapper.id = "retop-legacy-menu-search-wrapper";
-  liWrapper.className = "nav-item d-flex align-items-center ms-lg-auto my-1 position-relative";
-  liWrapper.style.cssText = "min-width: 220px; max-width: 340px; z-index: 1050;";
+  liWrapper.className = "nav-item d-flex align-items-center me-2 my-1 position-relative";
+  liWrapper.style.cssText = "min-width: 220px; max-width: 320px; z-index: 1050;";
 
   liWrapper.innerHTML = `
-    <div class="input-group input-group-sm w-100 retop-legacy-search-box" style="border-radius: 9999px; overflow: hidden; background: var(--vtop-search-bg, rgba(125, 125, 125, 0.1)); border: 1px solid var(--vtop-search-border, rgba(125, 125, 125, 0.25)); transition: all 0.15s ease;">
+    <div class="input-group input-group-sm w-100 retop-legacy-search-box" style="border-radius: 9999px; overflow: hidden; background: rgba(125, 125, 125, 0.09); border: 1px solid rgba(125, 125, 125, 0.22); transition: all 0.15s ease;">
       <span class="input-group-text bg-transparent border-0 py-1 ps-2.5 pe-1 text-muted">
         <i class="fa fa-search small" style="font-size: 11px;"></i>
       </span>
@@ -43,16 +43,21 @@ export function injectLegacyMenuSearch(): void {
     <div
       id="retop-legacy-menu-search-dropdown"
       class="dropdown-menu shadow-lg p-1.5 position-absolute w-100 mt-1 custom-scrollbar"
-      style="display: none; max-height: min(450px, calc(100vh - 130px)); overflow-y: auto; z-index: 1055; top: 100%; right: 0; min-width: 290px; border-radius: 14px;"
+      style="display: none; max-height: min(450px, calc(100vh - 130px)); overflow-y: auto; z-index: 1055; top: 100%; left: 0; min-width: 300px; border-radius: 14px;"
     >
     </div>
   `;
 
-  // Insert into navbar-nav or container
+  // Insert before first menu item in navbar-nav, or right after quickLinks
   if (navList) {
-    navList.appendChild(liWrapper);
+    navList.prepend(liWrapper);
   } else {
-    containerFluid.appendChild(liWrapper);
+    const quickLinks = document.getElementById("quickLinks");
+    if (quickLinks) {
+      quickLinks.after(liWrapper);
+    } else {
+      containerFluid.prepend(liWrapper);
+    }
   }
 
   const input = liWrapper.querySelector("#retop-legacy-menu-search-input") as HTMLInputElement;

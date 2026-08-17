@@ -10,20 +10,20 @@ import {
   Category,
   Send,
   Warning,
+  CalendarMonth,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { VTOPNetwork } from "../utils/network";
 import { EmptyState } from "../components/EmptyState";
+import {
+  SearchableDropdown,
+  SearchableOption,
+} from "../components/ui/SearchableDropdown";
 
 interface LateHourPageProps {
   network: VTOPNetwork;
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-
-interface Opt {
-  value: string;
-  label: string;
-}
 
 interface StatusEntry {
   id: string; // lateHourId value (e.g. P170826404414)
@@ -37,9 +37,9 @@ interface StatusEntry {
   status: string;
 }
 
-// ── Default Time Options ──────────────────────────────────────────────────────
+// ── Static Option Lists ───────────────────────────────────────────────────────
 
-const DEFAULT_TIME_OPTS: Opt[] = [
+const DEFAULT_TIME_OPTS: SearchableOption[] = [
   { value: "08:30 PM", label: "08:30 PM" },
   { value: "08:45 PM", label: "08:45 PM" },
   { value: "09:00 PM", label: "09:00 PM" },
@@ -61,7 +61,7 @@ const DEFAULT_TIME_OPTS: Opt[] = [
   { value: "01:00 AM", label: "01:00 AM" },
 ];
 
-const VENUE_TYPE_OPTS: Opt[] = [
+const VENUE_TYPE_OPTS: SearchableOption[] = [
   { value: "2", label: "Lab" },
   { value: "1", label: "Class Room" },
   { value: "9", label: "Foodys" },
@@ -72,7 +72,7 @@ const VENUE_TYPE_OPTS: Opt[] = [
   { value: "15", label: "MH-Dance Room" },
 ];
 
-const EVENT_TYPE_OPTS: Opt[] = [
+const EVENT_TYPE_OPTS: SearchableOption[] = [
   { value: "LHE1", label: "LAB" },
   { value: "LHE2", label: "Clubs and Chapters" },
   { value: "LHE3", label: "Cultural Events" },
@@ -81,14 +81,14 @@ const EVENT_TYPE_OPTS: Opt[] = [
 
 // ── Parsers ───────────────────────────────────────────────────────────────────
 
-function parseOpts(html: string, selectId: string): Opt[] {
+function parseOpts(html: string, selectId: string): SearchableOption[] {
   const re = new RegExp(
     `<select[^>]*id=["']${selectId}["'][^>]*>([\\s\\S]*?)<\\/select>`,
     "i",
   );
   const m = html.match(re);
   if (!m) return [];
-  const opts: Opt[] = [];
+  const opts: SearchableOption[] = [];
   const optRe = /<option\s+value=["']([^"']*)["'][^>]*>([\s\S]*?)<\/option>/gi;
   let o: RegExpExecArray | null;
   while ((o = optRe.exec(m[1])) !== null) {
@@ -101,9 +101,6 @@ function parseOpts(html: string, selectId: string): Opt[] {
   return opts;
 }
 
-/**
- * Parse status/history table rows from VTOP HTML.
- */
 function parseRows(html: string): StatusEntry[] {
   const rows: StatusEntry[] = [];
   const rowRe = /<tr>([\s\S]*?)<\/tr>/gi;
@@ -113,7 +110,6 @@ function parseRows(html: string): StatusEntry[] {
   let rowM: RegExpExecArray | null;
   while ((rowM = rowRe.exec(html)) !== null) {
     const rowHtml = rowM[1];
-    // Rows containing a lateHourId input or button
     if (!rowHtml.includes("lateHourId")) continue;
 
     const tds: string[] = [];
@@ -123,7 +119,6 @@ function parseRows(html: string): StatusEntry[] {
     }
     if (tds.length < 8) continue;
 
-    // Extract ID from hidden input or data-latehourid or button
     const idMatch =
       rowHtml.match(/name=["']lateHourId\d*["'][^>]*value=["']([^"']+)["']/i) ||
       rowHtml.match(/value=["'](P\d+)["']/i) ||
@@ -144,9 +139,6 @@ function parseRows(html: string): StatusEntry[] {
   return rows;
 }
 
-/**
- * Parse submit/cancel response message.
- */
 function parseResponseMsg(html: string): { ok: boolean; text: string } {
   const dataMsg =
     html
@@ -161,11 +153,17 @@ function parseResponseMsg(html: string): { ok: boolean; text: string } {
 
   const msg = dataMsg || appMsg;
   const ok = msg.toUpperCase().includes("SUCCESSFUL");
-  const failed = msg.toUpperCase().includes("FAILED") || msg.toLowerCase().includes("unable to process");
+  const failed =
+    msg.toUpperCase().includes("FAILED") ||
+    msg.toLowerCase().includes("unable to process");
 
   return {
     ok: ok || (!failed && !msg),
-    text: msg || (ok ? "Request submitted successfully." : "Unable to process request on VTOP."),
+    text:
+      msg ||
+      (ok
+        ? "Request submitted successfully."
+        : "Unable to process request on VTOP."),
   };
 }
 
@@ -284,47 +282,6 @@ function EntryCard({
   );
 }
 
-function SelectField({
-  label,
-  value,
-  options,
-  disabled = false,
-  loading = false,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  options: Opt[];
-  disabled?: boolean;
-  loading?: boolean;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-[11px] font-bold text-(--text-muted) uppercase tracking-wide flex items-center gap-1.5">
-        {label}
-        {loading && (
-          <span className="text-(--accent-base) animate-pulse normal-case tracking-normal font-normal">
-            loading…
-          </span>
-        )}
-      </label>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        disabled={disabled || loading || options.length === 0}
-        className="w-full h-10 px-3.5 rounded-2xl bg-(--bg-main) border border-(--border-dim) text-sm font-medium text-(--text-main) focus:outline-none focus:border-(--accent-base) transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
-        <option value="">— Select —</option>
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 type Tab = "request" | "status" | "history";
@@ -345,13 +302,18 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
   const [fromTime, setFromTime] = useState("");
   const [toTime, setToTime] = useState("");
 
+  // Touch tracking for validation
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
   // Cascading options
-  const [schoolOpts, setSchoolOpts] = useState<Opt[]>([]);
-  const [facultyOpts, setFacultyOpts] = useState<Opt[]>([]);
-  const [blockOpts, setBlockOpts] = useState<Opt[]>([]);
-  const [venueOpts, setVenueOpts] = useState<Opt[]>([]);
-  const [fromTimeOpts, setFromTimeOpts] = useState<Opt[]>(DEFAULT_TIME_OPTS);
-  const [toTimeOpts, setToTimeOpts] = useState<Opt[]>(DEFAULT_TIME_OPTS);
+  const [schoolOpts, setSchoolOpts] = useState<SearchableOption[]>([]);
+  const [facultyOpts, setFacultyOpts] = useState<SearchableOption[]>([]);
+  const [blockOpts, setBlockOpts] = useState<SearchableOption[]>([]);
+  const [venueOpts, setVenueOpts] = useState<SearchableOption[]>([]);
+  const [fromTimeOpts, setFromTimeOpts] =
+    useState<SearchableOption[]>(DEFAULT_TIME_OPTS);
+  const [toTimeOpts, setToTimeOpts] =
+    useState<SearchableOption[]>(DEFAULT_TIME_OPTS);
 
   // Loading states
   const [loadingSchool, setLoadingSchool] = useState(false);
@@ -360,7 +322,10 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
   const [loadingVenues, setLoadingVenues] = useState(false);
   const [loadingDateBlock, setLoadingDateBlock] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [submitMsg, setSubmitMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [submitMsg, setSubmitMsg] = useState<{
+    ok: boolean;
+    text: string;
+  } | null>(null);
 
   // Status / History
   const [statusEntries, setStatusEntries] = useState<StatusEntry[]>([]);
@@ -370,6 +335,56 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
   const [cancelling, setCancelling] = useState<string | null>(null);
 
   const needsBuilding = venueType === "1" || venueType === "2";
+  const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
+
+  // ── Validation Errors ─────────────────────────────────────────────────────
+  const errors = useMemo(() => {
+    const errs: Record<string, string> = {};
+    if (!school) errs.school = "Please select a school";
+    if (!faculty) errs.faculty = "Please select a faculty";
+    if (!venueType) errs.venueType = "Please select a venue type";
+    if (needsBuilding) {
+      if (!block) errs.block = "Please select an academic block";
+      if (!venue) errs.venue = "Please select a venue";
+    }
+    if (!eventType) errs.eventType = "Please select category";
+    if (!details.trim()) {
+      errs.details = "Please enter brief details on work";
+    } else if (details.trim().length < 4) {
+      errs.details = "Details should be at least 4 characters";
+    }
+    if (!fromDate) {
+      errs.fromDate = "Please select from date";
+    }
+    if (!toDate) {
+      errs.toDate = "Please select to date";
+    } else if (fromDate && toDate < fromDate) {
+      errs.toDate = "To date cannot be earlier than From date";
+    }
+    if (!fromTime) errs.fromTime = "Please select from time";
+    if (!toTime) errs.toTime = "Please select to time";
+
+    return errs;
+  }, [
+    school,
+    faculty,
+    venueType,
+    needsBuilding,
+    block,
+    venue,
+    eventType,
+    details,
+    fromDate,
+    toDate,
+    fromTime,
+    toTime,
+  ]);
+
+  const canSubmit = Object.keys(errors).length === 0;
+
+  // Mark field as touched
+  const touch = (field: string) =>
+    setTouched((prev) => ({ ...prev, [field]: true }));
 
   // ── Step 1 Init: load school options ──────────────────────────────────────
   useEffect(() => {
@@ -388,6 +403,7 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
   const handleSchoolChange = useCallback(
     async (v: string) => {
       setSchool(v);
+      touch("school");
       setFaculty("");
       setFacultyOpts([]);
       if (!v) return;
@@ -405,10 +421,11 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
     [network],
   );
 
-  // ── Step 4: VenueType → Academic Blocks (or skip for non-building types) ──
+  // ── Step 4: VenueType → Academic Blocks ───────────────────────────────────
   const handleVenueTypeChange = useCallback(
     async (v: string) => {
       setVenueType(v);
+      touch("venueType");
       setBlock("");
       setBlockOpts([]);
       setVenue("");
@@ -439,6 +456,7 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
   const handleBlockChange = useCallback(
     async (v: string) => {
       setBlock(v);
+      touch("block");
       setVenue("");
       setVenueOpts([]);
       if (!v) return;
@@ -465,6 +483,7 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
   const handleEventTypeChange = useCallback(
     async (v: string) => {
       setEventType(v);
+      touch("eventType");
       if (!v) return;
 
       setLoadingDateBlock(true);
@@ -493,35 +512,22 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
   );
 
   // ── Submit ────────────────────────────────────────────────────────────────
-  const canSubmit = useMemo(() => {
-    return Boolean(
-      school &&
-        faculty &&
-        venueType &&
-        (!needsBuilding || (block && venue)) &&
-        eventType &&
-        details.trim() &&
-        fromDate &&
-        toDate &&
-        fromTime &&
-        toTime,
-    );
-  }, [
-    school,
-    faculty,
-    venueType,
-    needsBuilding,
-    block,
-    venue,
-    eventType,
-    details,
-    fromDate,
-    toDate,
-    fromTime,
-    toTime,
-  ]);
-
   const handleSubmit = async () => {
+    // Touch all fields to trigger full validation display
+    setTouched({
+      school: true,
+      faculty: true,
+      venueType: true,
+      block: true,
+      venue: true,
+      eventType: true,
+      details: true,
+      fromDate: true,
+      toDate: true,
+      fromTime: true,
+      toTime: true,
+    });
+
     if (!canSubmit) return;
     setSubmitting(true);
     setSubmitMsg(null);
@@ -545,13 +551,15 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
       setSubmitMsg(result);
 
       if (result.ok) {
-        // Clear form
         setDetails("");
-        // Auto-switch to Status tab after delay
+        setTouched({});
         setTimeout(() => setActiveTab("status"), 1200);
       }
     } catch (e: any) {
-      setSubmitMsg({ ok: false, text: e.message || "Failed to submit request." });
+      setSubmitMsg({
+        ok: false,
+        text: e.message || "Failed to submit request.",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -616,7 +624,7 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
   ];
 
   return (
-    <div className="h-full w-full flex flex-col overflow-y-auto custom-scrollbar bg-(--bg-main) text-(--text-main) px-4 md:px-6 lg:px-8 max-w-3xl mx-auto">
+    <div className="h-full w-full flex flex-col overflow-y-auto custom-scrollbar bg-(--bg-main) text-(--text-main) px-4 md:px-8 lg:px-12">
       <div className="pt-20 md:pt-23 lg:pt-25" />
 
       {/* Header */}
@@ -629,8 +637,8 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
         </p>
       </div>
 
-      {/* Segmented Tab Bar */}
-      <div className="flex items-center gap-1.5 p-1 bg-(--bg-surface) rounded-2xl border border-(--border-dim)/40 my-4 shrink-0">
+      {/* Segmented Tab Bar - LEFT ALIGNED */}
+      <div className="flex items-center gap-1.5 p-1 bg-(--bg-surface) rounded-2xl border border-(--border-dim)/40 my-4 self-start">
         {tabs.map((t) => {
           const Icon = t.icon;
           const isActive = activeTab === t.id;
@@ -638,7 +646,7 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id)}
-              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border-0 ${
+              className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border-0 ${
                 isActive
                   ? "bg-(--accent-base) text-(--text-inverse) shadow-sm"
                   : "text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-highlight)/50"
@@ -650,131 +658,239 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
         })}
       </div>
 
-      {/* Tab Content */}
-      <div className="pb-24 flex-1">
-        {/* TAB 1: NEW REQUEST */}
-        {activeTab === "request" && (
-          <div className="flex flex-col gap-4">
-            <div className="bg-(--bg-surface) border border-(--border-dim)/40 rounded-3xl p-5 md:p-6 flex flex-col gap-4">
-              <h2 className="text-xs font-mono font-black uppercase tracking-wider text-(--text-muted)">
-                Permission Details
-              </h2>
+      {/* Main Content Layout: Left side has content/form, Right side is empty */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-24 flex-1">
+        <div className="lg:col-span-8 xl:col-span-7 flex flex-col gap-4">
+          {/* TAB 1: NEW REQUEST */}
+          {activeTab === "request" && (
+            <div className="bg-(--bg-surface) border border-(--border-dim)/40 rounded-3xl p-5 md:p-7 flex flex-col gap-5">
+              <div>
+                <h2 className="text-xs font-mono font-black uppercase tracking-wider text-(--text-muted)">
+                  Permission Details
+                </h2>
+                <p className="text-xs text-(--text-muted)/80 mt-0.5">
+                  Select school, faculty, venue and time interval for the permission
+                </p>
+              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <SelectField
+              {/* School & Faculty */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <SearchableDropdown
                   label="Select School"
-                  value={school}
+                  required
+                  placeholder="— Choose School —"
+                  searchPlaceholder="Search schools..."
                   options={schoolOpts}
+                  value={school}
                   loading={loadingSchool}
+                  error={touched.school ? errors.school : undefined}
                   onChange={handleSchoolChange}
                 />
-                <SelectField
+                <SearchableDropdown
                   label="Select Faculty"
-                  value={faculty}
+                  required
+                  placeholder="— Choose Faculty —"
+                  searchPlaceholder="Search faculty name or ID..."
                   options={facultyOpts}
+                  value={faculty}
                   disabled={!school}
                   loading={loadingFaculty}
-                  onChange={setFaculty}
+                  error={touched.faculty ? errors.faculty : undefined}
+                  helperText={!school ? "Select a school first" : undefined}
+                  onChange={(v) => {
+                    setFaculty(v);
+                    touch("faculty");
+                  }}
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                <SelectField
+              {/* Venue Type & Blocks */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <SearchableDropdown
                   label="Venue Type"
-                  value={venueType}
+                  required
+                  placeholder="— Choose Type —"
                   options={VENUE_TYPE_OPTS}
+                  value={venueType}
                   disabled={!faculty}
+                  error={touched.venueType ? errors.venueType : undefined}
+                  helperText={!faculty ? "Select faculty first" : undefined}
                   onChange={handleVenueTypeChange}
                 />
                 {needsBuilding ? (
                   <>
-                    <SelectField
+                    <SearchableDropdown
                       label="Academic Block"
-                      value={block}
+                      required
+                      placeholder="— Choose Block —"
+                      searchPlaceholder="Search block..."
                       options={blockOpts}
+                      value={block}
                       disabled={!venueType}
                       loading={loadingBlocks}
+                      error={touched.block ? errors.block : undefined}
                       onChange={handleBlockChange}
                     />
-                    <SelectField
+                    <SearchableDropdown
                       label="Select Venue"
-                      value={venue}
+                      required
+                      placeholder="— Choose Venue —"
+                      searchPlaceholder="Search venue code..."
                       options={venueOpts}
+                      value={venue}
                       disabled={!block}
                       loading={loadingVenues}
-                      onChange={setVenue}
+                      error={touched.venue ? errors.venue : undefined}
+                      onChange={(v) => {
+                        setVenue(v);
+                        touch("venue");
+                      }}
                     />
                   </>
                 ) : (
-                  <div className="md:col-span-2 flex items-center px-4 py-2 rounded-2xl bg-(--bg-main)/50 border border-(--border-dim)/30 text-xs text-(--text-muted)">
+                  <div className="sm:col-span-2 flex flex-col justify-center px-4 py-3 rounded-2xl bg-(--bg-main)/50 border border-(--border-dim)/40 text-xs text-(--text-muted)">
+                    <span className="font-bold text-(--text-main)/80 mb-0.5">
+                      Fixed Location
+                    </span>
                     Academic block and venue are pre-assigned for this venue type.
                   </div>
                 )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <SelectField
+              {/* Category & Details */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <SearchableDropdown
                   label="Work Related To"
-                  value={eventType}
+                  required
+                  placeholder="— Choose Category —"
                   options={EVENT_TYPE_OPTS}
+                  value={eventType}
                   disabled={needsBuilding ? !venue : !venueType}
+                  error={touched.eventType ? errors.eventType : undefined}
                   onChange={handleEventTypeChange}
                 />
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-bold text-(--text-muted) uppercase tracking-wide">
+                  <label className="text-[11px] font-bold text-(--text-muted) uppercase tracking-wide flex items-center gap-1">
                     Brief Details on Work
+                    <span className="text-red-400 font-bold">*</span>
                   </label>
                   <input
                     type="text"
                     value={details}
-                    onChange={(e) => setDetails(e.target.value)}
+                    onChange={(e) => {
+                      setDetails(e.target.value);
+                      touch("details");
+                    }}
+                    onBlur={() => touch("details")}
                     placeholder="e.g. Capstone Project experimentation"
-                    className="w-full h-10 px-3.5 rounded-2xl bg-(--bg-main) border border-(--border-dim) text-sm font-medium text-(--text-main) focus:outline-none focus:border-(--accent-base) transition-colors"
+                    className={`w-full h-10 px-3.5 rounded-2xl bg-(--bg-main) border text-sm font-medium text-(--text-main) placeholder:text-(--text-muted)/60 focus:outline-none transition-colors ${
+                      touched.details && errors.details
+                        ? "border-red-500/70 focus:border-red-500"
+                        : "border-(--border-dim) focus:border-(--accent-base)"
+                    }`}
                   />
+                  {touched.details && errors.details && (
+                    <span className="text-[10px] font-bold text-red-400">
+                      {errors.details}
+                    </span>
+                  )}
                 </div>
               </div>
 
               {/* Date and Time Pickers */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-2 border-t border-(--border-dim)/30">
-                <div className="flex flex-col gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-(--border-dim)/30">
+                {/* From Date & Time */}
+                <div className="flex flex-col gap-3.5">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-bold text-(--text-muted) uppercase tracking-wide">
+                    <label className="text-[11px] font-bold text-(--text-muted) uppercase tracking-wide flex items-center gap-1">
                       From Date
+                      <span className="text-red-400 font-bold">*</span>
                     </label>
-                    <input
-                      type="date"
-                      value={fromDate}
-                      onChange={(e) => setFromDate(e.target.value)}
-                      className="w-full h-10 px-3.5 rounded-2xl bg-(--bg-main) border border-(--border-dim) text-sm font-medium text-(--text-main) focus:outline-none focus:border-(--accent-base) transition-colors"
-                    />
+                    <div className="relative">
+                      <input
+                        type="date"
+                        min={todayStr}
+                        value={fromDate}
+                        onChange={(e) => {
+                          setFromDate(e.target.value);
+                          touch("fromDate");
+                          if (toDate && e.target.value > toDate) {
+                            setToDate(e.target.value);
+                          }
+                        }}
+                        onBlur={() => touch("fromDate")}
+                        className={`w-full h-10 px-3.5 rounded-2xl bg-(--bg-main) border text-sm font-medium font-mono text-(--text-main) focus:outline-none transition-colors ${
+                          touched.fromDate && errors.fromDate
+                            ? "border-red-500/70 focus:border-red-500"
+                            : "border-(--border-dim) focus:border-(--accent-base)"
+                        }`}
+                      />
+                    </div>
+                    {touched.fromDate && errors.fromDate && (
+                      <span className="text-[10px] font-bold text-red-400">
+                        {errors.fromDate}
+                      </span>
+                    )}
                   </div>
-                  <SelectField
+
+                  <SearchableDropdown
                     label="From Time"
-                    value={fromTime}
+                    required
+                    placeholder="— Choose Start Time —"
                     options={fromTimeOpts}
+                    value={fromTime}
                     loading={loadingDateBlock}
-                    onChange={setFromTime}
+                    error={touched.fromTime ? errors.fromTime : undefined}
+                    onChange={(v) => {
+                      setFromTime(v);
+                      touch("fromTime");
+                    }}
                   />
                 </div>
 
-                <div className="flex flex-col gap-3">
+                {/* To Date & Time */}
+                <div className="flex flex-col gap-3.5">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-bold text-(--text-muted) uppercase tracking-wide">
+                    <label className="text-[11px] font-bold text-(--text-muted) uppercase tracking-wide flex items-center gap-1">
                       To Date
+                      <span className="text-red-400 font-bold">*</span>
                     </label>
-                    <input
-                      type="date"
-                      value={toDate}
-                      onChange={(e) => setToDate(e.target.value)}
-                      className="w-full h-10 px-3.5 rounded-2xl bg-(--bg-main) border border-(--border-dim) text-sm font-medium text-(--text-main) focus:outline-none focus:border-(--accent-base) transition-colors"
-                    />
+                    <div className="relative">
+                      <input
+                        type="date"
+                        min={fromDate || todayStr}
+                        value={toDate}
+                        onChange={(e) => {
+                          setToDate(e.target.value);
+                          touch("toDate");
+                        }}
+                        onBlur={() => touch("toDate")}
+                        className={`w-full h-10 px-3.5 rounded-2xl bg-(--bg-main) border text-sm font-medium font-mono text-(--text-main) focus:outline-none transition-colors ${
+                          touched.toDate && errors.toDate
+                            ? "border-red-500/70 focus:border-red-500"
+                            : "border-(--border-dim) focus:border-(--accent-base)"
+                        }`}
+                      />
+                    </div>
+                    {touched.toDate && errors.toDate && (
+                      <span className="text-[10px] font-bold text-red-400">
+                        {errors.toDate}
+                      </span>
+                    )}
                   </div>
-                  <SelectField
+
+                  <SearchableDropdown
                     label="To Time"
-                    value={toTime}
+                    required
+                    placeholder="— Choose End Time —"
                     options={toTimeOpts}
+                    value={toTime}
                     loading={loadingDateBlock}
-                    onChange={setToTime}
+                    error={touched.toTime ? errors.toTime : undefined}
+                    onChange={(v) => {
+                      setToTime(v);
+                      touch("toTime");
+                    }}
                   />
                 </div>
               </div>
@@ -799,69 +915,78 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
               {/* Submit Button */}
               <button
                 onClick={handleSubmit}
-                disabled={!canSubmit || submitting}
-                className="w-full py-3.5 rounded-2xl text-xs font-black uppercase bg-(--accent-base) text-(--text-inverse) transition-all cursor-pointer disabled:opacity-40 hover:opacity-90 flex items-center justify-center gap-2 border-0 mt-2">
+                disabled={submitting}
+                className={`w-full py-3.5 rounded-2xl text-xs font-black uppercase transition-all cursor-pointer flex items-center justify-center gap-2 border-0 mt-2 ${
+                  canSubmit
+                    ? "bg-(--accent-base) text-(--text-inverse) hover:opacity-90 active:scale-[0.99]"
+                    : "bg-(--bg-main) text-(--text-muted) border border-(--border-dim) opacity-70"
+                }`}>
                 <Send className="w-4 h-4" />
-                {submitting ? "Submitting to VTOP..." : "Submit Late Hour Request"}
+                {submitting
+                  ? "Submitting to VTOP..."
+                  : "Submit Late Hour Request"}
               </button>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* TAB 2: MY REQUESTS (STATUS) */}
-        {activeTab === "status" && (
-          <div className="flex flex-col gap-3">
-            {statusLoading ? (
-              <div className="flex flex-col gap-3">
-                {[1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="h-28 bg-(--bg-surface) rounded-3xl animate-pulse border border-(--border-dim)/40"
+          {/* TAB 2: MY REQUESTS (STATUS) */}
+          {activeTab === "status" && (
+            <div className="flex flex-col gap-3">
+              {statusLoading ? (
+                <div className="flex flex-col gap-3">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="h-28 bg-(--bg-surface) rounded-3xl animate-pulse border border-(--border-dim)/40"
+                    />
+                  ))}
+                </div>
+              ) : statusEntries.length > 0 ? (
+                statusEntries.map((e, idx) => (
+                  <EntryCard
+                    key={idx}
+                    entry={e}
+                    onCancel={handleCancel}
+                    cancelling={cancelling === e.id}
                   />
-                ))}
-              </div>
-            ) : statusEntries.length > 0 ? (
-              statusEntries.map((e, idx) => (
-                <EntryCard
-                  key={idx}
-                  entry={e}
-                  onCancel={handleCancel}
-                  cancelling={cancelling === e.id}
+                ))
+              ) : (
+                <EmptyState
+                  icon={HourglassEmpty}
+                  msg="No Active Requests"
+                  subMsg="You do not have any pending or active late hour requests."
                 />
-              ))
-            ) : (
-              <EmptyState
-                icon={HourglassEmpty}
-                msg="No Active Requests"
-                subMsg="You do not have any pending or active late hour requests."
-              />
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          )}
 
-        {/* TAB 3: HISTORY */}
-        {activeTab === "history" && (
-          <div className="flex flex-col gap-3">
-            {historyLoading ? (
-              <div className="flex flex-col gap-3">
-                {[1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="h-28 bg-(--bg-surface) rounded-3xl animate-pulse border border-(--border-dim)/40"
-                  />
-                ))}
-              </div>
-            ) : historyEntries.length > 0 ? (
-              historyEntries.map((e, idx) => <EntryCard key={idx} entry={e} />)
-            ) : (
-              <EmptyState
-                icon={History}
-                msg="No Permission History"
-                subMsg="Previous late hour permissions will show up here."
-              />
-            )}
-          </div>
-        )}
+          {/* TAB 3: HISTORY */}
+          {activeTab === "history" && (
+            <div className="flex flex-col gap-3">
+              {historyLoading ? (
+                <div className="flex flex-col gap-3">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="h-28 bg-(--bg-surface) rounded-3xl animate-pulse border border-(--border-dim)/40"
+                    />
+                  ))}
+                </div>
+              ) : historyEntries.length > 0 ? (
+                historyEntries.map((e, idx) => <EntryCard key={idx} entry={e} />)
+              ) : (
+                <EmptyState
+                  icon={History}
+                  msg="No Permission History"
+                  subMsg="Previous late hour permissions will show up here."
+                />
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Right side empty as requested */}
+        <div className="hidden lg:block lg:col-span-4 xl:col-span-5 pointer-events-none" />
       </div>
     </div>
   );

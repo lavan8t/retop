@@ -46,10 +46,10 @@ export function injectLegacyMenuSearch(): void {
     </div>
   `;
 
-  // Insert after quickLinks or at the start of containerFluid
+  // Insert safely after quickLinks or prepend to navbar
   const quickLinks = document.getElementById("quickLinks");
-  if (quickLinks && quickLinks.nextSibling) {
-    containerFluid.insertBefore(wrapper, quickLinks.nextSibling);
+  if (quickLinks) {
+    quickLinks.after(wrapper);
   } else {
     containerFluid.prepend(wrapper);
   }

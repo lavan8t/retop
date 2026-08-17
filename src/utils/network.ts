@@ -1241,23 +1241,14 @@ export class VTOPNetwork {
 
   // ── Late Hour Permission ──────────────────────────────────────────────────
 
-  /** Full form state passed to cascading steps, mirrors what VTOP JS sends */
-  private lhFormState: Record<string, string> = {};
-
-  /** Snapshot current form state (called by page before each cascade step) */
-  setLHFormState(state: Record<string, string>) {
-    this.lhFormState = { ...state };
-  }
-
-  /** Step 2: Open request form — get costCentreId options */
-  async getLateHourRequestForm(): Promise<string> {
-    return this.fetchVtopApi("hostels/late/hour/student/request/2", {
-      apply: "",
+  /** Step 1: Initialize Late Hour session and get School options */
+  async getLateHourInit(): Promise<string> {
+    return this.fetchVtopApi("hostels/late/hour/student/request/1", {
       verifyMenu: "true",
     });
   }
 
-  /** Step 3: Faculty list for a school (costCentreId) */
+  /** Step 3: Get faculties for school (costCentreId) */
   async getLateHourFaculties(costCentreId: string): Promise<string> {
     return this.fetchVtopApi("hostels/late/hour/student/request/3", {
       costCentreId,
@@ -1266,56 +1257,120 @@ export class VTOPNetwork {
     });
   }
 
-  /** Step 4: Academic blocks for a venueType (roomTypeId) — sends full form state */
-  async getLateHourAcademicBlocks(roomTypeId: string): Promise<string> {
+  /** Step 4: Academic blocks for roomTypeId (Lab, Class Room, etc.) */
+  async getLateHourAcademicBlocks(params: {
+    costCentreId: string;
+    appliedTo: string;
+    roomTypeId: string;
+  }): Promise<string> {
     return this.fetchVtopApi("hostels/late/hour/student/request/4", {
-      ...this.lhFormState,
-      roomTypeId,
+      costCentreId: params.costCentreId,
+      appliedTo: params.appliedTo,
+      roomTypeId: params.roomTypeId,
+      lateHourEventId: "",
+      details: "",
+      lateHourFromDate: "",
+      fromTime: "",
+      lateHourToDate: "",
+      toTime: "",
       form: "LateHourRequestForm",
       control: "roomTypeId",
     });
   }
 
-  /** Step 5: Venues for a building + venueType — sends full form state */
-  async getLateHourVenues(buildingId: string): Promise<string> {
+  /** Step 5: Venues for buildingId */
+  async getLateHourVenues(params: {
+    costCentreId: string;
+    appliedTo: string;
+    roomTypeId: string;
+    buildingId: string;
+  }): Promise<string> {
     return this.fetchVtopApi("hostels/late/hour/student/request/5", {
-      ...this.lhFormState,
-      buildingId,
+      costCentreId: params.costCentreId,
+      appliedTo: params.appliedTo,
+      roomTypeId: params.roomTypeId,
+      buildingId: params.buildingId,
+      venue: "",
+      lateHourEventId: "",
+      details: "",
+      lateHourFromDate: "",
+      fromTime: "",
+      lateHourToDate: "",
+      toTime: "",
       form: "LateHourRequestForm",
       control: "buildingId",
     });
   }
 
-  /** Step 6: From-times for a venue + event type — sends full form state */
-  async getLateHourFromTimes(lateHourEventId: string): Promise<string> {
-    return this.fetchVtopApi("hostels/late/hour/student/request/6", {
-      ...this.lhFormState,
-      lateHourEventId,
+  /** Step 6: Get time slots and date block */
+  async getLateHourDateBlock(params: {
+    costCentreId: string;
+    appliedTo: string;
+    roomTypeId: string;
+    buildingId?: string;
+    venue?: string;
+    lateHourEventId: string;
+    details?: string;
+    lateHourFromDate?: string;
+    fromTime?: string;
+    lateHourToDate?: string;
+    toTime?: string;
+  }): Promise<string> {
+    const payload: Record<string, string> = {
+      costCentreId: params.costCentreId,
+      appliedTo: params.appliedTo,
+      roomTypeId: params.roomTypeId,
+      lateHourEventId: params.lateHourEventId,
+      details: params.details || "",
+      lateHourFromDate: params.lateHourFromDate || "",
+      fromTime: params.fromTime || "",
+      lateHourToDate: params.lateHourToDate || "",
+      toTime: params.toTime || "",
       form: "LateHourRequestForm",
       control: "lateHourEventId",
-    });
+    };
+
+    if (params.buildingId) payload.buildingId = params.buildingId;
+    if (params.venue) payload.venue = params.venue;
+
+    return this.fetchVtopApi("hostels/late/hour/student/request/6", payload);
   }
 
-  /** Step 7: To-times once fromTime selected — sends full form state */
-  async getLateHourToTimes(fromTime: string): Promise<string> {
-    return this.fetchVtopApi("hostels/late/hour/student/request/7", {
-      ...this.lhFormState,
-      fromTime,
-      form: "LateHourRequestForm",
-      control: "fromTime",
-    });
-  }
-
-  /** Step 8: Submit — sends full form state + submitButton1 control */
-  async submitLateHourRequest(): Promise<string> {
-    return this.fetchVtopApi("hostels/late/hour/student/request/8", {
-      ...this.lhFormState,
+  /** Step 8: Submit Late Hour Request */
+  async submitLateHourRequest(params: {
+    costCentreId: string;
+    appliedTo: string;
+    roomTypeId: string;
+    buildingId?: string;
+    venue?: string;
+    lateHourEventId: string;
+    details: string;
+    lateHourFromDate: string;
+    fromTime: string;
+    lateHourToDate: string;
+    toTime: string;
+  }): Promise<string> {
+    const payload: Record<string, string> = {
+      costCentreId: params.costCentreId,
+      appliedTo: params.appliedTo,
+      roomTypeId: params.roomTypeId,
+      lateHourEventId: params.lateHourEventId,
+      details: params.details,
+      lateHourFromDate: params.lateHourFromDate,
+      fromTime: params.fromTime,
+      lateHourToDate: params.lateHourToDate,
+      toTime: params.toTime,
       form: "LateHourRequestForm",
       control: "submitButton1",
-    });
+    };
+
+    if (params.buildingId) payload.buildingId = params.buildingId;
+    if (params.venue) payload.venue = params.venue;
+
+    return this.fetchVtopApi("hostels/late/hour/student/request/8", payload);
   }
 
-  /** Step 9: Current request status */
+  /** Step 9: Get Late Hour status list */
   async getLateHourStatus(): Promise<string> {
     return this.fetchVtopApi("hostels/late/hour/student/request/9", {
       status: "",
@@ -1324,24 +1379,27 @@ export class VTOPNetwork {
     });
   }
 
-  /** Step 10: Cancel a pending request by lateHourId */
+  /** Step 10: Cancel Late Hour Request */
   async cancelLateHourRequest(lateHourId: string): Promise<string> {
     return this.fetchVtopApi("hostels/late/hour/student/request/10", {
       cancelButton: "",
+      lateHourId,
       form: "undefined",
       control: "cancelButton",
-      lateHourId,
     });
   }
 
   /** Step 11: Permissions history (cached) */
-  async getLateHourHistory(): Promise<string> {
-    return this.fetchWithCache("late_hour_history", () =>
-      this.fetchVtopApi("hostels/late/hour/student/request/11", {
-        history: "",
-        form: "undefined",
-        control: "history",
-      }),
+  async getLateHourHistory(forceRefresh = false): Promise<string> {
+    return this.fetchWithCache(
+      "late_hour_history",
+      () =>
+        this.fetchVtopApi("hostels/late/hour/student/request/11", {
+          history: "",
+          form: "undefined",
+          control: "history",
+        }),
+      forceRefresh,
     );
   }
 }

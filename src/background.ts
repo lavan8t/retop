@@ -15,12 +15,28 @@ chrome.action.onClicked.addListener(() => {
 
 if (typeof chrome !== "undefined" && chrome.downloads?.onDeterminingFilename) {
   chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
-    const isVtopDownload =
-      item.url.includes("vit.ac.in") ||
-      item.url.startsWith("blob:") ||
-      (item.referrer && item.referrer.includes("vit.ac.in"));
+    // Strictly identify downloads from retop extension or VTOP pages
+    const extId = typeof chrome.runtime !== "undefined" ? chrome.runtime.id : "";
+    const isByRetopExtension = Boolean(item.byExtensionId && extId && item.byExtensionId === extId);
 
-    if (!isVtopDownload) {
+    const isVitUrl = Boolean(
+      (item.url && item.url.includes("vit.ac.in")) ||
+      (item.finalUrl && item.finalUrl.includes("vit.ac.in"))
+    );
+
+    const isVitOrRetopReferrer = Boolean(
+      item.referrer &&
+      (item.referrer.includes("vit.ac.in") ||
+       item.referrer.includes("getretop.web.app") ||
+       (extId && item.referrer.includes(extId)))
+    );
+
+    // For blob: URLs, NEVER intercept unless referrer is VIT / retop or byExtensionId matches
+    const isBlobFromVtopOrRetop = item.url.startsWith("blob:") && (isVitOrRetopReferrer || isByRetopExtension);
+
+    const isRetopOrVtopDownload = isByRetopExtension || isVitUrl || isVitOrRetopReferrer || isBlobFromVtopOrRetop;
+
+    if (!isRetopOrVtopDownload) {
       suggest();
       return;
     }
@@ -54,8 +70,8 @@ if (typeof chrome !== "undefined" && chrome.downloads?.onDeterminingFilename) {
         } else if (info.type === "curriculum") {
           suggest({ filename: `retop/${sem}/${course}/curriculum/${itemFileName}` });
           return;
-        } else if (info.type === "daqp") {
-          suggest({ filename: `retop/${sem}/${course}/daqp/${itemFileName}` });
+        } else if (info.type === "daqp" || info.type === "assignments") {
+          suggest({ filename: `retop/${sem}/${course}/assignments/${itemFileName}` });
           return;
         }
       }

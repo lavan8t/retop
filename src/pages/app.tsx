@@ -709,6 +709,41 @@ const DashboardApp = () => {
           retop_cached_users: users,
         });
 
+        // Immediately fetch photo from /vtop/users/image/?id= if missing
+        if (
+          !updatedUser.profileImgBase64 &&
+          currentReg &&
+          currentReg !== "..." &&
+          currentReg !== "Student" &&
+          !isOffline
+        ) {
+          fetch(`/vtop/users/image/?id=${encodeURIComponent(currentReg)}`)
+            .then((imgRes) => {
+              if (imgRes.ok) return imgRes.blob();
+              throw new Error("Failed to fetch photo");
+            })
+            .then((blob) => {
+              if (blob.size < 50) return;
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                const b64 = reader.result as string;
+                if (b64 && b64.length > 50 && !b64.endsWith("base64,")) {
+                  const withImg = { ...updatedUser, profileImgBase64: b64 };
+                  cleanUsersMap.set(currentReg.toUpperCase(), withImg);
+                  const newUsersList = Array.from(cleanUsersMap.values());
+                  setUser(withImg);
+                  setStorageData({
+                    [`${currentReg}_profileImage`]: b64,
+                    retop_profileImage: b64,
+                    retop_cached_users: newUsersList,
+                  });
+                }
+              };
+              reader.readAsDataURL(blob);
+            })
+            .catch(() => {});
+        }
+
         // Relay scraped portal data to background worker for PWA sync
         if (typeof chrome !== "undefined" && chrome.runtime?.sendMessage) {
           try {

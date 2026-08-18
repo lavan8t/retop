@@ -508,8 +508,15 @@ const DashboardApp = () => {
       const newPins = pinnedLinks.filter((p) => getDestinationView(p) !== dest);
       updateSetting("pinnedLinks", newPins);
     } else {
-      if (pinnedLinks.length>= 3) {
-        alert("You can only pin up to 3 custom items.");
+      if (pinnedLinks.length >= 9) {
+        window.dispatchEvent(
+          new CustomEvent("retop-toast", {
+            detail: {
+              message: "Maximum 9 pinned pages allowed.",
+              type: "warning",
+            },
+          }),
+        );
         return;
       }
       updateSetting("pinnedLinks", [...pinnedLinks, link]);

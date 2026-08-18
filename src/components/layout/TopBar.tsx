@@ -195,7 +195,12 @@ export const TopBar: React.FC<TopBarProps> = ({
         return;
       }
 
-      // Check if key is a number between 1 and 9
+      // Hotkey 0 for Home/Dashboard, 1-9 for Pinned Pages
+      if (e.key === "0") {
+        e.preventDefault();
+        setCurrentView("dashboard");
+        return;
+      }
       const num = parseInt(e.key);
       if (!isNaN(num) && num > 0 && num <= Math.min(pinnedLinks.length, 9)) {
         e.preventDefault();
@@ -205,7 +210,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [currentView, pinnedLinks, handleLinkClick]);
+  }, [currentView, pinnedLinks, handleLinkClick, setCurrentView]);
 
   return (
     <>
@@ -744,9 +749,6 @@ export const TopBar: React.FC<TopBarProps> = ({
                     onMouseLeave={() => setIsStarOpen(false)}
                     className={`absolute top-full right-0 mt-2 transition-all duration-150 flex flex-col bg-(--bg-surface) border-2 border-(--border-dim) rounded-[16px] p-1.5 popup-shadow min-w-52 z-[999] ${isStarOpen ? "opacity-100 pointer-events-auto translate-y-0" : "opacity-0 pointer-events-none translate-y-1"}`}
                   >
-                    <div className="px-2.5 py-1.5 text-[9px] font-expanded font-bold text-(--text-muted) uppercase tracking-wider border-b border-(--border-dim) mb-1">
-                      Pinned Pages · Press 1–{Math.min(pinnedLinks.length, 9)} to jump
-                    </div>
                     {pinnedLinks.map((link, idx) => {
                       const Icon = getCategoryIcon(link.title, link.url);
                       const isThisCurrentPage = currentLink && link.url === currentLink.url;

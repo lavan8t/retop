@@ -707,33 +707,57 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                           </span>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
-                          {cat.links.map((link, lIdx) => (
-                            <button
-                              key={lIdx}
-                              onClick={(e) => {
-                                const forceLegacy = e.shiftKey ? isModernUI : !isModernUI;
-                                onNavigate(link, forceLegacy);
-                                setIsOmniboxOpen(false);
-                                setQuery("");
-                              }}
-                              className="flex items-center justify-between px-4 py-3 rounded-full bg-(--bg-surface) hover:bg-(--bg-highlight) active:bg-(--bg-highlight) border border-(--border-dim)/30 text-left text-xs font-bold text-(--text-main) transition-colors cursor-pointer"
-                            >
-                              <span className="truncate flex-1 pr-2">
-                                {toTitleCase(link.title)}
-                              </span>
-                              {hasRetopPage(link) && (
-                                <span
-                                  className="re-badge inline-block text-[9px] font-black px-1 py-0.5 rounded leading-none shrink-0 bg-transparent text-(--accent-base)"
-                                  style={{
-                                    fontFamily: "var(--font-expanded)",
-                                    fontVariationSettings: "'wdth' 151, 'wght' 700, 'ROND' 100, 'slnt' -10",
+                          {cat.links.map((link, lIdx) => {
+                            const linkDest = getDestinationView(link);
+                            const isPinned =
+                              linkDest !== "content" &&
+                              pinnedLinks.some(
+                                (p) => getDestinationView(p) === linkDest,
+                              );
+                            return (
+                              <div
+                                key={lIdx}
+                                className="flex items-center justify-between px-4 py-3 rounded-full bg-(--bg-surface) hover:bg-(--bg-highlight) active:bg-(--bg-highlight) border border-(--border-dim)/30 transition-colors group/mitem"
+                              >
+                                <button
+                                  onClick={(e) => {
+                                    const forceLegacy = e.shiftKey ? isModernUI : !isModernUI;
+                                    onNavigate(link, forceLegacy);
+                                    setIsOmniboxOpen(false);
+                                    setQuery("");
                                   }}
+                                  className="flex items-center gap-2 flex-1 min-w-0 text-left text-xs font-bold text-(--text-main) cursor-pointer border-0 bg-transparent"
                                 >
-                                  re.
-                                </span>
-                              )}
-                            </button>
-                          ))}
+                                  <span className="truncate flex-1 pr-1">
+                                    {toTitleCase(link.title)}
+                                  </span>
+                                  {hasRetopPage(link) && (
+                                    <span
+                                      className="re-badge inline-block text-[9px] font-black px-1 py-0.5 rounded leading-none shrink-0 bg-transparent text-(--accent-base)"
+                                      style={{
+                                        fontFamily: "var(--font-expanded)",
+                                        fontVariationSettings: "'wdth' 151, 'wght' 700, 'ROND' 100, 'slnt' -10",
+                                      }}
+                                    >
+                                      re.
+                                    </span>
+                                  )}
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onTogglePin(link);
+                                  }}
+                                  className="p-1 text-(--text-muted) hover:text-(--accent-base) shrink-0 cursor-pointer"
+                                  title={isPinned ? "Unpin from Dock" : "Pin to Dock"}
+                                >
+                                  <Star
+                                    className={`w-3.5 h-3.5 ${isPinned ? "text-(--accent-base) fill-current" : "opacity-40"}`}
+                                  />
+                                </button>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     );
@@ -1026,48 +1050,76 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                 gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
               }}
             >
-              {activeMenu.cat.links.map((link, i) => (
-                <button
-                  key={i}
-                  id={`home-popup-item-${i}`}
-                  onMouseEnter={() => setSelectedIndex(i)}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    isChildHoveredRef.current = false;
-                    const forceLegacy = e.shiftKey ? isModernUI : !isModernUI;
-                    onNavigate(link, forceLegacy);
-                    setActiveMenu(null);
-                    setIsOmniboxOpen(false);
-                  }}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    isChildHoveredRef.current = false;
-                    const forceLegacy = e.shiftKey ? isModernUI : !isModernUI;
-                    onNavigate(link, forceLegacy);
-                    setActiveMenu(null);
-                    setIsOmniboxOpen(false);
-                  }}
-                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between gap-2 group ${
-                    i === selectedIndex && !query
-                      ? "bg-(--accent-base) text-(--text-inverse)"
-                      : "bg-transparent text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main)"
-                  }`}
-                >
-                  <span className="flex-1 truncate">{link.title}</span>
-                  {hasRetopPage(link) && (
-                    <span
-                      className={`re-badge inline-block text-[9px] font-black px-1 py-0.5 rounded leading-none shrink-0 bg-transparent ${i === selectedIndex && !query ? "text-white" : "text-(--accent-base)"}`}
-                      style={{
-                        fontFamily: "var(--font-expanded)",
-                        fontVariationSettings: "'wdth' 151, 'wght' 700, 'ROND' 100, 'slnt' -10",
-                        transform: "skewX(-10deg)",
+              {activeMenu.cat.links.map((link, i) => {
+                const linkDest = getDestinationView(link);
+                const isPinned =
+                  linkDest !== "content" &&
+                  pinnedLinks.some(
+                    (p) => getDestinationView(p) === linkDest,
+                  );
+                return (
+                  <div
+                    key={i}
+                    className={`relative w-full flex items-center rounded-xl transition-all group/item ${
+                      i === selectedIndex && !query
+                        ? "bg-(--accent-base) text-(--text-inverse)"
+                        : "bg-transparent text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main)"
+                    }`}
+                  >
+                    <button
+                      id={`home-popup-item-${i}`}
+                      onMouseEnter={() => setSelectedIndex(i)}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        isChildHoveredRef.current = false;
+                        const forceLegacy = e.shiftKey ? isModernUI : !isModernUI;
+                        onNavigate(link, forceLegacy);
+                        setActiveMenu(null);
+                        setIsOmniboxOpen(false);
                       }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        isChildHoveredRef.current = false;
+                        const forceLegacy = e.shiftKey ? isModernUI : !isModernUI;
+                        onNavigate(link, forceLegacy);
+                        setActiveMenu(null);
+                        setIsOmniboxOpen(false);
+                      }}
+                      className="flex-1 text-left px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between gap-2 border-0 bg-transparent text-inherit cursor-pointer min-w-0 pr-7"
                     >
-                      re.
-                    </span>
-                  )}
-                </button>
-              ))}
+                      <span className="truncate">{link.title}</span>
+                      {hasRetopPage(link) && (
+                        <span
+                          className={`re-badge inline-block text-[9px] font-black px-1 py-0.5 rounded leading-none shrink-0 bg-transparent ${i === selectedIndex && !query ? "text-white" : "text-(--accent-base)"}`}
+                          style={{
+                            fontFamily: "var(--font-expanded)",
+                            fontVariationSettings: "'wdth' 151, 'wght' 700, 'ROND' 100, 'slnt' -10",
+                            transform: "skewX(-10deg)",
+                          }}
+                        >
+                          re.
+                        </span>
+                      )}
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onTogglePin(link);
+                      }}
+                      className={`absolute right-1 p-1 rounded-lg transition-all cursor-pointer shrink-0 z-20 ${
+                        isPinned
+                          ? "text-(--accent-base) opacity-100"
+                          : "text-(--text-muted) opacity-0 group-hover/item:opacity-100 hover:text-(--text-main)"
+                      }`}
+                      title={isPinned ? "Unpin from Dock" : "Pin to Dock"}
+                    >
+                      <Star
+                        className={`w-3.5 h-3.5 transition-transform ${isPinned ? "fill-current scale-110" : "opacity-60 hover:opacity-100"}`}
+                      />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
         );

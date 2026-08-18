@@ -800,7 +800,11 @@ const OfflineApp = () => {
     header.textContent = `${user.regNo} - ${user.name || "Student"}`;
     document.body.appendChild(header);
 
-    if (user.profileImgBase64) {
+    if (
+      user.profileImgBase64 &&
+      user.profileImgBase64.length > 50 &&
+      !user.profileImgBase64.endsWith("base64,")
+    ) {
       const img = document.createElement("img");
       img.id = "retop-profile-image-mock";
       img.src = user.profileImgBase64;

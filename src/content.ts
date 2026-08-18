@@ -1248,23 +1248,109 @@ const injectLoginTheme = () => {
     }, 200);
   }
 
-  // Error Page Handling
-  const errorSpan = document.querySelector("span.text-danger[role='alert']");
-  if (errorSpan && errorSpan.textContent?.trim()) {
-    const errorText = errorSpan.textContent.trim();
-    errorSpan.remove(); // Hide the native ugly text
+  // Error Page Handling & Login Snackbar
+  const showLoginSnackbar = (message: string, type: "error" | "warning" | "info" = "error") => {
+    const existing = document.getElementById("retop-login-snackbar");
+    if (existing) existing.remove();
 
-    // Spawn a beautiful compact brutalist snackbar
-    const isCaptchaError = errorText.toLowerCase().includes("captcha");
+    const snackbar = document.createElement("div");
+    snackbar.id = "retop-login-snackbar";
+    snackbar.className = "retop-login-snackbar";
+    snackbar.style.cssText = `
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 999999;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 18px;
+      border-radius: 9999px;
+      background: #18181b;
+      color: #f4f4f5;
+      border: 1px solid ${type === "error" ? "rgba(239, 68, 68, 0.45)" : type === "warning" ? "rgba(245, 158, 11, 0.45)" : "rgba(255, 255, 255, 0.2)"};
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      font-family: 'Google Sans Flex', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      max-width: min(90vw, 460px);
+      cursor: pointer;
+      animation: retop-snackbar-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      user-select: none;
+    `;
 
-    window.dispatchEvent(
-      new CustomEvent("retop-toast", {
-        detail: {
-          message: errorText,
-          type: isCaptchaError ? "warning" : "error",
-        },
-      }),
+    const iconSvg =
+      type === "error"
+        ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`
+        : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
+
+    snackbar.innerHTML = `
+      <div style="display: flex; align-items: center; justify-content: center; flex-shrink: 0;">${iconSvg}</div>
+      <span style="flex: 1; line-height: 1.35; text-align: left;">${message}</span>
+      <button type="button" style="background: none; border: none; padding: 0 0 0 6px; color: #a1a1aa; cursor: pointer; display: flex; align-items: center; font-size: 14px;">✕</button>
+    `;
+
+    if (!document.getElementById("retop-login-snackbar-style")) {
+      const style = document.createElement("style");
+      style.id = "retop-login-snackbar-style";
+      style.textContent = `
+        @keyframes retop-snackbar-slide-up {
+          from { opacity: 0; transform: translate(-50%, 20px) scale(0.96); }
+          to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+        }
+        @keyframes retop-snackbar-fade-out {
+          from { opacity: 1; transform: translate(-50%, 0) scale(1); }
+          to { opacity: 0; transform: translate(-50%, 15px) scale(0.96); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    const dismiss = () => {
+      snackbar.style.animation = "retop-snackbar-fade-out 0.2s ease forwards";
+      setTimeout(() => snackbar.remove(), 200);
+    };
+
+    snackbar.addEventListener("click", dismiss);
+    document.body.appendChild(snackbar);
+
+    setTimeout(() => {
+      if (snackbar.isConnected) dismiss();
+    }, 6000);
+  };
+
+  const extractAndShowError = () => {
+    const errorCandidates = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        "span.text-danger, div.text-danger, .alert-danger, #errorMsg, #error, span[style*='color:red'], span[style*='color: red'], div[style*='color:red']"
+      )
     );
+
+    for (const el of errorCandidates) {
+      if (el.id === "retop-login-snackbar" || el.closest("#retop-login-snackbar")) continue;
+      const text = el.textContent?.trim() || "";
+      if (text && text.length > 1) {
+        el.style.display = "none"; // Hide native text cleanly
+        const isCaptcha = text.toLowerCase().includes("captcha");
+        showLoginSnackbar(text, isCaptcha ? "warning" : "error");
+        break;
+      }
+    }
+  };
+
+  extractAndShowError();
+
+  if (!(window as any).__retop_login_toast_listener) {
+    (window as any).__retop_login_toast_listener = true;
+    window.addEventListener("retop-toast", (e: any) => {
+      if (!document.getElementById("retop-root")) {
+        const msg = e.detail?.message;
+        if (msg) {
+          showLoginSnackbar(msg, e.detail?.type || "error");
+        }
+      }
+    });
   }
 
   // Replace Native Footer and move to Right Side (Header)

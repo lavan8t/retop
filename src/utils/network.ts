@@ -710,9 +710,18 @@ export class VTOPNetwork {
     return this.fetchWithCache(
       cacheKey,
       async () => {
-        return this.fetchVtopApi("examinations/processDigitalAssignment", {
-          classId,
-        });
+        try {
+          return await this.fetchVtopApi("examinations/processViewStudentDA", {
+            classId,
+          });
+        } catch (e: any) {
+          if (e.message?.includes("404") || e.message?.includes("Status 404")) {
+            return await this.fetchVtopApi("examinations/processDigitalAssignment", {
+              classId,
+            });
+          }
+          throw e;
+        }
       },
       forceRefresh,
       isPastSemester ? Infinity : undefined,

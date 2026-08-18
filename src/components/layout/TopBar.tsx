@@ -869,7 +869,10 @@ export const TopBar: React.FC<TopBarProps> = ({
                       : "opacity-100 scale-100"
                   }`}
                 >
-                  {user.regNo !== "..." && user.profileImgBase64 ? (
+                  {user.regNo !== "..." &&
+                  user.profileImgBase64 &&
+                  user.profileImgBase64.length > 50 &&
+                  !user.profileImgBase64.endsWith("base64,") ? (
                     <img
                       src={user.profileImgBase64}
                       className="w-full h-full object-cover"

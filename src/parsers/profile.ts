@@ -12,13 +12,15 @@ import {
 
 function fixBase64Image(src: string | null | undefined): string {
   if (!src) return "";
-  if (src.startsWith("data:null;base64")) {
-    return src.replace("data:null;base64", "data:image/jpeg;base64");
+  const s = src.trim();
+  if (s.startsWith("data:") && (s.length < 50 || s.endsWith("base64,"))) return "";
+  if (s.startsWith("data:null;base64")) {
+    return s.replace("data:null;base64", "data:image/jpeg;base64");
   }
-  if (src.startsWith("data:jpg;base64")) {
-    return src.replace("data:jpg;base64", "data:image/jpeg;base64");
+  if (s.startsWith("data:jpg;base64")) {
+    return s.replace("data:jpg;base64", "data:image/jpeg;base64");
   }
-  return src;
+  return s;
 }
 
 function cleanText(text: string | undefined | null): string {

@@ -376,7 +376,21 @@ export function scrapeUserProfile(doc: Document) {
     doc.querySelector("img[src*='StudentPhoto'], img[src*='studentPhoto'], img[src*='Photo'], img[src*='photo'], img[src*='process/profilePhoto']")?.getAttribute("src") ||
     undefined;
 
-  const profileImgBase64 = rawImg && (rawImg.startsWith("data:image") || rawImg.startsWith("blob:") || rawImg.startsWith("http") || rawImg.startsWith("/")) ? rawImg : undefined;
+  const isValidImgSrc = (s?: string) => {
+    if (!s) return false;
+    const clean = s.trim();
+    if (clean.length < 50 && clean.startsWith("data:")) return false;
+    if (clean.endsWith("base64,")) return false;
+    return (
+      clean.startsWith("data:image") ||
+      clean.startsWith("blob:") ||
+      clean.startsWith("http") ||
+      clean.startsWith("/")
+    );
+  };
+
+  const profileImgBase64 =
+    rawImg && isValidImgSrc(rawImg) ? rawImg.trim() : undefined;
 
   return { name, regNo, profileImgBase64, campus };
 }

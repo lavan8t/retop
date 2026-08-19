@@ -1,7 +1,7 @@
 import React from "react";
 import { AppSettings, getMaterialThemeColor, getMaterialOnThemeColor } from "../../utils/settings-store";
 import { SettingTopicCard } from "./SettingTopicCard";
-import { SettingsDropdown } from "./SettingsDropdown";
+import { SettingsDropdown } from "../ui/Dropdown";
 import { MaterialSwitch } from "../MaterialSwitch";
 import { useIsDark } from "../../hooks/useTheme";
 import { WbSunny, DarkMode, Computer, LocationOn } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
@@ -107,6 +107,28 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
               value={settings.accentColor}
               onChange={(val) => updateSetting("accentColor", val as any)}
               colorHex={(val) => COLORS.find((c) => c.id === val)?.hex || "#f97316"}
+            />
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4 w-full items-start sm:items-center justify-between">
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-bold text-(--text-main)">Palette Style</span>
+              <span className="text-xs text-(--text-muted)">Select Material Design 3 tone algorithm</span>
+            </div>
+            <SettingsDropdown
+              options={[
+                { label: "Vibrant", value: "vibrant" },
+                { label: "Tonal Spot", value: "tonal" },
+                { label: "Expressive", value: "expressive" },
+                { label: "Content", value: "content" },
+                { label: "Fidelity", value: "fidelity" },
+                { label: "Fruit Salad", value: "fruitSalad" },
+                { label: "Rainbow", value: "rainbow" },
+                { label: "Neutral", value: "neutral" },
+                { label: "Monochrome", value: "monochrome" },
+              ]}
+              value={settings.colorSchemeStyle || "vibrant"}
+              onChange={(val) => updateSetting("colorSchemeStyle", val as any)}
             />
           </div>
         </div>
@@ -235,6 +257,31 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
                 );
               })}
             </div>
+          </div>
+        </div>
+      </SettingTopicCard>
+
+      <SettingTopicCard
+        title={<><span className="font-vtop font-bold">VTOP</span> (Legacy View)</>}
+        description={<>Theme & appearance settings for the original <span className="font-vtop font-bold">VTOP</span> interface</>}
+      >
+        <div className="flex flex-col gap-6 w-full">
+          <div className="flex flex-col sm:flex-row gap-4 w-full items-start sm:items-center justify-between">
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-bold text-(--text-main)"><span className="font-vtop font-bold">VTOP</span> Dark Mode</span>
+              <span className="text-xs text-(--text-muted)">Dark mode styling for native <span className="font-vtop font-bold">VTOP</span> pages and tables</span>
+            </div>
+            <SettingsDropdown
+              options={[
+                { label: "Match retop theme", value: "same" },
+                { label: "Always Dark", value: "dark" },
+                { label: "Pure Black (AMOLED)", value: "amoled" },
+                { label: "Always Light", value: "light" },
+                { label: "Original (Untouched)", value: "none" },
+              ]}
+              value={settings.vtopThemeMode ?? "same"}
+              onChange={(val) => updateSetting("vtopThemeMode", val as any)}
+            />
           </div>
         </div>
       </SettingTopicCard>

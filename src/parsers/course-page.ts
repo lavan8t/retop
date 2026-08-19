@@ -6,9 +6,12 @@ import {
   CoursePageData,
 } from "../types/vtop";
 
-import { parseHTMLFast } from "../utils/parser-utils";
+import { parseHTMLFast, validateParsed, Versioned } from "../utils/parser-utils";
+import { CoursePageDataSchema } from "../schemas";
 
-export const parseCoursePage = (html: string): CoursePageData => {
+export const COURSE_PAGE_SCHEMA_VERSION = 1;
+
+export const parseCoursePage = (html: string): Versioned<CoursePageData> => {
   const doc = parseHTMLFast(html);
 
   const options: CoursePageOption[] = [];
@@ -191,12 +194,16 @@ export const parseCoursePage = (html: string): CoursePageData => {
     });
   }
 
-  return {
-    options,
-    selectedCourseId: select?.getAttribute("value") || null,
-    outcomes,
-    syllabus,
-    materials,
-    books,
-  };
+  return validateParsed(
+    CoursePageDataSchema,
+    {
+      options,
+      selectedCourseId: select?.getAttribute("value") || null,
+      outcomes,
+      syllabus,
+      materials,
+      books,
+    },
+    "coursePage",
+  );
 };

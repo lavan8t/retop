@@ -20,9 +20,7 @@ import { EmptyState } from "../components/EmptyState";
 import { HomeWidgets } from "../components/home/HomeWidgets";
 import { SpotlightSection } from "../components/home/SpotlightSection";
 import { getClassesForDate } from "../utils/timetable-slots";
-import { PullToRefresh } from "../components/common/PullToRefresh";
 import { Add, Event, Apps, School, Close, Campaign } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
-import { Tooltip } from "../components/ui/Tooltip";
 import { Card } from "../components/ui/Card";
 import { formatTimeStr, parseVtopDate, TimeFormatMode } from "../utils/formatting";
 
@@ -298,7 +296,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       />
 
       {/* CENTER PANE: Surface Level Unified Event CalendarMonth & Mobile Feed */}
-      <div className="flex-none lg:flex-1 w-full max-w-full flex flex-col gap-6 md:gap-8 overflow-visible lg:overflow-x-hidden pt-1 pl-1 md:pl-0 min-h-0 relative">
+      <div className="flex-none lg:flex-1 w-full max-w-full flex flex-col gap-6 md:gap-8 overflow-visible lg:overflow-hidden lg:h-full pt-1 pl-1 md:pl-0 min-h-0 relative">
         <div className="hidden lg:flex flex-col items-center mb-2 lg:mb-4 px-2 w-full relative z-95 pointer-events-auto pt-20 md:pt-23 lg:pt-25">
           <div className="flex flex-col items-center w-full">
             {/* Desktop Header: Unchanged */}
@@ -383,11 +381,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
         </div>
 
-        <PullToRefresh
-          onRefresh={onSync}
-          isRefreshing={isSyncing}
+        <div
           onScroll={handleCalendarScroll}
-          className="h-auto lg:flex-1 overflow-visible lg:overflow-y-auto lg:overflow-x-hidden custom-scrollbar flex flex-col gap-4 pr-3 pb-32 pt-16 lg:pt-15 mt-0 lg:-mt-24 -mb-12 relative z-0 pointer-events-auto empty-events-container w-full max-w-full lg:[mask-image:linear-gradient(to_bottom,transparent,black_5%,black_15%)]"
+          className="h-auto lg:h-full lg:flex-1 lg:min-h-0 overflow-visible lg:overflow-y-auto lg:overflow-x-hidden custom-scrollbar flex flex-col gap-4 pr-3 pb-32 pt-16 lg:pt-15 mt-0 lg:-mt-24 -mb-12 relative z-0 pointer-events-auto empty-events-container w-full max-w-full lg:[mask-image:linear-gradient(to_bottom,transparent,black_5%,black_15%)]"
         >
           {/* MOBILE FEED HEADER (< lg screens): 1. Carousel Row (Attendance & Pending Assignments) -> 2. Merged CGPA/Credits Card -> 3. Month & Sem Title */}
           <div className="flex lg:hidden flex-col gap-3 w-full max-w-full pt-1 pb-2 px-0 overflow-x-hidden">
@@ -511,7 +507,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               onNavigate={handleCalendarNavigate}
             />
           ))}
-        </PullToRefresh>
+        </div>
 
       </div>
 

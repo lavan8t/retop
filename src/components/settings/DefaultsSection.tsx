@@ -2,7 +2,7 @@ import React from "react";
 import { AppSettings } from "../../utils/settings-store";
 import { SettingTopicCard } from "./SettingTopicCard";
 import { SegmentedControl } from "../ui/SegmentedControl";
-import { SemesterDropdown } from "../timetable/SemesterDropdown";
+import { SemesterDropdown } from "../ui/Dropdown";
 import { MaterialSwitch } from "../MaterialSwitch";
 
 interface DefaultsSectionProps {
@@ -71,7 +71,7 @@ export const DefaultsSection: React.FC<DefaultsSectionProps> = ({
               Load retop on Login
             </span>
             <span className="text-xs text-(--text-muted)">
-              Automatically show retop dashboard instead of legacy VTOP UI
+              Automatically show retop dashboard instead of legacy <span className="font-vtop font-bold">VTOP</span> UI
             </span>
           </div>
           <MaterialSwitch

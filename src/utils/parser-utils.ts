@@ -30,15 +30,25 @@ export function parseHTMLFast(html: string): Document {
   return getSharedDOMParser().parseFromString(cleanHtml, "text/html");
 }
 
-/**
- * Yields execution to the browser main thread loop to keep UI animations smooth (60fps).
- */
-export function yieldToMainThread(): Promise<void> {
-  return new Promise((resolve) => {
-    if (typeof requestIdleCallback !== "undefined") {
-      requestIdleCallback(() => resolve());
-    } else {
-      setTimeout(resolve, 0);
-    }
-  });
+export const yieldToMainThread = (): Promise<void> =>
+  typeof (globalThis as any).scheduler?.yield === "function"
+    ? (globalThis as any).scheduler.yield()
+    : new Promise((r) => setTimeout(r, 0));
+
+import { ZodSchema } from "zod";
+import { ParserModuleId, wrapWithSchemaVersion, Versioned } from "../parsers/version";
+
+export * from "../parsers/version";
+
+export function validateParsed<T extends object>(
+  schema: ZodSchema<T>,
+  data: unknown,
+  moduleId: ParserModuleId,
+): Versioned<T> {
+  const result = schema.safeParse(data);
+  if (!result.success) {
+    console.warn(`[retop-schema] Validation failed for module '${moduleId}':`, result.error.format());
+    return wrapWithSchemaVersion(data as T, moduleId);
+  }
+  return wrapWithSchemaVersion(result.data, moduleId);
 }

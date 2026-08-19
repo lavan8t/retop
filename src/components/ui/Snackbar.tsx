@@ -31,7 +31,7 @@ export const Snackbar: React.FC<{ snackbar: SnackbarData; onDismiss: () => void 
 
   return (
     <div
-      className="flex items-center gap-3 px-4 py-3.5 bg-(--bg-surface) border-2 border-(--border-dim) rounded-[24px] shadow-lg popup-shadow text-xs md:text-sm font-bold text-(--text-main) pointer-events-auto min-w-[18rem] sm:min-w-[22rem] md:min-w-[26rem] max-w-[32rem] w-full animate-in fade-in slide-in-from-bottom-4 zoom-in-95 duration-200"
+      className="flex items-center gap-3 px-5 py-3.5 bg-[#313033] dark:bg-[#e6e1e5] border-none rounded-full shadow-[0_3px_5px_-1px_rgba(0,0,0,0.25),0_6px_10px_0_rgba(0,0,0,0.18),0_1px_18px_0_rgba(0,0,0,0.15)] text-xs md:text-sm font-semibold text-[#f4eff4] dark:text-[#1c1b1f] pointer-events-auto min-w-[18rem] sm:min-w-104 max-w-lg w-full animate-in fade-in slide-in-from-bottom-4 zoom-in-95 duration-200"
     >
       <IconComponent className={`w-5 h-5 shrink-0 ${iconColor}`} />
       
@@ -70,7 +70,7 @@ export const SnackbarManager: React.FC = () => {
   }, []);
 
   return (
-    <div className="fixed bottom-6 left-6 md:bottom-8 md:left-8 z-[10000] flex flex-col-reverse gap-2.5 pointer-events-none items-start max-w-[calc(100vw-3rem)]">
+    <div className="fixed bottom-6 left-6 md:bottom-8 md:left-8 z-10000 flex flex-col-reverse gap-2.5 pointer-events-none items-start max-w-[calc(100vw-3rem)]">
       <>
         {snackbars.slice(0, 3).map((sb) => (
           <Snackbar key={sb.id} snackbar={sb} onDismiss={() => removeSnackbar(sb.id)} />

@@ -1,9 +1,12 @@
 import { DetailedAttendanceCourse, AttendanceRecord } from "../types/vtop";
-import { parseHTMLFast } from "../utils/parser-utils";
+import { parseHTMLFast, validateParsed, Versioned } from "../utils/parser-utils";
+import { AttendanceListSchema } from "../schemas";
+
+export const ATTENDANCE_SCHEMA_VERSION = 1;
 
 export function parseStudentAttendance(
   html: string,
-): DetailedAttendanceCourse[] {
+): Versioned<DetailedAttendanceCourse[]> {
   const doc = parseHTMLFast(html);
 
   const courses: DetailedAttendanceCourse[] = [];
@@ -75,7 +78,7 @@ export function parseStudentAttendance(
     });
   });
 
-  return courses;
+  return validateParsed(AttendanceListSchema, courses, "attendance");
 }
 
 export function parseAttendanceDetail(html: string): AttendanceRecord[] {

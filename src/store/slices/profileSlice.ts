@@ -1,9 +1,10 @@
 import { StateCreator } from "zustand";
 import { VTOPNetwork } from "../../utils/network";
 import { getCachedData, setCachedData } from "../../utils/cache";
-import { parseStudentProfile } from "../../parsers/profile";
+import { parseStudentProfile, urlToBase64 } from "../../parsers/profile";
 import { DataState } from "../dataStore";
 import { getStorageData, setStorageData } from "../../utils/storageAdapter";
+import { getUserProfileImage, saveUserProfileImage } from "../../utils/pinSecurity";
 
 export interface UserProfileData {
   name: string;
@@ -66,6 +67,14 @@ export const createProfileSlice: StateCreator<
 
         // 1. Prioritize freshly scraped photo from profile page, then active user state if regNo matches
         let profileImgBase64: string | undefined = profile.basic.photoUrl;
+        if (profileImgBase64 && !profileImgBase64.startsWith("data:image")) {
+          try {
+            const converted = await urlToBase64(profileImgBase64);
+            if (converted && converted.startsWith("data:image")) {
+              profileImgBase64 = converted;
+            }
+          } catch {}
+        }
         if (!profileImgBase64 && get().user.regNo === regNo) {
           profileImgBase64 = get().user.profileImgBase64;
         }
@@ -73,44 +82,11 @@ export const createProfileSlice: StateCreator<
         // 2. Check existing stored base64 image strictly for THIS user
         if (!profileImgBase64 || !profileImgBase64.startsWith("data:image")) {
           try {
-            const rawStored = await getStorageData([`${regNo}_profileImage`]);
-            if (
-              rawStored[`${regNo}_profileImage`] &&
-              typeof rawStored[`${regNo}_profileImage`] === "string"
-            ) {
-              profileImgBase64 = rawStored[`${regNo}_profileImage`];
+            const storedImg = await getUserProfileImage(regNo);
+            if (storedImg && typeof storedImg === "string") {
+              profileImgBase64 = storedImg;
             }
           } catch {}
-        }
-
-        // 3. Fetch over network if not available and online
-        if (!profileImgBase64 && regNo !== "...") {
-          const isOffline =
-            (typeof window !== "undefined" &&
-              (window as any).__RETOP_OFFLINE__) ||
-            (typeof window !== "undefined" &&
-              window.location.hostname.includes("web.app")) ||
-            (typeof window !== "undefined" &&
-              window.location.hostname === "localhost") ||
-            (typeof window !== "undefined" &&
-              window.location.protocol.includes("-extension:"));
-
-          if (!isOffline) {
-            try {
-              const imgRes = await fetch(
-                `/vtop/users/image/?id=${encodeURIComponent(regNo)}`,
-              );
-              if (imgRes.ok) {
-                const blob = await imgRes.blob();
-                profileImgBase64 = await new Promise<string>((resolve) => {
-                  const reader = new FileReader();
-                  reader.onloadend = () => resolve(reader.result as string);
-                  reader.onerror = () => resolve("");
-                  reader.readAsDataURL(blob);
-                });
-              }
-            } catch {}
-          }
         }
 
         const newUser: UserProfileData = {
@@ -122,6 +98,10 @@ export const createProfileSlice: StateCreator<
 
         set({ user: newUser });
         setCachedData(`${regNo}_user_basic_profile`, newUser);
+
+        if (profileImgBase64 && profileImgBase64.startsWith("data:image")) {
+          saveUserProfileImage(regNo, profileImgBase64).catch(() => {});
+        }
 
         try {
           const rawStore = await getStorageData(["retop_cached_users"]);
@@ -143,7 +123,6 @@ export const createProfileSlice: StateCreator<
             [`${regNo}_profileImage`]: profileImgBase64 || "",
             retop_lastAuthId: regNo,
             retop_lastName: profile.basic.name,
-            retop_profileImage: profileImgBase64 || "",
             retop_last_campus: campus,
             retop_active_user: regNo,
             retop_cached_users: users,

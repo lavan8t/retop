@@ -1,4 +1,7 @@
-import { parseHTMLFast } from "../utils/parser-utils";
+import { parseHTMLFast, validateParsed, Versioned } from "../utils/parser-utils";
+import { DACourseListSchema, DAAssignmentListSchema } from "../schemas";
+
+export const DA_SCHEMA_VERSION = 1;
 
 export interface DACourse {
   classId: string;
@@ -17,6 +20,8 @@ export interface DAAssignment {
   lastUpdated: string;
   code: string; // The assignment code (e.g., 'CS1', 'AST02')
   hasQP?: boolean;
+  canUpload?: boolean;
+  canDownloadSubmission?: boolean;
 }
 
 export const parseDASemesters = (
@@ -46,10 +51,10 @@ export const parseDASemesters = (
   return semesters;
 };
 
-export const parseDACourses = (html: string): DACourse[] => {
+export const parseDACourses = (html: string): Versioned<DACourse[]> => {
   const doc = parseHTMLFast(html);
   const tables = Array.from(doc.querySelectorAll("table"));
-  if (tables.length === 0) return [];
+  if (tables.length === 0) return validateParsed(DACourseListSchema, [], "digitalAssignments");
 
   // Find table that contains courses (has Class Nbr / Course Code / Title)
   let table =
@@ -134,38 +139,40 @@ export const parseDACourses = (html: string): DACourse[] => {
     }
   });
 
-  return courses;
+  return validateParsed(DACourseListSchema, courses, "digitalAssignments");
 };
 
-export const parseDAAssignments = (html: string): DAAssignment[] => {
+export const parseDAAssignments = (html: string): Versioned<DAAssignment[]> => {
   const doc = parseHTMLFast(html);
   const tables = Array.from(doc.querySelectorAll("table"));
-  if (tables.length === 0) return [];
+  if (tables.length === 0) return validateParsed(DAAssignmentListSchema, [], "digitalAssignments");
 
   // Find table containing assignments (has Title, Due Date, Weightage, Max Mark, etc.)
   let table =
     tables.find((t) => {
       const txt = t.textContent?.toLowerCase() || "";
       return (
-        txt.includes("title") ||
-        txt.includes("due date") ||
-        txt.includes("weightage") ||
-        txt.includes("assignment") ||
-        txt.includes("max mark")
+        (txt.includes("title") &&
+          (txt.includes("due date") ||
+            txt.includes("mark") ||
+            txt.includes("weightage"))) ||
+        txt.includes("document details") ||
+        txt.includes("upload/edit")
       );
-    }) || tables[tables.length - 1]; // Fallback to last table
+    }) || tables[tables.length - 1];
 
   const assignments: DAAssignment[] = [];
   const rows = Array.from(table.querySelectorAll("tr"));
 
   rows.forEach((row) => {
     const cells = Array.from(row.querySelectorAll("td"));
-    if (cells.length >= 5) {
+    if (cells.length >= 6) {
       const col0 = cells[0]?.textContent?.trim() || "";
       // Skip header rows
       if (
         col0.toLowerCase().includes("sl") ||
-        col0.toLowerCase().includes("s.no")
+        col0.toLowerCase().includes("s.no") ||
+        col0.toLowerCase().includes("title")
       ) {
         return;
       }
@@ -175,55 +182,59 @@ export const parseDAAssignments = (html: string): DAAssignment[] => {
       const maxMark = cells[2]?.textContent?.trim() || "";
       const weightage = cells[3]?.textContent?.trim() || "";
       const dueDate = cells[4]?.textContent?.trim() || "";
-      const lastUpdated =
-        cells[6]?.textContent?.trim() || cells[5]?.textContent?.trim() || "";
 
-      // Check Question Paper (QP) button or link in cell 5 or anywhere in the row
-      const qpElem = row.querySelector(
-        "[onclick*='downloadQuestion'], [onclick*='doDownloadQuestion'], [data-code]",
-      );
-      const qpCell = cells[5];
+      // Document details columns:
+      // If 9 columns: cell 5 = QP, cell 6 = Last Updated, cell 7 = Upload/Edit, cell 8 = Download
+      // If 8 columns: cell 5 = Last Updated, cell 6 = Upload/Edit, cell 7 = Download
+      const hasQpColumn = cells.length >= 9;
+      const qpCell = hasQpColumn ? cells[5] : null;
+      const lastUpdatedCell = hasQpColumn ? cells[6] : cells[5];
+      const uploadCell = hasQpColumn ? cells[7] : cells[6];
+      const downloadCell = hasQpColumn ? cells[8] : cells[7];
+
+      const lastUpdated = lastUpdatedCell?.textContent?.trim() || "";
+
+      // Check for QP button
+      const qpBtn =
+        row.querySelector(
+          "button[name='downloadQuestion'], button[id='downloadQuestion'], [onclick*='downloadQuestion'], [onclick*='doDownloadQuestion']",
+        ) || (qpCell ? qpCell.querySelector("button, a") : null);
+
       const hasQP = Boolean(
-        qpElem ||
-          (qpCell &&
-            qpCell.querySelector("button, a") &&
-            !qpCell.textContent?.includes("-")),
+        qpBtn &&
+          !qpBtn.textContent?.includes("-") &&
+          (qpBtn.getAttribute("data-code") ||
+            qpBtn.getAttribute("onclick") ||
+            qpCell?.innerHTML.includes("download") ||
+            qpCell?.querySelector("button")),
       );
 
-      // Extract assignment code (e.g. AST01, AST02, DA01, CS1, EXP01)
+      // Extract Assignment Code (e.g. CS1, AST01, SET1, etc.)
       let code = "";
 
-      // 1. From dataset attributes
-      const editBtn = row.querySelector(
-        "[data-editcode], [data-subcode], [data-code]",
+      // 1. From hidden inputs (e.g., <input type="hidden" name="code" value="CS1">)
+      const hiddenCodeInput = row.querySelector(
+        "input[name='code'], input[name='code1'], input[name='mCode'], input[name='assignmentCode']",
       );
-      if (editBtn) {
-        code =
-          editBtn.getAttribute("data-editcode") ||
-          editBtn.getAttribute("data-subcode") ||
-          editBtn.getAttribute("data-code") ||
-          "";
+      if (hiddenCodeInput) {
+        code = hiddenCodeInput.getAttribute("value") || "";
       }
 
-      // 2. From hidden inputs
+      // 2. From dataset attributes on buttons in the row (e.g. data-editcode="CS1", data-code="CS1")
       if (!code) {
-        const hiddenInputs = Array.from(
-          row.querySelectorAll("input[type='hidden']"),
+        const anyDatasetBtn = row.querySelector(
+          "[data-editcode], [data-code], [data-subcode]",
         );
-        for (const input of hiddenInputs) {
-          const name = input.getAttribute("name") || "";
-          const val = input.getAttribute("value") || "";
-          if (
-            ["code", "mCode", "code1", "assignmentCode"].includes(name) &&
-            val
-          ) {
-            code = val;
-            break;
-          }
+        if (anyDatasetBtn) {
+          code =
+            anyDatasetBtn.getAttribute("data-editcode") ||
+            anyDatasetBtn.getAttribute("data-code") ||
+            anyDatasetBtn.getAttribute("data-subcode") ||
+            "";
         }
       }
 
-      // 3. From onclick strings (e.g., doDownloadQuestion('AST01', ...) or downloadSTudentDA('AST01', ...))
+      // 3. From onclick handler attributes
       if (!code) {
         const rowHtml = row.innerHTML;
         const fnMatch = rowHtml.match(
@@ -245,6 +256,25 @@ export const parseDAAssignments = (html: string): DAAssignment[] => {
         code = `AST0${slNo}`;
       }
 
+      // Download submission check
+      const downloadBtn = row.querySelector(
+        "button[name='downloadStudentDA'], button[id='downloadStudentDA'], [onclick*='downloadStudentDA'], [onclick*='downloadSTudentDA']",
+      );
+      const canDownloadSubmission = Boolean(
+        downloadBtn ||
+          (lastUpdated &&
+            (lastUpdated.includes("/") ||
+              lastUpdated.includes("-") ||
+              lastUpdated.includes("AM") ||
+              lastUpdated.includes("PM"))),
+      );
+
+      // Upload / edit check
+      const editBtn = row.querySelector(
+        "button[name='editAssignment'], button[id='editAssignment'], [onclick*='doDAssignmentProcess'], button[name='digitalAssignmentSubmit']",
+      );
+      const canUpload = Boolean(editBtn || uploadCell);
+
       if (title && (maxMark || dueDate || weightage)) {
         assignments.push({
           slNo,
@@ -253,15 +283,21 @@ export const parseDAAssignments = (html: string): DAAssignment[] => {
           weightage,
           dueDate,
           lastUpdated:
-            lastUpdated.includes("/") || lastUpdated.includes("-")
+            lastUpdated &&
+            (lastUpdated.includes("/") ||
+              lastUpdated.includes("-") ||
+              lastUpdated.includes("AM") ||
+              lastUpdated.includes("PM"))
               ? lastUpdated
               : "",
           code: code || `AST01`,
           hasQP,
+          canUpload,
+          canDownloadSubmission,
         });
       }
     }
   });
 
-  return assignments;
+  return validateParsed(DAAssignmentListSchema, assignments, "digitalAssignments");
 };

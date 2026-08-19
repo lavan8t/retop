@@ -19,10 +19,19 @@ export const GlobalDADropZone: React.FC<GlobalDADropZoneProps> = ({ network }) =
     fetchDASemesters 
   } = useDataStore();
 
+  const isInsideDaPage = (target: EventTarget | null) =>
+    Boolean(
+      document.getElementById("retop-da-page") ||
+        (target &&
+          target instanceof Element &&
+          typeof target.closest === "function" &&
+          target.closest("#retop-da-page")),
+    );
+
   const handleDragEnter = useCallback((e: DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (document.getElementById("retop-da-page") || (e.target as HTMLElement)?.closest("#retop-da-page")) return;
+    if (isInsideDaPage(e.target)) return;
     if (e.dataTransfer?.types.includes("Files")) {
       setIsDragging(true);
     }
@@ -31,7 +40,7 @@ export const GlobalDADropZone: React.FC<GlobalDADropZoneProps> = ({ network }) =
   const handleDragOver = useCallback((e: DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (document.getElementById("retop-da-page") || (e.target as HTMLElement)?.closest("#retop-da-page")) return;
+    if (isInsideDaPage(e.target)) return;
     if (e.dataTransfer?.types.includes("Files")) {
       setIsDragging(true);
     }
@@ -40,7 +49,7 @@ export const GlobalDADropZone: React.FC<GlobalDADropZoneProps> = ({ network }) =
   const handleDragLeave = useCallback((e: DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (document.getElementById("retop-da-page") || (e.target as HTMLElement)?.closest("#retop-da-page")) return;
+    if (isInsideDaPage(e.target)) return;
     if (e.clientX === 0 && e.clientY === 0) {
       setIsDragging(false);
     }
@@ -50,7 +59,7 @@ export const GlobalDADropZone: React.FC<GlobalDADropZoneProps> = ({ network }) =
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
-    if (document.getElementById("retop-da-page") || (e.target as HTMLElement)?.closest("#retop-da-page")) return;
+    if (isInsideDaPage(e.target)) return;
     
     if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
       const droppedFile = e.dataTransfer.files[0];

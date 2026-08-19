@@ -1,5 +1,8 @@
 import { Semester, GradeCourse, GradeAssessment, GradesData } from "../types/vtop";
-import { parseHTMLFast } from "../utils/parser-utils";
+import { parseHTMLFast, wrapWithSchemaVersion, validateParsed, Versioned } from "../utils/parser-utils";
+import { GradesDataSchema } from "../schemas";
+
+export const GRADES_SCHEMA_VERSION = 1;
 
 export function parseGradesSemesters(html: string): Semester[] {
   const doc = parseHTMLFast(html);
@@ -22,7 +25,7 @@ export function parseGradesSemesters(html: string): Semester[] {
   return semesters;
 }
 
-export function parseGrades(html: string): GradesData {
+export function parseGrades(html: string): Versioned<GradesData> {
   const doc = parseHTMLFast(html);
   const courses: GradeCourse[] = [];
   let gpa = "";
@@ -41,7 +44,7 @@ export function parseGrades(html: string): GradesData {
 
   // The main table has header row with background-color: #3c8dbc
   // and data rows that either have no background or #C0D8C0.
-  const rows = doc.querySelectorAll("table.table-hover tr");
+  const rows = doc.querySelectorAll("table.table-hover tr, table.table tr, table tr");
 
   rows.forEach((row) => {
     // skip header rows
@@ -77,24 +80,31 @@ export function parseGrades(html: string): GradesData {
         }
       }
 
-      const notIncludedInGpa = row.getAttribute("style")?.includes("#C0D8C0") || false;
+      const style = (row.getAttribute("style") || "").toLowerCase();
+      const notIncludedInGpa =
+        style.includes("c0d8c0") ||
+        style.includes("rgb(192, 216, 192)") ||
+        style.includes("rgb(192,216,192)");
 
       courses.push({
         code,
         title,
         type,
-        credits: "", // unused directly now, or could compute
-        l, p, j, c,
+        credits: c || "0",
+        l,
+        p,
+        j,
+        c,
         gradingType,
         grandTotal,
         grade,
         courseId,
-        notIncludedInGpa
+        notIncludedInGpa,
       });
     }
   });
 
-  return { gpa, courses };
+  return validateParsed(GradesDataSchema, { gpa, courses }, "grades");
 }
 
 export function parseGradeDetails(html: string): Partial<GradeCourse> {
@@ -156,16 +166,45 @@ export function parseGradeHistory(html: string): import("../types/vtop").GradeHi
   const doc = parseHTMLFast(html);
 
   const data: import("../types/vtop").GradeHistoryData = {
+    studentInfo: null,
     courses: [],
     cgpa: null,
     curriculum: [],
     baskets: [],
+    legend: {},
   };
 
-  // 1. Effective Grades table
-  // Look for the table that has "Effective Grades" in its header
   const tables = doc.querySelectorAll("table");
-  
+
+  // 1. Student Information Table
+  const studentInfoTable = Array.from(tables).find(
+    (t) =>
+      (t.textContent || "").includes("Reg.No.") &&
+      (t.textContent || "").includes("Programme and Branch")
+  );
+  if (studentInfoTable) {
+    const row = studentInfoTable.querySelector("tr.tableContent");
+    if (row) {
+      const cells = row.querySelectorAll("td");
+      if (cells.length >= 10) {
+        data.studentInfo = {
+          regNo: cells[0].textContent?.trim() || "",
+          name: cells[1].textContent?.trim() || "",
+          programme: cells[2].textContent?.trim() || "",
+          programmeMode: cells[3].textContent?.trim() || "",
+          studySystem: cells[4].textContent?.trim() || "",
+          gender: cells[5].textContent?.trim() || "",
+          yearJoined: cells[6].textContent?.trim() || "",
+          eduStatus: cells[7].textContent?.trim() || "",
+          school: cells[8].textContent?.trim() || "",
+          campus: cells[9].textContent?.trim() || "",
+        };
+      }
+    }
+  }
+
+  // 2. Effective Grades table
+  // Look for the table that has "Effective Grades" in its header
   const effectiveGradesTable = Array.from(tables).find((t) => (t.textContent || "").includes("Effective Grades"));
   const curriculumTable = Array.from(tables).find((t) => (t.textContent || "").includes("Curriculum Details"));
   const basketTable = Array.from(tables).find((t) => (t.textContent || "").includes("Basket Details"));
@@ -198,7 +237,7 @@ export function parseGradeHistory(html: string): import("../types/vtop").GradeHi
       } else {
         // Main row
         const cells = row.querySelectorAll("td");
-        if (cells.length >= 10) {
+        if (cells.length >= 9) {
           data.courses.push({
             slNo: cells[0].textContent?.trim() || "",
             code: cells[1].textContent?.trim() || "",
@@ -208,14 +247,27 @@ export function parseGradeHistory(html: string): import("../types/vtop").GradeHi
             grade: cells[5].textContent?.trim() || "",
             examMonth: cells[6].textContent?.trim() || "",
             resultDeclared: cells[7].textContent?.trim() || "",
-            courseDistribution: cells[8].textContent?.trim() || "",
+            courseDistribution: cells[8]?.textContent?.trim() || "",
           });
         }
       }
     });
   }
 
-  // 2. Curriculum Details
+  // 3. Legend / N-Grades
+  const legendDiv = doc.getElementById("legend");
+  if (legendDiv) {
+    const items = legendDiv.querySelectorAll("li");
+    const legend: Record<string, string> = {};
+    items.forEach((li) => {
+      const key = li.querySelector("span")?.textContent?.trim() || "";
+      const text = li.textContent?.replace(key, "").replace(/^[:\s-]+/, "").trim() || "";
+      if (key) legend[key] = text;
+    });
+    data.legend = legend;
+  }
+
+  // 4. Curriculum Details
   if (curriculumTable) {
     const rows = curriculumTable.querySelectorAll("tr.tableContent, tr.fixedContent");
     rows.forEach((row: Element) => {
@@ -230,7 +282,7 @@ export function parseGradeHistory(html: string): import("../types/vtop").GradeHi
     });
   }
 
-  // 3. Basket Details
+  // 5. Basket Details
   if (basketTable) {
     const rows = basketTable.querySelectorAll("tr.tableContent");
     rows.forEach((row: Element) => {
@@ -246,7 +298,7 @@ export function parseGradeHistory(html: string): import("../types/vtop").GradeHi
     });
   }
 
-  // 4. CGPA Details
+  // 6. CGPA Details
   // table inside <div class="box-header"> -> CGPA Details
   const cgpaHeader = doc.evaluate(
     "//h3[contains(text(), 'CGPA Details')]",
@@ -258,10 +310,10 @@ export function parseGradeHistory(html: string): import("../types/vtop").GradeHi
   if (cgpaHeader) {
     const table = cgpaHeader.parentElement?.nextElementSibling?.querySelector("table");
     if (table) {
-      const row = table.querySelector("tbody tr");
-      if (row) {
+      const rows = table.querySelectorAll("tr");
+      for (const row of rows) {
         const cells = row.querySelectorAll("td");
-        if (cells.length >= 11) {
+        if (cells.length >= 11 && !cells[0].textContent?.includes("Credits Registered")) {
           data.cgpa = {
             creditsRegistered: cells[0].textContent?.trim() || "",
             creditsEarned: cells[1].textContent?.trim() || "",
@@ -275,10 +327,11 @@ export function parseGradeHistory(html: string): import("../types/vtop").GradeHi
             f: cells[9].textContent?.trim() || "",
             n: cells[10].textContent?.trim() || "",
           };
+          break;
         }
       }
     }
   }
 
-  return data;
+  return wrapWithSchemaVersion(data, "grades");
 }

@@ -1,6 +1,6 @@
-import { uploadBackup, downloadBackup, getAuthToken } from "./utils/googleDriveSync";
 import { getExtUrl } from "./utils/url";
 import { get as idbGet, set as idbSet } from "idb-keyval";
+
 
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === "install") {
@@ -152,24 +152,5 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
 
-  if (message.action === "UPLOAD_DRIVE_BACKUP") {
-    uploadBackup(message.settingsData, message.clientId)
-      .then(() => sendResponse({ success: true }))
-      .catch((err) => sendResponse({ success: false, error: err?.message || String(err) }));
-    return true; // Keep channel open for async response
-  }
-
-  if (message.action === "DOWNLOAD_DRIVE_BACKUP") {
-    downloadBackup(message.clientId)
-      .then((data) => sendResponse({ success: true, data }))
-      .catch((err) => sendResponse({ success: false, error: err?.message || String(err) }));
-    return true; // Keep channel open for async response
-  }
-
-  if (message.action === "SIGN_IN_GOOGLE" || message.action === "GET_AUTH_TOKEN") {
-    getAuthToken(message.clientId)
-      .then((token) => sendResponse({ success: true, token }))
-      .catch((err) => sendResponse({ success: false, error: err?.message || String(err) }));
-    return true;
-  }
 });
+

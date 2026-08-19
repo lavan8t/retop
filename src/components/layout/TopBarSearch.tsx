@@ -1,6 +1,5 @@
 import React, { useState, useRef, useMemo, useEffect, useDeferredValue } from "react";
 import {
-  Keep,
   Error,
   Search,
   Autorenew,
@@ -15,8 +14,8 @@ import { QuickLink, MenuCategory } from "../../types/vtop";
 import { useDataStore } from "../../store/dataStore";
 import { useAppStore } from "../../store/appStore";
 import { getCategoryIcon } from "../../utils/icons";
-import { Tooltip } from "../ui/Tooltip";
 import { toTitleCase } from "../../utils/formatting";
+import { getDestinationView, hasRetopPage } from "../../utils/routes";
 
 interface TopBarSearchProps {
   currentView: string;
@@ -34,66 +33,6 @@ interface TopBarSearchProps {
   isSyncing?: boolean;
   lastSyncTime?: number;
 }
-
-const getDestinationView = (link: QuickLink) => {
-  return link.url.startsWith("/")
-    ? link.url.slice(1) || "dashboard"
-    : "content";
-};
-
-export const hasRetopPage = (link: QuickLink | string): boolean => {
-  const url = (typeof link === "string" ? link : link.url).toLowerCase().trim();
-  const title = (typeof link === "string" ? "" : link.title).toLowerCase().trim();
-
-  // 1. Primary check: Specific native URL matching
-  const hasUrlMatch =
-    url.includes("studenttimetable") ||
-    url.includes("processviewtimetable") ||
-    url.includes("studentattendance") ||
-    url.includes("processviewstudentattendance") ||
-    url.includes("studentda") ||
-    url.includes("processviewstudentda") ||
-    url.includes("studentmarkview") ||
-    url.includes("processviewstudentmark") ||
-    url.includes("studentgradeview") ||
-    url.includes("processviewstudentgrade") ||
-    url.includes("studexamschedule") ||
-    url.includes("processviewexamschedule") ||
-    url.includes("studentprofileallview") ||
-    url.includes("curriculumsyllabus") ||
-    url.includes("studentcoursepage") ||
-    url.includes("calendarpreview");
-
-  if (hasUrlMatch) return true;
-
-  // 2. Secondary check: Exact native titles only
-  const exactFullTitles = [
-    "timetable",
-    "time table",
-    "class timetable",
-    "class attendance",
-    "student attendance",
-    "digital assignments",
-    "digital assignment upload",
-    "marks view",
-    "student marks",
-    "grades view",
-    "grades & history",
-    "grade history",
-    "exam schedule",
-    "student profile",
-    "curriculum",
-    "programme curriculum",
-    "curriculum & syllabus",
-    "course page consolidated",
-    "course page (consolidated)",
-    "academic calendar",
-    "academics calendar",
-    "academic calendar preview",
-  ];
-
-  return exactFullTitles.includes(title);
-};
 
 const renderCategoryTitle = (catTitle: string) => {
   const titleStr = toTitleCase(catTitle);
@@ -495,73 +434,73 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
     <div ref={wrapperRef} className="relative flex flex-col z-50">
       {/* Unified Search Bar */}
       <div
-        className={`group flex items-center gap-1.5 transition-all duration-fast ease-out cursor-text min-w-60 md:min-w-72 pl-1 sm:pl-2 pr-3 h-12 md:h-14 rounded-[32px] relative z-10000 bg-transparent border-2 border-transparent shadow-none`}
+        className={`group flex items-center gap-2 md:gap-2.5 transition-all duration-fast ease-out cursor-text min-w-60 md:min-w-72 pl-0.5 sm:pl-1 pr-3 h-12 md:h-14 rounded-[32px] relative z-10000 bg-transparent border-2 border-transparent shadow-none`}
       >
         <div className="relative flex items-center shrink-0">
-          <Tooltip text={isHome ? "Go to VTOP" : "Return to Dashboard"}>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                (e.currentTarget as HTMLElement).blur();
-                if (isHome) {
-                  if (typeof window !== "undefined" && !(window as any).__RETOP_OFFLINE__) {
-                    setIsModernUI(false);
-                  }
-                } else {
-                  if (onBack) onBack();
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              (e.currentTarget as HTMLElement).blur();
+              if (isHome) {
+                if (typeof window !== "undefined" && !(window as any).__RETOP_OFFLINE__) {
+                  setIsModernUI(false);
                 }
-              }}
-              onMouseEnter={() => setIsLogoHovered(true)}
-              onMouseLeave={() => setIsLogoHovered(false)}
-              className="relative flex items-center justify-end shrink-0 cursor-pointer hover:opacity-90 transition-opacity focus:outline-none w-[64px] md:w-[72px] h-9 pr-0.5 select-none overflow-visible"
-            >
-              <div className="relative flex items-center justify-end h-full w-full">
-                {/* 1. "re." Branding (re text + dot) */}
+              } else {
+                if (onBack) onBack();
+              }
+            }}
+            title={isHome ? "Go to VTOP" : "Return to Dashboard"}
+            aria-label={isHome ? "Go to VTOP" : "Return to Dashboard"}
+            onMouseEnter={() => setIsLogoHovered(true)}
+            onMouseLeave={() => setIsLogoHovered(false)}
+            className="relative flex items-center justify-end shrink-0 cursor-pointer hover:opacity-90 transition-opacity focus:outline-none w-[58px] md:w-[66px] h-9 pr-0.5 select-none overflow-visible"
+          >
+            <div className="relative flex items-center justify-end h-full w-full">
+              {/* 1. "re." Branding (re text + dot) */}
+              <div
+                className={`absolute right-0 inset-y-0 flex items-end justify-end pb-1 transition-all duration-200 ${
+                  isHome && isLogoHovered
+                    ? "opacity-0 -translate-y-1 scale-90 pointer-events-none"
+                    : "opacity-100 translate-y-0 scale-100"
+                }`}
+              >
+                <span className="font-expanded font-black text-2xl md:text-3xl italic lowercase leading-none text-(--text-main) hover:text-(--accent-hover)">
+                  re
+                </span>
                 <div
-                  className={`absolute right-0 inset-y-0 flex items-end justify-end pb-1 transition-all duration-200 ${
-                    isHome && isLogoHovered
-                      ? "opacity-0 -translate-y-1 scale-90 pointer-events-none"
-                      : "opacity-100 translate-y-0 scale-100"
+                  className={`relative ml-[-1.5px] md:ml-[-2.5px] mb-0.5 md:mb-0.75 flex items-center justify-center transition-all duration-300 origin-bottom-left rounded-full bg-(--accent-base) shrink-0 ${
+                    isSearchActive
+                      ? "w-4.5 h-4.5 md:w-5 md:h-5"
+                      : "w-2.5 h-2.5 md:w-3 md:h-3"
                   }`}
                 >
-                  <span className="font-expanded font-black text-2xl md:text-3xl italic lowercase leading-none text-(--text-main) hover:text-(--accent-hover)">
-                    re
-                  </span>
-                  <div
-                    className={`relative ml-[-1.5px] md:ml-[-2.5px] mb-0.5 md:mb-0.75 flex items-center justify-center transition-all duration-300 origin-bottom-left rounded-full bg-(--accent-base) shrink-0 ${
+                  <Search
+                    className={`text-(--text-inverse) transition-all duration-200 absolute ${
                       isSearchActive
-                        ? "w-4.5 h-4.5 md:w-5 md:h-5"
-                        : "w-2.5 h-2.5 md:w-3 md:h-3"
+                        ? "opacity-100 scale-100 w-2.5 h-2.5 md:w-3 md:h-3"
+                        : "opacity-0 scale-0 w-1.5 h-1.5 pointer-events-none"
                     }`}
-                  >
-                    <Search
-                      className={`text-(--text-inverse) transition-all duration-200 absolute ${
-                        isSearchActive
-                          ? "opacity-100 scale-100 w-2.5 h-2.5 md:w-3 md:h-3"
-                          : "opacity-0 scale-0 w-1.5 h-1.5 pointer-events-none"
-                      }`}
-                      strokeWidth={3.5}
-                    />
-                  </div>
+                    strokeWidth={3.5}
+                  />
                 </div>
-
-                {/* 2. "VTOP" Hover State (Home only) */}
-                {isHome && (
-                  <div
-                    className={`absolute right-0 inset-y-0 flex items-center justify-end transition-all duration-200 ${
-                      isLogoHovered
-                        ? "opacity-100 translate-y-0 scale-100"
-                        : "opacity-0 translate-y-1 scale-90 pointer-events-none"
-                    }`}
-                  >
-                    <span className="font-['Times_New_Roman',Times,serif]! font-bold text-xl md:text-2xl leading-none text-(--text-main) hover:text-(--accent-hover)">
-                      VTOP
-                    </span>
-                  </div>
-                )}
               </div>
-            </button>
-          </Tooltip>
+
+              {/* 2. "VTOP" Hover State (Home only) */}
+              {isHome && (
+                <div
+                  className={`absolute right-0 inset-y-0 flex items-center justify-end transition-all duration-200 ${
+                    isLogoHovered
+                      ? "opacity-100 translate-y-0 scale-100"
+                      : "opacity-0 translate-y-1 scale-90 pointer-events-none"
+                  }`}
+                >
+                  <span className="font-['Times_New_Roman',Times,serif]! font-bold text-xl md:text-2xl leading-none text-(--text-main) hover:text-(--accent-hover)">
+                    VTOP
+                  </span>
+                </div>
+              )}
+            </div>
+          </button>
         </div>
 
         <div className="relative flex-1 w-full min-w-0 flex items-center">
@@ -684,10 +623,10 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                             e.stopPropagation();
                             onTogglePin(link);
                           }}
-                          className="p-1 text-(--accent-base) hover:text-(--text-muted) shrink-0"
+                          className="p-1.5 text-(--accent-base) hover:text-(--text-muted) shrink-0 cursor-pointer"
                           title="Unpin"
                         >
-                          <Star className="w-3.5 h-3.5 fill-current" />
+                          <Star className="w-4 h-4 fill-current" />
                         </button>
                       </div>
                     ))}
@@ -748,11 +687,13 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                                     e.stopPropagation();
                                     onTogglePin(link);
                                   }}
-                                  className="p-1 text-(--text-muted) hover:text-(--accent-base) shrink-0 cursor-pointer"
+                                  className="p-1.5 text-(--text-muted) hover:text-(--accent-base) shrink-0 cursor-pointer"
                                   title={isPinned ? "Unpin from Dock" : "Pin to Dock"}
                                 >
                                   <Star
-                                    className={`w-3.5 h-3.5 ${isPinned ? "text-(--accent-base) fill-current" : "opacity-40"}`}
+                                    className={`w-4 h-4 transition-all ${
+                                      isPinned ? "text-(--accent-base) fill-current" : "opacity-50 hover:opacity-100"
+                                    }`}
                                   />
                                 </button>
                               </div>
@@ -816,7 +757,9 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                           title={isPinned ? "Unpin from Dock" : "Pin to Dock"}
                         >
                           <Star
-                            className={`w-3.5 h-3.5 ${isPinned ? "text-(--accent-base) fill-current" : "opacity-50"}`}
+                            className={`w-4 h-4 transition-all ${
+                              isPinned ? "text-(--accent-base) fill-current" : "opacity-50 hover:opacity-100"
+                            }`}
                           />
                         </button>
                       </div>
@@ -964,24 +907,24 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                             </div>
                           </button>
                           <div
-                            className={`absolute right-1 top-1 bottom-1 w-12 pr-1 flex items-center justify-end rounded-r-xl transition-all pointer-events-none z-20 ${!isPinned ? "opacity-50 group-hover:opacity-100" : "opacity-100"}`}
+                            className="absolute right-1 top-1 bottom-1 w-12 pr-1 flex items-center justify-end rounded-r-xl transition-all pointer-events-none z-20"
                           >
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onTogglePin(link);
                               }}
-                              className={`pointer-events-auto p-1.5 rounded-xl transition-all border-2 shadow-none hover:bg-(--bg-highlight) ${
-                                isPinned
-                                  ? "bg-transparent text-(--accent-base) border-transparent"
-                                  : "bg-transparent border-transparent text-(--text-muted) hover:text-(--text-main)"
-                              }`}
+                              className="pointer-events-auto p-1.5 rounded-xl transition-all border-2 border-transparent hover:bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) cursor-pointer"
                               title={
                                 isPinned ? "Unpin from Dock" : "Pin to Dock"
                               }
                             >
                               <Star
-                                className={`w-4 h-4 transition-transform ${isPinned ? "scale-110" : "scale-100 opacity-50 group-hover:opacity-100"}`}
+                                className={`w-4.5 h-4.5 transition-transform ${
+                                  isPinned
+                                    ? "text-(--accent-base) fill-current scale-110"
+                                    : "opacity-50 group-hover:opacity-100 hover:text-(--text-main)"
+                                }`}
                               />
                             </button>
                           </div>
@@ -993,7 +936,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
               )}
             </div>
             <div className="w-full text-center py-2 px-3 text-[10px] font-bold text-(--text-muted) border-t-2 border-(--border-dim) bg-(--bg-surface) shrink-0 mt-1">
-              <span className="font-mono font-bold text-(--accent-base)">Shift + Enter</span> for {isModernUI ? "VTOP" : "retop"} &nbsp;•&nbsp; <span className="font-mono font-bold text-(--text-muted)">Enter</span> for {isModernUI ? "retop" : "VTOP"}
+              <span className="font-mono font-bold text-(--accent-base)">Shift + Enter</span> for {isModernUI ? <span className="font-vtop font-bold">VTOP</span> : "retop"} &nbsp;•&nbsp; <span className="font-mono font-bold text-(--text-muted)">Enter</span> for {isModernUI ? "retop" : <span className="font-vtop font-bold">VTOP</span>}
             </div>
           </div>
         </div>
@@ -1106,7 +1049,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                         e.stopPropagation();
                         onTogglePin(link);
                       }}
-                      className={`absolute right-1 p-1 rounded-lg transition-all cursor-pointer shrink-0 z-20 ${
+                      className={`absolute right-1.5 p-1 rounded-lg transition-all cursor-pointer shrink-0 z-20 ${
                         isPinned
                           ? "text-(--accent-base) opacity-100"
                           : "text-(--text-muted) opacity-0 group-hover/item:opacity-100 hover:text-(--text-main)"
@@ -1114,7 +1057,9 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                       title={isPinned ? "Unpin from Dock" : "Pin to Dock"}
                     >
                       <Star
-                        className={`w-3.5 h-3.5 transition-transform ${isPinned ? "fill-current scale-110" : "opacity-60 hover:opacity-100"}`}
+                        className={`w-4 h-4 transition-transform ${
+                          isPinned ? "fill-current scale-110" : "opacity-60 hover:opacity-100"
+                        }`}
                       />
                     </button>
                   </div>

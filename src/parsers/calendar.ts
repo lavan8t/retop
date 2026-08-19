@@ -1,6 +1,9 @@
 import { CalendarMonthPreview, CalendarEvent, ClassGroup } from "../types/vtop";
 import { normalizeSemesterLabel } from "../utils/formatting";
-import { parseHTMLFast } from "../utils/parser-utils";
+import { parseHTMLFast, validateParsed, wrapWithSchemaVersion, Versioned } from "../utils/parser-utils";
+import { CalendarEventsListSchema } from "../schemas";
+
+export const CALENDAR_SCHEMA_VERSION = 1;
 
 export function parseCalendarSemesters(
   html: string,
@@ -88,15 +91,15 @@ export function parseCalendarGroupsAndMonths(html: string): {
     }
   }
 
-  return { groups, months };
+  return wrapWithSchemaVersion({ groups, months }, "calendar");
 }
 
 // Step 3: Extracts the actual calendar grid for the selected month
 export function parseCalendarDays(
   html: string,
   monthLabel: string,
-): CalendarEvent[] {
-  if (!html) return [];
+): Versioned<CalendarEvent[]> {
+  if (!html) return validateParsed(CalendarEventsListSchema, [], "calendar");
   // VTOP HTML anomalies check
   const cleanHtml = html.replace(/<</g, "<");
   const doc = parseHTMLFast(cleanHtml);
@@ -150,5 +153,5 @@ export function parseCalendarDays(
     });
   });
 
-  return days;
+  return validateParsed(CalendarEventsListSchema, days, "calendar");
 }

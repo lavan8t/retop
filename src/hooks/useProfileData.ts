@@ -152,8 +152,9 @@ export function useProfileData(network: VTOPNetwork) {
       }
 
       try {
-        const cachedObj = await getCachedData<StudentProfile>("student_profile_parsed");
-        if (cachedObj && cachedObj.basic?.name) {
+        const userPrefix = network.authorizedID ? `${network.authorizedID}_` : "";
+        const cachedObj = await getCachedData<StudentProfile>(`${userPrefix}student_profile_parsed`);
+        if (cachedObj && cachedObj.basic?.name && (!network.authorizedID || cachedObj.basic.regNo === network.authorizedID)) {
           setRawProfileData(cachedObj);
         }
 
@@ -165,7 +166,7 @@ export function useProfileData(network: VTOPNetwork) {
         const parsedData = parseStudentProfile(html);
         if (parsedData?.basic?.name) {
           setRawProfileData(parsedData);
-          setCachedData("student_profile_parsed", parsedData);
+          setCachedData(`${userPrefix}student_profile_parsed`, parsedData);
         }
       } catch (e: any) {
         if (e && e.message === "OFFLINE_CACHE_MISS") {

@@ -105,7 +105,7 @@ if (isTopWindow && isVtopDomain) {
     p.includes("/vtop/init/page");
 
   if (isPreloginOrLogin) {
-    injectSplashScreen();
+    injectSplashScreen(false);
 
     if (p.includes("/vtop/open/page") || p.includes("/vtop/prelogin")) {
       const earlyLink = document.createElement("link");
@@ -121,13 +121,17 @@ if (isTopWindow && isVtopDomain) {
       (document.head || document.documentElement).appendChild(earlyLink);
     }
   } else if (p.includes("/vtop/content") || p.includes("/vtop/main")) {
-    // Authenticated page: inject splash to cover load flicker, removed after retop mounts
-    injectSplashScreen();
+    // Authenticated page: inject splash with VIT logo to cover load flicker, removed after retop mounts
+    injectSplashScreen(true);
   }
 }
 
-// Enhance native VTOP processLoader whenever it appears
+// Enhance native VTOP processLoader whenever it appears (only on authenticated content)
 function enhanceProcessLoader(el: HTMLElement) {
+  const p = window.location.pathname;
+  const isAuthPage = p.includes("/vtop/content") || p.includes("/vtop/main");
+  if (!isAuthPage) return;
+
   if (document.getElementById("retop-open-loader")) {
     // Splash screen is already handling early load
     return;
@@ -214,6 +218,11 @@ function showErrorDialog(
     font-family: 'Google Sans Flex', system-ui, sans-serif !important;
   `;
 
+  const formattedMessage = message.replace(
+    /VTOP/g,
+    '<span style="font-family: \'Times New Roman\', Times, serif !important; font-weight: 700 !important;">VTOP</span>',
+  );
+
   const parsedDoc = new DOMParser().parseFromString(`
     <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(239, 68, 68, 0.2), transparent, transparent); pointer-events: none;"></div>
     
@@ -223,7 +232,7 @@ function showErrorDialog(
         <span class="material-symbols-rounded" style="color: #ef4444; font-size: 40px;">warning</span>
         <div style="display: flex; flex-direction: column; text-align: right;">
           <h1 style="font-size: 24px; font-weight: 900; color: var(--text-main, #fff); margin: 0; text-transform: uppercase; font-family: 'Google Sans Flex', sans-serif; line-height: 1;">${title}</h1>
-          <p style="font-size: 14px; font-family: monospace; color: #f87171; margin: 6px 0 0; max-width: 600px; white-space: pre-wrap;">${message}</p>
+          <p style="font-size: 14px; font-family: monospace; color: #f87171; margin: 6px 0 0; max-width: 600px; white-space: pre-wrap;">${formattedMessage}</p>
         </div>
       </div>
       
@@ -661,7 +670,7 @@ const enhancePreloginRoleCards = () => {
       const card = document.querySelector(sel)?.closest(".cardStudent, .cardEmployee, .cardParent, .cardAlumni") as HTMLElement;
       if (card) {
         const link = card.querySelector("a") as HTMLElement;
-        if (link) {
+        if (link && !link.querySelector(".retop-role-card-inner")) {
           link.innerHTML = `
             <div class="retop-role-card-inner">
               <div class="retop-role-icon-col">${cfg.svg}</div>
@@ -806,7 +815,7 @@ const injectPreloginTheme = () => {
 
   // Reset any huge inline margin-top computed by native VTOP scripts
   if (document.body) {
-    document.body.style.marginTop = "60px";
+    document.body.style.marginTop = "56px";
     document.body.style.paddingTop = "0px";
     document.body.style.paddingLeft = "0px";
   }
@@ -829,10 +838,12 @@ const injectPreloginTheme = () => {
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", () => {
       enhancePreloginHeader();
+      enhancePreloginRoleCards();
       enhancePreloginInfoAndApps();
     });
   } else {
     enhancePreloginHeader();
+    enhancePreloginRoleCards();
     enhancePreloginInfoAndApps();
   }
 
@@ -1248,7 +1259,7 @@ const injectLoginTheme = () => {
     }, 200);
   }
 
-  // Error Page Handling & Login Snackbar
+  // Error Page Handling & Login Snackbar (Material 3 Inverse Surface)
   const showLoginSnackbar = (message: string, type: "error" | "warning" | "info" = "error") => {
     const existing = document.getElementById("retop-login-snackbar");
     if (existing) existing.remove();
@@ -1264,31 +1275,30 @@ const injectLoginTheme = () => {
       z-index: 999999;
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 10px 18px;
+      gap: 12px;
+      padding: 12px 22px;
       border-radius: 9999px;
-      background: #18181b;
-      color: #f4f4f5;
-      border: 1px solid ${type === "error" ? "rgba(239, 68, 68, 0.45)" : type === "warning" ? "rgba(245, 158, 11, 0.45)" : "rgba(255, 255, 255, 0.2)"};
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05);
-      font-family: 'Google Sans Flex', -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: 13px;
+      background: #313033;
+      color: #f4eff4;
+      border: none !important;
+      box-shadow: 0 3px 5px -1px rgba(0,0,0,0.25), 0 6px 10px 0 rgba(0,0,0,0.18), 0 1px 18px 0 rgba(0,0,0,0.15);
+      font-family: 'Google Sans Flex', system-ui, sans-serif;
+      font-size: 13.5px;
       font-weight: 600;
       max-width: min(90vw, 460px);
       cursor: pointer;
-      animation: retop-snackbar-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: retop-snackbar-slide-up 0.25s cubic-bezier(0.2, 0, 0, 1) forwards;
       user-select: none;
     `;
 
     const iconSvg =
       type === "error"
-        ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`
-        : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
+        ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f2b8b5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`
+        : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fdd663" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
 
     snackbar.innerHTML = `
       <div style="display: flex; align-items: center; justify-content: center; flex-shrink: 0;">${iconSvg}</div>
-      <span style="flex: 1; line-height: 1.35; text-align: left;">${message}</span>
-      <button type="button" style="background: none; border: none; padding: 0 0 0 6px; color: #a1a1aa; cursor: pointer; display: flex; align-items: center; font-size: 14px;">✕</button>
+      <span style="flex: 1; line-height: 1.4; text-align: left;">${message}</span>
     `;
 
     if (!document.getElementById("retop-login-snackbar-style")) {
@@ -1399,94 +1409,56 @@ const injectLoginTheme = () => {
     const asciiPre = document.createElement("pre");
     asciiPre.id = "retop-ascii-art";
     const isChennaiHost = window.location.hostname.includes("vtopcc");
-    const artTypes = isChennaiHost ? ["CC"] : ["TT", "SMV", "MGR"];
-    const lastArt = localStorage.getItem("retop_last_ascii_art") || "";
-    const availableArts = artTypes.filter(type => type !== lastArt);
-    const pickedArt = availableArts.length ? availableArts[Math.floor(Math.random() * availableArts.length)] : artTypes[0];
-    localStorage.setItem("retop_last_ascii_art", pickedArt);
 
-    import("./components/asciiArt").then(({ asciiArtTT, asciiArtSMV, asciiArtMGR, asciiArtCC }) => {
-      let rawArt = asciiArtTT;
-      if (pickedArt === "CC") rawArt = asciiArtCC.trim() ? asciiArtCC : asciiArtTT;
-      else if (pickedArt === "SMV") rawArt = asciiArtSMV;
-      else if (pickedArt === "MGR") rawArt = asciiArtMGR;
-      
-      const asciiArt = rawArt.replace(/\r/g, "");
+    import("./components/asciiArt").then(async ({ loadAsciiArt, pickAsciiType, getAsciiConfig }) => {
+      const pickedArt = pickAsciiType(isChennaiHost ? "chennai" : "vellore");
+      const config = getAsciiConfig(pickedArt);
 
-      // Force right alignment for ASCII art
       asciiPre.style.setProperty("text-align", "right", "important");
+      asciiPre.style.setProperty("letter-spacing", "0px", "important");
+      asciiPre.style.setProperty("margin-right", config.marginRight, "important");
+      asciiPre.style.setProperty("font-size", config.fontSize, "important");
+      asciiPre.style.setProperty("line-height", config.lineH, "important");
 
-    if (pickedArt === "CC") {
-      asciiPre.style.letterSpacing = "0px";
-      asciiPre.style.setProperty("margin-right", "0px", "important");
-      asciiPre.style.setProperty("font-size", "4px", "important");
-      asciiPre.style.setProperty("line-height", "4px", "important");
-    } else if (pickedArt === "SMV") {
-      asciiPre.style.letterSpacing = "0px";
-      asciiPre.style.setProperty("margin-right", "0px", "important");
-      asciiPre.style.setProperty("font-size", "4px", "important");
-      asciiPre.style.setProperty("line-height", "4px", "important");
-    } else if (pickedArt === "MGR") {
-      asciiPre.style.letterSpacing = "0px";
-      asciiPre.style.setProperty("margin-right", "0px", "important");
-      asciiPre.style.setProperty("font-size", "4.8px", "important");
-      asciiPre.style.setProperty("line-height", "4px", "important");
-    } else {
-      asciiPre.style.letterSpacing = "0px";
-      asciiPre.style.setProperty("font-size", "7px", "important");
-      asciiPre.style.setProperty("line-height", "7px", "important");
-    }
-    asciiPre.textContent = asciiArt;
-    wrapper.appendChild(asciiPre);
+      const asciiArt = await loadAsciiArt(pickedArt);
+      if (!asciiArt) return;
 
-    document.body.appendChild(wrapper);
+      asciiPre.textContent = asciiArt;
+      wrapper.appendChild(asciiPre);
 
-    // ASCII Scramble Animation Logic
-    const nonSpaceIndices: number[] = [];
-    for (let i = 0; i < asciiArt.length; i++) {
-      if (asciiArt[i] !== " " && asciiArt[i] !== "\n") {
-        nonSpaceIndices.push(i);
+      document.body.appendChild(wrapper);
+
+      // ASCII Scramble Animation Logic
+      const nonSpaceIndices: number[] = [];
+      for (let i = 0; i < asciiArt.length; i++) {
+        if (asciiArt[i] !== " " && asciiArt[i] !== "\n") {
+          nonSpaceIndices.push(i);
+        }
       }
-    }
 
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*";
-    let puddleInterval: ReturnType<typeof setInterval> | null = null;
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*";
+      let puddleInterval: ReturnType<typeof setInterval> | null = null;
 
-    // Initial load CSS animation instead of JS rain
-    asciiPre.style.animation = "retop-ascii-rise 0.5s linear forwards";
+      // Initial load CSS animation instead of JS rain
+      asciiPre.style.animation = "retop-ascii-rise 0.5s linear forwards";
 
-    // Kinetic Puddle Hover Logic - Awwards Level Fluid Ripples
-    interface Ripple {
-      x: number;
-      y: number;
-      timeCreated: number;
-      energy: number;
-    }
-    let ripples: Ripple[] = [];
-    const maxRipples = 25;
-    const waveSpeed = 0.15; // pixels per ms
-    const waveFrequency = 0.08;
+      // Kinetic Puddle Hover Logic - Awwards Level Fluid Ripples
+      interface Ripple {
+        x: number;
+        y: number;
+        timeCreated: number;
+        energy: number;
+      }
+      let ripples: Ripple[] = [];
+      const maxRipples = 25;
+      const waveSpeed = 0.15; // pixels per ms
+      const waveFrequency = 0.08;
 
-    let lastMouseX = -1000;
-    let lastMouseY = -1000;
-    let lastTime = Date.now();
+      let lastMouseX = -1000;
+      let lastMouseY = -1000;
+      let lastTime = Date.now();
 
-    let charW = 4.2; // default approx width of monospace char for 7px font
-    let charH = 7;   // default line-height matches font size
-    
-    if (pickedArt === "CC") {
-      charW = 2.4;
-      charH = 4;
-    } else if (pickedArt === "PRP") {
-      charW = 3;
-      charH = 4.5;
-    } else if (pickedArt === "SMV") {
-      charW = 2.4;
-      charH = 4;
-    } else if (pickedArt === "MGR") {
-      charW = 2.9;
-      charH = 4;
-    }
+      const { charW, charH } = config;
 
     const getLineOffsetX = (preW: number, lineLen: number) => {
       return Math.max(0, preW - lineLen * charW);
@@ -1740,6 +1712,116 @@ const enhanceLegacyLogin = () => {
   console.log("[retop] Looking for CAPTCHA elements...");
   let attempts = 0;
   const maxAttempts = 300; // 30 seconds (300 * 100ms)
+
+  // ── Global Capturing Validation for Login Form ───────────────────────────
+  const getLoginInputs = () => {
+    const pInput = (
+      document.querySelector("input[type='password']") ||
+      document.getElementById("password") ||
+      document.querySelector("input[name*='pass' i]") ||
+      document.querySelector("input[id*='pass' i]")
+    ) as HTMLInputElement | null;
+
+    const uInput = (
+      document.getElementById("username") ||
+      document.querySelector("input[name='username']") ||
+      document.querySelector("input[name='uname']") ||
+      document.querySelector("input[id*='user' i]") ||
+      document.querySelector("input[name*='user' i]") ||
+      document.querySelector("input[id*='reg' i]") ||
+      document.querySelector("input[name*='reg' i]")
+    ) as HTMLInputElement | null;
+
+    const cInput = (
+      document.getElementById("captchaStr") ||
+      document.querySelector("input[name='captchaCheck']") ||
+      document.querySelector("input[placeholder*='Captcha' i]") ||
+      document.querySelector("input[name*='captcha' i]") ||
+      document.querySelector("input[id*='captcha' i]")
+    ) as HTMLInputElement | null;
+
+    return { pInput, uInput, cInput };
+  };
+
+  const validateLoginForm = (e?: Event): boolean => {
+    const { pInput, uInput, cInput } = getLoginInputs();
+
+    // If on a login page with password field
+    if (pInput) {
+      // 1. Validate Username
+      if (uInput && !uInput.value.trim()) {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          (e as any).returnValue = false;
+        }
+        uInput.focus();
+        uInput.classList.add("retop-input-invalid");
+        setTimeout(() => uInput.classList.remove("retop-input-invalid"), 1000);
+        return false;
+      }
+
+      // 2. Validate Password (Never allow submitting without password)
+      if (!pInput.value || !pInput.value.trim()) {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          (e as any).returnValue = false;
+        }
+        pInput.focus();
+        pInput.classList.add("retop-input-invalid");
+        setTimeout(() => pInput.classList.remove("retop-input-invalid"), 1000);
+        return false;
+      }
+
+      // 3. Validate Captcha
+      if (cInput && !cInput.value.trim()) {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          (e as any).returnValue = false;
+        }
+        cInput.focus();
+        cInput.classList.add("retop-input-invalid");
+        setTimeout(() => cInput.classList.remove("retop-input-invalid"), 1000);
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  if (!(window as any).__retop_login_validators_attached) {
+    (window as any).__retop_login_validators_attached = true;
+
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Enter" || e.keyCode === 13 || e.which === 13) {
+        validateLoginForm(e);
+      }
+    };
+
+    window.addEventListener("keydown", handleKey, true);
+    window.addEventListener("keypress", handleKey, true);
+    window.addEventListener("keyup", handleKey, true);
+    document.addEventListener("keydown", handleKey, true);
+    document.addEventListener("keypress", handleKey, true);
+    document.addEventListener("keyup", handleKey, true);
+
+    document.addEventListener("submit", (e: Event) => {
+      validateLoginForm(e);
+    }, true);
+
+    document.addEventListener("click", (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const btn = target?.closest("#submitBtn, #btnSubmit, button[type='submit'], input[type='submit'], a[onclick*='submit'], button[onclick*='submit']");
+      if (btn) {
+        validateLoginForm(e);
+      }
+    }, true);
+  }
 
   // Save/Restore Username
   const usernameInput = (document.getElementById("username") ||

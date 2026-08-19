@@ -173,7 +173,7 @@ export function initializeContainer() {
   isInitialized = true;
 }
 
-export function injectSplashScreen() {
+export function injectSplashScreen(showLogo: boolean = true) {
   if (document.getElementById("retop-open-loader")) return;
 
   const styleId = "retop-early-cloak";
@@ -234,7 +234,9 @@ export function injectSplashScreen() {
 
   const loader = document.createElement("div");
   loader.id = "retop-open-loader";
-  loader.innerHTML = `<div class="vit-emblem-splash" style="width:210px;height:210px;display:flex;align-items:center;justify-content:center;">${VIT_EMBLEM_SVG_RAW}</div>`;
+  if (showLogo) {
+    loader.innerHTML = `<div class="vit-emblem-splash" style="width:210px;height:210px;display:flex;align-items:center;justify-content:center;">${VIT_EMBLEM_SVG_RAW}</div>`;
+  }
   document.documentElement.appendChild(loader);
 }
 

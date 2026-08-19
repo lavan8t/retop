@@ -1,76 +1,36 @@
-export const getCourseAcronym = (title: string) => {
+const ACRONYM_MAP: Record<string, string> = {
+  "MICROPROCESSORS AND MICROCONTROLLERS": "MPMC",
+  "COMPUTER ARCHITECTURE AND ORGANIZATION": "CAO",
+  "DATA STRUCTURES AND ALGORITHMS": "DSA",
+  "OBJECT ORIENTED PROGRAMMING": "OOP",
+  "PROBABILITY AND STATISTICS": "P&S",
+  "DESIGN AND ANALYSIS OF ALGORITHMS": "DAA",
+};
+
+const IGNORE_WORDS = new Set(["AND", "OF", "THE", "IN", "FOR", "TO", "A", "AN", "WITH", "BY"]);
+
+export const getCourseAcronym = (title: string): string => {
   if (!title) return "";
-  const upperTitle = title.trim().toUpperCase();
-  const cleanKey = upperTitle.replace(/\s+/g, " ");
-
-  const manualCodes: Record<string, string> = {
-    "MICROPROCESSORS AND MICROCONTROLLERS": "MPMC",
-    "COMPUTER ARCHITECTURE AND ORGANIZATION": "CAO",
-    "DATA STRUCTURES AND ALGORITHMS": "DSA",
-    "OBJECT ORIENTED PROGRAMMING": "OOP",
-    "PROBABILITY AND STATISTICS": "P&S",
-    "DESIGN AND ANALYSIS OF ALGORITHMS": "DAA",
-  };
-
-  for (const [phrase, code] of Object.entries(manualCodes)) {
-    if (cleanKey.includes(phrase)) {
-      return code;
-    }
+  const upper = title.trim().toUpperCase().replace(/\s+/g, " ");
+  for (const [k, v] of Object.entries(ACRONYM_MAP)) {
+    if (upper.includes(k)) return v;
   }
-
-  const words = title.split(/[\s\-\(\)\.,]+/).filter((w) => w.length > 0);
-  if (words.length === 0) return "";
-
-  const firstWord = words[0].toUpperCase();
-  if (firstWord.length === 3 && !["THE", "AND", "FOR"].includes(firstWord)) {
-    return firstWord;
-  }
-
-  if (words.length === 3) {
-    return words.map((w) => w[0].toUpperCase()).join("");
-  }
-
-  const ignore = [
-    "AND",
-    "OF",
-    "THE",
-    "IN",
-    "FOR",
-    "TO",
-    "A",
-    "AN",
-    "WITH",
-    "BY",
-  ];
-
-  if (words.length === 1) return words[0].substring(0, 4).toUpperCase();
-
+  const words = upper.split(/[\s\-\(\)\.,]+/).filter(Boolean);
+  if (!words.length) return "";
+  if (words.length === 1) return words[0].slice(0, 4);
   const acronym = words
-    .map((w) => {
-      const clean = w.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
-
-      return ignore.includes(clean) ? "" : clean[0];
-    })
+    .filter((w) => !IGNORE_WORDS.has(w))
+    .map((w) => w[0])
     .join("");
-
-  return acronym.length < 2 ? title.substring(0, 3).toUpperCase() : acronym;
+  return acronym.length >= 2 ? acronym : upper.slice(0, 3);
 };
 
 export function normalizeSemesterLabel(rawLabel: string): string {
-  if (!rawLabel) return "";
-
-  return (
-    rawLabel
-      // Decode HTML entities that VTOP sometimes returns in raw HTML
-      .replace(/&amp;/g, "&")
-      // Strip " - VLR", "(VLR)", " - CHN", "(CHN)", etc.
-      .replace(/\s*-\s*(?:VLR|CHN)\s*$/i, "")
-      .replace(/\s*\(\s*(?:VLR|CHN)\s*\)\s*$/i, "")
-      .replace(/\s*(?:VLR|CHN)\s*$/i, "")
-      // Fix weird spacing VTOP sometimes adds
-      .replace(/\s+/g, " ")
-      .trim()
-  );
+  return (rawLabel || "")
+    .replace(/&amp;/g, "&")
+    .replace(/\s*(?:-\s*|\(\s*)?(?:VLR|CHN)\s*\)?\s*$/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export function formatSemesterShorthand(label: string): string {

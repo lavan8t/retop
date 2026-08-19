@@ -1,4 +1,9 @@
 import { MenuCategory, QuickLink } from "../types/vtop";
+import { fixBase64Image, imageElementToBase64 } from "./profile";
+import { validateParsed, Versioned } from "../utils/parser-utils";
+import { MenuCategoriesListSchema, UserProfileHeaderSchema } from "../schemas";
+
+export const MENU_SCHEMA_VERSION = 1;
 
 const MENU_TITLE_CANONICAL: Record<string, string> = {
   "class attendance": "Attendance",
@@ -105,7 +110,7 @@ function cleanElementText(el: Element): string {
   return text;
 }
 
-export function scrapeMenu(doc: Document): MenuCategory[] {
+export function scrapeMenu(doc: Document): Versioned<MenuCategory[]> {
   const categories: MenuCategory[] = [];
   const visitedUrls = new Set<string>();
 
@@ -325,7 +330,7 @@ export function scrapeMenu(doc: Document): MenuCategory[] {
     });
   }
 
-  return categories;
+  return validateParsed(MenuCategoriesListSchema, categories, "menu");
 }
 
 export function scrapeUserProfile(doc: Document) {
@@ -342,55 +347,58 @@ export function scrapeUserProfile(doc: Document) {
   const clean = navText
     .replace(/\(STUDENT\)|\(FACULTY\)|\(PARENT\)|\(EMPLOYEE\)|\(ALUMNI\)|\(OFFLINE\)/gi, "")
     .trim();
+  const parts = clean.split("-").map((s) => s.trim()).filter(Boolean);
 
-  let regNo = authInput.replace(/\s*\(offline\)/gi, "").trim();
-  let name = "";
-
-  if (clean.includes("-")) {
-    const parts = clean.split("-").map((s) => s.trim()).filter(Boolean);
-    if (!regNo && parts[0]) regNo = parts[0];
-    if (parts[1]) name = parts[1];
-  } else if (clean.includes("(") && clean.includes(")")) {
-    const match = clean.match(/^([^(]+)\s*\(([^)]+)\)/);
-    if (match) {
-      name = match[1].trim();
-      if (!regNo) regNo = match[2].trim();
-    }
-  } else if (clean) {
-    name = clean;
-  }
-
-  if (!regNo) regNo = "Student";
-  if (!name) name = regNo !== "Student" ? regNo : "Student";
+  const rawRegNo = authInput || parts[0] || "Student";
+  const regNo = rawRegNo.replace(/\s*\(offline\)/gi, "").trim() || "Student";
+  const rawName =
+    parts.length > 1
+      ? parts.slice(1).join("-").trim()
+      : parts[0] && parts[0] !== authInput
+        ? parts[0]
+        : "";
+  const name =
+    rawName
+      .replace(/\s*\(offline\)/gi, "")
+      .replace(/\)+$/, "")
+      .trim() || regNo;
 
   const isChennai =
     (typeof window !== "undefined" && window.location.hostname.includes("vtopcc")) ||
     doc.title.toLowerCase().includes("chennai") ||
     doc.documentElement.innerHTML.includes("vtopcc");
-  const campus: "chennai" | "vellore" = isChennai ? "chennai" : "vellore";
+  const campus: "Chennai" | "Vellore" = isChennai ? "Chennai" : "Vellore";
 
-  const rawImg =
-    doc.querySelector("img#retop-profile-image-mock")?.getAttribute("src") ||
-    doc.querySelector("img.img_icon_size, img.img_stamp_size")?.getAttribute("src") ||
-    doc.querySelector("#navbarDropdown img, #profileDropdown img, .profile-picture img")?.getAttribute("src") ||
-    doc.querySelector("img[src*='StudentPhoto'], img[src*='studentPhoto'], img[src*='Photo'], img[src*='photo'], img[src*='process/profilePhoto']")?.getAttribute("src") ||
-    undefined;
+  let rawImg: string | undefined = undefined;
 
-  const isValidImgSrc = (s?: string) => {
-    if (!s) return false;
-    const clean = s.trim();
-    if (clean.length < 50 && clean.startsWith("data:")) return false;
-    if (clean.endsWith("base64,")) return false;
-    return (
-      clean.startsWith("data:image") ||
-      clean.startsWith("blob:") ||
-      clean.startsWith("http") ||
-      clean.startsWith("/")
-    );
-  };
+  const imgEl = (
+    doc.querySelector("img#retop-profile-image-mock") ||
+    doc.querySelector("#vtop-header img.img_icon_size, #vtop-header img.img_stamp_size, #top-hmenu-bar img.img_icon_size, #top-hmenu-bar img.img_stamp_size") ||
+    doc.querySelector(".navbar-right img, #navbarDropdown img, #profileDropdown img, .profile-picture img") ||
+    doc.querySelector("img[src*='users/image'], img[src*='image/?id'], img[src*='StudentPhoto'], img[src*='studentPhoto'], img[src*='process/profilePhoto']") ||
+    doc.querySelector("img.img_icon_size, img.img_stamp_size, img.img-circle")
+  ) as HTMLImageElement | null;
 
-  const profileImgBase64 =
-    rawImg && isValidImgSrc(rawImg) ? rawImg.trim() : undefined;
+  if (imgEl) {
+    const canvasBase64 = imageElementToBase64(imgEl);
+    rawImg = canvasBase64 || imgEl.getAttribute("src") || imgEl.src || undefined;
+  }
 
-  return { name, regNo, profileImgBase64, campus };
+  if (!rawImg) {
+    const allHeaderImgs = Array.from(
+      doc.querySelectorAll("#vtop-header img, #top-hmenu-bar img, header img, nav img, .navbar img")
+    ) as HTMLImageElement[];
+    for (const img of allHeaderImgs) {
+      const src = img.getAttribute("src") || img.src;
+      if (src && !src.includes("vitLogo") && !src.includes("logo") && !src.includes("icon") && !src.includes("retop")) {
+        const canvasBase64 = imageElementToBase64(img);
+        rawImg = canvasBase64 || src;
+        break;
+      }
+    }
+  }
+
+  const profileImgBase64 = fixBase64Image(rawImg) || undefined;
+
+  return validateParsed(UserProfileHeaderSchema, { name, regNo, profileImgBase64, campus }, "menu");
 }

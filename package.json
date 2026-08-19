@@ -13,8 +13,8 @@
     "@quicktoolsone/pdf-compress": "^2.0.0",
     "idb-keyval": "^6.3.0",
     "react": "^19.2.4",
-    "react-barcode": "^1.6.1",
     "react-dom": "^19.2.4",
+    "zod": "^4.4.3",
     "zustand": "^5.0.14"
   },
   "devDependencies": {

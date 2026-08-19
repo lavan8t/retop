@@ -4,6 +4,7 @@ import {
   getCachedDataWithTimestamp,
 } from "./cache";
 import { useAppStore } from "../store/appStore";
+import { showAlertDialog } from "../components/ui/AlertDialog";
 
 export function extractCsrfTokenFromHTML(html: string): string | null {
   if (!html || typeof html !== "string") return null;
@@ -386,8 +387,7 @@ export class VTOPNetwork {
           data.includes("<title>Error</title>");
 
         if (isErrorPage) {
-          const isFatalKey = key.includes("dashboard") || key.includes("tt_");
-          VTOPNetwork.handleNetworkFailure("404 Error Page", isFatalKey);
+          console.warn(`[VTOP Network] 404/Error response for ${key}`);
         } else if (
           data &&
           data.length > 50 &&
@@ -614,27 +614,13 @@ export class VTOPNetwork {
     forceRefresh = false,
     isPastSemester = false,
   ): Promise<string> {
-    const cacheKey = `tt_sem_${semesterSubId}`;
+    const cacheKey = `tt_${semesterSubId}`;
     return this.fetchWithCache(
       cacheKey,
       async () => {
-        const isChennai = typeof window !== "undefined" && window.location.hostname.includes("vtopcc");
-        const url = isChennai ? "academics/common/StudentTimeTableChn" : "academics/common/StudentTimeTable";
-        const body = new URLSearchParams();
-        body.append("semesterSubId", semesterSubId);
-        body.append("authorizedID", this.authorizedID);
-        body.append("x", new Date().toUTCString());
-
-        const response = await this.rateLimitedFetch(`/vtop/${url}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          },
-          body: body,
+        return await this.fetchVtopApi("processViewTimeTable", {
+          semesterSubId: semesterSubId,
         });
-
-        if (!response.ok) throw new Error(`Status ${response.status}`);
-        return await response.text();
       },
       forceRefresh,
       isPastSemester ? Infinity : undefined,
@@ -710,18 +696,9 @@ export class VTOPNetwork {
     return this.fetchWithCache(
       cacheKey,
       async () => {
-        try {
-          return await this.fetchVtopApi("examinations/processViewStudentDA", {
-            classId,
-          });
-        } catch (e: any) {
-          if (e.message?.includes("404") || e.message?.includes("Status 404")) {
-            return await this.fetchVtopApi("examinations/processDigitalAssignment", {
-              classId,
-            });
-          }
-          throw e;
-        }
+        return this.fetchVtopApi("examinations/processDigitalAssignment", {
+          classId,
+        });
       },
       forceRefresh,
       isPastSemester ? Infinity : undefined,
@@ -1189,7 +1166,10 @@ export class VTOPNetwork {
       }, 1000);
     } catch (e) {
       console.error("Download Error:", e);
-      alert("Failed to download file. Please check console.");
+      showAlertDialog({
+        title: "Download Failed",
+        message: "Failed to download file. Please check console.",
+      });
     }
   }
 
@@ -1324,13 +1304,18 @@ export class VTOPNetwork {
     return this.fetchVtopApi("hostels/late/hour/student/request/8", payload);
   }
 
-  /** Step 9: Get Late Hour status list */
-  async getLateHourStatus(): Promise<string> {
-    return this.fetchVtopApi("hostels/late/hour/student/request/9", {
-      status: "",
-      form: "undefined",
-      control: "status",
-    });
+  /** Step 9: Get Late Hour status list (cached) */
+  async getLateHourStatus(forceRefresh = false): Promise<string> {
+    return this.fetchWithCache(
+      "late_hour_status",
+      () =>
+        this.fetchVtopApi("hostels/late/hour/student/request/9", {
+          status: "",
+          form: "undefined",
+          control: "status",
+        }),
+      forceRefresh,
+    );
   }
 
   /** Step 10: Cancel Late Hour Request */

@@ -62,7 +62,7 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
               className="h-full p-4">
               <EmptyState 
                 msg="No Timetable Found" 
-                subMsg="If you have registered courses, please ensure VTOP is responding and try selecting a different semester." 
+                subMsg={<>If you have registered courses, please ensure <span className="font-vtop font-bold">VTOP</span> is responding and try selecting a different semester.</>} 
                 icon={Layers} />
             </div>
           ) : (

@@ -1,17 +1,34 @@
 import { Assignment, CourseSummary } from "../types/vtop";
-import { parseHTMLFast } from "../utils/parser-utils";
+import { parseHTMLFast, validateParsed, Versioned } from "../utils/parser-utils";
+import {
+  AcademicStatsSchema,
+  DashboardAssignmentsListSchema,
+  DashboardCourseSummaryListSchema,
+} from "../schemas";
+
+export const DASHBOARD_SCHEMA_VERSION = 1;
 
 function stripTags(html: string): string {
   if (!html) return "";
   return html.replace(/<[^>]*>/g, "").trim();
 }
 
-export function parseAcademicStats(html: any) {
+export function parseAcademicStats(html: any): Versioned<{
+  cgpa: string;
+  credits: string;
+  totalCredits: string;
+  nonGraded: string;
+  placement: string;
+}> {
   if (html && typeof html === "object" && !html.nodeType) {
-    return html;
+    return validateParsed(AcademicStatsSchema, html, "dashboard");
   }
   if (!html || typeof html !== "string") {
-    return { cgpa: "...", credits: "...", totalCredits: "...", nonGraded: "...", placement: "..." };
+    return validateParsed(
+      AcademicStatsSchema,
+      { cgpa: "...", credits: "...", totalCredits: "...", nonGraded: "...", placement: "..." },
+      "dashboard"
+    );
   }
   const doc = parseHTMLFast(html);
   
@@ -38,7 +55,7 @@ export function parseAcademicStats(html: any) {
     stats.placement = placementTd.textContent?.trim() || "...";
   }
   
-  return stats;
+  return validateParsed(AcademicStatsSchema, stats, "dashboard");
 }
 
 export function parseProctorMessage(html: string) {
@@ -46,8 +63,8 @@ export function parseProctorMessage(html: string) {
   return stripTags(html).replace(/\s+/g, " ").trim();
 }
 
-export function parseDigitalAssignments(html: any): Assignment[] {
-  if (Array.isArray(html)) return html;
+export function parseDigitalAssignments(html: any): Versioned<Assignment[]> {
+  if (Array.isArray(html)) return validateParsed(DashboardAssignmentsListSchema, html, "dashboard");
   if (
     !html ||
     typeof html !== "string" ||
@@ -55,7 +72,7 @@ export function parseDigitalAssignments(html: any): Assignment[] {
     html.includes("No Records") ||
     html.trim() === ""
   )
-    return [];
+    return validateParsed(DashboardAssignmentsListSchema, [], "dashboard");
 
   // VTOP's HTML sometimes has malformed tags like <<td, so we sanitize it slightly
   const cleanHtml = html.replace(/<</g, "<");
@@ -83,12 +100,12 @@ export function parseDigitalAssignments(html: any): Assignment[] {
     }
   });
 
-  return assignments;
+  return validateParsed(DashboardAssignmentsListSchema, assignments, "dashboard");
 }
 
-export function parseCourseDetails(html: any): CourseSummary[] {
-  if (Array.isArray(html)) return html;
-  if (!html || typeof html !== "string") return [];
+export function parseCourseDetails(html: any): Versioned<CourseSummary[]> {
+  if (Array.isArray(html)) return validateParsed(DashboardCourseSummaryListSchema, html, "dashboard");
+  if (!html || typeof html !== "string") return validateParsed(DashboardCourseSummaryListSchema, [], "dashboard");
 
   const doc = parseHTMLFast(html);
   const rows = doc.querySelectorAll("table tbody tr");
@@ -137,5 +154,5 @@ export function parseCourseDetails(html: any): CourseSummary[] {
     }
   });
 
-  return courses;
+  return validateParsed(DashboardCourseSummaryListSchema, courses, "dashboard");
 }

@@ -15,27 +15,27 @@ export function injectLegacyMenuSearch(): void {
 
   const liWrapper = document.createElement("li");
   liWrapper.id = "retop-legacy-menu-search-wrapper";
-  liWrapper.className = "nav-item d-flex align-items-center me-2 my-1 position-relative";
-  liWrapper.style.cssText = "min-width: 220px; max-width: 320px; z-index: 1050;";
+  liWrapper.className = "nav-item d-inline-flex align-items-center position-relative my-auto ms-lg-2";
+  liWrapper.style.cssText = "min-width: 220px; max-width: 290px; height: 36px; z-index: 1050; font-family: OpenSans, 'Open Sans', 'Google Sans Flex', sans-serif; font-size: 14px;";
 
   liWrapper.innerHTML = `
-    <div class="input-group input-group-sm w-100 retop-legacy-search-box" style="border-radius: 9999px; overflow: hidden; background: rgba(125, 125, 125, 0.09); border: 1px solid rgba(125, 125, 125, 0.22); transition: all 0.15s ease;">
-      <span class="input-group-text bg-transparent border-0 py-1 ps-2.5 pe-1 text-muted">
-        <i class="fa fa-search small" style="font-size: 11px;"></i>
+    <div class="input-group input-group-sm w-100 retop-legacy-search-box d-flex align-items-center" style="height: 34px; border-radius: 9999px; overflow: hidden; background: rgb(242, 244, 244); border: 1px solid rgba(0, 0, 0, 0.15); transition: all 0.15s ease;">
+      <span class="input-group-text bg-transparent border-0 py-0 ps-2.5 pe-1 text-muted d-flex align-items-center">
+        <i class="fa fa-search" style="font-size: 13px; color: #475569;"></i>
       </span>
       <input
         type="text"
         id="retop-legacy-menu-search-input"
-        class="form-control form-control-sm bg-transparent border-0 shadow-none ps-1 py-1 text-reset"
+        class="form-control form-control-sm bg-transparent border-0 shadow-none ps-1 py-0 text-reset"
         placeholder="Search menu ( Press Space )"
         autocomplete="off"
-        style="font-size: 12px; font-weight: 600; color: inherit;"
+        style="font-family: OpenSans, 'Open Sans', 'Google Sans Flex', sans-serif; font-size: 14px; font-weight: 600; color: #1e293b; height: 32px; line-height: 32px;"
       />
       <button
         type="button"
         id="retop-legacy-menu-search-clear"
-        class="btn btn-sm bg-transparent border-0 text-muted px-2 d-none"
-        style="font-size: 11px;"
+        class="btn btn-sm bg-transparent border-0 text-muted px-2 d-none d-flex align-items-center justify-content-center"
+        style="font-size: 12px;"
       >
         <i class="fa fa-times"></i>
       </button>
@@ -43,20 +43,20 @@ export function injectLegacyMenuSearch(): void {
     <div
       id="retop-legacy-menu-search-dropdown"
       class="dropdown-menu shadow-lg p-1.5 position-absolute w-100 mt-1 custom-scrollbar"
-      style="display: none; max-height: min(450px, calc(100vh - 130px)); overflow-y: auto; z-index: 1055; top: 100%; left: 0; min-width: 300px; border-radius: 14px;"
+      style="display: none; max-height: min(450px, calc(100vh - 130px)); overflow-y: auto; z-index: 1055; top: 100%; left: 0; min-width: 320px; border-radius: 16px; font-family: OpenSans, 'Open Sans', 'Google Sans Flex', sans-serif;"
     >
     </div>
   `;
 
-  // Insert before first menu item in navbar-nav, or right after quickLinks
+  // Insert directly into the navbar-nav row so it sits in the same line
   if (navList) {
-    navList.prepend(liWrapper);
+    navList.appendChild(liWrapper);
   } else {
     const quickLinks = document.getElementById("quickLinks");
     if (quickLinks) {
-      quickLinks.after(liWrapper);
+      quickLinks.appendChild(liWrapper);
     } else {
-      containerFluid.prepend(liWrapper);
+      containerFluid.appendChild(liWrapper);
     }
   }
 
@@ -149,7 +149,8 @@ export function injectLegacyMenuSearch(): void {
     activeIndex = currentMatches.length > 0 ? 0 : -1;
 
     if (currentMatches.length === 0) {
-      dropdown.innerHTML = `<div class="p-3 text-muted text-center small">No menu items matching "<strong>${query}</strong>"</div>`;
+      const escaped = query.replace(/[<>&"']/g, c => `&#${c.charCodeAt(0)};`);
+      dropdown.innerHTML = `<div class="p-3 text-muted text-center small">No menu items matching "<strong>${escaped}</strong>"</div>`;
       dropdown.style.display = "block";
       return;
     }
@@ -249,8 +250,15 @@ export function injectLegacyMenuSearch(): void {
     }
   });
 
-  // Hotkey: Space opens legacy menu search when on legacy VTOP
+  // Hotkey: "/" or Ctrl/Cmd+K or Space opens legacy menu search ONLY when on legacy VTOP
   window.addEventListener("keydown", (e: KeyboardEvent) => {
+    const isLegacyVisible =
+      document.body.classList.contains("show-legacy-ui") ||
+      document.documentElement.classList.contains("show-legacy-ui");
+
+    // Only process if legacy VTOP is active/visible
+    if (!isLegacyVisible) return;
+
     const target = (e.composedPath ? e.composedPath()[0] : e.target) as HTMLElement;
     const isInput =
       target &&
@@ -261,17 +269,15 @@ export function injectLegacyMenuSearch(): void {
 
     if (isInput) return;
 
-    if (e.code === "Space" || e.key === " " || e.key === "/" || (e.ctrlKey && e.key.toLowerCase() === "k")) {
-      const isLegacyVisible =
-        document.body.classList.contains("show-legacy-ui") ||
-        document.documentElement.classList.contains("show-legacy-ui") ||
-        document.body.style.display === "block";
-
-      if (isLegacyVisible) {
-        e.preventDefault();
-        input.focus();
-        input.select();
-      }
+    if (
+      e.key === "/" ||
+      e.code === "Space" ||
+      e.key === " " ||
+      ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k")
+    ) {
+      e.preventDefault();
+      input.focus();
+      input.select();
     }
   });
 }

@@ -92,6 +92,17 @@ body, body.WhiteBackground, html {
   font-variation-settings: "wdth" 100, "wght" 500, "GRAD" 0, "ROND" 0 !important;
 }
 
+/* Mandatory Times New Roman Bold for the word VTOP */
+.vtop-serif,
+.vtop-word,
+.font-vtop,
+.font-times,
+[data-vtop] {
+  font-family: "Times New Roman", Times, serif !important;
+  font-weight: 700 !important;
+  font-variation-settings: normal !important;
+}
+
 /* Transform Top Header to Responsive Sidebar */
 #vtopOpenPageHeader {
   background: transparent !important;
@@ -882,6 +893,20 @@ img[src*="spinner" i] {
   background: transparent !important;
   box-shadow: none !important;
   text-decoration: none !important;
+}
+
+/* Invalid Input Validation State */
+.retop-input-invalid,
+input.retop-input-invalid {
+  border-color: #ef4444 !important;
+  outline: 2px solid #ef4444 !important;
+  animation: retop-shake 0.35s ease-in-out !important;
+}
+
+@keyframes retop-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
 }
 
 

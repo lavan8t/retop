@@ -4,12 +4,12 @@ import {
   Error,
   KeyboardArrowDown,
   KeyboardArrowUp,
-  Analytics,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { EmptyState } from "../components/EmptyState";
 import { OfflineNotSynced } from "../components/ui/OfflineNotSynced";
 import { WhatIfGradeCalculator } from "../components/course-page/WhatIfGradeCalculator";
 import { GradeTicker } from "../components/grades/GradeTicker";
+import { GradeTrendChart } from "../components/grades/GradeTrendChart";
 import { useGradesData } from "../hooks/useGradesData";
 
 interface GradesPageProps {
@@ -42,164 +42,169 @@ export const GradesPage: React.FC<GradesPageProps> = ({
     predictedCgpa,
   } = useGradesData(network, semesters, setSemesters, selectedSem, setSelectedSem);
 
-  const getGradeColor = (grade: string) => {
-    return "text-(--text-main) bg-(--bg-highlight)";
-  };
-
   if (offlineMiss) {
     return (
-      <div className="h-full pt-16 md:pt-15 lg:pt-24 pb-32 md:pb-12">
+      <div className="h-full pt-16 md:pt-15 lg:pt-24 pb-32 md:pb-12 text-left">
         <OfflineNotSynced pageName="Grades" />
       </div>
     );
   }
 
-  return (
-    <div 
-      className="h-full flex flex-col bg-transparent font-mono text-(--text-main) overflow-hidden">
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-6 pt-20 md:pt-24 lg:pt-28 space-y-12">
-        {loading || fetchingGrades ? (
-          <div className="flex flex-col gap-6 max-w-5xl mx-auto animate-pulse">
-            <div className="h-32 bg-(--bg-surface) rounded-4xl w-full" />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="h-40 bg-(--bg-surface) rounded-4xl w-full" />
-              ))}
-            </div>
-          </div>
-        ) : !gradesData || gradesData.courses.length === 0 ? (
-          <EmptyState msg="No Semester Data Found" icon={Error} />
-        ) : gradesData ? (
-          <div
-            className="flex flex-col gap-6 max-w-5xl mx-auto">
-            {(gradesData.gpa || predictedGpa) && (
-              <div 
-                className="flex items-center justify-between bg-(--bg-surface) rounded-4xl p-6 shadow-none border-2 border-(--border-main) overflow-hidden relative">
-                <div className="absolute -right-10 -bottom-10 opacity-10 pointer-events-none">
-                  <Analytics className="w-48 h-48 text-(--accent-base)" />
-                </div>
-                <div className="z-10 w-full flex flex-col md:flex-row gap-6 md:gap-12">
-                  <div>
-                    <h2 className="text-(--text-muted) font-bold uppercase text-sm mb-1 tracking-widest">
-                      Semester GPA
-                    </h2>
-                    <div className="text-5xl md:text-6xl font-black text-(--text-main) font-expanded shadow-none flex items-end gap-3">
-                      {gradesData.gpa && gradesData.gpa !== "0.0" && gradesData.gpa !== "0"
-                        ? gradesData.gpa
-                        : predictedGpa || "0.00"}
-                      {(!gradesData.gpa || gradesData.gpa === "0.0" || gradesData.gpa === "0") && (
-                        <span className="text-xl text-(--text-muted) mb-2">(Predicted)</span>
-                      )}
-                    </div>
-                  </div>
-                  {predictedCgpa && (
-                    <div>
-                      <h2 className="text-(--text-muted) font-bold uppercase text-sm mb-1 tracking-widest">
-                        Predicted CGPA
-                      </h2>
-                      <div className="text-5xl md:text-6xl font-black text-(--text-main) font-expanded shadow-none flex items-end gap-3">
-                        {predictedCgpa}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+  const isLatestSem = Boolean(semesters && semesters.length > 0 && semesters[0].id === selectedSem);
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+  const currentSemGpa =
+    gradesData?.gpa && gradesData.gpa !== "0.0" && gradesData.gpa !== "0"
+      ? gradesData.gpa
+      : isLatestSem
+      ? predictedGpa
+      : null;
+
+  const isPredictedGpa = isLatestSem && (!gradesData?.gpa || gradesData.gpa === "0.0" || gradesData.gpa === "0");
+  const hasPredictions = isLatestSem && Object.keys(predictedGrades).length > 0;
+
+  const handleResetPredictions = () => {
+    setPredictedGrades({});
+    try {
+      if (selectedSem) {
+        localStorage.removeItem(`retop_pred_grades_${selectedSem}`);
+      }
+    } catch {}
+  };
+
+  return (
+    <div className="h-full flex flex-col bg-transparent text-(--text-main) overflow-hidden text-left">
+      <div className="flex-1 overflow-y-auto custom-scrollbar px-6 md:px-10 lg:px-14 xl:px-16 pt-20 md:pt-24 lg:pt-28 pb-32 space-y-8 text-left">
+        {/* Trend Chart */}
+        {semesters && semesters.length > 0 && (
+          <div className="w-full max-w-5xl text-left">
+            <GradeTrendChart
+              network={network}
+              semesters={semesters}
+              selectedSem={selectedSem}
+              onSelectSem={(id) => setSelectedSem(id)}
+              officialCgpa={historyData?.cgpa?.cgpa}
+              officialCredits={historyData?.cgpa?.creditsEarned}
+              predictedGpa={predictedGpa}
+              predictedCgpa={predictedCgpa}
+              currentSemGpa={currentSemGpa}
+              isPredictedGpa={isPredictedGpa}
+              hasPredictions={hasPredictions}
+              onResetPredictions={handleResetPredictions}
+            />
+          </div>
+        )}
+
+        {loading || fetchingGrades ? (
+          <div className="flex flex-col gap-4 w-full max-w-5xl animate-pulse text-left">
+            <div className="h-24 bg-(--bg-surface) rounded-3xl w-full" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="h-32 bg-(--bg-surface) rounded-3xl w-full" />
+                ))}
+              </div>
+            </div>
+          ) : !gradesData || gradesData.courses.length === 0 ? (
+            <EmptyState msg="No Semester Data Found" icon={Error} />
+          ) : gradesData ? (
+            <div className="flex flex-col gap-4 w-full max-w-5xl text-left">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 text-left">
               {gradesData.courses.map((course, idx) => {
-                const isExpanded = expandedCourseId === course.courseId;
-                const currentGrade = predictedGrades[course.courseId] || course.grade || "-";
-                const gradeColorClass = getGradeColor(currentGrade);
+                const courseKey = course.courseId || course.code;
+                const isExpanded = expandedCourseId === courseKey || expandedCourseId === course.courseId;
+                const currentGrade = predictedGrades[courseKey] || predictedGrades[course.courseId] || predictedGrades[course.code] || course.grade || "-";
                 const isLatest = semesters.length> 0 && semesters[0].id === selectedSem;
                 const isOfficiallyMarked = Boolean(
                   course.grade && course.grade.trim() !== "" && course.grade !== "-"
                 );
 
+                const isPredicted = Boolean(
+                  (predictedGrades[courseKey] || predictedGrades[course.courseId] || predictedGrades[course.code]) &&
+                  (predictedGrades[courseKey] || predictedGrades[course.courseId] || predictedGrades[course.code]) !== course.grade
+                );
+
                 return (
                   <div
                     key={idx} 
-                    className={`bg-(--bg-surface) rounded-4xl overflow-hidden border-2 border-(--border-main) transition-all flex flex-col ${
-                      isExpanded ? "ring-4 ring-(--accent-base)" : ""
+                    className={`bg-(--bg-surface) rounded-3xl overflow-hidden border-2 border-(--border-main) transition-all flex flex-col relative ${
+                      isExpanded ? "ring-2 ring-(--accent-base)" : ""
                     } ${course.notIncludedInGpa ? "opacity-70 hover:opacity-100" : ""}`}>
-                    <div className="p-5 flex flex-col gap-4 relative">
-                      {course.notIncludedInGpa && (
-                        <div className="absolute top-0 right-0 bg-(--border-dim) text-(--text-muted) text-[9px] font-bold uppercase px-2 py-1 rounded-bl-xl">
-                          Not in GPA
-                        </div>
+                    <div className="p-4 flex flex-col gap-3 relative text-left">
+                      {isPredicted && (
+                        <span className="absolute top-3 right-3 text-(--accent-base) font-black text-base select-none pointer-events-none leading-none">
+                          *
+                        </span>
                       )}
 
-                      <div className="flex justify-between items-start gap-4">
-                        <div className="flex-1 min-w-0 flex flex-col gap-3">
-                          <div className="flex items-center gap-2">
-                            <span className="bg-(--bg-highlight) text-(--text-muted) text-[10px] font-bold px-2 py-0.5 rounded font-mono uppercase">
-                              {course.code}
+                      <div className="flex justify-between items-start gap-3 text-left">
+                        <div className="flex-1 min-w-0 flex flex-col gap-1.5 text-left">
+                          <div className="flex items-center gap-1.5 flex-wrap text-left">
+                            <span className="bg-(--bg-highlight) text-(--text-muted) text-[10px] font-bold px-2.5 py-1 rounded-full uppercase inline-flex items-center justify-center leading-none">
+                              <span className="leading-none pt-px">{course.code}</span>
                             </span>
-                            <span className="bg-(--bg-highlight) text-(--text-muted) text-[10px] font-bold px-2 py-0.5 rounded font-mono uppercase shrink-0">
-                              {course.type}
+                            <span className="bg-(--bg-highlight) text-(--text-muted) text-[10px] font-bold px-2.5 py-1 rounded-full uppercase shrink-0 inline-flex items-center justify-center leading-none">
+                              <span className="leading-none pt-px">{course.type}</span>
                             </span>
+                            {course.notIncludedInGpa && (
+                              <span className="bg-(--bg-highlight) text-(--text-muted) text-[10px] font-bold px-2.5 py-1 rounded-full uppercase shrink-0 inline-flex items-center justify-center leading-none">
+                                <span className="leading-none pt-px">Not in GPA</span>
+                              </span>
+                            )}
                           </div>
-                          <div className="flex items-start gap-3">
-                            <h3 className="font-bold text-(--text-main) text-lg leading-tight font-expanded pr-4">
+                          <div className="flex items-start gap-2 text-left">
+                            <h3 className="font-bold text-(--text-main) text-base leading-tight font-expanded pr-2 text-left">
                               {course.title}
                             </h3>
                           </div>
                         </div>
-                        <GradeTicker
-                          currentGrade={currentGrade}
-                          gradeColorClass={gradeColorClass}
-                          readonly={!isLatest || isOfficiallyMarked}
-                          onChange={(val: string) =>
-                            setPredictedGrades((prev) => ({ ...prev, [course.courseId]: val }))
-                          }
-                          availableGrades={
-                            course.notIncludedInGpa
-                              ? ["P", "F"]
-                              : ["S", "A", "B", "C", "D", "E", "F", "N"]
-                          } />
+                        <div className="flex items-center gap-2.5 shrink-0">
+                          <span className="text-xs font-bold text-(--text-muted) leading-none select-none">
+                            {parseFloat(course.c || course.credits || "0").toString()} CR
+                          </span>
+                          <GradeTicker
+                            currentGrade={currentGrade}
+                            gradeColorClass="text-(--text-main) bg-(--bg-highlight)"
+                            readonly={!isLatest || isOfficiallyMarked}
+                            onChange={(val: string) =>
+                              setPredictedGrades((prev) => ({ ...prev, [courseKey]: val }))
+                            }
+                            availableGrades={
+                              course.notIncludedInGpa
+                                ? ["P", "F"]
+                                : ["S", "A", "B", "C", "D", "E", "F", "N"]
+                            } />
+                        </div>
                       </div>
 
-                      <div className="flex items-center justify-between mt-auto">
-                        <div className="flex gap-2">
-                          <div className="flex flex-col">
-                            <span className="text-[9px] text-(--text-muted) uppercase font-bold">
-                              Credits
+                      <div className="flex items-center justify-between mt-auto pt-1 gap-2">
+                        <div className="flex items-center gap-1.5 flex-wrap text-left">
+                          {course.gradingType && (
+                            <span className="bg-(--bg-highlight) text-(--text-muted) text-[10px] font-bold px-2.5 py-1 rounded-full uppercase inline-flex items-center justify-center leading-none">
+                              <span className="leading-none pt-px">{course.gradingType}</span>
                             </span>
-                            <span className="text-sm font-bold text-(--text-main)">
-                              {parseFloat(course.c || "0").toString()}
-                            </span>
-                          </div>
-                          <div className="w-px bg-(--text-main) opacity-10 my-1"></div>
-                          <div className="flex flex-col">
-                            <span className="text-[9px] text-(--text-muted) uppercase font-bold">
-                              Total
-                            </span>
-                            <span className="text-sm font-bold text-(--text-main)">
-                              {course.grandTotal}
-                            </span>
-                          </div>
-                          <div className="w-px bg-(--text-main) opacity-10 my-1"></div>
-                          <div className="flex flex-col">
-                            <span className="text-[9px] text-(--text-muted) uppercase font-bold">
-                              Type
-                            </span>
-                            <span className="text-sm font-bold text-(--text-main)">
-                              {course.gradingType}
-                            </span>
-                          </div>
+                          )}
                         </div>
 
-                        {course.courseId && (
-                          <button
-                            onClick={() => handleToggleDetails(course)}
-                            className="bg-(--bg-highlight) hover:bg-(--accent-base) hover:text-white text-(--text-main) w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-none active:scale-95">
-                            {isExpanded ? (
-                              <KeyboardArrowUp className="w-5 h-5" />
-                            ) : (
-                              <KeyboardArrowDown className="w-5 h-5" />
-                            )}
-                          </button>
-                        )}
+                        <div className="flex items-center gap-2 ml-auto">
+                          {course.grandTotal && course.grandTotal !== "-" && (
+                            <span className="font-black text-xl text-(--text-main) leading-none select-none">
+                              {course.grandTotal}
+                            </span>
+                          )}
+
+                          {course.courseId && (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleDetails(course)}
+                              className="bg-(--bg-highlight) hover:bg-(--accent-base) hover:text-(--text-inverse) text-(--text-main) w-7 h-7 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-none active:scale-95 border-none outline-none"
+                              title={isExpanded ? "Collapse course details" : "Expand course details"}>
+                              {isExpanded ? (
+                                <KeyboardArrowUp className="w-4.5 h-4.5" />
+                              ) : (
+                                <KeyboardArrowDown className="w-4.5 h-4.5" />
+                              )}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -314,7 +319,7 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                                               </td>
                                             ) : (
                                               <>
-                                                <td className="py-1.5 px-3 text-center font-mono">
+                                                <td className="py-1.5 px-3 text-center">
                                                   <span
                                                     className={`text-(--text-main) ${
                                                       isTotal ? "font-black text-sm" : "font-bold"
@@ -325,7 +330,7 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                                                     /{asm.maxMark}
                                                   </span>
                                                 </td>
-                                                <td className="py-1.5 px-3 text-right font-mono">
+                                                <td className="py-1.5 px-3 text-right">
                                                   <span
                                                     className={`text-(--accent-base) ${
                                                       isTotal ? "font-black text-sm" : "font-bold"
@@ -346,24 +351,27 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                                 </div>
                               )}
 
-                              <WhatIfGradeCalculator
-                                network={network}
-                                courseCode={course.code}
-                                classId={course.courseId}
-                                selectedSem={selectedSem}
-                                isLatestSem={
-                                  semesters.length> 0 && semesters[0].id === selectedSem
-                                }
-                                onGradePredicted={(g) => {
-                                  setPredictedGrades((prev) => {
-                                    if (g === null) {
-                                      const newPreds = { ...prev };
-                                      delete newPreds[course.courseId];
-                                      return newPreds;
-                                    }
-                                    return { ...prev, [course.courseId]: g };
-                                  });
-                                }} />
+                                <WhatIfGradeCalculator
+                                 network={network}
+                                 courseCode={course.code}
+                                 classId={course.courseId}
+                                 selectedSem={selectedSem}
+                                 isLatestSem={
+                                   semesters.length> 0 && semesters[0].id === selectedSem
+                                 }
+                                 onGradePredicted={(g) => {
+                                   setPredictedGrades((prev) => {
+                                     const next = { ...prev };
+                                     if (g === null) {
+                                       delete next[courseKey];
+                                       delete next[course.courseId];
+                                       delete next[course.code];
+                                     } else {
+                                       next[courseKey] = g;
+                                     }
+                                     return next;
+                                   });
+                                 }} />
                             </div>
                           )}
                         </div>
@@ -376,46 +384,45 @@ export const GradesPage: React.FC<GradesPageProps> = ({
           </div>
         ) : null}
 
-        {historyData && historyData.courses.length> 0 && (
-          <div
-            className="flex flex-col gap-10 max-w-5xl mx-auto pt-16">
+        {historyData && historyData.courses.length > 0 && (
+          <div className="flex flex-col gap-6 w-full max-w-5xl pt-6 text-left">
             {/* CGPA Details Table */}
             {historyData.cgpa && (
-              <div>
-                <div className="mb-4">
-                  <h2 className="text-2xl font-bold font-expanded text-(--text-main) mb-2">
-                    CGPA Details
+              <div className="text-left">
+                <div className="mb-2 text-left">
+                  <h2 className="text-lg font-bold font-expanded text-(--text-main) text-left">
+                    CGPA Summary
                   </h2>
                 </div>
-                <div className="overflow-x-auto custom-scrollbar rounded-4xl bg-(--bg-surface) shadow-none border-2 border-(--border-main) mb-12">
-                  <table className="w-full text-left text-sm min-w-150">
-                    <thead className="bg-(--bg-highlight) text-[10px] font-bold text-(--text-muted) uppercase">
+                <div className="overflow-x-auto custom-scrollbar rounded-3xl bg-(--bg-surface) shadow-none border-2 border-(--border-main) text-left">
+                  <table className="w-full text-left text-xs min-w-140">
+                    <thead className="bg-(--bg-highlight) text-[10px] font-bold text-(--text-muted) uppercase text-left">
                       <tr>
-                        <th className="p-4 pl-6 whitespace-nowrap">Credits Reg</th>
-                        <th className="p-4 whitespace-nowrap">Credits Earned</th>
-                        <th className="p-4 pr-6">CGPA</th>
+                        <th className="p-3 pl-5 whitespace-nowrap text-left">Credits Reg</th>
+                        <th className="p-3 whitespace-nowrap text-left">Credits Earned</th>
+                        <th className="p-3 pr-5 text-left">CGPA</th>
                         {["S", "A", "B", "C", "D", "E", "F", "N"].map((g) => (
-                          <th key={g} className="p-4 text-center">
+                          <th key={g} className="p-3 text-center">
                             {g}
                           </th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="font-mono">
+                    <tbody className="text-left">
                       <tr className="hover:bg-(--bg-highlight) transition-colors">
-                        <td className="p-4 pl-6 font-bold text-(--text-main)">
+                        <td className="p-3 pl-5 font-bold text-(--text-main) text-left">
                           {historyData.cgpa.creditsRegistered}
                         </td>
-                        <td className="p-4 font-bold text-(--text-main)">
+                        <td className="p-3 font-bold text-(--text-main) text-left">
                           {historyData.cgpa.creditsEarned}
                         </td>
-                        <td className="p-4 pr-6 font-bold text-(--accent-base) text-base">
+                        <td className="p-3 pr-5 font-bold text-(--accent-base) text-sm text-left">
                           {historyData.cgpa.cgpa}
                         </td>
                         {["s", "a", "b", "c", "d", "e", "f", "n"].map((g) => {
                           const val = (historyData.cgpa as any)[g];
                           return (
-                            <td key={g} className="p-4 text-center font-bold text-(--text-muted)">
+                            <td key={g} className="p-3 text-center font-bold text-(--text-muted)">
                               {val === "0" ? <span className="opacity-30">-</span> : val}
                             </td>
                           );
@@ -427,132 +434,186 @@ export const GradesPage: React.FC<GradesPageProps> = ({
               </div>
             )}
 
-            {/* Curriculum Details */}
-            {historyData.curriculum && historyData.curriculum.length> 0 && (
-              <div>
-                <div className="mb-4">
-                  <h2 className="text-2xl font-bold font-expanded text-(--text-main) mb-2">
-                    Curriculum Details
-                  </h2>
-                </div>
-                <div className="overflow-x-auto custom-scrollbar rounded-4xl bg-(--bg-surface) shadow-none border-2 border-(--border-main) mb-12">
-                  <table className="w-full text-left text-sm min-w-125">
-                    <thead className="bg-(--bg-highlight) text-[10px] font-bold text-(--text-muted) uppercase">
-                      <tr>
-                        <th className="p-4 pl-6">Curriculum Distribution Type</th>
-                        <th className="p-4 text-center">Credits Required</th>
-                        <th className="p-4 text-center pr-6">Credits Earned</th>
-                      </tr>
-                    </thead>
-                    <tbody className="font-mono">
-                      {historyData.curriculum.map((item, idx) => (
-                        <tr key={idx} className="hover:bg-(--bg-highlight) transition-colors group">
-                          <td className="p-4 pl-6 font-bold text-(--text-main)">{item.title}</td>
-                          <td className="p-4 text-center text-(--text-muted)">{item.required}</td>
-                          <td className="p-4 text-center font-bold text-(--text-main) pr-6 group-hover:text-(--accent-base) transition-colors">
-                            {item.earned}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
+            {/* Curriculum & Basket Details in Same Row */}
+            {((historyData.curriculum && historyData.curriculum.length > 0) || (historyData.baskets && historyData.baskets.length > 0)) && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 items-start text-left">
+                {/* Curriculum Details */}
+                {historyData.curriculum && historyData.curriculum.length > 0 && (
+                  <div className="flex flex-col gap-2 text-left">
+                    <div className="text-left">
+                      <h2 className="text-lg font-bold font-expanded text-(--text-main) text-left">
+                        Curriculum Details
+                      </h2>
+                    </div>
+                    <div className="overflow-x-auto custom-scrollbar rounded-3xl bg-(--bg-surface) shadow-none border-2 border-(--border-main) text-left">
+                      <table className="w-full text-left text-xs min-w-80">
+                        <thead className="bg-(--bg-highlight) text-[10px] font-bold text-(--text-muted) uppercase text-left">
+                          <tr>
+                            <th className="p-3 pl-5 text-left">Curriculum Distribution</th>
+                            <th className="p-3 pr-5 text-right">Credits (Earned / Required)</th>
+                          </tr>
+                        </thead>
+                        <tbody className="text-left">
+                          {historyData.curriculum.map((item, idx) => {
+                            const isTotal = item.title.toLowerCase().includes("total");
+                            return (
+                              <tr
+                                key={idx}
+                                className={`hover:bg-(--bg-highlight) transition-colors group ${
+                                  isTotal ? "font-bold bg-(--bg-highlight)/40" : ""
+                                }`}
+                              >
+                                <td className="p-3.5 pl-5 text-left align-middle">
+                                  <span className={`text-(--text-main) text-left ${isTotal ? "font-black" : "font-bold"}`}>
+                                    {item.title}
+                                  </span>
+                                </td>
+                                <td className="p-3.5 pr-5 text-right font-bold align-middle whitespace-nowrap">
+                                  <span className="text-(--text-main) group-hover:text-(--accent-base) transition-colors">
+                                    {item.earned}
+                                  </span>
+                                  <span className="text-(--text-muted) font-normal mx-1">/</span>
+                                  <span className="text-(--text-muted)">{item.required}</span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
 
-            {/* Basket Details */}
-            {historyData.baskets && historyData.baskets.length> 0 && (
-              <div>
-                <div className="mb-4">
-                  <h2 className="text-2xl font-bold font-expanded text-(--text-main) mb-2">
-                    Basket Details
-                  </h2>
-                </div>
-                <div className="overflow-x-auto custom-scrollbar rounded-4xl bg-(--bg-surface) shadow-none border-2 border-(--border-main) mb-12">
-                  <table className="w-full text-left text-sm min-w-150">
-                    <thead className="bg-(--bg-highlight) text-[10px] font-bold text-(--text-muted) uppercase">
-                      <tr>
-                        <th className="p-4 pl-6">Basket Title</th>
-                        <th className="p-4 text-center">Type</th>
-                        <th className="p-4 text-center">Credits Required</th>
-                        <th className="p-4 text-center pr-6">Credits Earned</th>
-                      </tr>
-                    </thead>
-                    <tbody className="font-mono">
-                      {historyData.baskets.map((item, idx) => (
-                        <tr key={idx} className="hover:bg-(--bg-highlight) transition-colors group">
-                          <td className="p-4 pl-6 font-bold text-(--text-main)">{item.title}</td>
-                          <td className="p-4 text-center text-(--text-muted)">
-                            <span className="bg-(--bg-highlight) text-(--text-muted) text-[10px] font-bold px-2 py-0.5 rounded uppercase">
-                              {item.distributionType}
-                            </span>
-                          </td>
-                          <td className="p-4 text-center text-(--text-muted)">{item.required}</td>
-                          <td className="p-4 text-center font-bold text-(--text-main) pr-6 group-hover:text-(--accent-base) transition-colors">
-                            {item.earned}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                {/* Basket Details */}
+                {historyData.baskets && historyData.baskets.length > 0 && (
+                  <div className="flex flex-col gap-2 text-left">
+                    <div className="text-left">
+                      <h2 className="text-lg font-bold font-expanded text-(--text-main) text-left">
+                        Basket Details
+                      </h2>
+                    </div>
+                    <div className="overflow-x-auto custom-scrollbar rounded-3xl bg-(--bg-surface) shadow-none border-2 border-(--border-main) text-left">
+                      <table className="w-full text-left text-xs min-w-80">
+                        <thead className="bg-(--bg-highlight) text-[10px] font-bold text-(--text-muted) uppercase text-left">
+                          <tr>
+                            <th className="p-3 pl-5 text-left">Basket Title</th>
+                            <th className="p-3 pr-5 text-right">Credits (Earned / Required)</th>
+                          </tr>
+                        </thead>
+                        <tbody className="text-left">
+                          {historyData.baskets.map((item, idx) => (
+                            <tr key={idx} className="hover:bg-(--bg-highlight) transition-colors group">
+                              <td className="p-3.5 pl-5 text-left align-middle">
+                                <div className="flex items-center gap-2 flex-wrap text-left">
+                                  <span className="font-bold text-(--text-main) text-left">{item.title}</span>
+                                  {item.distributionType && (
+                                    <span className="bg-(--bg-highlight) text-(--text-muted) text-[10px] font-bold px-2.5 py-1 rounded-full uppercase shrink-0 inline-flex items-center justify-center leading-none">
+                                      <span className="leading-none pt-px">{item.distributionType}</span>
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="p-3.5 pr-5 text-right font-bold align-middle whitespace-nowrap">
+                                <span className="text-(--text-main) group-hover:text-(--accent-base) transition-colors">
+                                  {item.earned}
+                                </span>
+                                <span className="text-(--text-muted) font-normal mx-1">/</span>
+                                <span className="text-(--text-muted)">{item.required}</span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
             {/* Course History List */}
-            <div>
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold font-expanded text-(--text-main) mb-2">
+            <div className="text-left">
+              <div className="mb-3 text-left">
+                <h2 className="text-lg font-bold font-expanded text-(--text-main) text-left">
                   Course History
                 </h2>
-                <p className="text-(--text-muted) text-sm font-bold uppercase">
-                  All completed courses
-                </p>
               </div>
-              <div>
-                <div className="overflow-x-auto custom-scrollbar pb-4">
-                  <table className="w-full text-left text-sm min-w-125 border-separate border-spacing-y-2">
-                    <tbody className="font-mono">
-                      {[...historyData.courses].reverse().map((course, idx) => {
-                        const gradeColorClass = getGradeColor(course.grade);
+              <div className="overflow-x-auto custom-scrollbar pb-2 text-left">
+                <table className="w-full text-left text-xs min-w-120 border-separate border-spacing-y-1">
+                  <tbody className="text-left">
+                    {(() => {
+                      const coursesList = [...historyData.courses].reverse();
+                      const count = coursesList.length;
+
+                      return coursesList.map((course, idx) => {
+                        const isFirst = idx === 0;
+                        const isLast = idx === count - 1;
+
+                        const leftRounding =
+                          isFirst && isLast
+                            ? "rounded-l-2xl"
+                            : isFirst
+                            ? "rounded-tl-2xl rounded-bl-md"
+                            : isLast
+                            ? "rounded-tl-md rounded-bl-2xl"
+                            : "rounded-l-md";
+
+                        const rightRounding =
+                          isFirst && isLast
+                            ? "rounded-r-2xl"
+                            : isFirst
+                            ? "rounded-tr-2xl rounded-br-md"
+                            : isLast
+                            ? "rounded-tr-md rounded-br-2xl"
+                            : "rounded-r-md";
+
                         return (
                           <tr
                             key={idx}
-                            className="bg-(--bg-surface) hover:bg-(--bg-highlight) transition-colors group">
-                            <td className="p-5 pl-6 rounded-l-3xl">
-                              <div className="flex flex-col gap-2">
-                                <div className="flex items-start gap-3">
-                                  <span className="font-bold text-(--text-main) group-hover:text-(--accent-base) transition-colors text-base font-expanded">
+                            className="bg-(--bg-surface) hover:bg-(--bg-highlight) transition-colors group text-left">
+                            {/* 1. Exam Date on left area */}
+                            <td className={`p-3.5 pl-4 ${leftRounding} text-left whitespace-nowrap align-middle`}>
+                              <span className="text-[11px] font-bold text-(--text-muted) uppercase">
+                                {course.examMonth.replace("-", " ")}
+                              </span>
+                            </td>
+
+                            {/* 2. Course details */}
+                            <td className="p-3.5 text-left align-middle">
+                              <div className="flex flex-col gap-0.5 text-left">
+                                <div className="flex items-start gap-2 text-left">
+                                  <span className="font-bold text-(--text-main) group-hover:text-(--accent-base) transition-colors text-sm font-expanded text-left">
                                     {course.title}
                                   </span>
-                                  <span className="bg-(--bg-highlight) text-(--text-muted) text-[10px] font-bold px-2 py-0.5 rounded font-mono uppercase shrink-0">
-                                    {course.type}
+                                  <span className="bg-(--bg-highlight) text-(--text-muted) text-[10px] font-bold px-2.5 py-1 rounded-full uppercase shrink-0 inline-flex items-center justify-center leading-none">
+                                    <span className="leading-none pt-px">{course.type}</span>
                                   </span>
                                 </div>
-                                <span className="text-xs text-(--text-muted)">{course.code}</span>
+                                <span className="text-[11px] text-(--text-muted) text-left">{course.code}</span>
                               </div>
                             </td>
-                            <td className="p-5 text-center font-bold text-(--text-main)">
-                              {parseFloat(course.credits || "0").toString()}{" "}
-                              <span className="text-[10px] uppercase font-bold text-(--text-muted) ml-1 hidden sm:inline">
+
+                            {/* 3. Credits */}
+                            <td className="p-3.5 text-center font-bold text-(--text-main) align-middle whitespace-nowrap">
+                              <span className="text-sm font-bold">
+                                {parseFloat(course.credits || "0").toString()}
+                              </span>{" "}
+                              <span className="text-[10px] uppercase font-bold text-(--text-muted) ml-0.5">
                                 CR
                               </span>
                             </td>
-                            <td className="p-5 text-center">
-                              <span
-                                className={`inline-flex w-8 h-8 rounded-lg items-center justify-center font-black text-sm leading-none pt-0.5 shadow-none mx-auto ${gradeColorClass}`}>
+
+                            {/* 4. Large Grade Letter with NO background */}
+                            <td className={`p-3.5 pr-5 text-right ${rightRounding} align-middle whitespace-nowrap`}>
+                              <span className="font-black text-2xl sm:text-3xl font-expanded bg-transparent text-(--text-main) group-hover:text-(--accent-base) leading-none select-none">
                                 {course.grade}
                               </span>
                             </td>
-                            <td className="p-5 text-(--text-muted) font-bold text-xs uppercase rounded-r-3xl pr-6 whitespace-nowrap">
-                              {course.examMonth.replace("-", " ")}
-                            </td>
                           </tr>
                         );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                      });
+                    })()}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>

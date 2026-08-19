@@ -22,7 +22,7 @@ import {
   Public,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 
-import Barcode from "react-barcode";
+import { Barcode } from "../components/common/Barcode";
 
 const CopyableText = ({
   text,

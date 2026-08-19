@@ -300,7 +300,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
                 <button
                   key={basket}
                   onClick={() => setSelectedBasket(basket)}
-                  className={`px-4 py-2 rounded-2xl text-xs md:text-sm font-bold uppercase tracking-wider whitespace-nowrap transition-all cursor-pointer border ${
+                  className={`px-4 py-2 rounded-2xl text-xs md:text-sm font-bold uppercase whitespace-nowrap transition-all cursor-pointer border ${
                     activeBasket === basket
                       ? "bg-(--accent-base) text-(--text-inverse) border-(--accent-base)"
                       : "bg-(--bg-surface) text-(--text-muted) border-(--border-dim)/40 hover:bg-(--bg-highlight) hover:text-(--text-main)"

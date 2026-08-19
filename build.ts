@@ -75,6 +75,22 @@ safeCleanDir(DIST);
 try { if (!existsSync(DIST)) mkdirSync(DIST, { recursive: true }); } catch {}
 try { if (!existsSync(resolve(DIST, "assets"))) mkdirSync(resolve(DIST, "assets"), { recursive: true }); } catch {}
 
+const commonDefine = {
+  __BUILD_NUMBER__: JSON.stringify(buildNumber),
+  "process.env.NODE_ENV": JSON.stringify("production"),
+  "import.meta.url": '""',
+  "import.meta": "{}",
+};
+
+const ignoreCssPlugin = {
+  name: "ignore-css",
+  setup(build: import("bun").PluginBuilder) {
+    build.onResolve({ filter: /\.css$/ }, (args: import("bun").OnResolveArgs) => {
+      return { path: args.path, external: true };
+    });
+  },
+};
+
 // ── Step 1: Build content scripts (IIFE, no splitting) ──────────────
 console.log("Building content scripts...");
 const contentBuild = await Bun.build({
@@ -90,20 +106,8 @@ const contentBuild = await Bun.build({
   splitting: false,
   minify: IS_PROD,
   naming: "[name].[ext]",
-  define: {
-    __BUILD_NUMBER__: JSON.stringify(buildNumber),
-    "process.env.NODE_ENV": JSON.stringify(IS_PROD ? "production" : "production"),
-    "import.meta.url": '""',
-    "import.meta": "{}",
-  },
-  plugins: [{
-    name: "ignore-css",
-    setup(build: import("bun").PluginBuilder) {
-      build.onResolve({ filter: /\.css$/ }, (args: import("bun").OnResolveArgs) => {
-        return { path: args.path, external: true };
-      });
-    },
-  }],
+  define: commonDefine,
+  plugins: [ignoreCssPlugin],
 });
 
 if (!contentBuild.success) {
@@ -125,21 +129,8 @@ const popupBuild = await Bun.build({
   splitting: true,
   minify: IS_PROD,
   naming: "[name].[ext]",
-  define: {
-    __BUILD_NUMBER__: JSON.stringify(buildNumber),
-    "process.env.NODE_ENV": JSON.stringify(IS_PROD ? "production" : "production"),
-    "import.meta.url": '""',
-    "import.meta": "{}",
-  },
-  // CSS handled by Tailwind CLI — tell Bun to ignore .css imports
-  plugins: [{
-    name: "ignore-css",
-    setup(build: import("bun").PluginBuilder) {
-      build.onResolve({ filter: /\.css$/ }, (args: import("bun").OnResolveArgs) => {
-        return { path: args.path, external: true };
-      });
-    },
-  }],
+  define: commonDefine,
+  plugins: [ignoreCssPlugin],
 });
 
 if (!popupBuild.success) {
@@ -166,47 +157,26 @@ const sanitizeBundle = (filePath: string) => {
 // ── Step 3: Tailwind CSS via CLI ────────────────────────────────────
 console.log("Building CSS with Tailwind...");
 
-// input.css → dist/style.css
-const tailwindProc = Bun.spawnSync([
-  "bunx", "tailwindcss",
-  "-i", resolve(ROOT, "src/input.css"),
-  "-o", resolve(DIST, "style.css"),
-  ...(IS_PROD ? ["--minify"] : []),
-], { cwd: ROOT, stdio: ["inherit", "inherit", "inherit"] });
+const cssBuilds: [string, string, string][] = [
+  ["src/input.css", "style.css", "style.css"],
+  ["src/login-theme.css", "login.css", "login.css"],
+  ["src/styles/prelogin.css", "prelogin.css", "prelogin.css"],
+];
 
-if (tailwindProc.exitCode !== 0) {
-  console.error("Tailwind build failed for input.css");
-  process.exit(1);
+for (const [srcRel, outRel, label] of cssBuilds) {
+  const proc = Bun.spawnSync([
+    "bunx", "tailwindcss",
+    "-i", resolve(ROOT, srcRel),
+    "-o", resolve(DIST, outRel),
+    ...(IS_PROD ? ["--minify"] : []),
+  ], { cwd: ROOT, stdio: ["inherit", "inherit", "inherit"] });
+
+  if (proc.exitCode !== 0) {
+    console.error(`Tailwind build failed for ${srcRel}`);
+    process.exit(1);
+  }
+  console.log(`  - ${label}`);
 }
-console.log("  - style.css");
-
-// login-theme.css → dist/login.css
-const loginCssProc = Bun.spawnSync([
-  "bunx", "tailwindcss",
-  "-i", resolve(ROOT, "src/login-theme.css"),
-  "-o", resolve(DIST, "login.css"),
-  ...(IS_PROD ? ["--minify"] : []),
-], { cwd: ROOT, stdio: ["inherit", "inherit", "inherit"] });
-
-if (loginCssProc.exitCode !== 0) {
-  console.error("Tailwind build failed for login-theme.css");
-  process.exit(1);
-}
-console.log("  - login.css");
-
-// prelogin.css → dist/prelogin.css
-const preloginCssProc = Bun.spawnSync([
-  "bunx", "tailwindcss",
-  "-i", resolve(ROOT, "src/styles/prelogin.css"),
-  "-o", resolve(DIST, "prelogin.css"),
-  ...(IS_PROD ? ["--minify"] : []),
-], { cwd: ROOT, stdio: ["inherit", "inherit", "inherit"] });
-
-if (preloginCssProc.exitCode !== 0) {
-  console.error("Tailwind build failed for prelogin.css");
-  process.exit(1);
-}
-console.log("  - prelogin.css");
 
 // ── Step 4: Copy + rewrite HTML files ───────────────────────────────
 console.log("Processing HTML...");

@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { School, CalendarMonth } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
+import React, { useMemo } from "react";
+import { School } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 
 import { AppSettings } from "../../utils/settings-store";
 import { Card } from "../ui/Card";
@@ -44,14 +44,6 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
     ? nonGradedNum.toString().replace(/\.0$/, "")
     : stats.nonGraded || "0";
 
-  const overallAttPct = useMemo(() => {
-    if (!attendance || attendance.length === 0) return "--%";
-    const valid = attendance.filter((a) => !isNaN(parseFloat(a.attendance)));
-    if (valid.length === 0) return "--%";
-    const sum = valid.reduce((acc, a) => acc + parseFloat(a.attendance), 0);
-    return Math.round(sum / valid.length) + "%";
-  }, [attendance]);
-
   const pendingAssignments = useMemo(() => {
     return assignments
       .filter((a) => a.status !== "submitted")
@@ -69,6 +61,8 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
       });
   }, [assignments]);
 
+  const cgpaHoverTitle = `${gradedStr} + ${nonGradedStr} NGCR / ${stats.totalCredits || "..."} Credits${stats.placement ? ` • ${stats.placement}` : ""}`;
+
   // Mobile Merged CGPA & Credits Card Rendering (< lg)
   if (isMobileFeed) {
     return (
@@ -80,13 +74,23 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
             category: "Examinations",
           })
         }
-        className={`w-full bg-(--bg-highlight) rounded-3xl p-5 sm:p-6 min-h-[120px] flex flex-col justify-between relative z-30 cursor-pointer overflow-hidden border-2 border-(--border-main) shadow-(--brutal-shadow-sm) hover:shadow-(--brutal-shadow-hover) hover:bg-(--bg-surface) transition-all ${className || ""}`}
+        className={`w-full bg-(--bg-highlight) rounded-3xl p-5 sm:p-6 min-h-[120px] flex flex-col justify-between relative z-30 cursor-pointer overflow-hidden border-2 border-(--border-main) shadow-(--brutal-shadow-sm) hover:shadow-(--brutal-shadow-hover) transition-all ${className || ""}`}
       >
         <div className="flex justify-between items-start my-auto">
           <div className="flex flex-col">
-            <span className="text-[0.625rem] font-expanded font-bold uppercase text-(--text-muted) leading-none mb-2">
-              CGPA
-            </span>
+            <div className="flex items-center gap-1.5 mb-2">
+              <span className="text-[0.625rem] font-expanded font-bold uppercase text-(--text-muted) leading-none">
+                CGPA
+              </span>
+              <span
+                onClick={(e) => e.stopPropagation()}
+                title={cgpaHoverTitle}
+                aria-label={cgpaHoverTitle}
+                className="inline-flex items-center justify-center text-(--text-muted) hover:text-(--text-main) opacity-85 hover:opacity-100 transition-opacity cursor-help select-none text-sm font-black leading-none"
+              >
+                ?
+              </span>
+            </div>
             <div
               className={`text-3xl sm:text-4xl font-black font-expanded leading-none text-(--text-main) transition-all duration-fast ${
                 settings.blurCgpa ? "blur-md hover:blur-none" : ""
@@ -108,30 +112,14 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
             </div>
           </div>
         </div>
-
-        {stats.placement && (
-          <div
-            className={`mt-3 text-[0.625rem] font-black uppercase text-center leading-none ${
-              stats.placement.toLowerCase().includes("eligible")
-                ? "text-(--att-safe)"
-                : "text-(--att-danger)"
-            }`}
-          >
-            {stats.placement}
-          </div>
-        )}
       </Card>
     );
   }
 
-  const [isCgpaHovered, setIsCgpaHovered] = useState(false);
-
-  // Original Desktop Right Column View (commit b11e407)
+  // Original Desktop Right Column View
   return (
     <div className={`hidden lg:flex w-full lg:w-[27%] xl:w-[24%] flex-col shrink-0 h-auto lg:h-full overflow-y-auto custom-scrollbar relative z-30 pt-20 md:pt-23 lg:pt-25 pb-4 md:pb-6 lg:pb-8 pl-2 lg:pl-3 pr-4 lg:pr-6 gap-4 ${className || ""}`}>
       <Card
-        onMouseEnter={() => setIsCgpaHovered(true)}
-        onMouseLeave={() => setIsCgpaHovered(false)}
         onClick={() =>
           onNavigate({
             title: "Grades View",
@@ -139,80 +127,47 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
             category: "Examinations",
           })
         }
-        className={`cgpa-card-group group shrink-0 h-auto bg-(--bg-highlight) rounded-4xl p-5 flex flex-col relative z-30 cursor-pointer overflow-hidden border-2 border-(--border-main) hover:border-(--accent-base) hover:bg-(--bg-surface) transition-all duration-300 ease-out ${isCgpaHovered ? "is-hovered" : ""}`}
+        className={`group shrink-0 h-auto bg-(--bg-highlight) rounded-4xl p-5 flex flex-col relative z-30 cursor-pointer overflow-hidden border-2 border-(--border-main) shadow-(--brutal-shadow-sm) hover:shadow-(--brutal-shadow-hover) transition-all ${className || ""}`}
       >
-        {/* Credits Hover Target */}
-        <div className="flex flex-col">
-          {/* Expanded Split View */}
-          <div className="cgpa-expand-section overflow-hidden relative z-10">
-            <div className="overflow-hidden min-h-0">
-              <div className="flex flex-col items-center w-full">
-                <div className="text-[0.625rem] font-expanded font-bold uppercase text-(--text-muted) mb-3 leading-none">
-                  Credits
-                </div>
-
-                <div className="flex flex-col items-center">
-                  <div className="flex items-center gap-2 text-3xl font-black font-expanded leading-none">
-                    <span>{gradedStr}</span>
-                    <span className="text-xl text-(--text-muted)">+</span>
-                    <div className="flex flex-col items-center">
-                      <span>{nonGradedStr}</span>
-                      <span className="text-[0.5rem] font-bold text-(--text-muted) uppercase tracking-wider -mt-0.5 leading-none">
-                        NGCR
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="w-24 h-0.75 rounded-full bg-(--text-main) my-3"></div>
-
-                  <div className="text-3xl font-black font-expanded leading-none text-(--text-muted)">
-                    {stats.totalCredits}
-                  </div>
-                </div>
-
-                {stats.placement && (
-                  <div
-                    className={`mt-4 text-[0.625rem] font-black uppercase text-center leading-none ${stats.placement.toLowerCase().includes("eligible") ? "text-(--att-safe)" : "text-(--att-danger)"}`}
-                  >
-                    {stats.placement}
-                  </div>
-                )}
-              </div>
+        {/* Credits Row */}
+        <div className="flex items-start justify-end relative z-10 mb-3">
+          <div className="text-right flex flex-col items-end">
+            <div className="text-[0.625rem] font-expanded font-bold uppercase text-(--text-muted) leading-none mb-1">
+              Credits
             </div>
-          </div>
-
-          {/* Resting Combined View */}
-          <div className="cgpa-resting-section overflow-hidden relative z-10">
-            <div className="overflow-hidden min-h-0 flex items-center justify-end">
-              <div className="text-right">
-                <div className="text-[0.625rem] font-expanded font-bold uppercase text-(--text-muted) leading-none">
-                  Credits
-                </div>
-                <div className="text-3xl font-black font-expanded leading-none whitespace-nowrap">
-                  {totalEarnedStr}{" "}
-                  <span className="text-xl text-(--text-muted)">
-                    / {stats.totalCredits || "..."}
-                  </span>
-                </div>
-              </div>
+            <div className="text-3xl font-black font-expanded leading-none whitespace-nowrap">
+              {totalEarnedStr}{" "}
+              <span className="text-xl text-(--text-muted)">
+                / {stats.totalCredits || "..."}
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Persistent CGPA */}
-        <div
-          className="flex flex-col relative z-10 transition-transform duration-300 ease-out group-hover:translate-y-1"
-        >
+        {/* CGPA Row */}
+        <div className="flex flex-col relative z-10">
           <div className="flex items-center justify-between">
-            <School className="w-10 h-10 text-(--text-main) mix-blend-overlay opacity-80 transition-transform duration-300 group-hover:scale-110" />
+            <div className="relative inline-flex items-center">
+              <School className="w-10 h-10 text-(--text-main) mix-blend-overlay opacity-80" />
+              <span
+                onClick={(e) => e.stopPropagation()}
+                title={cgpaHoverTitle}
+                aria-label={cgpaHoverTitle}
+                className="absolute -top-1 -right-2.5 inline-flex items-center justify-center text-(--text-muted) hover:text-(--text-main) opacity-85 hover:opacity-100 transition-opacity cursor-help select-none text-sm font-black leading-none"
+              >
+                ?
+              </span>
+            </div>
             <div className="text-right">
               <div className="text-[0.625rem] font-expanded font-bold uppercase text-(--text-muted) leading-none">
                 CGPA
               </div>
               <div
-                className={`text-3xl font-black font-expanded leading-none transition-all duration-fast ${settings.blurCgpa ? "blur-md hover:blur-none" : ""}`}
+                className={`text-3xl font-black font-expanded leading-none transition-all duration-fast ${
+                  settings.blurCgpa ? "blur-md hover:blur-none" : ""
+                }`}
               >
-                {stats.cgpa}
+                {stats.cgpa || "--"}
               </div>
             </div>
           </div>
@@ -226,7 +181,7 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
             url: "examinations/StudentDA",
             category: "Examinations"
           })}
-          className="shrink-0 bg-(--bg-highlight) rounded-4xl flex flex-col relative z-30 cursor-pointer overflow-hidden border-2 border-transparent transition-all h-fit"
+          className="shrink-0 bg-(--bg-highlight) rounded-4xl flex flex-col relative z-30 cursor-pointer overflow-hidden border-2 border-transparent hover:border-(--border-main) transition-all h-fit"
         >
           <div className="px-5 pt-5 border-b-2 border-(--border-main) flex justify-between items-center shrink-0">
             <div className="flex flex-col">

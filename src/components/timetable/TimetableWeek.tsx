@@ -47,8 +47,11 @@ export const TimetableWeek = React.memo(({
 
   useEffect(() => {
     const handleDocumentClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const isTileButton = target.closest('button[data-tile="true"]');
+      const target = e.target as HTMLElement | null;
+      const isTileButton =
+        target && typeof target.closest === "function"
+          ? target.closest('button[data-tile="true"]')
+          : null;
       if (isTileButton) return;
       setSelectedCourse(null);
     };

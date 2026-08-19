@@ -18,11 +18,15 @@ import {
   Person,
   Settings as SettingsIcon,
   AppRegistration,
+  GridView,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 
 export const getCategoryIcon = (title: string, url: string = "") => {
   const t = title.toLowerCase();
   const u = url.toLowerCase();
+
+  // Made for retop Category
+  if (t.includes("made for retop") || t.includes("retop")) return GridView;
 
   // Core Links
   if (t.includes("time table") || u.includes("studenttimetable"))

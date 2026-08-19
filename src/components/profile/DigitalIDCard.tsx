@@ -2,7 +2,7 @@ import React from "react";
 import { StudentProfile } from "../../types/vtop";
 import { VitLogo } from "../VitLogo";
 import { Person } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
-import Barcode from "react-barcode";
+import { Barcode } from "../common/Barcode";
 
 const toTitleCase = (str: string) => {
   if (!str) return "";

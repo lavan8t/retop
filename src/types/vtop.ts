@@ -1,4 +1,4 @@
-export type ViewType = "dashboard" | "timetable" | "curriculum" | "marks" | "grades" | "profile" | "settings" | "coursePage" | "calendar" | "attendance" | "digitalAssignments" | "examSchedule" | "notes" | "lateHour" | "content";
+export type ViewType = "dashboard" | "timetable" | "curriculum" | "marks" | "grades" | "profile" | "settings" | "coursePage" | "calendar" | "attendance" | "digitalAssignments" | "examSchedule" | "lateHour" | "content";
 
 export interface QuickLink {
   title: string;
@@ -437,9 +437,36 @@ export interface BasketDetails {
   earned: string;
 }
 
+export interface GradeHistoryStudentInfo {
+  regNo: string;
+  name: string;
+  programme: string;
+  programmeMode: string;
+  studySystem: string;
+  gender: string;
+  yearJoined: string;
+  eduStatus: string;
+  school: string;
+  campus: string;
+}
+
 export interface GradeHistoryData {
+  studentInfo?: GradeHistoryStudentInfo | null;
   courses: GradeHistoryCourse[];
   cgpa: CGPADetails | null;
   curriculum: CurriculumDistribution[];
   baskets: BasketDetails[];
+  legend?: Record<string, string>;
+}
+
+export interface LateHourStatusEntry {
+  id: string;
+  venue: string;
+  eventType: string;
+  details: string;
+  appliedTo: string;
+  fromDate: string;
+  toDate: string;
+  time: string;
+  status: string;
 }

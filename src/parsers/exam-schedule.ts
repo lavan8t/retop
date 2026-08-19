@@ -62,7 +62,10 @@ export function isSameDayExam(examDateStr: string, targetDate: Date): boolean {
   return false;
 }
 
-import { parseHTMLFast } from "../utils/parser-utils";
+import { parseHTMLFast, validateParsed, wrapWithSchemaVersion, Versioned } from "../utils/parser-utils";
+import { ExamScheduleListSchema } from "../schemas";
+
+export const EXAM_SCHEDULE_SCHEMA_VERSION = 1;
 
 export function parseExamSemesters(html: string): { id: string; label: string }[] {
   const doc = parseHTMLFast(html);
@@ -86,7 +89,12 @@ export function parseExamSemesters(html: string): { id: string; label: string }[
   return semesters;
 }
 
-export function parseExamScheduleData(html: string): { groups: ExamGroup[]; reportingNote: string } {
+export function parseExamSchedule(html: string): Versioned<ExamGroup[]> {
+  const { groups } = parseExamScheduleData(html);
+  return groups;
+}
+
+export function parseExamScheduleData(html: string): { groups: Versioned<ExamGroup[]>; reportingNote: string } {
   const doc = parseHTMLFast(html);
 
   // Extract reporting note
@@ -100,7 +108,12 @@ export function parseExamScheduleData(html: string): { groups: ExamGroup[]; repo
   });
 
   const table = doc.querySelector(".customTable, table");
-  if (!table) return { groups: [], reportingNote };
+  if (!table) {
+    return wrapWithSchemaVersion(
+      { groups: validateParsed(ExamScheduleListSchema, [], "examSchedule"), reportingNote },
+      "examSchedule",
+    );
+  }
 
   const rows = table.querySelectorAll("tr");
   const groups: ExamGroup[] = [];
@@ -164,5 +177,6 @@ export function parseExamScheduleData(html: string): { groups: ExamGroup[]; repo
     }
   });
 
-  return { groups, reportingNote };
+  const validatedGroups = validateParsed(ExamScheduleListSchema, groups, "examSchedule");
+  return wrapWithSchemaVersion({ groups: validatedGroups, reportingNote }, "examSchedule");
 }

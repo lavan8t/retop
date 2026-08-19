@@ -3,14 +3,8 @@ import {
   Add,
   History,
   CheckCircle,
-  Cancel,
   HourglassEmpty,
-  Schedule,
-  Person,
-  Category,
-  Send,
   Warning,
-  CalendarMonth,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { VTOPNetwork } from "../utils/network";
 import { EmptyState } from "../components/EmptyState";
@@ -18,26 +12,18 @@ import {
   SearchableDropdown,
   SearchableOption,
 } from "../components/ui/SearchableDropdown";
+import { EntryCard } from "../components/late-hour/EntryCard";
+import { LateHourStatusEntry } from "../types/vtop";
+import {
+  parseLateHourSelectOpts,
+  parseLateHourRows,
+  parseLateHourResponseMsg,
+} from "../parsers/late-hour";
+import { showAlertDialog } from "../components/ui/AlertDialog";
 
 interface LateHourPageProps {
   network: VTOPNetwork;
 }
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-interface StatusEntry {
-  id: string; // lateHourId value (e.g. P170826404414)
-  venue: string;
-  eventType: string;
-  details: string;
-  appliedTo: string;
-  fromDate: string;
-  toDate: string;
-  time: string; // combined "21:00 to 01:00"
-  status: string;
-}
-
-// ── Static Option Lists ───────────────────────────────────────────────────────
 
 const DEFAULT_TIME_OPTS: SearchableOption[] = [
   { value: "08:30 PM", label: "08:30 PM" },
@@ -79,211 +65,6 @@ const EVENT_TYPE_OPTS: SearchableOption[] = [
   { value: "LHE4", label: "Workshop and Conferences" },
 ];
 
-// ── Parsers ───────────────────────────────────────────────────────────────────
-
-function parseOpts(html: string, selectId: string): SearchableOption[] {
-  const re = new RegExp(
-    `<select[^>]*id=["']${selectId}["'][^>]*>([\\s\\S]*?)<\\/select>`,
-    "i",
-  );
-  const m = html.match(re);
-  if (!m) return [];
-  const opts: SearchableOption[] = [];
-  const optRe = /<option\s+value=["']([^"']*)["'][^>]*>([\s\S]*?)<\/option>/gi;
-  let o: RegExpExecArray | null;
-  while ((o = optRe.exec(m[1])) !== null) {
-    const val = o[1].trim();
-    const lbl = o[2].trim().replace(/&amp;/g, "&").replace(/<[^>]+>/g, "");
-    if (val && !["-select-", "select", "--select--"].includes(val.toLowerCase())) {
-      opts.push({ value: val, label: lbl });
-    }
-  }
-  return opts;
-}
-
-function parseRows(html: string): StatusEntry[] {
-  const rows: StatusEntry[] = [];
-  const rowRe = /<tr>([\s\S]*?)<\/tr>/gi;
-  const tdRe = /<td[^>]*>([\s\S]*?)<\/td>/gi;
-  const clean = (s: string) => s.replace(/<[^>]+>/g, "").trim();
-
-  let rowM: RegExpExecArray | null;
-  while ((rowM = rowRe.exec(html)) !== null) {
-    const rowHtml = rowM[1];
-    if (!rowHtml.includes("lateHourId")) continue;
-
-    const tds: string[] = [];
-    let tdM: RegExpExecArray | null;
-    while ((tdM = tdRe.exec(rowHtml)) !== null) {
-      tds.push(tdM[1].trim());
-    }
-    if (tds.length < 8) continue;
-
-    const idMatch =
-      rowHtml.match(/name=["']lateHourId\d*["'][^>]*value=["']([^"']+)["']/i) ||
-      rowHtml.match(/value=["'](P\d+)["']/i) ||
-      rowHtml.match(/lateHourId=([^&"'\s]+)/i);
-
-    rows.push({
-      id: idMatch?.[1] ?? "",
-      venue: clean(tds[2] ?? tds[1] ?? ""),
-      eventType: clean(tds[3] ?? tds[2] ?? ""),
-      details: clean(tds[4] ?? tds[3] ?? ""),
-      appliedTo: clean(tds[5] ?? tds[4] ?? ""),
-      fromDate: clean(tds[6] ?? tds[5] ?? ""),
-      toDate: clean(tds[7] ?? tds[6] ?? ""),
-      time: clean(tds[8] ?? tds[7] ?? ""),
-      status: clean(tds[9] ?? tds[8] ?? tds[tds.length - 1] ?? ""),
-    });
-  }
-  return rows;
-}
-
-function parseResponseMsg(html: string): { ok: boolean; text: string } {
-  const dataMsg =
-    html
-      .match(/id=["']DataBlockMessage["'][^>]*>\s*([\s\S]*?)\s*<\/p>/i)?.[1]
-      ?.replace(/<[^>]+>/g, "")
-      .trim() ?? "";
-  const appMsg =
-    html
-      .match(/id=["']ApplicationBlockMessage["'][^>]*>\s*([\s\S]*?)\s*<\/p>/i)?.[1]
-      ?.replace(/<[^>]+>/g, "")
-      .trim() ?? "";
-
-  const msg = dataMsg || appMsg;
-  const ok = msg.toUpperCase().includes("SUCCESSFUL");
-  const failed =
-    msg.toUpperCase().includes("FAILED") ||
-    msg.toLowerCase().includes("unable to process");
-
-  return {
-    ok: ok || (!failed && !msg),
-    text:
-      msg ||
-      (ok
-        ? "Request submitted successfully."
-        : "Unable to process request on VTOP."),
-  };
-}
-
-// ── Sub-components ────────────────────────────────────────────────────────────
-
-function StatusBadge({ status }: { status: string }) {
-  const s = status.toLowerCase();
-  if (s.includes("approved") || s.includes("successful")) {
-    return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-(--att-safe-container) text-(--att-safe)">
-        <CheckCircle className="w-3 h-3" />
-        Approved
-      </span>
-    );
-  }
-  if (s.includes("cancel") || s.includes("reject")) {
-    return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-(--att-danger-container) text-(--att-danger)">
-        <Cancel className="w-3 h-3" />
-        Cancelled
-      </span>
-    );
-  }
-  if (s.includes("pending") || s.includes("raised")) {
-    return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-(--att-warn-container) text-(--att-warn)">
-        <HourglassEmpty className="w-3 h-3" />
-        Pending
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-(--bg-highlight) text-(--text-muted)">
-      {status || "—"}
-    </span>
-  );
-}
-
-function EntryCard({
-  entry,
-  onCancel,
-  cancelling = false,
-}: {
-  entry: StatusEntry;
-  onCancel?: (id: string) => void;
-  cancelling?: boolean;
-}) {
-  const isPending =
-    entry.status.toLowerCase().includes("pending") ||
-    entry.status.toLowerCase().includes("raised");
-
-  return (
-    <div className="bg-(--bg-surface) border border-(--border-dim)/40 rounded-3xl p-4 md:p-5 flex flex-col gap-3 hover:bg-(--bg-highlight) transition-colors">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div className="flex-1 min-w-0">
-          <p className="text-base font-bold text-(--text-main) truncate">
-            {entry.venue || "—"}
-          </p>
-          <p className="text-xs text-(--text-muted) mt-0.5 line-clamp-2">
-            {entry.details || "—"}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <StatusBadge status={entry.status} />
-          {onCancel && isPending && entry.id && (
-            <button
-              onClick={() => onCancel(entry.id)}
-              disabled={cancelling}
-              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-(--att-danger-container) text-(--att-danger) hover:opacity-80 transition-opacity cursor-pointer disabled:opacity-50">
-              <Cancel className="w-3 h-3" />
-              {cancelling ? "Cancelling..." : "Cancel"}
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="inline-flex items-center gap-1.5 text-[11px] font-mono text-(--text-muted)">
-          <Category className="w-3 h-3 text-(--accent-base)" />
-          {entry.eventType || "—"}
-        </span>
-        <span className="inline-flex items-center gap-1.5 text-[11px] font-mono text-(--text-muted)">
-          <Person className="w-3 h-3 text-(--accent-base)" />
-          {entry.appliedTo || "—"}
-        </span>
-      </div>
-
-      {/* Date + time timeline pill */}
-      <div className="flex items-center gap-0 w-full">
-        <div className="px-3.5 py-2 rounded-full bg-(--bg-main) border border-r-0 border-(--border-dim)/60 text-xs font-mono font-bold flex flex-col items-center justify-center shrink-0">
-          <span className="text-[9px] font-bold text-(--text-muted) uppercase leading-none mb-0.5">
-            From
-          </span>
-          <span className="text-(--text-main) leading-none">
-            {entry.fromDate || "—"}
-          </span>
-        </div>
-        <div className="flex-1 flex items-center justify-between py-2 px-4 rounded-2xl bg-(--bg-main)/60 border border-(--border-dim)/40 text-xs font-mono">
-          <div className="flex flex-col">
-            <span className="text-[9px] font-bold text-(--text-muted) uppercase">
-              To
-            </span>
-            <span className="font-bold text-(--text-main)">
-              {entry.toDate || "—"}
-            </span>
-          </div>
-          {entry.time && (
-            <div className="flex items-center gap-1.5 text-(--text-muted) shrink-0">
-              <Schedule className="w-3 h-3 text-(--accent-base)" />
-              <span className="font-bold">{entry.time}</span>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Main Page ─────────────────────────────────────────────────────────────────
-
 type Tab = "request" | "status" | "history";
 
 export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
@@ -310,10 +91,8 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
   const [facultyOpts, setFacultyOpts] = useState<SearchableOption[]>([]);
   const [blockOpts, setBlockOpts] = useState<SearchableOption[]>([]);
   const [venueOpts, setVenueOpts] = useState<SearchableOption[]>([]);
-  const [fromTimeOpts, setFromTimeOpts] =
-    useState<SearchableOption[]>(DEFAULT_TIME_OPTS);
-  const [toTimeOpts, setToTimeOpts] =
-    useState<SearchableOption[]>(DEFAULT_TIME_OPTS);
+  const [fromTimeOpts, setFromTimeOpts] = useState<SearchableOption[]>(DEFAULT_TIME_OPTS);
+  const [toTimeOpts, setToTimeOpts] = useState<SearchableOption[]>(DEFAULT_TIME_OPTS);
 
   // Loading states
   const [loadingSchool, setLoadingSchool] = useState(false);
@@ -322,22 +101,19 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
   const [loadingVenues, setLoadingVenues] = useState(false);
   const [loadingDateBlock, setLoadingDateBlock] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [submitMsg, setSubmitMsg] = useState<{
-    ok: boolean;
-    text: string;
-  } | null>(null);
+  const [submitMsg, setSubmitMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   // Status / History
-  const [statusEntries, setStatusEntries] = useState<StatusEntry[]>([]);
+  const [statusEntries, setStatusEntries] = useState<LateHourStatusEntry[]>([]);
   const [statusLoading, setStatusLoading] = useState(false);
-  const [historyEntries, setHistoryEntries] = useState<StatusEntry[]>([]);
+  const [historyEntries, setHistoryEntries] = useState<LateHourStatusEntry[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [cancelling, setCancelling] = useState<string | null>(null);
 
   const needsBuilding = venueType === "1" || venueType === "2";
   const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
 
-  // ── Validation Errors ─────────────────────────────────────────────────────
+  // Validation errors
   const errors = useMemo(() => {
     const errs: Record<string, string> = {};
     if (!school) errs.school = "Please select a school";
@@ -353,9 +129,7 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
     } else if (details.trim().length < 4) {
       errs.details = "Details should be at least 4 characters";
     }
-    if (!fromDate) {
-      errs.fromDate = "Please select from date";
-    }
+    if (!fromDate) errs.fromDate = "Please select from date";
     if (!toDate) {
       errs.toDate = "Please select to date";
     } else if (fromDate && toDate < fromDate) {
@@ -381,25 +155,22 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
   ]);
 
   const canSubmit = Object.keys(errors).length === 0;
+  const touch = (field: string) => setTouched((prev) => ({ ...prev, [field]: true }));
 
-  // Mark field as touched
-  const touch = (field: string) =>
-    setTouched((prev) => ({ ...prev, [field]: true }));
-
-  // ── Step 1 Init: load school options ──────────────────────────────────────
+  // Step 1 Init: load school options
   useEffect(() => {
     setLoadingSchool(true);
     network
       .getLateHourInit()
       .then((html) => {
-        const opts = parseOpts(html, "costCentreId");
+        const opts = parseLateHourSelectOpts(html, "costCentreId");
         if (opts.length > 0) setSchoolOpts(opts);
       })
       .catch((e) => console.error("Late Hour Init Error:", e))
       .finally(() => setLoadingSchool(false));
   }, [network]);
 
-  // ── Step 3: School → Faculty ──────────────────────────────────────────────
+  // Step 3: School → Faculty
   const handleSchoolChange = useCallback(
     async (v: string) => {
       setSchool(v);
@@ -411,7 +182,7 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
       setLoadingFaculty(true);
       try {
         const html = await network.getLateHourFaculties(v);
-        setFacultyOpts(parseOpts(html, "appliedTo"));
+        setFacultyOpts(parseLateHourSelectOpts(html, "appliedTo"));
       } catch (e) {
         console.error("Fetch Faculty Error:", e);
       } finally {
@@ -421,7 +192,7 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
     [network],
   );
 
-  // ── Step 4: VenueType → Academic Blocks ───────────────────────────────────
+  // Step 4: VenueType → Academic Blocks
   const handleVenueTypeChange = useCallback(
     async (v: string) => {
       setVenueType(v);
@@ -441,7 +212,7 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
             appliedTo: faculty,
             roomTypeId: v,
           });
-          setBlockOpts(parseOpts(html, "buildingId"));
+          setBlockOpts(parseLateHourSelectOpts(html, "buildingId"));
         } catch (e) {
           console.error("Fetch Blocks Error:", e);
         } finally {
@@ -452,7 +223,7 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
     [network, school, faculty],
   );
 
-  // ── Step 5: Academic Block → Venues ───────────────────────────────────────
+  // Step 5: Academic Block → Venues
   const handleBlockChange = useCallback(
     async (v: string) => {
       setBlock(v);
@@ -469,7 +240,7 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
           roomTypeId: venueType,
           buildingId: v,
         });
-        setVenueOpts(parseOpts(html, "venue"));
+        setVenueOpts(parseLateHourSelectOpts(html, "venue"));
       } catch (e) {
         console.error("Fetch Venues Error:", e);
       } finally {
@@ -479,7 +250,7 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
     [network, school, faculty, venueType],
   );
 
-  // ── Step 6: Event Type → Date & Time Slots ────────────────────────────────
+  // Step 6: Event Type → Date & Time Slots
   const handleEventTypeChange = useCallback(
     async (v: string) => {
       setEventType(v);
@@ -497,8 +268,8 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
           lateHourEventId: v,
         });
 
-        const fromOpts = parseOpts(html, "fromTime");
-        const toOpts = parseOpts(html, "toTime");
+        const fromOpts = parseLateHourSelectOpts(html, "fromTime");
+        const toOpts = parseLateHourSelectOpts(html, "toTime");
 
         if (fromOpts.length > 0) setFromTimeOpts(fromOpts);
         if (toOpts.length > 0) setToTimeOpts(toOpts);
@@ -511,9 +282,40 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
     [network, school, faculty, venueType, needsBuilding, block, venue],
   );
 
-  // ── Submit ────────────────────────────────────────────────────────────────
+  // Status loader (cached with user-scoped keys)
+  const loadStatus = useCallback(
+    async (force = false) => {
+      setStatusLoading(true);
+      try {
+        const html = await network.getLateHourStatus(force);
+        setStatusEntries(parseLateHourRows(html));
+      } catch (e) {
+        console.error("Fetch Status Error:", e);
+      } finally {
+        setStatusLoading(false);
+      }
+    },
+    [network],
+  );
+
+  // History loader (cached with user-scoped keys)
+  const loadHistory = useCallback(
+    async (force = false) => {
+      setHistoryLoading(true);
+      try {
+        const html = await network.getLateHourHistory(force);
+        setHistoryEntries(parseLateHourRows(html));
+      } catch (e) {
+        console.error("Fetch History Error:", e);
+      } finally {
+        setHistoryLoading(false);
+      }
+    },
+    [network],
+  );
+
+  // Submit request
   const handleSubmit = async () => {
-    // Touch all fields to trigger full validation display
     setTouched({
       school: true,
       faculty: true,
@@ -547,13 +349,14 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
         toTime,
       });
 
-      const result = parseResponseMsg(html);
+      const result = parseLateHourResponseMsg(html);
       setSubmitMsg(result);
 
       if (result.ok) {
         setDetails("");
         setTouched({});
-        setTimeout(() => setActiveTab("status"), 1200);
+        setActiveTab("status");
+        loadStatus(true);
       }
     } catch (e: any) {
       setSubmitMsg({
@@ -565,32 +368,26 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
     }
   };
 
-  // ── Status ────────────────────────────────────────────────────────────────
-  const loadStatus = useCallback(async () => {
-    setStatusLoading(true);
-    try {
-      const html = await network.getLateHourStatus();
-      setStatusEntries(parseRows(html));
-    } catch (e) {
-      console.error("Fetch Status Error:", e);
-    } finally {
-      setStatusLoading(false);
-    }
-  }, [network]);
-
+  // Cancel pending request
   const handleCancel = useCallback(
     async (id: string) => {
       setCancelling(id);
       try {
         const html = await network.cancelLateHourRequest(id);
-        const result = parseResponseMsg(html);
+        const result = parseLateHourResponseMsg(html);
         if (result.ok) {
-          await loadStatus();
+          await loadStatus(true);
         } else {
-          alert(result.text || "Failed to cancel request.");
+          showAlertDialog({
+            title: "Cancellation Failed",
+            message: result.text || "Failed to cancel request.",
+          });
         }
       } catch (e) {
-        alert("Failed to cancel request. Please try again.");
+        showAlertDialog({
+          title: "Cancellation Error",
+          message: "Failed to cancel request. Please try again.",
+        });
       } finally {
         setCancelling(null);
       }
@@ -598,25 +395,21 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
     [network, loadStatus],
   );
 
-  // ── History ───────────────────────────────────────────────────────────────
-  const loadHistory = useCallback(async () => {
-    setHistoryLoading(true);
-    try {
-      const html = await network.getLateHourHistory(true);
-      setHistoryEntries(parseRows(html));
-    } catch (e) {
-      console.error("Fetch History Error:", e);
-    } finally {
-      setHistoryLoading(false);
-    }
-  }, [network]);
-
   useEffect(() => {
     if (activeTab === "status") loadStatus();
     if (activeTab === "history") loadHistory();
   }, [activeTab, loadStatus, loadHistory]);
 
-  // ── Tabs ──────────────────────────────────────────────────────────────────
+  // Listen to TopBar sync refresh event
+  useEffect(() => {
+    const onRefresh = () => {
+      if (activeTab === "status") loadStatus(true);
+      if (activeTab === "history") loadHistory(true);
+    };
+    window.addEventListener("retop-refresh-late-hour", onRefresh);
+    return () => window.removeEventListener("retop-refresh-late-hour", onRefresh);
+  }, [activeTab, loadStatus, loadHistory]);
+
   const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
     { id: "request", label: "New Request", icon: Add },
     { id: "status", label: "My Requests", icon: HourglassEmpty },
@@ -624,8 +417,8 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
   ];
 
   return (
-    <div className="h-full w-full flex flex-col overflow-y-auto custom-scrollbar bg-(--bg-main) text-(--text-main) px-4 md:px-8 lg:px-12">
-      <div className="pt-20 md:pt-23 lg:pt-25" />
+    <div className="h-full w-full flex flex-col overflow-y-auto custom-scrollbar bg-(--bg-main) text-(--text-main) px-4 sm:px-6 md:px-8 max-w-7xl mx-auto">
+      <div className="pt-20 sm:pt-24" />
 
       {/* Segmented Tab Bar - LEFT ALIGNED */}
       <div className="flex items-center gap-1.5 p-1 bg-(--bg-surface) rounded-2xl border border-(--border-dim)/40 my-4 self-start">
@@ -636,7 +429,7 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id)}
-              className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border-0 ${
+              className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer border-0 ${
                 isActive
                   ? "bg-(--accent-base) text-(--text-inverse) shadow-sm"
                   : "text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-highlight)/50"
@@ -648,14 +441,14 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
         })}
       </div>
 
-      {/* Main Content Layout: Left side has content/form, Right side is empty */}
+      {/* Main Content Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-24 flex-1">
         <div className="lg:col-span-8 xl:col-span-7 flex flex-col gap-4">
           {/* TAB 1: NEW REQUEST */}
           {activeTab === "request" && (
             <div className="bg-(--bg-surface) border border-(--border-dim)/40 rounded-3xl p-5 md:p-7 flex flex-col gap-5">
               <div>
-                <h2 className="text-xs font-mono font-black uppercase tracking-wider text-(--text-muted)">
+                <h2 className="text-xs font-mono font-black uppercase text-(--text-muted)">
                   Permission Details
                 </h2>
                 <p className="text-xs text-(--text-muted)/80 mt-0.5">
@@ -663,7 +456,6 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
                 </p>
               </div>
 
-              {/* School & Faculty */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <SearchableDropdown
                   label="Select School"
@@ -694,7 +486,6 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
                 />
               </div>
 
-              {/* Venue Type & Blocks */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <SearchableDropdown
                   label="Venue Type"
@@ -747,7 +538,6 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
                 )}
               </div>
 
-              {/* Category & Details */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <SearchableDropdown
                   label="Work Related To"
@@ -760,7 +550,7 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
                   onChange={handleEventTypeChange}
                 />
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-bold text-(--text-muted) uppercase tracking-wide flex items-center gap-1">
+                  <label className="text-[11px] font-bold text-(--text-muted) uppercase flex items-center gap-1">
                     Brief Details on Work
                     <span className="text-red-400 font-bold">*</span>
                   </label>
@@ -787,35 +577,31 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
                 </div>
               </div>
 
-              {/* Date and Time Pickers */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-(--border-dim)/30">
-                {/* From Date & Time */}
                 <div className="flex flex-col gap-3.5">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-bold text-(--text-muted) uppercase tracking-wide flex items-center gap-1">
+                    <label className="text-[11px] font-bold text-(--text-muted) uppercase flex items-center gap-1">
                       From Date
                       <span className="text-red-400 font-bold">*</span>
                     </label>
-                    <div className="relative">
-                      <input
-                        type="date"
-                        min={todayStr}
-                        value={fromDate}
-                        onChange={(e) => {
-                          setFromDate(e.target.value);
-                          touch("fromDate");
-                          if (toDate && e.target.value > toDate) {
-                            setToDate(e.target.value);
-                          }
-                        }}
-                        onBlur={() => touch("fromDate")}
-                        className={`w-full h-10 px-3.5 rounded-2xl bg-(--bg-main) border text-sm font-medium font-mono text-(--text-main) focus:outline-none transition-colors ${
-                          touched.fromDate && errors.fromDate
-                            ? "border-red-500/70 focus:border-red-500"
-                            : "border-(--border-dim) focus:border-(--accent-base)"
-                        }`}
-                      />
-                    </div>
+                    <input
+                      type="date"
+                      min={todayStr}
+                      value={fromDate}
+                      onChange={(e) => {
+                        setFromDate(e.target.value);
+                        touch("fromDate");
+                        if (toDate && e.target.value > toDate) {
+                          setToDate(e.target.value);
+                        }
+                      }}
+                      onBlur={() => touch("fromDate")}
+                      className={`w-full h-10 px-3.5 rounded-2xl bg-(--bg-main) border text-sm font-medium font-mono text-(--text-main) focus:outline-none transition-colors ${
+                        touched.fromDate && errors.fromDate
+                          ? "border-red-500/70 focus:border-red-500"
+                          : "border-(--border-dim) focus:border-(--accent-base)"
+                      }`}
+                    />
                     {touched.fromDate && errors.fromDate && (
                       <span className="text-[10px] font-bold text-red-400">
                         {errors.fromDate}
@@ -838,30 +624,27 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
                   />
                 </div>
 
-                {/* To Date & Time */}
                 <div className="flex flex-col gap-3.5">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-bold text-(--text-muted) uppercase tracking-wide flex items-center gap-1">
+                    <label className="text-[11px] font-bold text-(--text-muted) uppercase flex items-center gap-1">
                       To Date
                       <span className="text-red-400 font-bold">*</span>
                     </label>
-                    <div className="relative">
-                      <input
-                        type="date"
-                        min={fromDate || todayStr}
-                        value={toDate}
-                        onChange={(e) => {
-                          setToDate(e.target.value);
-                          touch("toDate");
-                        }}
-                        onBlur={() => touch("toDate")}
-                        className={`w-full h-10 px-3.5 rounded-2xl bg-(--bg-main) border text-sm font-medium font-mono text-(--text-main) focus:outline-none transition-colors ${
-                          touched.toDate && errors.toDate
-                            ? "border-red-500/70 focus:border-red-500"
-                            : "border-(--border-dim) focus:border-(--accent-base)"
-                        }`}
-                      />
-                    </div>
+                    <input
+                      type="date"
+                      min={fromDate || todayStr}
+                      value={toDate}
+                      onChange={(e) => {
+                        setToDate(e.target.value);
+                        touch("toDate");
+                      }}
+                      onBlur={() => touch("toDate")}
+                      className={`w-full h-10 px-3.5 rounded-2xl bg-(--bg-main) border text-sm font-medium font-mono text-(--text-main) focus:outline-none transition-colors ${
+                        touched.toDate && errors.toDate
+                          ? "border-red-500/70 focus:border-red-500"
+                          : "border-(--border-dim) focus:border-(--accent-base)"
+                      }`}
+                    />
                     {touched.toDate && errors.toDate && (
                       <span className="text-[10px] font-bold text-red-400">
                         {errors.toDate}
@@ -885,7 +668,6 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
                 </div>
               </div>
 
-              {/* Status Alert Message */}
               {submitMsg && (
                 <div
                   className={`p-3.5 rounded-2xl font-bold text-xs flex items-center gap-2.5 ${
@@ -902,19 +684,19 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
                 </div>
               )}
 
-              {/* Submit Button */}
               <button
                 onClick={handleSubmit}
                 disabled={submitting}
-                className={`w-full py-3.5 rounded-2xl text-xs font-black uppercase transition-all cursor-pointer flex items-center justify-center gap-2 border-0 mt-2 ${
+                className={`w-full py-3.5 rounded-2xl text-xs font-black uppercase transition-colors cursor-pointer flex items-center justify-center gap-2 border-0 mt-2 ${
                   canSubmit
                     ? "bg-(--accent-base) text-(--text-inverse) hover:opacity-90 active:scale-[0.99]"
                     : "bg-(--bg-main) text-(--text-muted) border border-(--border-dim) opacity-70"
                 }`}>
-                <Send className="w-4 h-4" />
-                {submitting
-                  ? "Submitting to VTOP..."
-                  : "Submit Late Hour Request"}
+                {submitting ? (
+                  <>Submitting to <span className="font-vtop font-bold ml-1">VTOP</span>...</>
+                ) : (
+                  "Submit Late Hour Request"
+                )}
               </button>
             </div>
           )}
@@ -975,7 +757,6 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
           )}
         </div>
 
-        {/* Right side empty as requested */}
         <div className="hidden lg:block lg:col-span-4 xl:col-span-5 pointer-events-none" />
       </div>
     </div>

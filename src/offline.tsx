@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import {
-  ArrowForward,
   AccountCircle,
   Add,
   Upload,
@@ -13,51 +12,18 @@ import {
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { renderDashboard } from "./pages/app";
 import { getStorageData, setStorageData } from "./utils/storageAdapter";
-import { getUserPinRecord, saveUserPin, verifyUserPin } from "./utils/pinSecurity";
-import { asciiArtTT, asciiArtSMV, asciiArtMGR, asciiArtCC } from "./components/asciiArt";
-
-import { getExtUrl } from "./utils/url";
+import { getUserPinRecord, saveUserPin, verifyUserPin, getUserProfileImage } from "./utils/pinSecurity";
+import { AsciiPanel } from "./components/asciiArt";
 import { applyTheme } from "./utils/settings-store";
-import { GlobalOverflowTooltip } from "./components/ui/Tooltip";
 import { VitLogo } from "./components/VitLogo";
 import { VitEmblemLoader } from "./components/common/VitEmblemLoader";
 import { ErrorBoundary } from "./components/common/ErrorBoundary";
+import { fixBase64Image } from "./parsers/profile";
 import { clear as idbClear, set as idbSet } from "idb-keyval";
-
-const pickAsciiArt = (campus?: "chennai" | "vellore"): { art: string; type: string } => {
-  const isChennai =
-    campus === "chennai" ||
-    (typeof window !== "undefined" && window.location.hostname.includes("vtopcc")) ||
-    (typeof localStorage !== "undefined" && localStorage.getItem("retop_last_campus") === "chennai");
-
-  const artTypes = isChennai ? (["CC"] as const) : (["TT", "SMV", "MGR"] as const);
-  const lastArt = typeof localStorage !== "undefined" ? localStorage.getItem("retop_last_ascii_art") || "" : "";
-  const availableArts = artTypes.filter((type) => type !== lastArt);
-  const picked = availableArts.length
-    ? availableArts[Math.floor(Math.random() * availableArts.length)]
-    : artTypes[Math.floor(Math.random() * artTypes.length)];
-
-  if (typeof localStorage !== "undefined") {
-    localStorage.setItem("retop_last_ascii_art", picked);
-  }
-
-  const artMap: Record<string, string> = {
-    TT: asciiArtTT,
-    SMV: asciiArtSMV,
-    MGR: asciiArtMGR,
-    CC: asciiArtCC.trim() ? asciiArtCC : asciiArtTT,
-  };
-  return { art: (artMap[picked] || asciiArtTT).replace(/\r/g, ""), type: picked };
-};
+import { AlertDialogManager, showAlertDialog } from "./components/ui/AlertDialog";
 
 const GSF: React.CSSProperties = {
   fontFamily: "'Google Sans Flex', system-ui, sans-serif",
-};
-
-const GSF_MONO: React.CSSProperties = {
-  fontFamily: "'Google Sans Flex', system-ui, sans-serif",
-  fontVariationSettings: '"wdth" 75, "wght" 700',
-  letterSpacing: "0.3em",
 };
 
 export const cleanUserString = (str?: string) => {
@@ -117,14 +83,14 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ users, activeUser, on
         className="w-full flex items-center justify-between gap-3 bg-[#18181b] hover:bg-[#222226] rounded-full px-5 py-3.5 sm:px-6 sm:py-4 transition-all cursor-pointer group shadow-lg border-0"
         style={GSF}>
         <div className="flex items-center gap-3 min-w-0">
-          {activeUser.profileImgBase64 ? (
-            <img src={activeUser.profileImgBase64} alt={activeLabel} className="w-6 h-6 rounded-full object-cover shrink-0" />
+          {fixBase64Image(activeUser.profileImgBase64) ? (
+            <img src={fixBase64Image(activeUser.profileImgBase64)} alt={activeLabel} className="w-6 h-6 rounded-full object-cover shrink-0" />
           ) : (
             <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0">
               <AccountCircle className="w-4 h-4" />
             </div>
           )}
-          <span className="text-xs sm:text-sm font-bold text-white font-mono leading-none truncate" style={GSF}>{activeLabel}</span>
+          <span className="text-xs sm:text-sm font-bold text-white leading-none truncate">{activeLabel}</span>
         </div>
         <KeyboardArrowDown
           className={`w-5 h-5 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
@@ -147,18 +113,17 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ users, activeUser, on
                     key={u.regNo}
                     type="button"
                     onClick={() => { onSelect(u); setIsOpen(false); }}
-                    className={`w-full flex items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-3.5 rounded-2xl transition-all cursor-pointer text-left font-mono ${
+                    className={`w-full flex items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-3.5 rounded-2xl transition-all cursor-pointer text-left ${
                       isSelected
                         ? "text-white font-bold shadow-md"
                         : "text-zinc-300 hover:bg-zinc-800/80 hover:text-white"
                     }`}
                     style={{
-                      ...GSF,
                       backgroundColor: isSelected ? "var(--accent-base, #2563eb)" : undefined,
                     }}>
                     <div className="flex items-center gap-3 min-w-0">
-                      {u.profileImgBase64 ? (
-                        <img src={u.profileImgBase64} alt={itemLabel} className="w-6 h-6 rounded-full object-cover shrink-0" />
+                      {fixBase64Image(u.profileImgBase64) ? (
+                        <img src={fixBase64Image(u.profileImgBase64)} alt={itemLabel} className="w-6 h-6 rounded-full object-cover shrink-0" />
                       ) : (
                         <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-zinc-300 shrink-0">
                           <AccountCircle className="w-4 h-4" />
@@ -294,7 +259,7 @@ const StarPinInput: React.FC<StarPinInputProps> = ({
   return (
     <div
       onClick={handleContainerClick}
-      className={`relative w-full py-10 px-4 sm:px-6 flex flex-col items-center justify-center cursor-pointer select-none transition-all duration-200 min-h-[130px] ${
+      className={`relative w-full py-10 px-4 sm:px-6 flex flex-col items-center justify-center cursor-pointer select-none transition-all duration-200 min-h-32.5 ${
         error ? "animate-pin-shake" : ""
       }`}
     >
@@ -314,7 +279,7 @@ const StarPinInput: React.FC<StarPinInputProps> = ({
 
       {value.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-1.5 animate-in fade-in duration-200">
-          <p className="text-base sm:text-lg font-bold text-zinc-400 tracking-wide font-mono uppercase" style={GSF}>
+          <p className="text-base sm:text-lg font-bold text-zinc-400 tracking-wide uppercase">
             {prompt}
           </p>
           <span className="text-[11px] text-zinc-500 font-medium font-sans">
@@ -349,132 +314,7 @@ const StarPinInput: React.FC<StarPinInputProps> = ({
 
 const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*";
 
-const AsciiPanel: React.FC<{ campus?: "chennai" | "vellore" }> = ({ campus }) => {
-  const preRef = useRef<HTMLPreElement>(null);
-  const [artData, setArtData] = useState(() => pickAsciiArt(campus));
-  const { art, type } = artData;
 
-  useEffect(() => {
-    setArtData(pickAsciiArt(campus));
-  }, [campus]);
-
-  const originalLines = useRef(art.split("\n"));
-  useEffect(() => {
-    originalLines.current = art.split("\n");
-  }, [art]);
-
-  const ripples = useRef<{ x: number; y: number; t: number }[]>([]);
-  const rafRef = useRef<number>(0);
-  const lastMouse = useRef({ x: -9999, y: -9999, t: 0 });
-
-  const charW = type === "CC" ? 2.5 : type === "SMV" ? 2.5 : type === "MGR" ? 2.9 : 4.2;
-  const charH = type === "CC" ? 4 : type === "SMV" ? 4 : type === "MGR" ? 4.4 : 7;
-
-  const fontSize = type === "CC" ? "4px" : type === "SMV" ? "4.2px" : type === "MGR" ? "4.8px" : "7px";
-  const lineH = type === "CC" ? "4px" : type === "SMV" ? "4px" : type === "MGR" ? "4.4px" : "7px";
-  const marginRight = type === "TT" ? "-15vw" : "0px";
-
-  useEffect(() => {
-    const pre = preRef.current;
-    if (!pre) return;
-
-    pre.style.setProperty("font-size", fontSize, "important");
-    pre.style.setProperty("line-height", lineH, "important");
-    pre.style.setProperty("letter-spacing", "0px", "important");
-    pre.style.setProperty("margin-right", marginRight, "important");
-  }, [fontSize, lineH, marginRight]);
-
-  useEffect(() => {
-    const pre = preRef.current;
-    if (!pre) return;
-
-    const onMove = (e: MouseEvent) => {
-      const rect = pre.getBoundingClientRect();
-      const now = Date.now();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      const dx = x - lastMouse.current.x;
-      const dy = y - lastMouse.current.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist > 6 || ripples.current.length === 0) {
-        ripples.current.push({ x, y, t: now });
-        if (ripples.current.length > 20) ripples.current.shift();
-      }
-      lastMouse.current = { x, y, t: now };
-    };
-
-    let animFrame: number;
-    const animate = () => {
-      const now = Date.now();
-      ripples.current = ripples.current.filter((r) => now - r.t < 900);
-      if (ripples.current.length === 0) {
-        animFrame = requestAnimationFrame(animate);
-        return;
-      }
-
-      const lines = originalLines.current;
-      let out = "";
-      for (let row = 0; row < lines.length; row++) {
-        const line = lines[row];
-        const offsetX = Math.max(0, pre.clientWidth - line.length * charW);
-        let newLine = "";
-        for (let col = 0; col < line.length; col++) {
-          const char = line[col];
-          if (char === " ") { newLine += " "; continue; }
-          const px = offsetX + col * charW;
-          const py = row * charH;
-          let wave = 0;
-          for (const r of ripples.current) {
-            const dx = px - r.x;
-            const dy = py - r.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            const age = now - r.t;
-            const waveR = age * 0.15;
-            const dw = Math.abs(dist - waveR);
-            if (dw < 30) {
-              wave += Math.cos(dw * 0.1) * Math.pow(Math.max(0, 1 - dw / 30), 2) * Math.pow(Math.max(0, 1 - age / 900), 2);
-            }
-          }
-          newLine += Math.abs(wave) > 0.2 ? CHARS[Math.floor(Math.random() * CHARS.length)] : char;
-        }
-        out += newLine + "\n";
-      }
-      if (pre) pre.textContent = out.slice(0, -1);
-      animFrame = requestAnimationFrame(animate);
-    };
-
-    document.addEventListener("mousemove", onMove);
-    animFrame = requestAnimationFrame(animate);
-    return () => {
-      document.removeEventListener("mousemove", onMove);
-      cancelAnimationFrame(animFrame);
-    };
-  }, [charW, charH]);
-
-  return (
-    <pre
-      ref={preRef}
-      id="retop-ascii-art"
-      style={{
-        fontFamily: "monospace",
-        fontSize,
-        lineHeight: lineH,
-        letterSpacing: "0px",
-        textAlign: "right",
-        margin: 0,
-        marginRight,
-        padding: 0,
-        whiteSpace: "pre",
-        overflow: "hidden",
-        width: "100%",
-        userSelect: "none",
-        pointerEvents: "auto",
-        animation: "retop-ascii-rise 0.5s linear forwards",
-      }}>
-      {art}
-    </pre>
-  );
-};
 
 const OfflineApp = () => {
   const [step, setStep] = useState<"LOADING" | "NO_CACHE" | "PIN_LOCK" | "UNLOCKED">("LOADING");
@@ -627,7 +467,14 @@ const OfflineApp = () => {
       const existing = cleanUsersMap.get(key);
       const username = cleanUserString(rawUser.username) || regNo;
       const name = cleanUserString(rawUser.name) || existing?.name || "Student";
-      const profileImgBase64 = rawUser.profileImgBase64 || existing?.profileImgBase64 || "";
+      let rawImg = rawUser.profileImgBase64 || existing?.profileImgBase64 || "";
+      if (!rawImg || !rawImg.startsWith("data:image")) {
+        try {
+          const stored = await getUserProfileImage(regNo);
+          if (stored) rawImg = stored;
+        } catch {}
+      }
+      const profileImgBase64 = fixBase64Image(rawImg);
       const lastActive = Math.max(rawUser.lastActive || 0, existing?.lastActive || 0);
 
       cleanUsersMap.set(key, {
@@ -757,7 +604,10 @@ const OfflineApp = () => {
         window.location.reload();
       }
     } catch (err) {
-      alert("Invalid backup file format.");
+      showAlertDialog({
+        title: "Import Error",
+        message: "Invalid backup file format.",
+      });
     }
   };
 
@@ -765,24 +615,22 @@ const OfflineApp = () => {
     setStep("UNLOCKED");
 
     try {
+      const safeImg = fixBase64Image(user.profileImgBase64);
       localStorage.setItem("retop_lastAuthId", user.regNo);
       localStorage.setItem("retop_active_user", user.regNo);
       if (user.name) localStorage.setItem("retop_lastName", user.name);
-      if (user.profileImgBase64) {
-        localStorage.setItem("retop_profileImage", user.profileImgBase64);
-        localStorage.setItem(`${user.regNo}_profileImage`, user.profileImgBase64);
-      } else {
-        localStorage.removeItem("retop_profileImage");
+      if (safeImg) {
+        localStorage.setItem(`${user.regNo}_profileImage`, safeImg);
       }
       setStorageData({
         retop_lastAuthId: user.regNo,
         retop_active_user: user.regNo,
         retop_lastName: user.name || "Student",
-        [`${user.regNo}_profileImage`]: user.profileImgBase64 || "",
+        [`${user.regNo}_profileImage`]: safeImg || "",
         [`${user.regNo}_user_basic_profile`]: {
           name: user.name || "Student",
           regNo: user.regNo,
-          profileImgBase64: user.profileImgBase64 || "",
+          profileImgBase64: safeImg || "",
           campus: user.campus || "vellore",
         },
       });
@@ -800,14 +648,15 @@ const OfflineApp = () => {
     header.textContent = `${user.regNo} - ${user.name || "Student"}`;
     document.body.appendChild(header);
 
+    const safeImg = fixBase64Image(user.profileImgBase64);
     if (
-      user.profileImgBase64 &&
-      user.profileImgBase64.length > 50 &&
-      !user.profileImgBase64.endsWith("base64,")
+      safeImg &&
+      safeImg.length > 50 &&
+      !safeImg.endsWith("base64,")
     ) {
       const img = document.createElement("img");
       img.id = "retop-profile-image-mock";
-      img.src = user.profileImgBase64;
+      img.src = safeImg;
       img.style.display = "none";
       document.body.appendChild(img);
     }
@@ -876,7 +725,7 @@ const OfflineApp = () => {
                 <a
                   href="https://vtop.vit.ac.in/vtop/login"
                   className="w-full h-11 bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs rounded-full transition-all shadow-md active:scale-98 cursor-pointer flex items-center justify-center gap-2">
-                  Go to VTOP
+                  Go to <span className="font-vtop font-bold ml-1">VTOP</span>
                 </a>
                 <button
                   onClick={() => fileInputRef.current?.click()}
@@ -980,11 +829,11 @@ const OfflineApp = () => {
       {/* Right 50% Column: Hero Branding (#vtopOpenPageHeader) */}
       <div
         id="vtopOpenPageHeader"
-        className="w-full lg:w-1/2 min-h-[220px] lg:min-h-screen border-b lg:border-b-0 lg:border-l border-zinc-800/80 flex flex-col justify-center items-center py-10 px-6 sm:px-12 relative overflow-hidden order-first lg:order-last z-10 shrink-0">
+        className="w-full lg:w-1/2 min-h-55 lg:min-h-screen border-b lg:border-b-0 lg:border-l border-zinc-800/80 flex flex-col justify-center items-center py-10 px-6 sm:px-12 relative overflow-hidden order-first lg:order-last z-10 shrink-0">
         <div className="relative z-10 text-center flex flex-col items-center max-w-sm w-full">
           <div className="mb-3 flex items-center justify-center p-2 text-white">
             <VitLogo
-              className="h-16 sm:h-20 md:h-24 w-auto max-w-[260px] sm:max-w-[340px] text-white drop-shadow-md"
+              className="h-16 sm:h-20 md:h-24 w-auto max-w-65 sm:max-w-85 text-white drop-shadow-md"
             />
           </div>
           <div
@@ -1052,7 +901,7 @@ const OfflineApp = () => {
             </div>
           </div>
         )}
-      <GlobalOverflowTooltip />
+      <AlertDialogManager />
     </div>
   );
 };
@@ -1063,7 +912,7 @@ export const initializeOfflineMode = () => {
   document.body.appendChild(container);
   const root = createRoot(container);
   root.render(
-    <ErrorBoundary>
+    <ErrorBoundary variant="fullscreen" name="retop Offline">
       <OfflineApp />
     </ErrorBoundary>
   );

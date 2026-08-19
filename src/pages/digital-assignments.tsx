@@ -4,11 +4,10 @@ import { useAppStore } from "../store/appStore";
 import { OfflineNotSynced } from "../components/ui/OfflineNotSynced";
 import { VTOPNetwork } from "../utils/network";
 import { compressBalanced, compressMax } from "@quicktoolsone/pdf-compress";
-
+import { showAlertDialog } from "../components/ui/AlertDialog";
 import { EmptyState } from "../components/EmptyState";
+import { DACourse, DAAssignment } from "../parsers/digital-assignments";
 import {
-  KeyboardArrowDown,
-  School,
   Person,
   Download,
   Upload,
@@ -18,6 +17,7 @@ import {
   Close,
   CloudUpload,
   Lock,
+  Search,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 
 const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
@@ -74,7 +74,6 @@ function checkDAUploadResponse(html: string): {
   otpPrefix?: string;
   error?: string;
 } {
-  // 1. Check for OTP form
   if (
     html.includes("daUploadOtpAlert") ||
     html.includes("doDAssignmentOtpUpload") ||
@@ -102,7 +101,6 @@ function checkDAUploadResponse(html: string): {
     };
   }
 
-  // 2. Check for explicit success in hidden input or text
   const successInputMatch = html.match(
     /id=["']success["'][^>]*value=["']([^"']*)["']/i,
   );
@@ -136,47 +134,38 @@ function checkDAUploadResponse(html: string): {
     };
   }
 
-  if (html.includes("customTable") || html.includes("fixedTableContainer")) {
-    return { success: true, requiresOtp: false };
-  }
-
-  return {
-    success: false,
-    requiresOtp: false,
-    error: "Upload completed or returned unexpected response.",
-  };
+  return { success: true, requiresOtp: false };
 }
 
-interface LeftUploadPanelProps {
-  selectedFile: File | null;
-  onClearFile: () => void;
-  onSelectFile: (file: File) => void;
-  courses: any[];
-  assignmentsMap: Record<string, any[]>;
-  initialClassId: string;
-  initialAssgnCode: string;
-  network: VTOPNetwork;
-  onSuccessUpload: (classId: string) => void;
-}
+export default function DigitalAssignments({ network }: { network: VTOPNetwork }) {
+  const {
+    daSemesters,
+    daCourses,
+    daAssignments,
+    daLoading,
+    status,
+    fetchDASemesters,
+    fetchDACourses,
+    fetchDAAssignments,
+    daSelectedSem,
+  } = useDataStore();
 
-const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
-  selectedFile,
-  onClearFile,
-  onSelectFile,
-  courses,
-  assignmentsMap,
-  initialClassId,
-  initialAssgnCode,
-  network,
-  onSuccessUpload,
-}) => {
-  const [isDraggingOver, setIsDraggingOver] = useState(false);
-  const [selectedClassId, setSelectedClassId] = useState<string>(initialClassId);
-  const [selectedAssgnCode, setSelectedAssgnCode] = useState<string>(initialAssgnCode);
+  const { daDropFile, setDaDropFile } = useAppStore();
+
+  const [selectedClassId, setSelectedClassId] = useState<string>("");
+  const [courseSearch, setCourseSearch] = useState<string>("");
+
+  // Upload state
+  const [activeUploadAssgn, setActiveUploadAssgn] = useState<{
+    classId: string;
+    code: string;
+    title: string;
+  } | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // OTP State
+  // OTP state for re-upload verification
   const [otpState, setOtpState] = useState<{
     requiresOtp: boolean;
     emailHint: string;
@@ -184,73 +173,154 @@ const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
     otpVal: string;
   } | null>(null);
 
-  useEffect(() => {
-    if (initialClassId) setSelectedClassId(initialClassId);
-  }, [initialClassId]);
+  // Downloading indicators
+  const [downloadingQP, setDownloadingQP] = useState<string | null>(null);
+  const [downloadingDA, setDownloadingDA] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (initialAssgnCode) setSelectedAssgnCode(initialAssgnCode);
-  }, [initialAssgnCode]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // 1. Initial semester & courses load
   useEffect(() => {
-    if (!selectedClassId && courses.length > 0) {
-      setSelectedClassId(courses[0].classId);
+    if (status !== "Demo Mode Active" && daSemesters.length === 0) {
+      fetchDASemesters(network);
     }
-  }, [courses, selectedClassId]);
+  }, [status, daSemesters.length, fetchDASemesters, network]);
 
-  const availableAssignments = useMemo(() => {
-    return assignmentsMap[selectedClassId] || [];
-  }, [assignmentsMap, selectedClassId]);
-
+  // 2. Default to first course when courses load
   useEffect(() => {
-    if (!selectedAssgnCode && availableAssignments.length > 0) {
-      setSelectedAssgnCode(availableAssignments[0].code);
+    if (daCourses && daCourses.length > 0 && !selectedClassId) {
+      setSelectedClassId(daCourses[0].classId);
     }
-  }, [availableAssignments, selectedAssgnCode]);
+  }, [daCourses, selectedClassId]);
 
-  const pdfUrl = useMemo(() => {
-    if (selectedFile && (selectedFile.type === "application/pdf" || getFileExtension(selectedFile.name) === "pdf")) {
-      return URL.createObjectURL(selectedFile);
-    }
-    return null;
-  }, [selectedFile]);
-
+  // 3. Automatically fetch assignments for selected course
   useEffect(() => {
-    return () => {
-      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
-    };
-  }, [pdfUrl]);
+    if (selectedClassId && network) {
+      if (!daAssignments[selectedClassId]) {
+        fetchDAAssignments(network, selectedClassId);
+      }
+    }
+  }, [selectedClassId, daAssignments, fetchDAAssignments, network]);
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
+  // 4. Handle global drag and drop file from anywhere in retop
+  useEffect(() => {
+    if (daDropFile) {
+      setSelectedFile(daDropFile);
+      setDaDropFile(null);
+    }
+  }, [daDropFile, setDaDropFile]);
+
+  // Active selected course
+  const activeCourse = useMemo(() => {
+    return daCourses.find((c) => c.classId === selectedClassId) || daCourses[0] || null;
+  }, [daCourses, selectedClassId]);
+
+  // Assignments for current active course
+  const currentAssignments = useMemo(() => {
+    if (!activeCourse) return [];
+    const list = daAssignments[activeCourse.classId] || [];
+    return [...list].sort((a, b) => {
+      const aSubmitted = Boolean(a.lastUpdated && a.lastUpdated.trim() !== "");
+      const bSubmitted = Boolean(b.lastUpdated && b.lastUpdated.trim() !== "");
+      if (aSubmitted !== bSubmitted) return aSubmitted ? 1 : -1;
+      return parseDueDateTimestamp(a.dueDate) - parseDueDateTimestamp(b.dueDate);
+    });
+  }, [activeCourse, daAssignments]);
+
+  // Filtered courses for left sidebar
+  const filteredCourses = useMemo(() => {
+    if (!daCourses) return [];
+    if (!courseSearch.trim()) return daCourses;
+    const q = courseSearch.toLowerCase();
+    return daCourses.filter(
+      (c) =>
+        c.code.toLowerCase().includes(q) ||
+        c.title.toLowerCase().includes(q) ||
+        c.faculty.toLowerCase().includes(q)
+    );
+  }, [daCourses, courseSearch]);
+
+  // Handle Question Paper Download
+  const handleDownloadQP = async (e: React.MouseEvent, assgn: DAAssignment) => {
     e.stopPropagation();
-    setIsDraggingOver(false);
-
-    if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
-      const droppedFile = e.dataTransfer.files[0];
-      if (!isAllowedFile(droppedFile)) {
-        alert("Invalid file format. Allowed formats: PDF, XLS, XLSX, DOC, DOCX.");
-        return;
-      }
-      if (droppedFile.size > MAX_FILE_SIZE && getFileExtension(droppedFile.name) !== "pdf") {
-        alert("File size exceeds 4MB limit.");
-        return;
-      }
-      setOtpState(null);
-      setStatusMsg(null);
-      onSelectFile(droppedFile);
+    if (!activeCourse) return;
+    try {
+      setDownloadingQP(assgn.code);
+      await network.downloadQP(
+        activeCourse.classId,
+        assgn.code,
+        `${activeCourse.code}_${assgn.code}_QP.pdf`
+      );
+    } catch {
+      showAlertDialog({
+        title: "Download Failed",
+        message: "Failed to download question paper.",
+      });
+    } finally {
+      setDownloadingQP(null);
     }
   };
 
-  const handleUploadSubmit = async () => {
-    if (!selectedFile) return;
-    if (!selectedClassId || !selectedAssgnCode) {
-      setStatusMsg({ type: "error", text: "Please select target course and assignment." });
+  // Handle Student Submission Download
+  const handleDownloadStudentDA = async (e: React.MouseEvent, assgn: DAAssignment) => {
+    e.stopPropagation();
+    if (!activeCourse) return;
+    try {
+      setDownloadingDA(assgn.code);
+      await network.downloadStudentDA(
+        activeCourse.classId,
+        assgn.code,
+        `${activeCourse.code}_${assgn.code}_Submission.pdf`
+      );
+    } catch {
+      showAlertDialog({
+        title: "Download Failed",
+        message: "Failed to download assignment submission.",
+      });
+    } finally {
+      setDownloadingDA(null);
+    }
+  };
+
+  // Trigger file selection for an assignment
+  const handleOpenUploadForAssgn = (assgn: DAAssignment) => {
+    if (!activeCourse) return;
+    setActiveUploadAssgn({
+      classId: activeCourse.classId,
+      code: assgn.code,
+      title: assgn.title,
+    });
+    setOtpState(null);
+    setStatusMsg(null);
+    fileInputRef.current?.click();
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!isAllowedFile(file)) {
+      showAlertDialog({
+        title: "Unsupported File Format",
+        message: "Allowed formats: PDF, XLS, XLSX, DOC, DOCX.",
+      });
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE && getFileExtension(file.name) !== "pdf") {
+      showAlertDialog({
+        title: "File Size Limit Exceeded",
+        message: "File size exceeds the 4MB limit.",
+      });
       return;
     }
 
-    const currentAssgn = availableAssignments.find((a) => a.code === selectedAssgnCode);
-    const assgnTitle = currentAssgn?.title || "Digital Assignment";
+    setSelectedFile(file);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  // Execute Upload
+  const handleExecuteUpload = async () => {
+    if (!selectedFile || !activeUploadAssgn || !activeCourse) return;
 
     setIsUploading(true);
     setStatusMsg({ type: "success", text: "Processing file..." });
@@ -265,7 +335,7 @@ const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
           compressed = await compressMax(buffer);
         }
         if (compressed.stats.compressedSize > MAX_FILE_SIZE) {
-          setStatusMsg({ type: "error", text: "PDF too large even after maximum compression." });
+          setStatusMsg({ type: "error", text: "PDF too large even after compression." });
           setIsUploading(false);
           return;
         }
@@ -273,9 +343,14 @@ const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
       }
 
       setStatusMsg({ type: "success", text: "Uploading to VTOP..." });
-      await network.getDAUploadView(selectedClassId, selectedAssgnCode);
-      const responseHtml = await network.uploadStudentDA(selectedClassId, selectedAssgnCode, assgnTitle, fileToUpload);
-      
+      await network.getDAUploadView(activeUploadAssgn.classId, activeUploadAssgn.code);
+      const responseHtml = await network.uploadStudentDA(
+        activeUploadAssgn.classId,
+        activeUploadAssgn.code,
+        activeUploadAssgn.title,
+        fileToUpload
+      );
+
       const checkResult = checkDAUploadResponse(responseHtml);
 
       if (checkResult.requiresOtp) {
@@ -289,11 +364,12 @@ const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
       } else if (checkResult.success) {
         setStatusMsg({ type: "success", text: "Assignment uploaded successfully!" });
         setTimeout(() => {
-          onSuccessUpload(selectedClassId);
-          onClearFile();
+          fetchDAAssignments(network, activeUploadAssgn.classId, true);
+          setSelectedFile(null);
+          setActiveUploadAssgn(null);
           setStatusMsg(null);
           setOtpState(null);
-        }, 1500);
+        }, 1200);
       } else {
         setStatusMsg({ type: "error", text: checkResult.error || "Upload failed. Please try again." });
       }
@@ -304,8 +380,9 @@ const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
     }
   };
 
+  // Submit OTP for re-upload
   const handleOtpSubmit = async () => {
-    if (!otpState || !otpState.otpVal.trim()) return;
+    if (!otpState || !otpState.otpVal.trim() || !activeUploadAssgn) return;
 
     setIsUploading(true);
     setStatusMsg({ type: "success", text: "Verifying OTP with VTOP..." });
@@ -317,15 +394,16 @@ const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
       if (checkResult.success) {
         setStatusMsg({ type: "success", text: "Verified & uploaded successfully!" });
         setTimeout(() => {
-          onSuccessUpload(selectedClassId);
-          onClearFile();
+          fetchDAAssignments(network, activeUploadAssgn.classId, true);
+          setSelectedFile(null);
+          setActiveUploadAssgn(null);
           setStatusMsg(null);
           setOtpState(null);
-        }, 1500);
+        }, 1200);
       } else {
         setStatusMsg({
           type: "error",
-          text: checkResult.error || "OTP verification failed. Please check the code and try again.",
+          text: checkResult.error || "OTP verification failed. Please check the code.",
         });
       }
     } catch (err: any) {
@@ -335,569 +413,6 @@ const LeftUploadPanel: React.FC<LeftUploadPanelProps> = ({
     }
   };
 
-  const ext = selectedFile ? getFileExtension(selectedFile.name) : "";
-
-  return (
-    <div
-      onDragOver={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDraggingOver(true);
-      }}
-      onDragLeave={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDraggingOver(false);
-      }}
-      onDrop={handleDrop}
-      className={`w-full lg:w-112.5 shrink-0 bg-(--bg-surface)/40 rounded-3xl p-6 border transition-all flex flex-col gap-5 ${
-        isDraggingOver
-          ? "border-(--accent-base) bg-(--accent-base)/10 ring-2 ring-(--accent-base)/30"
-          : "border-(--border-dim)/40 hover:border-(--border-dim)/70"
-      }`}>
-      {/* Title / Header */}
-      <div className="flex items-center justify-between pb-1 border-b border-(--border-dim)/20">
-        <h3 className="font-expanded font-black text-sm uppercase tracking-wider text-(--text-main) flex items-center gap-2">
-          {otpState ? (
-            <>
-              <Lock className="w-4 h-4 text-(--accent-base)" />
-              OTP Verification
-            </>
-          ) : selectedFile ? (
-            <>
-              <CloudUpload className="w-4 h-4 text-(--accent-base)" />
-              Upload Assignment
-            </>
-          ) : (
-            <>
-              <CloudUpload className="w-4 h-4 text-(--accent-base)" />
-              Quick Upload
-            </>
-          )}
-        </h3>
-        {otpState ? (
-          <span className="text-[11px] font-mono font-bold text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
-            OTP Required
-          </span>
-        ) : selectedFile ? (
-          <span className="text-[11px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
-            File Ready
-          </span>
-        ) : null}
-      </div>
-
-      {otpState ? (
-        /* OTP Verification View */
-        <div className="flex flex-col gap-4">
-          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex flex-col gap-2">
-            <div className="flex items-center gap-2 text-amber-400 font-bold text-xs">
-              <Lock className="w-4 h-4 shrink-0" />
-              <span>Authentication Code Sent</span>
-            </div>
-            <p className="text-xs text-(--text-muted) leading-relaxed">
-              Updating an existing submission requires OTP verification. Enter the 6-digit OTP sent to your student email
-              {otpState.emailHint ? (
-                <> (<strong className="text-(--text-main)">{otpState.emailHint}</strong>)</>
-              ) : null}.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-(--text-muted)">
-              Enter 6-Digit OTP
-            </label>
-            <div className="flex items-center gap-2">
-              <div className="px-3.5 py-2.5 rounded-xl bg-(--bg-main) border border-(--border-dim)/40 text-xs font-mono font-bold text-(--text-muted) select-none shrink-0">
-                {otpState.otpPrefix}
-              </div>
-              <input
-                type="text"
-                autoFocus
-                maxLength={6}
-                value={otpState.otpVal}
-                onChange={(e) =>
-                  setOtpState({
-                    ...otpState,
-                    otpVal: e.target.value.replace(/[^0-9]/g, ""),
-                  })
-                }
-                placeholder="123456"
-                className="flex-1 px-3.5 py-2.5 rounded-xl text-base font-mono font-bold tracking-widest bg-(--bg-main) border border-(--border-dim)/40 text-(--text-main) outline-none focus:border-(--accent-base)"
-              />
-            </div>
-          </div>
-
-          {/* Status Message */}
-          {statusMsg && (
-            <div
-              className={`p-3 rounded-xl font-bold text-xs flex items-center gap-2 ${
-                statusMsg.type === "success"
-                  ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                  : "bg-red-500/15 text-red-400 border border-red-500/30"
-              }`}>
-              {statusMsg.type === "success" ? (
-                <CheckCircle className="w-4 h-4 shrink-0" />
-              ) : (
-                <ErrorIcon className="w-4 h-4 shrink-0" />
-              )}
-              <span>{statusMsg.text}</span>
-            </div>
-          )}
-
-          <div className="flex items-center gap-2 pt-1">
-            <button
-              onClick={() => {
-                setOtpState(null);
-                setStatusMsg(null);
-              }}
-              disabled={isUploading}
-              className="flex-1 py-3 rounded-xl text-xs font-bold uppercase bg-(--bg-main) hover:bg-(--bg-highlight) text-(--text-muted) transition-colors cursor-pointer border border-(--border-dim)/40">
-              Cancel
-            </button>
-            <button
-              onClick={handleOtpSubmit}
-              disabled={isUploading || otpState.otpVal.length < 4}
-              className="flex-1 py-3 rounded-xl text-xs font-black uppercase bg-(--accent-base) text-(--text-inverse) transition-all cursor-pointer disabled:opacity-50 hover:opacity-90 flex items-center justify-center gap-2 border-0">
-              <CheckCircle className="w-4 h-4" />
-              {isUploading ? "Verifying..." : "Verify OTP"}
-            </button>
-          </div>
-        </div>
-      ) : !selectedFile ? (
-        /* Empty State Dropzone */
-        <div
-          onClick={() => {
-            const input = document.createElement("input");
-            input.type = "file";
-            input.accept = ".pdf,.xls,.xlsx,.doc,.docx";
-            input.onchange = (e: any) => {
-              const f = e.target.files?.[0];
-              if (f) {
-                if (!isAllowedFile(f)) {
-                  alert("Invalid file format. Allowed formats: PDF, XLS, XLSX, DOC, DOCX.");
-                  return;
-                }
-                if (f.size > MAX_FILE_SIZE && getFileExtension(f.name) !== "pdf") {
-                  alert("File size exceeds 4MB limit.");
-                  return;
-                }
-                setOtpState(null);
-                setStatusMsg(null);
-                onSelectFile(f);
-              }
-            };
-            input.click();
-          }}
-          className="w-full py-10 px-6 rounded-2xl border-2 border-dashed border-(--border-dim) bg-(--bg-main)/40 hover:bg-(--bg-main)/80 hover:border-(--accent-base)/60 transition-all flex flex-col items-center justify-center text-center gap-3 cursor-pointer">
-          <div className="p-3.5 rounded-2xl bg-(--accent-base)/15 text-(--accent-base)">
-            <CloudUpload className="w-8 h-8" />
-          </div>
-          <div className="flex flex-col gap-1">
-            <h4 className="font-expanded font-black text-base text-(--text-main)">
-              Drag & Drop Assignment
-            </h4>
-            <span className="text-xs font-medium text-(--text-muted)">
-              Drop file here or click to browse
-            </span>
-            <span className="text-[10px] font-mono text-(--text-muted)/70 mt-1">
-              PDF, DOCX, XLSX, XLS, DOC • Max 4MB
-            </span>
-          </div>
-        </div>
-      ) : (
-        /* Attached File + Selection Controls in SAME Card */
-        <div className="flex flex-col gap-4">
-          {/* File Card Banner */}
-          <div className="flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-(--bg-main) border border-(--border-dim)/40">
-            <div className="flex items-center gap-3 min-w-0 flex-1">
-              <div className="p-2.5 rounded-xl bg-(--accent-base) text-(--text-inverse) shrink-0 font-mono font-black text-xs uppercase">
-                {ext}
-              </div>
-              <div className="flex flex-col min-w-0 flex-1">
-                <span className="font-bold text-xs text-(--text-main) truncate" title={selectedFile.name}>
-                  {selectedFile.name}
-                </span>
-                <span className="text-[11px] text-(--text-muted) font-mono">
-                  {formatFileSize(selectedFile.size)}
-                </span>
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                setOtpState(null);
-                setStatusMsg(null);
-                onClearFile();
-              }}
-              className="p-1.5 rounded-lg text-(--text-muted) hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
-              title="Remove File">
-              <Close className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* PDF Visual Preview if available */}
-          {pdfUrl && (
-            <div className="w-full h-44 rounded-2xl overflow-hidden border border-(--border-dim)/40 bg-zinc-900">
-              <iframe src={pdfUrl} title="PDF Preview" className="w-full h-full border-0" />
-            </div>
-          )}
-
-          {/* Course & Assignment Target Pickers */}
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-1">
-              <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-(--text-muted)">
-                Target Course
-              </label>
-              <select
-                value={selectedClassId}
-                onChange={(e) => {
-                  setSelectedClassId(e.target.value);
-                  setSelectedAssgnCode("");
-                }}
-                className="w-full px-3.5 py-2.5 rounded-xl text-xs font-bold bg-(--bg-main) border border-(--border-dim)/40 text-(--text-main) outline-none cursor-pointer focus:border-(--accent-base)">
-                {courses.map((c) => (
-                  <option key={c.classId} value={c.classId}>
-                    {c.code} - {c.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-(--text-muted)">
-                Target Assignment
-              </label>
-              <select
-                value={selectedAssgnCode}
-                onChange={(e) => setSelectedAssgnCode(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl text-xs font-bold bg-(--bg-main) border border-(--border-dim)/40 text-(--text-main) outline-none cursor-pointer focus:border-(--accent-base)">
-                {availableAssignments.length === 0 ? (
-                  <option value="">No assignments found for course</option>
-                ) : (
-                  availableAssignments.map((a) => (
-                    <option key={a.code} value={a.code}>
-                      {a.title} {a.dueDate ? `(Due: ${a.dueDate})` : ""} {a.lastUpdated ? "• Re-upload" : ""}
-                    </option>
-                  ))
-                )}
-              </select>
-            </div>
-          </div>
-
-          {/* Status Message */}
-          {statusMsg && (
-            <div
-              className={`p-3 rounded-xl font-bold text-xs flex items-center gap-2 ${
-                statusMsg.type === "success"
-                  ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                  : "bg-red-500/15 text-red-400 border border-red-500/30"
-              }`}>
-              {statusMsg.type === "success" ? (
-                <CheckCircle className="w-4 h-4 shrink-0" />
-              ) : (
-                <ErrorIcon className="w-4 h-4 shrink-0" />
-              )}
-              <span>{statusMsg.text}</span>
-            </div>
-          )}
-
-          {/* Submit Action Button */}
-          <button
-            onClick={handleUploadSubmit}
-            disabled={isUploading || availableAssignments.length === 0}
-            className="w-full py-3 rounded-xl text-xs font-black uppercase bg-(--accent-base) text-(--text-inverse) transition-all cursor-pointer disabled:opacity-50 hover:opacity-90 flex items-center justify-center gap-2 border-0">
-            <CloudUpload className="w-4 h-4" />
-            {isUploading ? "Uploading to VTOP..." : "Submit to VTOP"}
-          </button>
-        </div>
-      )}
-    </div>
-  );
-};
-
-const CourseCard = ({ course, network, expanded, setExpanded, onSelectFile }: any) => {
-  const { daAssignments, fetchDAAssignments, daLoading } = useDataStore();
-  const rawAssignments = daAssignments[course.classId];
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [activeAssgn, setActiveAssgn] = useState<any>(null);
-  const [downloadingDA, setDownloadingDA] = useState<string | null>(null);
-  const [downloadingQP, setDownloadingQP] = useState<string | null>(null);
-
-  // Sort assignments: pending first, then by due date timestamp ascending
-  const sortedAssignments = useMemo(() => {
-    if (!rawAssignments) return [];
-    return [...rawAssignments].sort((a, b) => {
-      const aSubmitted = Boolean(a.lastUpdated && a.lastUpdated.trim() !== "");
-      const bSubmitted = Boolean(b.lastUpdated && b.lastUpdated.trim() !== "");
-      if (aSubmitted !== bSubmitted) return aSubmitted ? 1 : -1;
-      return parseDueDateTimestamp(a.dueDate) - parseDueDateTimestamp(b.dueDate);
-    });
-  }, [rawAssignments]);
-
-  const handleDownloadStudentDA = async (e: React.MouseEvent, assgn: any) => {
-    e.stopPropagation();
-    try {
-      setDownloadingDA(assgn.code);
-      await network.downloadStudentDA(course.classId, assgn.code, `${course.code}_${assgn.code}_Submission.pdf`);
-    } catch (err) {
-      alert("Failed to download assignment submission.");
-    } finally {
-      setDownloadingDA(null);
-    }
-  };
-
-  const handleDownloadQP = async (e: React.MouseEvent, assgn: any) => {
-    e.stopPropagation();
-    try {
-      setDownloadingQP(assgn.code);
-      await network.downloadQP(course.classId, assgn.code, `${course.code}_${assgn.code}_QP.pdf`);
-    } catch (err) {
-      alert("Failed to download question paper.");
-    } finally {
-      setDownloadingQP(null);
-    }
-  };
-
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !activeAssgn) return;
-
-    if (!isAllowedFile(file)) {
-      alert("Invalid file format. Allowed formats: PDF, XLS, XLSX, DOC, DOCX.");
-      return;
-    }
-    if (file.size > MAX_FILE_SIZE && getFileExtension(file.name) !== "pdf") {
-      alert("File size exceeds 4MB limit.");
-      return;
-    }
-
-    onSelectFile(file, course.classId, activeAssgn.code);
-    setActiveAssgn(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  const handleToggle = () => {
-    if (expanded) {
-      setExpanded(null);
-    } else {
-      setExpanded(course.classId);
-      if (!rawAssignments || rawAssignments.length === 0) {
-        fetchDAAssignments(network, course.classId);
-      }
-    }
-  };
-
-  const pendingCount = rawAssignments
-    ? rawAssignments.filter((a: any) => !a.lastUpdated || a.lastUpdated.trim() === "").length
-    : 0;
-
-  const isCourseLoading = daLoading && !rawAssignments;
-
-  return (
-    <div className="bg-(--bg-surface)/40 hover:bg-(--bg-surface)/70 rounded-3xl overflow-hidden transition-colors border-0 shadow-none">
-      <button
-        onClick={handleToggle}
-        className="w-full p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left transition-colors cursor-pointer">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-            <span className="px-2.5 py-0.5 rounded-full bg-(--bg-highlight) text-(--text-main) text-xs font-mono font-bold">
-              {course.code}
-            </span>
-            <span className="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-xs font-mono font-black uppercase">
-              {course.type}
-            </span>
-            {pendingCount > 0 && (
-              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-xs font-mono font-black uppercase tracking-wider">
-                {pendingCount} Pending
-              </span>
-            )}
-          </div>
-          <h3 className="text-base md:text-lg font-bold text-(--text-main) truncate leading-snug">
-            {course.title}
-          </h3>
-          <div className="flex items-center gap-1.5 mt-1 text-(--text-muted) text-xs">
-            <Person className="w-4 h-4 text-(--text-muted)" />
-            <span className="truncate">{course.faculty}</span>
-          </div>
-        </div>
-
-        <div className="shrink-0 flex items-center justify-between md:justify-end gap-3">
-          <div
-            className={`p-2 rounded-full bg-(--bg-main) transition-transform duration-200 ${
-              expanded ? "rotate-180" : ""
-            }`}>
-            <KeyboardArrowDown className="w-5 h-5 text-(--text-muted)" />
-          </div>
-        </div>
-      </button>
-
-      {expanded && (
-        <div className="overflow-hidden">
-          <div className="p-4 md:p-5 pt-0 border-t border-(--border-dim)/20 bg-(--bg-main)/40">
-            {isCourseLoading ? (
-              <div className="flex justify-center py-6 text-(--text-muted) font-mono font-bold text-xs animate-pulse">
-                LOADING ASSIGNMENTS...
-              </div>
-            ) : sortedAssignments && sortedAssignments.length > 0 ? (
-              <div className="grid grid-cols-1 gap-3 mt-3">
-                {sortedAssignments.map((assgn: any, idx: number) => {
-                  const isSubmitted = Boolean(assgn.lastUpdated && assgn.lastUpdated.trim() !== "");
-
-                  return (
-                    <div
-                      key={idx}
-                      className="bg-(--bg-surface)/60 p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 border-0">
-                      <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="font-bold text-(--text-main) text-sm truncate">
-                            {assgn.title}
-                          </h4>
-                          <span
-                            className={`text-[10px] font-mono font-black uppercase px-2.5 py-0.5 rounded-full shrink-0 ${
-                              isSubmitted
-                                ? "bg-emerald-500/20 text-emerald-400"
-                                : "bg-amber-500/20 text-amber-400"
-                            }`}>
-                            {isSubmitted ? "Submitted" : "Pending"}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-(--text-muted)">
-                          <span className="bg-(--bg-main) px-2.5 py-0.5 rounded-md">
-                            Max: <strong className="text-(--text-main)">{assgn.maxMark}</strong>
-                          </span>
-                          <span className="bg-(--bg-main) px-2.5 py-0.5 rounded-md">
-                            Weightage: <strong className="text-(--text-main)">{assgn.weightage}</strong>
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="shrink-0 flex flex-col items-start md:items-end gap-1 text-xs font-mono text-(--text-muted)">
-                        <div>
-                          Due: <span className="text-(--text-main) font-bold">{assgn.dueDate || "N/A"}</span>
-                        </div>
-                        <div className="text-[11px] text-(--text-muted)">
-                          Updated: {assgn.lastUpdated || "Not Uploaded"}
-                        </div>
-                        <div className="flex items-center gap-2 mt-1 flex-wrap">
-                          {/* QP Download Button */}
-                          {assgn.hasQP && (
-                            <button
-                              onClick={(e) => handleDownloadQP(e, assgn)}
-                              disabled={downloadingQP === assgn.code}
-                              title="Download Question Paper"
-                              className="px-3 py-1 flex items-center gap-1.5 bg-(--bg-main) hover:bg-(--bg-highlight) rounded-xl transition-colors text-xs font-bold text-(--text-main) cursor-pointer border border-(--border-dim)/40">
-                              <Description className="w-3.5 h-3.5 text-(--accent-base)" />
-                              {downloadingQP === assgn.code ? "Downloading..." : "QP"}
-                            </button>
-                          )}
-
-                          {/* Student Submission Download Button */}
-                          {isSubmitted && (
-                            <button
-                              onClick={(e) => handleDownloadStudentDA(e, assgn)}
-                              disabled={downloadingDA === assgn.code}
-                              title="Download Your Submission"
-                              className="px-3 py-1 flex items-center gap-1.5 bg-(--bg-main) hover:bg-(--bg-highlight) rounded-xl transition-colors text-xs font-bold text-(--text-main) cursor-pointer border border-(--border-dim)/40">
-                              <Download className="w-3.5 h-3.5 text-(--accent-base)" />
-                              {downloadingDA === assgn.code ? "Downloading..." : "Download"}
-                            </button>
-                          )}
-
-                          {/* Upload / Re-upload Button */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveAssgn(assgn);
-                              fileInputRef.current?.click();
-                            }}
-                            className="px-3.5 py-1 flex items-center gap-1.5 bg-(--accent-base) text-(--text-inverse) hover:opacity-90 rounded-xl transition-opacity text-xs font-mono font-bold uppercase cursor-pointer border-0">
-                            <Upload className="w-3.5 h-3.5" />
-                            {isSubmitted ? "Re-upload" : "Upload"}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  style={{ display: "none" }}
-                  accept=".pdf,.xls,.xlsx,.doc,.docx"
-                  onChange={handleFileInputChange} />
-              </div>
-            ) : (
-              <div className="py-6 text-center text-xs text-(--text-muted) font-medium">
-                No digital assignments found for this course.
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default function DigitalAssignments({ network }: { network: VTOPNetwork }) {
-  const { daSemesters, daCourses, daAssignments, daLoading, status, fetchDASemesters, fetchDAAssignments } =
-    useDataStore();
-  const { daDropFile, setDaDropFile } = useAppStore();
-
-  const [expandedCourse, setExpandedCourse] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [targetContext, setTargetContext] = useState<{ classId: string; assgnCode: string }>({
-    classId: "",
-    assgnCode: "",
-  });
-
-  useEffect(() => {
-    if (status !== "Demo Mode Active" && daSemesters.length === 0) {
-      fetchDASemesters(network);
-    }
-    const handleRefresh = (e: Event) => {
-      const detail = (e as CustomEvent)?.detail;
-      const sem = detail?.sem || useDataStore.getState().daSelectedSem;
-      if (sem) {
-        useDataStore.getState().fetchDACourses(network, sem, true);
-      }
-    };
-    window.addEventListener("retop-refresh-da", handleRefresh);
-    return () => window.removeEventListener("retop-refresh-da", handleRefresh);
-  }, [status, daSemesters.length, fetchDASemesters, network]);
-
-  useEffect(() => {
-    if (daDropFile) {
-      handleSelectFile(daDropFile);
-      setDaDropFile(null);
-    }
-  }, [daDropFile, setDaDropFile]);
-
-  const handleSelectFile = (file: File, classId: string = "", assgnCode: string = "") => {
-    if (classId) setTargetContext({ classId, assgnCode });
-    setSelectedFile(file);
-  };
-
-  const handleSuccessUpload = (classId: string) => {
-    fetchDAAssignments(network, classId, true);
-  };
-
-  // Sort courses by earliest pending assignment due date
-  const sortedCourses = useMemo(() => {
-    if (!daCourses) return [];
-    return [...daCourses].sort((a, b) => {
-      const aAssgns = daAssignments[a.classId] || [];
-      const bAssgns = daAssignments[b.classId] || [];
-      const aMinDue = aAssgns.reduce(
-        (min: number, curr: any) => Math.min(min, parseDueDateTimestamp(curr.dueDate)),
-        Infinity,
-      );
-      const bMinDue = bAssgns.reduce(
-        (min: number, curr: any) => Math.min(min, parseDueDateTimestamp(curr.dueDate)),
-        Infinity,
-      );
-      return aMinDue - bMinDue;
-    });
-  }, [daCourses, daAssignments]);
-
   if (status === "Offline - Not Synced") {
     return <OfflineNotSynced pageName="Digital Assignments" />;
   }
@@ -906,63 +421,360 @@ export default function DigitalAssignments({ network }: { network: VTOPNetwork }
     <div
       id="retop-da-page"
       className="h-full w-full bg-(--bg-main) text-(--text-main) overflow-y-auto custom-scrollbar relative z-0">
+      {/* Clearance for floating TopBar */}
       <div className="w-full h-20 md:h-24 shrink-0" />
 
-      <div className="pb-32 px-4 md:px-8 max-w-7xl mx-auto w-full flex flex-col lg:flex-row gap-6 items-start">
-        {/* LEFT COLUMN: Drag & Drop + File Attachment & Upload Target Panel (with OTP handling) */}
-        <LeftUploadPanel
-          selectedFile={selectedFile}
-          onClearFile={() => {
-            setSelectedFile(null);
-            setTargetContext({ classId: "", assgnCode: "" });
-          }}
-          onSelectFile={handleSelectFile}
-          courses={daCourses}
-          assignmentsMap={daAssignments}
-          initialClassId={targetContext.classId}
-          initialAssgnCode={targetContext.assgnCode}
-          network={network}
-          onSuccessUpload={handleSuccessUpload} />
-
-        {/* RIGHT COLUMN: Course Cards & Sorted Assignments */}
-        <div className="flex-1 w-full flex flex-col gap-4">
+      {/* Main Container: Leftward aligned */}
+      <div className="px-4 sm:px-6 md:px-8 pb-16 w-full max-w-7xl mx-auto flex flex-col md:flex-row gap-6 items-start">
+        
+        {/* ================= LEFT COLUMN: COMPACT COURSE LIST ================= */}
+        <div className="w-full md:w-80 lg:w-96 shrink-0 flex flex-col gap-3">
+          {/* Header & Course Count */}
           <div className="flex items-center justify-between px-1">
-            <h2 className="text-xl font-expanded font-black text-(--text-main)">
-              Digital Assignments
-            </h2>
-            <span className="text-xs font-mono font-bold text-(--text-muted)">
-              {daCourses.length} Courses
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono font-black uppercase tracking-wider text-(--text-muted)">
+                Courses ({daCourses.length})
+              </span>
+            </div>
+            {daLoading && (
+              <span className="text-[10px] font-mono font-bold text-(--accent-base) animate-pulse">
+                SYNCING...
+              </span>
+            )}
           </div>
 
-          {daLoading && daCourses.length === 0 ? (
-            <div className="grid grid-cols-1 gap-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-28 bg-(--bg-surface)/40 rounded-3xl animate-pulse" />
-              ))}
+          {/* Compact Course Search */}
+          {daCourses.length > 4 && (
+            <div className="relative w-full">
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-(--text-muted) pointer-events-none" />
+              <input
+                type="text"
+                value={courseSearch}
+                onChange={(e) => setCourseSearch(e.target.value)}
+                placeholder="Filter courses..."
+                className="w-full pl-9.5 pr-4 py-2 rounded-full bg-(--bg-surface)/50 hover:bg-(--bg-surface)/80 focus:bg-(--bg-surface) border border-(--border-dim)/40 focus:border-(--accent-base) text-xs text-(--text-main) placeholder:text-(--text-muted) outline-none transition-all"
+              />
             </div>
-          ) : sortedCourses.length > 0 ? (
-            <div className="grid grid-cols-1 gap-3">
-              {sortedCourses.map((course) => (
-                <CourseCard
-                  key={course.classId}
-                  course={course}
-                  network={network}
-                  expanded={expandedCourse === course.classId}
-                  setExpanded={setExpandedCourse}
-                  onSelectFile={(file: File, classId: string, assgnCode: string) =>
-                    handleSelectFile(file, classId, assgnCode)
-                  } />
-              ))}
-            </div>
+          )}
+
+          {/* Courses List */}
+          <div className="flex flex-col gap-2 w-full">
+            {filteredCourses.length > 0 ? (
+              filteredCourses.map((course) => {
+                const isSelected = course.classId === activeCourse?.classId;
+                const assgns = daAssignments[course.classId] || [];
+                const pendingCount = assgns.filter((a) => !a.lastUpdated || a.lastUpdated.trim() === "").length;
+
+                return (
+                  <button
+                    key={course.classId}
+                    onClick={() => {
+                      setSelectedClassId(course.classId);
+                      setSelectedFile(null);
+                      setActiveUploadAssgn(null);
+                    }}
+                    className={`w-full p-3.5 rounded-2xl text-left transition-all cursor-pointer flex flex-col gap-2 ${
+                      isSelected
+                        ? "bg-(--accent-base)/15 border-2 border-(--accent-base) shadow-xs"
+                        : "bg-(--bg-surface)/40 hover:bg-(--bg-surface)/80 border border-transparent hover:border-(--border-dim)/40"
+                    }`}>
+                    {/* Top Row: Code + Type + Pending Chip */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className={`px-2.5 py-0.5 rounded-full font-mono font-bold text-xs ${
+                          isSelected
+                            ? "bg-(--accent-base) text-(--text-inverse)"
+                            : "bg-(--bg-highlight) text-(--text-main)"
+                        }`}>
+                          {course.code}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 font-mono font-black text-[10px] uppercase">
+                          {course.type}
+                        </span>
+                      </div>
+                      {pendingCount > 0 && (
+                        <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-mono text-[10px] font-black uppercase shrink-0">
+                          {pendingCount} Pending
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Course Title */}
+                    <h4 className="text-sm font-bold text-(--text-main) line-clamp-1 leading-snug">
+                      {course.title}
+                    </h4>
+
+                    {/* Faculty */}
+                    <div className="flex items-center gap-1.5 text-xs text-(--text-muted) truncate">
+                      <Person className="w-3.5 h-3.5 shrink-0 opacity-80" />
+                      <span className="truncate">{course.faculty || "Faculty"}</span>
+                    </div>
+                  </button>
+                );
+              })
+            ) : (
+              <div className="p-6 text-center text-xs text-(--text-muted) bg-(--bg-surface)/30 rounded-2xl border border-(--border-dim)/20">
+                No matching courses found.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ================= RIGHT COLUMN: ASSIGNMENTS & ACTIONS ================= */}
+        <div className="flex-1 min-w-0 w-full flex flex-col gap-5">
+          {activeCourse ? (
+            <>
+              {/* Active Course Hero Card */}
+              <div className="p-5 md:p-6 rounded-3xl bg-(--bg-surface)/50 border border-(--border-dim)/40 flex flex-col gap-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="px-3 py-1 rounded-full bg-(--accent-base) text-(--text-inverse) text-xs font-mono font-bold">
+                    {activeCourse.code}
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-xs font-mono font-black uppercase">
+                    {activeCourse.type}
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-(--bg-highlight) text-(--text-muted) text-xs font-mono">
+                    Class ID: {activeCourse.classId}
+                  </span>
+                </div>
+
+                <h2 className="text-xl md:text-2xl font-bold font-expanded text-(--text-main) leading-tight">
+                  {activeCourse.title}
+                </h2>
+
+                <div className="flex items-center gap-2 text-xs text-(--text-muted) pt-1 border-t border-(--border-dim)/20">
+                  <Person className="w-4 h-4 shrink-0 text-(--accent-base)" />
+                  <span className="font-medium text-(--text-main)">{activeCourse.faculty}</span>
+                </div>
+              </div>
+
+              {/* Upload Modal / Active Attachment Bar if a file is selected */}
+              {selectedFile && activeUploadAssgn && (
+                <div className="p-5 rounded-3xl bg-(--accent-base)/10 border-2 border-(--accent-base) flex flex-col gap-4 transition-all">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CloudUpload className="w-5 h-5 text-(--accent-base)" />
+                      <span className="font-bold text-sm text-(--text-main)">
+                        Upload for <strong className="text-(--accent-base)">{activeUploadAssgn.title}</strong>
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedFile(null);
+                        setActiveUploadAssgn(null);
+                        setOtpState(null);
+                        setStatusMsg(null);
+                      }}
+                      className="p-1 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-(--text-muted) cursor-pointer">
+                      <Close className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Attached File Card */}
+                  <div className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-(--bg-main) border border-(--border-dim)/40">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="px-2.5 py-1 rounded-lg bg-(--accent-base) text-(--text-inverse) font-mono font-black text-xs uppercase">
+                        {getFileExtension(selectedFile.name)}
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-xs font-bold text-(--text-main) truncate" title={selectedFile.name}>
+                          {selectedFile.name}
+                        </span>
+                        <span className="text-[10px] font-mono text-(--text-muted)">
+                          {formatFileSize(selectedFile.size)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* OTP Verification Prompt if Required */}
+                  {otpState ? (
+                    <div className="flex flex-col gap-3 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30">
+                      <div className="flex items-center gap-2 text-amber-400 font-bold text-xs">
+                        <Lock className="w-4 h-4" />
+                        <span>OTP Verification Required</span>
+                      </div>
+                      <p className="text-xs text-(--text-muted)">
+                        Enter the code sent to your student email ({otpState.emailHint || "registered email"}):
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <span className="px-3 py-2 rounded-xl bg-(--bg-main) font-mono font-bold text-xs text-(--text-muted)">
+                          {otpState.otpPrefix}
+                        </span>
+                        <input
+                          type="text"
+                          maxLength={6}
+                          autoFocus
+                          value={otpState.otpVal}
+                          onChange={(e) => setOtpState({ ...otpState, otpVal: e.target.value.replace(/[^0-9]/g, "") })}
+                          placeholder="123456"
+                          className="flex-1 px-3.5 py-2 rounded-xl bg-(--bg-main) border border-(--border-dim)/40 font-mono font-bold text-sm tracking-widest text-(--text-main) outline-none focus:border-(--accent-base)"
+                        />
+                        <button
+                          onClick={handleOtpSubmit}
+                          disabled={isUploading || otpState.otpVal.length < 4}
+                          className="px-5 py-2 rounded-xl bg-(--accent-base) text-(--text-inverse) font-bold text-xs cursor-pointer disabled:opacity-50 border-0">
+                          {isUploading ? "Verifying..." : "Confirm OTP"}
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {/* Status Banner */}
+                  {statusMsg && (
+                    <div className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 ${
+                      statusMsg.type === "success"
+                        ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                        : "bg-red-500/15 text-red-400 border border-red-500/30"
+                    }`}>
+                      {statusMsg.type === "success" ? (
+                        <CheckCircle className="w-4 h-4 shrink-0" />
+                      ) : (
+                        <ErrorIcon className="w-4 h-4 shrink-0" />
+                      )}
+                      <span>{statusMsg.text}</span>
+                    </div>
+                  )}
+
+                  {!otpState && (
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => {
+                          setSelectedFile(null);
+                          setActiveUploadAssgn(null);
+                        }}
+                        disabled={isUploading}
+                        className="px-4 py-2 rounded-full text-xs font-bold bg-(--bg-surface) hover:bg-(--bg-highlight) text-(--text-muted) transition-colors cursor-pointer border border-(--border-dim)/40">
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleExecuteUpload}
+                        disabled={isUploading}
+                        className="px-6 py-2 rounded-full text-xs font-black uppercase bg-(--accent-base) text-(--text-inverse) hover:opacity-90 transition-opacity cursor-pointer border-0 flex items-center gap-2">
+                        <Upload className="w-4 h-4" />
+                        {isUploading ? "Uploading..." : "Submit File"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Assignments List */}
+              <div className="flex flex-col gap-3">
+                <span className="text-xs font-mono font-black uppercase tracking-wider text-(--text-muted) px-1">
+                  Assignments ({currentAssignments.length})
+                </span>
+
+                {currentAssignments.length > 0 ? (
+                  currentAssignments.map((assgn, idx) => {
+                    const isSubmitted = Boolean(assgn.lastUpdated && assgn.lastUpdated.trim() !== "");
+
+                    return (
+                      <div
+                        key={idx}
+                        className="p-5 rounded-3xl bg-(--bg-surface)/40 hover:bg-(--bg-surface)/70 border border-(--border-dim)/30 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        {/* Assignment Details */}
+                        <div className="flex flex-col gap-2 flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="font-bold text-base text-(--text-main) truncate">
+                              {assgn.title}
+                            </h3>
+                            <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-mono font-black uppercase shrink-0 ${
+                              isSubmitted
+                                ? "bg-emerald-500/20 text-emerald-400"
+                                : "bg-amber-500/20 text-amber-400"
+                            }`}>
+                              {isSubmitted ? "Submitted" : "Pending"}
+                            </span>
+                          </div>
+
+                          {/* Chips: Max Mark, Weightage */}
+                          <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-(--text-muted)">
+                            <span className="bg-(--bg-main) px-2.5 py-0.5 rounded-full border border-(--border-dim)/30">
+                              Max Mark: <strong className="text-(--text-main)">{assgn.maxMark}</strong>
+                            </span>
+                            <span className="bg-(--bg-main) px-2.5 py-0.5 rounded-full border border-(--border-dim)/30">
+                              Weightage: <strong className="text-(--text-main)">{assgn.weightage}</strong>
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Right Area: Due Dates & Actions */}
+                        <div className="shrink-0 flex flex-col items-start md:items-end gap-2.5">
+                          <div className="flex flex-col items-start md:items-end text-xs font-mono">
+                            <div className="text-(--text-muted)">
+                              Due: <span className="text-(--text-main) font-bold">{assgn.dueDate || "N/A"}</span>
+                            </div>
+                            <div className="text-[11px] text-(--text-muted)/80">
+                              Updated: {assgn.lastUpdated || "Not Uploaded"}
+                            </div>
+                          </div>
+
+                          {/* Action Pill Buttons */}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {/* Question Paper Download */}
+                            {assgn.hasQP && (
+                              <button
+                                onClick={(e) => handleDownloadQP(e, assgn)}
+                                disabled={downloadingQP === assgn.code}
+                                title="Download Question Paper"
+                                className="px-3.5 py-1.5 rounded-full flex items-center gap-1.5 bg-(--bg-main) hover:bg-(--bg-highlight) text-xs font-bold text-(--text-main) transition-colors cursor-pointer border border-(--border-dim)/50">
+                                <Description className="w-3.5 h-3.5 text-(--accent-base)" />
+                                {downloadingQP === assgn.code ? "Downloading..." : "QP"}
+                              </button>
+                            )}
+
+                            {/* Submission Download */}
+                            {isSubmitted && (
+                              <button
+                                onClick={(e) => handleDownloadStudentDA(e, assgn)}
+                                disabled={downloadingDA === assgn.code}
+                                title="Download Your Submitted File"
+                                className="px-3.5 py-1.5 rounded-full flex items-center gap-1.5 bg-(--bg-main) hover:bg-(--bg-highlight) text-xs font-bold text-(--text-main) transition-colors cursor-pointer border border-(--border-dim)/50">
+                                <Download className="w-3.5 h-3.5 text-(--accent-base)" />
+                                {downloadingDA === assgn.code ? "Downloading..." : "Download"}
+                              </button>
+                            )}
+
+                            {/* Upload / Re-upload Button */}
+                            <button
+                              onClick={() => handleOpenUploadForAssgn(assgn)}
+                              className="px-4 py-1.5 rounded-full flex items-center gap-1.5 bg-(--accent-base) text-(--text-inverse) hover:opacity-90 transition-opacity text-xs font-mono font-bold uppercase cursor-pointer border-0 shadow-xs">
+                              <Upload className="w-3.5 h-3.5" />
+                              {isSubmitted ? "Re-upload" : "Upload"}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="p-8 rounded-3xl bg-(--bg-surface)/30 border border-(--border-dim)/20 text-center flex flex-col items-center justify-center gap-2">
+                    <Description className="w-8 h-8 text-(--text-muted)/60" />
+                    <span className="text-xs font-medium text-(--text-muted)">
+                      No digital assignments found for this course.
+                    </span>
+                  </div>
+                )}
+              </div>
+            </>
           ) : (
             <EmptyState
-              icon={School}
-              msg="No Courses Found"
-              subMsg="Could not find any courses for the selected semester." />
+              msg="No Course Selected"
+              subMsg="Select a course from the left menu to view and submit digital assignments."
+            />
           )}
         </div>
       </div>
+
+      {/* Hidden File Input Trigger */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        style={{ display: "none" }}
+        accept=".pdf,.xls,.xlsx,.doc,.docx"
+        onChange={handleFileInputChange}
+      />
     </div>
   );
 }

@@ -26,15 +26,15 @@ import {
   CourseSummary,
 } from "../../types/vtop";
 import { MaterialSwitch } from "../MaterialSwitch";
-import { SemesterDropdown } from "../timetable/SemesterDropdown";
-import { ClassGroupDropdown } from "../timetable/ClassGroupDropdown";
+import { SemesterDropdown, ClassGroupDropdown } from "../ui/Dropdown";
 import { TopBarSearch } from "./TopBarSearch";
 import { OfficialResourcesMenu } from "../resources/OfficialResourcesMenu";
-import { Tooltip } from "../ui/Tooltip";
 import { SegmentedControl } from "../ui/SegmentedControl";
 import { getCategoryIcon } from "../../utils/icons";
 import { useDataStore } from "../../store/dataStore";
 import { useAppStore } from "../../store/appStore";
+import { fixBase64Image } from "../../parsers/profile";
+import { UserProfileData } from "../../store/slices/profileSlice";
 
 interface TopBarProps {
   currentView: string;
@@ -47,9 +47,11 @@ interface TopBarProps {
   setIsOmniboxOpen: (open: boolean) => void;
   setCurrentView: (view: any) => void;
 
+  user?: UserProfileData;
   pinnedLinks: QuickLink[];
   menuCategories: MenuCategory[];
   onTogglePin: (link: QuickLink) => void;
+  onReorderPins?: (newPins: QuickLink[]) => void;
   onNavigate: (link: QuickLink) => void;
   initialQuery?: string;
   onTimetableSemChange?: (semId: string) => void;
@@ -76,20 +78,20 @@ const getPageTitle = (view: string, dynamicTitle?: string) => {
       return "Settings";
     case "coursePage":
       return "Course Page";
-    case "calendar":
-      return "Academics Calendar";
-    case "attendance":
-      return "Class Attendance";
     case "digitalAssignments":
-      return "Digital Assignments";
+      return "Assignments";
+    case "attendance":
+      return "Attendance";
     case "examSchedule":
       return "Exam Schedule";
+    case "calendar":
+      return "Calendar";
     case "lateHour":
-      return "Late Hour Permission";
+      return "Late Hour";
     case "content":
-      return dynamicTitle || "Content";
+      return dynamicTitle || "Legacy View";
     default:
-      return "retop";
+      return "";
   }
 };
 
@@ -103,9 +105,11 @@ export const TopBar: React.FC<TopBarProps> = ({
   isOmniboxOpen,
   setIsOmniboxOpen,
   setCurrentView,
+  user: propUser,
   pinnedLinks,
   menuCategories,
   onTogglePin,
+  onReorderPins,
   onNavigate,
   initialQuery = "",
   onTimetableSemChange,
@@ -114,6 +118,8 @@ export const TopBar: React.FC<TopBarProps> = ({
   onBack,
 }) => {
   const [isStarOpen, setIsStarOpen] = React.useState(false);
+  const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = React.useState<number | null>(null);
   const [isMobileControlsOpen, setIsMobileControlsOpen] = React.useState(false);
 
   React.useEffect(() => {
@@ -147,7 +153,7 @@ export const TopBar: React.FC<TopBarProps> = ({
     calClassGroups,
     calSelectedGroup,
     setCalSelectedGroup,
-    user,
+    user: storeUser,
     daSemesters,
     daSelectedSem,
     setDaSelectedSem,
@@ -162,6 +168,8 @@ export const TopBar: React.FC<TopBarProps> = ({
     setExamSelectedSem,
     fetchExamSchedule,
   } = useDataStore();
+
+  const user = propUser || storeUser;
 
   const isLoading =
     status === "Syncing..." ||
@@ -363,11 +371,11 @@ export const TopBar: React.FC<TopBarProps> = ({
               >
                 <button
                   onClick={() => setIsMarksModernView(!isMarksModernView)}
+                  title={isMarksModernView ? "Switch to Legacy View" : "Switch to Modern View"}
+                  aria-label={isMarksModernView ? "Switch to Legacy View" : "Switch to Modern View"}
                   className="hidden sm:flex items-center justify-center bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) w-8 h-8 rounded-xl transition-colors cursor-pointer"
                 >
-                  <Tooltip text={isMarksModernView ? "Switch to Legacy View" : "Switch to Modern View"}>
-                    {isMarksModernView ? <List className="w-4 h-4" /> : <GridView className="w-4 h-4" />}
-                  </Tooltip>
+                  {isMarksModernView ? <List className="w-4 h-4" /> : <GridView className="w-4 h-4" />}
                 </button>
 
                 <SemesterDropdown
@@ -710,81 +718,163 @@ export const TopBar: React.FC<TopBarProps> = ({
             const canPinCurrent = !!currentLink && currentView !== "dashboard";
 
             return (
-              <div className="hidden xl:flex items-center relative pointer-events-auto shrink-0">
+              <div className="hidden xl:flex items-center relative pointer-events-auto shrink-0 mr-1">
                 {isStarOpen && (
                   <div
                     className="fixed inset-0 z-[998]"
-                    onClick={() => setIsStarOpen(false)}
+                    onClick={() => {
+                      setIsStarOpen(false);
+                      setDraggedIndex(null);
+                      setDragOverIndex(null);
+                    }}
                   />
                 )}
-                {/* Star button: click = toggle current page pin; hover = open list */}
-                <div
-                  className={`flex items-center justify-center w-10 h-10 rounded-[14px] bg-transparent border-0 cursor-pointer transition-all shadow-none z-[999] ${isCurrentPinned ? "text-(--accent-base)" : "text-(--text-muted) hover:text-(--text-main)"}`}
-                  onClick={() => {
-                    if (canPinCurrent) {
-                      onTogglePin(currentLink!);
-                    } else {
-                      setIsStarOpen(!isStarOpen);
-                    }
-                  }}
-                  onMouseEnter={() => pinnedLinks.length > 0 && setIsStarOpen(true)}
-                  onMouseLeave={() => {
-                    // close after brief delay so user can move into dropdown
-                    setTimeout(() => {
-                      if (!document.querySelector("[data-star-dropdown]:hover")) {
-                        setIsStarOpen(false);
-                      }
-                    }, 120);
+                {/* Star button: open on click only */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsStarOpen(!isStarOpen);
                   }}
                   title={canPinCurrent ? (isCurrentPinned ? "Unpin this page" : "Pin this page") : "Favourites"}
+                  aria-label="Favourites"
+                  className={`flex items-center justify-center w-10 h-10 rounded-[14px] bg-transparent border-0 cursor-pointer transition-all shadow-none z-[999] ${
+                    isCurrentPinned || isStarOpen ? "text-(--accent-base)" : "text-(--text-muted) hover:text-(--text-main)"
+                  }`}
                 >
-                  <Star className={`w-5 h-5 transition-all ${isCurrentPinned ? "scale-110" : "opacity-50 hover:opacity-100"}`} />
-                </div>
+                  <Star className={`w-5 h-5 transition-all ${isCurrentPinned ? "scale-110" : "opacity-60 hover:opacity-100"}`} />
+                </button>
 
-                {/* Pinned pages dropdown */}
-                {pinnedLinks.length > 0 && (
+                {/* Favourites Dropdown Popup */}
+                {isStarOpen && (
                   <div
                     data-star-dropdown
-                    onMouseEnter={() => setIsStarOpen(true)}
-                    onMouseLeave={() => setIsStarOpen(false)}
-                    className={`absolute top-full right-0 mt-2 transition-all duration-150 flex flex-col bg-(--bg-surface) border-2 border-(--border-dim) rounded-[16px] p-1.5 popup-shadow min-w-52 z-[999] ${isStarOpen ? "opacity-100 pointer-events-auto translate-y-0" : "opacity-0 pointer-events-none translate-y-1"}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute top-full right-0 mt-2 flex flex-col bg-(--bg-surface) border-2 border-(--border-dim) rounded-3xl p-2 popup-shadow min-w-64 sm:min-w-72 shadow-2xl z-[999] animate-in fade-in zoom-in-95 duration-100"
                   >
-                    {pinnedLinks.map((link, idx) => {
-                      const Icon = getCategoryIcon(link.title, link.url);
-                      const isThisCurrentPage = currentLink && link.url === currentLink.url;
-                      return (
-                        <div key={idx} className="flex items-center gap-1 group/row">
-                          <button
-                            onClick={() => {
-                              handleLinkClick(link);
-                              setIsStarOpen(false);
+                    {/* 0: Home / Dashboard */}
+                    <div className="flex items-center gap-1 mb-1">
+                      <button
+                        onClick={() => {
+                          setCurrentView("dashboard");
+                          setIsStarOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl transition-colors text-left border-2 border-transparent hover:border-(--border-dim) hover:bg-(--bg-highlight) cursor-pointer ${
+                          currentView === "dashboard"
+                            ? "bg-(--accent-base)/10 text-(--accent-base)"
+                            : "text-(--text-main)"
+                        }`}
+                      >
+                        <Home className="w-5 h-5 text-(--text-muted) shrink-0" />
+                        <span className="text-sm font-bold truncate flex-1">Home</span>
+                        <span className="text-xs font-black font-mono px-2 py-0.5 rounded-lg bg-(--bg-highlight) text-(--text-muted) shrink-0">
+                          0
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* 1-9: Pinned Pages with Drag & Drop Reordering */}
+                    <div className="flex flex-col gap-1 max-h-[340px] overflow-y-auto custom-scrollbar pr-0.5">
+                      {pinnedLinks.map((link, idx) => {
+                        const Icon = getCategoryIcon(link.title, link.url);
+                        const isThisCurrentPage = currentLink && link.url === currentLink.url;
+                        const isDragging = draggedIndex === idx;
+                        const isDragOver = dragOverIndex === idx;
+
+                        return (
+                          <div
+                            key={`${link.url}-${idx}`}
+                            draggable
+                            onDragStart={(e) => {
+                              e.dataTransfer.setData("text/plain", `${idx}`);
+                              setDraggedIndex(idx);
                             }}
-                            className={`flex-1 flex items-center gap-2 px-2.5 py-1.5 rounded-[10px] transition-colors text-left border-2 border-transparent hover:border-(--border-dim) hover:bg-(--bg-highlight) relative overflow-hidden ${isThisCurrentPage ? "bg-(--accent-base)/8" : ""}`}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              e.dataTransfer.dropEffect = "move";
+                              if (dragOverIndex !== idx) setDragOverIndex(idx);
+                            }}
+                            onDragLeave={() => {
+                              if (dragOverIndex === idx) setDragOverIndex(null);
+                            }}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              if (draggedIndex !== null && draggedIndex !== idx) {
+                                const updated = [...pinnedLinks];
+                                const [moved] = updated.splice(draggedIndex, 1);
+                                updated.splice(idx, 0, moved);
+                                onReorderPins?.(updated);
+                              }
+                              setDraggedIndex(null);
+                              setDragOverIndex(null);
+                            }}
+                            onDragEnd={() => {
+                              setDraggedIndex(null);
+                              setDragOverIndex(null);
+                            }}
+                            className={`flex items-center gap-1.5 group/row rounded-2xl transition-all border-2 ${
+                              isDragOver
+                                ? "border-(--accent-base) bg-(--accent-base)/10 scale-[1.01]"
+                                : isDragging
+                                ? "opacity-30 border-dashed border-(--border-dim)"
+                                : "border-transparent hover:border-(--border-dim) bg-transparent hover:bg-(--bg-highlight)"
+                            }`}
                           >
-                            <div className="relative shrink-0">
-                              <Icon className="w-3.5 h-3.5 text-(--text-muted)" />
-                              {isThisCurrentPage && (
-                                <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-(--accent-base)" />
-                              )}
+                            <div
+                              className="pl-2.5 py-2 text-(--text-muted) cursor-grab active:cursor-grabbing hover:text-(--text-main) shrink-0 flex items-center select-none"
+                              title="Drag to reorder"
+                            >
+                              <span className="text-xs font-mono tracking-tighter opacity-40 group-hover/row:opacity-100">⋮⋮</span>
                             </div>
-                            <span className={`text-[11px] font-bold truncate flex-1 ${isThisCurrentPage ? "text-(--accent-base)" : "text-(--text-main)"}`}>
-                              {link.title}
-                            </span>
-                            <span className="text-[9px] font-black font-mono text-(--text-muted) opacity-40 ml-auto shrink-0">
-                              {idx + 1}
-                            </span>
-                          </button>
-                          {/* Unpin button */}
-                          <button
-                            onClick={() => onTogglePin(link)}
-                            className="p-1 rounded-lg text-(--text-muted) hover:text-(--accent-base) opacity-0 group-hover/row:opacity-100 transition-all cursor-pointer shrink-0"
-                            title="Unpin"
-                          >
-                            <Star className="w-3 h-3" />
-                          </button>
-                        </div>
-                      );
-                    })}
+                            <button
+                              onClick={() => {
+                                handleLinkClick(link);
+                                setIsStarOpen(false);
+                              }}
+                              className={`flex-1 flex items-center gap-2.5 py-2.5 pr-1 rounded-xl transition-colors text-left min-w-0 cursor-pointer ${
+                                isThisCurrentPage ? "text-(--accent-base) font-bold" : "text-(--text-main)"
+                              }`}
+                            >
+                              <div className="relative shrink-0">
+                                <Icon className="w-4.5 h-4.5 text-(--text-muted)" />
+                                {isThisCurrentPage && (
+                                  <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-(--accent-base)" />
+                                )}
+                              </div>
+                              <span className="text-sm font-bold truncate flex-1">{link.title}</span>
+                              <span className="text-xs font-black font-mono px-2 py-0.5 rounded-lg bg-(--bg-highlight) text-(--text-muted) shrink-0">
+                                {idx + 1}
+                              </span>
+                            </button>
+                            {/* Unpin button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onTogglePin(link);
+                              }}
+                              className="p-2 mr-1 rounded-xl text-(--text-muted) hover:text-(--accent-base) opacity-40 hover:opacity-100 transition-all cursor-pointer shrink-0"
+                              title="Unpin"
+                            >
+                              <Star className="w-4 h-4 text-(--text-muted) hover:text-(--accent-base)" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Pin Current Page Action if applicable */}
+                    {canPinCurrent && !isCurrentPinned && pinnedLinks.length < 9 && (
+                      <div className="pt-2 mt-1 border-t border-(--border-dim)/60">
+                        <button
+                          onClick={() => {
+                            onTogglePin(currentLink!);
+                          }}
+                          className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-2xl bg-(--bg-highlight) hover:bg-(--accent-base) text-(--text-main) hover:text-(--text-inverse) transition-colors text-sm font-bold cursor-pointer"
+                        >
+                          <Star className="w-4.5 h-4.5" />
+                          <span>Pin "{currentLink.title}" ({pinnedLinks.length + 1})</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -792,8 +882,17 @@ export const TopBar: React.FC<TopBarProps> = ({
           })()}
 
           <div className="hidden lg:flex items-center pointer-events-auto mr-1 md:mr-2">
-            <Tooltip
-              text={
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) {
+                  const isChennai = window.location.hostname.includes("vtopcc");
+                  window.open(isChennai ? "https://vtopcc.vit.ac.in/vtop/open/page" : "https://vtop.vit.ac.in/vtop/open/page", "_blank");
+                } else if (onSync && !isSyncing && !isLoading) {
+                  onSync();
+                }
+              }}
+              title={
                 (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__)
                   ? `Offline Mode - Last saved ${
                       lastSyncTime > 0
@@ -809,43 +908,38 @@ export const TopBar: React.FC<TopBarProps> = ({
                   ? "Syncing..."
                   : "Sync now"
               }
+              aria-label={
+                (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__)
+                  ? "Offline Mode"
+                  : (isSyncing || isLoading)
+                  ? "Syncing"
+                  : "Sync now"
+              }
+              disabled={(isSyncing || isLoading) && !(typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__)}
+              className="flex flex-col items-center justify-center px-1.5 py-0.5 rounded-lg hover:bg-(--bg-hover) transition-colors cursor-pointer text-center disabled:opacity-50 shrink-0 min-w-[24px]"
             >
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) {
-                    const isChennai = window.location.hostname.includes("vtopcc");
-                    window.open(isChennai ? "https://vtopcc.vit.ac.in/vtop/open/page" : "https://vtop.vit.ac.in/vtop/open/page", "_blank");
-                  } else if (onSync && !isSyncing && !isLoading) {
-                    onSync();
-                  }
-                }}
-                disabled={(isSyncing || isLoading) && !(typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__)}
-                className="flex flex-col items-center justify-center px-1.5 py-0.5 rounded-lg hover:bg-(--bg-hover) transition-colors cursor-pointer text-center disabled:opacity-50 shrink-0 min-w-[24px]"
+              <div
+                className={`shrink-0 flex items-center justify-center ${(isSyncing || isLoading) && !(typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ? "animate-spin" : ""}`}
               >
-                <div
-                  className={`shrink-0 flex items-center justify-center ${(isSyncing || isLoading) && !(typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ? "animate-spin" : ""}`}
-                >
-                  {(typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ? (
-                    <NoInternetIcon className="w-3.5 h-3.5 md:w-4 md:h-4 transition-colors" style={{ color: "var(--accent-base, #3b82f6)" }} />
-                  ) : (
-                    <Refresh className="w-3.5 h-3.5 md:w-4 md:h-4 text-(--text-muted) hover:text-(--text-main) transition-colors" />
-                  )}
-                </div>
-                {lastSyncTime > 0 && (
-                  <span className="text-[9px] font-mono font-bold text-(--text-muted) leading-none mt-0.5">
-                    {(() => {
-                      const ago = Math.floor(
-                        (Date.now() - lastSyncTime) / 1000,
-                      );
-                      if (ago < 60) return "now";
-                      if (ago < 3600) return `${Math.floor(ago / 60)}m`;
-                      return `${Math.floor(ago / 3600)}h`;
-                    })()}
-                  </span>
+                {(typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ? (
+                  <NoInternetIcon className="w-3.5 h-3.5 md:w-4 md:h-4 transition-colors" style={{ color: "var(--accent-base, #3b82f6)" }} />
+                ) : (
+                  <Refresh className="w-3.5 h-3.5 md:w-4 md:h-4 text-(--text-muted) hover:text-(--text-main) transition-colors" />
                 )}
-              </button>
-            </Tooltip>
+              </div>
+              {lastSyncTime > 0 && (
+                <span className="text-[9px] font-mono font-bold text-(--text-muted) leading-none mt-0.5">
+                  {(() => {
+                    const ago = Math.floor(
+                      (Date.now() - lastSyncTime) / 1000,
+                    );
+                    if (ago < 60) return "now";
+                    if (ago < 3600) return `${Math.floor(ago / 60)}m`;
+                    return `${Math.floor(ago / 3600)}h`;
+                  })()}
+                </span>
+              )}
+            </button>
           </div>
 
           {((typeof window !== "undefined" && window.location.hostname.includes("vtopcc")) ||
@@ -872,11 +966,9 @@ export const TopBar: React.FC<TopBarProps> = ({
                   }`}
                 >
                   {user.regNo !== "..." &&
-                  user.profileImgBase64 &&
-                  user.profileImgBase64.length > 50 &&
-                  !user.profileImgBase64.endsWith("base64,") ? (
+                  fixBase64Image(user.profileImgBase64) ? (
                     <img
-                      src={user.profileImgBase64}
+                      src={fixBase64Image(user.profileImgBase64)}
                       className="w-full h-full object-cover"
                       alt="Profile"
                       onError={(e) => {

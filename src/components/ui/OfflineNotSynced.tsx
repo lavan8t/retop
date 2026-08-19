@@ -18,7 +18,7 @@ export const OfflineNotSynced = ({ pageName = "Data" }: OfflineNotSyncedProps) =
           No Cached {pageName} Found
         </h2>
         <p className="text-(--text-muted) max-w-md mx-auto text-lg leading-relaxed">
-          No saved offline data was found for this section. Login to VTOP while online to automatically sync and cache your {pageName.toLowerCase()}.
+          No saved offline data was found for this section. Login to <span className="font-vtop font-bold">VTOP</span> while online to automatically sync and cache your {pageName.toLowerCase()}.
         </p>
       </div>
     </div>

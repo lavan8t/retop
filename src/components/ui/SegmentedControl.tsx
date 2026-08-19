@@ -10,6 +10,7 @@ interface SegmentedControlProps<T extends string> {
   value: T;
   onChange: (value: T, e: React.MouseEvent) => void;
   className?: string;
+  buttonClassName?: string;
 }
 
 export const SegmentedControl = <T extends string>({
@@ -17,6 +18,7 @@ export const SegmentedControl = <T extends string>({
   value,
   onChange,
   className = "",
+  buttonClassName = "px-2.5 sm:px-3 py-1.5",
 }: SegmentedControlProps<T>) => {
   return (
     <div className={`flex items-center gap-0.5 shrink-0 ${className}`}>
@@ -41,7 +43,7 @@ export const SegmentedControl = <T extends string>({
               e.stopPropagation();
               onChange(option.value, e);
             }}
-            className={`px-3 md:px-5 py-1.5 text-xs font-bold transition-all duration-fast shadow-none ${roundedClass} ${
+            className={`${buttonClassName} text-xs font-bold transition-all duration-fast shadow-none ${roundedClass} ${
               isSelected
                 ? "bg-(--text-main) text-(--bg-main)"
                 : "bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main)"

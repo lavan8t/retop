@@ -36,6 +36,136 @@ interface CalendarPageProps {
 const WEEKDAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const spring = { type: "spring", stiffness: 300, damping: 30 } as const;
 
+interface MergedCalendarGroup {
+  id: string;
+  startDay: CalendarEvent;
+  endDay: CalendarEvent;
+  count: number;
+  info: string;
+  subInfo: string;
+  isHoliday: boolean;
+  isInstructional: boolean;
+  isExam: boolean;
+  isToday: boolean;
+}
+
+function getMergedCalendarGroups(days: CalendarEvent[]): MergedCalendarGroup[] {
+  // 1. Filter out empty days without events/instructional/holiday/exam
+  const eventDays = days.filter((day) =>
+    Boolean(day.info || day.subInfo || day.isHoliday || day.isExam || day.isInstructional)
+  );
+
+  if (eventDays.length === 0) return [];
+
+  const groups: MergedCalendarGroup[] = [];
+  const todayStr = new Date().toDateString();
+
+  let currentGroup: {
+    startDay: CalendarEvent;
+    endDay: CalendarEvent;
+    count: number;
+    info: string;
+    subInfo: string;
+    isHoliday: boolean;
+    isInstructional: boolean;
+    isExam: boolean;
+    hasToday: boolean;
+  } | null = null;
+
+  for (const day of eventDays) {
+    const isDayToday = new Date(day.dateObj).toDateString() === todayStr;
+    const title =
+      day.info ||
+      (day.isHoliday
+        ? "Holiday"
+        : day.isExam
+        ? "Exam Day"
+        : day.isInstructional
+        ? "Instructional Day"
+        : "");
+
+    const sub = day.subInfo || "";
+
+    if (!currentGroup) {
+      currentGroup = {
+        startDay: day,
+        endDay: day,
+        count: 1,
+        info: title,
+        subInfo: sub,
+        isHoliday: Boolean(day.isHoliday),
+        isInstructional: Boolean(day.isInstructional),
+        isExam: Boolean(day.isExam),
+        hasToday: isDayToday,
+      };
+      continue;
+    }
+
+    const prevDate = new Date(currentGroup.endDay.dateObj);
+    const currDate = new Date(day.dateObj);
+    const diffDays = Math.round(
+      (currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    // Merge if consecutive day (+1 day) and matching event info/category
+    const canMerge =
+      diffDays === 1 &&
+      currentGroup.info.toLowerCase() === title.toLowerCase() &&
+      currentGroup.subInfo.toLowerCase() === sub.toLowerCase() &&
+      currentGroup.isHoliday === Boolean(day.isHoliday) &&
+      currentGroup.isExam === Boolean(day.isExam) &&
+      currentGroup.isInstructional === Boolean(day.isInstructional);
+
+    if (canMerge) {
+      currentGroup.endDay = day;
+      currentGroup.count += 1;
+      if (isDayToday) currentGroup.hasToday = true;
+    } else {
+      groups.push({
+        id: `${currentGroup.startDay.dayNumber}-${currentGroup.endDay.dayNumber}-${currentGroup.info}`,
+        startDay: currentGroup.startDay,
+        endDay: currentGroup.endDay,
+        count: currentGroup.count,
+        info: currentGroup.info,
+        subInfo: currentGroup.subInfo,
+        isHoliday: currentGroup.isHoliday,
+        isInstructional: currentGroup.isInstructional,
+        isExam: currentGroup.isExam,
+        isToday: currentGroup.hasToday,
+      });
+
+      currentGroup = {
+        startDay: day,
+        endDay: day,
+        count: 1,
+        info: title,
+        subInfo: sub,
+        isHoliday: Boolean(day.isHoliday),
+        isInstructional: Boolean(day.isInstructional),
+        isExam: Boolean(day.isExam),
+        hasToday: isDayToday,
+      };
+    }
+  }
+
+  if (currentGroup) {
+    groups.push({
+      id: `${currentGroup.startDay.dayNumber}-${currentGroup.endDay.dayNumber}-${currentGroup.info}`,
+      startDay: currentGroup.startDay,
+      endDay: currentGroup.endDay,
+      count: currentGroup.count,
+      info: currentGroup.info,
+      subInfo: currentGroup.subInfo,
+      isHoliday: currentGroup.isHoliday,
+      isInstructional: currentGroup.isInstructional,
+      isExam: currentGroup.isExam,
+      isToday: currentGroup.hasToday,
+    });
+  }
+
+  return groups;
+}
+
 export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
   const { settings } = useSettingsStore();
 
@@ -237,112 +367,136 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                   <div
                     key="content"
                     className="flex flex-col relative">
-                    {calGridData.map((data, mIdx) => (
-                      <div key={mIdx} className="flex flex-col pb-6 md:pb-8 pt-2 md:pt-4">
-                        <div className="flex items-center justify-start pb-2 md:pb-4 pointer-events-none sticky top-0 z-50 pt-1 md:pt-2 bg-(--bg-main)/90 backdrop-blur-xs">
-                          <h2 className="font-expanded font-black text-lg sm:text-2xl md:text-3xl uppercase tracking-tighter m-0 text-(--text-main) px-1 sm:px-2">
-                            {data.month.label.replace(/\s*-\s*/, " ")}
-                          </h2>
-                        </div>
+                    {calGridData.map((data, mIdx) => {
+                      const mergedGroups = calViewMode === "list" ? getMergedCalendarGroups(data.days) : [];
 
-                        {calViewMode === "list" ? (
-                          /* List View for Month: Timeline layout matching Home Lazy Calendar */
-                          <div className="flex flex-col gap-1 p-0.5 sm:p-1">
-                            {data.days.map((day, idx) => {
-                              const isToday =
-                                new Date().toDateString() ===
-                                new Date(day.dateObj).toDateString();
-
-                              const dateObj = new Date(day.dateObj);
-                              const weekday = !isNaN(dateObj.getTime())
-                                ? WEEKDAYS[dateObj.getDay()]
-                                : "";
-
-                              let cardStyle: React.CSSProperties = {};
-                              let bgClass = "bg-(--bg-surface) hover:bg-(--bg-highlight)";
-                              let titleClass = "text-(--text-main)";
-
-                              if (day.isHoliday) {
-                                cardStyle = {
-                                  backgroundColor: holidayBg,
-                                  color: holidayFg,
-                                };
-                                bgClass = "border-0 hover:opacity-90";
-                                titleClass = "font-black";
-                              } else if (day.isExam) {
-                                cardStyle = {
-                                  backgroundColor: examBg,
-                                  color: examFg,
-                                };
-                                bgClass = "border-0 hover:opacity-90";
-                                titleClass = "font-black";
-                              } else if (day.isInstructional) {
-                                cardStyle = {
-                                  backgroundColor: classBg,
-                                  color: classFg,
-                                };
-                                bgClass = "border-0 hover:opacity-90";
-                                titleClass = "font-black";
-                              } else if (day.info) {
-                                cardStyle = {
-                                  backgroundColor: eventBg,
-                                  color: eventFg,
-                                };
-                                bgClass = "border-0 hover:opacity-90";
-                                titleClass = "font-black";
-                              }
-
-                              const hasDetails = Boolean(
-                                day.info || day.subInfo || day.isHoliday || day.isExam || day.isInstructional
-                              );
-
-                              return (
-                                <div
-                                  key={idx}
-                                  ref={isToday ? todayRef : null}
-                                  className={`${!hasDetails ? "hidden sm:flex" : "flex"} gap-2 sm:gap-3 relative select-none items-stretch`}
-                                >
-                                  {/* Left Date Column */}
-                                  <div className="flex flex-col items-center shrink-0 w-8 sm:w-10 pt-1 sticky top-4 h-fit">
-                                    <div
-                                      className={`flex items-center justify-center font-black transition-all w-7 h-7 sm:w-8 sm:h-8 rounded-full text-xs sm:text-sm ${
-                                        isToday
-                                          ? "bg-(--accent-base) text-(--text-inverse)"
-                                          : "bg-transparent text-(--text-main)"
-                                      }`}
-                                    >
-                                      {day.dayNumber}
-                                    </div>
-                                    <div
-                                      className={`text-[8px] sm:text-[9px] font-expanded font-bold uppercase mt-0.5 ${
-                                        isToday ? "text-(--accent-base)" : "text-(--text-muted)"
-                                      }`}
-                                    >
-                                      {weekday}
-                                    </div>
-                                  </div>
-
-                                  {/* Right Content Area: Card with full color same as Grid */}
-                                  <div className="flex flex-col flex-1 min-w-0 border-l-2 border-(--border-dim) pl-2 sm:pl-3 pb-1">
-                                    <div
-                                      style={cardStyle}
-                                      className={`p-2 sm:p-2.5 rounded-xl sm:rounded-2xl flex items-center justify-between gap-2 transition-all ${bgClass}`}
-                                    >
-                                      <span className={`text-xs sm:text-sm font-bold leading-snug wrap-break-word ${titleClass}`}>
-                                        {day.info || (day.isInstructional ? "Instructional Day" : day.isHoliday ? "Holiday" : day.isExam ? "Exam Day" : "Regular Day")}
-                                      </span>
-                                      {day.subInfo && (
-                                        <span className="text-[8px] sm:text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase shrink-0 bg-current/15 text-current">
-                                          {day.subInfo.replace(/[()]/g, "")}
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
+                      return (
+                        <div key={mIdx} className="flex flex-col pb-6 md:pb-8 pt-2 md:pt-4">
+                          <div className="flex items-center justify-start pb-2 md:pb-4 pointer-events-none sticky top-0 z-50 pt-1 md:pt-2 bg-transparent">
+                            <h2 className="font-expanded font-black text-lg sm:text-2xl md:text-3xl uppercase tracking-tighter m-0 text-(--text-main) px-1 sm:px-2">
+                              {data.month.label.replace(/\s*-\s*/, " ")}
+                            </h2>
                           </div>
-                        ) : (
+
+                          {calViewMode === "list" ? (
+                            /* List View for Month: Merged schedule-based timeline */
+                            <div className="flex flex-col gap-1 p-0.5 sm:p-1">
+                              {mergedGroups.length === 0 ? (
+                                <div className="py-4 px-3 text-xs font-bold text-(--text-muted) italic">
+                                  No scheduled events or instructional days for this month.
+                                </div>
+                              ) : (
+                                mergedGroups.map((group) => {
+                                  const startDateObj = new Date(group.startDay.dateObj);
+                                  const endDateObj = new Date(group.endDay.dateObj);
+                                  const startWeekday = !isNaN(startDateObj.getTime())
+                                    ? WEEKDAYS[startDateObj.getDay()]
+                                    : "";
+                                  const endWeekday = !isNaN(endDateObj.getTime())
+                                    ? WEEKDAYS[endDateObj.getDay()]
+                                    : "";
+
+                                  let cardStyle: React.CSSProperties = {};
+                                  let bgClass = "bg-(--bg-surface) hover:bg-(--bg-highlight)";
+                                  let titleClass = "text-(--text-main)";
+
+                                  if (group.isHoliday) {
+                                    cardStyle = {
+                                      backgroundColor: holidayBg,
+                                      color: holidayFg,
+                                    };
+                                    bgClass = "border-0 hover:opacity-90";
+                                    titleClass = "font-black";
+                                  } else if (group.isExam) {
+                                    cardStyle = {
+                                      backgroundColor: examBg,
+                                      color: examFg,
+                                    };
+                                    bgClass = "border-0 hover:opacity-90";
+                                    titleClass = "font-black";
+                                  } else if (group.isInstructional) {
+                                    cardStyle = {
+                                      backgroundColor: classBg,
+                                      color: classFg,
+                                    };
+                                    bgClass = "border-0 hover:opacity-90";
+                                    titleClass = "font-black";
+                                  } else if (group.info) {
+                                    cardStyle = {
+                                      backgroundColor: eventBg,
+                                      color: eventFg,
+                                    };
+                                    bgClass = "border-0 hover:opacity-90";
+                                    titleClass = "font-black";
+                                  }
+
+                                  const dateLabel =
+                                    group.count > 1
+                                      ? `${group.startDay.dayNumber} - ${group.endDay.dayNumber}`
+                                      : group.startDay.dayNumber;
+
+                                  const weekdayLabel =
+                                    group.count > 1
+                                      ? `${startWeekday} - ${endWeekday}`
+                                      : startWeekday;
+
+                                  return (
+                                    <div
+                                      key={group.id}
+                                      ref={group.isToday ? todayRef : null}
+                                      className="flex gap-2 sm:gap-3 relative select-none items-stretch my-0.5"
+                                    >
+                                      {/* Left Date Column */}
+                                      <div className="flex flex-col items-center shrink-0 w-12 sm:w-16 pt-1 sticky top-4 h-fit">
+                                        <div
+                                          className={`flex items-center justify-center font-black transition-all px-2 h-7 sm:h-8 rounded-full text-xs sm:text-sm text-center ${
+                                            group.isToday
+                                              ? "bg-(--accent-base) text-(--text-inverse)"
+                                              : "bg-transparent text-(--text-main)"
+                                          }`}
+                                        >
+                                          {dateLabel}
+                                        </div>
+                                        <div
+                                          className={`text-[8px] sm:text-[9px] font-expanded font-bold uppercase mt-0.5 text-center ${
+                                            group.isToday ? "text-(--accent-base)" : "text-(--text-muted)"
+                                          }`}
+                                        >
+                                          {weekdayLabel}
+                                        </div>
+                                      </div>
+
+                                      {/* Right Content Area: Card */}
+                                      <div className="flex flex-col flex-1 min-w-0 border-l-2 border-(--border-dim) pl-2 sm:pl-3 pb-1">
+                                        <div
+                                          style={cardStyle}
+                                          className={`p-2.5 sm:p-3 rounded-xl sm:rounded-2xl flex items-center justify-between gap-2 transition-all shadow-xs ${bgClass}`}
+                                        >
+                                          <div className="flex items-center gap-2 min-w-0">
+                                            <span className={`text-xs sm:text-sm font-bold leading-snug wrap-break-word ${titleClass}`}>
+                                              {group.info}
+                                            </span>
+                                          </div>
+                                          <div className="flex items-center gap-1.5 shrink-0">
+                                            {group.count > 1 && (
+                                              <span className="text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded-full uppercase bg-current/15 text-current">
+                                                {group.count} Days
+                                              </span>
+                                            )}
+                                            {group.subInfo && (
+                                              <span className="text-[8px] sm:text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase bg-current/15 text-current">
+                                                {group.subInfo.replace(/[()]/g, "")}
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })
+                              )}
+                            </div>
+                          ) : (
                           /* Grid View for Month: Colored day numbers on mobile, full event info on desktop */
                           <div className="grid grid-cols-7 gap-1 sm:gap-1.5 md:gap-2 auto-rows-[minmax(38px,auto)] sm:auto-rows-[minmax(70px,auto)] md:auto-rows-[minmax(90px,auto)] lg:auto-rows-[minmax(105px,auto)] p-0.5 sm:p-1">
                             {Array.from({ length: data.startOffset }).map(
@@ -462,7 +616,8 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                           </div>
                         )}
                       </div>
-                    ))}
+                    );
+                  })}
                   </div>
                 ) : null}
               

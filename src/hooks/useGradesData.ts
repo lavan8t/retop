@@ -88,7 +88,17 @@ export function useGradesData(
       setFetchingGrades(true);
       setGradesData(null);
       setExpandedCourseId(null);
-      setPredictedGrades({});
+      
+      try {
+        const saved = localStorage.getItem(`retop_pred_grades_${selectedSem}`);
+        if (saved) {
+          setPredictedGrades(JSON.parse(saved));
+        } else {
+          setPredictedGrades({});
+        }
+      } catch {
+        setPredictedGrades({});
+      }
       
       if (useDataStore.getState().status === "Demo Mode Active") {
         setGradesData({
@@ -101,54 +111,67 @@ export function useGradesData(
 
       try {
         const isPastSemester = semesters.length > 0 && semesters[0].id !== selectedSem;
-        const html = await network.getStudentGrades(selectedSem, false, isPastSemester);
-        const parsedGrades = parseGrades(html);
+        let parsedGrades: GradesData = { gpa: "", courses: [] };
+
+        try {
+          const html = await network.getStudentGrades(selectedSem, false, isPastSemester);
+          parsedGrades = parseGrades(html);
+        } catch (err) {
+          console.warn("Failed to fetch student grades directly", err);
+        }
 
         const isLatest = !isPastSemester;
-        if (isLatest) {
+        // If it is the latest/ongoing semester or if grades table returned 0 courses, augment from timetable
+        if (isLatest || parsedGrades.courses.length === 0) {
           try {
-            const ttHtml = await network.fetchWithCache(`tt_${selectedSem}`, async () => {
-              const url = "/vtop/processViewTimeTable";
-              const body = new URLSearchParams();
-              body.append("_csrf", network.csrf);
-              body.append("authorizedID", network.authorizedID);
-              body.append("semesterSubId", selectedSem);
-              body.append("x", new Date().toUTCString());
-
-              const res = await fetch(url, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-                  "X-Requested-With": "XMLHttpRequest",
-                },
-                body: body,
+            // 1. Try store ttCourses if already cached or loaded
+            let ttCourses = useDataStore.getState().ttCourses;
+            if (!ttCourses || ttCourses.length === 0) {
+              const ttHtml = await network.fetchWithCache(`tt_${selectedSem}`, async () => {
+                return await network.fetchVtopApi("processViewTimeTable", {
+                  semesterSubId: selectedSem,
+                });
               });
-              return await res.text();
-            });
-            const ttCourses = parseTimetable(ttHtml).filter(
+              ttCourses = parseTimetable(ttHtml);
+            }
+
+            const validTtCourses = (ttCourses || []).filter(
               (c) =>
                 !c.status.toLowerCase().includes("drop") &&
                 !c.status.toLowerCase().includes("withdrawn")
             );
-            
-            const existingCodes = new Set(parsedGrades.courses.map(c => c.code));
-            
-            for (const tc of ttCourses) {
+
+            const existingCodes = new Set(parsedGrades.courses.map((c) => c.code));
+
+            for (const tc of validTtCourses) {
               if (!existingCodes.has(tc.code)) {
                 parsedGrades.courses.push({
                   code: tc.code,
                   title: tc.title,
                   type: tc.type,
-                  credits: tc.credits,
-                  l: "-", p: "-", j: "-", c: tc.credits,
+                  credits: tc.credits || "0",
+                  l: "-",
+                  p: "-",
+                  j: "-",
+                  c: tc.credits || "0",
                   gradingType: tc.category || "Ongoing",
                   grandTotal: "-",
                   grade: "-",
-                  courseId: tc.classId,
-                  notIncludedInGpa: tc.category?.toLowerCase().includes("non-graded") || tc.category?.toLowerCase().includes("ngcr"),
-                  assessments: []
+                  courseId: tc.classId || tc.code,
+                  notIncludedInGpa:
+                    tc.category?.toLowerCase().includes("non-graded") ||
+                    tc.category?.toLowerCase().includes("ngcr") ||
+                    tc.type?.toLowerCase().includes("non-graded"),
+                  assessments: [],
                 });
                 existingCodes.add(tc.code);
+              } else {
+                // If existing entry has 0 credits (e.g. lab), update if timetable has higher credits
+                const existing = parsedGrades.courses.find((c) => c.code === tc.code);
+                if (existing && parseFloat(existing.credits || "0") === 0 && parseFloat(tc.credits || "0") > 0) {
+                  existing.credits = tc.credits;
+                  existing.c = tc.credits;
+                }
               }
             }
           } catch (e) {
@@ -158,6 +181,33 @@ export function useGradesData(
 
         setGradesData(parsedGrades);
         setOfflineMiss(false);
+
+        // Slowly pre-fetch all internal assessments in the background
+        if (parsedGrades.courses.length > 0) {
+          const semToFetch = selectedSem;
+          (async () => {
+            for (const c of parsedGrades.courses) {
+              if (!c.courseId || (c.assessments && c.assessments.length > 0)) continue;
+              try {
+                const detailsHtml = await network.getGradeDetails(semToFetch, c.courseId);
+                const details = parseGradeDetails(detailsHtml);
+                setGradesData((prev) => {
+                  if (!prev) return prev;
+                  return {
+                    ...prev,
+                    courses: prev.courses.map((item) =>
+                      item.courseId === c.courseId ? { ...item, ...details } : item
+                    ),
+                  };
+                });
+                // Polite delay between background requests
+                await new Promise((r) => setTimeout(r, 250));
+              } catch (err) {
+                // Ignore silent background prefetch errors
+              }
+            }
+          })();
+        }
       } catch (e: any) {
         if (e && e.message === "OFFLINE_CACHE_MISS") {
           setOfflineMiss(true);
@@ -212,15 +262,17 @@ export function useGradesData(
     }
   };
 
+  const isLatestSem = Boolean(semesters && semesters.length > 0 && semesters[0].id === selectedSem);
+
   const predictedGpa = useMemo(() => {
-    if (!gradesData) return null;
+    if (!isLatestSem || !gradesData) return null;
     let totalCredits = 0;
     let totalPoints = 0;
-    const points: Record<string, number> = { S: 10, A: 9, B: 8, C: 7, D: 6, E: 5, F: 0, N: 0 };
+    const points: Record<string, number> = { S: 10, A: 9, B: 8, C: 7, D: 6, E: 5, F: 0 };
     gradesData.courses.forEach(c => {
       if (c.notIncludedInGpa) return;
-      const credit = parseFloat(c.c || "0");
-      const g = predictedGrades[c.courseId] || c.grade;
+      const credit = parseFloat(c.c || c.credits || "0");
+      const g = (predictedGrades[c.courseId] || predictedGrades[c.code] || c.grade || "").trim().toUpperCase();
       if (points[g] !== undefined) {
         totalCredits += credit;
         totalPoints += credit * points[g];
@@ -228,25 +280,41 @@ export function useGradesData(
     });
     if (totalCredits === 0) return null;
     return (totalPoints / totalCredits).toFixed(2);
-  }, [gradesData, predictedGrades]);
+  }, [isLatestSem, gradesData, predictedGrades]);
 
   const predictedCgpa = useMemo(() => {
-    if (!historyData || !historyData.cgpa || !gradesData) return null;
-    const isCompletedSem = gradesData.gpa && gradesData.gpa !== "0.0" && gradesData.gpa !== "0";
-    if (isCompletedSem) return null;
+    if (!isLatestSem || !gradesData) return null;
 
-    let totalCreditsEarned = parseFloat(historyData.cgpa.creditsEarned || "0");
-    let currentCgpa = parseFloat(historyData.cgpa.cgpa || "0");
-    let totalPoints = totalCreditsEarned * currentCgpa;
+    let totalCreditsEarned = parseFloat(historyData?.cgpa?.creditsEarned || "0");
+    let currentCgpa = parseFloat(historyData?.cgpa?.cgpa || "0");
 
-    const points: Record<string, number> = { S: 10, A: 9, B: 8, C: 7, D: 6, E: 5, F: 0, N: 0 };
+    // If historyData.cgpa is missing or 0, compute from historyData.courses
+    if ((totalCreditsEarned === 0 || isNaN(totalCreditsEarned)) && historyData?.courses && historyData.courses.length > 0) {
+      let earned = 0;
+      let pointsSum = 0;
+      const points: Record<string, number> = { S: 10, A: 9, B: 8, C: 7, D: 6, E: 5, F: 0 };
+      historyData.courses.forEach(c => {
+        const cr = parseFloat(c.credits || "0");
+        const g = (c.grade || "").trim().toUpperCase();
+        if (points[g] !== undefined) {
+          earned += cr;
+          pointsSum += cr * points[g];
+        }
+      });
+      if (earned > 0) {
+        totalCreditsEarned = earned;
+        currentCgpa = pointsSum / earned;
+      }
+    }
+
+    const points: Record<string, number> = { S: 10, A: 9, B: 8, C: 7, D: 6, E: 5, F: 0 };
     let semCredits = 0;
     let semPoints = 0;
 
     gradesData.courses.forEach(c => {
       if (c.notIncludedInGpa) return;
-      const credit = parseFloat(c.c || "0");
-      const g = predictedGrades[c.courseId] || c.grade;
+      const credit = parseFloat(c.c || c.credits || "0");
+      const g = (predictedGrades[c.courseId] || predictedGrades[c.code] || c.grade || "").trim().toUpperCase();
       if (points[g] !== undefined) {
         semCredits += credit;
         semPoints += credit * points[g];
@@ -254,10 +322,30 @@ export function useGradesData(
     });
 
     if (semCredits === 0) return null;
+
+    if (totalCreditsEarned === 0 || currentCgpa === 0 || isNaN(currentCgpa)) {
+      return (semPoints / semCredits).toFixed(2);
+    }
+
+    const totalPoints = totalCreditsEarned * currentCgpa;
     const newTotalCredits = totalCreditsEarned + semCredits;
     const newTotalPoints = totalPoints + semPoints;
     return (newTotalPoints / newTotalCredits).toFixed(2);
-  }, [historyData, gradesData, predictedGrades]);
+  }, [isLatestSem, historyData, gradesData, predictedGrades]);
+
+  const handleSetPredictedGrades: React.Dispatch<React.SetStateAction<Record<string, string>>> = (
+    updater
+  ) => {
+    setPredictedGrades((prev) => {
+      const next = typeof updater === "function" ? (updater as any)(prev) : updater;
+      try {
+        if (selectedSem) {
+          localStorage.setItem(`retop_pred_grades_${selectedSem}`, JSON.stringify(next));
+        }
+      } catch (e) {}
+      return next;
+    });
+  };
 
   return {
     loading,
@@ -267,7 +355,7 @@ export function useGradesData(
     expandedCourseId,
     fetchingDetails,
     predictedGrades,
-    setPredictedGrades,
+    setPredictedGrades: handleSetPredictedGrades,
     offlineMiss,
     handleToggleDetails,
     predictedGpa,

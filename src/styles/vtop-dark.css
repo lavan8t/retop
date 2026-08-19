@@ -63,7 +63,72 @@ html[data-theme="amoled"] .headerBackgroundColor {
   color: var(--vtop-dark-text) !important;
 }
 
+/* Horizontal Menu Bar & Single-Line Navbar Alignment */
+#top-hmenu-bar,
+.horizontal-menu-color,
+.hmenu-sticky {
+  display: flex !important;
+  align-items: center !important;
+}
+
+#top-hmenu-bar .container-fluid,
+#top-hmenu-bar .container {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  width: 100% !important;
+  gap: 8px !important;
+}
+
+#top-hmenu-bar #navbarSupportedContent,
+#top-hmenu-bar .navbar-collapse {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  flex: 1 1 auto !important;
+  width: auto !important;
+}
+
+#top-hmenu-bar ul.navbar-nav,
+#top-hmenu-bar .navbar-nav {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  margin-bottom: 0 !important;
+  gap: 2px !important;
+}
+
+.menuFontStyle,
+.menuHeaderFontStyle,
+#top-hmenu-bar .hmenuItem,
+#top-hmenu-bar .nav-link,
+#top-hmenu-bar .navbar-brand {
+  font-family: OpenSans, 'Open Sans', 'Google Sans Flex', -apple-system, sans-serif !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+}
+
 /* Horizontal Menu Bar & Menu Row Search */
+#top-hmenu-bar .retop-legacy-search-box {
+  background-color: rgb(242, 244, 244) !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+  color: #1e293b !important;
+}
+
+#top-hmenu-bar .retop-legacy-search-box input {
+  font-family: OpenSans, 'Open Sans', 'Google Sans Flex', -apple-system, sans-serif !important;
+  font-size: 14px !important;
+  color: #1e293b !important;
+}
+
+#top-hmenu-bar .retop-legacy-search-box input::placeholder {
+  color: #64748b !important;
+  font-size: 13.5px !important;
+}
+
 #top-hmenu-bar .retop-legacy-search-box:focus-within {
   border-color: var(--accent-base, #3b82f6) !important;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25) !important;

@@ -5,14 +5,16 @@ import { getAppRoot } from "../../utils/bridge";
 import { formatSemesterShorthand } from "../../utils/formatting";
 
 export interface DropdownOption<T = string> {
-  id: T;
+  id?: T;
+  value?: T;
   label: string;
   subLabel?: string;
 }
 
 interface DropdownProps<T extends string | number = string> {
-  options: DropdownOption<T>[] | { id: string; label: string }[];
-  selectedId: T;
+  options: (DropdownOption<T> | { id?: T; value?: T; label: string; subLabel?: string })[];
+  selectedId?: T;
+  value?: T;
   onChange: (id: T) => void;
   placeholder?: string;
   className?: string;
@@ -20,9 +22,11 @@ interface DropdownProps<T extends string | number = string> {
   disabled?: boolean;
 }
 
+
 export function Dropdown<T extends string | number = string>({
   options,
   selectedId,
+  value,
   onChange,
   placeholder = "Select...",
   className = "",
@@ -36,19 +40,22 @@ export function Dropdown<T extends string | number = string>({
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0, minWidth: 180 });
 
-  const normalizedOptions: DropdownOption<T>[] = options.map((opt: any) => ({
+  const activeId = selectedId ?? value;
+
+  const normalizedOptions: { id: T; label: string; subLabel?: string }[] = (options || []).map((opt: any) => ({
     id: opt.id ?? opt.value,
     label: opt.label,
     subLabel: opt.subLabel,
   }));
 
-  const selectedIndex = normalizedOptions.findIndex((o) => o.id === selectedId);
+  const selectedIndex = normalizedOptions.findIndex((o) => o.id === activeId);
   const selectedOpt = selectedIndex >= 0 ? normalizedOptions[selectedIndex] : undefined;
   const displayLabel = selectedOpt
     ? selectedOpt.label
-    : selectedId
-      ? formatSemesterShorthand(String(selectedId))
+    : activeId
+      ? formatSemesterShorthand(String(activeId))
       : placeholder;
+
 
   const updatePosition = useCallback(() => {
     if (!triggerRef.current) return;
@@ -112,7 +119,7 @@ export function Dropdown<T extends string | number = string>({
     }
   }, [isOpen, highlightedIndex]);
 
-  const selectOption = (opt: DropdownOption<T>) => {
+  const selectOption = (opt: { id: T; label: string }) => {
     onChange(opt.id);
     setIsOpen(false);
     triggerRef.current?.focus();
@@ -183,11 +190,11 @@ export function Dropdown<T extends string | number = string>({
         aria-expanded={isOpen}
         onClick={() => setIsOpen((v) => !v)}
         onKeyDown={handleKeyDown}
-        className={`flex items-center justify-between gap-2 px-3.5 py-1.5 rounded-full bg-(--bg-surface) border border-(--border-dim)/60 text-(--text-main) text-xs font-bold font-mono transition-all cursor-pointer select-none hover:bg-(--bg-highlight) shrink-0 focus:outline-none focus:ring-2 focus:ring-(--accent-base)/50 ${
+        className={`flex items-center justify-between gap-2 px-3.5 py-2 rounded-full bg-(--bg-surface) border border-(--border-dim)/60 text-(--text-main) text-xs font-bold font-mono transition-all cursor-pointer select-none hover:bg-(--bg-highlight) shrink-0 focus:outline-none focus:ring-2 focus:ring-(--accent-base)/50 leading-none ${
           disabled ? "opacity-50 cursor-not-allowed" : ""
         } ${className}`}
       >
-        <span className="truncate max-w-44">
+        <span className="truncate max-w-44 leading-none pt-px">
           {displayLabel}
         </span>
         <KeyboardArrowDown
@@ -213,12 +220,12 @@ export function Dropdown<T extends string | number = string>({
             className="z-[999999] max-h-64 overflow-y-auto custom-scrollbar p-1.5 rounded-2xl bg-(--bg-surface) border-2 border-(--border-main) popup-shadow shadow-2xl flex flex-col gap-1 text-(--text-main) animate-popup-open focus:outline-none"
           >
             {normalizedOptions.length === 0 ? (
-              <div className="px-3 py-2 text-xs text-(--text-muted) text-center">
+              <div className="px-3 py-2 text-xs text-(--text-muted) text-center leading-none">
                 No options
               </div>
             ) : (
               normalizedOptions.map((opt, idx) => {
-                const isSelected = opt.id === selectedId;
+                const isSelected = opt.id === activeId;
                 const isHighlighted = idx === highlightedIndex;
                 return (
                   <button
@@ -237,7 +244,7 @@ export function Dropdown<T extends string | number = string>({
                       e.stopPropagation();
                     }}
                     onMouseEnter={() => setHighlightedIndex(idx)}
-                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between gap-2 cursor-pointer outline-none select-none ${
+                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between gap-2 cursor-pointer outline-none select-none leading-none ${
                       isSelected
                         ? "bg-(--accent-base) text-(--text-inverse)"
                         : isHighlighted
@@ -245,7 +252,7 @@ export function Dropdown<T extends string | number = string>({
                           : "text-(--text-main) hover:bg-(--bg-highlight)"
                     }`}
                   >
-                    <span className="truncate">{opt.label}</span>
+                    <span className="truncate leading-none pt-px">{opt.label}</span>
                     {isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
                   </button>
                 );
@@ -257,3 +264,58 @@ export function Dropdown<T extends string | number = string>({
     </>
   );
 }
+
+export const SemesterDropdown = ({ semesters, selectedId, onChange, align = "auto" }: any) => {
+  const formattedSemesters = (semesters || []).map((sem: any) => ({
+    id: sem.id,
+    label: formatSemesterShorthand(sem.label || sem.id),
+    subLabel: sem.label,
+  }));
+
+  return (
+    <Dropdown
+      options={formattedSemesters}
+      selectedId={selectedId}
+      onChange={onChange}
+      align={align}
+      placeholder="Select Semester"
+    />
+  );
+};
+
+export const ClassGroupDropdown = ({ groups, selectedId, onChange }: any) => {
+  return (
+    <Dropdown
+      options={groups || []}
+      selectedId={selectedId}
+      onChange={onChange}
+      placeholder="Select Group"
+    />
+  );
+};
+
+export function SettingsDropdown<T extends string | number>({
+  options,
+  value,
+  onChange,
+  align = "auto",
+  className = "",
+}: {
+  options: { label: string; value: T }[];
+  value: T;
+  onChange: (val: T) => void;
+  className?: string;
+  align?: "left" | "right" | "auto";
+  colorHex?: (val: T) => string;
+}) {
+  return (
+    <Dropdown
+      options={options}
+      selectedId={value}
+      onChange={onChange}
+      align={align}
+      className={className}
+    />
+  );
+}
+

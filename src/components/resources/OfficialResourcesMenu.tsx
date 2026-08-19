@@ -272,7 +272,7 @@ export const OfficialResourcesMenu: React.FC<OfficialResourcesMenuProps> = ({
                   </div>
 
                   {/* Regular Bold Title */}
-                  <span className="text-[11px] md:text-xs font-bold text-(--text-main) group-hover:text-(--accent-base) transition-colors line-clamp-2 leading-tight">
+                  <span className={`text-[11px] md:text-xs font-bold text-(--text-main) group-hover:text-(--accent-base) transition-colors line-clamp-2 leading-tight ${item.title === "VTOP" ? "font-vtop" : ""}`}>
                     {item.title}
                   </span>
                 </a>

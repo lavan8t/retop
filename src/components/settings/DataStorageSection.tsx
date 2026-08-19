@@ -14,7 +14,7 @@ export const DataStorageSection: React.FC<DataStorageSectionProps> = ({
   return (
     <SettingTopicCard
       title="Cache & Storage Management"
-      description="Clear cached VTOP portal data or manage specific cached endpoints"
+      description={<>Clear cached <span className="font-vtop font-bold">VTOP</span> portal data or manage specific cached endpoints</>}
     >
       <div className="flex flex-col gap-4 w-full">
         <div className="flex items-center justify-between gap-4">

@@ -1,26 +1,27 @@
 import { getStorageData, setStorageData, getAllStorageData } from "./storageAdapter";
 import { del as idbDel, entries as idbEntries } from "idb-keyval";
+import { isSchemaStale, ParserModuleId, PARSER_SCHEMA_VERSIONS } from "../parsers/version";
 
 const CACHE_PREFIX = "retop_cache_";
 const CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days default TTL
 
+export { isSchemaStale, PARSER_SCHEMA_VERSIONS };
+export type { ParserModuleId };
+
 export const getCachedDataWithTimestamp = async <T>(key: string): Promise<{ data: T; timestamp: number } | null> => {
   try {
+    const isUserScoped = /^[A-Za-z0-9]{6,15}_/.test(key);
     const keysToTry: string[] = [
       `${CACHE_PREFIX}${key}`,
       key,
     ];
 
-    // If key contains a user prefix (e.g. "21BCE0001_dashboard_stats"), also try un-prefixed versions
-    const unPrefixed = key.replace(/^[A-Za-z0-9]+_/, "");
-    if (unPrefixed !== key) {
-      keysToTry.push(`${CACHE_PREFIX}${unPrefixed}`, unPrefixed);
-    } else {
-      // If key is un-prefixed, also try with active user authId prefix
+    if (!isUserScoped) {
+      // If key is generic, check if active user has a scoped version
       try {
         const activeUser = localStorage.getItem("retop_active_user") || localStorage.getItem("retop_lastAuthId");
         if (activeUser) {
-          keysToTry.push(`${CACHE_PREFIX}${activeUser}_${key}`, `${activeUser}_${key}`);
+          keysToTry.unshift(`${CACHE_PREFIX}${activeUser}_${key}`, `${activeUser}_${key}`);
         }
       } catch {}
     }
@@ -32,23 +33,6 @@ export const getCachedDataWithTimestamp = async <T>(key: string): Promise<{ data
       if (storageRes[k] !== undefined && storageRes[k] !== null) {
         stored = storageRes[k];
         break;
-      }
-    }
-
-    if (stored === undefined || stored === null) {
-      const allData = await getAllStorageData();
-      const cleanTarget = unPrefixed.toLowerCase();
-      for (const [k, v] of Object.entries(allData)) {
-        const lowerK = k.toLowerCase();
-        if (
-          lowerK === cleanTarget ||
-          lowerK === `retop_cache_${cleanTarget}` ||
-          lowerK.endsWith(`_${cleanTarget}`) ||
-          lowerK.endsWith(`_${key.toLowerCase()}`)
-        ) {
-          stored = v;
-          break;
-        }
       }
     }
 
@@ -68,7 +52,7 @@ export const getCachedDataWithTimestamp = async <T>(key: string): Promise<{ data
       portalRes["portal-app-storage"]?.data ||
       portalRes["retop_last_sync_payload"];
     if (portalPayload && typeof portalPayload === "object") {
-      const matchKey = unPrefixed.toLowerCase();
+      const matchKey = key.toLowerCase();
       if (matchKey.includes("stat") && portalPayload.stats) {
         return { data: portalPayload.stats as T, timestamp: Date.now() };
       }

@@ -1,6 +1,5 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { AppSettings } from "../utils/settings-store";
-import { uploadBackup, downloadBackup } from "../utils/googleDriveSync";
 import { clearCache } from "../utils/cache";
 import {
   Palette,
@@ -45,7 +44,7 @@ const CATEGORIES = [
   {
     id: "sync",
     label: "Sync",
-    description: "Google Drive backups and Google Calendar export",
+    description: "Calendar export (.ics)",
     icon: Sync,
   },
   {
@@ -87,8 +86,6 @@ const COLORS = [
 export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
   const [activeCategory, setActiveCategory] = useState<CategoryId>("appearance");
   const [mobileSelectedCategory, setMobileSelectedCategory] = useState<CategoryId | null>(null);
-  const [isDriveSyncing, setIsDriveSyncing] = useState<boolean>(false);
-  const [driveStatus, setDriveStatus] = useState<string>("");
   const [clearStatus, setClearStatus] = useState<string>("");
 
   const [icalOptions, setIcalOptions] = useState({
@@ -111,39 +108,6 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
     });
   };
 
-  const handleDriveBackup = async () => {
-    setIsDriveSyncing(true);
-    setDriveStatus("Backing up to Google Drive...");
-    try {
-      await uploadBackup(settings, settings.googleClientId);
-      setDriveStatus("Backup successful!");
-      updateSetting("driveSync", true);
-    } catch (e: any) {
-      setDriveStatus(`Backup failed: ${e.message || e}`);
-    } finally {
-      setIsDriveSyncing(false);
-    }
-  };
-
-  const handleDriveRestore = async () => {
-    setIsDriveSyncing(true);
-    setDriveStatus("Restoring from Google Drive...");
-    try {
-      const data = await downloadBackup(settings.googleClientId);
-      if (data && data.settings) {
-        Object.entries(data.settings).forEach(([k, v]) => {
-          updateSetting(k as keyof AppSettings, v as any);
-        });
-        setDriveStatus("Restore successful!");
-      } else {
-        setDriveStatus("No backup found on Drive.");
-      }
-    } catch (e: any) {
-      setDriveStatus(`Restore failed: ${e.message || e}`);
-    } finally {
-      setIsDriveSyncing(false);
-    }
-  };
 
   const handleClearAllCache = async () => {
     try {
@@ -185,12 +149,6 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
       case "sync":
         return (
           <SyncSection
-            settings={settings}
-            updateSetting={updateSetting}
-            isDriveSyncing={isDriveSyncing}
-            driveStatus={driveStatus}
-            handleDriveBackup={handleDriveBackup}
-            handleDriveRestore={handleDriveRestore}
             icalOptions={icalOptions}
             setIcalOptions={setIcalOptions}
             handleExportICal={handleExportICal}
@@ -236,16 +194,16 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
                     setActiveCategory(cat.id);
                     setMobileSelectedCategory(cat.id);
                   }}
-                  className={`flex items-center gap-3.5 px-4 py-3.5 ${roundingClass} bg-(--bg-surface) hover:bg-(--bg-highlight) text-(--text-main) border-2 border-(--border-dim) active:scale-[0.99] transition-all cursor-pointer text-left shadow-(--brutal-shadow-sm)`}
+                  className={`flex items-center gap-3.5 px-4 py-3 ${roundingClass} bg-(--bg-surface) hover:bg-(--bg-highlight) text-(--text-main) border-2 border-(--border-dim) active:scale-[0.99] transition-all cursor-pointer text-left shadow-(--brutal-shadow-sm)`}
                 >
                   <div className="w-10 h-10 rounded-full bg-(--bg-highlight) flex items-center justify-center shrink-0 border border-(--border-dim)">
                     <CatIcon className="w-5 h-5 text-(--accent-base)" />
                   </div>
-                  <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-                    <span className="font-expanded font-black text-sm text-(--text-main) leading-snug">
+                  <div className="flex flex-col gap-0.5 min-w-0 flex-1 justify-center">
+                    <span className="font-expanded font-black text-sm text-(--text-main) leading-tight">
                       {cat.label}
                     </span>
-                    <span className="text-xs font-medium text-(--text-muted) leading-tight truncate">
+                    <span className="text-xs font-medium text-(--text-muted) leading-normal truncate">
                       {cat.description}
                     </span>
                   </div>
@@ -264,11 +222,11 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
               >
                 <ArrowBack className="w-5 h-5 text-(--text-main)" />
               </button>
-              <div className="flex flex-col min-w-0 flex-1">
+              <div className="flex flex-col min-w-0 flex-1 justify-center">
                 <h2 className="text-lg font-expanded font-black text-(--text-main) leading-tight truncate">
                   {currentMobileCatObj?.label}
                 </h2>
-                <span className="text-xs font-medium text-(--text-muted) leading-tight truncate">
+                <span className="text-xs font-medium text-(--text-muted) leading-normal truncate">
                   {currentMobileCatObj?.description}
                 </span>
               </div>
@@ -300,21 +258,21 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                className={`flex items-start gap-4 px-5 py-4 ${roundingClass} transition-all cursor-pointer text-left border-2 ${
+                className={`flex items-center gap-4 px-5 py-3.5 ${roundingClass} transition-all cursor-pointer text-left border-2 ${
                   isSelected
                     ? "bg-(--accent-base) text-(--text-inverse) border-(--accent-base) shadow-none"
                     : "bg-(--bg-surface) text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main) border-(--border-dim)"
                 }`}
               >
                 <CatIcon
-                  className={`w-6 h-6 shrink-0 mt-0.5 transition-transform ${isSelected ? "scale-105" : ""}`}
+                  className={`w-6 h-6 shrink-0 transition-transform ${isSelected ? "scale-105" : ""}`}
                 />
-                <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                  <span className="font-expanded font-black text-sm md:text-base leading-snug">
+                <div className="flex flex-col gap-0.5 flex-1 min-w-0 justify-center">
+                  <span className="font-expanded font-black text-sm md:text-base leading-tight">
                     {cat.label}
                   </span>
                   <span
-                    className={`text-xs font-medium leading-snug ${
+                    className={`text-xs font-medium leading-normal ${
                       isSelected
                         ? "opacity-90 text-(--text-inverse)"
                         : "text-(--text-muted)"

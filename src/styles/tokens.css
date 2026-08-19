@@ -15,6 +15,8 @@
   --bg-main: var(--md-sys-color-background, #09090b);
   --bg-card: var(--md-sys-color-surface, #18181b);
   --bg-surface: var(--md-sys-color-surface-variant, #18181b);
+  --bg-primary-container: var(--md-sys-color-primary-container, color-mix(in srgb, var(--accent-base) 18%, var(--bg-card)));
+  --text-on-primary-container: var(--md-sys-color-on-primary-container, var(--text-main));
   --bg-highlight: color-mix(in srgb, var(--md-sys-color-primary, #3b82f6) 15%, var(--md-sys-color-surface, #18181b));
   --border-main: var(--md-sys-color-outline, transparent);
   --text-main: var(--md-sys-color-on-background, #f8fafc);
@@ -107,6 +109,8 @@
   --bg-main: var(--md-sys-color-background, #f8fafc);
   --bg-card: var(--md-sys-color-surface, #ffffff);
   --bg-surface: var(--md-sys-color-surface-variant, #ffffff);
+  --bg-primary-container: var(--md-sys-color-primary-container, color-mix(in srgb, var(--accent-base) 14%, #ffffff));
+  --text-on-primary-container: var(--md-sys-color-on-primary-container, var(--text-main));
   --bg-highlight: color-mix(in srgb, var(--md-sys-color-primary, #3b82f6) 10%, var(--md-sys-color-surface, #ffffff));
   --border-main: var(--md-sys-color-outline, transparent);
   --text-main: var(--md-sys-color-on-background, #0f172a);
@@ -120,6 +124,8 @@
   --bg-main: #000000;
   --bg-card: #000000;
   --bg-surface: #000000;
+  --bg-primary-container: var(--md-sys-color-primary-container, color-mix(in srgb, var(--accent-base) 20%, #000000));
+  --text-on-primary-container: var(--md-sys-color-on-primary-container, #ffffff);
   --bg-highlight: #111111;
   --border-main: var(--md-sys-color-outline, #27272a);
   --text-main: #ffffff;
@@ -141,6 +147,17 @@
   --card-blue: color-mix(in srgb, #3b82f6 35%, #000000);
   --card-red: color-mix(in srgb, #ef4444 35%, #000000);
   --card-purple: color-mix(in srgb, #a855f7 35%, #000000);
+}
+
+/* ── Mandatory VTOP Word Styling (Times New Roman Bold everywhere) ── */
+.vtop-serif,
+.vtop-word,
+.font-vtop,
+.font-times,
+[data-vtop] {
+  font-family: "Times New Roman", Times, serif !important;
+  font-weight: 700 !important;
+  font-variation-settings: normal !important;
 }
 
 /* Material 3 Selection & Shadow DOM Text Selection styling */
@@ -180,7 +197,7 @@
 
 #retop-root .retop-about-logo:hover,
 .retop-about-logo:hover {
-  font-variation-settings: "wdth" 125, "wght" 100, "ROND" 100, "slnt" -10 !important;
+  font-variation-settings: "wdth" 151, "wght" 100, "ROND" 100, "slnt" -10 !important;
 }
 
 /* Range slider styling — no ghosting */

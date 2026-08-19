@@ -35,37 +35,109 @@ body, body.WhiteBackground {
   background-image: none !important;
   color: var(--text-main) !important;
   font-family: 'Google Sans Flex', system-ui, sans-serif !important;
+  margin: 0 !important;
+  margin-top: 56px !important;
+  padding: 0 !important;
+  padding-bottom: 28px !important;
+  min-height: calc(100vh - 56px) !important;
+  height: auto !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
 }
 
-/* ── Hide Native Stock Images & FontAwesome Icons ──────────────────── */
+/* ── Reset Native Stock Images, FontAwesome, and Chennai .circle ───── */
 #stdForm img,
 #empForm img,
 #parentForm img,
 #alumniForm img,
-i.fa,
-i.fa-bolt,
-i.fa-sign-in {
+#stdForm i.fa,
+#empForm i.fa,
+#parentForm i.fa,
+#alumniForm i.fa,
+#vtopOpenPageHeader i.fa,
+#stdForm i.fa-bolt,
+#stdForm i.fa-sign-in,
+.imgSize,
+.imgSiz,
+.circle img,
+.circle #student,
+.circle #alumni {
   display: none !important;
+}
+
+/* Chennai .circle complete neutralization */
+.circle,
+.cardStudent .circle,
+.cardEmployee .circle,
+.cardParent .circle,
+.cardAlumni .circle {
+  margin: 0 !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: auto !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  filter: none !important;
+  position: static !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 !important;
+}
+
+.circle p,
+.cardStudent p,
+.cardEmployee p,
+.cardParent p,
+.cardAlumni p {
+  position: static !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: var(--text-main) !important;
+  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
+  font-variation-settings: "wdth" 125, "wght" 700 !important;
+  font-size: 1.15rem !important;
+  text-align: right !important;
 }
 
 /* ── Navbar / Header ───────────────────────────────────────────────── */
 #vtopOpenPageHeader,
-nav.navbar,
-.navbar.navbar-expand-lg,
-.headerBackgroundColor {
+#vtopOpenPageHeader.navbar,
+#vtopOpenPageHeader.headerBackgroundColor,
+#vtopOpenPageHeader .headerBackgroundColor {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  height: 56px !important;
+  max-height: 56px !important;
+  flex: none !important;
   background-color: var(--bg-main) !important;
   background-image: none !important;
   border: none !important;
   border-bottom: 1px solid var(--border-main) !important;
   box-shadow: none !important;
+  z-index: 1030 !important;
+}
+
+#vtopOpenPageHeader .container-fluid {
+  flex: none !important;
+  width: 100% !important;
+  height: auto !important;
 }
 
 /* VIT Emblem / Vector Logo: Black in Light theme, White in Dark theme */
 img.VITEmblem,
 .VITEmblem,
 #vtop-prelogin-logo {
-  max-height: 42px !important;
-  height: 42px !important;
+  max-height: 40px !important;
+  height: 40px !important;
   width: auto !important;
   object-fit: contain !important;
   display: inline-block !important;
@@ -95,11 +167,9 @@ html[data-theme="light"] #vtop-prelogin-logo,
 span.navbar-text,
 .retop-campus-text {
   color: var(--text-main) !important;
-  font-family: "Times New Roman", Times, serif !important;
+  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
   font-weight: 700 !important;
   font-size: 1.05rem !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.15em !important;
   display: inline-block !important;
   vertical-align: middle !important;
   margin-left: 14px !important;
@@ -133,12 +203,28 @@ p, span, strong, b, a, div, li, label, small {
 }
 
 /* Hero heading */
-strong.h2, .h2.primaryTextColor1 {
-  font-variation-settings: "wdth" 125, "wght" 700 !important;
-  color: var(--text-main) !important;
+.card.card-body.border-0 .d-flex.flex-column.justify-content-center {
+  margin-top: 0 !important;
+  margin-bottom: 6px !important;
+  padding: 0 !important;
 }
 
-strong.h2 b {
+strong.h2, .h2.primaryTextColor1 {
+  font-variation-settings: "wdth" 125, "wght" 700 !important;
+  font-size: 1.45rem !important;
+  line-height: 1.2 !important;
+  color: var(--text-main) !important;
+  margin-bottom: 2px !important;
+}
+
+strong.h2 b,
+.h2 b,
+.vtop-word,
+.vtop-serif,
+.font-vtop {
+  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
+  font-weight: 700 !important;
+  font-variation-settings: normal !important;
   color: var(--text-main) !important;
 }
 
@@ -146,6 +232,10 @@ strong.h2 b {
 .h6.text-dark, .h6.text-center {
   color: var(--text-muted) !important;
   font-variation-settings: "wght" 450 !important;
+  font-size: 0.82rem !important;
+  line-height: 1.35 !important;
+  margin-top: 2px !important;
+  margin-bottom: 4px !important;
 }
 
 /* ── Form Inputs & Login Button Styles ─────────────────────────────── */
@@ -173,11 +263,11 @@ input[type="submit"] {
   background-color: var(--accent-base) !important;
   color: #ffffff !important;
   border: none !important;
-  border-radius: 9999px !important; /* Fully rounded pill */
+  border-radius: 9999px !important;
   padding-left: 20px !important;
   padding-right: 20px !important;
-  padding-top: 14px !important;     /* Increased Y padding */
-  padding-bottom: 14px !important;  /* Increased Y padding */
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
   font-family: 'Google Sans Flex', system-ui, sans-serif !important;
   font-variation-settings: "wght" 600 !important;
   box-shadow: none !important;
@@ -195,34 +285,111 @@ input[type="submit"]:hover {
   box-shadow: none !important;
 }
 
-/* ── Vellore Campus Role Cards (Student / Employee / Parent / Alumni) ── */
-html:not([data-campus="chennai"]) .cardStudent,
-html:not([data-campus="chennai"]) .cardEmployee,
-html:not([data-campus="chennai"]) .cardParent,
-html:not([data-campus="chennai"]) .cardAlumni {
+/* ── Role Cards (Student / Employee / Parent / Alumni) ─────────────── */
+.row.row-cols-2.row-cols-sm-4,
+.row.row-cols-2.row-cols-sm-4.py-3 {
+  padding-top: 4px !important;
+  padding-bottom: 8px !important;
+  margin-top: 0 !important;
+  margin-bottom: 8px !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  --bs-gutter-x: 0.25rem !important;
+  --bs-gutter-y: 0.25rem !important;
+  gap: 0.25rem !important;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.row.row-cols-2.row-cols-sm-4 > * {
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  width: auto !important;
+  max-width: 100% !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+@media (max-width: 640px) {
+  .row.row-cols-2.row-cols-sm-4,
+  .row.row-cols-2.row-cols-sm-4.py-3 {
+    flex-wrap: wrap !important;
+  }
+  .row.row-cols-2.row-cols-sm-4 > * {
+    flex: 1 1 calc(50% - 0.25rem) !important;
+  }
+}
+
+.cardStudent,
+.cardEmployee,
+.cardParent,
+.cardAlumni,
+#stdForm,
+#empForm,
+#parentForm,
+#alumniForm {
   position: relative !important;
-  background-color: var(--bg-surface) !important;
+  background-color: var(--md-sys-color-surface-container-high, color-mix(in srgb, var(--text-main) 10%, var(--bg-surface, #18181b))) !important;
+  color: var(--text-main) !important;
   background-image: none !important;
   border: none !important;
-  border-radius: 16px !important;
-  padding: 16px 20px !important;
-  min-height: 90px !important;
+  border-radius: 9999px !important;
+  padding: 0 !important;
+  min-height: 84px !important;
+  height: 84px !important;
   box-shadow: none !important;
   overflow: hidden !important;
   cursor: pointer !important;
-  transition: background-color var(--duration-font-var) ease !important;
+  display: flex !important;
+  align-items: stretch !important;
+  justify-content: center !important;
+  transition: background-color var(--duration-font-var) ease, opacity var(--duration-font-var) ease !important;
 }
 
-html:not([data-campus="chennai"]) .cardStudent:hover,
-html:not([data-campus="chennai"]) .cardEmployee:hover,
-html:not([data-campus="chennai"]) .cardParent:hover,
-html:not([data-campus="chennai"]) .cardAlumni:hover {
-  background-color: var(--bg-highlight) !important;
+.cardStudent:hover,
+.cardEmployee:hover,
+.cardParent:hover,
+.cardAlumni:hover,
+#stdForm:hover,
+#empForm:hover,
+#parentForm:hover,
+#alumniForm:hover {
+  background-color: color-mix(in srgb, var(--text-main) 18%, var(--bg-surface, #18181b)) !important;
+  border: none !important;
   transform: none !important;
   box-shadow: none !important;
 }
 
-/* Hide submit button inside cards */
+/* Light Theme Overrides */
+[data-theme="light"] .cardStudent,
+[data-theme="light"] .cardEmployee,
+[data-theme="light"] .cardParent,
+[data-theme="light"] .cardAlumni,
+[data-theme="light"] #stdForm,
+[data-theme="light"] #empForm,
+[data-theme="light"] #parentForm,
+[data-theme="light"] #alumniForm {
+  background-color: color-mix(in srgb, var(--text-main) 8%, var(--bg-card, #ffffff)) !important;
+}
+
+[data-theme="light"] .cardStudent:hover,
+[data-theme="light"] .cardEmployee:hover,
+[data-theme="light"] .cardParent:hover,
+[data-theme="light"] .cardAlumni:hover,
+[data-theme="light"] #stdForm:hover,
+[data-theme="light"] #empForm:hover,
+[data-theme="light"] #parentForm:hover,
+[data-theme="light"] #alumniForm:hover {
+  background-color: color-mix(in srgb, var(--text-main) 14%, var(--bg-card, #ffffff)) !important;
+}
+
 .cardStudent button,
 .cardEmployee button,
 .cardParent button,
@@ -230,156 +397,10 @@ html:not([data-campus="chennai"]) .cardAlumni:hover {
   display: none !important;
 }
 
-html:not([data-campus="chennai"]) .cardStudent form,
-html:not([data-campus="chennai"]) .cardEmployee form,
-html:not([data-campus="chennai"]) .cardParent form,
-html:not([data-campus="chennai"]) .cardAlumni form {
-  display: block !important;
-  width: 100% !important;
-  height: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-html:not([data-campus="chennai"]) .cardStudent a,
-html:not([data-campus="chennai"]) .cardEmployee a,
-html:not([data-campus="chennai"]) .cardParent a,
-html:not([data-campus="chennai"]) .cardAlumni a {
-  display: block !important;
-  width: 100% !important;
-  height: 100% !important;
-  position: relative !important;
-}
-
-html:not([data-campus="chennai"]) .cardStudent a::after,
-html:not([data-campus="chennai"]) .cardEmployee a::after,
-html:not([data-campus="chennai"]) .cardParent a::after,
-html:not([data-campus="chennai"]) .cardAlumni a::after {
-  content: "" !important;
-  position: absolute !important;
-  top: -16px !important;
-  bottom: -16px !important;
-  left: -20px !important;
-  right: -20px !important;
-  z-index: 10 !important;
-  cursor: pointer !important;
-}
-
-html:not([data-campus="chennai"]) .cardStudent .d-flex,
-html:not([data-campus="chennai"]) .cardEmployee .d-flex,
-html:not([data-campus="chennai"]) .cardParent .d-flex,
-html:not([data-campus="chennai"]) .cardAlumni .d-flex {
-  position: relative !important;
-  min-height: 60px !important;
-}
-
-/* Icon container div: Positioned at Bottom-Left Corner (bottom: -2px) */
-html:not([data-campus="chennai"]) .cardStudent .w-50,
-html:not([data-campus="chennai"]) .cardEmployee .w-50,
-html:not([data-campus="chennai"]) .cardParent .w-50,
-html:not([data-campus="chennai"]) .cardAlumni .w-50 {
-  position: absolute !important;
-  left: 0px !important;
-  bottom: -2px !important;
-  width: auto !important;
-  display: flex !important;
-  align-items: flex-end !important;
-  justify-content: flex-start !important;
-  padding: 0 !important;
-  margin: 0 !important;
-}
-
-/* No background fill for icons, clean raw icon styling */
-.retop-inline-icon {
-  display: inline-flex !important;
-  align-items: flex-end !important;
-  justify-content: flex-start !important;
-  background: transparent !important;
-  background-color: transparent !important;
-  border-radius: 0 !important;
-  width: auto !important;
-  height: auto !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  pointer-events: none !important;
-}
-
-.retop-inline-icon svg,
-.retop-inline-icon svg path {
-  fill: var(--accent-base) !important;
-  color: var(--accent-base) !important;
-  width: 42px !important;
-  height: 42px !important;
-}
-
-/* Title text: Positioned at Top-Right Corner */
-html:not([data-campus="chennai"]) .cardStudent .flex-grow-1,
-html:not([data-campus="chennai"]) .cardEmployee .flex-grow-1,
-html:not([data-campus="chennai"]) .cardParent .flex-grow-1,
-html:not([data-campus="chennai"]) .cardAlumni .flex-grow-1 {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: flex-end !important;
-  justify-content: flex-start !important;
-  text-align: right !important;
-  width: 100% !important;
-}
-
-html:not([data-campus="chennai"]) .cardStudent .fw-bold,
-html:not([data-campus="chennai"]) .cardEmployee .fw-bold,
-html:not([data-campus="chennai"]) .cardParent .fw-bold,
-html:not([data-campus="chennai"]) .cardAlumni .fw-bold {
-  color: var(--text-main) !important;
-  font-variation-settings: "wdth" 125, "wght" 700 !important;
-  font-size: 1.15rem !important;
-  text-align: right !important;
-}
-
-/* ── Chennai Campus Specific Role Cards Overrides ───────────────────── */
-html[data-campus="chennai"] .row.row-cols-2.row-cols-sm-4,
-html[data-campus="chennai"] .row.row-cols-2.row-cols-sm-4.py-3 {
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-  margin-top: 0 !important;
-  margin-bottom: 0 !important;
-  background: transparent !important;
-  background-color: transparent !important;
-}
-
-html[data-campus="chennai"] .cardStudent,
-html[data-campus="chennai"] .cardEmployee,
-html[data-campus="chennai"] .cardParent,
-html[data-campus="chennai"] .cardAlumni {
-  position: relative !important;
-  background-color: var(--bg-surface) !important;
-  background-image: none !important;
-  border: none !important;
-  border-radius: 20px !important;
-  padding: 0 !important;
-  min-height: 84px !important;
-  box-shadow: none !important;
-  overflow: hidden !important;
-  cursor: pointer !important;
-  display: flex !important;
-  align-items: stretch !important;
-  justify-content: center !important;
-  transition: background-color var(--duration-font-var) ease !important;
-}
-
-html[data-campus="chennai"] .cardStudent:hover,
-html[data-campus="chennai"] .cardEmployee:hover,
-html[data-campus="chennai"] .cardParent:hover,
-html[data-campus="chennai"] .cardAlumni:hover {
-  background-color: var(--bg-highlight) !important;
-  border: none !important;
-  transform: none !important;
-  box-shadow: none !important;
-}
-
-html[data-campus="chennai"] .cardStudent form,
-html[data-campus="chennai"] .cardEmployee form,
-html[data-campus="chennai"] .cardParent form,
-html[data-campus="chennai"] .cardAlumni form {
+.cardStudent form,
+.cardEmployee form,
+.cardParent form,
+.cardAlumni form {
   display: flex !important;
   width: 100% !important;
   height: 100% !important;
@@ -387,55 +408,65 @@ html[data-campus="chennai"] .cardAlumni form {
   padding: 0 !important;
 }
 
-html[data-campus="chennai"] .cardStudent a,
-html[data-campus="chennai"] .cardEmployee a,
-html[data-campus="chennai"] .cardParent a,
-html[data-campus="chennai"] .cardAlumni a {
+.cardStudent a,
+.cardEmployee a,
+.cardParent a,
+.cardAlumni a {
   display: flex !important;
   align-items: center !important;
+  justify-content: center !important;
   width: 100% !important;
   height: 100% !important;
-  padding: 18px 22px !important;
+  padding: 12px 24px !important;
   text-decoration: none !important;
+  position: relative !important;
 }
 
 .retop-role-card-inner {
   display: flex !important;
+  flex-direction: row !important;
   align-items: center !important;
-  justify-content: space-between !important;
+  justify-content: center !important;
+  gap: 12px !important;
   width: 100% !important;
-  min-height: 48px !important;
+  height: 100% !important;
 }
 
 .retop-role-icon-col {
   display: flex !important;
   align-items: center !important;
-  justify-content: flex-start !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
 }
 
 .retop-role-text-col {
   display: flex !important;
-  flex-direction: column !important;
-  align-items: flex-end !important;
+  align-items: center !important;
   justify-content: center !important;
-  text-align: right !important;
+  text-align: center !important;
 }
 
-.retop-role-text-col p {
+.retop-role-text-col p,
+.cardStudent p,
+.cardEmployee p,
+.cardParent p,
+.cardAlumni p {
   color: var(--text-main) !important;
+  font-family: 'Google Sans Flex', system-ui, sans-serif !important;
   font-variation-settings: "wdth" 125, "wght" 700 !important;
-  font-size: 1.25rem !important;
-  text-align: right !important;
+  font-size: 1.15rem !important;
+  text-align: center !important;
   margin: 0 !important;
   padding: 0 !important;
+  white-space: nowrap !important;
 }
 
 .retop-role-svg,
 .retop-role-svg path {
-  fill: var(--text-main) !important;
+  fill: currentColor !important;
   color: var(--text-main) !important;
-  width: 40px !important;
-  height: 40px !important;
+  width: 32px !important;
+  height: 32px !important;
 }
 
 .goldIcons,
@@ -444,20 +475,30 @@ html[data-campus="chennai"] .cardAlumni a {
   color: var(--text-muted) !important;
 }
 
-/* ── Outer Card Reset (Transparent by Default) ─────────────────────── */
-.card,
-.card-body,
-.card.border-0,
-.card.card-body.border-0,
-.card.border-0.shadow-lg,
-.container-fluid > .row.WhiteBackground {
+/* ── Outer Card Reset (Transparent by Default, except role cards) ──── */
+.card:not(.cardStudent):not(.cardEmployee):not(.cardParent):not(.cardAlumni):not(#stdForm):not(#empForm):not(#parentForm):not(#alumniForm),
+.card-body:not(.cardStudent *):not(.cardEmployee *):not(.cardParent *):not(.cardAlumni *),
+.card.border-0:not(.cardStudent):not(.cardEmployee):not(.cardParent):not(.cardAlumni),
+.card.card-body.border-0:not(.cardStudent):not(.cardEmployee):not(.cardParent):not(.cardAlumni),
+.card.border-0.shadow-lg:not(.cardStudent):not(.cardEmployee):not(.cardParent):not(.cardAlumni),
+.container-fluid > .row.WhiteBackground,
+.container-fluid > .row.WhiteBackground.pb-5,
+.row.WhiteBackground.pb-5 {
   background-color: transparent !important;
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
 }
 
-/* ── Spotlight Card ONLY (Vellore) ─────────────────────────────────── */
+.container-fluid > .row.WhiteBackground,
+.container-fluid > .row.WhiteBackground.pb-5,
+.row.WhiteBackground.pb-5 {
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+  margin-bottom: 0 !important;
+}
+
+/* ── Spotlight Card ONLY (Vellore Campus) ───────────────────────────── */
 html:not([data-campus="chennai"]) .card:has(.spotlightHeader),
 html:not([data-campus="chennai"]) .card:has(.spotlight-background),
 html:not([data-campus="chennai"]) .card:has(.retop-spotlight-bolt) {
@@ -467,13 +508,20 @@ html:not([data-campus="chennai"]) .card:has(.retop-spotlight-bolt) {
   box-shadow: none !important;
 }
 
+html:not([data-campus="chennai"]) .card:has(.spotlightHeader) .card-body,
+html:not([data-campus="chennai"]) .spotlightHeader + .card-body {
+  max-height: 32vh !important;
+  overflow-y: auto !important;
+  padding: 0 !important;
+}
+
 .spotlightHeader,
 .card-header.spotlightHeader {
   background: transparent !important;
   background-image: none !important;
   border: none !important;
   border-bottom: 1px solid color-mix(in srgb, var(--text-muted) 15%, transparent) !important;
-  padding: 8px 14px !important;
+  padding: 6px 12px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
@@ -520,7 +568,7 @@ ul.list-group.spotlight-background {
   border: none !important;
   border-bottom: 1px solid color-mix(in srgb, var(--text-muted) 10%, transparent) !important;
   color: var(--text-main) !important;
-  padding: 6px 14px !important;
+  padding: 5px 12px !important;
   transition: background-color var(--duration-font-var) ease !important;
 }
 
@@ -554,7 +602,7 @@ ul.list-group.spotlight-background {
   background-color: transparent !important;
   color: var(--text-main) !important;
   font-variation-settings: "wght" 500 !important;
-  font-size: 0.9rem !important;
+  font-size: 0.88rem !important;
   text-decoration: none !important;
   box-shadow: none !important;
 }
@@ -602,16 +650,17 @@ html[data-theme="light"] .btn-close,
   filter: none !important;
 }
 
-/* ── Ranking Badges (VIT Info Card — Grid Aligned Big Numbers) ──────── */
-.retop-rankings-grid {
+/* ── Ranking Badges (VIT Info Card — Chennai Campus ONLY) ──────────── */
+html[data-campus="chennai"] .retop-rankings-grid {
   display: grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 16px 14px !important;
+  gap: 12px 14px !important;
   width: 100% !important;
+  padding: 4px 0 !important;
 }
 
 @media (min-width: 576px) {
-  .retop-rankings-grid {
+  html[data-campus="chennai"] .retop-rankings-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   }
 }
@@ -628,23 +677,23 @@ html[data-theme="light"] .btn-close,
 .retop-rank-big-num {
   font-family: 'Google Sans Flex', system-ui, sans-serif !important;
   font-variation-settings: "wdth" 125, "wght" 900 !important;
-  font-size: 1.55rem !important;
+  font-size: 1.45rem !important;
   color: var(--text-main) !important;
   line-height: 1.1 !important;
   letter-spacing: -0.02em !important;
-  margin-bottom: 3px !important;
+  margin-bottom: 2px !important;
   white-space: nowrap !important;
 }
 
 .retop-rank-subtext {
   font-family: 'Google Sans Flex', system-ui, sans-serif !important;
   font-variation-settings: "wght" 500 !important;
-  font-size: 0.78rem !important;
+  font-size: 0.76rem !important;
   color: var(--text-muted) !important;
   line-height: 1.25 !important;
 }
 
-/* ── App Download Section (Larger Badges & Right Positioned) ────────── */
+/* ── App Download Section ──────────────────────────────────────────── */
 .col.text-center,
 .retop-apps-grid .col {
   display: flex !important;
@@ -659,8 +708,8 @@ html[data-theme="light"] .btn-close,
   color: var(--text-main) !important;
   font-family: 'Google Sans Flex', system-ui, sans-serif !important;
   font-variation-settings: "wght" 700 !important;
-  font-size: 0.95rem !important;
-  margin-bottom: 8px !important;
+  font-size: 0.9rem !important;
+  margin-bottom: 6px !important;
   text-align: center !important;
 }
 
@@ -670,14 +719,14 @@ html[data-theme="light"] .btn-close,
   align-items: center !important;
   justify-content: center !important;
   width: 100% !important;
-  margin: 4px auto !important;
+  margin: 3px auto !important;
   text-align: center !important;
 }
 
 .col.text-center img,
 .retop-apps-grid img {
   width: auto !important;
-  max-width: 165px !important;
+  max-width: 155px !important;
   object-fit: contain !important;
   margin: 0 auto !important;
   display: block !important;
@@ -686,17 +735,21 @@ html[data-theme="light"] .btn-close,
 
 /* Apple badge optical height balance */
 .col.text-center img[src*="appstore"],
+.col.text-center img[src*="App_Store"],
 .col.text-center img[src*="apple"],
 .retop-apps-grid img[src*="appstore"],
+.retop-apps-grid img[src*="App_Store"],
 .retop-apps-grid img[src*="apple"] {
-  height: 52px !important;
+  height: 46px !important;
 }
 
 .col.text-center img[src*="gplay"],
+.col.text-center img[src*="google-play"],
 .col.text-center img[src*="play"],
 .retop-apps-grid img[src*="gplay"],
+.retop-apps-grid img[src*="google-play"],
 .retop-apps-grid img[src*="play"] {
-  height: 44px !important;
+  height: 40px !important;
 }
 
 .col.text-center img:hover,
@@ -716,19 +769,13 @@ html[data-theme="light"] .btn-close,
   color: var(--text-main) !important;
   font-family: 'Google Sans Flex', system-ui, sans-serif !important;
   font-variation-settings: "wght" 450 !important;
+  height: 28px !important;
+  line-height: 28px !important;
+  padding: 0 !important;
 }
 
 .footercolor span, .footercolor a {
   color: var(--text-main) !important;
-}
-
-/* ── Container ─────────────────────────────────────────────────────── */
-.container-fluid > .row.WhiteBackground,
-.card.card-body.border-0,
-.card.card-body {
-  background-color: transparent !important;
-  background: transparent !important;
-  border: none !important;
 }
 
 /* ── Modal (Session Timed Out) ─────────────────────────────────────── */

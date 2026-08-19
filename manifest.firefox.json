@@ -4,12 +4,15 @@
   "description": "uni portal done better.",
   "version": "0.5.0",
   "permissions": [
-    "activeTab",
     "unlimitedStorage",
     "downloads",
     "webNavigation",
-    "identity"
+    "storage"
   ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self';"
+  },
+
   "host_permissions": [
     "https://*.vit.ac.in/*",
     "https://vtop.vit.ac.in/*",

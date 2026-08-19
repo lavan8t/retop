@@ -1,4 +1,8 @@
 import { SpotlightCategoryGroup, SpotlightLinkItem } from "../types/vtop";
+import { validateParsed, Versioned } from "../utils/parser-utils";
+import { SpotlightCategoryGroupListSchema } from "../schemas";
+
+export const SPOTLIGHT_SCHEMA_VERSION = 1;
 
 function parseAnchorItem(a: Element): SpotlightLinkItem | null {
   const clone = a.cloneNode(true) as HTMLElement;
@@ -39,7 +43,7 @@ function parseAnchorItem(a: Element): SpotlightLinkItem | null {
   return null;
 }
 
-export function scrapeSpotlight(doc: Document): SpotlightCategoryGroup[] {
+export function scrapeSpotlight(doc: Document): Versioned<SpotlightCategoryGroup[]> {
   const spotlightGroups: SpotlightCategoryGroup[] = [];
   const seenTitles = new Set<string>();
 
@@ -119,6 +123,6 @@ export function scrapeSpotlight(doc: Document): SpotlightCategoryGroup[] {
     }
   }
 
-  return spotlightGroups;
+  return validateParsed(SpotlightCategoryGroupListSchema, spotlightGroups, "spotlight");
 }
 

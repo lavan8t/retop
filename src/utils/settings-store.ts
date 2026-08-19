@@ -2,6 +2,20 @@ import { create } from "zustand";
 import { persist, createJSONStorage, StateStorage } from "zustand/middleware";
 import { getAppRoot } from "./bridge";
 import { QuickLink } from "../types/vtop";
+import {
+  argbFromHex,
+  hexFromArgb,
+  Hct,
+  SchemeVibrant,
+  SchemeTonalSpot,
+  SchemeExpressive,
+  SchemeContent,
+  SchemeFidelity,
+  SchemeFruitSalad,
+  SchemeRainbow,
+  SchemeNeutral,
+  SchemeMonochrome,
+} from "@material/material-color-utilities";
 
 export type DateFormatPattern =
   | "DD Mon YYYY"
@@ -12,16 +26,25 @@ export type DateFormatPattern =
   | "DD.MM.YYYY"
   | "DD-MM-YYYY";
 
+export type ColorSchemeStyle =
+  | "vibrant"
+  | "tonal"
+  | "expressive"
+  | "content"
+  | "fidelity"
+  | "fruitSalad"
+  | "rainbow"
+  | "neutral"
+  | "monochrome";
+
 export interface AppSettings {
   defaultView: "modern" | "legacy";
   themeMode: "dark" | "light" | "amoled" | "auto";
   vtopThemeMode: "same" | "dark" | "light" | "amoled" | "none";
   accentColor: "grey" | "red" | "orange" | "yellow" | "green" | "blue" | "purple" | "pink" | "cyan" | "indigo" | "lime" | "monochrome";
+  colorSchemeStyle?: ColorSchemeStyle;
   randomAccentColor: boolean;
   blurCgpa: boolean;
-  googleLinked: boolean;
-  calendarSync: boolean;
-  driveSync: boolean;
   pureBlack: boolean;
   pinnedLinks: QuickLink[];
   use24HourTime: boolean;
@@ -31,7 +54,6 @@ export interface AppSettings {
   calendarClassColor: string;
   calendarEventColor: string;
   timetableMode: "weekly" | "slot" | "consolidated" | "fullMonth";
-  googleClientId: string;
   dateFormat: DateFormatPattern;
   fontScale: number;
   fontWeight: "regular" | "medium" | "bold";
@@ -39,16 +61,15 @@ export interface AppSettings {
 }
 
 
+
 const DEFAULT_SETTINGS: AppSettings = {
   defaultView: "modern",
   themeMode: "dark",
   vtopThemeMode: "same",
   accentColor: "orange",
+  colorSchemeStyle: "vibrant",
   randomAccentColor: false,
   blurCgpa: false,
-  googleLinked: false,
-  calendarSync: false,
-  driveSync: false,
   pureBlack: false,
   use24HourTime: false,
   timeFormat: "12h",
@@ -57,7 +78,6 @@ const DEFAULT_SETTINGS: AppSettings = {
   calendarClassColor: "blue",
   calendarEventColor: "purple",
   timetableMode: "weekly",
-  googleClientId: "",
   dateFormat: "DD Mon YYYY",
   fontScale: 100,
   fontWeight: "bold",
@@ -74,28 +94,52 @@ const DEFAULT_SETTINGS: AppSettings = {
   ],
 };
 
+
 export const MATERIAL_ACCENTS: Record<string, string> = {
   grey: "#71717a",
   red: "#ef4444",
   orange: "#f97316",
-  amber: "#f59e0b",
   yellow: "#eab308",
   green: "#22c55e",
-  emerald: "#10b981",
-  teal: "#14b8a6",
-  cyan: "#06b6d4",
-  sky: "#0ea5e9",
   blue: "#3b82f6",
-  indigo: "#6366f1",
   purple: "#a855f7",
-  violet: "#8b5cf6",
   pink: "#ec4899",
+  cyan: "#06b6d4",
+  indigo: "#6366f1",
+  teal: "#14b8a6",
+  amber: "#f59e0b",
+  emerald: "#10b981",
+  sky: "#0ea5e9",
+  violet: "#8b5cf6",
+  fuchsia: "#d946ef",
   rose: "#f43f5e",
   lime: "#84cc16",
   deepOrange: "#ff5722",
 };
 
-import { argbFromHex, hexFromArgb, Hct, SchemeVibrant, SchemeMonochrome } from "@material/material-color-utilities";
+function createMaterialScheme(hct: Hct, isDark: boolean, style: ColorSchemeStyle = "vibrant") {
+  switch (style) {
+    case "tonal":
+      return new SchemeTonalSpot(hct, isDark, 0.0);
+    case "expressive":
+      return new SchemeExpressive(hct, isDark, 0.0);
+    case "content":
+      return new SchemeContent(hct, isDark, 0.0);
+    case "fidelity":
+      return new SchemeFidelity(hct, isDark, 0.0);
+    case "fruitSalad":
+      return new SchemeFruitSalad(hct, isDark, 0.0);
+    case "rainbow":
+      return new SchemeRainbow(hct, isDark, 0.0);
+    case "neutral":
+      return new SchemeNeutral(hct, isDark, 0.0);
+    case "monochrome":
+      return new SchemeMonochrome(hct, isDark, 0.0);
+    case "vibrant":
+    default:
+      return new SchemeVibrant(hct, isDark, 0.0);
+  }
+}
 
 export const getMaterialThemeColor = (colorKey: string, _isDark: boolean = true): string => {
   if (colorKey === "grey" || colorKey === "monochrome") {
@@ -147,26 +191,26 @@ export const applyTheme = (settings: AppSettings) => {
     document.documentElement.setAttribute("data-theme", appliedVtopTheme);
   }
 
-  const isMonochrome = settings.accentColor === "grey" || (settings as any).accentColor === "monochrome";
+  const isMonochrome =
+    settings.accentColor === "grey" ||
+    (settings as any).accentColor === "monochrome" ||
+    settings.colorSchemeStyle === "monochrome";
   const baseColor = MATERIAL_ACCENTS[settings.accentColor] || MATERIAL_ACCENTS.grey;
   const isDark = appliedTheme === "dark" || appliedTheme === "amoled";
 
-  // Initialize Material Theme
   const hct = Hct.fromInt(argbFromHex(baseColor));
   const scheme = isMonochrome
     ? new SchemeMonochrome(hct, isDark, 0.0)
-    : new SchemeVibrant(hct, isDark, 0.0);
+    : createMaterialScheme(hct, isDark, settings.colorSchemeStyle || "vibrant");
 
   const primaryHex = isMonochrome
     ? (isDark ? "#a1a1aa" : "#52525b")
     : hexFromArgb(scheme.primary);
 
-  // Set the base accent variable
   const docStyle = document.documentElement.style;
   if (root) root.style.setProperty("--accent-base", primaryHex);
   docStyle.setProperty("--accent-base", primaryHex);
 
-  // Extended Harmonized Semantic Colors (Success, Warning, Info)
   const makeTonal = (hex: string) => {
     const colorHct = Hct.fromInt(argbFromHex(hex));
     return {
@@ -181,7 +225,6 @@ export const applyTheme = (settings: AppSettings) => {
   const warning = makeTonal("#f59e0b");
   const info = makeTonal("#0ea5e9");
 
-  // Standard Material Design 3 system variables
   const sysColors: Record<string, string> = {
     primary: hexFromArgb(scheme.primary),
     "on-primary": hexFromArgb(scheme.onPrimary),
@@ -221,7 +264,6 @@ export const applyTheme = (settings: AppSettings) => {
     "on-info-container": info.onContainer,
   };
 
-  // Extended Semantic & Attendance Tokens
   const extendedTokens: Record<string, string> = {
     "--att-safe": success.base,
     "--att-text-safe": success.onBase,

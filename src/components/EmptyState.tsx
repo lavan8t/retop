@@ -2,8 +2,8 @@ import React, { ElementType } from "react";
 import { Error } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 
 interface EmptyStateProps {
-  msg: string;
-  subMsg?: string;
+  msg: React.ReactNode;
+  subMsg?: React.ReactNode;
   icon?: ElementType;
   className?: string;
   size?: "sm" | "md" | "lg";

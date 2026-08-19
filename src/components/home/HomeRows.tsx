@@ -38,7 +38,6 @@ export const AttendanceRow = React.memo(({ course }: { course: CourseSummary }) 
       />
       <div className="relative z-10 flex items-center gap-2 min-w-0 flex-1 pr-3">
         <span
-          data-tooltip={course.name}
           className="text-xs font-black text-(--text-main) leading-snug truncate min-w-0"
         >
           {course.name}
@@ -132,7 +131,6 @@ export const ScheduleRow = React.memo(({
         {/* Center: Main Name (No course code) */}
         <div className="flex-1 min-w-0 px-1">
           <span
-            data-tooltip={item.course.title}
             className="text-xs sm:text-sm md:text-base font-black leading-tight wrap-break-words line-clamp-2"
           >
             {item.course.title}
@@ -257,7 +255,6 @@ export const AssignmentRow = React.memo(({
         </div>
         <div className="flex items-center justify-between gap-2 text-[10px] sm:text-xs">
           <span
-            data-tooltip={assignment.course}
             className="font-bold font-mono text-(--text-muted) truncate shrink-0 max-w-[60%]"
           >
             {assignment.course}

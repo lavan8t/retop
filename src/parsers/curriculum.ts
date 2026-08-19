@@ -1,10 +1,13 @@
-import { CurriculumCategory, CurriculumCourse } from "../types/vtop";
-import { parseHTMLFast } from "../utils/parser-utils";
+﻿import { CurriculumCategory, CurriculumCourse } from "../types/vtop";
+import { parseHTMLFast, validateParsed, wrapWithSchemaVersion, Versioned } from "../utils/parser-utils";
+import { CurriculumDashboardSchema } from "../schemas";
 
-export function parseCurriculumDashboard(html: string): {
+export const CURRICULUM_SCHEMA_VERSION = 1;
+
+export function parseCurriculumDashboard(html: string): Versioned<{
   totalCredits: string;
   categories: CurriculumCategory[];
-} {
+}> {
   const doc = parseHTMLFast(html);
 
   let totalCredits = "0";
@@ -38,81 +41,88 @@ export function parseCurriculumDashboard(html: string): {
         title = titleEl.textContent.trim();
       } else {
         const raw = el.textContent || "";
-        const clean = raw
-          .replace(/Credit:\s*[\d.]+/gi, "")
-          .replace(/Max\.\s*Credit:\s*[\d.]+/gi, "")
-          .replace(id, "");
-        title = clean.replace(/\s+/g, " ").trim();
-      }
-
-      title = title.replace(/^[-:]+/, "").trim();
-
-      const textContent = el.textContent || "";
-      const creditMatch = textContent.match(/([\d.]+)\s*\/\s*([\d.]+)/);
-      let credits = "0";
-      let maxCredits = "0";
-
-      if (creditMatch) {
-        credits = creditMatch[1];
-        maxCredits = creditMatch[2];
-      } else {
-        const numbers = textContent.match(/[\d.]+/g);
-        if (numbers && numbers.length >= 2) {
-          credits = numbers[0];
-          maxCredits = numbers[1];
+        const lines = raw
+          .split("\n")
+          .map((l) => l.trim())
+          .filter(Boolean);
+        if (lines.length > 0) {
+          title = lines[0];
         }
       }
 
+      let credits = "0";
+      let maxCredits = "0";
+      const creditsContainer = el.querySelectorAll(".col-6, .text-right, span");
+
+      creditsContainer.forEach((c) => {
+        const text = c.textContent || "";
+        const m = text.match(/(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/);
+        if (m) {
+          credits = m[1];
+          maxCredits = m[2];
+        }
+      });
+
+      const isCompleted =
+        parseFloat(credits) >= parseFloat(maxCredits) &&
+        parseFloat(maxCredits) > 0;
+
       categories.push({
         id,
-        title: title || id,
+        title,
         credits,
         maxCredits,
-        isCompleted: parseFloat(credits) >= parseFloat(maxCredits),
+        isCompleted,
       });
     }
   });
 
-  return { totalCredits, categories };
+  return validateParsed(CurriculumDashboardSchema, {
+    totalCredits,
+    categories,
+  }, "curriculum");
 }
 
-export function parseCurriculumCategoryTable(html: string): { courses: CurriculumCourse[], basketMaxCredits: Record<string, string> } {
+export function parseCurriculumCourses(html: string): Versioned<{
+  courses: CurriculumCourse[];
+  basketMaxCredits: Record<string, string>;
+}> {
   const doc = parseHTMLFast(html);
-  
-  const basketMap: Record<string, string> = {};
-  const basketMaxCredits: Record<string, string> = {};
-  
-  const navButtons = doc.querySelectorAll(".nav-tabs button");
-  navButtons.forEach(btn => {
-    const target = btn.getAttribute("data-bs-target") || "";
-    const name = btn.textContent?.trim() || "";
-    if (target && name) {
-      basketMap[target.replace("#", "")] = name;
-    }
-  });
-
-  const tabPanes = doc.querySelectorAll(".tab-pane");
-  tabPanes.forEach(pane => {
-    if (pane.id && basketMap[pane.id]) {
-      const basket = basketMap[pane.id];
-      const text = pane.textContent || "";
-      const match = text.match(/Maximum Basket Credits Allowed\s*:\s*([\d.]+)/i);
-      if (match) {
-        basketMaxCredits[basket] = match[1];
-      }
-    }
-  });
-
-  const rows = doc.querySelectorAll("table tbody tr");
   const courses: CurriculumCourse[] = [];
+  const basketMaxCredits: Record<string, string> = {};
 
-  rows.forEach((row) => {
-    const cells = row.querySelectorAll("td");
+  const navButtons = doc.querySelectorAll('.nav-pills button, .nav-tabs button, .nav-pills a, .nav-tabs a');
+  const basketMap: Record<string, string> = {};
+
+  navButtons.forEach(btn => {
+    const target = btn.getAttribute('data-bs-target') || btn.getAttribute('href') || '';
+    const cleanTarget = target.replace('#', '').trim();
+    const btnText = btn.textContent?.trim() || '';
+    if (cleanTarget && btnText) {
+      basketMap[cleanTarget] = btnText;
+    }
+  });
+
+  const headers = doc.querySelectorAll('h4, h5, h6, .card-header, strong, b');
+  headers.forEach(h => {
+    const text = h.textContent || '';
+    const match = text.match(/([A-Za-z\s]+)\s*-\s*(\d+)\s*Credits/i);
+    if (match) {
+      const basketName = match[1].trim();
+      const credits = match[2].trim();
+      basketMaxCredits[basketName] = credits;
+    }
+  });
+
+  const rows = doc.querySelectorAll('table tr');
+  rows.forEach(row => {
+    const cells = row.querySelectorAll('td');
     if (cells.length < 5) return;
 
     let codeIndex = -1;
     for (let i = 0; i < cells.length; i++) {
-      if (/^[A-Z]{3,4}\d{3}[A-Z0-9]*$/.test(cells[i].innerText.trim())) {
+      const txt = cells[i].textContent?.trim() || "";
+      if (/^[A-Z]{3,4}\d{3,4}[A-Z]?$/.test(txt) || /^[A-Z]{2,4}\d{2,4}$/.test(txt)) {
         codeIndex = i;
         break;
       }
@@ -132,7 +142,6 @@ export function parseCurriculumCategoryTable(html: string): { courses: Curriculu
       if (navButtons.length === 1) {
         basket = navButtons[0].textContent?.trim() || "Core";
       } else if (navButtons.length > 1) {
-        // If we couldn't find the pane but there are multiple tabs, default to the first one as a fallback
         basket = navButtons[0].textContent?.trim() || "Core";
       }
     }
@@ -156,5 +165,7 @@ export function parseCurriculumCategoryTable(html: string): { courses: Curriculu
     }
   });
 
-  return { courses, basketMaxCredits };
+  return wrapWithSchemaVersion({ courses, basketMaxCredits }, "curriculum");
 }
+
+export const parseCurriculumCategoryTable = parseCurriculumCourses;

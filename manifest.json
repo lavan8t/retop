@@ -4,7 +4,12 @@
   "description": "uni portal done better.",
   "version": "0.5.0",
 
-  "permissions": ["activeTab", "unlimitedStorage", "downloads", "identity"],
+  "permissions": ["unlimitedStorage", "downloads", "storage"],
+
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self';"
+  },
+
 
   "host_permissions": [
     "https://vtop.vit.ac.in/*",
@@ -21,6 +26,15 @@
         "https://vtopcc.vit.ac.in/*"
       ],
       "js": ["content.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://vtop.vit.ac.in/*",
+        "https://vtopcc.vit.ac.in/*"
+      ],
+      "js": ["injected.js"],
+      "world": "MAIN",
       "run_at": "document_start"
     },
     {

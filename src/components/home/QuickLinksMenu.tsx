@@ -1,13 +1,4 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import {
-  Search,
-  Description,
-  Error,
-  ChevronRight,
-  SwapVert,
-  Keep,
-  Autorenew,
-} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 
 
 import {
@@ -18,12 +9,9 @@ import {
   SpotlightCategoryGroup,
 } from "../../types/vtop";
 import { Card } from "../ui/Card";
-import { ListCard } from "./ListCard";
 import { AttendanceRow } from "./HomeRows";
 import { EmptyState } from "../EmptyState";
-import { getCategoryIcon } from "../../utils/icons";
 import { useDataStore } from "../../store/dataStore";
-import { Tooltip } from "../ui/Tooltip";
 import { SpotlightSection } from "./SpotlightSection";
 
 interface QuickLinksMenuProps {
@@ -50,7 +38,6 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [attSort, setAttSort] = useState<"asc" | "desc">("asc");
 
   const {
     status,
@@ -207,9 +194,9 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
     return activeCourses.sort((a, b) => {
       const valA = parseFloat(a.attendance) || 0;
       const valB = parseFloat(b.attendance) || 0;
-      return attSort === "asc" ? valA - valB : valB - valA;
+      return valA - valB;
     });
-  }, [attendance, attSort, ttCourses]);
+  }, [attendance, ttCourses]);
 
   const overallAttendance = useMemo(() => {
     const valid = attendance.filter((a) => !isNaN(parseFloat(a.attendance)));
@@ -261,7 +248,7 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
 
   return (
     <>
-      <div className={`w-full lg:w-[27%] xl:w-[24%] flex-col shrink-0 h-auto lg:h-full overflow-y-auto custom-scrollbar [scrollbar-gutter:stable] relative z-40 pt-20 md:pt-23 lg:pt-25 pb-4 md:pb-6 lg:pb-8 pl-4 lg:pl-6 pr-2 lg:pr-3 gap-4 ${className || 'hidden lg:flex'}`}>
+      <div className={`w-full lg:w-[27%] xl:w-[24%] flex-col shrink-0 h-auto lg:h-full overflow-y-auto custom-scrollbar scrollbar-gutter-stable relative z-40 pt-20 md:pt-23 lg:pt-25 pb-4 md:pb-6 lg:pb-8 pl-4 lg:pl-6 pr-2 lg:pr-3 gap-4 ${className || 'hidden lg:flex'}`}>
         {/* Attendance Compact Box */}
         <div className="shrink-0 flex flex-col w-full">
           <Card
@@ -283,20 +270,6 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
                   {overallAttendance}
                 </span>
               </div>
-
-              <Tooltip text="Toggle Sort Order">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setAttSort((prev) => (prev === "asc" ? "desc" : "asc"));
-                  }}
-                  className="flex items-center justify-center p-2 bg-transparent hover:bg-black/10 rounded-full transition-colors text-(--text-muted) active:scale-95"
-                >
-                  <SwapVert
-                    className={`w-5 h-5 transition-transform ${attSort === "asc" ? "rotate-180" : ""}`}
-                  />
-                </button>
-              </Tooltip>
             </div>
 
             <div className="p-3 flex flex-col gap-0.5">
@@ -337,7 +310,7 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
           <div
             onMouseEnter={handleChildEnter}
             onMouseLeave={handleChildLeave}
-            className="fixed z-[999999] bg-(--bg-surface) border-0 rounded-2xl popup-shadow p-3 flex flex-col transition-all duration-200"
+            className="fixed z-999999 bg-(--bg-surface) border-0 rounded-2xl popup-shadow p-3 flex flex-col transition-all duration-200"
             style={{
               transformOrigin: "left center",
               left: leftPos,

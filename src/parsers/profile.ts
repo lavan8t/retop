@@ -9,8 +9,12 @@ import {
   ProfileHostel,
   ProfileFamilyMember,
 } from "../types/vtop";
+import { parseHTMLFast, validateParsed, Versioned } from "../utils/parser-utils";
+import { StudentProfileSchema } from "../schemas";
 
-function fixBase64Image(src: string | null | undefined): string {
+export const PROFILE_SCHEMA_VERSION = 1;
+
+export function fixBase64Image(src: string | null | undefined): string {
   if (!src) return "";
   const s = src.trim();
   if (s.startsWith("data:") && (s.length < 50 || s.endsWith("base64,"))) return "";
@@ -20,7 +24,110 @@ function fixBase64Image(src: string | null | undefined): string {
   if (s.startsWith("data:jpg;base64")) {
     return s.replace("data:jpg;base64", "data:image/jpeg;base64");
   }
-  return s;
+  if (s.startsWith("data:image")) return s;
+
+  // 1. Raw Base64 image payload (JPEG starts with /9j, PNG starts with iVBORw0KGgo, GIF with R0lGOD, WebP with UklGR)
+  const clean = s.replace(/\s+/g, "");
+  if (
+    clean.startsWith("/9j/") ||
+    clean.startsWith("/9j") ||
+    clean.startsWith("iVBORw0KGgo") ||
+    clean.startsWith("R0lGOD") ||
+    clean.startsWith("UklGR")
+  ) {
+    const mime = clean.startsWith("iVBOR") ? "image/png" : "image/jpeg";
+    return `data:${mime};base64,${clean}`;
+  }
+
+  // Pure base64 alphanumeric string without server paths
+  if (
+    clean.length > 80 &&
+    /^[A-Za-z0-9+/=]+$/.test(clean) &&
+    !clean.includes("users/image") &&
+    !clean.includes("vtop") &&
+    !clean.includes("process/")
+  ) {
+    return `data:image/jpeg;base64,${clean}`;
+  }
+
+  // 2. Standard web URLs & blob URIs
+  if (s.startsWith("http://") || s.startsWith("https://") || s.startsWith("blob:")) return s;
+
+  // 3. Server relative paths
+  if (s.startsWith("/vtop/")) return s;
+  if (s.startsWith("users/image") || s.startsWith("process/") || s.startsWith("studentsRecord/")) {
+    return `/vtop/${s}`;
+  }
+  if (s.startsWith("/")) {
+    return `/vtop/${s.replace(/^\/+/, "")}`;
+  }
+
+  return `/vtop/${s}`;
+}
+
+/**
+ * Converts an existing HTML image element in the DOM to base64 data URI via canvas.
+ */
+export function imageElementToBase64(img: HTMLImageElement | null | undefined): string {
+  if (!img) return "";
+  try {
+    if (!img.complete || img.naturalWidth === 0) {
+      const src = img.getAttribute("src") || img.src || "";
+      return fixBase64Image(src);
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return fixBase64Image(img.getAttribute("src") || img.src);
+    ctx.drawImage(img, 0, 0);
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+    if (dataUrl && dataUrl.startsWith("data:image") && dataUrl.length > 100) {
+      return dataUrl;
+    }
+    return fixBase64Image(img.getAttribute("src") || img.src);
+  } catch {
+    return fixBase64Image(img?.getAttribute("src") || img?.src);
+  }
+}
+
+export function normalizeVtopImageUrl(url: string): string {
+  if (!url || url.startsWith("data:image")) return url;
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  const cleanPath = url.replace(/^\/?(vtop\/)?/, "");
+  const origin =
+    typeof window !== "undefined" && window.location.origin.includes("vit.ac.in")
+      ? window.location.origin
+      : typeof window !== "undefined" && window.location.hostname.includes("vtopcc")
+      ? "https://vtopcc.vit.ac.in"
+      : "https://vtop.vit.ac.in";
+  return `${origin}/vtop/${cleanPath}`;
+}
+
+/**
+ * Fetch image from endpoint and convert to base64 data URI for offline caching.
+ */
+export async function urlToBase64(url: string): Promise<string> {
+  if (!url || typeof window === "undefined") return "";
+  if (url.startsWith("data:image")) return url;
+  try {
+    const fullUrl = normalizeVtopImageUrl(url);
+    const res = await window.fetch(fullUrl, { credentials: "include" });
+    if (!res.ok) return "";
+    const blob = await res.blob();
+    if (!blob || blob.size < 50) return "";
+    return new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const str = (reader.result as string) || "";
+        resolve(str.startsWith("data:image") ? str : "");
+      };
+      reader.onerror = () => resolve("");
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return "";
+  }
 }
 
 function cleanText(text: string | undefined | null): string {
@@ -65,9 +172,7 @@ function parseSectionMap(
   return map;
 }
 
-import { parseHTMLFast } from "../utils/parser-utils";
-
-export function parseStudentProfile(html: string): StudentProfile {
+export function parseStudentProfile(html: string): Versioned<StudentProfile> {
   const doc = parseHTMLFast(html);
 
   const basic: ProfileBasicInfo = {
@@ -252,14 +357,18 @@ export function parseStudentProfile(html: string): StudentProfile {
     };
   }
 
-  return {
-    basic,
-    personal,
-    currentAddress,
-    permanentAddress,
-    education,
-    family,
-    proctor,
-    hostel,
-  };
+  return validateParsed(
+    StudentProfileSchema,
+    {
+      basic,
+      personal,
+      currentAddress,
+      permanentAddress,
+      education,
+      family,
+      proctor,
+      hostel,
+    },
+    "profile",
+  );
 }

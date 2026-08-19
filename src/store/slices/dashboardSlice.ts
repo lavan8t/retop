@@ -177,14 +177,21 @@ export const createDashboardSlice: StateCreator<DataState, [], [], DashboardSlic
             const parsed = parser(intercepted);
             set({ [storeKey]: parsed } as any);
             await setCachedData(cacheKey, intercepted);
-          } catch (e) { console.warn(e); }
+          } catch (e) {
+            console.warn(`[retop] Parse failed for ${signalKey}:`, e);
+          }
           return;
         }
         // 2. Fallback: live fetch with cache update
         try {
           const html = await network.fetchWithCache(cacheKey, fetcher, true);
-          set({ [storeKey]: parser(html) } as any);
-        } catch (e) { console.warn(e); }
+          if (html && !html.includes("HTTP Status 404") && !html.includes("<title>404")) {
+            set({ [storeKey]: parser(html) } as any);
+          }
+        } catch (e) {
+          // Gracefully suppress 404 / optional dashboard widget errors
+          console.warn(`[retop] Sub-endpoint ${cacheKey} unavailable (404/network):`, e);
+        }
       };
 
       const statsP    = resolveOrFetch("dashboard_stats",      "dashboard_stats",      () => network.fetchFragment("get/dashboard/current/cgpa/credits"),                parseAcademicStats,       "stats");
@@ -232,6 +239,7 @@ export const createDashboardSlice: StateCreator<DataState, [], [], DashboardSlic
             });
 
             const subPromises = [];
+            subPromises.push(get().fetchUserProfile(network));
             subPromises.push(get().fetchExamSemesters(network));
             if (ttDefault) {
               subPromises.push(get().loadTimetable(network, csrf, authId, ttDefault));

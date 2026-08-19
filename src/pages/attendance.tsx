@@ -15,8 +15,6 @@ import {
   Cancel,
   Check,
   Close,
-  ArrowUpward,
-  ArrowDownward,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { Pill } from "../components/ui/Pill";
 import { DetailedAttendanceCourse } from "../types/vtop";
@@ -243,9 +241,9 @@ const CourseCard = ({
 
   return (
     <div
-      className={`relative flex items-center justify-between py-2 px-3.5 rounded-xl overflow-hidden transition-all duration-fast cursor-pointer group select-none border border-(--border-dim)/40 ${
+      className={`relative flex items-center justify-between py-2 px-3.5 rounded-2xl overflow-hidden transition-all duration-fast cursor-pointer group select-none border border-(--border-dim)/40 ${
         isSelected
-          ? "bg-(--accent-base)/20 border-l-4 border-l-(--accent-base)"
+          ? "bg-(--accent-base)/15 border-(--accent-base)/40"
           : "bg-(--bg-surface)/60 hover:bg-(--bg-highlight)"
       }`}
       onClick={onClick}>
@@ -403,24 +401,22 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
 
   return (
     <div className="h-full w-full bg-(--color-surface) text-(--color-on-surface) overflow-hidden relative z-0 flex">
-      <div className="flex-1 flex flex-col lg:flex-row w-full max-w-7xl mx-auto h-full overflow-y-auto lg:overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row w-full max-w-5xl mx-auto h-full overflow-y-auto lg:overflow-hidden">
+        {/* Course list — left, narrowed, centered */}
         <div
-          className={`w-full lg:w-1/2 flex flex-col border-r-0 lg:border-r border-(--color-outline-variant) h-full overflow-y-auto custom-scrollbar px-4 md:px-6 lg:px-8 pb-32 lg:pb-12 ${
+          className={`w-full lg:w-[420px] shrink-0 flex flex-col border-r-0 lg:border-r border-(--color-outline-variant) h-full overflow-y-auto custom-scrollbar px-4 md:px-6 lg:px-8 pb-32 lg:pb-12 ${
             selectedCourse ? "hidden lg:flex" : "flex"
           }`}>
           <div className="w-full h-21 md:h-25 shrink-0" />
 
-          <div className="mb-6 flex flex-col gap-1">
+          <div className="mb-4 flex flex-col gap-1">
             <h1 className="text-2xl md:text-3xl font-black font-expanded tracking-tight text-(--color-on-surface)">
               Attendance
             </h1>
-            <p className="text-xs text-(--color-on-surface-variant) font-mono">
-              Track course attendance and forecast targets
-            </p>
           </div>
 
-          <div className="flex flex-col gap-3">
-            {detailedAttendance.map((course, idx) => {
+          <div className="flex flex-col gap-1">
+            {detailedAttendance.map((course) => {
               const key = `${course.courseId}-${course.classType}`;
               return (
                 <CourseCard
@@ -438,7 +434,7 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
 
         {selectedCourseObj && (
           <div
-            className={`w-full lg:w-1/2 flex flex-col h-full overflow-y-auto custom-scrollbar px-4 md:px-6 lg:px-8 pb-32 lg:pb-12 ${
+            className={`flex-1 flex flex-col h-full overflow-y-auto custom-scrollbar px-4 md:px-6 lg:px-8 pb-32 lg:pb-12 ${
               !selectedCourse
                 ? "hidden lg:flex"
                 : "flex absolute inset-0 lg:static z-20 bg-(--color-surface)"
@@ -484,16 +480,6 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
                 <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-(--text-muted)">
                   Attendance History
                 </h4>
-                <button
-                  onClick={() => setSortOrder((prev) => (prev === "desc" ? "asc" : "desc"))}
-                  className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-(--text-muted) hover:text-(--text-main) cursor-pointer bg-(--bg-surface) px-2.5 py-1 rounded-lg border border-(--border-dim)/40 transition-colors">
-                  <span>{sortOrder === "desc" ? "Newest First" : "Oldest First"}</span>
-                  {sortOrder === "desc" ? (
-                    <ArrowDownward className="w-3.5 h-3.5 text-(--accent-base)" />
-                  ) : (
-                    <ArrowUpward className="w-3.5 h-3.5 text-(--accent-base)" />
-                  )}
-                </button>
               </div>
 
               {attRecordsLoading && !records ? (

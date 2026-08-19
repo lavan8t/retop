@@ -3,6 +3,7 @@ import { useDataStore } from "../../store/dataStore";
 import { useAppStore } from "../../store/appStore";
 import { ViewType } from "../../types/vtop";
 import { CAMPUS_SLOTS } from "../../utils/timetable-slots";
+import { getStorageData, setStorageData } from "../../utils/storageAdapter";
 import {
   School,
   Description,
@@ -24,13 +25,26 @@ export const UpdatesWidget: React.FC = () => {
   const { setCurrentView } = useAppStore();
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(() => {
     try {
-      const saved = sessionStorage.getItem("retop_dismissed_updates");
-      return saved ? new Set(JSON.parse(saved)) : new Set();
+      const local = localStorage.getItem("retop_dismissed_updates");
+      if (local) return new Set(JSON.parse(local));
+      const session = sessionStorage.getItem("retop_dismissed_updates");
+      return session ? new Set(JSON.parse(session)) : new Set();
     } catch {
       return new Set();
     }
   });
   const [now, setNow] = useState(() => new Date());
+
+  // Load permanent dismissed IDs from extension storage
+  useEffect(() => {
+    getStorageData(["retop_dismissed_updates"])
+      .then((res) => {
+        if (Array.isArray(res.retop_dismissed_updates)) {
+          setDismissedIds((prev) => new Set([...prev, ...res.retop_dismissed_updates]));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Refresh clock every minute for class 15-minute alerts
   useEffect(() => {
@@ -42,9 +56,12 @@ export const UpdatesWidget: React.FC = () => {
     e?.stopPropagation();
     setDismissedIds((prev) => {
       const next = new Set(prev).add(id);
+      const arr = [...next];
       try {
-        sessionStorage.setItem("retop_dismissed_updates", JSON.stringify([...next]));
+        localStorage.setItem("retop_dismissed_updates", JSON.stringify(arr));
+        sessionStorage.setItem("retop_dismissed_updates", JSON.stringify(arr));
       } catch {}
+      setStorageData({ retop_dismissed_updates: arr }).catch(() => {});
       return next;
     });
   };

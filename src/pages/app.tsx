@@ -7,218 +7,37 @@ import {
   getAppRoot,
   setUIVisibility,
   revealLegacyUI,
-  createHiddenForm,
   removeSplashScreen,
 } from "../utils/bridge";
 import { VTOPNetwork } from "../utils/network";
 import { getCachedData, setCachedData } from "../utils/cache";
-import { getStorageData, setStorageData } from "../utils/storageAdapter";
-import { del as idbDel } from "idb-keyval";
-import { scrapeMenu, scrapeUserProfile } from "../parsers/menu";
-import { getExtUrl } from "../utils/url";
 import {
-  parseAcademicStats,
-  parseDigitalAssignments,
-  parseCourseDetails,
-} from "../parsers/dashboard";
-import { parseSemesters, parseTimetable } from "../parsers/timetable";
-import { parseStudentProfile } from "../parsers/profile";
+  getStorageData,
+  setStorageData,
+  removeStorageKeys,
+} from "../utils/storageAdapter";
+import { scrapeMenu, scrapeUserProfile } from "../parsers/menu";
+import { fixBase64Image, urlToBase64 } from "../parsers/profile";
+import { saveUserProfileImage, getUserProfileImage } from "../utils/pinSecurity";
 import { scrapeSpotlight } from "../parsers/spotlight";
 import {
   QuickLink,
   MenuCategory,
-  CourseSummary,
-  Assignment,
-  TimetableCourse,
-  Semester,
-  CoursePageOption,
   ViewType,
   SpotlightCategoryGroup,
 } from "../types/vtop";
-
-
+import { getDestinationView, getSavedView } from "../utils/routes";
 
 import { TopBar } from "../components/layout/TopBar";
-import { TopBarSearch } from "../components/layout/TopBarSearch";
 import { ContentRouter } from "../components/layout/ContentRouter";
 import { GlobalDADropZone } from "../components/ui/GlobalDADropZone";
-import { GlobalOverflowTooltip } from "../components/ui/Tooltip";
+import { AlertDialogManager, showAlertDialog } from "../components/ui/AlertDialog";
 
 import { FloatingViewToggle } from "../components/timetable/FloatingViewToggle";
-import {
-  getUpcomingClasses,
-  UpcomingClass,
-  getCorrectDayName,
-} from "../utils/timetable-slots";
 import { useSettings, applyTheme } from "../utils/settings-store";
 import { LegacyReturnButton } from "../components/LegacyReturnButton";
 import { SnackbarManager } from "../components/ui/Snackbar";
 import { UpdatesWidget } from "../components/ui/UpdatesWidget";
-import { Search } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
-
-
-const getDestinationView = (link: QuickLink): ViewType | "content" => {
-  const lowerTitle = link.title.toLowerCase().trim();
-  const lowerUrl = link.url.toLowerCase().trim();
-
-  // 1. Dashboard / Home
-  if (
-    lowerTitle === "home" ||
-    lowerTitle === "dashboard" ||
-    lowerUrl === "home" ||
-    lowerUrl === "/home"
-  ) {
-    return "dashboard";
-  }
-
-  // 2. Timetable
-  if (
-    lowerTitle === "timetable" ||
-    lowerTitle === "time table" ||
-    lowerTitle === "class timetable" ||
-    lowerUrl.includes("studenttimetable") ||
-    lowerUrl.includes("processviewtimetable")
-  ) {
-    return "timetable";
-  }
-
-  // 3. Curriculum
-  if (
-    lowerTitle === "curriculum" ||
-    lowerTitle === "programme curriculum" ||
-    lowerTitle === "curriculum & syllabus" ||
-    lowerUrl.includes("curriculumsyllabus")
-  ) {
-    return "curriculum";
-  }
-
-  // 4. Marks
-  if (
-    lowerTitle === "marks view" ||
-    lowerTitle === "student marks" ||
-    lowerUrl.includes("studentmarkview") ||
-    lowerUrl.includes("processviewstudentmark")
-  ) {
-    return "marks";
-  }
-
-  // 5. Grades
-  if (
-    lowerTitle === "grades view" ||
-    lowerTitle === "grades & history" ||
-    lowerTitle === "grade history" ||
-    lowerUrl.includes("studentgradeview") ||
-    lowerUrl.includes("processviewstudentgrade")
-  ) {
-    return "grades";
-  }
-
-  // 6. Profile
-  if (
-    lowerTitle === "student profile" ||
-    lowerTitle === "profile view" ||
-    lowerUrl.includes("studentprofileallview")
-  ) {
-    return "profile";
-  }
-
-  // 7. Course Page Consolidated (Course Materials)
-  if (
-    lowerTitle === "course page consolidated" ||
-    lowerTitle === "course page (consolidated)" ||
-    lowerUrl.includes("studentcoursepage") ||
-    lowerUrl.includes("coursepageconsolidated")
-  ) {
-    return "coursePage";
-  }
-
-  // 8. Calendar
-  if (
-    lowerTitle === "academic calendar" ||
-    lowerTitle === "academics calendar" ||
-    lowerTitle === "academic calendar preview" ||
-    lowerUrl.includes("calendarpreview")
-  ) {
-    return "calendar";
-  }
-
-  // 9. Attendance
-  if (
-    lowerTitle === "class attendance" ||
-    lowerTitle === "student attendance" ||
-    lowerUrl.includes("studentattendance") ||
-    lowerUrl.includes("processviewstudentattendance")
-  ) {
-    return "attendance";
-  }
-
-  // 10. Digital Assignments
-  if (
-    lowerTitle === "digital assignments" ||
-    lowerTitle === "digital assignment upload" ||
-    lowerUrl.includes("studentda") ||
-    lowerUrl.includes("processviewstudentda")
-  ) {
-    return "digitalAssignments";
-  }
-
-  // 11. Exam Schedule
-  if (
-    lowerTitle === "exam schedule" ||
-    lowerTitle === "examinations schedule" ||
-    lowerUrl.includes("studexamschedule") ||
-    lowerUrl.includes("processviewexamschedule")
-  ) {
-    return "examSchedule";
-  }
-
-  // 12. Late Hour Permission
-  if (
-    lowerTitle === "late hour permission" ||
-    lowerTitle === "late hour" ||
-    lowerUrl.includes("hostels/late/hour")
-  ) {
-    return "lateHour";
-  }
-
-  // 13. Keep Notes
-  if (
-    lowerTitle === "keep notes" ||
-    lowerTitle === "notes" ||
-    lowerTitle === "quick notes" ||
-    lowerUrl.includes("retop/notes") ||
-    lowerUrl.includes("notes")
-  ) {
-    return "notes";
-  }
-
-  // Default: Open in legacy content mode (with re. theme)
-  return "content";
-};
-
-// Using the Session Storage routing we built previously
-const getSavedView = (): ViewType => {
-  const saved = sessionStorage.getItem("vtop-retop-view");
-  const validViews = [
-    "dashboard",
-    "content",
-    "timetable",
-    "curriculum",
-    "marks",
-    "grades",
-    "profile",
-    "settings",
-    "coursePage",
-    "calendar",
-    "attendance",
-    "digitalAssignments",
-    "examSchedule",
-    "lateHour",
-  ];
-  return validViews.includes(saved as ViewType)
-    ? (saved as ViewType)
-    : "dashboard";
-};
 
 const findLegacyTarget = (title: string, url?: string): HTMLElement | null => {
   const links = Array.from(document.querySelectorAll("a, button, [onclick], .nav-link, .menu-item, [data-url], li"));
@@ -307,7 +126,7 @@ export function renderDashboard() {
   if (rootEl) {
     if ((rootEl as any)._reactRoot) {
       (rootEl as any)._reactRoot.render(
-        <ErrorBoundary>
+        <ErrorBoundary variant="fullscreen" name="retop App">
           <DashboardApp />
         </ErrorBoundary>
       );
@@ -315,7 +134,7 @@ export function renderDashboard() {
       const root = createRoot(rootEl);
       (rootEl as any)._reactRoot = root;
       root.render(
-        <ErrorBoundary>
+        <ErrorBoundary variant="fullscreen" name="retop App">
           <DashboardApp />
         </ErrorBoundary>
       );
@@ -390,7 +209,6 @@ const DashboardApp = () => {
     calSelectedGroup,
     setCalSelectedGroup,
     calGridData,
-    fetchUserProfile,
     fetchDashboardData,
     loadTimetable,
     syncDashboard,
@@ -477,6 +295,12 @@ const DashboardApp = () => {
         window.dispatchEvent(new CustomEvent("retop-refresh-profile"));
       } else if (view === "coursePage") {
         window.dispatchEvent(new CustomEvent("retop-refresh-coursepage"));
+      } else if (view === "lateHour") {
+        await Promise.all([
+          net.getLateHourStatus(true),
+          net.getLateHourHistory(true),
+        ]).catch(console.warn);
+        window.dispatchEvent(new CustomEvent("retop-refresh-late-hour"));
       } else {
         if (csrfRef.current && authIdRef.current) {
           await dataState.syncDashboard(net, csrfRef.current, authIdRef.current);
@@ -496,7 +320,10 @@ const DashboardApp = () => {
   const handleTogglePin = (link: QuickLink) => {
     const dest = getDestinationView(link);
     if (dest === "content") {
-      alert("Only retop exclusive native pages can be pinned to the dock.");
+      showAlertDialog({
+        title: "Pinning Unavailable",
+        message: "Only retop exclusive native pages can be pinned to the dock.",
+      });
       return;
     }
 
@@ -622,13 +449,21 @@ const DashboardApp = () => {
     const campus: "chennai" | "vellore" = isChennai ? "chennai" : "vellore";
 
     if (isOffline) {
-      getStorageData([
-        `${authId}_profileImage`,
-        `${authId}_user_basic_profile`,
-        "retop_cached_users",
-      ]).then((res) => {
+      getUserProfileImage(authId).then(async (decryptedImg) => {
+        const res = await getStorageData([
+          `${authId}_profileImage`,
+          `${authId}_user_basic_profile`,
+          "retop_cached_users",
+        ]);
         const cachedProfile = res[`${authId}_user_basic_profile`];
-        const cachedImg = res[`${authId}_profileImage`];
+        const cachedImg =
+          decryptedImg ||
+          res[`${authId}_profileImage`] ||
+          (typeof localStorage !== "undefined"
+            ? localStorage.getItem(`${authId}_profileImage`) ||
+              localStorage.getItem("retop_profileImage")
+            : "") ||
+          "";
         const cachedUsers = (res.retop_cached_users || []) as any[];
         const foundUser = cachedUsers.find(
           (u) => (u.regNo || "").toUpperCase() === authId.toUpperCase(),
@@ -679,8 +514,8 @@ const DashboardApp = () => {
         }
 
         const existingUser = cleanUsersMap.get(currentReg.toUpperCase());
-        const userCachedImg =
-          res[`${currentReg}_profileImage`] || existingUser?.profileImgBase64 || "";
+        const cachedUserImg = res[`${currentReg}_profileImage`] || existingUser?.profileImgBase64 || "";
+        let profileImg = fixBase64Image(userProfile.profileImgBase64 || cachedUserImg);
 
         const updatedUser = {
           regNo: currentReg,
@@ -690,7 +525,7 @@ const DashboardApp = () => {
             existingUser?.name ||
             res[`${currentReg}_user_basic_profile`]?.name ||
             "Student",
-          profileImgBase64: userProfile.profileImgBase64 || userCachedImg || "",
+          profileImgBase64: profileImg || "",
           lastActive: Date.now(),
           campus,
         };
@@ -703,45 +538,22 @@ const DashboardApp = () => {
           retop_lastAuthId: currentReg,
           retop_lastName: updatedUser.name,
           [`${currentReg}_profileImage`]: updatedUser.profileImgBase64,
-          retop_profileImage: updatedUser.profileImgBase64,
           retop_active_user: currentReg,
           retop_last_campus: campus,
           retop_cached_users: users,
         });
 
-        // Immediately fetch photo from /vtop/users/image/?id= if missing
-        if (
-          !updatedUser.profileImgBase64 &&
-          currentReg &&
-          currentReg !== "..." &&
-          currentReg !== "Student" &&
-          !isOffline
-        ) {
-          fetch(`/vtop/users/image/?id=${encodeURIComponent(currentReg)}`)
-            .then((imgRes) => {
-              if (imgRes.ok) return imgRes.blob();
-              throw new Error("Failed to fetch photo");
-            })
-            .then((blob) => {
-              if (blob.size < 50) return;
-              const reader = new FileReader();
-              reader.onloadend = () => {
-                const b64 = reader.result as string;
-                if (b64 && b64.length > 50 && !b64.endsWith("base64,")) {
-                  const withImg = { ...updatedUser, profileImgBase64: b64 };
-                  cleanUsersMap.set(currentReg.toUpperCase(), withImg);
-                  const newUsersList = Array.from(cleanUsersMap.values());
-                  setUser(withImg);
-                  setStorageData({
-                    [`${currentReg}_profileImage`]: b64,
-                    retop_profileImage: b64,
-                    retop_cached_users: newUsersList,
-                  });
-                }
-              };
-              reader.readAsDataURL(blob);
-            })
-            .catch(() => {});
+        // Ensure raw image URLs are converted to self-contained Base64 and stored encrypted for offline mode
+        if (profileImg && !profileImg.startsWith("data:image")) {
+          urlToBase64(profileImg).then((dataUri) => {
+            if (dataUri && dataUri.startsWith("data:image")) {
+              saveUserProfileImage(currentReg, dataUri).catch(() => {});
+              updatedUser.profileImgBase64 = dataUri;
+              setUser({ ...updatedUser, profileImgBase64: dataUri });
+            }
+          }).catch(() => {});
+        } else if (profileImg && profileImg.startsWith("data:image")) {
+          saveUserProfileImage(currentReg, profileImg).catch(() => {});
         }
 
         // Relay scraped portal data to background worker for PWA sync
@@ -763,7 +575,6 @@ const DashboardApp = () => {
     }
 
     fetchDashboardData(networkRef.current, csrf, authId);
-    fetchUserProfile(networkRef.current);
 
     let menuPoller: ReturnType<typeof setInterval> | undefined;
     let feedbackPoller: ReturnType<typeof setInterval> | undefined;
@@ -858,6 +669,11 @@ const DashboardApp = () => {
     }
 
     const handleKeys = (e: KeyboardEvent) => {
+      // If legacy UI is active (Retop is hidden), let legacy injector handle it
+      if (document.body.classList.contains("show-legacy-ui")) {
+        return;
+      }
+
       // Get target element resolving through shadow DOM
       const targetEl = (
         e.composedPath ? e.composedPath()[0] : e.target
@@ -893,18 +709,21 @@ const DashboardApp = () => {
         }
         return;
       }
-      if (e.key === "Escape") return;
-
-      const shouldOpen = e.key === " ";
+      const shouldOpen =
+        e.key === "/" ||
+        e.code === "Space" ||
+        e.key === " " ||
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k");
 
       if (shouldOpen) {
         e.preventDefault();
+        e.stopImmediatePropagation();
         isOmniboxOpenRef.current = true;
         setOmniboxInitial("");
         setIsOmniboxOpen(true);
       }
     };
-    window.addEventListener("keydown", handleKeys);
+    window.addEventListener("keydown", handleKeys, true);
 
     const restoreHandler = () => setIsModernUI(true);
     window.addEventListener("vtop-restore-ui", restoreHandler);
@@ -960,7 +779,6 @@ const DashboardApp = () => {
     else if (currentView === "digitalAssignments") pageName = "Assignments";
     else if (currentView === "coursePage") pageName = "Course Page";
     else if (currentView === "calendar") pageName = "Calendar";
-    else if (currentView === "notes") pageName = "Notes";
     else if (currentView === "profile") pageName = "Profile";
     else if (currentView === "content" && contentTitle) pageName = contentTitle;
     // @ts-ignore - Handle settings explicitly as fallback
@@ -1024,8 +842,7 @@ const DashboardApp = () => {
     } finally {
       try {
         localStorage.removeItem("retop_lastAuthId");
-        await idbDel("retop_lastAuthId");
-        await idbDel("retop_active_user");
+        await removeStorageKeys(["retop_lastAuthId", "retop_active_user"]);
       } catch {}
       window.location.href = "/vtop/open/page";
     }
@@ -1071,10 +888,12 @@ const DashboardApp = () => {
             isOmniboxOpen={isOmniboxOpen}
             setIsOmniboxOpen={setIsOmniboxOpen}
             setCurrentView={navigateToView}
+            user={user}
             onBack={handleBack}
             pinnedLinks={pinnedLinks}
             menuCategories={menu}
             onTogglePin={handleTogglePin}
+            onReorderPins={(newPins) => updateSetting("pinnedLinks", newPins)}
             onNavigate={handleLinkClick}
             initialQuery={omniboxInitial}
             onTimetableSemChange={(semId) => {
@@ -1136,10 +955,10 @@ const DashboardApp = () => {
           
 
           <SnackbarManager />
+          <AlertDialogManager />
           <UpdatesWidget />
           
           <GlobalDADropZone network={networkRef.current!} />
-          <GlobalOverflowTooltip />
         </div>
       </div>
 

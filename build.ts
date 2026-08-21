@@ -13,8 +13,9 @@
  *   5. Copy HTML files into dist/ with rewritten script paths
  */
 
-import { rmSync, mkdirSync, copyFileSync, readFileSync, writeFileSync, existsSync, realpathSync, statSync, readdirSync } from "fs";
+import { rmSync, mkdirSync, copyFileSync, readFileSync, writeFileSync, existsSync, realpathSync, statSync, readdirSync, cpSync } from "fs";
 import { resolve, basename } from "path";
+import { homedir } from "os";
 import { gzipSync, deflateRawSync } from "zlib";
 
 const IS_PROD = process.argv.includes("--prod") || process.argv.includes("--production");
@@ -163,9 +164,10 @@ const cssBuilds: [string, string, string][] = [
   ["src/styles/prelogin.css", "prelogin.css", "prelogin.css"],
 ];
 
+const tailwindCli = resolve(ROOT, "node_modules/@tailwindcss/cli/dist/index.mjs");
 for (const [srcRel, outRel, label] of cssBuilds) {
   const proc = Bun.spawnSync([
-    "bunx", "tailwindcss",
+    process.execPath, tailwindCli,
     "-i", resolve(ROOT, srcRel),
     "-o", resolve(DIST, outRel),
     ...(IS_PROD ? ["--minify"] : []),
@@ -478,3 +480,19 @@ if (archiveType) {
   const archiveSize = statSync(archivePath).size;
   console.log(`\x1b[32m✓ Archive Created!\x1b[0m (${formatBytes(archiveSize)}) → ${archiveFilename}`);
 }
+
+const shouldCopy = process.argv.includes("--copy") || process.argv.includes("--sync");
+if (shouldCopy) {
+  const target = resolve(homedir(), "storage/documents/dist");
+  try {
+    mkdirSync(resolve(homedir(), "storage/documents"), { recursive: true });
+    if (existsSync(target)) {
+      rmSync(target, { recursive: true, force: true });
+    }
+    cpSync(DIST, target, { recursive: true });
+    console.log(`\x1b[32m✓ Synced dist/ -> ${target}\x1b[0m`);
+  } catch (err) {
+    console.warn(`\x1b[33mWarning: Failed to copy to ${target}\x1b[0m`, err);
+  }
+}
+

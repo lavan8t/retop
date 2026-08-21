@@ -38,7 +38,8 @@ export const MarksPage: React.FC<MarksPageProps> = ({
 
   useEffect(() => {
     const init = async () => {
-      if (semesters.length> 0) {
+      if (semesters.length > 0) {
+        if (!selectedSem) setSelectedSem(semesters[0].id);
         setLoading(false);
         return;
       }
@@ -51,11 +52,20 @@ export const MarksPage: React.FC<MarksPageProps> = ({
       try {
         const html = await network.getMarksView();
         const sems = typeof html === "string" ? parseMarksSemesters(html) : html;
-        const dropdownSems = (Array.isArray(sems) ? sems : []).map((s) => ({
+        let dropdownSems = (Array.isArray(sems) ? sems : []).map((s: any) => ({
           id: s.id,
           label: s.label,
           isLatest: s.isLatest,
         }));
+
+        // Fallback: If marks page select is empty or pending, fallback to timetable semesters
+        if (dropdownSems.length === 0) {
+          const ttSems = useDataStore.getState().ttSemesters;
+          if (ttSems && ttSems.length > 0) {
+            dropdownSems = ttSems;
+          }
+        }
+
         setSemesters(dropdownSems);
         if (dropdownSems.length > 0 && !selectedSem) {
           setSelectedSem(dropdownSems[0].id);

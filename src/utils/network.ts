@@ -23,11 +23,11 @@ export const getParserForKey = (key: string): ((html: string) => any) | null => 
   if (key === "dashboard_attendance") return parseCourseDetails;
   if (key === "dashboard_da") return parseDigitalAssignments;
   if (key === "dashboard_events") return parseEvents;
-  if (key === "tt_semester_list") return parseSemesters;
-  if (key === "cal_semester_list") return parseCalendarSemesters;
-  if (key === "exam_schedule_view") return parseExamSemesters;
-  if (key === "marks_view") return parseMarksSemesters;
-  if (key === "grades_view") return parseGradesSemesters;
+  if (key === "tt_semester_list" || key === "tt_semesters") return parseSemesters;
+  if (key === "cal_semester_list" || key === "cal_semesters") return parseCalendarSemesters;
+  if (key === "exam_schedule_view" || key === "exam_semesters") return parseExamSemesters;
+  if (key === "marks_view" || key === "marks_view_initial" || key === "marks_semesters" || key === "marks_semester_list") return parseMarksSemesters;
+  if (key === "grades_view" || key === "grades_semesters" || key === "grades_semester_list") return parseGradesSemesters;
   if (key === "grade_history_data" || key === "student_grade_history") return parseGradeHistory;
   if (key === "curriculum_dashboard" || key === "curriculum") return parseCurriculumDashboard;
   if (key === "student_profile_data" || key === "student_profile") return parseStudentProfile;
@@ -37,8 +37,8 @@ export const getParserForKey = (key: string): ((html: string) => any) | null => 
   if (key.startsWith("attendance_detailed_")) return parseStudentAttendance;
   if (key.startsWith("attendance_records_")) return parseAttendanceDetail;
   if (key.startsWith("tt_") || key.startsWith("timetable_")) return parseTimetable;
-  if (key.startsWith("marks_data_") || key.startsWith("marks_")) return parseStudentMarks;
-  if (key.startsWith("grades_data_") || key.startsWith("grades_")) return parseGrades;
+  if (key.startsWith("marks_data_")) return parseStudentMarks;
+  if (key.startsWith("grades_data_")) return parseGrades;
   if (key.startsWith("grade_details_")) return parseGradeDetails;
   if (key.startsWith("da_courses_")) return parseDACourses;
   if (key.startsWith("da_class_") || key.startsWith("da_view_")) return parseDAAssignments;

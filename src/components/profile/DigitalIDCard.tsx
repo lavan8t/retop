@@ -13,6 +13,7 @@ const toTitleCase = (str: string) => {
 };
 
 export const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
+  const [isFlipped, setIsFlipped] = React.useState(false);
   const isHosteller = !!data.hostel;
   const address = data.permanentAddress;
   const contactNo =
@@ -36,9 +37,25 @@ export const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
 
   return (
     <div
-      className="retop-digital-id-card group w-full max-w-74 aspect-64/100 perspective-[1000px] cursor-pointer shrink-0"
+      role="button"
+      tabIndex={0}
+      aria-label="Student ID card. Tap or click to flip."
+      onClick={() => setIsFlipped((prev) => !prev)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          setIsFlipped((prev) => !prev);
+        }
+      }}
+      className="retop-digital-id-card group w-full max-w-74 aspect-64/100 perspective-[1000px] cursor-pointer shrink-0 select-none touch-manipulation focus:outline-none"
     >
-      <div className="relative w-full h-full transition-transform duration-300 transform-3d group-hover:transform-[rotateY(180deg)] shadow-none rounded-2xl">
+      <div
+        className={`relative w-full h-full transition-transform duration-500 transform-3d shadow-none rounded-2xl ${
+          isFlipped
+            ? "transform-[rotateY(180deg)]"
+            : "md:group-hover:transform-[rotateY(180deg)]"
+        }`}
+      >
         {/* FRONT SIDE */}
         <div
           className={`absolute inset-0 backface-hidden rounded-2xl border-2 border-border-dim flex flex-col overflow-hidden ${fontArial}`}
@@ -202,7 +219,13 @@ export const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
                 fontSize={16}
                 margin={0}
                 format="CODE128"
+                background="transparent"
+                lineColor="#000000"
+                font="Arial"
               />
+            </div>
+            <div className={`font-bold text-[13px] ${fontArial} mt-1`}>
+              Website : www.vit.ac.in
             </div>
           </div>
         </div>

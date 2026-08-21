@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { VTOPNetwork } from "../utils/network";
 import { useDataStore } from "../store/dataStore";
+import { getCachedData, setCachedData } from "../utils/cache";
 import { parseStudentProfile } from "../parsers/profile";
 import { StudentProfile } from "../types/vtop";
-import { VitLogo } from "../components/VitLogo";
+import { DigitalIDCard } from "../components/profile/DigitalIDCard";
 import {
-  Person,
   Mobile,
   Mail,
   LocationOn,
@@ -21,8 +21,6 @@ import {
   Wc,
   Public,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
-
-import { Barcode } from "../components/common/Barcode";
 
 const CopyableText = ({
   text,
@@ -75,24 +73,24 @@ const BentoBlock = ({
 
   return (
     <div
-      className={`relative p-5 md:p-6 bg-(--bg-surface) text-(--text-main) rounded-4xl transition-all duration-fast flex flex-col justify-between gap-4 overflow-hidden wrap-break-word whitespace-normal min-h-35 max-h-max ${span} ${className}`}
+      className={`relative p-4 sm:p-5 md:p-6 bg-(--bg-surface) text-(--text-main) rounded-3xl sm:rounded-4xl transition-all duration-fast flex flex-col justify-between gap-3 sm:gap-4 overflow-hidden break-words whitespace-normal min-h-28 sm:min-h-35 ${span} ${className}`}
     >
-      <div className="relative z-10 flex flex-col justify-between h-full gap-4 w-full">
+      <div className="relative z-10 flex flex-col justify-between h-full gap-3 sm:gap-4 w-full">
         {Icon ? (
-          <div className="flex items-start justify-between w-full h-full gap-4">
-            <Icon className="w-8 h-8 md:w-10 md:h-10 text-(--text-main) mix-blend-overlay opacity-80 shrink-0" />
+          <div className="flex items-start justify-between w-full h-full gap-3 sm:gap-4">
+            <Icon className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 text-(--text-main) mix-blend-overlay opacity-80 shrink-0" />
             <div className="flex flex-col items-end justify-end text-right h-full w-full min-w-0">
               {title && (
-                <div className="text-[10px] md:text-xs uppercase font-black font-expanded opacity-50 shrink-0 mb-2">
+                <div className="text-[10px] sm:text-xs uppercase font-black font-expanded opacity-50 shrink-0 mb-1.5 sm:mb-2">
                   {title}
                 </div>
               )}
               {value ? (
-                <div className="text-2xl md:text-3xl font-black font-expanded leading-none w-full wrap-break-word whitespace-normal py-1">
+                <div className="text-xl sm:text-2xl md:text-3xl font-black font-expanded leading-tight w-full break-words whitespace-normal py-0.5 sm:py-1">
                   {value}
                 </div>
               ) : (
-                <div className="w-full flex flex-col items-end justify-end text-sm md:text-base font-black font-expanded gap-1 wrap-break-word whitespace-normal">
+                <div className="w-full flex flex-col items-end justify-end text-sm md:text-base font-black font-expanded gap-1 break-words whitespace-normal">
                   {children}
                 </div>
               )}
@@ -101,16 +99,16 @@ const BentoBlock = ({
         ) : (
           <>
             {title && (
-              <div className="text-[10px] md:text-xs uppercase font-black font-expanded opacity-50 shrink-0 mb-2 text-right w-full">
+              <div className="text-[10px] sm:text-xs uppercase font-black font-expanded opacity-50 shrink-0 mb-1.5 sm:mb-2 text-right w-full">
                 {title}
               </div>
             )}
             {value ? (
-              <div className="text-xl md:text-2xl lg:text-3xl font-black font-expanded leading-tight w-full wrap-break-word whitespace-normal text-right">
+              <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black font-expanded leading-tight w-full break-words whitespace-normal text-right">
                 {value}
               </div>
             ) : (
-              <div className="w-full h-full flex flex-col justify-end text-sm md:text-base font-black font-expanded gap-1 wrap-break-word whitespace-normal text-right">
+              <div className="w-full h-full flex flex-col justify-end text-sm md:text-base font-black font-expanded gap-1 break-words whitespace-normal text-right">
                 {children}
               </div>
             )}
@@ -121,225 +119,7 @@ const BentoBlock = ({
   );
 };
 
-const toTitleCase = (str: string) => {
-  if (!str) return "";
-  return str.replace(
-    /\w\S*/g,
-    (txt) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase(),
-  );
-};
 
-const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
-  const isHosteller = !!data.hostel;
-  const address = data.permanentAddress;
-  const contactNo =
-    data.permanentAddress.phone || data.personal.mobile || "Not Provided";
-
-  // Strict font enforcement
-  const fontArial = "font-['Arial',Helvetica,sans-serif]!";
-  const fontTimes = "font-['Times_New_Roman',Times,serif]!";
-
-  // FIX 1: Defensive Null Guard Implemented (Will not affect visuals)
-  const fullName = toTitleCase(data?.basic?.name ?? "");
-  const isShortName = fullName.length < 17;
-  
-  const words = fullName.split(" ");
-  const line1 = words[0] || "";
-  const line2 = words.slice(1).join(" ") || "";
-
-  const isChennai =
-    (data as any).campus === "chennai" ||
-    (typeof window !== "undefined" && window.location.hostname.includes("vtopcc")) ||
-    (typeof window !== "undefined" && (window as any)._retopCampus === "chennai");
-  const campusName = isChennai ? "CHENNAI" : "VELLORE";
-
-  return (
-    <div
-      className="retop-digital-id-card group w-full max-w-74 aspect-64/100 perspective-[1000px] cursor-pointer shrink-0"
-    >
-      {/* Container for 3D flip */}
-      <div className="relative w-full h-full transition-transform duration-300 transform-3d group-hover:transform-[rotateY(180deg)] shadow-none rounded-2xl">
-        {/* FRONT SIDE */}
-        <div
-          className={`absolute inset-0 backface-hidden rounded-2xl border-2 border-border-dim flex flex-col overflow-hidden ${fontArial}`}
-          style={{ backgroundColor: "white", color: "black" }}
-        >
-          {/* Header */}
-          <div className="flex flex-col items-center pt-3 px-3 shrink-0">
-            <div className="w-47.5 mx-auto flex justify-center [&>svg]:w-full [&>svg]:h-[auto!important] [&>svg]:max-h-16.25">
-              <VitLogo />
-            </div>
-
-            <h3
-              className={`text-[17px] font-extrabold scale-x-120 text-black ${fontTimes}`}
-            >
-              {campusName} CAMPUS
-            </h3>
-          </div>
-
-          <div className="flex-1 flex flex-col justify-center top-1 items-center px-4 w-full">
-            <div className={`overflow-hidden flex items-center justify-center z-10 transition-all w-27 h-41.25`}>
-              {data.basic.photoUrl ? (
-                <img
-                  src={data.basic.photoUrl}
-                  className="w-full h-full object-contain brightness-110"
-                  alt="Student"
-                />
-              ) : (
-                <Person className="w-20 h-20 text-content" />
-              )}
-            </div>
-          </div>
-
-          {/* Negative top margin pulls the text block upward for two-line names */}
-          <div className={`flex flex-col items-center justify-center text-center shrink-0 pb-1 w-full ${isShortName ? '' : '-mt-2'}`}>
-            {isShortName ? (
-              <div
-                className={`font-bold text-[25px] ${fontArial} text-[#181d79] leading-none text-center px-2 mt-6`}
-              >
-                {fullName}
-              </div>
-            ) : (
-              <div
-                className={`font-bold text-[25px] ${fontArial} text-[#181d79] leading-[1.1] flex flex-col items-center justify-center text-center w-full mt-1 px-2`}
-              >
-                <span className={`${fontArial}`}>{line1}</span>
-                <span className={`${fontArial}`}>{line2}</span>
-              </div>
-            )}
-            
-            <div
-              className={`font-bold text-[18px] ${fontArial} text-black mt-1 text-center`}
-            >
-              {data.basic.regNo}
-            </div>
-          </div>
-
-          {/* Footer Banner */}
-          <div
-            className={`text-[#ffffff] text-center py-1 font-bold text-[22px] shrink-0 ${fontArial}`}
-            style={{
-              backgroundColor: isHosteller ? "#181d79" : "#C41E3A",
-            }}
-          >
-            {isHosteller ? "HOSTELLER" : "DAY SCHOLAR"}
-          </div>
-        </div>
-
-        {/* BACK SIDE */}
-        <div
-          className={`absolute inset-0 backface-hidden transform-[rotateY(180deg)] rounded-2xl border-2 border-border-dim flex flex-col p-3 text-[12px] leading-tight overflow-hidden`}
-          style={{ backgroundColor: "white", color: "black" }}
-        >
-          <div className="flex gap-1">
-            <span className={`italic font-bold ${fontTimes}`}>App. No:</span>{" "}
-            <span className={`font-bold ml-1 ${fontArial}`}>
-              {data.personal.appNo}
-            </span>
-          </div>
-
-          <div className="flex gap-1 mt-1">
-            <span className={`italic font-bold ${fontTimes}`}>
-              Blood Group :
-            </span>{" "}
-            <span className={`font-bold ml-1 ${fontArial}`}>
-              {data.personal.bloodGroup}
-            </span>
-          </div>
-
-          <div className={`mt-1.5 italic font-bold ${fontTimes}`}>
-            Official Address :
-          </div>
-          <div
-            className={`font-bold ml-2 text-[11px] leading-snug ${fontArial}`}
-          >
-            {isChennai ? (
-              <>
-                Vellore Institute of Technology,
-                <br />
-                Vandalur - Kelambakkam Road,
-                <br />
-                Chennai - 600 127, Tamilnadu, India.
-                <br />
-                Ph : 044 3993 1555
-              </>
-            ) : (
-              <>
-                Vellore Institute of Technology,
-                <br />
-                Vellore - 632 014, Tamilnadu, India.
-                <br />
-                Ph : 0416 224 3091
-                <br />
-                Fax : 0416 224 3092
-              </>
-            )}
-          </div>
-
-          <div className={`mt-1.5 italic font-bold ${fontTimes}`}>
-            Address :
-          </div>
-          <div
-            className={`font-bold ml-2 text-[11px] leading-snug uppercase ${fontArial}`}
-          >
-            {address.street},<br />
-            {address.area}, {address.city},<br />
-            {address.pincode}, {address.state},<br />
-            {address.country}
-          </div>
-
-          <div className={`mt-1.5 italic font-bold ${fontTimes}`}>
-            Contact No. :
-          </div>
-          <div className={`font-bold ml-2 text-[13px] ${fontArial}`}>
-            {contactNo}
-          </div>
-
-          <div className="mt-1.5 flex gap-1">
-            <span className={`italic font-bold ${fontTimes}`}>
-              Valid Upto :
-            </span>{" "}
-            <span className={`font-bold text-[13px] ml-1 ${fontArial}`}>
-              JUL-2028
-            </span>
-          </div>
-
-          <div className="mt-2 flex justify-between text-[11px] items-end px-2">
-            <div className="text-center flex flex-col items-center">
-              <span className={`text-xl -mb-2 text-content-dim ${fontArial}`}></span>
-              <span className={fontArial}> </span>
-            </div>
-            <div className="text-center flex flex-col items-center">
-              <span className={`text-xl -mb-2 text-content-dim ${fontArial}`}></span>
-              <span className={fontArial}> </span>
-            </div>
-          </div>
-
-          {/* TEC-IT API Barcode Replaced with react-barcode */}
-          <div className="mt-auto flex flex-col items-center pb-1">
-            <div className="w-[85%] flex justify-center bg-white px-2 py-2 rounded-sm mix-blend-multiply opacity-90">
-              <Barcode
-                value={data.basic.regNo}
-                displayValue={true}
-                height={75}
-                width={2}
-                fontSize={16}
-                margin={0}
-                format="CODE128"
-                background="transparent"
-                lineColor="#000000"
-                font="Arial"
-              />
-            </div>
-            <div className={`font-bold text-[13px] ${fontArial} mt-1`}>
-              Website : www.vit.ac.in
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
   const [loading, setLoading] = useState(true);
@@ -486,14 +266,39 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
         return;
       }
 
+      const authId = network.authorizedID || useDataStore.getState().user?.regNo;
+      const userPrefix = authId && authId !== "..." ? `${authId}_` : "";
+
+      // 1. Fast restore from cached profile
+      const cachedParsed = await getCachedData<StudentProfile>(`${userPrefix}student_profile_parsed`);
+      if (cachedParsed?.basic?.name) {
+        setData(cachedParsed);
+        setLoading(false);
+      }
+
+      // 2. Fetch fresh profile data
       try {
         const html = await network.fetchWithCache(
           "student_profile_data",
           async () =>
             await network.fetchFragment("studentsRecord/StudentProfileAllView"),
         );
-        const parsedData = typeof html === "string" ? parseStudentProfile(html) : html;
-        setData(parsedData);
+        const parsedData: StudentProfile = typeof html === "string" ? parseStudentProfile(html) : html;
+        if (parsedData?.basic) {
+          const storeUser = useDataStore.getState().user;
+          if (!parsedData.basic.name && storeUser?.name && storeUser.name !== "Student") {
+            parsedData.basic.name = storeUser.name;
+          }
+          if (!parsedData.basic.regNo && (authId || storeUser?.regNo)) {
+            parsedData.basic.regNo = authId || storeUser?.regNo || "";
+          }
+          if (!parsedData.basic.photoUrl && storeUser?.profileImgBase64) {
+            parsedData.basic.photoUrl = storeUser.profileImgBase64;
+          }
+
+          setData(parsedData);
+          setCachedData(`${userPrefix}student_profile_parsed`, parsedData);
+        }
       } catch (e) {
         console.error("Failed to load profile data:", e);
       } finally {
@@ -505,14 +310,30 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
 
     const handleRefresh = async () => {
       setLoading(true);
+      const authId = network.authorizedID || useDataStore.getState().user?.regNo;
+      const userPrefix = authId && authId !== "..." ? `${authId}_` : "";
       try {
         const html = await network.fetchWithCache(
           "student_profile_data",
           async () => await network.fetchFragment("studentsRecord/StudentProfileAllView"),
           true,
         );
-        const parsedData = typeof html === "string" ? parseStudentProfile(html) : html;
-        setData(parsedData);
+        const parsedData: StudentProfile = typeof html === "string" ? parseStudentProfile(html) : html;
+        if (parsedData?.basic) {
+          const storeUser = useDataStore.getState().user;
+          if (!parsedData.basic.name && storeUser?.name && storeUser.name !== "Student") {
+            parsedData.basic.name = storeUser.name;
+          }
+          if (!parsedData.basic.regNo && (authId || storeUser?.regNo)) {
+            parsedData.basic.regNo = authId || storeUser?.regNo || "";
+          }
+          if (!parsedData.basic.photoUrl && storeUser?.profileImgBase64) {
+            parsedData.basic.photoUrl = storeUser.profileImgBase64;
+          }
+
+          setData(parsedData);
+          setCachedData(`${userPrefix}student_profile_parsed`, parsedData);
+        }
       } catch (e) {
         console.error("Failed to refresh profile:", e);
       } finally {
@@ -525,15 +346,15 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
 
   if (loading) {
     return (
-      <div className="h-full overflow-y-auto bg-(--bg-main) p-4 md:p-8 pt-20 md:pt-24 lg:pt-28 custom-scrollbar">
-        <div className="max-w-345 mx-auto flex flex-col gap-12 md:gap-20 animate-pulse pb-20">
+      <div className="h-full overflow-y-auto bg-(--bg-main) p-3 sm:p-4 md:p-8 pt-18 sm:pt-20 md:pt-24 lg:pt-28 custom-scrollbar">
+        <div className="max-w-345 mx-auto flex flex-col gap-8 sm:gap-12 md:gap-20 animate-pulse pb-20 w-full">
           <div className="w-full max-w-74 mx-auto aspect-64/100 bg-(--bg-surface) rounded-2xl" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-4">
-            <div className="md:col-span-2 h-40 bg-(--bg-surface)" />
-            <div className="md:col-span-2 h-40 bg-(--bg-surface)" />
-            <div className="md:col-span-2 h-40 bg-(--bg-surface)" />
-            <div className="col-span-1 h-40 bg-(--bg-surface)" />
-            <div className="col-span-1 h-40 bg-(--bg-surface)" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="md:col-span-2 h-36 bg-(--bg-surface) rounded-3xl" />
+            <div className="md:col-span-2 h-36 bg-(--bg-surface) rounded-3xl" />
+            <div className="md:col-span-2 h-36 bg-(--bg-surface) rounded-3xl" />
+            <div className="col-span-1 h-36 bg-(--bg-surface) rounded-3xl" />
+            <div className="col-span-1 h-36 bg-(--bg-surface) rounded-3xl" />
           </div>
         </div>
       </div>
@@ -543,21 +364,21 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
   if (!data) return null;
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-(--bg-main) p-4 md:p-8 pt-20 md:pt-24 lg:pt-28 font-mono custom-scrollbar">
-      <div className="max-w-345 mx-auto flex flex-col pb-20">
+    <div className="h-full w-full overflow-y-auto bg-(--bg-main) p-3 sm:p-4 md:p-8 pt-18 sm:pt-20 md:pt-24 lg:pt-28 font-mono custom-scrollbar">
+      <div className="max-w-345 mx-auto flex flex-col pb-20 w-full">
         {/* BENTO GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4 grid-flow-dense">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 grid-flow-dense w-full">
           {/* 1. Digital ID Card (Top Left) */}
-          <div className="md:col-span-2 lg:col-span-2 lg:row-span-4 flex justify-center items-center z-10 w-full">
+          <div className="md:col-span-2 lg:col-span-2 lg:row-span-4 flex justify-center items-center z-10 w-full py-1 sm:py-2">
             <DigitalIDCard data={data} />
           </div>
 
           {/* 2. Program & School */}
           <BentoBlock span="md:col-span-2 lg:col-span-2" icon={School}>
-            <div className="text-lg md:text-xl font-black leading-tight wrap-break-words whitespace-normal text-right">
+            <div className="text-base sm:text-lg md:text-xl font-black leading-tight break-words whitespace-normal text-right">
               {data.basic.program}
             </div>
-            <div className="opacity-70 text-sm mt-1 wrap-break-words whitespace-normal text-right">
+            <div className="opacity-70 text-xs sm:text-sm mt-1 break-words whitespace-normal text-right">
               {data.basic.school}
             </div>
           </BentoBlock>
@@ -568,7 +389,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
               icon={AlternateEmail}
               span="md:col-span-2 lg:col-span-2"
             >
-              <div className="text-xl md:text-2xl font-black leading-tight transition-all duration-fast origin-right w-full py-1 text-wrap wrap-break-word">
+              <div className="text-lg sm:text-xl md:text-2xl font-black leading-tight transition-all duration-fast origin-right w-full py-0.5 sm:py-1 break-words">
                 <CopyableText text={data.basic.email} />
               </div>
             </BentoBlock>
@@ -576,9 +397,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
 
           {/* 4. Proctor Information */}
           {(isValid(data.proctor.name) || isValid(data.proctor.mobile)) && (
-            <div className="relative md:col-span-2 lg:col-span-2 bg-(--bg-surface) text-(--text-main) rounded-4xl transition-all duration-fast flex overflow-hidden min-h-35 max-h-max wrap-break-words whitespace-normal">
+            <div className="relative md:col-span-2 lg:col-span-2 bg-(--bg-surface) text-(--text-main) rounded-3xl sm:rounded-4xl transition-all duration-fast flex flex-col sm:flex-row overflow-hidden min-h-30 sm:min-h-35 max-h-max break-words whitespace-normal">
               {data.proctor.photoUrl && (
-                <div className="relative z-10 w-[30%] shrink-0">
+                <div className="relative z-10 w-full sm:w-[32%] h-44 sm:h-auto shrink-0 bg-(--bg-surface-dim)">
                   <img
                     src={data.proctor.photoUrl}
                     className="w-full h-full object-cover transition-all duration-fast"
@@ -586,24 +407,24 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
                   />
                 </div>
               )}
-              <div className="relative z-10 p-5 md:p-6 flex flex-col justify-between gap-4 flex-1 w-full text-right">
-                <div className="text-[10px] md:text-xs uppercase font-black font-expanded opacity-50 shrink-0 mb-2">
+              <div className="relative z-10 p-4 sm:p-5 md:p-6 flex flex-col justify-between gap-3 sm:gap-4 flex-1 w-full text-right">
+                <div className="text-[10px] sm:text-xs uppercase font-black font-expanded opacity-50 shrink-0 mb-1 sm:mb-2">
                   Proctor Information
                 </div>
-                <div className="transition-all duration-fast origin-right w-full flex flex-col justify-between text-sm md:text-base font-black font-expanded gap-4">
+                <div className="transition-all duration-fast origin-right w-full flex flex-col justify-between text-sm md:text-base font-black font-expanded gap-3 sm:gap-4">
                   <div className="flex flex-col items-end justify-start gap-1 flex-1 min-w-0">
                     {isValid(data.proctor.name) && (
-                      <div className="text-xl md:text-2xl leading-tight wrap-break-words whitespace-normal">
+                      <div className="text-lg sm:text-xl md:text-2xl leading-tight break-words whitespace-normal">
                         {data.proctor.name}
                       </div>
                     )}
                     {isValid(data.proctor.designation) && (
-                      <div className="opacity-70 mt-1 wrap-break-words whitespace-normal">
+                      <div className="opacity-70 mt-1 break-words whitespace-normal text-xs sm:text-sm">
                         {data.proctor.designation}
                       </div>
                     )}
                     {isValid(data.proctor.school) && (
-                      <div className="opacity-50 text-[10px] md:text-xs mt-1 wrap-break-words whitespace-normal">
+                      <div className="opacity-50 text-[10px] sm:text-xs mt-1 break-words whitespace-normal">
                         {data.proctor.school}{" "}
                         {isValid(data.proctor.dept) && `/ ${data.proctor.dept}`}
                       </div>
@@ -612,17 +433,17 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
 
                   <div className="flex flex-col items-end justify-start gap-1 min-w-0 border-t-2 border-zinc-500/20 pt-3 mt-1">
                     {isValid(data.proctor.mobile) && (
-                      <div className="text-xl md:text-2xl leading-tight">
+                      <div className="text-lg sm:text-xl md:text-2xl leading-tight">
                         <CopyableText text={data.proctor.mobile} />
                       </div>
                     )}
                     {isValid(data.proctor.email) && (
-                      <div className="opacity-70 lowercase mt-1 wrap-break-words whitespace-normal">
+                      <div className="opacity-70 lowercase mt-1 break-words whitespace-normal text-xs sm:text-sm">
                         <CopyableText text={data.proctor.email} />
                       </div>
                     )}
                     {isValid(data.proctor.cabin) && (
-                      <div className="opacity-50 text-[10px] md:text-xs mt-1 mb-1 wrap-break-words whitespace-normal">
+                      <div className="opacity-50 text-[10px] sm:text-xs mt-1 mb-1 break-words whitespace-normal">
                         Cabin: {data.proctor.cabin}
                       </div>
                     )}
@@ -635,23 +456,23 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
           {/* 5. Hostel Details / Day Scholar */}
           {data.hostel ? (
             <BentoBlock icon={Domain} span="md:col-span-2 lg:col-span-4">
-              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-end sm:items-end py-1 w-full text-right">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 justify-end sm:items-end py-1 w-full text-right">
                 <div className="flex items-end justify-end gap-3 shrink-0">
-                  <span className="text-6xl md:text-7xl font-black font-expanded leading-tight wrap-break-words whitespace-normal text-right">
+                  <span className="text-4xl sm:text-6xl md:text-7xl font-black font-expanded leading-tight break-words whitespace-normal text-right">
                     {data.hostel.room}
                   </span>
-                  <span className="text-2xl md:text-3xl opacity-60 pb-1 wrap-break-words whitespace-normal text-right">
+                  <span className="text-xl sm:text-2xl md:text-3xl opacity-60 pb-1 break-words whitespace-normal text-right">
                     {data.hostel.block}
                   </span>
                 </div>
                 <div className="flex flex-col sm:items-end text-right flex-1 min-w-0">
                   {isValid(data.hostel.mess) && (
-                    <div className="text-xl md:text-2xl leading-tight text-wrap wrap-break-words break-all sm:wrap-break-words">
+                    <div className="text-lg sm:text-xl md:text-2xl leading-tight break-words">
                       {data.hostel.mess}
                     </div>
                   )}
                   {isValid(data.hostel.bedType) && (
-                    <div className="text-sm md:text-base opacity-60 mt-1 uppercase font-black font-expanded text-wrap wrap-break-words text-right">
+                    <div className="text-xs sm:text-sm md:text-base opacity-60 mt-1 uppercase font-black font-expanded break-words text-right">
                       {data.hostel.bedType} Bed
                     </div>
                   )}
@@ -663,7 +484,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
               icon={Domain}
               value="Day Scholar"
               span="md:col-span-2 lg:col-span-4"
-              className="bg-(--bg-highlight)! py-16"
+              className="bg-(--bg-highlight)! py-10 sm:py-16"
             />
           )}
 
@@ -673,17 +494,17 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
               title="Academic Program"
               span="md:col-span-2 lg:col-span-2"
             >
-              <div className="text-xl leading-tight wrap-break-words whitespace-normal text-right">
+              <div className="text-lg sm:text-xl leading-tight break-words whitespace-normal text-right">
                 {data.education.degree} - {data.education.branch}
               </div>
-              <div className="opacity-70 mt-2 wrap-break-words whitespace-normal text-right">
+              <div className="opacity-70 mt-1.5 break-words whitespace-normal text-right text-xs sm:text-sm">
                 {data.education.qualification}
               </div>
-              <div className="opacity-50 text-[10px] md:text-xs mt-1 text-right">
+              <div className="opacity-50 text-[10px] sm:text-xs mt-1 text-right">
                 Class: {data.education.classObtained}
               </div>
               {data.education.breakInStudy === "Yes" && (
-                <div className="text-att-danger text-[10px] md:text-xs mt-1 text-right">
+                <div className="text-att-danger text-[10px] sm:text-xs mt-1 text-right">
                   Break: {data.education.breakReason}
                 </div>
               )}
@@ -696,15 +517,15 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
               title="Previous Education"
               span="md:col-span-2 lg:col-span-2"
             >
-              <div className="text-lg md:text-xl leading-tight wrap-break-words whitespace-normal text-right">
+              <div className="text-base sm:text-lg md:text-xl leading-tight break-words whitespace-normal text-right">
                 {data.education.school}
               </div>
-              <div className="opacity-70 text-sm mt-2 wrap-break-words whitespace-normal text-right">
+              <div className="opacity-70 text-xs sm:text-sm mt-1.5 break-words whitespace-normal text-right">
                 {data.education.board}{" "}
                 {isValid(data.education.medium) &&
                   `/ Medium: ${data.education.medium}`}
               </div>
-              <div className="opacity-50 text-[10px] md:text-xs mt-1 text-right">
+              <div className="opacity-50 text-[10px] sm:text-xs mt-1 text-right">
                 Year: {data.education.year} {data.education.month} / Reg:{" "}
                 {data.education.regNo}
               </div>
@@ -723,15 +544,15 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
           <BentoBlock icon={Public} span="col-span-1 lg:col-span-1">
             <div className="flex flex-col items-end text-right gap-1 w-full">
               {isValid(data.personal.nationality) && (
-                <div>{data.personal.nationality}</div>
+                <div className="text-sm sm:text-base font-bold">{data.personal.nationality}</div>
               )}
               {isValid(data.personal.nativeLanguage) && (
-                <div className="opacity-70 text-sm">
+                <div className="opacity-70 text-xs sm:text-sm">
                   {data.personal.nativeLanguage}
                 </div>
               )}
               {isValid(data.personal.religion) && (
-                <div className="opacity-50 text-xs">
+                <div className="opacity-50 text-[10px] sm:text-xs">
                   {data.personal.religion}
                 </div>
               )}
@@ -742,12 +563,12 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
           {(isValid(data.personal.mobile) || isValid(data.personal.email)) && (
             <BentoBlock icon={Mobile} span="md:col-span-2 lg:col-span-2">
               {isValid(data.personal.mobile) && (
-                <div className="text-2xl md:text-3xl leading-tight">
+                <div className="text-xl sm:text-2xl md:text-3xl leading-tight">
                   <CopyableText text={data.personal.mobile} />
                 </div>
               )}
               {isValid(data.personal.email) && (
-                <div className="text-sm md:text-base opacity-70 lowercase mt-1 w-full text-right text-wrap wrap-break-word">
+                <div className="text-xs sm:text-sm md:text-base opacity-70 lowercase mt-1 w-full text-right break-words">
                   <CopyableText text={data.personal.email} />
                 </div>
               )}
@@ -758,47 +579,47 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
           {(isValid(data.currentAddress.street) ||
             isValid(data.permanentAddress.street)) && (
             <BentoBlock icon={LocationOn} span="md:col-span-2 lg:col-span-4">
-              <div className="flex flex-col md:flex-row gap-6 w-full text-right justify-end">
+              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 w-full text-right justify-end">
                 {isValid(data.currentAddress.street) && (
-                  <div className="flex flex-col items-end flex-1 text-right wrap-break-words whitespace-normal">
-                    <div className="opacity-50 text-[10px] md:text-xs mb-1 uppercase font-black font-expanded">
+                  <div className="flex flex-col items-end flex-1 text-right break-words whitespace-normal">
+                    <div className="opacity-50 text-[10px] sm:text-xs mb-1 uppercase font-black font-expanded">
                       Current Address
                     </div>
-                    <div className="text-lg md:text-xl leading-tight wrap-break-words whitespace-normal">
+                    <div className="text-base sm:text-lg md:text-xl leading-tight break-words whitespace-normal">
                       {data.currentAddress.street}
                     </div>
-                    <div className="opacity-70 text-sm mt-2 wrap-break-words whitespace-normal">
+                    <div className="opacity-70 text-xs sm:text-sm mt-1.5 break-words whitespace-normal">
                       {data.currentAddress.area}, {data.currentAddress.city}
                     </div>
-                    <div className="opacity-50 text-[10px] md:text-xs mt-1 mb-2 wrap-break-words whitespace-normal">
+                    <div className="opacity-50 text-[10px] sm:text-xs mt-1 mb-1 break-words whitespace-normal">
                       {data.currentAddress.state}, {data.currentAddress.country}{" "}
                       - {data.currentAddress.pincode}
                     </div>
                     {isValid(data.currentAddress.phone) && (
-                      <div className="mt-1 text-xl">
+                      <div className="mt-1 text-base sm:text-lg">
                         <CopyableText text={data.currentAddress.phone} />
                       </div>
                     )}
                   </div>
                 )}
                 {isValid(data.permanentAddress.street) && (
-                  <div className="flex flex-col items-end flex-1 text-right wrap-break-words whitespace-normal">
-                    <div className="opacity-50 text-[10px] md:text-xs mb-1 uppercase font-black font-expanded">
+                  <div className="flex flex-col items-end flex-1 text-right break-words whitespace-normal">
+                    <div className="opacity-50 text-[10px] sm:text-xs mb-1 uppercase font-black font-expanded">
                       Permanent Address
                     </div>
-                    <div className="text-lg md:text-xl leading-tight wrap-break-words whitespace-normal">
+                    <div className="text-base sm:text-lg md:text-xl leading-tight break-words whitespace-normal">
                       {data.permanentAddress.street}
                     </div>
-                    <div className="opacity-70 text-sm mt-2 wrap-break-words whitespace-normal">
+                    <div className="opacity-70 text-xs sm:text-sm mt-1.5 break-words whitespace-normal">
                       {data.permanentAddress.area}, {data.permanentAddress.city}
                     </div>
-                    <div className="opacity-50 text-[10px] md:text-xs mt-1 mb-2 wrap-break-words whitespace-normal">
+                    <div className="opacity-50 text-[10px] sm:text-xs mt-1 mb-1 break-words whitespace-normal">
                       {data.permanentAddress.state},{" "}
                       {data.permanentAddress.country} -{" "}
                       {data.permanentAddress.pincode}
                     </div>
                     {isValid(data.permanentAddress.phone) && (
-                      <div className="mt-1 text-xl">
+                      <div className="mt-1 text-base sm:text-lg">
                         <CopyableText text={data.permanentAddress.phone} />
                       </div>
                     )}
@@ -811,10 +632,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
           {/* 13. Parent Profile */}
           {isValid(data.family.father.name) && (
             <BentoBlock title="Parent" span="md:col-span-2 lg:col-span-2">
-              <div className="text-2xl md:text-3xl leading-tight wrap-break-words whitespace-normal text-right">
+              <div className="text-xl sm:text-2xl md:text-3xl leading-tight break-words whitespace-normal text-right">
                 {data.family.father.name}
               </div>
-              <div className="opacity-70 text-sm mt-2 wrap-break-words whitespace-normal text-right">
+              <div className="opacity-70 text-xs sm:text-sm mt-1.5 break-words whitespace-normal text-right">
                 {[
                   data.family.father.designation,
                   data.family.father.organization,
@@ -822,25 +643,25 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
                   .filter(isValid)
                   .join(" at ") || "No Work Info"}
               </div>
-              <div className="opacity-50 text-[10px] md:text-xs mt-1 wrap-break-words whitespace-normal text-right">
+              <div className="opacity-50 text-[10px] sm:text-xs mt-1 break-words whitespace-normal text-right">
                 {data.family.father.qualification} /{" "}
                 {data.family.father.occupation}{" "}
                 {isValid(data.family.father.income) &&
                   `/ Income: ${data.family.father.income}`}
               </div>
-              <div className="mt-4 flex flex-col items-end gap-1 w-full border-t-2 border-zinc-500/20 pt-4">
+              <div className="mt-3 sm:mt-4 flex flex-col items-end gap-1 w-full border-t-2 border-zinc-500/20 pt-3 sm:pt-4">
                 {isValid(data.family.father.mobile) && (
-                  <div className="text-xl md:text-2xl leading-tight">
+                  <div className="text-lg sm:text-xl md:text-2xl leading-tight">
                     <CopyableText text={data.family.father.mobile} />
                   </div>
                 )}
                 {isValid(data.family.father.email) && (
-                  <div className="opacity-70 lowercase mt-1 wrap-break-words whitespace-normal text-right">
+                  <div className="opacity-70 lowercase mt-1 break-words whitespace-normal text-right text-xs sm:text-sm">
                     <CopyableText text={data.family.father.email} />
                   </div>
                 )}
                 {isValid(data.family.father.address.city) && (
-                  <div className="opacity-50 text-[10px] md:text-xs mt-1 mb-2 wrap-break-words whitespace-normal text-right">
+                  <div className="opacity-50 text-[10px] sm:text-xs mt-1 mb-1 break-words whitespace-normal text-right">
                     {data.family.father.address.city},{" "}
                     {data.family.father.address.state}
                   </div>
@@ -852,10 +673,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
           {/* 14. Mother Profile */}
           {isValid(data.family.mother.name) && (
             <BentoBlock title="Mother" span="md:col-span-2 lg:col-span-2">
-              <div className="text-2xl md:text-3xl leading-tight wrap-break-words whitespace-normal text-right">
+              <div className="text-xl sm:text-2xl md:text-3xl leading-tight break-words whitespace-normal text-right">
                 {data.family.mother.name}
               </div>
-              <div className="opacity-70 text-sm mt-2 wrap-break-words whitespace-normal text-right">
+              <div className="opacity-70 text-xs sm:text-sm mt-1.5 break-words whitespace-normal text-right">
                 {[
                   data.family.mother.designation,
                   data.family.mother.organization,
@@ -863,25 +684,25 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
                   .filter(isValid)
                   .join(" at ") || "No Work Info"}
               </div>
-              <div className="opacity-50 text-[10px] md:text-xs mt-1 wrap-break-words whitespace-normal text-right">
+              <div className="opacity-50 text-[10px] sm:text-xs mt-1 break-words whitespace-normal text-right">
                 {data.family.mother.qualification} /{" "}
                 {data.family.mother.occupation}{" "}
                 {isValid(data.family.mother.income) &&
                   `/ Income: ${data.family.mother.income}`}
               </div>
-              <div className="mt-4 flex flex-col items-end gap-1 w-full border-t-2 border-zinc-500/20 pt-4">
+              <div className="mt-3 sm:mt-4 flex flex-col items-end gap-1 w-full border-t-2 border-zinc-500/20 pt-3 sm:pt-4">
                 {isValid(data.family.mother.mobile) && (
-                  <div className="text-xl md:text-2xl leading-tight">
+                  <div className="text-lg sm:text-xl md:text-2xl leading-tight">
                     <CopyableText text={data.family.mother.mobile} />
                   </div>
                 )}
                 {isValid(data.family.mother.email) && (
-                  <div className="opacity-70 lowercase mt-1 wrap-break-words whitespace-normal text-right">
+                  <div className="opacity-70 lowercase mt-1 break-words whitespace-normal text-right text-xs sm:text-sm">
                     <CopyableText text={data.family.mother.email} />
                   </div>
                 )}
                 {isValid(data.family.mother.address.city) && (
-                  <div className="opacity-50 text-[10px] md:text-xs mt-1 mb-2 wrap-break-words whitespace-normal text-right">
+                  <div className="opacity-50 text-[10px] sm:text-xs mt-1 mb-1 break-words whitespace-normal text-right">
                     {data.family.mother.address.city},{" "}
                     {data.family.mother.address.state}
                   </div>
@@ -892,22 +713,22 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
 
           {/* 15. Family Extras */}
           <BentoBlock title="Family Extras" span="md:col-span-2 lg:col-span-2">
-            <div className="grid grid-cols-2 gap-4 w-full">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 w-full">
               <div className="flex flex-col items-end">
                 <div className="opacity-50 text-[10px] mb-1">Siblings</div>
-                <div className="font-bold text-sm">
+                <div className="font-bold text-xs sm:text-sm">
                   Brothers: {data.family.brothers}
                 </div>
-                <div className="font-bold text-sm">
+                <div className="font-bold text-xs sm:text-sm">
                   Sisters: {data.family.sisters}
                 </div>
               </div>
               <div className="flex flex-col items-end">
                 <div className="opacity-50 text-[10px] mb-1">VIT Relations</div>
-                <div className="font-bold text-sm">
+                <div className="font-bold text-xs sm:text-sm">
                   Studying: {data.family.studyingInVit}
                 </div>
-                <div className="font-bold text-sm">
+                <div className="font-bold text-xs sm:text-sm">
                   Studied: {data.family.studiedInVit}
                 </div>
               </div>
@@ -915,13 +736,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
                 <div className="opacity-50 text-[10px] mb-1">
                   Local Guardian
                 </div>
-                <div className="font-bold text-sm wrap-break-words whitespace-normal text-right">
+                <div className="font-bold text-xs sm:text-sm break-words whitespace-normal text-right">
                   {data.family.guardian}
                 </div>
               </div>
               <div className="flex flex-col items-end">
                 <div className="opacity-50 text-[10px] mb-1">Friend Mobile</div>
-                <div className="font-bold text-sm">
+                <div className="font-bold text-xs sm:text-sm">
                   <CopyableText text={data.family.friendMobile} />
                 </div>
               </div>

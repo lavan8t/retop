@@ -52,3 +52,27 @@ export function validateParsed<T extends object>(
   }
   return wrapWithSchemaVersion(result.data, moduleId);
 }
+
+/**
+ * Resiliently find semester option elements across various VTOP select dropdown IDs/names.
+ */
+export function findSemesterOptions(doc: Document): Element[] {
+  const select = doc.querySelector(
+    "#semesterSubId, select[name='semesterSubId'], #semSubId, select[name='semSubId'], select[id*='semester' i], select[name*='semester' i], select.form-control, select"
+  );
+  if (!select) return [];
+  const options = Array.from(select.querySelectorAll("option"));
+  return options.filter((opt) => {
+    const val = opt.getAttribute("value") || (opt as HTMLOptionElement).value || opt.textContent?.trim() || "";
+    const text = opt.textContent?.trim() || "";
+    const isSelectPlaceholder =
+      text.toLowerCase().includes("select") ||
+      text.toLowerCase().includes("choose") ||
+      val.toLowerCase().includes("select") ||
+      val.toLowerCase().includes("choose") ||
+      text === "-" ||
+      !val;
+    return val && val.trim() !== "" && !isSelectPlaceholder;
+  });
+}
+

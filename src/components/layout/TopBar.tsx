@@ -529,168 +529,170 @@ export const TopBar: React.FC<TopBarProps> = ({
                     className="fixed inset-0 z-99998 bg-black/60 backdrop-blur-xs transition-opacity"
                     onClick={() => setIsMobileControlsOpen(false)}
                   />
-                  <div className="fixed inset-x-0 bottom-0 z-99999 bg-(--bg-surface) border-t-2 border-(--border-main) rounded-t-3xl p-4 sm:p-5 shadow-2xl flex flex-col gap-3 animate-sheet-up max-h-[85vh] overflow-y-auto">
-                    {/* Bottom Sheet Drag Handle */}
-                    <div className="w-12 h-1.5 bg-(--border-main) rounded-full mx-auto -mt-1 mb-1 opacity-60" />
+                  <div className="fixed inset-x-0 bottom-0 z-99999 p-3 pb-6 sm:p-4 max-h-[85vh] flex flex-col justify-end pointer-events-none">
+                    <div className="w-full max-w-lg mx-auto bg-(--bg-surface) border-2 border-(--border-main) rounded-[32px] p-5 sm:p-6 shadow-2xl flex flex-col gap-3.5 animate-sheet-up max-h-[80vh] overflow-y-auto pointer-events-auto">
+                      {/* Bottom Sheet Drag Handle */}
+                      <div className="w-12 h-1.5 bg-(--border-main) rounded-full mx-auto -mt-1 mb-1 opacity-60" />
 
-                    {currentView === "timetable" && (
-                      <div className="flex flex-col gap-3">
-                        <div className="flex bg-transparent rounded-full border-2 border-(--border-main) shadow-(--brutal-shadow-sm) items-center">
-                          <SegmentedControl
-                            options={[
-                              { label: <div className="flex items-center justify-center" title="Grid View"><GridView className="w-3.5 h-3.5" /></div>, value: "grid" },
-                              { label: <div className="flex items-center justify-center" title="List View"><List className="w-3.5 h-3.5" /></div>, value: "list" },
-                              { label: <div className="flex items-center justify-center" title="Week View"><CalendarMonth className="w-3.5 h-3.5" /></div>, value: "week" },
-                            ]}
-                            value={ttViewMode}
-                            onChange={(val) => setTtViewMode(val as any)}
-                          />
-                        </div>
-                        <SemesterDropdown
-                          semesters={ttSemesters}
-                          selectedId={ttSelectedSem}
-                          onChange={(id: string) => {
-                            onTimetableSemChange?.(id);
-                            setIsMobileControlsOpen(false);
-                          }}
-                        />
-                      </div>
-                    )}
-
-                    {currentView === "calendar" && (
-                      <div className="flex flex-col gap-3">
-                        <div className="flex bg-transparent rounded-full border-2 border-(--border-main) shadow-(--brutal-shadow-sm) items-center">
-                          <SegmentedControl
-                            options={[
-                              { label: <div className="flex items-center justify-center" title="Grid View"><GridView className="w-3.5 h-3.5" /></div>, value: "grid" },
-                              { label: <div className="flex items-center justify-center" title="List View"><List className="w-3.5 h-3.5" /></div>, value: "list" },
-                            ]}
-                            value={calViewMode}
-                            onChange={(val) => setCalViewMode(val as any)}
-                          />
-                        </div>
-                        <SemesterDropdown
-                          semesters={calSemesters}
-                          selectedId={calSelectedSem}
-                          onChange={(id: string) => {
-                            setCalSelectedSem(id);
-                            setIsMobileControlsOpen(false);
-                          }}
-                        />
-                        {calClassGroups.length > 0 && (
-                          <ClassGroupDropdown
-                            groups={calClassGroups}
-                            selectedId={calSelectedGroup}
+                      {currentView === "timetable" && (
+                        <div className="flex flex-col gap-3">
+                          <div className="flex bg-transparent rounded-full border-2 border-(--border-main) shadow-(--brutal-shadow-sm) items-center">
+                            <SegmentedControl
+                              options={[
+                                { label: <div className="flex items-center justify-center" title="Grid View"><GridView className="w-3.5 h-3.5" /></div>, value: "grid" },
+                                { label: <div className="flex items-center justify-center" title="List View"><List className="w-3.5 h-3.5" /></div>, value: "list" },
+                                { label: <div className="flex items-center justify-center" title="Week View"><CalendarMonth className="w-3.5 h-3.5" /></div>, value: "week" },
+                              ]}
+                              value={ttViewMode}
+                              onChange={(val) => setTtViewMode(val as any)}
+                            />
+                          </div>
+                          <SemesterDropdown
+                            semesters={ttSemesters}
+                            selectedId={ttSelectedSem}
                             onChange={(id: string) => {
-                              setCalSelectedGroup(id);
+                              onTimetableSemChange?.(id);
                               setIsMobileControlsOpen(false);
                             }}
                           />
-                        )}
-                      </div>
-                    )}
+                        </div>
+                      )}
 
-                    {currentView === "marks" && (
-                      <div className="flex flex-col gap-3">
+                      {currentView === "calendar" && (
+                        <div className="flex flex-col gap-3">
+                          <div className="flex bg-transparent rounded-full border-2 border-(--border-main) shadow-(--brutal-shadow-sm) items-center">
+                            <SegmentedControl
+                              options={[
+                                { label: <div className="flex items-center justify-center" title="Grid View"><GridView className="w-3.5 h-3.5" /></div>, value: "grid" },
+                                { label: <div className="flex items-center justify-center" title="List View"><List className="w-3.5 h-3.5" /></div>, value: "list" },
+                              ]}
+                              value={calViewMode}
+                              onChange={(val) => setCalViewMode(val as any)}
+                            />
+                          </div>
+                          <SemesterDropdown
+                            semesters={calSemesters}
+                            selectedId={calSelectedSem}
+                            onChange={(id: string) => {
+                              setCalSelectedSem(id);
+                              setIsMobileControlsOpen(false);
+                            }}
+                          />
+                          {calClassGroups.length > 0 && (
+                            <ClassGroupDropdown
+                              groups={calClassGroups}
+                              selectedId={calSelectedGroup}
+                              onChange={(id: string) => {
+                                setCalSelectedGroup(id);
+                                setIsMobileControlsOpen(false);
+                              }}
+                            />
+                          )}
+                        </div>
+                      )}
+
+                      {currentView === "marks" && (
+                        <div className="flex flex-col gap-3">
+                          <SemesterDropdown
+                            semesters={marksSemesters}
+                            selectedId={marksSelectedSem}
+                            onChange={(id: string) => {
+                              setMarksSelectedSem(id);
+                              setIsMobileControlsOpen(false);
+                            }}
+                          />
+                          <div className="flex items-center justify-between py-1">
+                            <span className="text-xs font-bold text-(--text-main)">Modern View</span>
+                            <MaterialSwitch
+                              selected={isMarksModernView}
+                              onChange={(checked) => setIsMarksModernView(checked)}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {currentView === "grades" && (
                         <SemesterDropdown
-                          semesters={marksSemesters}
-                          selectedId={marksSelectedSem}
+                          semesters={gradesSemesters}
+                          selectedId={gradesSelectedSem}
                           onChange={(id: string) => {
-                            setMarksSelectedSem(id);
+                            setGradesSelectedSem(id);
                             setIsMobileControlsOpen(false);
                           }}
                         />
+                      )}
+
+                      {currentView === "curriculum" && (
                         <div className="flex items-center justify-between py-1">
-                          <span className="text-xs font-bold text-(--text-main)">Modern View</span>
+                          <span className="text-xs font-bold text-(--text-main)">Hide Completed</span>
                           <MaterialSwitch
-                            selected={isMarksModernView}
-                            onChange={(checked) => setIsMarksModernView(checked)}
+                            selected={curriculumHideCompleted}
+                            onChange={(checked) => setCurriculumHideCompleted(checked)}
                           />
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                    {currentView === "grades" && (
-                      <SemesterDropdown
-                        semesters={gradesSemesters}
-                        selectedId={gradesSelectedSem}
-                        onChange={(id: string) => {
-                          setGradesSelectedSem(id);
-                          setIsMobileControlsOpen(false);
-                        }}
-                      />
-                    )}
+                      {currentView === "digitalAssignments" && (
+                        <div className="flex flex-col gap-3">
+                          <SemesterDropdown
+                            semesters={daSemesters}
+                            selectedId={daSelectedSem}
+                            onChange={(id: string) => {
+                              setDaSelectedSem(id);
+                              if (network) fetchDACourses(network, id);
+                              setIsMobileControlsOpen(false);
+                            }}
+                          />
+                          <button
+                            onClick={() => {
+                              if (daSelectedSem && network) fetchDACourses(network, daSelectedSem, true);
+                              else if (network) fetchDASemesters(network, true);
+                              setIsMobileControlsOpen(false);
+                            }}
+                            disabled={daLoading}
+                            className="flex items-center justify-center gap-2 py-2.5 px-4 bg-(--bg-highlight) rounded-xl text-xs font-bold text-(--text-main) border border-(--border-dim) cursor-pointer"
+                          >
+                            <Refresh className={`w-4 h-4 ${daLoading ? "animate-spin" : ""}`} />
+                            <span>Refresh</span>
+                          </button>
+                        </div>
+                      )}
 
-                    {currentView === "curriculum" && (
-                      <div className="flex items-center justify-between py-1">
-                        <span className="text-xs font-bold text-(--text-main)">Hide Completed</span>
-                        <MaterialSwitch
-                          selected={curriculumHideCompleted}
-                          onChange={(checked) => setCurriculumHideCompleted(checked)}
-                        />
-                      </div>
-                    )}
-
-                    {currentView === "coursePage" && (
-                      <SemesterDropdown
-                        semesters={ttSemesters}
-                        selectedId={cpSelectedSem}
-                        onChange={(sem: string) => {
-                          setCpSelectedSem(sem);
-                          setCpSelectedCourseId("");
-                          setIsMobileControlsOpen(false);
-                        }}
-                      />
-                    )}
-
-                    {currentView === "digitalAssignments" && (
-                      <div className="flex flex-col gap-3">
+                      {currentView === "examSchedule" && (
                         <SemesterDropdown
-                          semesters={daSemesters}
-                          selectedId={daSelectedSem}
+                          semesters={examSemesters}
+                          selectedId={examSelectedSem}
                           onChange={(id: string) => {
-                            setDaSelectedSem(id);
-                            if (network) fetchDACourses(network, id);
+                            setExamSelectedSem(id);
+                            if (network) fetchExamSchedule(network, id);
                             setIsMobileControlsOpen(false);
                           }}
                         />
-                        <button
-                          onClick={() => {
-                            if (daSelectedSem && network) fetchDACourses(network, daSelectedSem, true);
-                            else if (network) fetchDASemesters(network, true);
+                      )}
+
+                      {currentView === "coursePage" && (
+                        <SemesterDropdown
+                          semesters={ttSemesters}
+                          selectedId={cpSelectedSem}
+                          onChange={(sem: string) => {
+                            setCpSelectedSem(sem);
+                            setCpSelectedCourseId("");
                             setIsMobileControlsOpen(false);
                           }}
-                          disabled={daLoading}
-                          className="flex items-center justify-center gap-2 py-2.5 px-4 bg-(--bg-highlight) rounded-xl text-xs font-bold text-(--text-main) border border-(--border-dim) cursor-pointer"
-                        >
-                          <Refresh className={`w-4 h-4 ${daLoading ? "animate-spin" : ""}`} />
-                          <span>Refresh</span>
-                        </button>
-                      </div>
-                    )}
+                        />
+                      )}
 
-                    {currentView === "examSchedule" && (
-                      <SemesterDropdown
-                        semesters={examSemesters}
-                        selectedId={examSelectedSem}
-                        onChange={(id: string) => {
-                          setExamSelectedSem(id);
-                          if (network) fetchExamSchedule(network, id);
-                          setIsMobileControlsOpen(false);
-                        }}
-                      />
-                    )}
-
-                    {currentView === "attendance" && (
-                      <SemesterDropdown
-                        semesters={ttSemesters}
-                        selectedId={attSelectedSem}
-                        onChange={(sem: string) => {
-                          setAttSelectedSem(sem);
-                          setIsMobileControlsOpen(false);
-                        }}
-                      />
-                    )}
+                      {currentView === "attendance" && (
+                        <SemesterDropdown
+                          semesters={ttSemesters}
+                          selectedId={attSelectedSem}
+                          onChange={(sem: string) => {
+                            setAttSelectedSem(sem);
+                            setIsMobileControlsOpen(false);
+                          }}
+                        />
+                      )}
+                    </div>
                   </div>
                 </>
               )}

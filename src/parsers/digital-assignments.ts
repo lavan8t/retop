@@ -1,4 +1,4 @@
-import { parseHTMLFast, validateParsed, Versioned } from "../utils/parser-utils";
+import { parseHTMLFast, validateParsed, Versioned, findSemesterOptions } from "../utils/parser-utils";
 import { DACourseListSchema, DAAssignmentListSchema } from "../schemas";
 
 export const DA_SCHEMA_VERSION = 1;
@@ -28,7 +28,7 @@ export const parseDASemesters = (
   html: string,
 ): { id: string; label: string }[] => {
   const doc = parseHTMLFast(html);
-  const options = doc.querySelectorAll("#semesterSubId option");
+  const options = findSemesterOptions(doc);
 
   const semesters: { id: string; label: string }[] = [];
   options.forEach((opt) => {
@@ -37,17 +37,12 @@ export const parseDASemesters = (
       (opt as HTMLOptionElement).value ||
       opt.textContent?.trim() ||
       "";
-    const txt = opt.textContent?.trim() || "";
-    const isSelectPlaceholder =
-      txt.toLowerCase().includes("select") ||
-      txt.toLowerCase().includes("choose") ||
-      val.toLowerCase().includes("select") ||
-      val.toLowerCase().includes("choose") ||
-      txt === "-";
-    if (val && val.trim() !== "" && !isSelectPlaceholder) {
+    const txt = opt.textContent?.trim() || val;
+    if (val && val.trim() !== "") {
       semesters.push({ id: val, label: txt });
     }
   });
+
   return semesters;
 };
 

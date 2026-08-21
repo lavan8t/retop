@@ -1,19 +1,18 @@
 import { Semester, TimetableCourse } from "../types/vtop";
-import { parseHTMLFast, validateParsed, Versioned } from "../utils/parser-utils";
+import { parseHTMLFast, validateParsed, Versioned, findSemesterOptions } from "../utils/parser-utils";
 import { TimetableListSchema } from "../schemas";
 
 export const TIMETABLE_SCHEMA_VERSION = 1;
 
 export function parseSemesters(html: string): Semester[] {
   const doc = parseHTMLFast(html);
-  const options = doc.querySelectorAll("#semesterSubId option");
+  const options = findSemesterOptions(doc);
 
   const semesters: Semester[] = [];
   options.forEach((opt) => {
     const val = opt.getAttribute("value") || (opt as HTMLOptionElement).value || opt.textContent?.trim() || "";
     const txt = opt.textContent?.trim() || "";
-    const isSelectPlaceholder = txt.toLowerCase().includes("select") || txt.toLowerCase().includes("choose") || val.toLowerCase().includes("select") || val.toLowerCase().includes("choose") || txt === "-";
-    if (val && val.trim() !== "" && !isSelectPlaceholder) {
+    if (val && val.trim() !== "") {
       const isSelected = opt.hasAttribute("selected") || (opt as HTMLOptionElement).selected;
       semesters.push({
         id: val,

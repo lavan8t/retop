@@ -1,24 +1,27 @@
 import { Semester, GradeCourse, GradeAssessment, GradesData } from "../types/vtop";
-import { parseHTMLFast, wrapWithSchemaVersion, validateParsed, Versioned } from "../utils/parser-utils";
+import { parseHTMLFast, wrapWithSchemaVersion, validateParsed, Versioned, findSemesterOptions } from "../utils/parser-utils";
 import { GradesDataSchema } from "../schemas";
 
 export const GRADES_SCHEMA_VERSION = 1;
 
 export function parseGradesSemesters(html: string): Semester[] {
   const doc = parseHTMLFast(html);
-
-  const select = doc.getElementById("semesterSubId") as HTMLSelectElement;
-  if (!select) return [];
-
+  const options = findSemesterOptions(doc);
   const semesters: Semester[] = [];
-  const options = select.querySelectorAll("option");
+
   options.forEach((opt) => {
-    const val = opt.value;
-    if (val) {
-      semesters.push({ id: val, label: opt.textContent?.trim() || "", isLatest: false });
+    const val = opt.getAttribute("value") || (opt as HTMLOptionElement).value || opt.textContent?.trim() || "";
+    if (val && val.trim() !== "") {
+      const isSelected = opt.hasAttribute("selected") || (opt as HTMLOptionElement).selected;
+      semesters.push({
+        id: val,
+        label: opt.textContent?.trim() || val,
+        isLatest: isSelected,
+      });
     }
   });
-  if (semesters.length > 0) {
+
+  if (semesters.length > 0 && !semesters.some((s) => s.isLatest)) {
     semesters[0].isLatest = true;
   }
 

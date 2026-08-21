@@ -548,36 +548,38 @@ export const HomeView: React.FC<HomeViewProps> = ({
               />
 
               {/* Bottom Sheet: 150ms slide up / slide down, touch drag dismiss */}
-              <div
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-                style={{
-                  transform: sheetDragY > 0 ? `translateY(${sheetDragY}px)` : undefined,
-                  transition: isDraggingRef.current ? "none" : sheetDragY === 0 && !isSpotlightClosing ? "transform 150ms cubic-bezier(0.16, 1, 0.3, 1)" : undefined,
-                  animation: sheetDragY > 0 ? "none" : undefined,
-                }}
-                className={`fixed inset-x-0 bottom-0 z-99999 bg-(--bg-surface) border-t-2 border-(--border-main) rounded-t-3xl p-4 sm:p-5 shadow-2xl flex flex-col gap-2 max-h-[82vh] overflow-hidden lg:hidden ${
-                  isSpotlightClosing
-                    ? "animate-sheet-down"
-                    : sheetDragY > 0
-                    ? ""
-                    : "animate-sheet-up"
-                }`}
-              >
-                {/* Top Center Pill Handle */}
+              <div className="fixed inset-x-0 bottom-0 z-99999 p-3 pb-6 sm:p-4 max-h-[85vh] flex flex-col justify-end pointer-events-none lg:hidden">
                 <div
-                  onTouchStart={handleHandleTouchStart}
-                  onTouchMove={handleHandleTouchMove}
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
                   onTouchEnd={handleTouchEnd}
-                  className="w-full py-2 -mt-2 flex items-center justify-center cursor-grab active:cursor-grabbing select-none shrink-0 touch-none"
+                  style={{
+                    transform: sheetDragY > 0 ? `translateY(${sheetDragY}px)` : undefined,
+                    transition: isDraggingRef.current ? "none" : sheetDragY === 0 && !isSpotlightClosing ? "transform 150ms cubic-bezier(0.16, 1, 0.3, 1)" : undefined,
+                    animation: sheetDragY > 0 ? "none" : undefined,
+                  }}
+                  className={`w-full max-w-lg mx-auto bg-(--bg-surface) border-2 border-(--border-main) rounded-[32px] p-4 sm:p-5 shadow-2xl flex flex-col gap-2 max-h-[80vh] overflow-hidden pointer-events-auto ${
+                    isSpotlightClosing
+                      ? "animate-sheet-down"
+                      : sheetDragY > 0
+                      ? ""
+                      : "animate-sheet-up"
+                  }`}
                 >
-                  <div className="w-12 h-1.5 bg-(--border-main) rounded-full opacity-60 pointer-events-none" />
-                </div>
+                  {/* Top Center Pill Handle */}
+                  <div
+                    onTouchStart={handleHandleTouchStart}
+                    onTouchMove={handleHandleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    className="w-full py-2 -mt-2 flex items-center justify-center cursor-grab active:cursor-grabbing select-none shrink-0 touch-none"
+                  >
+                    <div className="w-12 h-1.5 bg-(--border-main) rounded-full opacity-60 pointer-events-none" />
+                  </div>
 
-                {/* Scrollable Spotlight Content (No duplicate title, no cross button) */}
-                <div ref={sheetContentRef} className="overflow-y-auto flex-1 custom-scrollbar pt-1">
-                  <SpotlightSection spotlightCategories={spotlightCategories} />
+                  {/* Scrollable Spotlight Content (No duplicate title, no cross button) */}
+                  <div ref={sheetContentRef} className="overflow-y-auto flex-1 custom-scrollbar pt-1">
+                    <SpotlightSection spotlightCategories={spotlightCategories} />
+                  </div>
                 </div>
               </div>
             </>

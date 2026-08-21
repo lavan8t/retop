@@ -62,22 +62,19 @@ export function isSameDayExam(examDateStr: string, targetDate: Date): boolean {
   return false;
 }
 
-import { parseHTMLFast, validateParsed, wrapWithSchemaVersion, Versioned } from "../utils/parser-utils";
+import { parseHTMLFast, validateParsed, wrapWithSchemaVersion, Versioned, findSemesterOptions } from "../utils/parser-utils";
 import { ExamScheduleListSchema } from "../schemas";
 
 export const EXAM_SCHEDULE_SCHEMA_VERSION = 1;
 
 export function parseExamSemesters(html: string): { id: string; label: string }[] {
   const doc = parseHTMLFast(html);
-  
-  const select = doc.getElementById("semesterSubId") as HTMLSelectElement;
-  if (!select) return [];
+  const options = findSemesterOptions(doc);
 
   const semesters: { id: string; label: string }[] = [];
-  const options = select.querySelectorAll("option");
   
   options.forEach((opt) => {
-    const value = opt.getAttribute("value");
+    const value = opt.getAttribute("value") || (opt as HTMLOptionElement).value || opt.textContent?.trim() || "";
     if (value && value.trim() !== "") {
       semesters.push({
         id: value,

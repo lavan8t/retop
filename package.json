@@ -3,9 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "tsc --noEmit && bun run build.ts",
-    "build:prod": "tsc --noEmit && bun run build.ts --prod",
-    "css:watch": "bunx tailwindcss -i src/input.css -o dist/style.css --watch"
+    "build": "bun ./node_modules/typescript/lib/tsc.js --noEmit && bun run build.ts",
+    "build:prod": "bun ./node_modules/typescript/lib/tsc.js --noEmit && bun run build.ts --prod",
+    "build:copy": "bun run build && bun scripts/copy-dist.ts",
+    "copy:dist": "bun scripts/copy-dist.ts",
+    "css:watch": "bun ./node_modules/@tailwindcss/cli/dist/index.mjs -i src/input.css -o dist/style.css --watch"
   },
   "dependencies": {
     "@material/material-color-utilities": "^0.4.0",

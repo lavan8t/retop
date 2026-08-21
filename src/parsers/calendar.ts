@@ -1,6 +1,6 @@
 import { CalendarMonthPreview, CalendarEvent, ClassGroup } from "../types/vtop";
 import { normalizeSemesterLabel } from "../utils/formatting";
-import { parseHTMLFast, validateParsed, wrapWithSchemaVersion, Versioned } from "../utils/parser-utils";
+import { parseHTMLFast, validateParsed, wrapWithSchemaVersion, Versioned, findSemesterOptions } from "../utils/parser-utils";
 import { CalendarEventsListSchema } from "../schemas";
 
 export const CALENDAR_SCHEMA_VERSION = 1;
@@ -10,25 +10,16 @@ export function parseCalendarSemesters(
 ): { id: string; label: string; selected?: boolean }[] {
   if (!html) return [];
   const doc = parseHTMLFast(html);
+  const options = findSemesterOptions(doc);
 
-  const select = doc.getElementById("semesterSubId") as HTMLSelectElement;
-  if (!select) return [];
-
-  return Array.from(select.options)
-    .filter((opt) => {
-      const val = opt.getAttribute("value") || opt.value || opt.textContent?.trim() || "";
-      const text = opt.textContent?.trim() || "";
-      const isSelectPlaceholder = text.toLowerCase().includes("select") || text.toLowerCase().includes("choose") || val.toLowerCase().includes("select") || val.toLowerCase().includes("choose") || text === "-";
-      return val && val.trim() !== "" && !isSelectPlaceholder;
-    })
-    .map((opt) => {
-      const val = opt.getAttribute("value") || opt.value || opt.textContent?.trim() || "";
-      return {
-        id: val,
-        label: normalizeSemesterLabel(opt.textContent || val),
-        selected: opt.hasAttribute("selected") || opt.selected,
-      };
-    });
+  return options.map((opt) => {
+    const val = opt.getAttribute("value") || (opt as HTMLOptionElement).value || opt.textContent?.trim() || "";
+    return {
+      id: val,
+      label: normalizeSemesterLabel(opt.textContent || val),
+      selected: opt.hasAttribute("selected") || (opt as HTMLOptionElement).selected,
+    };
+  });
 }
 
 // Combined parser for Step 2: Extracts both the Class Groups and the Month Buttons

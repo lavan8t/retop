@@ -138,19 +138,26 @@ function cleanText(text: string | undefined | null): string {
 function parseSectionMap(
   doc: Document,
   sectionId: string,
+  sectionIndex?: number,
 ): Map<string, string> {
   const map = new Map<string, string>();
-  const container = doc.querySelector(`#${sectionId}`);
+  let container = doc.querySelector(`#${sectionId}, [id*='${sectionId}' i]`);
+  if (!container && sectionIndex !== undefined) {
+    const accordions = doc.querySelectorAll(".accordion-item, .card, .panel, .collapse, .accordion .card-body, table.table");
+    if (accordions[sectionIndex]) {
+      container = accordions[sectionIndex];
+    }
+  }
   if (!container) return map;
 
   const rows = container.querySelectorAll("tr");
   let currentContext = "MAIN";
 
   rows.forEach((row) => {
-    const cells = row.querySelectorAll("td");
+    const cells = row.querySelectorAll("td, th");
 
     // Detect Context Headers (e.g., CURRENT ADDRESS, FATHER DETAILS)
-    if (cells.length === 1 && cells[0].hasAttribute("colspan")) {
+    if (cells.length === 1 && (cells[0].hasAttribute("colspan") || cells[0].tagName.toLowerCase() === "th")) {
       const headerText = cleanText(cells[0].textContent).toUpperCase();
       if (headerText) currentContext = headerText;
       return;
@@ -158,12 +165,12 @@ function parseSectionMap(
 
     // Extract Key-Value Pairs
     if (cells.length >= 2) {
-      // Loop with -1 to safely prevent reading rowspan image tags as text
       for (let i = 0; i < cells.length - 1; i += 2) {
         const key = cleanText(cells[i].textContent).toUpperCase();
         const val = cleanText(cells[i + 1]?.textContent);
         if (key) {
           map.set(`${currentContext}_${key}`, val);
+          map.set(`MAIN_${key}`, val);
         }
       }
     }
@@ -176,41 +183,59 @@ export function parseStudentProfile(html: string): Versioned<StudentProfile> {
   const doc = parseHTMLFast(html);
 
   const basic: ProfileBasicInfo = {
-    name: cleanText(doc.querySelector(".col-4 p")?.textContent),
+    name:
+      cleanText(doc.querySelector(".col-4 p, .col-sm-4 p, .card p, h4, h5, .card-title, strong.text-primary")?.textContent) ||
+      "",
     regNo: "",
     email: "",
     program: "",
     school: "",
     photoUrl: fixBase64Image(
-      doc.querySelector(".col-4 img")?.getAttribute("src"),
+      doc.querySelector("img[src*='studentPhoto' i], img[src*='users/image' i], img[src*='StudentPhoto' i], .col-4 img, .card img, img")?.getAttribute("src"),
     ),
   };
 
-  const labels = doc.querySelectorAll("label.col-form-label");
+  const labels = doc.querySelectorAll("label, th, td strong, td b, .form-group, td");
   labels.forEach((label) => {
     const text = cleanText(label.textContent).toUpperCase();
-    const sibling = cleanText(label.nextElementSibling?.textContent);
-    if (text.includes("REGISTER NUMBER")) basic.regNo = sibling;
-    if (text.includes("VIT EMAIL")) basic.email = sibling;
-    if (text.includes("PROGRAM")) basic.program = sibling;
-    if (text.includes("SCHOOL NAME")) basic.school = sibling;
+    const sibling =
+      cleanText(label.nextElementSibling?.textContent) ||
+      cleanText(label.parentElement?.querySelector(".form-control-static, p, span, div:last-child")?.textContent);
+    if (!basic.regNo && (text.includes("REGISTER NUMBER") || text.includes("REGISTRATION NUMBER") || text.includes("REG NO") || text.includes("REG. NO")) && sibling) {
+      basic.regNo = sibling;
+    }
+    if (!basic.email && (text.includes("VIT EMAIL") || text.includes("OFFICIAL EMAIL") || text.includes("INSTITUTIONAL EMAIL")) && sibling) {
+      basic.email = sibling;
+    }
+    if (!basic.program && (text.includes("PROGRAM") || text.includes("PROGRAMME") || text.includes("DEGREE")) && sibling) {
+      basic.program = sibling;
+    }
+    if (!basic.school && (text.includes("SCHOOL NAME") || text.includes("SCHOOL")) && sibling) {
+      basic.school = sibling;
+    }
   });
 
-  const pMap = parseSectionMap(doc, "collapseOne");
+  const pMap = parseSectionMap(doc, "collapseOne", 0);
+  if (!basic.regNo) basic.regNo = pMap.get("MAIN_REGISTER NUMBER") || pMap.get("MAIN_REGISTRATION NUMBER") || pMap.get("MAIN_REG NO") || "";
+  if (!basic.name) basic.name = pMap.get("MAIN_STUDENT NAME") || pMap.get("MAIN_NAME") || pMap.get("MAIN_STUDENT'S NAME") || "";
+  if (!basic.email) basic.email = pMap.get("MAIN_VIT EMAIL") || pMap.get("MAIN_EMAIL") || "";
+  if (!basic.program) basic.program = pMap.get("MAIN_PROGRAM") || pMap.get("MAIN_PROGRAMME") || "";
+  if (!basic.school) basic.school = pMap.get("MAIN_SCHOOL NAME") || pMap.get("MAIN_SCHOOL") || "";
+
   const personal: ProfilePersonal = {
-    appNo: pMap.get("MAIN_APPLICATION NUMBER") || "",
-    dob: pMap.get("MAIN_DATE OF BIRTH") || "",
-    gender: pMap.get("MAIN_GENDER") || "",
-    bloodGroup: pMap.get("MAIN_BLOOD GROUP") || "",
+    appNo: pMap.get("MAIN_APPLICATION NUMBER") || pMap.get("MAIN_APP NO") || "",
+    dob: pMap.get("MAIN_DATE OF BIRTH") || pMap.get("MAIN_DOB") || "",
+    gender: pMap.get("MAIN_GENDER") || pMap.get("MAIN_SEX") || "",
+    bloodGroup: pMap.get("MAIN_BLOOD GROUP") || pMap.get("MAIN_BLOOD") || "",
     community: pMap.get("MAIN_COMMUNITY") || "",
     caste: pMap.get("MAIN_CASTE") || "",
     religion: pMap.get("MAIN_RELIGION") || "",
     nationality: pMap.get("MAIN_NATIONALITY") || "",
-    nativeState: pMap.get("MAIN_NATIVE STATE") || "",
-    nativeLanguage: pMap.get("MAIN_NATIVE LANGUAGE") || "",
+    nativeState: pMap.get("MAIN_NATIVE STATE") || pMap.get("MAIN_STATE") || "",
+    nativeLanguage: pMap.get("MAIN_NATIVE LANGUAGE") || pMap.get("MAIN_MOTHER TONGUE") || "",
     physicallyChallenged: pMap.get("MAIN_PHYSICALLY CHALLENGED") || "NO",
-    aadhar: pMap.get("MAIN_AADHAR NUMBER") || "",
-    mobile: pMap.get("MAIN_MOBILE NUMBER") || "",
+    aadhar: pMap.get("MAIN_AADHAR NUMBER") || pMap.get("MAIN_AADHAR") || "",
+    mobile: pMap.get("MAIN_MOBILE NUMBER") || pMap.get("MAIN_MOBILE") || "",
     email:
       pMap.get("PERMANENT ADDRESS_EMAIL") ||
       pMap.get("CURRENT ADDRESS_EMAIL") ||
@@ -219,37 +244,37 @@ export function parseStudentProfile(html: string): Versioned<StudentProfile> {
   };
 
   const currentAddress: Address = {
-    street: pMap.get("CURRENT ADDRESS_STREET NAME") || "",
-    area: pMap.get("CURRENT ADDRESS_AREA NAME") || "",
-    city: pMap.get("CURRENT ADDRESS_CITY") || "",
+    street: pMap.get("CURRENT ADDRESS_STREET NAME") || pMap.get("CURRENT ADDRESS_STREET") || "",
+    area: pMap.get("CURRENT ADDRESS_AREA NAME") || pMap.get("CURRENT ADDRESS_AREA") || "",
+    city: pMap.get("CURRENT ADDRESS_CITY") || pMap.get("CURRENT ADDRESS_DISTRICT") || "",
     state: pMap.get("CURRENT ADDRESS_STATE") || "",
     country: pMap.get("CURRENT ADDRESS_COUNTRY") || "",
-    pincode: pMap.get("CURRENT ADDRESS_PINCODE") || "",
-    phone: pMap.get("CURRENT ADDRESS_PHONE NUMBER[LAND LINE]") || "",
+    pincode: pMap.get("CURRENT ADDRESS_PINCODE") || pMap.get("CURRENT ADDRESS_ZIPCODE") || "",
+    phone: pMap.get("CURRENT ADDRESS_PHONE NUMBER[LAND LINE]") || pMap.get("CURRENT ADDRESS_PHONE") || "",
   };
 
   const permanentAddress: Address = {
-    street: pMap.get("PERMANENT ADDRESS_STREET NAME") || "",
-    area: pMap.get("PERMANENT ADDRESS_AREA NAME") || "",
-    city: pMap.get("PERMANENT ADDRESS_CITY") || "",
+    street: pMap.get("PERMANENT ADDRESS_STREET NAME") || pMap.get("PERMANENT ADDRESS_STREET") || "",
+    area: pMap.get("PERMANENT ADDRESS_AREA NAME") || pMap.get("PERMANENT ADDRESS_AREA") || "",
+    city: pMap.get("PERMANENT ADDRESS_CITY") || pMap.get("PERMANENT ADDRESS_DISTRICT") || "",
     state: pMap.get("PERMANENT ADDRESS_STATE") || "",
     country: pMap.get("PERMANENT ADDRESS_COUNTRY") || "",
-    pincode: pMap.get("PERMANENT ADDRESS_PINCODE") || "",
-    phone: pMap.get("PERMANENT ADDRESS_PHONE NUMBER[LAND LINE]") || "",
+    pincode: pMap.get("PERMANENT ADDRESS_PINCODE") || pMap.get("PERMANENT ADDRESS_ZIPCODE") || "",
+    phone: pMap.get("PERMANENT ADDRESS_PHONE NUMBER[LAND LINE]") || pMap.get("PERMANENT ADDRESS_PHONE") || "",
   };
 
-  const eMap = parseSectionMap(doc, "collapseTwo");
+  const eMap = parseSectionMap(doc, "collapseTwo", 1);
   const education: ProfileEducation = {
-    degree: eMap.get("MAIN_APPLIED DEGREE") || "",
-    qualification: eMap.get("MAIN_EDUCATIONAL QUALIFICATION") || "",
-    branch: eMap.get("MAIN_BRANCH / GROUP STUDIED") || "",
-    school: eMap.get("MAIN_SCHOOL NAME") || "",
-    medium: eMap.get("MAIN_MEDIUM OF STUDY") || "",
-    board: eMap.get("MAIN_BOARD / UNIVERSITY") || "",
-    regNo: eMap.get("MAIN_REGISTER NO/ ROLL NO") || "",
-    classObtained: eMap.get("MAIN_CLASS OBTAINED") || "",
-    year: eMap.get("MAIN_YEAR OF PASSING/ PASSED") || "",
-    month: eMap.get("MAIN_MONTH OF PASSING/ PASSED") || "",
+    degree: eMap.get("MAIN_APPLIED DEGREE") || eMap.get("MAIN_DEGREE") || basic.program || "",
+    qualification: eMap.get("MAIN_EDUCATIONAL QUALIFICATION") || eMap.get("MAIN_QUALIFICATION") || "",
+    branch: eMap.get("MAIN_BRANCH / GROUP STUDIED") || eMap.get("MAIN_BRANCH") || "",
+    school: eMap.get("MAIN_SCHOOL NAME") || eMap.get("MAIN_COLLEGE NAME") || "",
+    medium: eMap.get("MAIN_MEDIUM OF STUDY") || eMap.get("MAIN_MEDIUM") || "",
+    board: eMap.get("MAIN_BOARD / UNIVERSITY") || eMap.get("MAIN_BOARD") || "",
+    regNo: eMap.get("MAIN_REGISTER NO/ ROLL NO") || eMap.get("MAIN_ROLL NO") || "",
+    classObtained: eMap.get("MAIN_CLASS OBTAINED") || eMap.get("MAIN_CLASS") || "",
+    year: eMap.get("MAIN_YEAR OF PASSING/ PASSED") || eMap.get("MAIN_YEAR") || "",
+    month: eMap.get("MAIN_MONTH OF PASSING/ PASSED") || eMap.get("MAIN_MONTH") || "",
     breakInStudy:
       eMap.get("SCHOOL / COLLEGE ADDRESS_BREAK IN STUDY") ||
       eMap.get("MAIN_BREAK IN STUDY") ||
@@ -260,7 +285,7 @@ export function parseStudentProfile(html: string): Versioned<StudentProfile> {
       "-",
     address: {
       street: "",
-      area: eMap.get("SCHOOL / COLLEGE ADDRESS_AREA NAME") || "",
+      area: eMap.get("SCHOOL / COLLEGE ADDRESS_AREA NAME") || eMap.get("SCHOOL / COLLEGE ADDRESS_AREA") || "",
       city:
         eMap.get("SCHOOL / COLLEGE ADDRESS_CITY / DISTRICT NAME") ||
         eMap.get("SCHOOL / COLLEGE ADDRESS_CITY") ||
@@ -274,42 +299,44 @@ export function parseStudentProfile(html: string): Versioned<StudentProfile> {
         eMap.get("SCHOOL / COLLEGE ADDRESS_PINCODE / ZIPCODE") ||
         eMap.get("SCHOOL / COLLEGE ADDRESS_PINCODE") ||
         "",
-      phone: eMap.get("SCHOOL / COLLEGE ADDRESS_PHONE NUMBER[LAND LINE]") || "",
+      phone: eMap.get("SCHOOL / COLLEGE ADDRESS_PHONE NUMBER[LAND LINE]") || eMap.get("SCHOOL / COLLEGE ADDRESS_PHONE") || "",
     },
   };
 
-  const fMap = parseSectionMap(doc, "collapseThree");
+  const fMap = parseSectionMap(doc, "collapseThree", 2);
   const getFamilyMember = (prefix: string): ProfileFamilyMember => ({
     name:
       fMap.get(`${prefix}_FATHER NAME`) ||
       fMap.get(`${prefix}_MOTHER NAME`) ||
       fMap.get(`${prefix}_NAME`) ||
+      fMap.get(`${prefix}_PARENT NAME`) ||
       "",
     qualification: fMap.get(`${prefix}_QUALIFICATION`) || "",
     occupation: fMap.get(`${prefix}_OCCUPATION`) || "",
     organization: fMap.get(`${prefix}_ORGANIZATION`) || "",
     designation: fMap.get(`${prefix}_DESIGNATION`) || "",
-    mobile: fMap.get(`${prefix}_MOBILE NUMBER`) || "",
-    email: fMap.get(`${prefix}_EMAIL`) || "",
-    income: fMap.get(`${prefix}_ANNUAL INCOME`) || "",
+    mobile: fMap.get(`${prefix}_MOBILE NUMBER`) || fMap.get(`${prefix}_MOBILE`) || "",
+    email: fMap.get(`${prefix}_EMAIL`) || fMap.get(`${prefix}_EMAIL ID`) || "",
+    income: fMap.get(`${prefix}_ANNUAL INCOME`) || fMap.get(`${prefix}_INCOME`) || "",
     address: {
-      street: "",
-      area: fMap.get(`${prefix}_OFFICIAL ADDRESS(AREA NAME)`) || "",
+      street: fMap.get(`${prefix}_STREET`) || fMap.get(`${prefix}_OFFICIAL ADDRESS(STREET NAME)`) || "",
+      area: fMap.get(`${prefix}_OFFICIAL ADDRESS(AREA NAME)`) || fMap.get(`${prefix}_AREA`) || "",
       city:
-        fMap.get(`${prefix}_CITY/DISTRICT`) || fMap.get(`${prefix}_CITY`) || "",
+        fMap.get(`${prefix}_CITY/DISTRICT`) || fMap.get(`${prefix}_CITY`) || fMap.get(`${prefix}_DISTRICT`) || "",
       state: fMap.get(`${prefix}_STATE`) || "",
       country: "",
       pincode:
         fMap.get(`${prefix}_PINCODE/ZIPCODE`) ||
         fMap.get(`${prefix}_PINCODE`) ||
+        fMap.get(`${prefix}_ZIPCODE`) ||
         "",
-      phone: fMap.get(`${prefix}_PHONE NUMBER[LAND LINE]`) || "",
+      phone: fMap.get(`${prefix}_PHONE NUMBER[LAND LINE]`) || fMap.get(`${prefix}_PHONE`) || "",
     },
   });
 
   const family: ProfileFamily = {
-    brothers: fMap.get("MAIN_NO.OF.BROTHERS") || "0",
-    sisters: fMap.get("MAIN_NO.OF.SISTERS") || "0",
+    brothers: fMap.get("MAIN_NO.OF.BROTHERS") || fMap.get("MAIN_BROTHERS") || "0",
+    sisters: fMap.get("MAIN_NO.OF.SISTERS") || fMap.get("MAIN_SISTERS") || "0",
     studyingInVit: fMap.get("MAIN_IF BROTHER/SISTER STUDYING IN VIT") || "NO",
     studyingDetails: fMap.get("MAIN_STUDYING DETAILS") || "-",
     studiedInVit: fMap.get("MAIN_IF BROTHER/SISTER STUDIED IN VIT") || "NO",
@@ -319,41 +346,44 @@ export function parseStudentProfile(html: string): Versioned<StudentProfile> {
     guardian:
       fMap.get("FATHER DETAILS_GUARDIAN INFO") ||
       fMap.get("MOTHER DETAILS_GUARDIAN INFO") ||
+      fMap.get("MAIN_GUARDIAN NAME") ||
       "PARENT",
-    friendMobile: pMap.get("PERMANENT ADDRESS_FRIEND MOBILE NUMBER") || "",
+    friendMobile: pMap.get("PERMANENT ADDRESS_FRIEND MOBILE NUMBER") || pMap.get("MAIN_FRIEND MOBILE NUMBER") || "",
   };
 
-  const procMap = parseSectionMap(doc, "collapseFour");
+  const procMap = parseSectionMap(doc, "collapseFour", 3);
   const proctorImg = doc
-    .querySelector("#collapseFour img")
+    .querySelector("#collapseFour img, [id*='collapseFour' i] img, img[src*='faculty' i], img[src*='emp' i]")
     ?.getAttribute("src");
 
   const proctor: ProfileProctor = {
-    id: procMap.get("MAIN_FACULTY ID") || "",
-    name: procMap.get("MAIN_FACULTY NAME") || "",
-    designation: procMap.get("MAIN_FACULTY DESIGNATION") || "",
-    school: procMap.get("MAIN_SCHOOL") || "",
-    cabin: procMap.get("MAIN_CABIN") || "",
-    dept: procMap.get("MAIN_FACULTY DEPARTMENT") || "",
-    email: procMap.get("MAIN_FACULTY EMAIL") || "",
-    mobile: procMap.get("MAIN_FACULTY MOBILE NUMBER") || "",
+    id: procMap.get("MAIN_FACULTY ID") || procMap.get("MAIN_STAFF ID") || procMap.get("MAIN_ID") || "",
+    name: procMap.get("MAIN_FACULTY NAME") || procMap.get("MAIN_PROCTOR NAME") || procMap.get("MAIN_NAME") || "",
+    designation: procMap.get("MAIN_FACULTY DESIGNATION") || procMap.get("MAIN_DESIGNATION") || "",
+    school: procMap.get("MAIN_SCHOOL") || procMap.get("MAIN_SCHOOL NAME") || "",
+    cabin: procMap.get("MAIN_CABIN") || procMap.get("MAIN_CABIN NO.") || procMap.get("MAIN_ROOM NO.") || "",
+    dept: procMap.get("MAIN_FACULTY DEPARTMENT") || procMap.get("MAIN_DEPARTMENT") || procMap.get("MAIN_DEPT") || "",
+    email: procMap.get("MAIN_FACULTY EMAIL") || procMap.get("MAIN_EMAIL") || procMap.get("MAIN_EMAIL ID") || "",
+    mobile: procMap.get("MAIN_FACULTY MOBILE NUMBER") || procMap.get("MAIN_MOBILE NUMBER") || procMap.get("MAIN_MOBILE") || procMap.get("MAIN_PHONE") || "",
     photoUrl: fixBase64Image(proctorImg),
   };
 
-  const hMap = parseSectionMap(doc, "collapseFive");
+  const hMap = parseSectionMap(doc, "collapseFive", 4);
   let hostel: ProfileHostel | null = null;
-  const hostelNotFound = doc
-    .querySelector("#collapseFive")
-    ?.textContent?.includes("NOT FOUND");
+  const hostelContainer = doc.querySelector("#collapseFive, [id*='collapseFive' i]");
+  const hostelNotFound =
+    hostelContainer?.textContent?.toUpperCase().includes("NOT FOUND") ||
+    hostelContainer?.textContent?.toUpperCase().includes("DAY SCHOLAR") ||
+    hMap.size === 0;
 
   if (!hostelNotFound && hMap.size > 0) {
     hostel = {
-      appNo: hMap.get("MAIN_APPLICATION NUMBER") || "",
-      regNo: hMap.get("MAIN_REGISTER NUMBER") || "",
-      block: hMap.get("MAIN_BLOCK NAME") || "",
-      room: hMap.get("MAIN_ROOM NO.") || "",
-      bedType: hMap.get("MAIN_BED TYPE") || "",
-      mess: hMap.get("MAIN_MESS INFORMATION") || "",
+      appNo: hMap.get("MAIN_APPLICATION NUMBER") || hMap.get("MAIN_APP NO") || "",
+      regNo: hMap.get("MAIN_REGISTER NUMBER") || hMap.get("MAIN_REG NO") || basic.regNo || "",
+      block: hMap.get("MAIN_BLOCK NAME") || hMap.get("MAIN_BLOCK") || hMap.get("MAIN_HOSTEL BLOCK") || "",
+      room: hMap.get("MAIN_ROOM NO.") || hMap.get("MAIN_ROOM NO") || hMap.get("MAIN_ROOM NUMBER") || "",
+      bedType: hMap.get("MAIN_BED TYPE") || hMap.get("MAIN_BED") || "",
+      mess: hMap.get("MAIN_MESS INFORMATION") || hMap.get("MAIN_MESS TYPE") || hMap.get("MAIN_MESS") || "",
     };
   }
 

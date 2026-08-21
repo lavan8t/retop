@@ -1,26 +1,32 @@
 import { CourseMarks, AssessmentMark, Semester } from "../types/vtop";
-import { parseHTMLFast, validateParsed, Versioned } from "../utils/parser-utils";
+import { parseHTMLFast, validateParsed, Versioned, findSemesterOptions } from "../utils/parser-utils";
 import { CourseMarksListSchema } from "../schemas";
 
 export const MARKS_SCHEMA_VERSION = 1;
 
 export const parseMarksSemesters = (html: string): Semester[] => {
   const doc = parseHTMLFast(html);
-  const options = doc.querySelectorAll("#semesterSubId option");
+  const options = findSemesterOptions(doc);
   const semesters: Semester[] = [];
 
   options.forEach((opt) => {
-    const val = opt.getAttribute("value");
-    if (val && val !== "") {
+    const val = opt.getAttribute("value") || (opt as HTMLOptionElement).value || opt.textContent?.trim() || "";
+    if (val && val.trim() !== "") {
+      const isSelected = opt.hasAttribute("selected") || (opt as HTMLOptionElement).selected;
       semesters.push({
         id: val,
-        label: opt.textContent?.trim() || "",
-        isLatest: false
+        label: opt.textContent?.trim() || val,
+        isLatest: isSelected,
       });
     }
   });
+
+  if (semesters.length > 0 && !semesters.some((s) => s.isLatest)) {
+    semesters[0].isLatest = true;
+  }
+
   return semesters;
-}
+};
 
 export function parseStudentMarks(html: string): Versioned<CourseMarks[]> {
   const doc = parseHTMLFast(html);

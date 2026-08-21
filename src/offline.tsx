@@ -14,13 +14,18 @@ import { renderDashboard } from "./pages/app";
 import { getStorageData, setStorageData } from "./utils/storageAdapter";
 import { getUserPinRecord, saveUserPin, verifyUserPin, getUserProfileImage } from "./utils/pinSecurity";
 import { AsciiPanel } from "./components/asciiArt";
-import { applyTheme } from "./utils/settings-store";
+import { applyTheme, DEFAULT_SETTINGS } from "./utils/settings-store";
 import { VitLogo } from "./components/VitLogo";
 import { VitEmblemLoader } from "./components/common/VitEmblemLoader";
 import { ErrorBoundary } from "./components/common/ErrorBoundary";
 import { fixBase64Image } from "./parsers/profile";
-import { clear as idbClear, set as idbSet } from "idb-keyval";
+import { clear as idbClear, set as idbSet, get as idbGet } from "idb-keyval";
 import { AlertDialogManager, showAlertDialog } from "./components/ui/AlertDialog";
+
+// Apply default theme immediately on module load so variables are present before first render
+try {
+  applyTheme(DEFAULT_SETTINGS);
+} catch {}
 
 const GSF: React.CSSProperties = {
   fontFamily: "'Google Sans Flex', system-ui, sans-serif",
@@ -76,34 +81,34 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ users, activeUser, on
 
   return (
     <div ref={containerRef} className="relative w-full max-w-[320px] mx-auto">
-      {/* Trigger button — solid fill bg, no border, higher padding */}
+      {/* Trigger button */}
       <button
         type="button"
         onClick={() => setIsOpen((o) => !o)}
-        className="w-full flex items-center justify-between gap-3 bg-[#18181b] hover:bg-[#222226] rounded-full px-5 py-3.5 sm:px-6 sm:py-4 transition-all cursor-pointer group shadow-lg border-0"
+        className="w-full flex items-center justify-between gap-3 bg-(--bg-surface) hover:bg-(--bg-highlight) text-(--text-main) rounded-full px-5 py-3.5 sm:px-6 sm:py-4 transition-all cursor-pointer group shadow-lg border border-(--border-dim)/40"
         style={GSF}>
         <div className="flex items-center gap-3 min-w-0">
           {fixBase64Image(activeUser.profileImgBase64) ? (
             <img src={fixBase64Image(activeUser.profileImgBase64)} alt={activeLabel} className="w-6 h-6 rounded-full object-cover shrink-0" />
           ) : (
-            <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0">
+            <div className="w-6 h-6 rounded-full bg-(--bg-highlight) flex items-center justify-center text-(--text-muted) shrink-0">
               <AccountCircle className="w-4 h-4" />
             </div>
           )}
-          <span className="text-xs sm:text-sm font-bold text-white leading-none truncate">{activeLabel}</span>
+          <span className="text-xs sm:text-sm font-bold text-(--text-main) leading-none truncate">{activeLabel}</span>
         </div>
         <KeyboardArrowDown
           className={`w-5 h-5 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-          style={{ color: "var(--accent-base, #60a5fa)" }}
+          style={{ color: "var(--accent-base)" }}
         />
       </button>
 
-      {/* Dropdown menu — solid fill bg, no border, higher padding, shadow-2xl */}
+      {/* Dropdown menu */}
       {isOpen && (
         <div
           className="absolute z-50 left-0 right-0 top-full pt-2 animate-in fade-in slide-in-from-top-1 duration-150"
           style={{ willChange: "transform, opacity" }}>
-          <div className="w-full bg-[#18181b] rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.85)] p-2 space-y-1.5 border-0">
+          <div className="w-full bg-(--bg-surface) rounded-3xl overflow-hidden shadow-2xl p-2 space-y-1.5 border border-(--border-dim)/50 text-(--text-main)">
             <div className="max-h-56 overflow-y-auto space-y-1 custom-scrollbar p-1">
               {users.map((u) => {
                 const isSelected = u.regNo.toLowerCase() === activeUser.regNo.toLowerCase();
@@ -115,35 +120,35 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ users, activeUser, on
                     onClick={() => { onSelect(u); setIsOpen(false); }}
                     className={`w-full flex items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-3.5 rounded-2xl transition-all cursor-pointer text-left ${
                       isSelected
-                        ? "text-white font-bold shadow-md"
-                        : "text-zinc-300 hover:bg-zinc-800/80 hover:text-white"
+                        ? "text-(--text-inverse) font-bold shadow-md"
+                        : "text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main)"
                     }`}
                     style={{
-                      backgroundColor: isSelected ? "var(--accent-base, #2563eb)" : undefined,
+                      backgroundColor: isSelected ? "var(--accent-base)" : undefined,
                     }}>
                     <div className="flex items-center gap-3 min-w-0">
                       {fixBase64Image(u.profileImgBase64) ? (
                         <img src={fixBase64Image(u.profileImgBase64)} alt={itemLabel} className="w-6 h-6 rounded-full object-cover shrink-0" />
                       ) : (
-                        <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-zinc-300 shrink-0">
+                        <div className="w-6 h-6 rounded-full bg-(--bg-highlight) flex items-center justify-center text-(--text-muted) shrink-0">
                           <AccountCircle className="w-4 h-4" />
                         </div>
                       )}
                       <span className="text-xs sm:text-sm truncate">{itemLabel}</span>
                     </div>
-                    {isSelected && <Check className="w-5 h-5 shrink-0 text-white" />}
+                    {isSelected && <Check className="w-5 h-5 shrink-0 text-(--text-inverse)" />}
                   </button>
                 );
               })}
             </div>
             {/* Import option as footer */}
-            <div className="border-t border-zinc-800/80 pt-1.5 mt-1">
+            <div className="border-t border-(--border-dim)/50 pt-1.5 mt-1">
               <button
                 type="button"
                 onClick={() => { onImport(); setIsOpen(false); }}
-                className="w-full flex items-center gap-3 px-4 py-3 sm:px-5 sm:py-3.5 rounded-2xl text-zinc-400 hover:text-white hover:bg-zinc-800/80 transition-all cursor-pointer text-xs font-bold text-left"
+                className="w-full flex items-center gap-3 px-4 py-3 sm:px-5 sm:py-3.5 rounded-2xl text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-highlight) transition-all cursor-pointer text-xs font-bold text-left"
                 style={GSF}>
-                <Add className="w-5 h-5 shrink-0" style={{ color: "var(--accent-base, #60a5fa)" }} />
+                <Add className="w-5 h-5 shrink-0" style={{ color: "var(--accent-base)" }} />
                 <span>Import backup JSON</span>
               </button>
             </div>
@@ -279,10 +284,10 @@ const StarPinInput: React.FC<StarPinInputProps> = ({
 
       {value.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-1.5 animate-in fade-in duration-200">
-          <p className="text-base sm:text-lg font-bold text-zinc-400 tracking-wide uppercase">
+          <p className="text-base sm:text-lg font-bold text-(--text-muted) tracking-wide uppercase">
             {prompt}
           </p>
-          <span className="text-[11px] text-zinc-500 font-medium font-sans">
+          <span className="text-[11px] text-(--text-dim) font-medium font-sans">
             Type 4–10 digit PIN to unlock
           </span>
         </div>
@@ -299,7 +304,7 @@ const StarPinInput: React.FC<StarPinInputProps> = ({
                   type={isLeft ? "left" : "right"}
                   className="w-8 h-8 sm:w-10 sm:h-10 transition-colors duration-150"
                   style={{
-                    color: error ? "#ef4444" : "var(--accent-base, #60a5fa)",
+                    color: error ? "var(--color-error, #ef4444)" : "var(--accent-base)",
                   }}
                 />
               </div>
@@ -372,7 +377,12 @@ const OfflineApp = () => {
     ]);
 
     try {
-      const rawSettings = res["retop-settings"];
+      let rawSettings = res["retop-settings"];
+      if (!rawSettings) {
+        try {
+          rawSettings = await idbGet("retop-settings");
+        } catch {}
+      }
       if (rawSettings) {
         let parsed = rawSettings;
         if (typeof rawSettings === "string") {
@@ -385,8 +395,12 @@ const OfflineApp = () => {
         }
         const settings = parsed?.state?.settings || parsed;
         if (settings) applyTheme(settings);
+      } else {
+        applyTheme(DEFAULT_SETTINGS);
       }
-    } catch {}
+    } catch {
+      applyTheme(DEFAULT_SETTINGS);
+    }
 
     let users: CachedUser[] = res.retop_cached_users || [];
     const lastAuthId = res.retop_lastAuthId as string;
@@ -670,7 +684,7 @@ const OfflineApp = () => {
   if (step === "LOADING") {
     return (
       <div
-        className="h-screen w-screen bg-[#09090b] flex flex-col items-center justify-center text-white transition-opacity duration-50 ease-out"
+        className="h-screen w-screen bg-(--bg-main) flex flex-col items-center justify-center text-(--text-main) transition-opacity duration-50 ease-out"
         style={{
           ...GSF,
           opacity: loaderFading ? 0 : 1,
@@ -686,14 +700,14 @@ const OfflineApp = () => {
   }
 
   return (
-    <div className="min-h-screen w-screen bg-[#09090b] text-[#f8fafc] flex flex-col lg:flex-row overflow-x-hidden selection:bg-blue-600 selection:text-white" style={GSF}>
+    <div className="min-h-screen w-screen bg-(--bg-main) text-(--text-main) flex flex-col lg:flex-row overflow-x-hidden selection:bg-(--accent-base)/30 selection:text-(--text-main)" style={GSF}>
       {/* Left 50% Column: Form (.container-fluid / #loginBox) */}
       <div className="w-full lg:w-1/2 min-h-[55vh] lg:min-h-screen flex flex-col justify-center items-center px-4 py-8 sm:px-8 lg:px-16 z-10">
         <div className="w-full max-w-md space-y-6 mx-auto">
           {/* Header matching login-theme.css .card-header h4 */}
           <div className="text-left space-y-1">
             <h1
-              className="text-4xl sm:text-5xl font-black lowercase tracking-tighter text-white select-none inline-block cursor-default"
+              className="text-4xl sm:text-5xl font-black lowercase tracking-tighter text-(--text-main) select-none inline-block cursor-default"
               style={{
                 fontFamily: "'Google Sans Flex', system-ui, sans-serif",
                 fontVariationSettings: '"wdth" 151, "wght" 800, "GRAD" 100, "ROND" 100, "slnt" -10',
@@ -707,30 +721,30 @@ const OfflineApp = () => {
               }}>
               retop
             </h1>
-            <p className="text-slate-400 text-sm sm:text-base font-medium" style={GSF}>offline access portal</p>
+            <p className="text-(--text-muted) text-sm sm:text-base font-medium" style={GSF}>offline access portal</p>
           </div>
 
           {step === "NO_CACHE" && (
             <div className="space-y-6">
               <div className="flex flex-col">
-                <h3 className="text-lg font-bold text-white">No Saved Accounts</h3>
-                <span className="text-xs text-blue-400 font-semibold">Action Required</span>
+                <h3 className="text-lg font-bold text-(--text-main)">No Saved Accounts</h3>
+                <span className="text-xs text-(--accent-base) font-semibold">Action Required</span>
               </div>
 
-              <p className="text-slate-300 text-sm leading-relaxed">
+              <p className="text-(--text-muted) text-sm leading-relaxed">
                 No saved accounts found, please login and come back later.
               </p>
 
               <div className="flex flex-col gap-3 pt-2">
                 <a
                   href="https://vtop.vit.ac.in/vtop/login"
-                  className="w-full h-11 bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs rounded-full transition-all shadow-md active:scale-98 cursor-pointer flex items-center justify-center gap-2">
+                  className="w-full h-11 bg-(--bg-surface) hover:bg-(--bg-highlight) text-(--text-main) border border-(--border-dim)/50 font-bold text-xs rounded-full transition-all shadow-md active:scale-98 cursor-pointer flex items-center justify-center gap-2">
                   Go to <span className="font-vtop font-bold ml-1">VTOP</span>
                 </a>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full h-11 text-white font-bold text-xs rounded-full transition-all shadow-md active:scale-98 cursor-pointer flex items-center justify-center gap-2 hover:brightness-110"
-                  style={{ backgroundColor: "var(--accent-base, #2563eb)" }}>
+                  className="w-full h-11 text-(--text-inverse) font-bold text-xs rounded-full transition-all shadow-md active:scale-98 cursor-pointer flex items-center justify-center gap-2 hover:opacity-90"
+                  style={{ backgroundColor: "var(--accent-base)" }}>
                   <Upload className="w-4 h-4" />
                   <span>Import Backup File</span>
                 </button>
@@ -777,19 +791,19 @@ const OfflineApp = () => {
                     <div className="flex items-center justify-center text-xs pt-1">
                       <button
                         onClick={() => setShowForgotPinModal(true)}
-                        className="px-5 py-2 rounded-full bg-transparent hover:bg-[#18181b] border border-transparent hover:border-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs font-medium transition-all cursor-pointer"
+                        className="px-5 py-2 rounded-full bg-transparent hover:bg-(--bg-surface) border border-transparent hover:border-(--border-dim)/50 text-(--text-muted) hover:text-(--text-main) text-xs font-medium transition-all cursor-pointer"
                         style={GSF}>
                         Forgot PIN?
                       </button>
                     </div>
                   </>
                 ) : (
-                  <div className="bg-[#18181b] rounded-3xl p-6 space-y-4 text-center border-0 shadow-2xl">
-                    <h4 className="text-xs font-bold text-white flex items-center justify-center gap-2 uppercase tracking-wider">
-                      <Key className="w-4 h-4" style={{ color: "var(--accent-base, #60a5fa)" }} />
+                  <div className="bg-(--bg-surface) border border-(--border-dim)/40 rounded-3xl p-6 space-y-4 text-center shadow-2xl">
+                    <h4 className="text-xs font-bold text-(--text-main) flex items-center justify-center gap-2 uppercase tracking-wider">
+                      <Key className="w-4 h-4" style={{ color: "var(--accent-base)" }} />
                       <span>{hasPinSet ? "Update Security PIN" : "Setup Offline PIN"}</span>
                     </h4>
-                    <p className="text-xs text-zinc-400 text-center">
+                    <p className="text-xs text-(--text-muted) text-center">
                       {hasPinSet
                         ? "Enter a new 4–10 digit PIN to update your offline encryption passcode."
                         : "Please create a 4–10 digit Security PIN to protect & access your offline data."}
@@ -803,14 +817,14 @@ const OfflineApp = () => {
                       <button
                         onClick={handleSaveNewPin}
                         disabled={newPin.length < 4 || newPin.length > 10}
-                        className="flex-1 text-white font-bold text-xs py-3 rounded-full transition-all cursor-pointer hover:brightness-110 disabled:opacity-50"
-                        style={{ backgroundColor: "var(--accent-base, #2563eb)" }}>
+                        className="flex-1 text-(--text-inverse) font-bold text-xs py-3 rounded-full transition-all cursor-pointer hover:opacity-90 disabled:opacity-50"
+                        style={{ backgroundColor: "var(--accent-base)" }}>
                         Save Encrypted PIN
                       </button>
                       {hasPinSet && (
                         <button
                           onClick={() => setIsSettingPin(false)}
-                          className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold text-xs py-3 rounded-full transition-all cursor-pointer border-0">
+                          className="flex-1 bg-(--bg-main) hover:bg-(--bg-highlight) text-(--text-muted) font-bold text-xs py-3 rounded-full transition-all cursor-pointer border border-(--border-dim)/50">
                           Cancel
                         </button>
                       )}
@@ -829,15 +843,15 @@ const OfflineApp = () => {
       {/* Right 50% Column: Hero Branding (#vtopOpenPageHeader) */}
       <div
         id="vtopOpenPageHeader"
-        className="w-full lg:w-1/2 min-h-55 lg:min-h-screen border-b lg:border-b-0 lg:border-l border-zinc-800/80 flex flex-col justify-center items-center py-10 px-6 sm:px-12 relative overflow-hidden order-first lg:order-last z-10 shrink-0">
+        className="w-full lg:w-1/2 min-h-55 lg:min-h-screen border-b lg:border-b-0 lg:border-l border-(--border-dim)/50 flex flex-col justify-center items-center py-10 px-6 sm:px-12 relative overflow-hidden order-first lg:order-last z-10 shrink-0">
         <div className="relative z-10 text-center flex flex-col items-center max-w-sm w-full">
-          <div className="mb-3 flex items-center justify-center p-2 text-white">
+          <div className="mb-3 flex items-center justify-center p-2 text-(--text-main)">
             <VitLogo
-              className="h-16 sm:h-20 md:h-24 w-auto max-w-65 sm:max-w-85 text-white drop-shadow-md"
+              className="h-16 sm:h-20 md:h-24 w-auto max-w-65 sm:max-w-85 text-(--text-main) drop-shadow-md"
             />
           </div>
           <div
-            className="text-[#f8fafc] text-sm sm:text-base tracking-[0.15em] mt-2 uppercase font-bold"
+            className="text-(--text-muted) text-sm sm:text-base tracking-[0.15em] mt-2 uppercase font-bold"
             style={{ fontFamily: "'Times New Roman', Times, serif" }}>
             {activeUser?.campus === "chennai" ? "CHENNAI CAMPUS" : "VELLORE CAMPUS"}
           </div>
@@ -864,43 +878,42 @@ const OfflineApp = () => {
       </div>
 
       {/* Forgot PIN Confirmation Modal */}
-      
-        {showForgotPinModal && (
-          <div className="fixed inset-0 z-100 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <div 
-              className="bg-[#18181b] border-2 border-red-500/30 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl text-left"
-              style={GSF}>
-              <div className="flex items-center gap-3 text-red-400">
-                <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-xl shrink-0 font-bold">
-                  ⚠️
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-white leading-snug">Forgot Security PIN?</h3>
-                  <p className="text-xs text-red-400 font-semibold">Action is irreversible</p>
-                </div>
+      {showForgotPinModal && (
+        <div className="fixed inset-0 z-100 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div 
+            className="bg-(--bg-surface) border border-red-500/30 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl text-left"
+            style={GSF}>
+            <div className="flex items-center gap-3 text-red-400">
+              <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-xl shrink-0 font-bold">
+                ⚠️
               </div>
-
-              <p className="text-slate-300 text-xs leading-relaxed" style={GSF}>
-                You cannot access your offline profile without your PIN. Resetting your PIN will clear all cached profile data on this device.
-              </p>
-
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <button
-                  onClick={() => setShowForgotPinModal(false)}
-                  className="px-4 py-2.5 rounded-full border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-colors cursor-pointer"
-                  style={GSF}>
-                  Cancel
-                </button>
-                <button
-                  onClick={handleResetCacheAndRedirect}
-                  className="px-4 py-2.5 rounded-full bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-md transition-colors cursor-pointer"
-                  style={GSF}>
-                  Reset & Clear Cache
-                </button>
+              <div>
+                <h3 className="text-base font-bold text-(--text-main) leading-snug">Forgot Security PIN?</h3>
+                <p className="text-xs text-red-400 font-semibold">Action is irreversible</p>
               </div>
             </div>
+
+            <p className="text-(--text-muted) text-xs leading-relaxed" style={GSF}>
+              You cannot access your offline profile without your PIN. Resetting your PIN will clear all cached profile data on this device.
+            </p>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                onClick={() => setShowForgotPinModal(false)}
+                className="px-4 py-2.5 rounded-full border border-(--border-dim)/50 bg-(--bg-main) hover:bg-(--bg-highlight) text-(--text-muted) font-bold text-xs transition-colors cursor-pointer"
+                style={GSF}>
+                Cancel
+              </button>
+              <button
+                onClick={handleResetCacheAndRedirect}
+                className="px-4 py-2.5 rounded-full bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-md transition-colors cursor-pointer"
+                style={GSF}>
+                Reset & Clear Cache
+              </button>
+            </div>
           </div>
-        )}
+        </div>
+      )}
       <AlertDialogManager />
     </div>
   );

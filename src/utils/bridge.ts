@@ -22,7 +22,12 @@ function safeAppend(element: HTMLElement) {
 }
 
 export function getAppRoot(): HTMLElement | null {
-  if ((window as any).__RETOP_OFFLINE__) return document.getElementById("retop-root");
+  if (typeof document === "undefined") return null;
+  if ((window as any).__RETOP_OFFLINE__) {
+    return document.getElementById("retop-root") || document.getElementById("offline-root") || document.getElementById("root");
+  }
+  const el = document.getElementById("retop-root") || document.getElementById("offline-root");
+  if (el) return el;
   return shadowRoot
     ? (shadowRoot.querySelector("#retop-root") as HTMLElement)
     : null;

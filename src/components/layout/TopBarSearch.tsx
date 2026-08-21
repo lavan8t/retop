@@ -74,6 +74,12 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
   lastSyncTime = 0,
 }) => {
   const { isModernUI, setIsModernUI } = useAppStore();
+  const isOffline =
+    typeof window !== "undefined" &&
+    (!!(window as any).__RETOP_OFFLINE__ ||
+      window.location.pathname.includes("offline") ||
+      window.location.hostname.includes("web.app") ||
+      window.location.protocol === "file:");
   const isHome = currentView === "dashboard" || currentView === "home" || !currentView;
   const [isLogoHovered, setIsLogoHovered] = useState(false);
   const [query, setQuery] = useState(initialQuery);
@@ -182,8 +188,6 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
   }, []);
 
   const allCategories = useMemo(() => {
-    const isOffline = typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__;
-
     const retopNativeLinks: QuickLink[] = [
       { title: "Time Table", url: "academics/common/StudentTimeTable", category: "Made for retop" },
       { title: "Class Attendance", url: "academics/common/StudentAttendance", category: "Made for retop" },
@@ -213,7 +217,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
       .filter((c) => c.links && c.links.length > 0);
 
     return [madeForRetopCat, ...otherCats];
-  }, [menuCategories]);
+  }, [menuCategories, isOffline]);
 
   const flattenedLinks = useMemo(() => {
     const allLinks = allCategories.flatMap((c) => c.links);
@@ -280,8 +284,8 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
   useEffect(() => {
     if (!isExpanded) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      // 1. Query mode (filtering links)
-      if (query.trim()) {
+      // 1. Query mode OR offline/single-category flat list mode
+      if (query.trim() || isOffline || allCategories.length <= 1) {
         if (flattenedLinks.length === 0) return;
         if (e.key === "ArrowDown") {
           e.preventDefault();
@@ -294,7 +298,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
         } else if (e.key === "Enter" && flattenedLinks[selectedIndex]) {
           e.preventDefault();
           const selLink = flattenedLinks[selectedIndex];
-          const forceLegacy = e.shiftKey ? isModernUI : !isModernUI;
+          const forceLegacy = isOffline ? false : (e.shiftKey ? isModernUI : !isModernUI);
           onNavigate(selLink, forceLegacy);
           setIsOmniboxOpen(false);
           setQuery("");
@@ -442,24 +446,28 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
               e.stopPropagation();
               (e.currentTarget as HTMLElement).blur();
               if (isHome) {
-                if (typeof window !== "undefined" && !(window as any).__RETOP_OFFLINE__) {
+                if (!isOffline) {
                   setIsModernUI(false);
                 }
               } else {
                 if (onBack) onBack();
               }
             }}
-            title={isHome ? "Go to VTOP" : "Return to Dashboard"}
-            aria-label={isHome ? "Go to VTOP" : "Return to Dashboard"}
-            onMouseEnter={() => setIsLogoHovered(true)}
-            onMouseLeave={() => setIsLogoHovered(false)}
+            title={isOffline ? (isHome ? "retop" : "Return to Dashboard") : (isHome ? "Go to VTOP" : "Return to Dashboard")}
+            aria-label={isOffline ? (isHome ? "retop" : "Return to Dashboard") : (isHome ? "Go to VTOP" : "Return to Dashboard")}
+            onMouseEnter={() => {
+              if (!isOffline) setIsLogoHovered(true);
+            }}
+            onMouseLeave={() => {
+              if (!isOffline) setIsLogoHovered(false);
+            }}
             className="relative flex items-center justify-end shrink-0 cursor-pointer hover:opacity-90 transition-opacity focus:outline-none w-[58px] md:w-[66px] h-9 pr-0.5 select-none overflow-visible"
           >
             <div className="relative flex items-center justify-end h-full w-full">
               {/* 1. "re." Branding (re text + dot) */}
               <div
                 className={`absolute right-0 inset-y-0 flex items-end justify-end pb-1 transition-all duration-200 ${
-                  isHome && isLogoHovered
+                  !isOffline && isHome && isLogoHovered
                     ? "opacity-0 -translate-y-1 scale-90 pointer-events-none"
                     : "opacity-100 translate-y-0 scale-100"
                 }`}
@@ -485,8 +493,8 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                 </div>
               </div>
 
-              {/* 2. "VTOP" Hover State (Home only) */}
-              {isHome && (
+              {/* 2. "VTOP" Hover State (Home only, online only) */}
+              {!isOffline && isHome && (
                 <div
                   className={`absolute right-0 inset-y-0 flex items-center justify-end transition-all duration-200 ${
                     isLogoHovered
@@ -648,11 +656,9 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                           {cat.links.map((link, lIdx) => {
                             const linkDest = getDestinationView(link);
-                            const isPinned =
-                              linkDest !== "content" &&
-                              pinnedLinks.some(
-                                (p) => getDestinationView(p) === linkDest,
-                              );
+                            const isPinned = pinnedLinks.some(
+                              (p) => p.url === link.url || (linkDest !== "content" && getDestinationView(p) === linkDest),
+                            );
                             return (
                               <div
                                 key={lIdx}
@@ -718,9 +724,9 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                 ) : (
                   flattenedLinks.map((link, i) => {
                     const linkDest = getDestinationView(link);
-                    const isPinned =
-                      linkDest !== "content" &&
-                      pinnedLinks.some((p) => getDestinationView(p) === linkDest);
+                    const isPinned = pinnedLinks.some(
+                      (p) => p.url === link.url || (linkDest !== "content" && getDestinationView(p) === linkDest),
+                    );
                     return (
                       <div
                         key={i}
@@ -787,7 +793,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                 WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 14px, black calc(100% - 14px), transparent 100%)",
               }}
             >
-              {!query ? (
+              {!query && !isOffline && allCategories.length > 1 ? (
                 <div
                   className="space-y-1"
                   onMouseLeave={handleMenuLeave}
@@ -848,15 +854,13 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                 (() => {
                   let currentCategory = "";
                   return flattenedLinks.map((link, i) => {
-                    const isSelected = i === selectedIndex && query;
+                    const isSelected = i === selectedIndex;
                     const linkDest = getDestinationView(link);
-                    const isPinned =
-                      linkDest !== "content" &&
-                      pinnedLinks.some(
-                        (p) => getDestinationView(p) === linkDest,
-                      );
+                    const isPinned = pinnedLinks.some(
+                      (p) => p.url === link.url || (linkDest !== "content" && getDestinationView(p) === linkDest),
+                    );
                     const category = hasRetopPage(link) ? "Made for retop" : (link.category || "Other");
-                    const isNewCategory = category !== currentCategory;
+                    const isNewCategory = !isOffline && allCategories.length > 1 && category !== currentCategory;
                     if (isNewCategory) currentCategory = category;
 
                     return (
@@ -871,14 +875,14 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                             id={`search-result-item-${i}`}
                             onMouseDown={(e) => {
                               e.preventDefault();
-                              const forceLegacy = e.shiftKey ? isModernUI : !isModernUI;
+                              const forceLegacy = isOffline ? false : (e.shiftKey ? isModernUI : !isModernUI);
                               onNavigate(link, forceLegacy);
                               setIsOmniboxOpen(false);
                               setQuery("");
                             }}
                             onClick={(e) => {
                               e.preventDefault();
-                              const forceLegacy = e.shiftKey ? isModernUI : !isModernUI;
+                              const forceLegacy = isOffline ? false : (e.shiftKey ? isModernUI : !isModernUI);
                               onNavigate(link, forceLegacy);
                               setIsOmniboxOpen(false);
                               setQuery("");
@@ -936,14 +940,22 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
               )}
             </div>
             <div className="w-full text-center py-2 px-3 text-[10px] font-bold text-(--text-muted) border-t-2 border-(--border-dim) bg-(--bg-surface) shrink-0 mt-1">
-              <span className="font-mono font-bold text-(--accent-base)">Shift + Enter</span> for {isModernUI ? <span className="font-vtop font-bold">VTOP</span> : "retop"} &nbsp;•&nbsp; <span className="font-mono font-bold text-(--text-muted)">Enter</span> for {isModernUI ? "retop" : <span className="font-vtop font-bold">VTOP</span>}
+              {isOffline ? (
+                <span>
+                  <span className="font-mono font-bold text-(--accent-base)">Enter</span> to open &nbsp;•&nbsp; <span className="font-mono font-bold text-(--text-muted)">Esc</span> to close
+                </span>
+              ) : (
+                <span>
+                  <span className="font-mono font-bold text-(--accent-base)">Shift + Enter</span> for {isModernUI ? <span className="font-vtop font-bold">VTOP</span> : "retop"} &nbsp;•&nbsp; <span className="font-mono font-bold text-(--text-muted)">Enter</span> for {isModernUI ? "retop" : <span className="font-vtop font-bold">VTOP</span>}
+                </span>
+              )}
             </div>
           </div>
         </div>
       )}
 
       {/* Desktop Category Submenu Popup */}
-      {isExpanded && !query.trim() && activeMenu && (() => {
+      {isExpanded && !query.trim() && !isOffline && allCategories.length > 1 && activeMenu && (() => {
         const itemCount = activeMenu.cat.links.length;
         const cols = Math.max(1, Math.min(5, Math.ceil(itemCount / 10)));
         const colWidth = 220;
@@ -995,11 +1007,9 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
             >
               {activeMenu.cat.links.map((link, i) => {
                 const linkDest = getDestinationView(link);
-                const isPinned =
-                  linkDest !== "content" &&
-                  pinnedLinks.some(
-                    (p) => getDestinationView(p) === linkDest,
-                  );
+                const isPinned = pinnedLinks.some(
+                  (p) => p.url === link.url || (linkDest !== "content" && getDestinationView(p) === linkDest),
+                );
                 return (
                   <div
                     key={i}

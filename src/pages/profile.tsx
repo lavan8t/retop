@@ -492,7 +492,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
           async () =>
             await network.fetchFragment("studentsRecord/StudentProfileAllView"),
         );
-        const parsedData = parseStudentProfile(html);
+        const parsedData = typeof html === "string" ? parseStudentProfile(html) : html;
         setData(parsedData);
       } catch (e) {
         console.error("Failed to load profile data:", e);
@@ -511,7 +511,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
           async () => await network.fetchFragment("studentsRecord/StudentProfileAllView"),
           true,
         );
-        const parsedData = parseStudentProfile(html);
+        const parsedData = typeof html === "string" ? parseStudentProfile(html) : html;
         setData(parsedData);
       } catch (e) {
         console.error("Failed to refresh profile:", e);

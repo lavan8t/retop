@@ -85,16 +85,19 @@ export function parseLateHourRows(html: string): Versioned<LateHourStatusEntry[]
       rowHtml.match(/lateHourId=([^&"'\s]+)/i)?.[1] ||
       "";
 
+    const hasActionCol = tds.length >= 10;
+    const offset = hasActionCol ? 2 : 1;
+
     entries.push({
       id: idMatch,
-      venue: tds[2] ?? tds[1] ?? "",
-      eventType: tds[3] ?? tds[2] ?? "",
-      details: tds[4] ?? tds[3] ?? "",
-      appliedTo: tds[5] ?? tds[4] ?? "",
-      fromDate: tds[6] ?? tds[5] ?? "",
-      toDate: tds[7] ?? tds[6] ?? "",
-      time: tds[8] ?? tds[7] ?? "",
-      status: tds[9] ?? tds[8] ?? tds[tds.length - 1] ?? "",
+      venue: tds[offset] ?? "",
+      eventType: tds[offset + 1] ?? "",
+      details: tds[offset + 2] ?? "",
+      appliedTo: tds[offset + 3] ?? "",
+      fromDate: tds[offset + 4] ?? "",
+      toDate: tds[offset + 5] ?? "",
+      time: tds[offset + 6] ?? "",
+      status: tds[offset + 7] ?? tds[tds.length - 1] ?? "",
     });
   });
 
@@ -114,15 +117,27 @@ export function parseLateHourResponseMsg(html: string): Versioned<{
     doc.getElementById("DataBlockMessage")?.textContent?.trim() || "";
   const appMsg =
     doc.getElementById("ApplicationBlockMessage")?.textContent?.trim() || "";
+  const statusMsg =
+    doc.getElementById("StatusBlockMessage")?.textContent?.trim() || "";
+  const historyMsg =
+    doc.getElementById("HistoryBlockMessage")?.textContent?.trim() || "";
+  const alertMsg =
+    doc.querySelector(".alert")?.textContent?.trim() ||
+    doc.querySelector(".text-danger")?.textContent?.trim() || "";
 
-  const msg = dataMsg || appMsg;
-  const ok = msg.toUpperCase().includes("SUCCESSFUL");
+  const msg = dataMsg || appMsg || statusMsg || historyMsg || alertMsg;
+  const upper = msg.toUpperCase();
+  const ok = upper.includes("SUCCESS") || upper.includes("SUBMITTED") || upper.includes("APPROVED") || upper.includes("CANCELLED");
   const failed =
-    msg.toUpperCase().includes("FAILED") ||
-    msg.toLowerCase().includes("unable to process");
+    upper.includes("FAILED") ||
+    upper.includes("UNABLE") ||
+    upper.includes("ERROR") ||
+    upper.includes("INVALID") ||
+    upper.includes("NOT ALLOWED");
 
   return validateParsed(LateHourResponseMsgSchema, {
     ok: ok && !failed,
     text: msg || (ok ? "Submitted successfully" : "Operation completed"),
   }, "lateHour");
 }
+

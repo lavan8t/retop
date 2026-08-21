@@ -207,23 +207,23 @@ a:active,
     );
 
     /* Professional Theme mapping to Material Sys Colors */
-    --bg-main: var(--md-sys-color-surface);
-    --bg-surface: var(--md-sys-color-surface-variant);
-    --bg-highlight: color-mix(in srgb, var(--md-sys-color-surface-variant) 80%, var(--md-sys-color-primary) 20%);
+    --bg-main: var(--md-sys-color-background, #09090b);
+    --bg-card: var(--md-sys-color-surface, #18181b);
+    --bg-surface: var(--md-sys-color-surface-variant, #18181b);
+    --bg-highlight: color-mix(in srgb, var(--md-sys-color-surface-variant, #18181b) 80%, var(--md-sys-color-primary, #3b82f6) 20%);
 
-    /* Removed borders for Brutalist layout as requested */
-    --border-main: transparent;
-    --border-dim: transparent;
+    --border-main: color-mix(in srgb, var(--text-muted, #94a3b8) 35%, transparent);
+    --border-dim: color-mix(in srgb, var(--text-muted, #94a3b8) 20%, transparent);
 
-    --text-main: var(--md-sys-color-on-background);
-    --text-muted: var(--md-sys-color-on-surface-variant);
+    --text-main: var(--md-sys-color-on-background, #f8fafc);
+    --text-muted: var(--md-sys-color-on-surface-variant, #94a3b8);
     --text-dim: color-mix(
       in srgb,
-      var(--md-sys-color-on-surface-variant) 70%,
+      var(--md-sys-color-on-surface-variant, #94a3b8) 70%,
       transparent
     );
 
-    --text-inverse: var(--md-sys-color-on-primary);
+    --text-inverse: var(--md-sys-color-on-primary, #ffffff);
     --shadow-main: transparent;
     --brutal-shadow-sm: none;
     --brutal-shadow-hover: none;

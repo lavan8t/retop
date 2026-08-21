@@ -14,6 +14,7 @@ import {
   Refresh,
   Star,
   MoreVert,
+  Delete,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { NoInternetIcon } from "../icons/NoInternetIcon";
 import {
@@ -845,16 +846,16 @@ export const TopBar: React.FC<TopBarProps> = ({
                                 {idx + 1}
                               </span>
                             </button>
-                            {/* Unpin button */}
+                            {/* Unpin / Delete button */}
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onTogglePin(link);
                               }}
-                              className="p-2 mr-1 rounded-xl text-(--text-muted) hover:text-(--accent-base) opacity-40 hover:opacity-100 transition-all cursor-pointer shrink-0"
-                              title="Unpin"
+                              className="p-2 mr-1 rounded-xl text-(--text-muted) hover:text-red-500 opacity-40 hover:opacity-100 transition-all cursor-pointer shrink-0"
+                              title="Delete from favourites"
                             >
-                              <Star className="w-4 h-4 text-(--text-muted) hover:text-(--accent-base)" />
+                              <Delete className="w-4 h-4 text-(--text-muted) hover:text-red-500 transition-colors" />
                             </button>
                           </div>
                         );

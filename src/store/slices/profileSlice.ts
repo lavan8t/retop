@@ -57,7 +57,7 @@ export const createProfileSlice: StateCreator<
           );
         },
       );
-      const profile = parseStudentProfile(html);
+      const profile = typeof html === "string" ? parseStudentProfile(html) : html;
       if (profile?.basic?.name) {
         const regNo = profile.basic.regNo || currentAuthId || get().user.regNo;
         const isChennai =

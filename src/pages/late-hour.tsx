@@ -20,6 +20,7 @@ import {
   parseLateHourResponseMsg,
 } from "../parsers/late-hour";
 import { showAlertDialog } from "../components/ui/AlertDialog";
+import { formatTimeStr, parseVtopDate } from "../utils/formatting";
 
 interface LateHourPageProps {
   network: VTOPNetwork;
@@ -68,7 +69,19 @@ const EVENT_TYPE_OPTS: SearchableOption[] = [
 type Tab = "request" | "status" | "history";
 
 export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
-  const [activeTab, setActiveTab] = useState<Tab>("request");
+  const isOffline = useMemo(
+    () =>
+      typeof window !== "undefined" &&
+      (!!(window as any).__RETOP_OFFLINE__ ||
+        window.location.pathname.includes("offline") ||
+        window.location.hostname.includes("web.app") ||
+        window.location.protocol === "file:"),
+    [],
+  );
+
+  const [activeTab, setActiveTab] = useState<Tab>(() =>
+    isOffline ? "status" : "request",
+  );
 
   // Form values
   const [school, setSchool] = useState("");
@@ -157,8 +170,9 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
   const canSubmit = Object.keys(errors).length === 0;
   const touch = (field: string) => setTouched((prev) => ({ ...prev, [field]: true }));
 
-  // Step 1 Init: load school options
+  // Step 1 & 2 Init: load school options
   useEffect(() => {
+    if (isOffline) return;
     setLoadingSchool(true);
     network
       .getLateHourInit()
@@ -168,7 +182,7 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
       })
       .catch((e) => console.error("Late Hour Init Error:", e))
       .finally(() => setLoadingSchool(false));
-  }, [network]);
+  }, [network, isOffline]);
 
   // Step 3: School → Faculty
   const handleSchoolChange = useCallback(
@@ -282,13 +296,47 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
     [network, school, faculty, venueType, needsBuilding, block, venue],
   );
 
+  // Step 7: From Time → Dynamic To Time Slots
+  const handleFromTimeChange = useCallback(
+    async (v: string) => {
+      setFromTime(v);
+      touch("fromTime");
+      if (!v) return;
+
+      try {
+        const html = await network.getLateHourToTimeOptions({
+          costCentreId: school,
+          appliedTo: faculty,
+          roomTypeId: venueType,
+          buildingId: needsBuilding ? block : undefined,
+          venue: needsBuilding ? venue : undefined,
+          lateHourEventId: eventType,
+          details,
+          lateHourFromDate: fromDate,
+          fromTime: v,
+          lateHourToDate: toDate,
+        });
+
+        const toOpts = parseLateHourSelectOpts(html, "toTime");
+        if (toOpts.length > 0) {
+          setToTimeOpts(toOpts);
+        }
+      } catch (e) {
+        console.error("Fetch ToTime Options Error:", e);
+      }
+    },
+    [network, school, faculty, venueType, needsBuilding, block, venue, eventType, details, fromDate, toDate],
+  );
+
+
   // Status loader (cached with user-scoped keys)
   const loadStatus = useCallback(
     async (force = false) => {
       setStatusLoading(true);
       try {
         const html = await network.getLateHourStatus(force);
-        setStatusEntries(parseLateHourRows(html));
+        const entries = typeof html === "string" ? parseLateHourRows(html) : html;
+        setStatusEntries(Array.isArray(entries) ? entries : []);
       } catch (e) {
         console.error("Fetch Status Error:", e);
       } finally {
@@ -304,7 +352,8 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
       setHistoryLoading(true);
       try {
         const html = await network.getLateHourHistory(force);
-        setHistoryEntries(parseLateHourRows(html));
+        const entries = typeof html === "string" ? parseLateHourRows(html) : html;
+        setHistoryEntries(Array.isArray(entries) ? entries : []);
       } catch (e) {
         console.error("Fetch History Error:", e);
       } finally {
@@ -314,8 +363,65 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
     [network],
   );
 
+  // Redo / Modify existing request from history or status
+  const handleRedo = useCallback(
+    async (entry: LateHourStatusEntry) => {
+      setActiveTab("request");
+      setSubmitMsg(null);
+
+      if (entry.details) setDetails(entry.details);
+
+      // Match event category
+      const matchedEvt = EVENT_TYPE_OPTS.find(
+        (opt) =>
+          opt.label.toLowerCase() === entry.eventType.toLowerCase() ||
+          opt.value.toLowerCase() === entry.eventType.toLowerCase() ||
+          entry.eventType.toLowerCase().includes(opt.label.toLowerCase()),
+      );
+      if (matchedEvt) {
+        setEventType(matchedEvt.value);
+      }
+
+      // Convert VTOP date like "18-AUG-2026" to YYYY-MM-DD
+      if (entry.fromDate) {
+        const parsed = parseVtopDate(entry.fromDate);
+        if (parsed && !isNaN(parsed.getTime())) {
+          setFromDate(parsed.toISOString().split("T")[0]);
+        }
+      }
+      if (entry.toDate) {
+        const parsed = parseVtopDate(entry.toDate);
+        if (parsed && !isNaN(parsed.getTime())) {
+          setToDate(parsed.toISOString().split("T")[0]);
+        }
+      }
+
+      // Extract time slots
+      if (entry.time) {
+        const parts = entry.time.split(/to|-/i).map((s) => s.trim());
+        if (parts[0]) {
+          const formatted = formatTimeStr(parts[0], "12h-ampm");
+          if (formatted) setFromTime(formatted);
+        }
+        if (parts[1]) {
+          const formatted = formatTimeStr(parts[1], "12h-ampm");
+          if (formatted) setToTime(formatted);
+        }
+      }
+    },
+    [],
+  );
+
   // Submit request
   const handleSubmit = async () => {
+    if (isOffline) {
+      setSubmitMsg({
+        ok: false,
+        text: "Request submission is not available in the offline app.",
+      });
+      return;
+    }
+
     setTouched({
       school: true,
       faculty: true,
@@ -371,6 +477,7 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
   // Cancel pending request
   const handleCancel = useCallback(
     async (id: string) => {
+      if (isOffline) return;
       setCancelling(id);
       try {
         const html = await network.cancelLateHourRequest(id);
@@ -392,7 +499,7 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
         setCancelling(null);
       }
     },
-    [network, loadStatus],
+    [network, loadStatus, isOffline],
   );
 
   useEffect(() => {
@@ -410,357 +517,412 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
     return () => window.removeEventListener("retop-refresh-late-hour", onRefresh);
   }, [activeTab, loadStatus, loadHistory]);
 
-  const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
-    { id: "request", label: "New Request", icon: Add },
-    { id: "status", label: "My Requests", icon: HourglassEmpty },
-    { id: "history", label: "History", icon: History },
-  ];
+  const tabs: { id: Tab; label: string; icon: React.ElementType }[] = useMemo(() => {
+    if (isOffline) {
+      return [
+        { id: "status", label: "My Requests", icon: HourglassEmpty },
+        { id: "history", label: "History", icon: History },
+      ];
+    }
+    return [
+      { id: "request", label: "New Request", icon: Add },
+      { id: "status", label: "My Requests", icon: HourglassEmpty },
+      { id: "history", label: "History", icon: History },
+    ];
+  }, [isOffline]);
 
-  return (
-    <div className="h-full w-full flex flex-col overflow-y-auto custom-scrollbar bg-(--bg-main) text-(--text-main) px-4 sm:px-6 md:px-8 max-w-7xl mx-auto">
-      <div className="pt-20 sm:pt-24" />
+  const renderContent = () => {
+    return (
+      <div className="flex flex-col gap-5 max-w-4xl w-full">
+        {/* TAB 1: NEW REQUEST (Online only) */}
+        {!isOffline && activeTab === "request" && (
+          <div className="flex flex-col gap-4 w-full">
+            {/* Form Title */}
+            <div className="mb-1">
+              <h2 className="text-base font-bold text-(--text-main)">
+                Late Hour Permission Request
+              </h2>
+              <p className="text-xs text-(--text-muted) mt-0.5">
+                Fill in your faculty guide, venue, and designated working hours
+              </p>
+            </div>
 
-      {/* Segmented Tab Bar - LEFT ALIGNED */}
-      <div className="flex items-center gap-1.5 p-1 bg-(--bg-surface) rounded-2xl border border-(--border-dim)/40 my-4 self-start">
-        {tabs.map((t) => {
-          const Icon = t.icon;
-          const isActive = activeTab === t.id;
-          return (
-            <button
-              key={t.id}
-              onClick={() => setActiveTab(t.id)}
-              className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer border-0 ${
-                isActive
-                  ? "bg-(--accent-base) text-(--text-inverse) shadow-sm"
-                  : "text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-highlight)/50"
-              }`}>
-              <Icon className="w-4 h-4" />
-              <span>{t.label}</span>
-            </button>
-          );
-        })}
-      </div>
+            {/* School & Faculty */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <SearchableDropdown
+                label="School / Centre"
+                required
+                placeholder="— Choose School —"
+                searchPlaceholder="Search schools..."
+                options={schoolOpts}
+                value={school}
+                loading={loadingSchool}
+                error={touched.school ? errors.school : undefined}
+                onChange={handleSchoolChange}
+              />
+              <SearchableDropdown
+                label="Faculty Guide"
+                required
+                placeholder="— Choose Faculty —"
+                searchPlaceholder="Search faculty name or ID..."
+                options={facultyOpts}
+                value={faculty}
+                disabled={!school}
+                loading={loadingFaculty}
+                error={touched.faculty ? errors.faculty : undefined}
+                helperText={!school ? "Select a school first" : undefined}
+                onChange={(v) => {
+                  setFaculty(v);
+                  touch("faculty");
+                }}
+              />
+            </div>
 
-      {/* Main Content Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-24 flex-1">
-        <div className="lg:col-span-8 xl:col-span-7 flex flex-col gap-4">
-          {/* TAB 1: NEW REQUEST */}
-          {activeTab === "request" && (
-            <div className="bg-(--bg-surface) border border-(--border-dim)/40 rounded-3xl p-5 md:p-7 flex flex-col gap-5">
-              <div>
-                <h2 className="text-xs font-mono font-black uppercase text-(--text-muted)">
-                  Permission Details
-                </h2>
-                <p className="text-xs text-(--text-muted)/80 mt-0.5">
-                  Select school, faculty, venue and time interval for the permission
-                </p>
-              </div>
+            {/* Venue & Location */}
+            <div className={`grid grid-cols-1 ${needsBuilding ? "sm:grid-cols-3" : "sm:grid-cols-2"} gap-4`}>
+              <SearchableDropdown
+                label="Venue Type"
+                required
+                placeholder="— Choose Type —"
+                options={VENUE_TYPE_OPTS}
+                value={venueType}
+                disabled={!faculty}
+                error={touched.venueType ? errors.venueType : undefined}
+                helperText={!faculty ? "Select faculty first" : undefined}
+                onChange={handleVenueTypeChange}
+              />
+              {needsBuilding ? (
+                <>
+                  <SearchableDropdown
+                    label="Academic Block"
+                    required
+                    placeholder="— Choose Block —"
+                    searchPlaceholder="Search block..."
+                    options={blockOpts}
+                    value={block}
+                    disabled={!venueType}
+                    loading={loadingBlocks}
+                    error={touched.block ? errors.block : undefined}
+                    onChange={handleBlockChange}
+                  />
+                  <SearchableDropdown
+                    label="Specific Venue"
+                    required
+                    placeholder="— Choose Venue —"
+                    searchPlaceholder="Search venue code..."
+                    options={venueOpts}
+                    value={venue}
+                    disabled={!block}
+                    loading={loadingVenues}
+                    error={touched.venue ? errors.venue : undefined}
+                    onChange={(v) => {
+                      setVenue(v);
+                      touch("venue");
+                    }}
+                  />
+                </>
+              ) : (
+                <div className="flex flex-col justify-center px-4 py-2 rounded-2xl bg-(--bg-surface) border border-(--border-dim)/50 text-xs text-(--text-muted)">
+                  <span className="font-semibold text-(--text-main) mb-0.5">
+                    Fixed Facility Venue
+                  </span>
+                  Location is pre-assigned for this category.
+                </div>
+              )}
+            </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <SearchableDropdown
-                  label="Select School"
-                  required
-                  placeholder="— Choose School —"
-                  searchPlaceholder="Search schools..."
-                  options={schoolOpts}
-                  value={school}
-                  loading={loadingSchool}
-                  error={touched.school ? errors.school : undefined}
-                  onChange={handleSchoolChange}
-                />
-                <SearchableDropdown
-                  label="Select Faculty"
-                  required
-                  placeholder="— Choose Faculty —"
-                  searchPlaceholder="Search faculty name or ID..."
-                  options={facultyOpts}
-                  value={faculty}
-                  disabled={!school}
-                  loading={loadingFaculty}
-                  error={touched.faculty ? errors.faculty : undefined}
-                  helperText={!school ? "Select a school first" : undefined}
-                  onChange={(v) => {
-                    setFaculty(v);
-                    touch("faculty");
+            {/* Purpose & Description */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <SearchableDropdown
+                label="Work Category"
+                required
+                placeholder="— Choose Category —"
+                options={EVENT_TYPE_OPTS}
+                value={eventType}
+                disabled={needsBuilding ? !venue : !venueType}
+                error={touched.eventType ? errors.eventType : undefined}
+                onChange={handleEventTypeChange}
+              />
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-(--text-muted) flex items-center gap-1">
+                  Brief Work Summary
+                  <span className="text-red-400 font-bold">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={details}
+                  onChange={(e) => {
+                    setDetails(e.target.value);
+                    touch("details");
                   }}
+                  onBlur={() => touch("details")}
+                  placeholder="e.g. Project prototype testing & validation"
+                  className={`w-full h-11 px-4 rounded-2xl bg-(--bg-surface) border text-sm font-medium text-(--text-main) placeholder:text-(--text-muted)/50 focus:outline-none transition-all ${
+                    touched.details && errors.details
+                      ? "border-red-500/70 focus:ring-2 focus:ring-red-500/30"
+                      : "border-(--border-dim)/50 focus:border-(--accent-base) focus:ring-2 focus:ring-(--accent-base)/20"
+                  }`}
                 />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <SearchableDropdown
-                  label="Venue Type"
-                  required
-                  placeholder="— Choose Type —"
-                  options={VENUE_TYPE_OPTS}
-                  value={venueType}
-                  disabled={!faculty}
-                  error={touched.venueType ? errors.venueType : undefined}
-                  helperText={!faculty ? "Select faculty first" : undefined}
-                  onChange={handleVenueTypeChange}
-                />
-                {needsBuilding ? (
-                  <>
-                    <SearchableDropdown
-                      label="Academic Block"
-                      required
-                      placeholder="— Choose Block —"
-                      searchPlaceholder="Search block..."
-                      options={blockOpts}
-                      value={block}
-                      disabled={!venueType}
-                      loading={loadingBlocks}
-                      error={touched.block ? errors.block : undefined}
-                      onChange={handleBlockChange}
-                    />
-                    <SearchableDropdown
-                      label="Select Venue"
-                      required
-                      placeholder="— Choose Venue —"
-                      searchPlaceholder="Search venue code..."
-                      options={venueOpts}
-                      value={venue}
-                      disabled={!block}
-                      loading={loadingVenues}
-                      error={touched.venue ? errors.venue : undefined}
-                      onChange={(v) => {
-                        setVenue(v);
-                        touch("venue");
-                      }}
-                    />
-                  </>
-                ) : (
-                  <div className="sm:col-span-2 flex flex-col justify-center px-4 py-3 rounded-2xl bg-(--bg-main)/50 border border-(--border-dim)/40 text-xs text-(--text-muted)">
-                    <span className="font-bold text-(--text-main)/80 mb-0.5">
-                      Fixed Location
-                    </span>
-                    Academic block and venue are pre-assigned for this venue type.
-                  </div>
+                {touched.details && errors.details && (
+                  <span className="text-[10px] font-bold text-red-400">
+                    {errors.details}
+                  </span>
                 )}
               </div>
+            </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <SearchableDropdown
-                  label="Work Related To"
-                  required
-                  placeholder="— Choose Category —"
-                  options={EVENT_TYPE_OPTS}
-                  value={eventType}
-                  disabled={needsBuilding ? !venue : !venueType}
-                  error={touched.eventType ? errors.eventType : undefined}
-                  onChange={handleEventTypeChange}
-                />
+            {/* Date & Time Window */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* From Date & Time */}
+              <div className="flex flex-col gap-3">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-bold text-(--text-muted) uppercase flex items-center gap-1">
-                    Brief Details on Work
+                  <label className="text-xs font-semibold text-(--text-muted) flex items-center gap-1">
+                    From Date
                     <span className="text-red-400 font-bold">*</span>
                   </label>
                   <input
-                    type="text"
-                    value={details}
+                    type="date"
+                    min={todayStr}
+                    value={fromDate}
                     onChange={(e) => {
-                      setDetails(e.target.value);
-                      touch("details");
+                      setFromDate(e.target.value);
+                      touch("fromDate");
+                      if (toDate && e.target.value > toDate) {
+                        setToDate(e.target.value);
+                      }
                     }}
-                    onBlur={() => touch("details")}
-                    placeholder="e.g. Capstone Project experimentation"
-                    className={`w-full h-10 px-3.5 rounded-2xl bg-(--bg-main) border text-sm font-medium text-(--text-main) placeholder:text-(--text-muted)/60 focus:outline-none transition-colors ${
-                      touched.details && errors.details
-                        ? "border-red-500/70 focus:border-red-500"
-                        : "border-(--border-dim) focus:border-(--accent-base)"
+                    onBlur={() => touch("fromDate")}
+                    className={`w-full h-11 px-4 rounded-2xl bg-(--bg-surface) border text-sm font-medium text-(--text-main) focus:outline-none transition-all ${
+                      touched.fromDate && errors.fromDate
+                        ? "border-red-500/70 focus:ring-2 focus:ring-red-500/30"
+                        : "border-(--border-dim)/50 focus:border-(--accent-base) focus:ring-2 focus:ring-(--accent-base)/20"
                     }`}
                   />
-                  {touched.details && errors.details && (
+                  {touched.fromDate && errors.fromDate && (
                     <span className="text-[10px] font-bold text-red-400">
-                      {errors.details}
+                      {errors.fromDate}
                     </span>
                   )}
                 </div>
+
+                <SearchableDropdown
+                  label="From Time"
+                  required
+                  placeholder="— Choose Start Time —"
+                  options={fromTimeOpts}
+                  value={fromTime}
+                  loading={loadingDateBlock}
+                  error={touched.fromTime ? errors.fromTime : undefined}
+                  onChange={handleFromTimeChange}
+                />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-(--border-dim)/30">
-                <div className="flex flex-col gap-3.5">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-bold text-(--text-muted) uppercase flex items-center gap-1">
-                      From Date
-                      <span className="text-red-400 font-bold">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      min={todayStr}
-                      value={fromDate}
-                      onChange={(e) => {
-                        setFromDate(e.target.value);
-                        touch("fromDate");
-                        if (toDate && e.target.value > toDate) {
-                          setToDate(e.target.value);
-                        }
-                      }}
-                      onBlur={() => touch("fromDate")}
-                      className={`w-full h-10 px-3.5 rounded-2xl bg-(--bg-main) border text-sm font-medium font-mono text-(--text-main) focus:outline-none transition-colors ${
-                        touched.fromDate && errors.fromDate
-                          ? "border-red-500/70 focus:border-red-500"
-                          : "border-(--border-dim) focus:border-(--accent-base)"
-                      }`}
-                    />
-                    {touched.fromDate && errors.fromDate && (
-                      <span className="text-[10px] font-bold text-red-400">
-                        {errors.fromDate}
-                      </span>
-                    )}
-                  </div>
-
-                  <SearchableDropdown
-                    label="From Time"
-                    required
-                    placeholder="— Choose Start Time —"
-                    options={fromTimeOpts}
-                    value={fromTime}
-                    loading={loadingDateBlock}
-                    error={touched.fromTime ? errors.fromTime : undefined}
-                    onChange={(v) => {
-                      setFromTime(v);
-                      touch("fromTime");
+              {/* To Date & Time */}
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-(--text-muted) flex items-center gap-1">
+                    To Date
+                    <span className="text-red-400 font-bold">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    min={fromDate || todayStr}
+                    value={toDate}
+                    onChange={(e) => {
+                      setToDate(e.target.value);
+                      touch("toDate");
                     }}
+                    onBlur={() => touch("toDate")}
+                    className={`w-full h-11 px-4 rounded-2xl bg-(--bg-surface) border text-sm font-medium text-(--text-main) focus:outline-none transition-all ${
+                      touched.toDate && errors.toDate
+                        ? "border-red-500/70 focus:ring-2 focus:ring-red-500/30"
+                        : "border-(--border-dim)/50 focus:border-(--accent-base) focus:ring-2 focus:ring-(--accent-base)/20"
+                    }`}
                   />
-                </div>
-
-                <div className="flex flex-col gap-3.5">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-bold text-(--text-muted) uppercase flex items-center gap-1">
-                      To Date
-                      <span className="text-red-400 font-bold">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      min={fromDate || todayStr}
-                      value={toDate}
-                      onChange={(e) => {
-                        setToDate(e.target.value);
-                        touch("toDate");
-                      }}
-                      onBlur={() => touch("toDate")}
-                      className={`w-full h-10 px-3.5 rounded-2xl bg-(--bg-main) border text-sm font-medium font-mono text-(--text-main) focus:outline-none transition-colors ${
-                        touched.toDate && errors.toDate
-                          ? "border-red-500/70 focus:border-red-500"
-                          : "border-(--border-dim) focus:border-(--accent-base)"
-                      }`}
-                    />
-                    {touched.toDate && errors.toDate && (
-                      <span className="text-[10px] font-bold text-red-400">
-                        {errors.toDate}
-                      </span>
-                    )}
-                  </div>
-
-                  <SearchableDropdown
-                    label="To Time"
-                    required
-                    placeholder="— Choose End Time —"
-                    options={toTimeOpts}
-                    value={toTime}
-                    loading={loadingDateBlock}
-                    error={touched.toTime ? errors.toTime : undefined}
-                    onChange={(v) => {
-                      setToTime(v);
-                      touch("toTime");
-                    }}
-                  />
-                </div>
-              </div>
-
-              {submitMsg && (
-                <div
-                  className={`p-3.5 rounded-2xl font-bold text-xs flex items-center gap-2.5 ${
-                    submitMsg.ok
-                      ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                      : "bg-red-500/15 text-red-400 border border-red-500/30"
-                  }`}>
-                  {submitMsg.ok ? (
-                    <CheckCircle className="w-4 h-4 shrink-0" />
-                  ) : (
-                    <Warning className="w-4 h-4 shrink-0" />
+                  {touched.toDate && errors.toDate && (
+                    <span className="text-[10px] font-bold text-red-400">
+                      {errors.toDate}
+                    </span>
                   )}
-                  <span>{submitMsg.text}</span>
                 </div>
-              )}
 
-              <button
-                onClick={handleSubmit}
-                disabled={submitting}
-                className={`w-full py-3.5 rounded-2xl text-xs font-black uppercase transition-colors cursor-pointer flex items-center justify-center gap-2 border-0 mt-2 ${
-                  canSubmit
-                    ? "bg-(--accent-base) text-(--text-inverse) hover:opacity-90 active:scale-[0.99]"
-                    : "bg-(--bg-main) text-(--text-muted) border border-(--border-dim) opacity-70"
+                <SearchableDropdown
+                  label="To Time"
+                  required
+                  placeholder="— Choose End Time —"
+                  options={toTimeOpts}
+                  value={toTime}
+                  loading={loadingDateBlock}
+                  error={touched.toTime ? errors.toTime : undefined}
+                  onChange={(v) => {
+                    setToTime(v);
+                    touch("toTime");
+                  }}
+                />
+              </div>
+            </div>
+
+            {submitMsg && (
+              <div
+                className={`p-3.5 rounded-2xl font-semibold text-xs flex items-center gap-2.5 ${
+                  submitMsg.ok
+                    ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                    : "bg-red-500/15 text-red-400 border border-red-500/30"
                 }`}>
-                {submitting ? (
-                  <>Submitting to <span className="font-vtop font-bold ml-1">VTOP</span>...</>
+                {submitMsg.ok ? (
+                  <CheckCircle className="w-4.5 h-4.5 shrink-0" />
                 ) : (
-                  "Submit Late Hour Request"
+                  <Warning className="w-4.5 h-4.5 shrink-0" />
                 )}
-              </button>
-            </div>
-          )}
+                <span>{submitMsg.text}</span>
+              </div>
+            )}
 
-          {/* TAB 2: MY REQUESTS (STATUS) */}
-          {activeTab === "status" && (
-            <div className="flex flex-col gap-3">
-              {statusLoading ? (
-                <div className="flex flex-col gap-3">
-                  {[1, 2, 3].map((i) => (
-                    <div
-                      key={i}
-                      className="h-28 bg-(--bg-surface) rounded-3xl animate-pulse border border-(--border-dim)/40"
-                    />
-                  ))}
-                </div>
-              ) : statusEntries.length > 0 ? (
-                statusEntries.map((e, idx) => (
-                  <EntryCard
-                    key={idx}
-                    entry={e}
-                    onCancel={handleCancel}
-                    cancelling={cancelling === e.id}
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={submitting || !canSubmit}
+              className={`w-full h-12 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2 border-0 shadow-md ${
+                canSubmit
+                  ? "bg-(--accent-base) text-(--text-inverse) hover:opacity-90 active:scale-[0.99] cursor-pointer"
+                  : "bg-(--bg-surface) text-(--text-muted) border border-(--border-dim)/50 opacity-60 cursor-not-allowed"
+              }`}>
+              {submitting ? (
+                <>Submitting to <span className="font-vtop font-bold ml-1">VTOP</span>...</>
+              ) : (
+                "Submit Late Hour Request"
+              )}
+            </button>
+          </div>
+        )}
+
+        {/* TAB 2: MY REQUESTS (STATUS) */}
+        {activeTab === "status" && (
+          <div className="flex flex-col gap-3">
+            {statusLoading ? (
+              <div className="flex flex-col gap-3">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="h-28 bg-(--bg-surface) rounded-3xl animate-pulse border border-(--border-dim)/40"
                   />
-                ))
-              ) : (
-                <EmptyState
-                  icon={HourglassEmpty}
-                  msg="No Active Requests"
-                  subMsg="You do not have any pending or active late hour requests."
+                ))}
+              </div>
+            ) : statusEntries.length > 0 ? (
+              statusEntries.map((e, idx) => (
+                <EntryCard
+                  key={idx}
+                  entry={e}
+                  onCancel={handleCancel}
+                  onRedo={handleRedo}
+                  cancelling={cancelling === e.id}
                 />
-              )}
-            </div>
-          )}
+              ))
+            ) : (
+              <EmptyState
+                icon={HourglassEmpty}
+                msg="No Active Requests"
+                subMsg="You do not have any pending or active late hour requests."
+              />
+            )}
+          </div>
+        )}
 
-          {/* TAB 3: HISTORY */}
-          {activeTab === "history" && (
-            <div className="flex flex-col gap-3">
-              {historyLoading ? (
-                <div className="flex flex-col gap-3">
-                  {[1, 2, 3].map((i) => (
-                    <div
-                      key={i}
-                      className="h-28 bg-(--bg-surface) rounded-3xl animate-pulse border border-(--border-dim)/40"
-                    />
-                  ))}
-                </div>
-              ) : historyEntries.length > 0 ? (
-                historyEntries.map((e, idx) => <EntryCard key={idx} entry={e} />)
-              ) : (
-                <EmptyState
-                  icon={History}
-                  msg="No Permission History"
-                  subMsg="Previous late hour permissions will show up here."
-                />
-              )}
-            </div>
-          )}
+        {/* TAB 3: HISTORY */}
+        {activeTab === "history" && (
+          <div className="flex flex-col gap-3">
+            {historyLoading ? (
+              <div className="flex flex-col gap-3">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="h-28 bg-(--bg-surface) rounded-3xl animate-pulse border border-(--border-dim)/40"
+                  />
+                ))}
+              </div>
+            ) : historyEntries.length > 0 ? (
+              historyEntries.map((e, idx) => (
+                <EntryCard key={idx} entry={e} onRedo={handleRedo} />
+              ))
+            ) : (
+              <EmptyState
+                icon={History}
+                msg="No Permission History"
+                subMsg="Previous late hour permissions will show up here."
+              />
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="h-full w-full flex flex-col bg-(--bg-main) text-(--text-main) py-0 px-2 md:px-6 lg:px-8 max-w-425 mx-auto overflow-hidden">
+      {/* DESKTOP 2-COLUMN VIEW (md:flex) */}
+      <div className="hidden md:flex w-full flex-1 flex-row gap-6 md:gap-8 min-h-0 overflow-hidden h-full">
+        {/* Left Column: Fixed Tabs Sidebar */}
+        <div className="w-52 lg:w-56 shrink-0 flex flex-col gap-1 h-fit pt-20 md:pt-23 lg:pt-25 pb-6">
+          <div className="flex flex-col p-1.5 bg-(--bg-surface) rounded-3xl border border-(--border-dim)/50 shadow-sm w-full gap-1">
+            {tabs.map((t) => {
+              const Icon = t.icon;
+              const isActive = activeTab === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setActiveTab(t.id)}
+                  className={`w-full py-3 px-4 rounded-2xl text-xs font-bold transition-all flex items-center justify-start gap-2.5 cursor-pointer border-0 select-none ${
+                    isActive
+                      ? "bg-(--accent-base) text-(--text-inverse) shadow-xs"
+                      : "text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-highlight)/60"
+                  }`}>
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span className="truncate">{t.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="hidden lg:block lg:col-span-4 xl:col-span-5 pointer-events-none" />
+        {/* Right Column: Scrolling Main View (constrained width) */}
+        <div className="flex-1 max-w-2xl xl:max-w-3xl min-w-0 h-full overflow-y-auto custom-scrollbar pt-20 md:pt-23 lg:pt-25 pb-24 pr-1">
+          {renderContent()}
+        </div>
+      </div>
+
+      {/* MOBILE VIEW (md:hidden) */}
+      <div className="flex md:hidden flex-col w-full h-full overflow-y-auto custom-scrollbar pt-20 pb-24">
+        {/* Sticky Mobile Tabs Bar */}
+        <div className="sticky top-0 z-30 bg-(--bg-main)/85 backdrop-blur-md py-2.5 mb-4 flex items-center justify-start shrink-0 -mx-4 px-4">
+          <div className="inline-flex items-center p-1 bg-(--bg-surface) rounded-full border border-(--border-dim)/50 shadow-sm">
+            {tabs.map((t) => {
+              const Icon = t.icon;
+              const isActive = activeTab === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setActiveTab(t.id)}
+                  className={`py-2 px-4 rounded-full text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border-0 select-none ${
+                    isActive
+                      ? "bg-(--accent-base) text-(--text-inverse) shadow-xs"
+                      : "text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-highlight)/60"
+                  }`}>
+                  <Icon className="w-4 h-4" />
+                  <span>{t.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Mobile Main Content */}
+        {renderContent()}
       </div>
     </div>
   );
 };
 
 export default LateHourPage;
+

@@ -5,6 +5,49 @@ import {
 } from "./cache";
 import { useAppStore } from "../store/appStore";
 import { showAlertDialog } from "../components/ui/AlertDialog";
+import { parseAcademicStats, parseCourseDetails, parseDigitalAssignments } from "../parsers/dashboard";
+import { parseEvents } from "../parsers/events";
+import { parseSemesters, parseTimetable } from "../parsers/timetable";
+import { parseCalendarSemesters, parseCalendarGroupsAndMonths } from "../parsers/calendar";
+import { parseMarksSemesters, parseStudentMarks } from "../parsers/marks";
+import { parseGradesSemesters, parseGrades, parseGradeHistory, parseGradeDetails } from "../parsers/grades";
+import { parseDASemesters, parseDACourses, parseDAAssignments } from "../parsers/digital-assignments";
+import { parseStudentAttendance, parseAttendanceDetail } from "../parsers/attendance";
+import { parseExamSemesters, parseExamScheduleData } from "../parsers/exam-schedule";
+import { parseStudentProfile } from "../parsers/profile";
+import { parseCurriculumDashboard, parseCurriculumCourses } from "../parsers/curriculum";
+import { parseLateHourRows } from "../parsers/late-hour";
+
+export const getParserForKey = (key: string): ((html: string) => any) | null => {
+  if (key === "dashboard_stats") return parseAcademicStats;
+  if (key === "dashboard_attendance") return parseCourseDetails;
+  if (key === "dashboard_da") return parseDigitalAssignments;
+  if (key === "dashboard_events") return parseEvents;
+  if (key === "tt_semester_list") return parseSemesters;
+  if (key === "cal_semester_list") return parseCalendarSemesters;
+  if (key === "exam_schedule_view") return parseExamSemesters;
+  if (key === "marks_view") return parseMarksSemesters;
+  if (key === "grades_view") return parseGradesSemesters;
+  if (key === "grade_history_data" || key === "student_grade_history") return parseGradeHistory;
+  if (key === "curriculum_dashboard" || key === "curriculum") return parseCurriculumDashboard;
+  if (key === "student_profile_data" || key === "student_profile") return parseStudentProfile;
+  if (key === "late_hour_status" || key === "late_hour_history") return parseLateHourRows;
+  if (key === "da_semester_list" || key === "da_semesters") return parseDASemesters;
+
+  if (key.startsWith("attendance_detailed_")) return parseStudentAttendance;
+  if (key.startsWith("attendance_records_")) return parseAttendanceDetail;
+  if (key.startsWith("tt_") || key.startsWith("timetable_")) return parseTimetable;
+  if (key.startsWith("marks_data_") || key.startsWith("marks_")) return parseStudentMarks;
+  if (key.startsWith("grades_data_") || key.startsWith("grades_")) return parseGrades;
+  if (key.startsWith("grade_details_")) return parseGradeDetails;
+  if (key.startsWith("da_courses_")) return parseDACourses;
+  if (key.startsWith("da_class_") || key.startsWith("da_view_")) return parseDAAssignments;
+  if (key.startsWith("exam_schedule_data_")) return parseExamScheduleData;
+  if (key.startsWith("curriculum_cat_")) return parseCurriculumCourses;
+  if (key.startsWith("cal_groups_")) return parseCalendarGroupsAndMonths;
+
+  return null;
+};
 
 export function extractCsrfTokenFromHTML(html: string): string | null {
   if (!html || typeof html !== "string") return null;
@@ -363,16 +406,18 @@ export class VTOPNetwork {
     }
   }
 
-  public async fetchWithCache(
+  public async fetchWithCache<T = any>(
     key: string,
     fetcher: () => Promise<string>,
     forceRefresh = false,
     customExpiryMs?: number,
     validate?: (data: string) => boolean,
-  ): Promise<string> {
+    customParser?: (html: string) => T,
+  ): Promise<any> {
     const stableId =
       localStorage.getItem("retop_lastAuthId") || this.authorizedID;
     const userScopedKey = `${stableId}_${key}`;
+    const parser = customParser || getParserForKey(key);
 
     const doFetchAndCache = async () => {
       try {
@@ -380,21 +425,33 @@ export class VTOPNetwork {
         const data = await fetcher();
 
         const isErrorPage =
-          data.includes("<title>404") ||
-          data.includes("HTTP Status 404") ||
-          data.includes("404 Not Found") ||
-          data.includes("404 - File or directory not found") ||
-          data.includes("<title>Error</title>");
+          typeof data === "string" &&
+          (data.includes("<title>404") ||
+            data.includes("HTTP Status 404") ||
+            data.includes("404 Not Found") ||
+            data.includes("404 - File or directory not found") ||
+            data.includes("<title>Error</title>"));
 
         if (isErrorPage) {
           console.warn(`[VTOP Network] 404/Error response for ${key}`);
         } else if (
           data &&
-          data.length > 50 &&
-          !data.includes("Invalid") &&
-          (!validate || validate(data))
+          (typeof data !== "string" || data.length > 50) &&
+          (typeof data !== "string" || !data.includes("Invalid")) &&
+          (!validate || (typeof data === "string" && validate(data)))
         ) {
-          setCachedData(userScopedKey, data);
+          if (parser && typeof data === "string") {
+            try {
+              const parsed = parser(data);
+              setCachedData(userScopedKey, parsed);
+              return parsed;
+            } catch (err) {
+              console.warn(`[retop] Parsing before cache failed for ${key}:`, err);
+              setCachedData(userScopedKey, data);
+            }
+          } else {
+            setCachedData(userScopedKey, data);
+          }
         }
         return data;
       } catch (err) {
@@ -404,9 +461,9 @@ export class VTOPNetwork {
       }
     };
 
-    const cachedInfo = await getCachedDataWithTimestamp<string>(userScopedKey);
+    const cachedInfo = await getCachedDataWithTimestamp<any>(userScopedKey);
 
-    if (cachedInfo && cachedInfo.data) {
+    if (cachedInfo && cachedInfo.data !== undefined && cachedInfo.data !== null) {
       let EXPIRY_MS =
         customExpiryMs !== undefined ? customExpiryMs : 5 * 24 * 60 * 60 * 1000;
 
@@ -435,8 +492,16 @@ export class VTOPNetwork {
           !location.protocol.includes("chrome-extension") &&
           !location.protocol.includes("moz-extension"));
 
+      let resolvedData = cachedInfo.data;
+      if (typeof resolvedData === "string" && parser) {
+        try {
+          resolvedData = parser(resolvedData);
+          setCachedData(userScopedKey, resolvedData);
+        } catch {}
+      }
+
       if (isOffline) {
-        return cachedInfo.data;
+        return resolvedData;
       }
 
       if (forceRefresh) {
@@ -459,7 +524,7 @@ export class VTOPNetwork {
         }
       }
 
-      return cachedInfo.data;
+      return resolvedData;
     }
 
     const isOffline =
@@ -472,9 +537,16 @@ export class VTOPNetwork {
 
     if (isOffline) {
       // One final attempt: check un-prefixed key in cache
-      const unPrefixed = await getCachedDataWithTimestamp<string>(key);
-      if (unPrefixed && unPrefixed.data) {
-        return unPrefixed.data;
+      const unPrefixed = await getCachedDataWithTimestamp<any>(key);
+      if (unPrefixed && unPrefixed.data !== undefined && unPrefixed.data !== null) {
+        let res = unPrefixed.data;
+        if (typeof res === "string" && parser) {
+          try {
+            res = parser(res);
+            setCachedData(userScopedKey, res);
+          } catch {}
+        }
+        return res;
       }
       console.warn(`[VTOP Network] Offline cache miss for: ${userScopedKey}`);
       throw new Error("OFFLINE_CACHE_MISS");
@@ -1175,10 +1247,18 @@ export class VTOPNetwork {
 
   // ── Late Hour Permission ──────────────────────────────────────────────────
 
-  /** Step 1: Initialize Late Hour session and get School options */
+  /** Step 1 & 2: Initialize Late Hour session and get Request Form with School options */
   async getLateHourInit(): Promise<string> {
-    return this.fetchVtopApi("hostels/late/hour/student/request/1", {
-      verifyMenu: "true",
+    try {
+      // Warm up menu context
+      await this.fetchVtopApi("hostels/late/hour/student/request/1", {
+        verifyMenu: "true",
+      });
+    } catch (_) {}
+    return this.fetchVtopApi("hostels/late/hour/student/request/2", {
+      apply: "",
+      form: "undefined",
+      control: "apply",
     });
   }
 
@@ -1270,6 +1350,39 @@ export class VTOPNetwork {
     return this.fetchVtopApi("hostels/late/hour/student/request/6", payload);
   }
 
+  /** Step 7: Get To Time options based on selected From Time */
+  async getLateHourToTimeOptions(params: {
+    costCentreId: string;
+    appliedTo: string;
+    roomTypeId: string;
+    buildingId?: string;
+    venue?: string;
+    lateHourEventId: string;
+    details?: string;
+    lateHourFromDate: string;
+    fromTime: string;
+    lateHourToDate?: string;
+  }): Promise<string> {
+    const payload: Record<string, string> = {
+      costCentreId: params.costCentreId,
+      appliedTo: params.appliedTo,
+      roomTypeId: params.roomTypeId,
+      lateHourEventId: params.lateHourEventId,
+      details: params.details || "",
+      lateHourFromDate: params.lateHourFromDate,
+      fromTime: params.fromTime,
+      lateHourToDate: params.lateHourToDate || "",
+      toTime: "",
+      form: "LateHourRequestForm",
+      control: "fromTime",
+    };
+
+    if (params.buildingId) payload.buildingId = params.buildingId;
+    if (params.venue) payload.venue = params.venue;
+
+    return this.fetchVtopApi("hostels/late/hour/student/request/7", payload);
+  }
+
   /** Step 8: Submit Late Hour Request */
   async submitLateHourRequest(params: {
     costCentreId: string;
@@ -1294,6 +1407,7 @@ export class VTOPNetwork {
       fromTime: params.fromTime,
       lateHourToDate: params.lateHourToDate,
       toTime: params.toTime,
+      submitButton1: "",
       form: "LateHourRequestForm",
       control: "submitButton1",
     };

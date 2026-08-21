@@ -166,8 +166,8 @@ export const useCoursePageData = (
       try {
         const marksHtml = await network.getStudentMarks(selectedSem);
         if (!isMounted) return;
-        const parsedMarks = parseStudentMarks(marksHtml);
-        const marks = parsedMarks.find((m) => m.code.toLowerCase() === currentOption.code.trim().toLowerCase() || m.classNumber === currentOption.classId);
+        const parsedMarks = typeof marksHtml === "string" ? parseStudentMarks(marksHtml) : marksHtml;
+        const marks = (Array.isArray(parsedMarks) ? parsedMarks : []).find((m) => m.code.toLowerCase() === currentOption.code.trim().toLowerCase() || m.classNumber === currentOption.classId);
         if (marks) setCourseMarks(marks);
       } catch (err) {
         console.warn("Failed to fetch marks", err);
@@ -175,8 +175,8 @@ export const useCoursePageData = (
       try {
         const gradesHtml = await network.getStudentGrades(selectedSem);
         if (!isMounted) return;
-        const parsedGrades = parseGrades(gradesHtml);
-        const grade = parsedGrades.courses.find((m) => m.code.toLowerCase() === currentOption.code.trim().toLowerCase());
+        const parsedGrades = typeof gradesHtml === "string" ? parseGrades(gradesHtml) : gradesHtml;
+        const grade = parsedGrades?.courses?.find((m: any) => m.code.toLowerCase() === currentOption.code.trim().toLowerCase());
         if (grade) setCourseGrade(grade);
       } catch (err) {
         console.warn("Failed to fetch grades", err);

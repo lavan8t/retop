@@ -163,7 +163,7 @@ export function useProfileData(network: VTOPNetwork) {
           async () =>
             await network.fetchFragment("studentsRecord/StudentProfileAllView"),
         );
-        const parsedData = parseStudentProfile(html);
+        const parsedData = typeof html === "string" ? parseStudentProfile(html) : html;
         if (parsedData?.basic?.name) {
           setRawProfileData(parsedData);
           setCachedData(`${userPrefix}student_profile_parsed`, parsedData);

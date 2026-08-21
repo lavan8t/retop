@@ -46,7 +46,7 @@ export const createAttendanceSlice: StateCreator<DataState, [], [], AttendanceSl
         },
         forceRefresh,
       );
-      const data = parseStudentAttendance(html);
+      const data = typeof html === "string" ? parseStudentAttendance(html) : html;
       set({ detailedAttendance: data, attLoading: false });
     } catch (e) {
       if (e instanceof Error && e.message === "OFFLINE_CACHE_MISS") {
@@ -71,7 +71,7 @@ export const createAttendanceSlice: StateCreator<DataState, [], [], AttendanceSl
           courseType: classType,
         });
       });
-      const data = parseAttendanceDetail(html);
+      const data = typeof html === "string" ? parseAttendanceDetail(html) : html;
       set((state) => ({
         attendanceRecords: { ...state.attendanceRecords, [key]: data },
         attRecordsLoading: false,

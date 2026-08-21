@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import {
   Campaign,
   OpenInNew,
@@ -18,25 +18,12 @@ export const SpotlightSection: React.FC<SpotlightSectionProps> = ({
   isMobileWidget = false,
   className = "",
 }) => {
-  const [selectedCat, setSelectedCat] = useState<string>("all");
-
-  const totalItemsCount = useMemo(() => {
-    if (!spotlightCategories) return 0;
-    return spotlightCategories.reduce((sum, g) => sum + (g.items?.length || 0), 0);
+  const items = useMemo(() => {
+    if (!spotlightCategories || spotlightCategories.length === 0) return [];
+    return spotlightCategories.flatMap((g) => g.items || []);
   }, [spotlightCategories]);
 
-  const displayedItems = useMemo(() => {
-    if (!spotlightCategories || spotlightCategories.length === 0) return [];
-    if (selectedCat === "all") {
-      return spotlightCategories.flatMap((g) =>
-        (g.items || []).map((item) => ({ ...item, category: g.category }))
-      );
-    }
-    const group = spotlightCategories.find((g) => g.category === selectedCat);
-    return (group?.items || []).map((item) => ({ ...item, category: group?.category || "" }));
-  }, [spotlightCategories, selectedCat]);
-
-  if (!spotlightCategories || spotlightCategories.length === 0 || totalItemsCount === 0) {
+  if (!spotlightCategories || spotlightCategories.length === 0 || items.length === 0) {
     return null;
   }
 
@@ -63,43 +50,14 @@ export const SpotlightSection: React.FC<SpotlightSectionProps> = ({
           <div className="flex items-center gap-2">
             <Campaign className="w-4 h-4 text-(--accent-base)" />
             <span className="text-[0.625rem] font-expanded font-bold uppercase text-(--text-muted) leading-none">
-              Spotlight ({totalItemsCount})
+              Spotlight ({items.length})
             </span>
           </div>
         </div>
 
-        {/* Category Pills Filter */}
-        {spotlightCategories.length > 1 && (
-          <div className="flex items-center gap-1.5 px-4 pt-2.5 pb-1 overflow-x-auto hide-scrollbar shrink-0">
-            <button
-              onClick={() => setSelectedCat("all")}
-              className={`px-2.5 py-1 rounded-full text-[10px] font-expanded font-bold uppercase transition-colors shrink-0 cursor-pointer ${
-                selectedCat === "all"
-                  ? "bg-(--accent-base) text-(--text-inverse)"
-                  : "bg-(--bg-surface) text-(--text-muted) hover:text-(--text-main)"
-              }`}
-            >
-              All
-            </button>
-            {spotlightCategories.map((g, idx) => (
-              <button
-                key={idx}
-                onClick={() => setSelectedCat(g.category)}
-                className={`px-2.5 py-1 rounded-full text-[10px] font-expanded font-bold uppercase transition-colors shrink-0 cursor-pointer ${
-                  selectedCat === g.category
-                    ? "bg-(--accent-base) text-(--text-inverse)"
-                    : "bg-(--bg-surface) text-(--text-muted) hover:text-(--text-main)"
-                }`}
-              >
-                {g.category} ({g.items?.length || 0})
-              </button>
-            ))}
-          </div>
-        )}
-
         {/* Items List */}
         <div className="p-3 flex flex-col gap-1 max-h-75 overflow-y-auto custom-scrollbar">
-          {displayedItems.map((item, idx) => (
+          {items.map((item, idx) => (
             <div
               key={idx}
               onClick={() => handleLinkClick(item)}
@@ -109,11 +67,6 @@ export const SpotlightSection: React.FC<SpotlightSectionProps> = ({
                 <span className="text-xs font-bold text-(--text-main) line-clamp-2 leading-snug">
                   {item.title}
                 </span>
-                {selectedCat === "all" && item.category && (
-                  <span className="text-[9px] font-expanded font-bold text-(--text-muted) uppercase mt-0.5">
-                    {item.category}
-                  </span>
-                )}
               </div>
               <div className="shrink-0 text-(--text-muted) pl-1">
                 {item.isDownload ? (
@@ -142,41 +95,29 @@ export const SpotlightSection: React.FC<SpotlightSectionProps> = ({
 
         <Campaign className="w-8 h-8 text-(--text-main) mix-blend-overlay opacity-80 shrink-0" />
       </div>
-      {/* Categories Grouped List */}
-      <div className="flex flex-col gap-4 pt-1 pr-1">
-        {spotlightCategories.map((group, gIdx) => {
-          if (!group.items || group.items.length === 0) return null;
-          return (
-            <div key={gIdx} className="flex flex-col gap-1.5">
-              <span className="text-[10px] font-expanded font-bold uppercase tracking-wider text-(--text-muted) px-1">
-                {group.category}
+      {/* Items List */}
+      <div className="flex flex-col gap-[2px] rounded-2xl overflow-hidden pt-1 pr-1">
+        {items.map((item: SpotlightLinkItem, idx: number) => (
+          <div
+            key={idx}
+            onClick={() => handleLinkClick(item)}
+            className="group flex items-center justify-between p-3 bg-(--bg-highlight) hover:bg-(--border-dim) border-0 transition-all cursor-pointer rounded-sm first:rounded-t-2xl last:rounded-b-2xl"
+          >
+            <div className="flex flex-col flex-1 min-w-0 pr-2">
+              <span className="text-xs font-black text-(--text-main) group-hover:text-(--accent-base) transition-colors wrap-break-words">
+                {item.title}
               </span>
-              <div className="flex flex-col gap-[2px] rounded-2xl overflow-hidden">
-                {group.items.map((item: SpotlightLinkItem, idx: number) => (
-                  <div
-                    key={idx}
-                    onClick={() => handleLinkClick(item)}
-                    className="group flex items-center justify-between p-3 bg-(--bg-highlight) hover:bg-(--border-dim) border-0 transition-all cursor-pointer rounded-sm first:rounded-t-2xl last:rounded-b-2xl"
-                  >
-                    <div className="flex flex-col flex-1 min-w-0 pr-2">
-                      <span className="text-xs font-black text-(--text-main) group-hover:text-(--accent-base) transition-colors wrap-break-words">
-                        {item.title}
-                      </span>
-                    </div>
-
-                    <div className="shrink-0 text-(--text-muted) group-hover:text-(--accent-base) transition-colors">
-                      {item.isDownload ? (
-                        <Download className="w-4 h-4" />
-                      ) : (
-                        <OpenInNew className="w-4 h-4" />
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
-          );
-        })}
+
+            <div className="shrink-0 text-(--text-muted) group-hover:text-(--accent-base) transition-colors">
+              {item.isDownload ? (
+                <Download className="w-4 h-4" />
+              ) : (
+                <OpenInNew className="w-4 h-4" />
+              )}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

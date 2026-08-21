@@ -59,7 +59,7 @@ export const createDASlice: StateCreator<DataState, [], [], DASlice> = (
     set({ daLoading: true, daError: null });
     try {
       const html = await network.getDASemesters(force);
-      const sems = parseDASemesters(html);
+      const sems = typeof html === "string" ? parseDASemesters(html) : html;
       set({ daSemesters: sems });
       if (sems.length > 0 && !get().daSelectedSem) {
         set({ daSelectedSem: sems[0].id });
@@ -106,8 +106,8 @@ export const createDASlice: StateCreator<DataState, [], [], DASlice> = (
         force,
         isPastSemester,
       );
-      const courses = parseDACourses(html);
-      set({ daCourses: courses, daRawHtml: html });
+      const courses = typeof html === "string" ? parseDACourses(html) : html;
+      set({ daCourses: courses, daRawHtml: typeof html === "string" ? html : "" });
     } catch (e: any) {
       if (e.message !== "OFFLINE_CACHE_MISS") {
         set({ daError: e.message || "Failed to fetch DA courses" });
@@ -136,7 +136,7 @@ export const createDASlice: StateCreator<DataState, [], [], DASlice> = (
         get().daSelectedSem !== get().daSemesters[0].id;
 
       const html = await network.getDAForCourse(classId, force, isPastSemester);
-      const assignments = parseDAAssignments(html);
+      const assignments = typeof html === "string" ? parseDAAssignments(html) : html;
       set((state) => ({
         daAssignments: {
           ...state.daAssignments,

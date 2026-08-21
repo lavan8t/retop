@@ -62,7 +62,7 @@ export interface AppSettings {
 
 
 
-const DEFAULT_SETTINGS: AppSettings = {
+export const DEFAULT_SETTINGS: AppSettings = {
   defaultView: "modern",
   themeMode: "dark",
   vtopThemeMode: "same",
@@ -172,6 +172,7 @@ export const getMaterialOnThemeColor = (colorKey: string, _isDark: boolean = tru
 export const applyTheme = (settings: AppSettings) => {
   if (typeof document === "undefined") return;
   const root = getAppRoot();
+  const offlineRoot = document.getElementById("offline-root");
 
   let appliedTheme = settings.themeMode;
   if (appliedTheme === "auto") {
@@ -182,6 +183,7 @@ export const applyTheme = (settings: AppSettings) => {
   }
 
   if (root) root.setAttribute("data-theme", appliedTheme);
+  if (offlineRoot && offlineRoot !== root) offlineRoot.setAttribute("data-theme", appliedTheme);
 
   let vtopTheme = settings.vtopThemeMode || "same";
   let appliedVtopTheme = vtopTheme === "same" ? appliedTheme : vtopTheme;
@@ -209,6 +211,7 @@ export const applyTheme = (settings: AppSettings) => {
 
   const docStyle = document.documentElement.style;
   if (root) root.style.setProperty("--accent-base", primaryHex);
+  if (offlineRoot && offlineRoot !== root) offlineRoot.style.setProperty("--accent-base", primaryHex);
   docStyle.setProperty("--accent-base", primaryHex);
 
   const makeTonal = (hex: string) => {
@@ -250,6 +253,16 @@ export const applyTheme = (settings: AppSettings) => {
     "on-surface-variant": hexFromArgb(scheme.onSurfaceVariant),
     outline: hexFromArgb(scheme.outline),
     "outline-variant": hexFromArgb(scheme.outlineVariant),
+    "inverse-surface": hexFromArgb(scheme.inverseSurface),
+    "inverse-on-surface": hexFromArgb(scheme.inverseOnSurface),
+    "inverse-primary": hexFromArgb(scheme.inversePrimary),
+    "surface-dim": hexFromArgb(scheme.surfaceDim),
+    "surface-bright": hexFromArgb(scheme.surfaceBright),
+    "surface-container-lowest": hexFromArgb(scheme.surfaceContainerLowest),
+    "surface-container-low": hexFromArgb(scheme.surfaceContainerLow),
+    "surface-container": hexFromArgb(scheme.surfaceContainer),
+    "surface-container-high": hexFromArgb(scheme.surfaceContainerHigh),
+    "surface-container-highest": hexFromArgb(scheme.surfaceContainerHighest),
     success: success.base,
     "on-success": success.onBase,
     "success-container": success.container,
@@ -263,6 +276,19 @@ export const applyTheme = (settings: AppSettings) => {
     "info-container": info.container,
     "on-info-container": info.onContainer,
   };
+
+  if (appliedTheme === "amoled") {
+    sysColors.background = "#000000";
+    sysColors.surface = "#000000";
+    sysColors["surface-variant"] = "#000000";
+    sysColors["surface-container-lowest"] = "#000000";
+    sysColors["surface-container-low"] = "#000000";
+    sysColors["surface-container"] = "#000000";
+    sysColors["surface-container-high"] = "#050505";
+    sysColors["surface-container-highest"] = "#0a0a0a";
+    sysColors.outline = "#27272a";
+    sysColors["outline-variant"] = "#18181b";
+  }
 
   const extendedTokens: Record<string, string> = {
     "--att-safe": success.base,
@@ -293,20 +319,24 @@ export const applyTheme = (settings: AppSettings) => {
   const wghtMap: Record<string, string> = { regular: "400", medium: "550", bold: "700" };
   const wght = wghtMap[settings.fontWeight ?? "bold"] ?? "700";
   if (root) root.style.setProperty("--app-font-wght", wght);
+  if (offlineRoot && offlineRoot !== root) offlineRoot.style.setProperty("--app-font-wght", wght);
   docStyle.setProperty("--app-font-wght", wght);
 
   const animScaleMap: Record<string, string> = { "1x": "1", "0.5x": "0.5", "0x": "0" };
   const animScale = animScaleMap[settings.animationScale ?? "1x"] ?? "1";
   if (root) root.style.setProperty("--anim-scale", animScale);
+  if (offlineRoot && offlineRoot !== root) offlineRoot.style.setProperty("--anim-scale", animScale);
   docStyle.setProperty("--anim-scale", animScale);
 
   for (const [name, val] of Object.entries(sysColors)) {
     if (root) root.style.setProperty(`--md-sys-color-${name}`, val);
+    if (offlineRoot && offlineRoot !== root) offlineRoot.style.setProperty(`--md-sys-color-${name}`, val);
     docStyle.setProperty(`--md-sys-color-${name}`, val);
   }
 
   for (const [name, val] of Object.entries(extendedTokens)) {
     if (root) root.style.setProperty(name, val);
+    if (offlineRoot && offlineRoot !== root) offlineRoot.style.setProperty(name, val);
     docStyle.setProperty(name, val);
   }
 };

@@ -39,8 +39,8 @@ export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
       try {
         const html = await network.getStudentMarks(selectedSem);
         if (!isMounted) return;
-        const parsed = parseStudentMarks(html);
-        setMarksData(parsed);
+        const parsed = typeof html === "string" ? parseStudentMarks(html) : html;
+        setMarksData(Array.isArray(parsed) ? parsed : []);
       } catch (err) {
         console.error("Failed to fetch marks for calculator", err);
         if (isMounted) setErrorMsg("Failed to load internal marks.");

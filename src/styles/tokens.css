@@ -18,10 +18,12 @@
   --bg-primary-container: var(--md-sys-color-primary-container, color-mix(in srgb, var(--accent-base) 18%, var(--bg-card)));
   --text-on-primary-container: var(--md-sys-color-on-primary-container, var(--text-main));
   --bg-highlight: color-mix(in srgb, var(--md-sys-color-primary, #3b82f6) 15%, var(--md-sys-color-surface, #18181b));
-  --border-main: var(--md-sys-color-outline, transparent);
+  --border-main: var(--md-sys-color-outline, color-mix(in srgb, var(--text-muted, #94a3b8) 35%, transparent));
+  --border-dim: var(--md-sys-color-outline-variant, color-mix(in srgb, var(--text-muted, #94a3b8) 20%, transparent));
   --text-main: var(--md-sys-color-on-background, #f8fafc);
   --text-muted: var(--md-sys-color-on-surface-variant, #94a3b8);
   --text-dim: color-mix(in srgb, var(--md-sys-color-on-surface-variant, #94a3b8) 70%, transparent);
+  --text-inverse: var(--md-sys-color-on-primary, #ffffff);
   --shadow-main: transparent;
 
   /* Extended Palette (Same as AMOLED) */
@@ -112,10 +114,12 @@
   --bg-primary-container: var(--md-sys-color-primary-container, color-mix(in srgb, var(--accent-base) 14%, #ffffff));
   --text-on-primary-container: var(--md-sys-color-on-primary-container, var(--text-main));
   --bg-highlight: color-mix(in srgb, var(--md-sys-color-primary, #3b82f6) 10%, var(--md-sys-color-surface, #ffffff));
-  --border-main: var(--md-sys-color-outline, transparent);
+  --border-main: var(--md-sys-color-outline, color-mix(in srgb, var(--text-muted, #475569) 35%, transparent));
+  --border-dim: var(--md-sys-color-outline-variant, color-mix(in srgb, var(--text-muted, #475569) 20%, transparent));
   --text-main: var(--md-sys-color-on-background, #0f172a);
   --text-muted: var(--md-sys-color-on-surface-variant, #475569);
   --text-dim: color-mix(in srgb, var(--md-sys-color-on-surface-variant, #475569) 70%, transparent);
+  --text-inverse: var(--md-sys-color-on-primary, #ffffff);
   --shadow-main: transparent;
 }
 
@@ -128,9 +132,11 @@
   --text-on-primary-container: var(--md-sys-color-on-primary-container, #ffffff);
   --bg-highlight: #111111;
   --border-main: var(--md-sys-color-outline, #27272a);
+  --border-dim: var(--md-sys-color-outline-variant, #18181b);
   --text-main: #ffffff;
   --text-muted: #a3a3a3;
   --text-dim: #737373;
+  --text-inverse: var(--md-sys-color-on-primary, #ffffff);
   --shadow-main: transparent;
 
   /* Extended Palette (Identical to Dark) */

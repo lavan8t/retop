@@ -119,7 +119,7 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
           sortedSems.map(async (sem) => {
             try {
               const html = await network.getStudentGrades(sem.id);
-              const parsed = parseGrades(html);
+              const parsed = typeof html === "string" ? parseGrades(html) : html;
               return { sem, parsed };
             } catch (err) {
               return { sem, parsed: null };

@@ -43,8 +43,8 @@ export function useGradesData(
 
       try {
         const html = await network.getGradesView();
-        const sems = parseGradesSemesters(html);
-        const dropdownSems = sems.map((s) => ({
+        const sems = typeof html === "string" ? parseGradesSemesters(html) : html;
+        const dropdownSems = (Array.isArray(sems) ? sems : []).map((s) => ({
           id: s.id,
           label: s.label,
           isLatest: s.isLatest,
@@ -68,7 +68,7 @@ export function useGradesData(
       if (useDataStore.getState().status === "Demo Mode Active") return;
       try {
         const html = await network.getStudentGradeHistory();
-        setHistoryData(parsedHistory => parsedHistory || parseGradeHistory(html));
+        setHistoryData((parsedHistory) => parsedHistory || (typeof html === "string" ? parseGradeHistory(html) : html));
       } catch (e: any) {
         if (e && e.message === "OFFLINE_CACHE_MISS") {
           setOfflineMiss(true);
@@ -115,7 +115,7 @@ export function useGradesData(
 
         try {
           const html = await network.getStudentGrades(selectedSem, false, isPastSemester);
-          parsedGrades = parseGrades(html);
+          parsedGrades = typeof html === "string" ? parseGrades(html) : html;
         } catch (err) {
           console.warn("Failed to fetch student grades directly", err);
         }
@@ -132,7 +132,7 @@ export function useGradesData(
                   semesterSubId: selectedSem,
                 });
               });
-              ttCourses = parseTimetable(ttHtml);
+              ttCourses = typeof ttHtml === "string" ? parseTimetable(ttHtml) : ttHtml;
             }
 
             const validTtCourses = (ttCourses || []).filter(
@@ -190,7 +190,7 @@ export function useGradesData(
               if (!c.courseId || (c.assessments && c.assessments.length > 0)) continue;
               try {
                 const detailsHtml = await network.getGradeDetails(semToFetch, c.courseId);
-                const details = parseGradeDetails(detailsHtml);
+                const details = typeof detailsHtml === "string" ? parseGradeDetails(detailsHtml) : detailsHtml;
                 setGradesData((prev) => {
                   if (!prev) return prev;
                   return {
@@ -243,7 +243,7 @@ export function useGradesData(
     setFetchingDetails(true);
     try {
       const html = await network.getGradeDetails(selectedSem, course.courseId);
-      const details = parseGradeDetails(html);
+      const details = typeof html === "string" ? parseGradeDetails(html) : html;
       
       setGradesData(prev => {
         if (!prev) return prev;

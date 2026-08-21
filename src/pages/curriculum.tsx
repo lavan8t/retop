@@ -51,39 +51,41 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
         network.getCurriculumDashboard(),
         network.getStudentGradeHistory().catch(() => ""),
       ]);
-      const data = parseCurriculumDashboard(html);
+      const data = typeof html === "string" ? parseCurriculumDashboard(html) : html;
       
       const completedCodes = new Set<string>();
       if (historyHtml) {
         try {
-          const historyData = parseGradeHistory(historyHtml);
-          if (historyData.cgpa?.creditsEarned) {
+          const historyData = typeof historyHtml === "string" ? parseGradeHistory(historyHtml) : historyHtml;
+          if (historyData?.cgpa?.creditsEarned) {
             setGradeHistoryEarnedCredits(historyData.cgpa.creditsEarned);
           }
-          historyData.courses.forEach(c => {
-            if (c.grade !== "F" && c.grade !== "N" && c.grade !== "W" && c.grade !== "U") {
-              completedCodes.add(c.code);
-            }
-          });
+          if (historyData?.courses) {
+            historyData.courses.forEach((c: any) => {
+              if (c.grade !== "F" && c.grade !== "N" && c.grade !== "W" && c.grade !== "U") {
+                completedCodes.add(c.code);
+              }
+            });
+          }
         } catch (e) {
           console.error("Failed to parse grade history", e);
         }
       }
       setCompletedCourseCodes(completedCodes);
 
-      setTotalCredits(data.totalCredits);
-      setCategories(data.categories);
-      if (data.categories.length> 0) setSelectedId(data.categories[0].id);
+      setTotalCredits(data?.totalCredits || "0");
+      setCategories(data?.categories || []);
+      if (data?.categories?.length > 0) setSelectedId(data.categories[0].id);
       setLoading(false);
 
       setLoadingCourses(true);
-      const categoryPromises = data.categories.map(cat => 
+      const categoryPromises = (data?.categories || []).map((cat: CurriculumCategory) => 
         network.getCurriculumCategory(cat.id).then(catHtml => {
-          const parsed = parseCurriculumCategoryTable(catHtml);
+          const parsed = typeof catHtml === "string" ? parseCurriculumCategoryTable(catHtml) : catHtml;
           return {
             id: cat.id,
-            courses: parsed.courses,
-            basketMaxCredits: parsed.basketMaxCredits
+            courses: parsed?.courses || [],
+            basketMaxCredits: parsed?.basketMaxCredits || {}
           };
         }).catch(() => ({ id: cat.id, courses: [] as CurriculumCourse[], basketMaxCredits: {} as Record<string, string> }))
       );

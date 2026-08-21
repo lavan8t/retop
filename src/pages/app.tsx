@@ -319,20 +319,14 @@ const DashboardApp = () => {
 
   const handleTogglePin = (link: QuickLink) => {
     const dest = getDestinationView(link);
-    if (dest === "content") {
-      showAlertDialog({
-        title: "Pinning Unavailable",
-        message: "Only retop exclusive native pages can be pinned to the dock.",
-      });
-      return;
-    }
-
     const isAlreadyPinned = pinnedLinks.some(
-      (p) => getDestinationView(p) === dest,
+      (p) => p.url === link.url || (dest !== "content" && getDestinationView(p) === dest),
     );
 
     if (isAlreadyPinned) {
-      const newPins = pinnedLinks.filter((p) => getDestinationView(p) !== dest);
+      const newPins = pinnedLinks.filter(
+        (p) => p.url !== link.url && (dest === "content" || getDestinationView(p) !== dest),
+      );
       updateSetting("pinnedLinks", newPins);
     } else {
       if (pinnedLinks.length >= 9) {
@@ -802,6 +796,20 @@ const DashboardApp = () => {
     }
 
     const dest = getDestinationView(link);
+
+    const isOffline =
+      typeof window !== "undefined" &&
+      (!!(window as any).__RETOP_OFFLINE__ ||
+        window.location.pathname.includes("offline") ||
+        window.location.hostname.includes("web.app") ||
+        window.location.protocol === "file:");
+
+    if (isOffline) {
+      if (dest !== "content") {
+        navigateToView(dest as ViewType);
+      }
+      return;
+    }
 
     if (forceLegacy || dest === "content") {
       setContentTitle(link.title);

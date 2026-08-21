@@ -61,12 +61,13 @@ export const createTimetableSlice: StateCreator<DataState, [], [], TimetableSlic
         (get().ttSemesters.length > 0 && semId !== get().ttSemesters[0].id) ? Infinity : undefined
       );
 
-      if (html.includes("data not available")) {
+      if (typeof html === "string" && html.includes("data not available")) {
         set({ ttCourses: [], upcoming: [], ttLoading: false });
         return;
       }
 
-      const courses = parseTimetable(html).filter(
+      const parsedCourses = typeof html === "string" ? parseTimetable(html) : html;
+      const courses = (Array.isArray(parsedCourses) ? parsedCourses : []).filter(
         (c) =>
           !c.status.toLowerCase().includes("drop") &&
           !c.status.toLowerCase().includes("withdrawn"),

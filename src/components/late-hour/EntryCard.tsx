@@ -4,6 +4,7 @@ import {
   Category,
   Person,
   Schedule,
+  Autorenew,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { LateHourStatusEntry } from "../../types/vtop";
 import { StatusBadge } from "./StatusBadge";
@@ -11,20 +12,29 @@ import { StatusBadge } from "./StatusBadge";
 interface EntryCardProps {
   entry: LateHourStatusEntry;
   onCancel?: (id: string) => void;
+  onRedo?: (entry: LateHourStatusEntry) => void;
   cancelling?: boolean;
 }
 
 export const EntryCard: React.FC<EntryCardProps> = ({
   entry,
   onCancel,
+  onRedo,
   cancelling = false,
 }) => {
+  const isOffline =
+    typeof window !== "undefined" &&
+    (!!(window as any).__RETOP_OFFLINE__ ||
+      window.location.pathname.includes("offline") ||
+      window.location.hostname.includes("web.app") ||
+      window.location.protocol === "file:");
+
   const isPending =
     entry.status.toLowerCase().includes("pending") ||
     entry.status.toLowerCase().includes("raised");
 
   return (
-    <div className="bg-(--bg-surface) border border-(--border-dim)/40 rounded-3xl p-4 md:p-5 flex flex-col gap-3 hover:bg-(--bg-highlight) transition-colors">
+    <div className="bg-(--bg-surface) border border-(--border-dim)/40 rounded-3xl p-4 md:p-5 flex flex-col gap-3.5 hover:bg-(--bg-highlight)/60 transition-colors shadow-sm">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="flex-1 min-w-0">
           <p className="text-base font-bold text-(--text-main) truncate">
@@ -36,11 +46,22 @@ export const EntryCard: React.FC<EntryCardProps> = ({
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <StatusBadge status={entry.status} />
-          {onCancel && isPending && entry.id && (
+          {!isOffline && onRedo && (
             <button
+              type="button"
+              onClick={() => onRedo(entry)}
+              className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-(--bg-main) border border-(--border-dim)/60 text-(--text-main) hover:bg-(--accent-base) hover:text-(--text-inverse) hover:border-(--accent-base) transition-all cursor-pointer shadow-xs active:scale-95"
+              title="Redo or modify this request">
+              <Autorenew className="w-3.5 h-3.5" />
+              <span>Redo</span>
+            </button>
+          )}
+          {!isOffline && onCancel && isPending && entry.id && (
+            <button
+              type="button"
               onClick={() => onCancel(entry.id)}
               disabled={cancelling}
-              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-(--att-danger-container) text-(--att-danger) hover:opacity-80 transition-opacity cursor-pointer disabled:opacity-50">
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-(--att-danger-container) text-(--att-danger) hover:opacity-80 transition-opacity cursor-pointer disabled:opacity-50">
               <Cancel className="w-3 h-3" />
               {cancelling ? "Cancelling..." : "Cancel"}
             </button>

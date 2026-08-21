@@ -82,24 +82,24 @@ export const createDashboardSlice: StateCreator<DataState, [], [], DashboardSlic
       // Immediately hydrate store from local cache with zero latency so UI renders instantly
       try {
         const [cachedStats, cachedAtt, cachedDA, cachedEvents] = await Promise.all([
-          getCachedData<string>(authId ? `${authId}_dashboard_stats` : "dashboard_stats"),
-          getCachedData<string>(authId ? `${authId}_dashboard_attendance` : "dashboard_attendance"),
-          getCachedData<string>(authId ? `${authId}_dashboard_da` : "dashboard_da"),
-          getCachedData<string>(authId ? `${authId}_dashboard_events` : "dashboard_events"),
+          getCachedData<any>(authId ? `${authId}_dashboard_stats` : "dashboard_stats"),
+          getCachedData<any>(authId ? `${authId}_dashboard_attendance` : "dashboard_attendance"),
+          getCachedData<any>(authId ? `${authId}_dashboard_da` : "dashboard_da"),
+          getCachedData<any>(authId ? `${authId}_dashboard_events` : "dashboard_events"),
         ]);
 
         const instantUpdates: any = {};
         if (cachedStats) {
-          try { instantUpdates.stats = parseAcademicStats(cachedStats); } catch {}
+          try { instantUpdates.stats = typeof cachedStats === "string" ? parseAcademicStats(cachedStats) : cachedStats; } catch {}
         }
         if (cachedAtt) {
-          try { instantUpdates.attendance = parseCourseDetails(cachedAtt); } catch {}
+          try { instantUpdates.attendance = typeof cachedAtt === "string" ? parseCourseDetails(cachedAtt) : cachedAtt; } catch {}
         }
         if (cachedDA) {
-          try { instantUpdates.assignments = parseDigitalAssignments(cachedDA); } catch {}
+          try { instantUpdates.assignments = typeof cachedDA === "string" ? parseDigitalAssignments(cachedDA) : cachedDA; } catch {}
         }
         if (cachedEvents) {
-          try { instantUpdates.events = parseEvents(cachedEvents); } catch {}
+          try { instantUpdates.events = typeof cachedEvents === "string" ? parseEvents(cachedEvents) : cachedEvents; } catch {}
         }
 
         if (Object.keys(instantUpdates).length > 0) {
@@ -116,13 +116,13 @@ export const createDashboardSlice: StateCreator<DataState, [], [], DashboardSlic
         // In offline mode, read timetable & calendar from cache immediately without waiting for XHR interception
         try {
           const [semHTML, calHTML] = await Promise.all([
-            getCachedData<string>(authId ? `${authId}_tt_semester_list` : "tt_semester_list"),
-            getCachedData<string>(authId ? `${authId}_cal_semester_list` : "cal_semester_list"),
+            getCachedData<any>(authId ? `${authId}_tt_semester_list` : "tt_semester_list"),
+            getCachedData<any>(authId ? `${authId}_cal_semester_list` : "cal_semester_list"),
           ]);
 
           if (semHTML || calHTML) {
-            const sems = parseSemesters(semHTML || "");
-            const calSems = parseCalendarSemesters(calHTML || "");
+            const sems: any[] = typeof semHTML === "string" ? parseSemesters(semHTML || "") : (semHTML || []);
+            const calSems: any[] = typeof calHTML === "string" ? parseCalendarSemesters(calHTML || "") : (calHTML || []);
 
             const filterNonIndustry = <T extends { id: string; label: string; selected?: boolean; isLatest?: boolean }>(list: T[]): T[] => {
               const nonInd = list.filter((s) => !/industry|\(ind\)|_ind/i.test(s.label) && !/industry|\(ind\)|_ind/i.test(s.id));
@@ -132,14 +132,14 @@ export const createDashboardSlice: StateCreator<DataState, [], [], DashboardSlic
             const savedCalSem = localStorage.getItem("retop-cal-selected-sem");
             const calPool = filterNonIndustry(calSems);
             const calDefault =
-              savedCalSem && calSems.some((s) => s.id === savedCalSem)
+              savedCalSem && calSems.some((s: any) => s.id === savedCalSem)
                 ? savedCalSem
                 : calPool.find((s) => s.selected)?.id || calPool[0]?.id || "";
 
             const savedTtSem = localStorage.getItem("retop-tt-selected-sem");
             const ttPool = filterNonIndustry(sems);
             const ttDefault =
-              savedTtSem && sems.some((s) => s.id === savedTtSem)
+              savedTtSem && sems.some((s: any) => s.id === savedTtSem)
                 ? savedTtSem
                 : ttPool.find((s) => s.isLatest)?.id || ttPool[0]?.id || "";
 
@@ -176,7 +176,7 @@ export const createDashboardSlice: StateCreator<DataState, [], [], DashboardSlic
           try {
             const parsed = parser(intercepted);
             set({ [storeKey]: parsed } as any);
-            await setCachedData(cacheKey, intercepted);
+            await setCachedData(cacheKey, parsed);
           } catch (e) {
             console.warn(`[retop] Parse failed for ${signalKey}:`, e);
           }
@@ -185,8 +185,8 @@ export const createDashboardSlice: StateCreator<DataState, [], [], DashboardSlic
         // 2. Fallback: live fetch with cache update
         try {
           const html = await network.fetchWithCache(cacheKey, fetcher, true);
-          if (html && !html.includes("HTTP Status 404") && !html.includes("<title>404")) {
-            set({ [storeKey]: parser(html) } as any);
+          if (html && (typeof html !== "string" || (!html.includes("HTTP Status 404") && !html.includes("<title>404")))) {
+            set({ [storeKey]: typeof html === "string" ? parser(html) : html } as any);
           }
         } catch (e) {
           // Gracefully suppress 404 / optional dashboard widget errors
@@ -206,8 +206,8 @@ export const createDashboardSlice: StateCreator<DataState, [], [], DashboardSlic
             network.fetchWithCache("cal_semester_list", () => network.fetchFragment("academics/common/CalendarPreview")),
           ]);
 
-          const sems = parseSemesters(semHTML);
-          const calSems = parseCalendarSemesters(calHTML);
+          const sems: any[] = typeof semHTML === "string" ? parseSemesters(semHTML) : (semHTML || []);
+          const calSems: any[] = typeof calHTML === "string" ? parseCalendarSemesters(calHTML) : (calHTML || []);
 
           if (sems.length > 0 || calSems.length > 0) {
             const filterNonIndustry = <T extends { id: string; label: string; selected?: boolean; isLatest?: boolean }>(list: T[]): T[] => {
@@ -218,14 +218,14 @@ export const createDashboardSlice: StateCreator<DataState, [], [], DashboardSlic
             const savedCalSem = localStorage.getItem("retop-cal-selected-sem");
             const calPool = filterNonIndustry(calSems);
             const calDefault =
-              savedCalSem && calSems.some((s) => s.id === savedCalSem)
+              savedCalSem && calSems.some((s: any) => s.id === savedCalSem)
                 ? savedCalSem
                 : calPool.find((s) => s.selected)?.id || calPool[0]?.id || "";
 
             const savedTtSem = localStorage.getItem("retop-tt-selected-sem");
             const ttPool = filterNonIndustry(sems);
             const ttDefault =
-              savedTtSem && sems.some((s) => s.id === savedTtSem)
+              savedTtSem && sems.some((s: any) => s.id === savedTtSem)
                 ? savedTtSem
                 : ttPool.find((s) => s.isLatest)?.id || ttPool[0]?.id || "";
 

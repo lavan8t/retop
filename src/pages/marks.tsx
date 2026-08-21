@@ -50,15 +50,15 @@ export const MarksPage: React.FC<MarksPageProps> = ({
       }
       try {
         const html = await network.getMarksView();
-        const sems = parseMarksSemesters(html);
-        const dropdownSems = sems.map((s) => ({
+        const sems = typeof html === "string" ? parseMarksSemesters(html) : html;
+        const dropdownSems = (Array.isArray(sems) ? sems : []).map((s) => ({
           id: s.id,
           label: s.label,
           isLatest: s.isLatest,
         }));
         setSemesters(dropdownSems);
-        if (sems.length> 0 && !selectedSem) {
-          setSelectedSem(sems[0].id);
+        if (dropdownSems.length > 0 && !selectedSem) {
+          setSelectedSem(dropdownSems[0].id);
         }
       } catch (e) {
         if (e instanceof globalThis.Error && e.message === "OFFLINE_CACHE_MISS") {
@@ -99,7 +99,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({
       try {
         const isPastSemester = semesters.length > 0 && selectedSem !== semesters[0].id;
         const html = await network.getStudentMarks(selectedSem, false, isPastSemester);
-        const parsedMarks = parseStudentMarks(html);
+        const parsedMarks = typeof html === "string" ? parseStudentMarks(html) : html;
         setMarksData(parsedMarks);
         setOfflineMiss(false);
       } catch (e) {

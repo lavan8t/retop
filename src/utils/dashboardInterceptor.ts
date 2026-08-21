@@ -44,7 +44,6 @@ function notifyIntercepted(key: string, html: string) {
   }
 }
 
-// ── Interceptor ───────────────────────────────────────────────────────────────
 export function interceptDashboardResponse(url: string, htmlText: string) {
   if (!htmlText || typeof htmlText !== "string" || htmlText.length < 20) return;
 
@@ -56,45 +55,45 @@ export function interceptDashboardResponse(url: string, htmlText: string) {
     localStorage.getItem("retop_active_user") ||
     "";
 
-  const saveCache = (keyBase: string) => {
+  const saveCache = (keyBase: string, data: any) => {
     if (authId) {
-      setCachedData(`${authId}_${keyBase}`, htmlText);
+      setCachedData(`${authId}_${keyBase}`, data);
     }
-    setCachedData(keyBase, htmlText);
+    setCachedData(keyBase, data);
   };
 
   if (url.includes("get/dashboard/current/cgpa/credits")) {
-    saveCache("dashboard_stats");
-    notifyIntercepted("dashboard_stats", htmlText);
     try {
       const stats = parseAcademicStats(htmlText);
+      saveCache("dashboard_stats", stats);
+      notifyIntercepted("dashboard_stats", htmlText);
       useDataStore.setState({ stats });
     } catch (e) {
       console.warn("[retop] Error parsing intercepted dashboard stats:", e);
     }
   } else if (url.includes("get/dashboard/current/semester/course/details")) {
-    saveCache("dashboard_attendance");
-    notifyIntercepted("dashboard_attendance", htmlText);
     try {
       const attendance = parseCourseDetails(htmlText);
+      saveCache("dashboard_attendance", attendance);
+      notifyIntercepted("dashboard_attendance", htmlText);
       useDataStore.setState({ attendance });
     } catch (e) {
       console.warn("[retop] Error parsing intercepted dashboard attendance:", e);
     }
   } else if (url.includes("get/upcoming/digital/assignments")) {
-    saveCache("dashboard_da");
-    notifyIntercepted("dashboard_da", htmlText);
     try {
       const assignments = parseDigitalAssignments(htmlText);
+      saveCache("dashboard_da", assignments);
+      notifyIntercepted("dashboard_da", htmlText);
       useDataStore.setState({ assignments });
     } catch (e) {
       console.warn("[retop] Error parsing intercepted dashboard DA:", e);
     }
   } else if (url.includes("get/scheduled/events")) {
-    saveCache("dashboard_events");
-    notifyIntercepted("dashboard_events", htmlText);
     try {
       const events = parseEvents(htmlText);
+      saveCache("dashboard_events", events);
+      notifyIntercepted("dashboard_events", htmlText);
       useDataStore.setState({ events });
     } catch (e) {
       console.warn("[retop] Error parsing intercepted dashboard events:", e);

@@ -221,9 +221,9 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
           "cal_semester_list",
           () => network.fetchFragment("academics/common/CalendarPreview", { verifyMenu: "true" })
         );
-        const sems = parseCalendarSemesters(html);
-        setCalSemesters(sems);
-        if (sems.length> 0 && !calSelectedSem) {
+        const sems = typeof html === "string" ? parseCalendarSemesters(html) : html;
+        setCalSemesters(Array.isArray(sems) ? sems : []);
+        if (Array.isArray(sems) && sems.length > 0 && !calSelectedSem) {
           const defaultSem =
             sems.find((s: any) => s.selected)?.id || sems[0].id;
           setCalSelectedSem(defaultSem);

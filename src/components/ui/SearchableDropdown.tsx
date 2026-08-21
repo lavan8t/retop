@@ -201,13 +201,13 @@ export const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   return (
     <div className={`flex flex-col gap-1.5 ${className}`}>
       {label && (
-        <label className="text-[11px] font-bold text-(--text-muted) uppercase tracking-wide flex items-center justify-between">
+        <label className="text-xs font-semibold text-(--text-muted) flex items-center justify-between">
           <span className="flex items-center gap-1">
             {label}
             {required && <span className="text-red-400 font-bold">*</span>}
           </span>
           {loading && (
-            <span className="text-(--accent-base) animate-pulse normal-case tracking-normal font-normal text-[10px]">
+            <span className="text-(--accent-base) animate-pulse font-normal text-[11px]">
               loading…
             </span>
           )}
@@ -223,15 +223,15 @@ export const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
         aria-expanded={isOpen}
         onClick={() => setIsOpen((prev) => !prev)}
         onKeyDown={handleKeyDown}
-        className={`w-full min-h-10 px-3.5 py-2 rounded-2xl bg-(--bg-main) border text-left text-sm font-medium transition-all flex items-center justify-between gap-2 cursor-pointer select-none focus:outline-none focus:ring-2 focus:ring-(--accent-base)/40 ${
+        className={`w-full h-11 px-4 py-2.5 rounded-2xl bg-(--bg-surface) hover:bg-(--bg-highlight)/60 border text-left text-sm font-medium transition-all flex items-center justify-between gap-2 cursor-pointer select-none focus:outline-none focus:ring-2 focus:ring-(--accent-base)/30 ${
           error
             ? "border-red-500/70 focus:border-red-500"
             : isOpen
               ? "border-(--accent-base) ring-2 ring-(--accent-base)/30"
-              : "border-(--border-dim) hover:border-(--border-dim)/80 focus:border-(--accent-base)"
+              : "border-(--border-dim)/50 hover:border-(--border-dim) focus:border-(--accent-base)"
         } ${
           disabled || loading || options.length === 0
-            ? "opacity-50 cursor-not-allowed bg-(--bg-main)/40"
+            ? "opacity-50 cursor-not-allowed bg-(--bg-surface)/40"
             : ""
         }`}>
         <span

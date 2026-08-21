@@ -36,7 +36,7 @@ export const createExamScheduleSlice: StateCreator<DataState, [], [], ExamSchedu
     set({ examLoading: true, examError: null });
     try {
       const html = await network.getExamScheduleView();
-      const sems = parseExamSemesters(html);
+      const sems = typeof html === "string" ? parseExamSemesters(html) : html;
       set({ examSemesters: sems });
       if (sems.length > 0 && !get().examSelectedSem) {
         set({ examSelectedSem: sems[0].id });
@@ -57,7 +57,12 @@ export const createExamScheduleSlice: StateCreator<DataState, [], [], ExamSchedu
     set({ examLoading: true, examError: null, examGroups: [] });
     try {
       const html = await network.getExamScheduleData(semId);
-      const { groups, reportingNote } = parseExamScheduleData(html);
+      const { groups, reportingNote } =
+        typeof html === "string"
+          ? parseExamScheduleData(html)
+          : (html as any)?.groups
+            ? (html as any)
+            : { groups: (html as any) || [], reportingNote: "" };
       set({ examGroups: groups, examReportingNote: reportingNote });
     } catch (e: any) {
       if (e.message !== "OFFLINE_CACHE_MISS") {

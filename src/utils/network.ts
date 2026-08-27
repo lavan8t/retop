@@ -275,7 +275,6 @@ export class VTOPNetwork {
       return new Response("", { status: 200 });
     }
 
-    useAppStore.getState().logNetworkRequest(urlStr);
     await this.enforceRateLimit();
 
     try {
@@ -421,7 +420,6 @@ export class VTOPNetwork {
 
     const doFetchAndCache = async () => {
       try {
-        useAppStore.getState().logNetworkRequest(key, userScopedKey);
         const data = await fetcher();
 
         const isErrorPage =

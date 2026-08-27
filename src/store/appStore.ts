@@ -24,7 +24,6 @@ type AppState = {
   setCurrentView: (val: ViewType) => void;
   addSnackbar: (snackbar: Omit<SnackbarData, 'id'>) => void;
   removeSnackbar: (id: string) => void;
-  logNetworkRequest: (url: string, key?: string) => void;
 
   ttViewMode: "grid" | "list" | "week";
   setTtViewMode: (val: "grid" | "list" | "week") => void;
@@ -86,7 +85,6 @@ export const useAppStore = create<AppState>((set) => ({
     set((state) => ({
       snackbars: state.snackbars.filter((s) => s.id !== id),
     })),
-  logNetworkRequest: () => {},
 
   ttViewMode: "grid",
   setTtViewMode: (val) => set({ ttViewMode: val }),

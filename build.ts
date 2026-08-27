@@ -51,30 +51,8 @@ const ROOT = resolve(".");
 const DIST = resolve("dist");
 
 // ── Step 0: Clean dist/ ──────────────────────────────────────────────
-function safeCleanDir(dirPath: string) {
-  if (!existsSync(dirPath)) {
-    try { mkdirSync(dirPath, { recursive: true }); } catch {}
-    return;
-  }
-  try {
-    const entries = readdirSync(dirPath, { withFileTypes: true });
-    for (const entry of entries) {
-      const full = resolve(dirPath, entry.name);
-      try {
-        if (entry.isDirectory()) {
-          safeCleanDir(full);
-          try { rmSync(full, { recursive: true, force: true }); } catch {}
-        } else {
-          try { rmSync(full, { force: true }); } catch {}
-        }
-      } catch {}
-    }
-  } catch {}
-}
-
-safeCleanDir(DIST);
-try { if (!existsSync(DIST)) mkdirSync(DIST, { recursive: true }); } catch {}
-try { if (!existsSync(resolve(DIST, "assets"))) mkdirSync(resolve(DIST, "assets"), { recursive: true }); } catch {}
+try { rmSync(DIST, { recursive: true, force: true }); } catch {}
+try { mkdirSync(resolve(DIST, "assets"), { recursive: true }); } catch {}
 
 const commonDefine = {
   __BUILD_NUMBER__: JSON.stringify(buildNumber),

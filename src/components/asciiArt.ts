@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { getExtUrl } from "../utils/url";
+import { ASCII_ART_BUNDLED } from "./asciiArtData";
 
 export type AsciiArtType = "TT" | "SMV" | "MGR" | "CC";
 
@@ -50,20 +51,51 @@ export const loadAsciiArt = async (type: AsciiArtType): Promise<string> => {
   if (asciiCache.has(type)) {
     return asciiCache.get(type)!;
   }
-  const filename = `assets/ascii_${type.toLowerCase()}.txt`;
-  try {
-    const url = typeof chrome !== "undefined" && typeof chrome.runtime?.getURL === "function"
-      ? getExtUrl(filename)
-      : `/${filename}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const text = (await res.text()).replace(/\r/g, "");
+  if (ASCII_ART_BUNDLED[type]) {
+    const text = ASCII_ART_BUNDLED[type];
     asciiCache.set(type, text);
     return text;
-  } catch (err) {
-    console.warn(`[retop] Failed to load ASCII art for ${type}:`, err);
-    return "";
   }
+  const filename = `assets/ascii_${type.toLowerCase()}.txt`;
+  const candidates: string[] = [];
+
+  if (typeof chrome !== "undefined" && typeof chrome.runtime?.getURL === "function") {
+    try {
+      candidates.push(getExtUrl(filename));
+      candidates.push(chrome.runtime.getURL(filename));
+      candidates.push(chrome.runtime.getURL(`dist/${filename}`));
+    } catch {}
+  }
+
+  candidates.push(`./${filename}`);
+  candidates.push(`/${filename}`);
+  candidates.push(filename);
+  candidates.push(`../${filename}`);
+
+  for (const url of candidates) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const contentType = res.headers.get("content-type") || "";
+      if (contentType.includes("text/html")) continue;
+      const text = (await res.text()).replace(/\r/g, "");
+      if (
+        !text ||
+        text.trim().startsWith("<!doctype") ||
+        text.trim().startsWith("<html") ||
+        text.trim().startsWith("<head") ||
+        text.trim().startsWith("<body") ||
+        text.trim().startsWith("<script")
+      ) {
+        continue;
+      }
+      asciiCache.set(type, text);
+      return text;
+    } catch {}
+  }
+
+  console.warn(`[retop] Failed to load ASCII art for ${type}`);
+  return "";
 };
 
 const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*";

@@ -14,9 +14,7 @@
   "host_permissions": [
     "https://vtop.vit.ac.in/*",
     "https://vtopcc.vit.ac.in/*",
-    "https://getretop.web.app/*",
-    "http://localhost/*",
-    "http://127.0.0.1/*"
+    "https://getretop.web.app/*"
   ],
 
   "content_scripts": [
@@ -39,9 +37,7 @@
     },
     {
       "matches": [
-        "https://getretop.web.app/*",
-        "http://localhost/*",
-        "http://127.0.0.1/*"
+        "https://getretop.web.app/*"
       ],
       "js": ["webBridge.js"],
       "run_at": "document_start"
@@ -72,12 +68,9 @@
         "pdf.js/pdf.worker.min.mjs"
       ],
       "matches": [
-        "https://*.vit.ac.in/*",
         "https://vtop.vit.ac.in/*",
         "https://vtopcc.vit.ac.in/*",
-        "https://getretop.web.app/*",
-        "http://localhost/*",
-        "http://127.0.0.1/*"
+        "https://getretop.web.app/*"
       ]
     }
   ],

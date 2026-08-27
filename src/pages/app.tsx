@@ -31,7 +31,7 @@ import { getDestinationView, getSavedView } from "../utils/routes";
 import { TopBar } from "../components/layout/TopBar";
 import { ContentRouter } from "../components/layout/ContentRouter";
 import { GlobalDADropZone } from "../components/ui/GlobalDADropZone";
-import { AlertDialogManager, showAlertDialog } from "../components/ui/AlertDialog";
+import { AlertDialogManager } from "../components/ui/AlertDialog";
 
 import { FloatingViewToggle } from "../components/timetable/FloatingViewToggle";
 import { useSettings, applyTheme } from "../utils/settings-store";

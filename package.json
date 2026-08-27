@@ -7,6 +7,7 @@
     "build:prod": "bun ./node_modules/typescript/lib/tsc.js --noEmit && bun run build.ts --prod",
     "build:copy": "bun run build && bun scripts/copy-dist.ts",
     "copy:dist": "bun scripts/copy-dist.ts",
+    "serve:idcard": "bun run scripts/serve-idcard.ts",
     "css:watch": "bun ./node_modules/@tailwindcss/cli/dist/index.mjs -i src/input.css -o dist/style.css --watch"
   },
   "dependencies": {
@@ -28,9 +29,5 @@
     "@types/react-dom": "^19",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.9.3"
-  },
-  "trustedDependencies": [
-    "sharp",
-    "unrs-resolver"
-  ]
+  }
 }

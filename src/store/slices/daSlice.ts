@@ -16,7 +16,6 @@ export interface DASlice {
   daAssignments: Record<string, DAAssignment[]>; // classId -> assignments
   daLoading: boolean;
   daError: string | null;
-  daRawHtml: string;
   fetchDASemesters: (network: VTOPNetwork, force?: boolean) => Promise<void>;
   fetchDACourses: (
     network: VTOPNetwork,
@@ -41,7 +40,6 @@ export const createDASlice: StateCreator<DataState, [], [], DASlice> = (
   daAssignments: {},
   daLoading: false,
   daError: null,
-  daRawHtml: "",
 
   setDaSelectedSem: (semId: string) => set({ daSelectedSem: semId }),
 
@@ -97,7 +95,7 @@ export const createDASlice: StateCreator<DataState, [], [], DASlice> = (
       return;
     }
 
-    set({ daLoading: true, daError: null, daCourses: [], daRawHtml: "" });
+    set({ daLoading: true, daError: null, daCourses: [] });
     try {
       const isPastSemester =
         get().daSemesters.length > 0 && semesterId !== get().daSemesters[0].id;
@@ -107,7 +105,7 @@ export const createDASlice: StateCreator<DataState, [], [], DASlice> = (
         isPastSemester,
       );
       const courses = typeof html === "string" ? parseDACourses(html) : html;
-      set({ daCourses: courses, daRawHtml: typeof html === "string" ? html : "" });
+      set({ daCourses: courses });
     } catch (e: any) {
       if (e.message !== "OFFLINE_CACHE_MISS") {
         set({ daError: e.message || "Failed to fetch DA courses" });

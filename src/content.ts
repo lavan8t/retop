@@ -1,6 +1,7 @@
 import { renderDashboard } from "./pages/app";
 import { scrapeMenu } from "./parsers/menu";
 import { injectLegacyMenuSearch } from "./components/legacy/injectLegacyMenuSearch";
+import { injectRoleSwitcher, updateRolePlaceholders } from "./components/legacy/injectRoleSwitcher";
 import {
   injectGlobalStyles,
   injectGlobalFonts,
@@ -105,24 +106,51 @@ if (isTopWindow && isVtopDomain) {
     p.includes("/vtop/init/page");
 
   if (isPreloginOrLogin) {
-    injectSplashScreen(false);
+    idbGet("retop-user-role").then((savedRole) => {
+      const role = (savedRole as string) || "student";
+      const isParentOrAlumni = role === "parent" || role === "alumni";
 
-    if (p.includes("/vtop/open/page") || p.includes("/vtop/prelogin")) {
-      const earlyLink = document.createElement("link");
-      earlyLink.id = "vtop-early-theme";
-      earlyLink.rel = "stylesheet";
-      earlyLink.href = getExtUrl("dist/prelogin.css");
-      (document.head || document.documentElement).appendChild(earlyLink);
-    } else {
-      const earlyLink = document.createElement("link");
-      earlyLink.id = "vtop-early-theme";
-      earlyLink.rel = "stylesheet";
-      earlyLink.href = getExtUrl("dist/login.css");
-      (document.head || document.documentElement).appendChild(earlyLink);
-    }
+      if (isParentOrAlumni) return;
+
+      injectSplashScreen(false);
+
+      if (p.includes("/vtop/open/page") || p.includes("/vtop/prelogin")) {
+        const earlyLink = document.createElement("link");
+        earlyLink.id = "vtop-early-theme";
+        earlyLink.rel = "stylesheet";
+        earlyLink.href = getExtUrl("dist/prelogin.css");
+        (document.head || document.documentElement).appendChild(earlyLink);
+
+        // Auto-advance from role selection to student login immediately at document_start
+        const trySubmit = () => {
+          const stdForm = (document.getElementById("stdForm") || document.getElementById("empForm")) as HTMLFormElement | null;
+          if (stdForm) {
+            stdForm.submit();
+            return true;
+          }
+          return false;
+        };
+
+        if (!trySubmit()) {
+          const obs = new MutationObserver(() => {
+            if (trySubmit()) obs.disconnect();
+          });
+          obs.observe(document.documentElement, { childList: true, subtree: true });
+        }
+      } else {
+        const earlyLink = document.createElement("link");
+        earlyLink.id = "vtop-early-theme";
+        earlyLink.rel = "stylesheet";
+        earlyLink.href = getExtUrl("dist/login.css");
+        (document.head || document.documentElement).appendChild(earlyLink);
+      }
+    }).catch(() => {});
   } else if (p.includes("/vtop/content") || p.includes("/vtop/main")) {
-    // Authenticated page: inject splash with VIT logo to cover load flicker, removed after retop mounts
-    injectSplashScreen(true);
+    idbGet("retop-user-role").then((savedRole) => {
+      if ((savedRole as string) === "student" || !savedRole) {
+        injectSplashScreen(true);
+      }
+    }).catch(() => {});
   }
 }
 
@@ -468,11 +496,42 @@ const init = async () => {
       path.includes("/vtop/init/page"));
 
   if (isLoginPageOrRole) {
+    const savedRole = ((await idbGet("retop-user-role")) as string) || "student";
+
     if (initialStructure === "role_selection") {
+      let targetForm: HTMLFormElement | null = null;
+      if (savedRole === "parent") targetForm = document.getElementById("parentForm") as HTMLFormElement;
+      else if (savedRole === "alumni") targetForm = document.getElementById("alumniForm") as HTMLFormElement;
+      else targetForm = (document.getElementById("stdForm") || document.getElementById("empForm")) as HTMLFormElement;
+
+      if (targetForm) {
+        console.log(`[retop] Auto-submitting ${savedRole} form by default`);
+        targetForm.submit();
+        return;
+      }
       injectPreloginTheme();
     } else {
+      // Login page: check if current role is parent/alumni
+      const isParentOrAlumni =
+        savedRole === "parent" ||
+        savedRole === "alumni" ||
+        document.getElementById("form-signin_Alumni_v1") !== null ||
+        (document.getElementById("vtopLoginForm") === null && document.querySelector(".form-signin") !== null);
+
+      if (isParentOrAlumni) {
+        console.log(`[retop] Active role is ${savedRole}. Retop UI disabled for non-student.`);
+        document.getElementById("vtop-login-theme")?.remove();
+        document.getElementById("vtop-early-theme")?.remove();
+        document.body.classList.add("show-legacy-ui");
+        document.body.style.opacity = "1";
+        removeSplashScreen();
+        injectRoleSwitcher(savedRole === "alumni" ? "alumni" : "parent");
+        return;
+      }
+
       injectLoginTheme();
       enhanceLegacyLogin();
+      injectRoleSwitcher(savedRole);
     }
 
     // Observe DOM mutations to seamlessly swap themes if VTOP changes page structure without a reload
@@ -484,9 +543,19 @@ const init = async () => {
       const current = detectStructure();
       if (current === "role_selection" && !document.getElementById("vtop-prelogin-theme")) {
         injectPreloginTheme();
-      } else if (current === "login" && !document.getElementById("vtop-login-theme")) {
-        injectLoginTheme();
-        enhanceLegacyLogin();
+      } else if (current === "login") {
+        idbGet("retop-user-role").then((r) => {
+          const role = (r as string) || "student";
+          if (role === "student" || role === "employee") {
+            if (!document.getElementById("vtop-login-theme")) {
+              injectLoginTheme();
+              enhanceLegacyLogin();
+            }
+            injectRoleSwitcher(role);
+          } else {
+            injectRoleSwitcher(role);
+          }
+        });
       }
     });
     structureObserver.observe(document.body, { childList: true, subtree: true });
@@ -515,25 +584,6 @@ const init = async () => {
         },
         true,
       );
-    }
-
-    // SKIP ROLE SELECTION: When enabled in settings, auto-select student role
-    if (initialStructure === "role_selection") {
-      try {
-        const skipResult = await idbGet("retop-settings");
-        const skipSettings = parseSettingsPayload(skipResult);
-        if (skipSettings?.skipRoleSelection) {
-          const stdForm = document.getElementById("stdForm") as HTMLFormElement;
-          if (stdForm) {
-            console.log("[retop] skipRoleSelection enabled, auto-submitting student form");
-            await idbSet("retop-user-role", "student");
-            stdForm.submit();
-            return;
-          }
-        }
-      } catch (e) {
-        console.warn("[retop] skipRoleSelection check failed", e);
-      }
     }
 
     return;
@@ -1410,7 +1460,7 @@ const injectLoginTheme = () => {
     asciiPre.id = "retop-ascii-art";
     const isChennaiHost = window.location.hostname.includes("vtopcc");
 
-    import("./components/asciiArt").then(async ({ loadAsciiArt, pickAsciiType, getAsciiConfig }) => {
+    import("./components/asciiArt").then(async ({ loadAsciiArt, pickAsciiType, getAsciiConfig, runAsciiSparkAnimation }) => {
       const pickedArt = pickAsciiType(isChennaiHost ? "chennai" : "vellore");
       const config = getAsciiConfig(pickedArt);
 
@@ -1423,220 +1473,31 @@ const injectLoginTheme = () => {
       const asciiArt = await loadAsciiArt(pickedArt);
       if (!asciiArt) return;
 
-      asciiPre.textContent = asciiArt;
       wrapper.appendChild(asciiPre);
-
       document.body.appendChild(wrapper);
 
-      // ASCII Scramble Animation Logic
-      const nonSpaceIndices: number[] = [];
-      for (let i = 0; i < asciiArt.length; i++) {
-        if (asciiArt[i] !== " " && asciiArt[i] !== "\n") {
-          nonSpaceIndices.push(i);
+      const cleanupAnimation = runAsciiSparkAnimation(asciiPre, asciiArt);
+
+      const observer = new MutationObserver(() => {
+        if (!document.body.contains(asciiPre)) {
+          cleanupAnimation();
+          observer.disconnect();
         }
-      }
-
-      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*";
-      let puddleInterval: ReturnType<typeof setInterval> | null = null;
-
-      // Initial load CSS animation instead of JS rain
-      asciiPre.style.animation = "retop-ascii-rise 0.5s linear forwards";
-
-      // Kinetic Puddle Hover Logic - Awwards Level Fluid Ripples
-      interface Ripple {
-        x: number;
-        y: number;
-        timeCreated: number;
-        energy: number;
-      }
-      let ripples: Ripple[] = [];
-      const maxRipples = 25;
-      const waveSpeed = 0.15; // pixels per ms
-      const waveFrequency = 0.08;
-
-      let lastMouseX = -1000;
-      let lastMouseY = -1000;
-      let lastTime = Date.now();
-
-      const { charW, charH } = config;
-
-    const getLineOffsetX = (preW: number, lineLen: number) => {
-      return Math.max(0, preW - lineLen * charW);
-    };
-
-    const updateHoverPuddle = (
-      x: number,
-      y: number,
-      vx: number,
-      vy: number,
-    ) => {
-      // Create ripple exactly at the letter's grid coordinates
-      ripples.push({
-        x,
-        y,
-        timeCreated: Date.now(),
-        energy: Math.min(1.0, (Math.abs(vx) + Math.abs(vy)) * 0.2), // cap energy
       });
-    };
-
-    const originalLines = asciiArt.split("\n");
-
-    document.addEventListener("mousemove", (e) => {
-      const rect = asciiPre.getBoundingClientRect();
-      const currentX = e.clientX - rect.left;
-      const currentY = e.clientY - rect.top;
-
-      const now = Date.now();
-      const dt = Math.max(1, now - lastTime);
-      lastTime = now;
-
-      if (lastMouseX !== -1000) {
-        const dx = currentX - lastMouseX;
-        const dy = currentY - lastMouseY;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        // Check if mouse is touching an actual character ("water") with slight leniency
-        const charY = Math.floor(currentY / charH);
-        let onWater = false;
-
-        // Check current char and surrounding chars for leniency (radius increased for sparse arts like MGR)
-        for (
-          let cy = Math.max(0, charY - 3);
-          cy <= Math.min(originalLines.length - 1, charY + 3);
-          cy++
-        ) {
-          const line = originalLines[cy];
-          const offsetX = getLineOffsetX(rect.width, line.length);
-          const charX = Math.floor((currentX - offsetX) / charW);
-
-          for (
-            let cx = Math.max(0, charX - 8);
-            cx <= Math.min(line.length - 1, charX + 8);
-            cx++
-          ) {
-            if (cx >= 0 && line[cx] && line[cx] !== " ") onWater = true;
-          }
-        }
-
-        // Spawn a ripple if mouse moved enough AND is touching a character
-        if (onWater && (distance > 8 || ripples.length === 0)) {
-          const speed = distance / dt;
-          const spawnEnergy = Math.min(50 + speed * 100, 150);
-
-          ripples.push({
-            x: currentX,
-            y: currentY,
-            timeCreated: now,
-            energy: spawnEnergy,
-          });
-
-          if (ripples.length > maxRipples) {
-            ripples.shift();
-          }
-          lastMouseX = currentX;
-          lastMouseY = currentY;
-        } else if (!onWater) {
-          // Mouse is over empty space; just track it without spawning
-          lastMouseX = currentX;
-          lastMouseY = currentY;
-        }
-      } else {
-        lastMouseX = currentX;
-        lastMouseY = currentY;
-      }
-
-      if (!puddleInterval) {
-        puddleInterval = setInterval(() => {
-          const now = Date.now();
-          // Filter dead ripples (live for 1 second)
-          ripples = ripples.filter((r) => now - r.timeCreated < 1000);
-
-          if (ripples.length === 0) {
-            asciiPre.textContent = asciiArt;
-            clearInterval(puddleInterval!);
-            puddleInterval = null;
-            return;
-          }
-
-          const preWidth = asciiPre.getBoundingClientRect().width;
-          let newText = "";
-          for (let y = 0; y < originalLines.length; y++) {
-            const line = originalLines[y];
-            const py = y * charH;
-            const offsetX = getLineOffsetX(preWidth, line.length);
-
-            let newLine = "";
-            for (let x = 0; x < line.length; x++) {
-              const char = line[x];
-              if (char === " ") {
-                newLine += " ";
-                continue;
-              }
-              const px = offsetX + x * charW;
-
-              let totalWave = 0;
-              let isAffected = false;
-
-              for (let i = 0; i < ripples.length; i++) {
-                const r = ripples[i];
-                const dx = px - r.x;
-                const dy = py - r.y;
-                const distSq = dx * dx + dy * dy;
-
-                if (distSq > 40000) continue; // max 200px radius
-
-                const dist = Math.sqrt(distSq);
-                const age = now - r.timeCreated;
-                const waveRadius = age * waveSpeed;
-
-                // Only characters near the expanding wave ring are affected
-                const distanceToWave = Math.abs(dist - waveRadius);
-
-                if (distanceToWave < 40) {
-                  // thickness of the ripple
-                  const phase = distanceToWave * waveFrequency;
-                  // Quadratic falloff for smoother envelope
-                  const amplitude = Math.pow(
-                    Math.max(0, 1 - distanceToWave / 40),
-                    2,
-                  );
-                  // Quadratic fade out as it ages
-                  const lifeFade = Math.pow(Math.max(0, 1 - age / 1000), 2);
-
-                  // Add to total wave interference
-                  totalWave +=
-                    Math.cos(phase) * amplitude * lifeFade * (r.energy / 100);
-                  isAffected = true;
-                }
-              }
-
-              if (isAffected && Math.abs(totalWave) > 0.2) {
-                newLine += chars[Math.floor(Math.random() * chars.length)];
-              } else {
-                newLine += char;
-              }
-            }
-            newText += newLine + "\n";
-          }
-          asciiPre.textContent = newText.slice(0, -1);
-        }, 50); // 20fps
-      }
-    });
-
-    document.addEventListener("mouseleave", () => {
-      lastMouseX = -1000;
-    });
+      observer.observe(document.body, { childList: true, subtree: true });
     });
   }
 
   // Apply Floating Labels to Username and Password
-  const applyFloatingLabel = (inputId: string) => {
+  const applyFloatingLabel = (inputId: string, customLabel?: string) => {
     const input = document.getElementById(inputId) as HTMLInputElement;
-    if (
-      input &&
-      !input.nextElementSibling?.classList.contains("retop-floating-label")
-    ) {
-      const placeholder = input.getAttribute("placeholder") || input.name;
+    if (input) {
+      const existingLabel = input.parentElement?.querySelector(".retop-floating-label");
+      if (existingLabel) {
+        if (customLabel) existingLabel.textContent = customLabel;
+        return;
+      }
+      const placeholder = customLabel || input.getAttribute("placeholder") || input.name;
       input.setAttribute("placeholder", " "); // Space enables :placeholder-shown CSS hack
 
       const label = document.createElement("label");
@@ -1647,8 +1508,15 @@ const injectLoginTheme = () => {
       input.parentElement?.insertBefore(label, input.nextSibling);
     }
   };
-  applyFloatingLabel("username");
-  applyFloatingLabel("password");
+
+  idbGet("retop-user-role").then((r) => {
+    const role = (r as string) || "student";
+    applyFloatingLabel("username", role === "employee" ? "Employee ID" : "Registration Number");
+    applyFloatingLabel("password");
+  }).catch(() => {
+    applyFloatingLabel("username", "Registration Number");
+    applyFloatingLabel("password");
+  });
 
   idbGet("retop-settings").then((savedSettings) => {
     try {
@@ -1744,6 +1612,9 @@ const enhanceLegacyLogin = () => {
   };
 
   const validateLoginForm = (e?: Event): boolean => {
+    if (!document.getElementById("vtopLoginForm")) {
+      return true;
+    }
     const { pInput, uInput, cInput } = getLoginInputs();
 
     // If on a login page with password field

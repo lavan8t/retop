@@ -23,6 +23,7 @@ export const DashboardAssignmentSchema = z.object({
   title: z.string(),
   course: z.string(),
   dueDate: z.string(),
+  dueDateMs: z.number().optional(),
   status: z.string().optional(),
 });
 

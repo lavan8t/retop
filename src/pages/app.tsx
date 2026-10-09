@@ -37,7 +37,6 @@ import { FloatingViewToggle } from "../components/timetable/FloatingViewToggle";
 import { useSettings, applyTheme } from "../utils/settings-store";
 import { LegacyReturnButton } from "../components/LegacyReturnButton";
 import { SnackbarManager } from "../components/ui/Snackbar";
-import { UpdatesWidget } from "../components/ui/UpdatesWidget";
 
 const findLegacyTarget = (title: string, url?: string): HTMLElement | null => {
   const links = Array.from(document.querySelectorAll("a, button, [onclick], .nav-link, .menu-item, [data-url], li"));
@@ -142,7 +141,7 @@ export function renderDashboard() {
   }
 }
 
-const DashboardApp = () => {
+export const DashboardApp = () => {
   useEffect(() => {
     removeSplashScreen();
   }, []);
@@ -171,6 +170,7 @@ const DashboardApp = () => {
 
   const isStandalone = typeof window !== "undefined" && (
     !!(window as any).__RETOP_OFFLINE__ ||
+    !!(window as any).__RETOP_STANDALONE__ ||
     window.location.pathname.includes("offline") ||
     window.location.hostname.includes("web.app") ||
     window.location.hostname.includes("localhost") ||
@@ -425,13 +425,20 @@ const DashboardApp = () => {
     let csrf = domCsrfInput?.value || (csrfMatch ? csrfMatch[1] : (window as any).csrfValue) || "";
 
     const isOffline = !!(window as any).__RETOP_OFFLINE__;
-    if ((!authId || !csrf) && isOffline) {
-      authId = authId || localStorage.getItem("retop_active_user") || localStorage.getItem("retop_lastAuthId") || "offline_user";
-      csrf = csrf || "offline_csrf";
+    if ((!authId || !csrf) && (isOffline || isStandalone)) {
+      authId =
+        authId ||
+        (window as any).authorizedID ||
+        localStorage.getItem("retop_active_user") ||
+        localStorage.getItem("retop_lastAuthId") ||
+        "student";
+      csrf = csrf || (window as any).csrfValue || "retop_csrf";
     }
 
     if (!authId || !csrf) {
-      revealLegacyUI();
+      if (!isStandalone) {
+        revealLegacyUI();
+      }
       return;
     }
 
@@ -439,10 +446,12 @@ const DashboardApp = () => {
     authIdRef.current = authId;
     networkRef.current = new VTOPNetwork(csrf, authId);
 
-    const isChennai = window.location.hostname.includes("vtopcc");
+    const isChennai =
+      window.location.hostname.includes("vtopcc") ||
+      localStorage.getItem("retop_campus") === "chennai";
     const campus: "chennai" | "vellore" = isChennai ? "chennai" : "vellore";
 
-    if (isOffline) {
+    if (isOffline || isStandalone) {
       getUserProfileImage(authId).then(async (decryptedImg) => {
         const res = await getStorageData([
           `${authId}_profileImage`,
@@ -463,7 +472,7 @@ const DashboardApp = () => {
           (u) => (u.regNo || "").toUpperCase() === authId.toUpperCase(),
         );
 
-        const offlineUser = {
+        const loadedUser = {
           regNo: authId,
           username: authId,
           name:
@@ -474,7 +483,7 @@ const DashboardApp = () => {
           profileImgBase64: cachedImg || foundUser?.profileImgBase64 || "",
           campus,
         };
-        setUser(offlineUser);
+        setUser(loadedUser);
       });
     } else {
       const scrapedUser = scrapeUserProfile(document);
@@ -573,7 +582,7 @@ const DashboardApp = () => {
     let menuPoller: ReturnType<typeof setInterval> | undefined;
     let feedbackPoller: ReturnType<typeof setInterval> | undefined;
 
-    if ((window as any).__RETOP_OFFLINE__) {
+    if ((window as any).__RETOP_OFFLINE__ || isStandalone) {
       getCachedData<MenuCategory[]>(`${authId}_vtop_menu`).then(cachedMenu => {
         if (cachedMenu && cachedMenu.length > 0) {
           setMenu(cachedMenu);
@@ -812,6 +821,9 @@ const DashboardApp = () => {
     }
 
     if (forceLegacy || dest === "content") {
+      if (isStandalone) {
+        return;
+      }
       setContentTitle(link.title);
       setTimeout(() => {
         setIsModernUI(false);
@@ -826,9 +838,12 @@ const DashboardApp = () => {
   };
 
   const handleLogout = async () => {
-    if ((window as any).__RETOP_OFFLINE__ || window.location.pathname.includes("offline") || window.location.hostname.includes("web.app")) {
+    if (isStandalone) {
       try {
-        sessionStorage.removeItem("retop_session_unlocked");
+        localStorage.removeItem("retop_lastAuthId");
+        localStorage.removeItem("retop_active_user");
+        sessionStorage.clear();
+        await removeStorageKeys(["retop_lastAuthId", "retop_active_user"]);
       } catch {}
       window.location.reload();
       return;
@@ -964,8 +979,6 @@ const DashboardApp = () => {
 
           <SnackbarManager />
           <AlertDialogManager />
-          <UpdatesWidget />
-          
           <GlobalDADropZone network={networkRef.current!} />
         </div>
       </div>

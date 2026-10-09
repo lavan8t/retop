@@ -23,7 +23,7 @@ function safeAppend(element: HTMLElement) {
 
 export function getAppRoot(): HTMLElement | null {
   if (typeof document === "undefined") return null;
-  if ((window as any).__RETOP_OFFLINE__) {
+  if ((window as any).__RETOP_OFFLINE__ || (window as any).__RETOP_STANDALONE__) {
     return document.getElementById("retop-root") || document.getElementById("offline-root") || document.getElementById("root");
   }
   const el = document.getElementById("retop-root") || document.getElementById("offline-root");
@@ -109,12 +109,15 @@ export function injectGlobalStyles() {
 export function initializeContainer() {
   if (isInitialized && document.getElementById("retop-host")) return;
 
-  if ((window as any).__RETOP_OFFLINE__) {
+  if ((window as any).__RETOP_OFFLINE__ || (window as any).__RETOP_STANDALONE__) {
     const root = document.getElementById("root") || document.body;
-    const appRoot = document.createElement("div");
-    appRoot.id = "retop-root";
-    appRoot.style.cssText = "width: 100%; height: 100%; pointer-events: auto; background: transparent;";
-    root?.appendChild(appRoot);
+    let appRoot = document.getElementById("retop-root");
+    if (!appRoot) {
+      appRoot = document.createElement("div");
+      appRoot.id = "retop-root";
+      appRoot.style.cssText = "width: 100%; height: 100%; pointer-events: auto; background: transparent;";
+      root?.appendChild(appRoot);
+    }
     isInitialized = true;
     return;
   }

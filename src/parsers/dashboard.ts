@@ -1,5 +1,6 @@
 import { Assignment, CourseSummary } from "../types/vtop";
 import { parseHTMLFast, validateParsed, Versioned } from "../utils/parser-utils";
+import { parseVtopDate } from "../utils/formatting";
 import {
   AcademicStatsSchema,
   DashboardAssignmentsListSchema,
@@ -92,10 +93,12 @@ export function parseDigitalAssignments(html: any): Versioned<Assignment[]> {
     const dueDate = cols[2]?.textContent?.trim() || "";
 
     if (title && dueDate) {
+      const parsedDate = parseVtopDate(dueDate);
       assignments.push({
         course: courseName,
         title,
         dueDate,
+        dueDateMs: parsedDate ? parsedDate.getTime() : undefined,
       });
     }
   });

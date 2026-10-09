@@ -1,4 +1,5 @@
 import { parseHTMLFast, validateParsed, Versioned, findSemesterOptions } from "../utils/parser-utils";
+import { parseVtopDate } from "../utils/formatting";
 import { DACourseListSchema, DAAssignmentListSchema } from "../schemas";
 
 export const DA_SCHEMA_VERSION = 1;
@@ -17,6 +18,7 @@ export interface DAAssignment {
   maxMark: string;
   weightage: string;
   dueDate: string;
+  dueDateMs?: number;
   lastUpdated: string;
   code: string; // The assignment code (e.g., 'CS1', 'AST02')
   hasQP?: boolean;
@@ -24,44 +26,28 @@ export interface DAAssignment {
   canDownloadSubmission?: boolean;
 }
 
-export const parseDASemesters = (
-  html: string,
-): { id: string; label: string }[] => {
-  const doc = parseHTMLFast(html);
-  const options = findSemesterOptions(doc);
-
-  const semesters: { id: string; label: string }[] = [];
-  options.forEach((opt) => {
-    const val =
-      opt.getAttribute("value") ||
-      (opt as HTMLOptionElement).value ||
-      opt.textContent?.trim() ||
-      "";
-    const txt = opt.textContent?.trim() || val;
-    if (val && val.trim() !== "") {
-      semesters.push({ id: val, label: txt });
-    }
+export const parseDASemesters = (html: string): { id: string; label: string }[] => {
+  return findSemesterOptions(parseHTMLFast(html)).map((opt) => {
+    const id = opt.getAttribute("value") || (opt as HTMLOptionElement).value || opt.textContent?.trim() || "";
+    return { id, label: opt.textContent?.trim() || id };
   });
-
-  return semesters;
 };
+
+function findTableBy(tables: Element[], test: (txt: string) => boolean, fallback = tables[0]): Element {
+  return tables.find((t) => test(t.textContent?.toLowerCase() || "")) ?? fallback;
+}
 
 export const parseDACourses = (html: string): Versioned<DACourse[]> => {
   const doc = parseHTMLFast(html);
   const tables = Array.from(doc.querySelectorAll("table"));
   if (tables.length === 0) return validateParsed(DACourseListSchema, [], "digitalAssignments");
 
-  // Find table that contains courses (has Class Nbr / Course Code / Title)
-  let table =
-    tables.find((t) => {
-      const txt = t.textContent?.toLowerCase() || "";
-      return (
-        (txt.includes("course") && txt.includes("title")) ||
-        txt.includes("class nbr") ||
-        txt.includes("course code") ||
-        txt.includes("faculty")
-      );
-    }) || tables[0];
+  const table = findTableBy(tables, (txt) =>
+    (txt.includes("course") && txt.includes("title")) ||
+    txt.includes("class nbr") ||
+    txt.includes("course code") ||
+    txt.includes("faculty"),
+  );
 
   const courses: DACourse[] = [];
   const rows = Array.from(table.querySelectorAll("tr"));
@@ -142,19 +128,14 @@ export const parseDAAssignments = (html: string): Versioned<DAAssignment[]> => {
   const tables = Array.from(doc.querySelectorAll("table"));
   if (tables.length === 0) return validateParsed(DAAssignmentListSchema, [], "digitalAssignments");
 
-  // Find table containing assignments (has Title, Due Date, Weightage, Max Mark, etc.)
-  let table =
-    tables.find((t) => {
-      const txt = t.textContent?.toLowerCase() || "";
-      return (
-        (txt.includes("title") &&
-          (txt.includes("due date") ||
-            txt.includes("mark") ||
-            txt.includes("weightage"))) ||
-        txt.includes("document details") ||
-        txt.includes("upload/edit")
-      );
-    }) || tables[tables.length - 1];
+  const table = findTableBy(
+    tables,
+    (txt) =>
+      (txt.includes("title") && (txt.includes("due date") || txt.includes("mark") || txt.includes("weightage"))) ||
+      txt.includes("document details") ||
+      txt.includes("upload/edit"),
+    tables[tables.length - 1],
+  );
 
   const assignments: DAAssignment[] = [];
   const rows = Array.from(table.querySelectorAll("tr"));
@@ -184,8 +165,6 @@ export const parseDAAssignments = (html: string): Versioned<DAAssignment[]> => {
       const hasQpColumn = cells.length >= 9;
       const qpCell = hasQpColumn ? cells[5] : null;
       const lastUpdatedCell = hasQpColumn ? cells[6] : cells[5];
-      const uploadCell = hasQpColumn ? cells[7] : cells[6];
-      const downloadCell = hasQpColumn ? cells[8] : cells[7];
 
       const lastUpdated = lastUpdatedCell?.textContent?.trim() || "";
 
@@ -204,52 +183,18 @@ export const parseDAAssignments = (html: string): Versioned<DAAssignment[]> => {
             qpCell?.querySelector("button")),
       );
 
-      // Extract Assignment Code (e.g. CS1, AST01, SET1, etc.)
-      let code = "";
-
-      // 1. From hidden inputs (e.g., <input type="hidden" name="code" value="CS1">)
-      const hiddenCodeInput = row.querySelector(
-        "input[name='code'], input[name='code1'], input[name='mCode'], input[name='assignmentCode']",
+      // Extract assignment code: hidden input → data attribute → onclick regex → title → slNo
+      const rowHtml = row.innerHTML;
+      const code = (
+        (row.querySelector("input[name='code'], input[name='code1'], input[name='mCode'], input[name='assignmentCode']") as HTMLInputElement | null)
+          ?.value ||
+        row.querySelector("[data-editcode]")?.getAttribute("data-editcode") ||
+        row.querySelector("[data-code]")?.getAttribute("data-code") ||
+        row.querySelector("[data-subcode]")?.getAttribute("data-subcode") ||
+        rowHtml.match(/(?:doDownloadQuestion|downloadSTudentDA|doDAssignmentProcess|myFunction|doEdit)\s*\(\s*['"]([A-Za-z0-9_]+)['"]/i)?.[1] ||
+        title.match(/\b([A-Z]{2,4}\d{1,2}|CS\d|AST\d|DA\d|EXP\d)\b/i)?.[1]?.toUpperCase() ||
+        (slNo && !isNaN(parseInt(slNo, 10)) ? `AST0${slNo}` : "AST01")
       );
-      if (hiddenCodeInput) {
-        code = hiddenCodeInput.getAttribute("value") || "";
-      }
-
-      // 2. From dataset attributes on buttons in the row (e.g. data-editcode="CS1", data-code="CS1")
-      if (!code) {
-        const anyDatasetBtn = row.querySelector(
-          "[data-editcode], [data-code], [data-subcode]",
-        );
-        if (anyDatasetBtn) {
-          code =
-            anyDatasetBtn.getAttribute("data-editcode") ||
-            anyDatasetBtn.getAttribute("data-code") ||
-            anyDatasetBtn.getAttribute("data-subcode") ||
-            "";
-        }
-      }
-
-      // 3. From onclick handler attributes
-      if (!code) {
-        const rowHtml = row.innerHTML;
-        const fnMatch = rowHtml.match(
-          /(?:doDownloadQuestion|downloadSTudentDA|doDAssignmentProcess|myFunction|doEdit)\s*\(\s*['"]([A-Za-z0-9_]+)['"]/i,
-        );
-        if (fnMatch && fnMatch[1]) {
-          code = fnMatch[1];
-        }
-      }
-
-      // 4. Fallback code from title pattern or slNo
-      if (!code && title) {
-        const match = title.match(
-          /\b([A-Z]{2,4}\d{1,2}|CS\d|AST\d|DA\d|EXP\d)\b/i,
-        );
-        if (match) code = match[1].toUpperCase();
-      }
-      if (!code && slNo && !isNaN(parseInt(slNo, 10))) {
-        code = `AST0${slNo}`;
-      }
 
       // Download submission check
       const downloadBtn = row.querySelector(
@@ -264,19 +209,21 @@ export const parseDAAssignments = (html: string): Versioned<DAAssignment[]> => {
               lastUpdated.includes("PM"))),
       );
 
-      // Upload / edit check
+      // Upload/edit check — uploadCell is always defined so was always true; check for editBtn only
       const editBtn = row.querySelector(
         "button[name='editAssignment'], button[id='editAssignment'], [onclick*='doDAssignmentProcess'], button[name='digitalAssignmentSubmit']",
       );
-      const canUpload = Boolean(editBtn || uploadCell);
+      const canUpload = Boolean(editBtn);
 
       if (title && (maxMark || dueDate || weightage)) {
+        const parsedDate = dueDate ? parseVtopDate(dueDate) : null;
         assignments.push({
           slNo,
           title,
           maxMark,
           weightage,
           dueDate,
+          dueDateMs: parsedDate ? parsedDate.getTime() : undefined,
           lastUpdated:
             lastUpdated &&
             (lastUpdated.includes("/") ||
@@ -285,7 +232,7 @@ export const parseDAAssignments = (html: string): Versioned<DAAssignment[]> => {
               lastUpdated.includes("PM"))
               ? lastUpdated
               : "",
-          code: code || `AST01`,
+          code,
           hasQP,
           canUpload,
           canDownloadSubmission,

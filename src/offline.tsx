@@ -21,6 +21,7 @@ import { ErrorBoundary } from "./components/common/ErrorBoundary";
 import { fixBase64Image } from "./parsers/profile";
 import { clear as idbClear, set as idbSet, get as idbGet } from "idb-keyval";
 import { AlertDialogManager, showAlertDialog } from "./components/ui/AlertDialog";
+import { VtopLoginCard } from "./components/auth/VtopLoginCard";
 
 // Apply default theme immediately on module load so variables are present before first render
 try {
@@ -51,9 +52,10 @@ interface AccountDropdownProps {
   activeUser: CachedUser;
   onSelect: (u: CachedUser) => void;
   onImport: () => void;
+  onAddAccount?: () => void;
 }
 
-const AccountDropdown: React.FC<AccountDropdownProps> = ({ users, activeUser, onSelect, onImport }) => {
+const AccountDropdown: React.FC<AccountDropdownProps> = ({ users, activeUser, onSelect, onImport, onAddAccount }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -141,8 +143,18 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ users, activeUser, on
                 );
               })}
             </div>
-            {/* Import option as footer */}
-            <div className="border-t border-(--border-dim)/50 pt-1.5 mt-1">
+            {/* Account Actions in dropdown footer */}
+            <div className="border-t border-(--border-dim)/50 pt-1.5 mt-1 space-y-1">
+              {onAddAccount && (
+                <button
+                  type="button"
+                  onClick={() => { onAddAccount(); setIsOpen(false); }}
+                  className="w-full flex items-center gap-3 px-4 py-3 sm:px-5 sm:py-3.5 rounded-2xl text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-highlight) transition-all cursor-pointer text-xs font-bold text-left"
+                  style={GSF}>
+                  <AccountCircle className="w-5 h-5 shrink-0" style={{ color: "var(--accent-base)" }} />
+                  <span>Add VTOP account</span>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => { onImport(); setIsOpen(false); }}
@@ -322,7 +334,7 @@ const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*";
 
 
 const OfflineApp = () => {
-  const [step, setStep] = useState<"LOADING" | "NO_CACHE" | "PIN_LOCK" | "UNLOCKED">("LOADING");
+  const [step, setStep] = useState<"LOADING" | "NO_CACHE" | "PIN_LOCK" | "UNLOCKED" | "LIVE_LOGIN">("LOADING");
   const [loaderFinishing, setLoaderFinishing] = useState<boolean>(false);
   const [loaderFading, setLoaderFading] = useState<boolean>(false);
   const [usersIndex, setUsersIndex] = useState<CachedUser[]>([]);
@@ -681,6 +693,20 @@ const OfflineApp = () => {
     renderDashboard();
   };
 
+  const handleLoginSuccess = async (syncedUser: CachedUser) => {
+    await loadCachedProfiles();
+    sessionStorage.setItem("retop_session_unlocked", syncedUser.regNo);
+    const pinRecord = await getUserPinRecord(syncedUser.regNo);
+    if (!pinRecord) {
+      setActiveUser(syncedUser);
+      setIsSettingPin(true);
+      setHasPinSet(false);
+      setStep("PIN_LOCK");
+    } else {
+      launchDashboard(syncedUser);
+    }
+  };
+
   if (step === "LOADING") {
     return (
       <div
@@ -704,51 +730,58 @@ const OfflineApp = () => {
       {/* Left 50% Column: Form (.container-fluid / #loginBox) */}
       <div className="w-full lg:w-1/2 min-h-[55vh] lg:min-h-screen flex flex-col justify-center items-center px-4 py-8 sm:px-8 lg:px-16 z-10">
         <div className="w-full max-w-md space-y-6 mx-auto">
-          {/* Header matching login-theme.css .card-header h4 */}
-          <div className="text-left space-y-1">
-            <h1
-              className="text-4xl sm:text-5xl font-black lowercase tracking-tighter text-(--text-main) select-none inline-block cursor-default"
-              style={{
-                fontFamily: "'Google Sans Flex', system-ui, sans-serif",
-                fontVariationSettings: '"wdth" 151, "wght" 800, "GRAD" 100, "ROND" 100, "slnt" -10',
-                transition: "font-variation-settings 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.fontVariationSettings = '"wdth" 151, "wght" 1, "GRAD" 100, "ROND" 100, "slnt" -10';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.fontVariationSettings = '"wdth" 151, "wght" 800, "GRAD" 100, "ROND" 100, "slnt" -10';
-              }}>
-              retop
-            </h1>
-            <p className="text-(--text-muted) text-sm sm:text-base font-medium" style={GSF}>offline access portal</p>
-          </div>
+          {/* Header matching login-theme.css .card-header h4 (Only shown for PIN_LOCK, VtopLoginCard renders its own) */}
+          {step === "PIN_LOCK" && (
+            <div className="text-left space-y-1">
+              <h1
+                className="text-4xl sm:text-5xl font-black lowercase tracking-tighter text-(--text-main) select-none inline-block cursor-default"
+                style={{
+                  fontFamily: "'Google Sans Flex', system-ui, sans-serif",
+                  fontVariationSettings: '"wdth" 151, "wght" 800, "GRAD" 100, "ROND" 100, "slnt" -10',
+                  transition: "font-variation-settings 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.fontVariationSettings = '"wdth" 151, "wght" 1, "GRAD" 100, "ROND" 100, "slnt" -10';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.fontVariationSettings = '"wdth" 151, "wght" 800, "GRAD" 100, "ROND" 100, "slnt" -10';
+                }}>
+                retop
+              </h1>
+              <p className="text-(--text-muted) text-sm sm:text-base font-medium" style={GSF}>offline access portal</p>
+            </div>
+          )}
 
           {step === "NO_CACHE" && (
-            <div className="space-y-6">
-              <div className="flex flex-col">
-                <h3 className="text-lg font-bold text-(--text-main)">No Saved Accounts</h3>
-                <span className="text-xs text-(--accent-base) font-semibold">Action Required</span>
-              </div>
-
-              <p className="text-(--text-muted) text-sm leading-relaxed">
-                No saved accounts found, please login and come back later.
-              </p>
-
-              <div className="flex flex-col gap-3 pt-2">
-                <a
-                  href="https://vtop.vit.ac.in/vtop/login"
-                  className="w-full h-11 bg-(--bg-surface) hover:bg-(--bg-highlight) text-(--text-main) border border-(--border-dim)/50 font-bold text-xs rounded-full transition-all shadow-md active:scale-98 cursor-pointer flex items-center justify-center gap-2">
-                  Go to <span className="font-vtop font-bold ml-1">VTOP</span>
-                </a>
+            <div className="space-y-4">
+              <VtopLoginCard
+                initialCampus="vellore"
+                title="retop"
+                subtitle="Welcome back."
+                onLoginSuccess={handleLoginSuccess}
+              />
+              <div className="text-center pt-2">
                 <button
+                  type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full h-11 text-(--text-inverse) font-bold text-xs rounded-full transition-all shadow-md active:scale-98 cursor-pointer flex items-center justify-center gap-2 hover:opacity-90"
-                  style={{ backgroundColor: "var(--accent-base)" }}>
-                  <Upload className="w-4 h-4" />
-                  <span>Import Backup File</span>
+                  className="text-xs font-bold text-(--text-muted) hover:text-(--text-main) flex items-center justify-center gap-2 mx-auto cursor-pointer transition-colors"
+                  style={GSF}>
+                  <Upload className="w-3.5 h-3.5 text-(--accent-base)" />
+                  <span>Or import a backup JSON file</span>
                 </button>
               </div>
+            </div>
+          )}
+
+          {step === "LIVE_LOGIN" && (
+            <div className="space-y-4">
+              <VtopLoginCard
+                initialCampus={activeUser?.campus || "vellore"}
+                title="retop"
+                subtitle="Add account."
+                onLoginSuccess={handleLoginSuccess}
+                onCancel={usersIndex.length > 0 ? () => setStep("PIN_LOCK") : undefined}
+              />
             </div>
           )}
 
@@ -760,7 +793,8 @@ const OfflineApp = () => {
                 users={usersIndex}
                 activeUser={activeUser}
                 onSelect={selectUser}
-                onImport={() => fileInputRef.current?.click()} />
+                onImport={() => fileInputRef.current?.click()}
+                onAddAccount={() => setStep("LIVE_LOGIN")} />
 
               {/* Input Group matching login-theme.css */}
               <div 
@@ -788,10 +822,17 @@ const OfflineApp = () => {
                       </div>
                     )}
 
-                    <div className="flex items-center justify-center text-xs pt-1">
+                    <div className="flex items-center justify-center gap-3 text-xs pt-1">
+                      <button
+                        onClick={() => setStep("LIVE_LOGIN")}
+                        className="px-4 py-2 rounded-full bg-transparent hover:bg-(--bg-surface) border border-transparent hover:border-(--border-dim)/50 text-(--accent-base) font-semibold text-xs transition-all cursor-pointer"
+                        style={GSF}>
+                        Sign in / Re-sync VTOP
+                      </button>
+                      <span className="text-(--text-muted)/40">•</span>
                       <button
                         onClick={() => setShowForgotPinModal(true)}
-                        className="px-5 py-2 rounded-full bg-transparent hover:bg-(--bg-surface) border border-transparent hover:border-(--border-dim)/50 text-(--text-muted) hover:text-(--text-main) text-xs font-medium transition-all cursor-pointer"
+                        className="px-4 py-2 rounded-full bg-transparent hover:bg-(--bg-surface) border border-transparent hover:border-(--border-dim)/50 text-(--text-muted) hover:text-(--text-main) text-xs font-medium transition-all cursor-pointer"
                         style={GSF}>
                         Forgot PIN?
                       </button>

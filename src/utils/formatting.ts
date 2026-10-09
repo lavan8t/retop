@@ -116,14 +116,7 @@ export const toTitleCase = (str: string): string => {
 
 export function parseVtopDate(dateStr: string): Date | null {
   if (!dateStr) return null;
-  const cleanStr = dateStr.replace(/[-/.]/g, " ").trim();
-  const directDate = new Date(cleanStr);
-
-  if (!isNaN(directDate.getTime())) {
-    return directDate;
-  }
-  
-  const parts = cleanStr.split(/\s+/);
+  const parts = dateStr.replace(/[-/.]/g, " ").trim().split(/\s+/);
   if (parts.length >= 3) {
     let day = parseInt(parts[0], 10);
     let year = parseInt(parts[2], 10);
@@ -145,7 +138,7 @@ export function parseVtopDate(dateStr: string): Date | null {
       return new Date(year, monthIndex, day);
     }
   }
-  
+
   return null;
 }
 

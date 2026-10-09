@@ -1,4 +1,10 @@
-import React, { useState, useRef, useMemo, useEffect, useDeferredValue } from "react";
+import React, {
+  useState,
+  useRef,
+  useMemo,
+  useEffect,
+  useDeferredValue,
+} from "react";
 import {
   Error,
   Search,
@@ -45,7 +51,8 @@ const renderCategoryTitle = (catTitle: string) => {
           className="font-logo retop-logo inline-block lowercase text-inherit"
           style={{
             fontFamily: "var(--font-expanded)",
-            fontVariationSettings: "'wdth' 125, 'wght' 900, 'ROND' 100, 'slnt' -10",
+            fontVariationSettings:
+              "'wdth' 125, 'wght' 900, 'ROND' 100, 'slnt' -10",
           }}
         >
           retop
@@ -80,7 +87,8 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
       window.location.pathname.includes("offline") ||
       window.location.hostname.includes("web.app") ||
       window.location.protocol === "file:");
-  const isHome = currentView === "dashboard" || currentView === "home" || !currentView;
+  const isHome =
+    currentView === "dashboard" || currentView === "home" || !currentView;
   const [isLogoHovered, setIsLogoHovered] = useState(false);
   const [query, setQuery] = useState(initialQuery);
   const deferredQuery = useDeferredValue(query);
@@ -189,17 +197,61 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
 
   const allCategories = useMemo(() => {
     const retopNativeLinks: QuickLink[] = [
-      { title: "Time Table", url: "academics/common/StudentTimeTable", category: "Made for retop" },
-      { title: "Class Attendance", url: "academics/common/StudentAttendance", category: "Made for retop" },
-      { title: "Assignments", url: "examinations/StudentDA", category: "Made for retop" },
-      { title: "Course Page Consolidated", url: "academics/common/StudentCoursePage", category: "Made for retop" },
-      { title: "Marks View", url: "examinations/StudentMarkView", category: "Made for retop" },
-      { title: "Grades View", url: "examinations/StudentGradeView", category: "Made for retop" },
-      { title: "Academic Calendar", url: "academics/common/CalendarPreview", category: "Made for retop" },
-      { title: "Student Profile", url: "studentsRecord/StudentProfileAllView", category: "Made for retop" },
-      { title: "Curriculum", url: "academics/common/CurriculumSyllabus", category: "Made for retop" },
-      { title: "Exam Schedule", url: "examinations/StudExamSchedule", category: "Made for retop" },
-      { title: "Late Hour Permission", url: "hostels/late/hour/student/request/1", category: "Made for retop" },
+      {
+        title: "Time Table",
+        url: "academics/common/StudentTimeTable",
+        category: "Made for retop",
+      },
+      {
+        title: "Class Attendance",
+        url: "academics/common/StudentAttendance",
+        category: "Made for retop",
+      },
+      {
+        title: "Assignments",
+        url: "examinations/StudentDA",
+        category: "Made for retop",
+      },
+      {
+        title: "Course Page Consolidated",
+        url: "academics/common/StudentCoursePage",
+        category: "Made for retop",
+      },
+      {
+        title: "Marks View",
+        url: "examinations/StudentMarkView",
+        category: "Made for retop",
+      },
+      {
+        title: "Grades View",
+        url: "examinations/StudentGradeView",
+        category: "Made for retop",
+      },
+      {
+        title: "Academic Calendar",
+        url: "academics/common/CalendarPreview",
+        category: "Made for retop",
+      },
+      {
+        title: "Student Profile",
+        url: "studentsRecord/StudentProfileAllView",
+        category: "Made for retop",
+      },
+      {
+        title: "Curriculum",
+        url: "academics/common/CurriculumSyllabus",
+        category: "Made for retop",
+      },
+      {
+        title: "Exam Schedule",
+        url: "examinations/StudExamSchedule",
+        category: "Made for retop",
+      },
+      {
+        title: "Late Hour Permission",
+        url: "hostels/late/hour/student/request/1",
+        category: "Made for retop",
+      },
     ];
 
     const madeForRetopCat: MenuCategory = {
@@ -240,16 +292,89 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
     }
 
     const itemAliases: Record<string, string[]> = {
-      "time table": ["timetable", "time table", "schedule", "class schedule", "slots", "weekly timetable"],
-      "class attendance": ["attendance", "class attendance", "attendance view", "my attendance"],
-      "assignments": ["digital assignments", "digital assignment", "da", "da upload", "assignment", "assignments", "digital assignment upload"],
-      "marks view": ["marks", "marks view", "cat marks", "assessment marks", "test marks", "exam marks"],
-      "grades view": ["grades", "grades view", "grade history", "cgpa", "gpa", "history", "gpa calculator", "grade calculator"],
-      "academic calendar": ["academic calendar", "calendar", "events", "academics calendar", "calendar preview"],
-      "student profile": ["profile", "student profile", "digital id", "id card", "my profile"],
-      "curriculum": ["curriculum", "syllabus", "curriculum syllabus", "course syllabus"],
-      "exam schedule": ["exam schedule", "exams", "fat", "cat", "exam", "fat schedule", "cat schedule", "exam timetable"],
-      "course page consolidated": ["course page", "course page consolidated", "consolidated course page", "course", "courses", "course material", "materials", "class material", "subject material", "course page (consolidated)"],
+      "time table": [
+        "timetable",
+        "time table",
+        "schedule",
+        "class schedule",
+        "slots",
+        "weekly timetable",
+      ],
+      "class attendance": [
+        "attendance",
+        "class attendance",
+        "attendance view",
+        "my attendance",
+      ],
+      assignments: [
+        "digital assignments",
+        "digital assignment",
+        "da",
+        "da upload",
+        "assignment",
+        "assignments",
+        "digital assignment upload",
+      ],
+      "marks view": [
+        "marks",
+        "marks view",
+        "cat marks",
+        "assessment marks",
+        "test marks",
+        "exam marks",
+      ],
+      "grades view": [
+        "grades",
+        "grades view",
+        "grade history",
+        "cgpa",
+        "gpa",
+        "history",
+        "gpa calculator",
+        "grade calculator",
+      ],
+      "academic calendar": [
+        "academic calendar",
+        "calendar",
+        "events",
+        "academics calendar",
+        "calendar preview",
+      ],
+      "student profile": [
+        "profile",
+        "student profile",
+        "digital id",
+        "id card",
+        "my profile",
+      ],
+      curriculum: [
+        "curriculum",
+        "syllabus",
+        "curriculum syllabus",
+        "course syllabus",
+      ],
+      "exam schedule": [
+        "exam schedule",
+        "exams",
+        "fat",
+        "cat",
+        "exam",
+        "fat schedule",
+        "cat schedule",
+        "exam timetable",
+      ],
+      "course page consolidated": [
+        "course page",
+        "course page consolidated",
+        "consolidated course page",
+        "course",
+        "courses",
+        "course material",
+        "materials",
+        "class material",
+        "subject material",
+        "course page (consolidated)",
+      ],
     };
 
     const scored: { link: QuickLink; score: number }[] = [];
@@ -266,8 +391,17 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
 
       let score = 0;
       if (titleLower === lowerQ || aliases.includes(lowerQ)) score = 100;
-      else if (titleLower.startsWith(lowerQ) || aliases.some((a) => a.startsWith(lowerQ))) score = 85;
-      else if (titleLower.includes(lowerQ) || aliases.some((a) => a.includes(lowerQ)) || urlLower.includes(lowerQ)) score = 65;
+      else if (
+        titleLower.startsWith(lowerQ) ||
+        aliases.some((a) => a.startsWith(lowerQ))
+      )
+        score = 85;
+      else if (
+        titleLower.includes(lowerQ) ||
+        aliases.some((a) => a.includes(lowerQ)) ||
+        urlLower.includes(lowerQ)
+      )
+        score = 65;
 
       if (score > 0) {
         if (hasRetopPage(link)) score += 10;
@@ -293,12 +427,17 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
         } else if (e.key === "ArrowUp") {
           e.preventDefault();
           setSelectedIndex(
-            (prev) => (prev - 1 + flattenedLinks.length) % flattenedLinks.length,
+            (prev) =>
+              (prev - 1 + flattenedLinks.length) % flattenedLinks.length,
           );
         } else if (e.key === "Enter" && flattenedLinks[selectedIndex]) {
           e.preventDefault();
           const selLink = flattenedLinks[selectedIndex];
-          const forceLegacy = isOffline ? false : (e.shiftKey ? isModernUI : !isModernUI);
+          const forceLegacy = isOffline
+            ? false
+            : e.shiftKey
+              ? isModernUI
+              : !isModernUI;
           onNavigate(selLink, forceLegacy);
           setIsOmniboxOpen(false);
           setQuery("");
@@ -339,18 +478,25 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
           if (activeMenu) {
             const nextCat = allCategories[nextIdx];
             const catEl = document.getElementById(`topbar-cat-item-${nextIdx}`);
-            const rect = catEl?.getBoundingClientRect() || dropdownRef.current?.getBoundingClientRect() || new DOMRect();
+            const rect =
+              catEl?.getBoundingClientRect() ||
+              dropdownRef.current?.getBoundingClientRect() ||
+              new DOMRect();
             setActiveMenu({ cat: nextCat, rect });
             setSelectedIndex(0);
           }
         } else if (e.key === "ArrowUp") {
           e.preventDefault();
-          const prevIdx = (categoryIndex - 1 + allCategories.length) % allCategories.length;
+          const prevIdx =
+            (categoryIndex - 1 + allCategories.length) % allCategories.length;
           setCategoryIndex(prevIdx);
           if (activeMenu) {
             const prevCat = allCategories[prevIdx];
             const catEl = document.getElementById(`topbar-cat-item-${prevIdx}`);
-            const rect = catEl?.getBoundingClientRect() || dropdownRef.current?.getBoundingClientRect() || new DOMRect();
+            const rect =
+              catEl?.getBoundingClientRect() ||
+              dropdownRef.current?.getBoundingClientRect() ||
+              new DOMRect();
             setActiveMenu({ cat: prevCat, rect });
             setSelectedIndex(0);
           }
@@ -358,8 +504,13 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
           e.preventDefault();
           const targetCat = allCategories[categoryIndex];
           if (targetCat) {
-            const catEl = document.getElementById(`topbar-cat-item-${categoryIndex}`);
-            const rect = catEl?.getBoundingClientRect() || dropdownRef.current?.getBoundingClientRect() || new DOMRect();
+            const catEl = document.getElementById(
+              `topbar-cat-item-${categoryIndex}`,
+            );
+            const rect =
+              catEl?.getBoundingClientRect() ||
+              dropdownRef.current?.getBoundingClientRect() ||
+              new DOMRect();
             setSelectedIndex(0);
             setActiveMenu({ cat: targetCat, rect });
           }
@@ -415,7 +566,9 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      const path = event.composedPath ? event.composedPath() : [event.target as Node];
+      const path = event.composedPath
+        ? event.composedPath()
+        : [event.target as Node];
       if (
         wrapperRef.current &&
         !wrapperRef.current.contains(event.target as Node) &&
@@ -438,7 +591,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
     <div ref={wrapperRef} className="relative flex flex-col z-50">
       {/* Unified Search Bar */}
       <div
-        className={`group flex items-center gap-2 md:gap-2.5 transition-all duration-fast ease-out cursor-text min-w-60 md:min-w-72 pl-0.5 sm:pl-1 pr-3 h-12 md:h-14 rounded-[32px] relative z-10000 bg-transparent border-2 border-transparent shadow-none`}
+        className={`group flex items-center gap-2 md:gap-2.5 transition-all duration-fast ease-out cursor-text min-w-60 md:min-w-72 pl-0.5 sm:pl-1 pr-3 h-12 md:h-14 rounded-4xl relative z-10000 bg-transparent border-2 border-transparent shadow-none`}
       >
         <div className="relative flex items-center shrink-0">
           <button
@@ -453,8 +606,24 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                 if (onBack) onBack();
               }
             }}
-            title={isOffline ? (isHome ? "retop" : "Return to Dashboard") : (isHome ? "Go to VTOP" : "Return to Dashboard")}
-            aria-label={isOffline ? (isHome ? "retop" : "Return to Dashboard") : (isHome ? "Go to VTOP" : "Return to Dashboard")}
+            title={
+              isOffline
+                ? isHome
+                  ? "retop"
+                  : "Return to Dashboard"
+                : isHome
+                  ? "Go to VTOP"
+                  : "Return to Dashboard"
+            }
+            aria-label={
+              isOffline
+                ? isHome
+                  ? "retop"
+                  : "Return to Dashboard"
+                : isHome
+                  ? "Go to VTOP"
+                  : "Return to Dashboard"
+            }
             onMouseEnter={() => {
               if (!isOffline) setIsLogoHovered(true);
             }}
@@ -616,7 +785,9 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                       <div
                         key={idx}
                         onClick={(e) => {
-                          const forceLegacy = e.shiftKey ? isModernUI : !isModernUI;
+                          const forceLegacy = e.shiftKey
+                            ? isModernUI
+                            : !isModernUI;
                           onNavigate(link, forceLegacy);
                           setIsOmniboxOpen(false);
                           setQuery("");
@@ -657,7 +828,10 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                           {cat.links.map((link, lIdx) => {
                             const linkDest = getDestinationView(link);
                             const isPinned = pinnedLinks.some(
-                              (p) => p.url === link.url || (linkDest !== "content" && getDestinationView(p) === linkDest),
+                              (p) =>
+                                p.url === link.url ||
+                                (linkDest !== "content" &&
+                                  getDestinationView(p) === linkDest),
                             );
                             return (
                               <div
@@ -666,7 +840,9 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                               >
                                 <button
                                   onClick={(e) => {
-                                    const forceLegacy = e.shiftKey ? isModernUI : !isModernUI;
+                                    const forceLegacy = e.shiftKey
+                                      ? isModernUI
+                                      : !isModernUI;
                                     onNavigate(link, forceLegacy);
                                     setIsOmniboxOpen(false);
                                     setQuery("");
@@ -681,7 +857,8 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                                       className="re-badge inline-block text-[9px] font-black px-1 py-0.5 rounded leading-none shrink-0 bg-transparent text-(--accent-base)"
                                       style={{
                                         fontFamily: "var(--font-expanded)",
-                                        fontVariationSettings: "'wdth' 151, 'wght' 700, 'ROND' 100, 'slnt' -10",
+                                        fontVariationSettings:
+                                          "'wdth' 151, 'wght' 700, 'ROND' 100, 'slnt' -10",
                                       }}
                                     >
                                       re.
@@ -694,11 +871,15 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                                     onTogglePin(link);
                                   }}
                                   className="p-1.5 text-(--text-muted) hover:text-(--accent-base) shrink-0 cursor-pointer"
-                                  title={isPinned ? "Unpin from Dock" : "Pin to Dock"}
+                                  title={
+                                    isPinned ? "Unpin from Dock" : "Pin to Dock"
+                                  }
                                 >
                                   <Star
                                     className={`w-4 h-4 transition-all ${
-                                      isPinned ? "text-(--accent-base) fill-current" : "opacity-50 hover:opacity-100"
+                                      isPinned
+                                        ? "text-(--accent-base) fill-current"
+                                        : "opacity-50 hover:opacity-100"
                                     }`}
                                   />
                                 </button>
@@ -725,13 +906,18 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                   flattenedLinks.map((link, i) => {
                     const linkDest = getDestinationView(link);
                     const isPinned = pinnedLinks.some(
-                      (p) => p.url === link.url || (linkDest !== "content" && getDestinationView(p) === linkDest),
+                      (p) =>
+                        p.url === link.url ||
+                        (linkDest !== "content" &&
+                          getDestinationView(p) === linkDest),
                     );
                     return (
                       <div
                         key={i}
                         onClick={(e) => {
-                          const forceLegacy = e.shiftKey ? isModernUI : !isModernUI;
+                          const forceLegacy = e.shiftKey
+                            ? isModernUI
+                            : !isModernUI;
                           onNavigate(link, forceLegacy);
                           setIsOmniboxOpen(false);
                           setQuery("");
@@ -747,7 +933,8 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                               className="re-badge inline-block text-[9px] font-black px-1 py-0.5 rounded leading-none shrink-0 bg-transparent text-(--accent-base)"
                               style={{
                                 fontFamily: "var(--font-expanded)",
-                                fontVariationSettings: "'wdth' 151, 'wght' 700, 'ROND' 100, 'slnt' -10",
+                                fontVariationSettings:
+                                  "'wdth' 151, 'wght' 700, 'ROND' 100, 'slnt' -10",
                               }}
                             >
                               re.
@@ -764,7 +951,9 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                         >
                           <Star
                             className={`w-4 h-4 transition-all ${
-                              isPinned ? "text-(--accent-base) fill-current" : "opacity-50 hover:opacity-100"
+                              isPinned
+                                ? "text-(--accent-base) fill-current"
+                                : "opacity-50 hover:opacity-100"
                             }`}
                           />
                         </button>
@@ -789,8 +978,10 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
             <div
               className="flex flex-col gap-1 max-h-[50vh] overflow-y-auto search-scrollbar pr-1.5 py-1.5"
               style={{
-                maskImage: "linear-gradient(to bottom, transparent 0%, black 14px, black calc(100% - 14px), transparent 100%)",
-                WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 14px, black calc(100% - 14px), transparent 100%)",
+                maskImage:
+                  "linear-gradient(to bottom, transparent 0%, black 14px, black calc(100% - 14px), transparent 100%)",
+                WebkitMaskImage:
+                  "linear-gradient(to bottom, transparent 0%, black 14px, black calc(100% - 14px), transparent 100%)",
               }}
             >
               {!query && !isOffline && allCategories.length > 1 ? (
@@ -801,7 +992,9 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                 >
                   {allCategories.map((cat, catIdx) => {
                     const CatIcon = getCategoryIcon(cat.title);
-                    const isActive = activeMenu?.cat.title === cat.title || (!activeMenu && catIdx === categoryIndex);
+                    const isActive =
+                      activeMenu?.cat.title === cat.title ||
+                      (!activeMenu && catIdx === categoryIndex);
                     return (
                       <div
                         key={catIdx}
@@ -857,10 +1050,18 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                     const isSelected = i === selectedIndex;
                     const linkDest = getDestinationView(link);
                     const isPinned = pinnedLinks.some(
-                      (p) => p.url === link.url || (linkDest !== "content" && getDestinationView(p) === linkDest),
+                      (p) =>
+                        p.url === link.url ||
+                        (linkDest !== "content" &&
+                          getDestinationView(p) === linkDest),
                     );
-                    const category = hasRetopPage(link) ? "Made for retop" : (link.category || "Other");
-                    const isNewCategory = !isOffline && allCategories.length > 1 && category !== currentCategory;
+                    const category = hasRetopPage(link)
+                      ? "Made for retop"
+                      : link.category || "Other";
+                    const isNewCategory =
+                      !isOffline &&
+                      allCategories.length > 1 &&
+                      category !== currentCategory;
                     if (isNewCategory) currentCategory = category;
 
                     return (
@@ -875,14 +1076,22 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                             id={`search-result-item-${i}`}
                             onMouseDown={(e) => {
                               e.preventDefault();
-                              const forceLegacy = isOffline ? false : (e.shiftKey ? isModernUI : !isModernUI);
+                              const forceLegacy = isOffline
+                                ? false
+                                : e.shiftKey
+                                  ? isModernUI
+                                  : !isModernUI;
                               onNavigate(link, forceLegacy);
                               setIsOmniboxOpen(false);
                               setQuery("");
                             }}
                             onClick={(e) => {
                               e.preventDefault();
-                              const forceLegacy = isOffline ? false : (e.shiftKey ? isModernUI : !isModernUI);
+                              const forceLegacy = isOffline
+                                ? false
+                                : e.shiftKey
+                                  ? isModernUI
+                                  : !isModernUI;
                               onNavigate(link, forceLegacy);
                               setIsOmniboxOpen(false);
                               setQuery("");
@@ -895,13 +1104,16 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                             }`}
                           >
                             <div className="flex-1 min-w-0 pr-8 flex items-center justify-between gap-2 h-5">
-                              <span className="truncate">{toTitleCase(link.title)}</span>
+                              <span className="truncate">
+                                {toTitleCase(link.title)}
+                              </span>
                               {hasRetopPage(link) && (
                                 <span
                                   className={`re-badge inline-block text-[9px] font-black px-1 py-0.5 rounded leading-none shrink-0 bg-transparent ${isSelected ? "text-white" : "text-(--accent-base)"}`}
                                   style={{
                                     fontFamily: "var(--font-expanded)",
-                                    fontVariationSettings: "'wdth' 151, 'wght' 700, 'ROND' 100, 'slnt' -10",
+                                    fontVariationSettings:
+                                      "'wdth' 151, 'wght' 700, 'ROND' 100, 'slnt' -10",
                                     transform: "skewX(-10deg)",
                                   }}
                                 >
@@ -910,9 +1122,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                               )}
                             </div>
                           </button>
-                          <div
-                            className="absolute right-1 top-1 bottom-1 w-12 pr-1 flex items-center justify-end rounded-r-xl transition-all pointer-events-none z-20"
-                          >
+                          <div className="absolute right-1 top-1 bottom-1 w-12 pr-1 flex items-center justify-end rounded-r-xl transition-all pointer-events-none z-20">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -942,11 +1152,36 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
             <div className="w-full text-center py-2 px-3 text-[10px] font-bold text-(--text-muted) border-t-2 border-(--border-dim) bg-(--bg-surface) shrink-0 mt-1">
               {isOffline ? (
                 <span>
-                  <span className="font-mono font-bold text-(--accent-base)">Enter</span> to open &nbsp;•&nbsp; <span className="font-mono font-bold text-(--text-muted)">Esc</span> to close
+                  <span className="font-mono font-bold text-(--accent-base)">
+                    Enter
+                  </span>{" "}
+                  to open &nbsp;•&nbsp;{" "}
+                  <span className="font-mono font-bold text-(--text-muted)">
+                    Esc
+                  </span>{" "}
+                  to close
                 </span>
               ) : (
                 <span>
-                  <span className="font-mono font-bold text-(--accent-base)">Shift + Enter</span> for {isModernUI ? <span className="font-vtop font-bold">VTOP</span> : "retop"} &nbsp;•&nbsp; <span className="font-mono font-bold text-(--text-muted)">Enter</span> for {isModernUI ? "retop" : <span className="font-vtop font-bold">VTOP</span>}
+                  <span className="font-mono font-bold text-(--accent-base)">
+                    Shift + Enter
+                  </span>{" "}
+                  for{" "}
+                  {isModernUI ? (
+                    <span className="font-vtop font-bold">VTOP</span>
+                  ) : (
+                    "retop"
+                  )}{" "}
+                  &nbsp;•&nbsp;{" "}
+                  <span className="font-mono font-bold text-(--text-muted)">
+                    Enter
+                  </span>{" "}
+                  for{" "}
+                  {isModernUI ? (
+                    "retop"
+                  ) : (
+                    <span className="font-vtop font-bold">VTOP</span>
+                  )}
                 </span>
               )}
             </div>
@@ -955,130 +1190,155 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
       )}
 
       {/* Desktop Category Submenu Popup */}
-      {isExpanded && !query.trim() && !isOffline && allCategories.length > 1 && activeMenu && (() => {
-        const itemCount = activeMenu.cat.links.length;
-        const cols = Math.max(1, Math.min(5, Math.ceil(itemCount / 10)));
-        const colWidth = 220;
-        const popupWidth = cols * colWidth;
+      {isExpanded &&
+        !query.trim() &&
+        !isOffline &&
+        allCategories.length > 1 &&
+        activeMenu &&
+        (() => {
+          const itemCount = activeMenu.cat.links.length;
+          const cols = Math.max(1, Math.min(5, Math.ceil(itemCount / 10)));
+          const colWidth = 220;
+          const popupWidth = cols * colWidth;
 
-        const dropdownRect = dropdownRef.current?.getBoundingClientRect();
-        let itemRect = activeMenu.rect;
-        if (!itemRect || itemRect.right === 0 || itemRect.width === 0) {
-          const catEl = document.getElementById(`topbar-cat-item-${categoryIndex}`);
-          if (catEl) {
-            itemRect = catEl.getBoundingClientRect();
+          const dropdownRect = dropdownRef.current?.getBoundingClientRect();
+          let itemRect = activeMenu.rect;
+          if (!itemRect || itemRect.right === 0 || itemRect.width === 0) {
+            const catEl = document.getElementById(
+              `topbar-cat-item-${categoryIndex}`,
+            );
+            if (catEl) {
+              itemRect = catEl.getBoundingClientRect();
+            }
           }
-        }
 
-        const fallbackRight = dropdownRect ? dropdownRect.right : 320;
-        const fallbackTop = dropdownRect ? dropdownRect.top : 64;
+          const fallbackRight = dropdownRect ? dropdownRect.right : 320;
+          const fallbackTop = dropdownRect ? dropdownRect.top : 64;
 
-        const baseRight = (itemRect && itemRect.right > 0) ? itemRect.right : fallbackRight;
-        const baseTop = (itemRect && itemRect.top > 0) ? itemRect.top : fallbackTop;
+          const baseRight =
+            itemRect && itemRect.right > 0 ? itemRect.right : fallbackRight;
+          const baseTop =
+            itemRect && itemRect.top > 0 ? itemRect.top : fallbackTop;
 
-        const targetLeft = baseRight + 8;
-        const maxLeft = typeof window !== "undefined" ? window.innerWidth - popupWidth - 16 : targetLeft;
-        const leftPos = Math.max(16, Math.min(targetLeft, maxLeft));
+          const targetLeft = baseRight + 8;
+          const maxLeft =
+            typeof window !== "undefined"
+              ? window.innerWidth - popupWidth - 16
+              : targetLeft;
+          const leftPos = Math.max(16, Math.min(targetLeft, maxLeft));
 
-        const targetTop = baseTop;
-        const estimatedHeight = Math.ceil(itemCount / cols) * 38 + 24;
-        const maxTop = typeof window !== "undefined" ? window.innerHeight - estimatedHeight - 16 : targetTop;
-        const topPos = Math.max(16, Math.min(targetTop, maxTop));
+          const targetTop = baseTop;
+          const estimatedHeight = Math.ceil(itemCount / cols) * 38 + 24;
+          const maxTop =
+            typeof window !== "undefined"
+              ? window.innerHeight - estimatedHeight - 16
+              : targetTop;
+          const topPos = Math.max(16, Math.min(targetTop, maxTop));
 
-        return (
-          <div
-            onMouseEnter={handleChildEnter}
-            onMouseLeave={handleChildLeave}
-            className="hidden lg:flex fixed z-[999999] bg-(--bg-surface) border-2 border-(--border-main) rounded-2xl popup-shadow shadow-2xl p-2 flex-col transition-all duration-150"
-            style={{
-              transformOrigin: "left center",
-              left: leftPos,
-              top: topPos,
-              width: `${popupWidth}px`,
-              maxWidth: "calc(100vw - 32px)",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
+          return (
             <div
-              className="grid gap-1 p-0.5"
+              onMouseEnter={handleChildEnter}
+              onMouseLeave={handleChildLeave}
+              className="hidden lg:flex fixed z-[999999] bg-(--bg-surface) border-2 border-(--border-main) rounded-2xl popup-shadow shadow-2xl p-2 flex-col transition-all duration-150"
               style={{
-                gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+                transformOrigin: "left center",
+                left: leftPos,
+                top: topPos,
+                width: `${popupWidth}px`,
+                maxWidth: "calc(100vw - 32px)",
               }}
+              onClick={(e) => e.stopPropagation()}
             >
-              {activeMenu.cat.links.map((link, i) => {
-                const linkDest = getDestinationView(link);
-                const isPinned = pinnedLinks.some(
-                  (p) => p.url === link.url || (linkDest !== "content" && getDestinationView(p) === linkDest),
-                );
-                return (
-                  <div
-                    key={i}
-                    className={`relative w-full flex items-center rounded-xl transition-all group/item ${
-                      i === selectedIndex && !query
-                        ? "bg-(--accent-base) text-(--text-inverse)"
-                        : "bg-transparent text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main)"
-                    }`}
-                  >
-                    <button
-                      id={`home-popup-item-${i}`}
-                      onMouseEnter={() => setSelectedIndex(i)}
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        isChildHoveredRef.current = false;
-                        const forceLegacy = e.shiftKey ? isModernUI : !isModernUI;
-                        onNavigate(link, forceLegacy);
-                        setActiveMenu(null);
-                        setIsOmniboxOpen(false);
-                      }}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        isChildHoveredRef.current = false;
-                        const forceLegacy = e.shiftKey ? isModernUI : !isModernUI;
-                        onNavigate(link, forceLegacy);
-                        setActiveMenu(null);
-                        setIsOmniboxOpen(false);
-                      }}
-                      className="flex-1 text-left px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between gap-2 border-0 bg-transparent text-inherit cursor-pointer min-w-0 pr-7"
-                    >
-                      <span className="truncate">{link.title}</span>
-                      {hasRetopPage(link) && (
-                        <span
-                          className={`re-badge inline-block text-[9px] font-black px-1 py-0.5 rounded leading-none shrink-0 bg-transparent ${i === selectedIndex && !query ? "text-white" : "text-(--accent-base)"}`}
-                          style={{
-                            fontFamily: "var(--font-expanded)",
-                            fontVariationSettings: "'wdth' 151, 'wght' 700, 'ROND' 100, 'slnt' -10",
-                            transform: "skewX(-10deg)",
-                          }}
-                        >
-                          re.
-                        </span>
-                      )}
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onTogglePin(link);
-                      }}
-                      className={`absolute right-1.5 p-1 rounded-lg transition-all cursor-pointer shrink-0 z-20 ${
-                        isPinned
-                          ? "text-(--accent-base) opacity-100"
-                          : "text-(--text-muted) opacity-0 group-hover/item:opacity-100 hover:text-(--text-main)"
+              <div
+                className="grid gap-1 p-0.5"
+                style={{
+                  gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+                }}
+              >
+                {activeMenu.cat.links.map((link, i) => {
+                  const linkDest = getDestinationView(link);
+                  const isPinned = pinnedLinks.some(
+                    (p) =>
+                      p.url === link.url ||
+                      (linkDest !== "content" &&
+                        getDestinationView(p) === linkDest),
+                  );
+                  return (
+                    <div
+                      key={i}
+                      className={`relative w-full flex items-center rounded-xl transition-all group/item ${
+                        i === selectedIndex && !query
+                          ? "bg-(--accent-base) text-(--text-inverse)"
+                          : "bg-transparent text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main)"
                       }`}
-                      title={isPinned ? "Unpin from Dock" : "Pin to Dock"}
                     >
-                      <Star
-                        className={`w-4 h-4 transition-transform ${
-                          isPinned ? "fill-current scale-110" : "opacity-60 hover:opacity-100"
+                      <button
+                        id={`home-popup-item-${i}`}
+                        onMouseEnter={() => setSelectedIndex(i)}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          isChildHoveredRef.current = false;
+                          const forceLegacy = e.shiftKey
+                            ? isModernUI
+                            : !isModernUI;
+                          onNavigate(link, forceLegacy);
+                          setActiveMenu(null);
+                          setIsOmniboxOpen(false);
+                        }}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          isChildHoveredRef.current = false;
+                          const forceLegacy = e.shiftKey
+                            ? isModernUI
+                            : !isModernUI;
+                          onNavigate(link, forceLegacy);
+                          setActiveMenu(null);
+                          setIsOmniboxOpen(false);
+                        }}
+                        className="flex-1 text-left px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between gap-2 border-0 bg-transparent text-inherit cursor-pointer min-w-0 pr-7"
+                      >
+                        <span className="truncate">{link.title}</span>
+                        {hasRetopPage(link) && (
+                          <span
+                            className={`re-badge inline-block text-[9px] font-black px-1 py-0.5 rounded leading-none shrink-0 bg-transparent ${i === selectedIndex && !query ? "text-white" : "text-(--accent-base)"}`}
+                            style={{
+                              fontFamily: "var(--font-expanded)",
+                              fontVariationSettings:
+                                "'wdth' 151, 'wght' 700, 'ROND' 100, 'slnt' -10",
+                              transform: "skewX(-10deg)",
+                            }}
+                          >
+                            re.
+                          </span>
+                        )}
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onTogglePin(link);
+                        }}
+                        className={`absolute right-1.5 p-1 rounded-lg transition-all cursor-pointer shrink-0 z-20 ${
+                          isPinned
+                            ? "text-(--accent-base) opacity-100"
+                            : "text-(--text-muted) opacity-0 group-hover/item:opacity-100 hover:text-(--text-main)"
                         }`}
-                      />
-                    </button>
-                  </div>
-                );
-              })}
+                        title={isPinned ? "Unpin from Dock" : "Pin to Dock"}
+                      >
+                        <Star
+                          className={`w-4 h-4 transition-transform ${
+                            isPinned
+                              ? "fill-current scale-110"
+                              : "opacity-60 hover:opacity-100"
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
     </div>
   );
 };

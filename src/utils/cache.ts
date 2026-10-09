@@ -10,6 +10,7 @@ export type { ParserModuleId };
 
 export const getCachedDataWithTimestamp = async <T>(key: string): Promise<{ data: T; timestamp: number } | null> => {
   try {
+    // Keys scoped to a user look like "<regNo|username>_<dataKey>" (6–15 char alphanum prefix)
     const isUserScoped = /^[A-Za-z0-9]{6,15}_/.test(key);
     const keysToTry: string[] = [
       `${CACHE_PREFIX}${key}`,
@@ -43,31 +44,6 @@ export const getCachedDataWithTimestamp = async <T>(key: string): Promise<{ data
         return { data: stored.data as T, timestamp: stored.timestamp };
       }
       return { data: stored as T, timestamp: Date.now() };
-    }
-
-    // Fallback: Check Zustand PWA sync storage ("portal-app-storage" / "retop_last_sync_payload") in IndexedDB
-    const portalRes = await getStorageData(["portal-app-storage", "retop_last_sync_payload"]);
-    const portalPayload =
-      portalRes["portal-app-storage"]?.state?.data ||
-      portalRes["portal-app-storage"]?.data ||
-      portalRes["retop_last_sync_payload"];
-    if (portalPayload && typeof portalPayload === "object") {
-      const matchKey = key.toLowerCase();
-      if (matchKey.includes("stat") && portalPayload.stats) {
-        return { data: portalPayload.stats as T, timestamp: Date.now() };
-      }
-      if (matchKey.includes("attendance") && portalPayload.attendance) {
-        return { data: portalPayload.attendance as T, timestamp: Date.now() };
-      }
-      if (matchKey.includes("assignment") && portalPayload.assignments) {
-        return { data: portalPayload.assignments as T, timestamp: Date.now() };
-      }
-      if (matchKey.includes("event") && portalPayload.events) {
-        return { data: portalPayload.events as T, timestamp: Date.now() };
-      }
-      if (matchKey.includes("timetable") || matchKey.includes("tt_")) {
-        if (portalPayload.ttCourses) return { data: portalPayload.ttCourses as T, timestamp: Date.now() };
-      }
     }
   } catch (e: any) {
     console.warn("[Storage Engine] Cache read failed", e);

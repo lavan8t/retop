@@ -14,6 +14,7 @@ export const DAAssignmentSchema = z.object({
   maxMark: z.string(),
   weightage: z.string(),
   dueDate: z.string(),
+  dueDateMs: z.number().optional(),
   lastUpdated: z.string(),
   code: z.string(),
   hasQP: z.boolean().optional(),

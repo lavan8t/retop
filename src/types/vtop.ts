@@ -41,6 +41,7 @@ export interface Assignment {
   title: string;
   course: string;
   dueDate: string;
+  dueDateMs?: number;
   status?: string;
 }
 export interface Event {

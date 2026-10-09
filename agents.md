@@ -153,11 +153,12 @@ src/
 
 ### Absolute rules
 
-1. **User controls git.** Never run `git commit`, `git push`, `git checkout -b`, or `git rebase` unless explicitly asked.
-2. **Do not mutate legacy navigation elements.** Never delete or inject into `#vtop-header`, `#top-hmenu-bar`, or native navigation buttons in legacy mode.
-3. **Keep Shadow DOM isolated.** All retop UI renders inside `#retop-host`. Never inject global styles into the host document head.
-4. **Preserve variable font transitions.** Never set `!important` on `font-variation-settings` or apply universal font rules on `*`.
-5. **Protect element transitions.** Never declare global `transition-property` on `*, ::before, ::after` in `@layer base`.
+1. **Git commits on verified completion.** When a task is properly verified and completed, create a git commit for the changes before moving on to the next task. Never run `git push`, `git checkout -b`, or `git rebase` unless explicitly asked.
+2. **Check branch before making changes.** Always verify the active git branch and working tree status before editing code or starting work on a task.
+3. **Do not mutate legacy navigation elements.** Never delete or inject into `#vtop-header`, `#top-hmenu-bar`, or native navigation buttons in legacy mode.
+4. **Keep Shadow DOM isolated.** All retop UI renders inside `#retop-host`. Never inject global styles into the host document head.
+5. **Preserve variable font transitions.** Never set `!important` on `font-variation-settings` or apply universal font rules on `*`.
+6. **Protect element transitions.** Never declare global `transition-property` on `*, ::before, ::after` in `@layer base`.
 
 ### Strong preferences
 

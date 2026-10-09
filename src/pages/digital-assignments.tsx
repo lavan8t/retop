@@ -40,29 +40,6 @@ const isAllowedFile = (file: File) => {
   return ALLOWED_EXTENSIONS.includes(ext);
 };
 
-const parseDueDateTimestamp = (dateStr?: string): number => {
-  if (!dateStr || dateStr.trim() === "" || dateStr.toUpperCase() === "N/A") {
-    return Infinity;
-  }
-  try {
-    const d = new Date(dateStr);
-    if (!isNaN(d.getTime())) return d.getTime();
-    const parts = dateStr.trim().split(/[\s-]+/);
-    if (parts.length >= 3) {
-      const day = parseInt(parts[0], 10);
-      const monthMap: Record<string, number> = {
-        jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
-        jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
-      };
-      const month = monthMap[parts[1].toLowerCase().slice(0, 3)];
-      const year = parseInt(parts[2], 10);
-      if (!isNaN(day) && month !== undefined && !isNaN(year)) {
-        return new Date(year, month, day).getTime();
-      }
-    }
-  } catch (e) {}
-  return Infinity;
-};
 
 /**
  * Checks VTOP response for success, OTP prompt, or errors.
@@ -223,7 +200,9 @@ export default function DigitalAssignments({ network }: { network: VTOPNetwork }
       const aSubmitted = Boolean(a.lastUpdated && a.lastUpdated.trim() !== "");
       const bSubmitted = Boolean(b.lastUpdated && b.lastUpdated.trim() !== "");
       if (aSubmitted !== bSubmitted) return aSubmitted ? 1 : -1;
-      return parseDueDateTimestamp(a.dueDate) - parseDueDateTimestamp(b.dueDate);
+      const msA = a.dueDateMs ?? Infinity;
+      const msB = b.dueDateMs ?? Infinity;
+      return msA - msB;
     });
   }, [activeCourse, daAssignments]);
 

@@ -96,11 +96,12 @@ if (!contentBuild.success) {
 }
 console.log("  - content.js, injected.js, background.js, webBridge.js");
 
-// ── Step 2: Build offline React bundle ──────────────────────────────
-console.log("Building offline...");
+// ── Step 2: Build offline & standalone React bundles ────────────────
+console.log("Building offline & standalone...");
 const popupBuild = await Bun.build({
   entrypoints: [
     resolve(import.meta.dir, "src/offline.tsx"),
+    resolve(import.meta.dir, "src/standalone.tsx"),
   ],
   outdir: DIST,
   target: "browser",
@@ -113,11 +114,11 @@ const popupBuild = await Bun.build({
 });
 
 if (!popupBuild.success) {
-  console.error("Offline build failed:");
+  console.error("Offline/Standalone build failed:");
   for (const log of popupBuild.logs) console.error(log);
   process.exit(1);
 }
-console.log("  - offline.js");
+console.log("  - offline.js, standalone.js");
 
 // Post-process bundled JS files (innerHTML obfuscation & import.meta removal)
 const sanitizeBundle = (filePath: string) => {
@@ -129,7 +130,7 @@ const sanitizeBundle = (filePath: string) => {
     writeFileSync(filePath, content);
   }
 };
-["content.js", "injected.js", "background.js", "webBridge.js", "offline.js"].forEach((file) => {
+["content.js", "injected.js", "background.js", "webBridge.js", "offline.js", "standalone.js"].forEach((file) => {
   sanitizeBundle(resolve(DIST, file));
 });
 
@@ -173,6 +174,8 @@ function processHtml(srcPath: string, outName: string, jsEntryName: string) {
 
 processHtml(resolve(ROOT, "offline.html"), "offline.html", "offline");
 console.log("  - offline.html");
+processHtml(resolve(ROOT, "index.html"), "index.html", "standalone");
+console.log("  - index.html");
 
 // ── Step 5: Copy static assets ──────────────────────────────────────
 console.log("Copying static assets...");

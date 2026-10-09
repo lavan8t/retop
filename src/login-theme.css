@@ -572,6 +572,16 @@ input:not(:placeholder-shown) ~ .retop-floating-label {
   }
 }
 
+@keyframes retop-wiggle {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
+.retop-wiggle {
+  animation: retop-wiggle 0.35s ease-in-out !important;
+}
+
 /* Buttons */
 .btn-primary,
 .btn-success {
@@ -844,31 +854,47 @@ img[src*="spinner" i] {
 }
 
 #retop-ascii-art {
-  --ascii-opacity: 0.4;
-  --ascii-color: var(--text-muted);
-  
   font-family: monospace !important;
   font-size: 7px;
-  line-height: 1;
-  color: var(--ascii-color) !important;
+  line-height: 1 !important;
+  color: rgba(255, 255, 255, 0.28) !important;
   pointer-events: none !important;
   white-space: pre;
   margin: 0;
   margin-right: -15vw;
   padding: 0;
   text-align: right;
-  opacity: var(--ascii-opacity);
 }
 
 [data-theme="dark"] #retop-ascii-art,
 [data-theme="amoled"] #retop-ascii-art {
-  --ascii-opacity: 0.35;
-  --ascii-color: #ffffff; /* Explicitly light color as requested */
+  color: rgba(255, 255, 255, 0.28) !important;
 }
 
 [data-theme="light"] #retop-ascii-art {
-  --ascii-opacity: 0.15;
-  --ascii-color: #000000;
+  color: rgba(0, 0, 0, 0.18) !important;
+}
+
+.retop-ascii-spark {
+  color: var(--accent-base, #3b82f6) !important;
+  font-weight: 700 !important;
+  line-height: inherit !important;
+  text-shadow: 0 0 6px var(--accent-base, #3b82f6), 0 0 16px var(--accent-base, #3b82f6), 0 0 30px var(--accent-base, #3b82f6) !important;
+  display: inline !important;
+}
+
+.retop-ascii-glow {
+  color: var(--accent-base, #3b82f6) !important;
+  line-height: inherit !important;
+  text-shadow: 0 0 8px var(--accent-base, #3b82f6), 0 0 18px var(--accent-base, #3b82f6) !important;
+  display: inline !important;
+}
+
+.retop-ascii-trail {
+  color: color-mix(in srgb, var(--accent-base, #3b82f6) 55%, transparent) !important;
+  line-height: inherit !important;
+  text-shadow: 0 0 8px var(--accent-base, #3b82f6) !important;
+  display: inline !important;
 }
 
 @keyframes retop-ascii-rise {

@@ -202,18 +202,16 @@ export const AssignmentRow = React.memo(({
 }) => {
   const [isHovered, setIsHovered] = React.useState(false);
 
-  const getDueDaysText = (dueDateStr: string) => {
-    const d = parseVtopDate(dueDateStr);
-    if (!d) return { days: "DUE SOON", exact: dueDateStr, diffDays: 99 };
+  const getDueDaysText = (assignment: Assignment) => {
+    const ms = assignment.dueDateMs ?? (parseVtopDate(assignment.dueDate)?.getTime() ?? null);
+    if (ms === null) return { days: "DUE SOON", exact: assignment.dueDate, diffDays: 99 };
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const target = new Date(d);
+    const target = new Date(ms);
     target.setHours(0, 0, 0, 0);
 
-    const diffDays = Math.round(
-      (target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
-    );
+    const diffDays = Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
     let days = "";
     if (diffDays < 0) days = `${Math.abs(diffDays)}d OVERDUE`;
@@ -221,10 +219,10 @@ export const AssignmentRow = React.memo(({
     else if (diffDays === 1) days = "DUE TOMORROW";
     else days = `DUE IN ${diffDays}d`;
 
-    return { days, exact: dueDateStr, diffDays };
+    return { days, exact: assignment.dueDate, diffDays };
   };
 
-  const { days, exact, diffDays } = getDueDaysText(assignment.dueDate);
+  const { days, exact, diffDays } = getDueDaysText(assignment);
 
   // Urgency badge styling
   let badgeStyle = "bg-(--accent-base)/15 text-(--accent-base) border-(--accent-base)/30";

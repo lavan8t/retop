@@ -48,16 +48,12 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
     return assignments
       .filter((a) => a.status !== "submitted")
       .sort((a, b) => {
-        const parseDate = (dStr: string) => {
-          const d = parseVtopDate(dStr);
-          return d ? d.getTime() : NaN;
-        };
-        const dateA = parseDate(a.dueDate);
-        const dateB = parseDate(b.dueDate);
-        if (isNaN(dateA) && isNaN(dateB)) return 0;
-        if (isNaN(dateA)) return 1;
-        if (isNaN(dateB)) return -1;
-        return dateA - dateB;
+        const msA = a.dueDateMs ?? (parseVtopDate(a.dueDate)?.getTime() ?? NaN);
+        const msB = b.dueDateMs ?? (parseVtopDate(b.dueDate)?.getTime() ?? NaN);
+        if (isNaN(msA) && isNaN(msB)) return 0;
+        if (isNaN(msA)) return 1;
+        if (isNaN(msB)) return -1;
+        return msA - msB;
       });
   }, [assignments]);
 

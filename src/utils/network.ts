@@ -17,6 +17,8 @@ import { parseExamSemesters, parseExamScheduleData } from "../parsers/exam-sched
 import { parseStudentProfile } from "../parsers/profile";
 import { parseCurriculumDashboard, parseCurriculumCourses } from "../parsers/curriculum";
 import { parseLateHourRows } from "../parsers/late-hour";
+import { executeVtopRequest, isNativeAndroidBridgeAvailable } from "./vtopBridge";
+import { getVtopBaseUrl, VtopCampus } from "./vtopClient";
 
 export const getParserForKey = (key: string): ((html: string) => any) | null => {
   if (key === "dashboard_stats") return parseAcademicStats;
@@ -265,17 +267,79 @@ export class VTOPNetwork {
         : (input as any).url || input.toString();
 
     const isOfflineMode =
-      (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
-      (typeof location !== "undefined" &&
-        !location.hostname.includes("vit.ac.in") &&
-        !location.protocol.includes("chrome-extension") &&
-        !location.protocol.includes("moz-extension"));
+      !isNativeAndroidBridgeAvailable() &&
+      ((typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
+        (typeof location !== "undefined" &&
+          !location.hostname.includes("vit.ac.in") &&
+          !location.protocol.includes("chrome-extension") &&
+          !location.protocol.includes("moz-extension")));
 
     if (isOfflineMode) {
       return new Response("", { status: 200 });
     }
 
     await this.enforceRateLimit();
+
+    if (isNativeAndroidBridgeAvailable()) {
+      try {
+        const campus = (localStorage.getItem("retop_campus") as VtopCampus) || "vellore";
+        const base = getVtopBaseUrl(campus);
+        const fullUrl = urlStr.startsWith("http")
+          ? urlStr
+          : `${base}${urlStr.startsWith("/") ? "" : "/"}${urlStr}`;
+
+        const method = (init?.method || "GET").toUpperCase() as "GET" | "POST";
+        const headers: Record<string, string> = {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          Origin: base,
+          Referer: `${base}/vtop/content`,
+        };
+
+        if (init?.headers) {
+          if (init.headers instanceof Headers) {
+            init.headers.forEach((v, k) => {
+              headers[k] = v;
+            });
+          } else if (Array.isArray(init.headers)) {
+            init.headers.forEach(([k, v]) => {
+              headers[k] = v;
+            });
+          } else {
+            Object.assign(headers, init.headers);
+          }
+        }
+
+        let bodyStr: string | undefined = undefined;
+        if (init?.body) {
+          if (typeof init.body === "string") {
+            bodyStr = init.body;
+          } else if (init.body instanceof URLSearchParams) {
+            bodyStr = init.body.toString();
+          }
+        }
+
+        const vtopResp = await executeVtopRequest({
+          url: fullUrl,
+          method,
+          headers,
+          body: bodyStr,
+        });
+
+        const respHeaders = new Headers();
+        Object.entries(vtopResp.headers).forEach(([k, v]) => {
+          respHeaders.set(k, v);
+        });
+
+        return new Response(vtopResp.body, {
+          status: vtopResp.status,
+          headers: respHeaders,
+        });
+      } catch (err: any) {
+        throw err;
+      }
+    }
 
     try {
       const response = await window.fetch(input, init);
@@ -301,11 +365,12 @@ export class VTOPNetwork {
     params: Record<string, string> = {}
   ): Promise<string> {
     const isOfflineMode =
-      (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
-      (typeof location !== "undefined" &&
-        !location.hostname.includes("vit.ac.in") &&
-        !location.protocol.includes("chrome-extension") &&
-        !location.protocol.includes("moz-extension"));
+      !isNativeAndroidBridgeAvailable() &&
+      ((typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
+        (typeof location !== "undefined" &&
+          !location.hostname.includes("vit.ac.in") &&
+          !location.protocol.includes("chrome-extension") &&
+          !location.protocol.includes("moz-extension")));
 
     if (isOfflineMode) {
       return "";
@@ -483,12 +548,13 @@ export class VTOPNetwork {
       const age = Date.now() - (cachedInfo.timestamp || 0);
 
       const isOffline =
-        (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
-        (typeof navigator !== "undefined" && !navigator.onLine) ||
-        (typeof location !== "undefined" &&
-          !location.hostname.includes("vit.ac.in") &&
-          !location.protocol.includes("chrome-extension") &&
-          !location.protocol.includes("moz-extension"));
+        !isNativeAndroidBridgeAvailable() &&
+        ((typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
+          (typeof navigator !== "undefined" && !navigator.onLine) ||
+          (typeof location !== "undefined" &&
+            !location.hostname.includes("vit.ac.in") &&
+            !location.protocol.includes("chrome-extension") &&
+            !location.protocol.includes("moz-extension")));
 
       let resolvedData = cachedInfo.data;
       if (typeof resolvedData === "string" && parser) {
@@ -526,12 +592,13 @@ export class VTOPNetwork {
     }
 
     const isOffline =
-      (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
-      (typeof navigator !== "undefined" && !navigator.onLine) ||
-      (typeof location !== "undefined" &&
-        !location.hostname.includes("vit.ac.in") &&
-        !location.protocol.includes("chrome-extension") &&
-        !location.protocol.includes("moz-extension"));
+      !isNativeAndroidBridgeAvailable() &&
+      ((typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
+        (typeof navigator !== "undefined" && !navigator.onLine) ||
+        (typeof location !== "undefined" &&
+          !location.hostname.includes("vit.ac.in") &&
+          !location.protocol.includes("chrome-extension") &&
+          !location.protocol.includes("moz-extension")));
 
     if (isOffline) {
       // One final attempt: check un-prefixed key in cache

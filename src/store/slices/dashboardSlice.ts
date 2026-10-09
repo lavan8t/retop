@@ -14,6 +14,7 @@ import { parseDASemesters } from "../../parsers/digital-assignments";
 import { parseStudentProfile } from "../../parsers/profile";
 import { getCachedData, setCachedData } from "../../utils/cache";
 import { waitForIntercepted } from "../../utils/dashboardInterceptor";
+import { isNativeAndroidBridgeAvailable } from "../../utils/vtopBridge";
 import { CourseSummary, Assignment, Event } from "../../types/vtop";
 import { UpcomingClass } from "../../utils/timetable-slots";
 import { DataState } from "../dataStore";
@@ -69,12 +70,13 @@ export const createDashboardSlice: StateCreator<DataState, [], [], DashboardSlic
   fetchDashboardData: async (network, csrf, authId) => {
     try {
       const isOffline =
-        (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
-        (typeof navigator !== "undefined" && !navigator.onLine) ||
-        (typeof location !== "undefined" &&
-          !location.hostname.includes("vit.ac.in") &&
-          !location.protocol.includes("chrome-extension") &&
-          !location.protocol.includes("moz-extension"));
+        !isNativeAndroidBridgeAvailable() &&
+        ((typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
+          (typeof navigator !== "undefined" && !navigator.onLine) ||
+          (typeof location !== "undefined" &&
+            !location.hostname.includes("vit.ac.in") &&
+            !location.protocol.includes("chrome-extension") &&
+            !location.protocol.includes("moz-extension")));
 
       set({ status: isOffline ? "Offline" : "Syncing..." });
 
@@ -163,6 +165,8 @@ export const createDashboardSlice: StateCreator<DataState, [], [], DashboardSlic
       }
 
       // ── Background Fresh Sync Strategy ──────────────────────────────────────
+      const isBridgeMode = isNativeAndroidBridgeAvailable();
+
       const resolveOrFetch = async (
         signalKey: string,
         cacheKey: string,
@@ -170,6 +174,12 @@ export const createDashboardSlice: StateCreator<DataState, [], [], DashboardSlic
         parser: (html: string) => any,
         storeKey: string,
       ) => {
+        // In bridge/standalone mode: syncStudentData already populated these cache keys.
+        // Skipping waitForIntercepted (never fires) and skipping live-fetch of
+        // VTOP-home-only widget endpoints (return 302/empty outside home page context).
+        if (isBridgeMode) {
+          return; // cache hydration at top of fetchDashboardData already handled this
+        }
         // 1. Wait for VTOP's own home-page XHR (via interceptDashboardResponse)
         const intercepted = await waitForIntercepted(signalKey, 1500);
         if (intercepted) {

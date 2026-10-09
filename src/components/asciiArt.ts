@@ -98,7 +98,84 @@ export const loadAsciiArt = async (type: AsciiArtType): Promise<string> => {
   return "";
 };
 
-const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*";
+export const runAsciiSparkAnimation = (
+  pre: HTMLPreElement,
+  asciiArt: string,
+  onComplete?: () => void,
+): (() => void) => {
+  if (!pre || !asciiArt) return () => {};
+
+  const lines = asciiArt.split("\n");
+  const H = lines.length;
+  if (H === 0) {
+    pre.textContent = asciiArt;
+    return () => {};
+  }
+
+  // Pre-calculate blank lines to preserve exact width and spacing
+  const blankLines = lines.map((line) => line.replace(/\S/g, " "));
+
+  // Start with empty canvas
+  pre.textContent = blankLines.join("\n");
+
+  // Total duration ~1.5s with 25ms steps (60 frames)
+  const totalDuration = 1500;
+  const intervalMs = 25;
+  const totalSteps = Math.round(totalDuration / intervalMs);
+  let step = 0;
+  let interval: ReturnType<typeof setInterval> | null = null;
+
+  // Natural ease-out: fires briskly from ground and decelerates smoothly at the roofline
+  const easeOut = (t: number): number => {
+    return 1 - Math.pow(1 - t, 2.5);
+  };
+
+  const cleanup = () => {
+    if (interval) {
+      clearInterval(interval);
+      interval = null;
+    }
+  };
+
+  interval = setInterval(() => {
+    step++;
+    const t = Math.min(1, step / totalSteps);
+    const progress = easeOut(t);
+
+    // Bottom-up: beamLine sweeps from H down to -6 so the trailing glow sweeps cleanly off top
+    const beamLine = Math.round((1 - progress) * (H + 7)) - 6;
+
+    if (step >= totalSteps || beamLine < -5) {
+      cleanup();
+      pre.textContent = asciiArt;
+      if (onComplete) onComplete();
+      return;
+    }
+
+    let html = "";
+    for (let y = 0; y < H; y++) {
+      if (y > beamLine + 5) {
+        // Below trail: already etched baseline characters
+        html += lines[y] + "\n";
+      } else if (y === beamLine || y === beamLine + 1) {
+        // Leading laser front: intense pure white neon spark
+        html += `<span class="retop-ascii-spark">${lines[y]}</span>\n`;
+      } else if (y === beamLine + 2 || y === beamLine + 3) {
+        // Sustained white glow zone (lingering white glow)
+        html += `<span class="retop-ascii-glow">${lines[y]}</span>\n`;
+      } else if (y === beamLine + 4 || y === beamLine + 5) {
+        // Cooling phosphor tail
+        html += `<span class="retop-ascii-trail">${lines[y]}</span>\n`;
+      } else {
+        // Above beam: not yet scanned / dark
+        html += blankLines[y] + "\n";
+      }
+    }
+    pre.innerHTML = html.slice(0, -1);
+  }, intervalMs);
+
+  return cleanup;
+};
 
 export const AsciiPanel: React.FC<{ campus?: "chennai" | "vellore" }> = ({ campus }) => {
   const preRef = useRef<HTMLPreElement>(null);
@@ -111,15 +188,7 @@ export const AsciiPanel: React.FC<{ campus?: "chennai" | "vellore" }> = ({ campu
     loadAsciiArt(newType).then(setArt);
   }, [campus]);
 
-  const originalLines = useRef<string[]>([]);
-  useEffect(() => {
-    originalLines.current = art.split("\n");
-  }, [art]);
-
-  const ripples = useRef<{ x: number; y: number; t: number }[]>([]);
-  const lastMouse = useRef({ x: -9999, y: -9999, t: 0 });
-
-  const { charW, charH, fontSize, lineH, marginRight } = getAsciiConfig(pickedType);
+  const { fontSize, lineH, marginRight } = getAsciiConfig(pickedType);
 
   useEffect(() => {
     const pre = preRef.current;
@@ -134,68 +203,8 @@ export const AsciiPanel: React.FC<{ campus?: "chennai" | "vellore" }> = ({ campu
     const pre = preRef.current;
     if (!pre || !art) return;
 
-    const onMove = (e: MouseEvent) => {
-      const rect = pre.getBoundingClientRect();
-      const now = Date.now();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      const dx = x - lastMouse.current.x;
-      const dy = y - lastMouse.current.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist > 6 || ripples.current.length === 0) {
-        ripples.current.push({ x, y, t: now });
-        if (ripples.current.length > 20) ripples.current.shift();
-      }
-      lastMouse.current = { x, y, t: now };
-    };
-
-    let animFrame: number;
-    const animate = () => {
-      const now = Date.now();
-      ripples.current = ripples.current.filter((r) => now - r.t < 900);
-      if (ripples.current.length === 0) {
-        animFrame = requestAnimationFrame(animate);
-        return;
-      }
-
-      const lines = originalLines.current;
-      let out = "";
-      for (let row = 0; row < lines.length; row++) {
-        const line = lines[row];
-        const offsetX = Math.max(0, pre.clientWidth - line.length * charW);
-        let newLine = "";
-        for (let col = 0; col < line.length; col++) {
-          const char = line[col];
-          if (char === " ") { newLine += " "; continue; }
-          const px = offsetX + col * charW;
-          const py = row * charH;
-          let wave = 0;
-          for (const r of ripples.current) {
-            const dx = px - r.x;
-            const dy = py - r.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            const age = now - r.t;
-            const waveR = age * 0.15;
-            const dw = Math.abs(dist - waveR);
-            if (dw < 30) {
-              wave += Math.cos(dw * 0.1) * Math.pow(Math.max(0, 1 - dw / 30), 2) * Math.pow(Math.max(0, 1 - age / 900), 2);
-            }
-          }
-          newLine += Math.abs(wave) > 0.2 ? CHARS[Math.floor(Math.random() * CHARS.length)] : char;
-        }
-        out += newLine + "\n";
-      }
-      if (pre) pre.textContent = out.slice(0, -1);
-      animFrame = requestAnimationFrame(animate);
-    };
-
-    document.addEventListener("mousemove", onMove);
-    animFrame = requestAnimationFrame(animate);
-    return () => {
-      document.removeEventListener("mousemove", onMove);
-      cancelAnimationFrame(animFrame);
-    };
-  }, [charW, charH, art]);
+    return runAsciiSparkAnimation(pre, art);
+  }, [art]);
 
   return React.createElement(
     "pre",
@@ -216,9 +225,7 @@ export const AsciiPanel: React.FC<{ campus?: "chennai" | "vellore" }> = ({ campu
         width: "100%",
         userSelect: "none",
         pointerEvents: "auto",
-        animation: "retop-ascii-rise 0.5s linear forwards",
       },
-    },
-    art
+    }
   );
 };

@@ -888,15 +888,17 @@ export const TopBar: React.FC<TopBarProps> = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                if (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) {
+                if (onSync && !isSyncing && !isLoading) {
+                  onSync();
+                } else if (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) {
                   const isChennai = window.location.hostname.includes("vtopcc");
                   window.open(isChennai ? "https://vtopcc.vit.ac.in/vtop/open/page" : "https://vtop.vit.ac.in/vtop/open/page", "_blank");
-                } else if (onSync && !isSyncing && !isLoading) {
-                  onSync();
                 }
               }}
               title={
-                (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__)
+                isSyncing || isLoading
+                  ? "Syncing data..."
+                  : (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__)
                   ? `Offline Mode - Last saved ${
                       lastSyncTime > 0
                         ? (() => {
@@ -907,24 +909,16 @@ export const TopBar: React.FC<TopBarProps> = ({
                           })()
                         : "cached"
                     }`
-                  : (isSyncing || isLoading)
-                  ? "Syncing..."
                   : "Sync now"
               }
-              aria-label={
-                (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__)
-                  ? "Offline Mode"
-                  : (isSyncing || isLoading)
-                  ? "Syncing"
-                  : "Sync now"
-              }
-              disabled={(isSyncing || isLoading) && !(typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__)}
+              aria-label={isSyncing || isLoading ? "Syncing" : "Sync now"}
+              disabled={isSyncing || isLoading}
               className="flex flex-col items-center justify-center px-1.5 py-0.5 rounded-lg hover:bg-(--bg-hover) transition-colors cursor-pointer text-center disabled:opacity-50 shrink-0 min-w-[24px]"
             >
               <div
-                className={`shrink-0 flex items-center justify-center ${(isSyncing || isLoading) && !(typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ? "animate-spin" : ""}`}
+                className={`shrink-0 flex items-center justify-center ${isSyncing || isLoading ? "animate-spin" : ""}`}
               >
-                {(typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ? (
+                {(typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__ && !(window as any).VtopNativeBridge) ? (
                   <NoInternetIcon className="w-3.5 h-3.5 md:w-4 md:h-4 transition-colors" style={{ color: "var(--accent-base, #3b82f6)" }} />
                 ) : (
                   <Refresh className="w-3.5 h-3.5 md:w-4 md:h-4 text-(--text-muted) hover:text-(--text-main) transition-colors" />

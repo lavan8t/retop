@@ -148,6 +148,9 @@ window.addEventListener("retop-execute-legacy", (e: any) => {
   };
 
   const validateLoginFields = (e?: Event): boolean => {
+    if (!document.getElementById("vtopLoginForm")) {
+      return true;
+    }
     const { pInput, uInput, cInput } = getLoginInputs();
 
     if (pInput) {

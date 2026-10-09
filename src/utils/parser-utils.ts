@@ -6,10 +6,8 @@
 let sharedParser: DOMParser | null = null;
 
 export function getSharedDOMParser(): DOMParser {
-  if (!sharedParser && typeof DOMParser !== "undefined") {
-    sharedParser = new DOMParser();
-  }
-  return sharedParser || new DOMParser();
+  if (!sharedParser) sharedParser = new DOMParser();
+  return sharedParser;
 }
 
 /**
@@ -21,11 +19,10 @@ export function parseHTMLFast(html: string): Document {
     return getSharedDOMParser().parseFromString("", "text/html");
   }
 
-  // Strip script, style, and comments to drastically speed up parseFromString
-  const cleanHtml = html
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
-    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
-    .replace(/<!--[\s\S]*?-->/g, "");
+  const cleanHtml = html.replace(
+    /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>|<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>|<!--[\s\S]*?-->/gi,
+    "",
+  );
 
   return getSharedDOMParser().parseFromString(cleanHtml, "text/html");
 }

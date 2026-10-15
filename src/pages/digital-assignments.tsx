@@ -3,7 +3,6 @@ import { useDataStore } from "../store/dataStore";
 import { useAppStore } from "../store/appStore";
 import { OfflineNotSynced } from "../components/ui/OfflineNotSynced";
 import { VTOPNetwork } from "../utils/network";
-import { compressBalanced, compressMax } from "@quicktoolsone/pdf-compress";
 import { showAlertDialog } from "../components/ui/AlertDialog";
 import { EmptyState } from "../components/EmptyState";
 import { DACourse, DAAssignment } from "../parsers/digital-assignments";
@@ -309,6 +308,10 @@ export default function DigitalAssignments({ network }: { network: VTOPNetwork }
       if (selectedFile.size > MAX_FILE_SIZE && getFileExtension(selectedFile.name) === "pdf") {
         setStatusMsg({ type: "success", text: "Compressing PDF to under 4MB..." });
         const buffer = await selectedFile.arrayBuffer();
+        // pdf.js is ~1.5 MB and probes for `eval` at module load, which trips the PWA's
+        // Content-Security-Policy on every page if it is statically imported. Load
+        // it only for the one case that needs it.
+        const { compressBalanced, compressMax } = await import("@quicktoolsone/pdf-compress");
         let compressed = await compressBalanced(buffer);
         if (compressed.stats.compressedSize > MAX_FILE_SIZE) {
           compressed = await compressMax(buffer);

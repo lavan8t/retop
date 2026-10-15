@@ -21,7 +21,6 @@ import { ErrorBoundary } from "./components/common/ErrorBoundary";
 import { fixBase64Image } from "./parsers/profile";
 import { clear as idbClear, set as idbSet, get as idbGet } from "idb-keyval";
 import { AlertDialogManager, showAlertDialog } from "./components/ui/AlertDialog";
-import { VtopLoginCard } from "./components/auth/VtopLoginCard";
 
 // Apply default theme immediately on module load so variables are present before first render
 try {
@@ -334,7 +333,7 @@ const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*";
 
 
 const OfflineApp = () => {
-  const [step, setStep] = useState<"LOADING" | "NO_CACHE" | "PIN_LOCK" | "UNLOCKED" | "LIVE_LOGIN">("LOADING");
+  const [step, setStep] = useState<"LOADING" | "NO_CACHE" | "PIN_LOCK" | "UNLOCKED">("LOADING");
   const [loaderFinishing, setLoaderFinishing] = useState<boolean>(false);
   const [loaderFading, setLoaderFading] = useState<boolean>(false);
   const [usersIndex, setUsersIndex] = useState<CachedUser[]>([]);
@@ -693,20 +692,6 @@ const OfflineApp = () => {
     renderDashboard();
   };
 
-  const handleLoginSuccess = async (syncedUser: CachedUser) => {
-    await loadCachedProfiles();
-    sessionStorage.setItem("retop_session_unlocked", syncedUser.regNo);
-    const pinRecord = await getUserPinRecord(syncedUser.regNo);
-    if (!pinRecord) {
-      setActiveUser(syncedUser);
-      setIsSettingPin(true);
-      setHasPinSet(false);
-      setStep("PIN_LOCK");
-    } else {
-      launchDashboard(syncedUser);
-    }
-  };
-
   if (step === "LOADING") {
     return (
       <div
@@ -730,7 +715,7 @@ const OfflineApp = () => {
       {/* Left 50% Column: Form (.container-fluid / #loginBox) */}
       <div className="w-full lg:w-1/2 min-h-[55vh] lg:min-h-screen flex flex-col justify-center items-center px-4 py-8 sm:px-8 lg:px-16 z-10">
         <div className="w-full max-w-md space-y-6 mx-auto">
-          {/* Header matching login-theme.css .card-header h4 (Only shown for PIN_LOCK, VtopLoginCard renders its own) */}
+          {/* Header matching login-theme.css .card-header h4 */}
           {step === "PIN_LOCK" && (
             <div className="text-left space-y-1">
               <h1
@@ -753,13 +738,35 @@ const OfflineApp = () => {
           )}
 
           {step === "NO_CACHE" && (
-            <div className="space-y-4">
-              <VtopLoginCard
-                initialCampus="vellore"
-                title="retop"
-                subtitle="Welcome back."
-                onLoginSuccess={handleLoginSuccess}
-              />
+            <div className="space-y-6">
+              <div className="text-left space-y-2">
+                <h1
+                  className="text-4xl sm:text-5xl font-black lowercase tracking-tighter text-(--text-main) select-none inline-block cursor-default"
+                  style={{
+                    fontFamily: "'Google Sans Flex', system-ui, sans-serif",
+                    fontVariationSettings: '"wdth" 151, "wght" 800, "GRAD" 100, "ROND" 100, "slnt" -10',
+                  }}>
+                  retop
+                </h1>
+                <p className="text-(--text-muted) text-sm sm:text-base font-medium" style={GSF}>
+                  Nothing cached yet.
+                </p>
+              </div>
+
+              <div className="bg-(--bg-surface) border border-(--border-dim)/40 rounded-3xl p-6 space-y-4 shadow-2xl">
+                <p className="text-sm text-(--text-muted) leading-relaxed" style={GSF}>
+                  This page is offline-only. Sign in on VTOP once and the extension
+                  mirrors your timetable, attendance, marks and profile here.
+                </p>
+                <a
+                  href="https://vtop.vit.ac.in/vtop/open/page"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-primary w-full inline-flex items-center justify-center cursor-pointer active:scale-98 transition-all no-underline">
+                  <span>GO TO VTOP AND SIGN IN</span>
+                </a>
+              </div>
+
               <div className="text-center pt-2">
                 <button
                   type="button"
@@ -773,18 +780,6 @@ const OfflineApp = () => {
             </div>
           )}
 
-          {step === "LIVE_LOGIN" && (
-            <div className="space-y-4">
-              <VtopLoginCard
-                initialCampus={activeUser?.campus || "vellore"}
-                title="retop"
-                subtitle="Add account."
-                onLoginSuccess={handleLoginSuccess}
-                onCancel={usersIndex.length > 0 ? () => setStep("PIN_LOCK") : undefined}
-              />
-            </div>
-          )}
-
           {/* Step 2: PIN LOCK SCREEN & MULTI-USER SELECTOR */}
           {step === "PIN_LOCK" && activeUser && (
             <div className="space-y-6">
@@ -794,7 +789,7 @@ const OfflineApp = () => {
                 activeUser={activeUser}
                 onSelect={selectUser}
                 onImport={() => fileInputRef.current?.click()}
-                onAddAccount={() => setStep("LIVE_LOGIN")} />
+                onAddAccount={() => window.open("https://vtop.vit.ac.in/vtop/open/page", "_blank", "noopener")} />
 
               {/* Input Group matching login-theme.css */}
               <div 
@@ -824,10 +819,10 @@ const OfflineApp = () => {
 
                     <div className="flex items-center justify-center gap-3 text-xs pt-1">
                       <button
-                        onClick={() => setStep("LIVE_LOGIN")}
+                        onClick={() => window.open("https://vtop.vit.ac.in/vtop/open/page", "_blank", "noopener")}
                         className="px-4 py-2 rounded-full bg-transparent hover:bg-(--bg-surface) border border-transparent hover:border-(--border-dim)/50 text-(--accent-base) font-semibold text-xs transition-all cursor-pointer"
                         style={GSF}>
-                        Sign in / Re-sync VTOP
+                        Re-sync on VTOP
                       </button>
                       <span className="text-(--text-muted)/40">•</span>
                       <button

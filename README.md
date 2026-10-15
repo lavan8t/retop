@@ -7,6 +7,7 @@
 
 retop is a modern Chrome extension that completely transforms the legacy VIT University VTOP portal into a lightning-fast, brutalist Material 3-inspired dashboard. It runs seamlessly on top of the existing infrastructure by rendering entirely inside an isolated shadow DOM, meaning it intercepts and formats raw portal data without disrupting the core functionalities.
 
+- **Instant Login Takeover**: On VTOP login routes the extension cancels the page load at `document_start` and paints its own sign-in card. VTOP's Bootstrap login page never downloads.
 - **Automated Login & reCAPTCHA**: Instantly bypasses standard login captchas via bitmap matching or invisible reCAPTCHA v3 integration.
 - **Zero-Refresh Navigation**: A fully state-based React router operates over the legacy pages, ensuring instant transitions across modules like Timetables, Marks, and Curriculum.
 - **Aggressive Caching**: Your timetable, attendance, and calendar data are cached locally with a 24-hour TTL, allowing immediate dashboard rendering even on poor networks.
@@ -32,7 +33,9 @@ retop is a modern Chrome extension that completely transforms the legacy VIT Uni
 
 ## Architecture
 
-retop functions by injecting an initialization script into the main browser world to set up interceptors. A React application is then mounted into a `#retop-host` shadow DOM to prevent legacy CSS conflicts. Network requests are handled by a custom `VTOPNetwork` wrapper that fetches HTML fragments in the background, parses them into typed structures, and stores them in ephemeral Zustand states.
+A 2 KB `document_start` bootstrapper (`src/content.ts`) carries no static imports. It reads the saved role from `localStorage`, and on a VTOP login route calls `window.stop()` to cancel the HTML stream, mounts an empty `#retop-host` shadow root, then `import()`s `login.js` to render the sign-in card. On authenticated routes it cloaks the native document and imports `dashboard.js`, which mounts the React application into the same shadow DOM to prevent legacy CSS conflicts. An initialization script in the main world handles the legacy bridge. Network requests are handled by a custom `VTOPNetwork` wrapper that fetches HTML fragments in the background, parses them into typed structures, and stores them in ephemeral Zustand states.
+
+`login.js`, `dashboard.js`, and the offline/standalone bundles are separate ES modules and must stay listed in `web_accessible_resources` in both manifests.
 
 <br />
 

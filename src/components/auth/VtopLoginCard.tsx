@@ -18,6 +18,12 @@ export interface VtopLoginCardProps {
   onCancel?: () => void;
   title?: string;
   subtitle?: string;
+  /**
+   * Download every module into the offline cache before handing over. Offline and
+   * standalone surfaces need it; the live login takeover does not, because the
+   * dashboard entry fetches the same data through VTOPNetwork anyway.
+   */
+  syncAfterLogin?: boolean;
 }
 
 export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
@@ -26,6 +32,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
   onCancel,
   title = "retop",
   subtitle = "vtop login",
+  syncAfterLogin = true,
 }) => {
   const [campus, setCampus] = useState<VtopCampus>(initialCampus);
   const [username, setUsername] = useState("");
@@ -44,6 +51,9 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
   const [passwordWiggle, setPasswordWiggle] = useState(false);
   const [captchaWiggle, setCaptchaWiggle] = useState(false);
   const [isTitleHovered, setIsTitleHovered] = useState(false);
+  const [isSolvingCaptcha, setIsSolvingCaptcha] = useState(false);
+
+  const captchaImgRef = useRef<HTMLImageElement | null>(null);
 
   // Request sequencing to guarantee only the latest captcha response updates state
   const activeSeqRef = useRef<number>(0);
@@ -115,6 +125,35 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
     fetchInitialCaptcha(campus);
   }, [campus]);
 
+  // Auto-solve the CAPTCHA, as the old enhanceLegacyLogin poll did. Re-runs on
+  // every new image — VTOP rotates the CAPTCHA after each attempt — so a failed
+  // login still lands with a freshly solved field.
+  useEffect(() => {
+    const img = captchaImgRef.current;
+    if (!captchaData?.captchaImage || !img) return;
+    if (!img.complete || img.naturalWidth === 0) return;
+
+    let cancelled = false;
+    setIsSolvingCaptcha(true);
+
+    import("../../utils/captchaSolver")
+      .then(({ autoSolveCaptcha }) => autoSolveCaptcha(img))
+      .then((solved) => {
+        if (cancelled || !solved) return;
+        setCaptchaInput(solved);
+      })
+      .catch((e) => {
+        if (!cancelled) console.warn("[VtopLoginCard] CAPTCHA auto-solve failed:", e);
+      })
+      .finally(() => {
+        if (!cancelled) setIsSolvingCaptcha(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [captchaData?.captchaImage]);
+
   const handleCampusChange = (newCampus: VtopCampus) => {
     if (newCampus === campus || isSubmitting) return;
     setCampus(newCampus);
@@ -132,7 +171,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
     if (!trimmedUser) {
       setUsernameWiggle(true);
       setTimeout(() => setUsernameWiggle(false), 400);
-      setErrorMessage("Enter your registration number");
+      setErrorMessage("Enter your username");
       return;
     }
     if (!trimmedPass) {
@@ -180,6 +219,21 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
         setIsSubmitting(false);
         // Refresh captcha for next attempt
         handleRefreshCaptcha();
+        return;
+      }
+
+      if (!syncAfterLogin) {
+        const regNo = result.user?.registrationNumber || result.client.registrationNumber;
+        onLoginSuccess(
+          {
+            regNo,
+            username: regNo,
+            name: result.user?.name || result.client.studentName || regNo,
+            lastActive: Date.now(),
+            campus: result.client.campus,
+          },
+          result.client,
+        );
         return;
       }
 
@@ -277,7 +331,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
             onChange={(e) => setUsername(e.target.value.toUpperCase())}
           />
           <label htmlFor="username" className="retop-floating-label">
-            Registration Number
+            Username
           </label>
         </div>
 
@@ -322,6 +376,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
             {captchaData?.captchaImage ? (
               <img
                 id="captchaImage"
+                ref={captchaImgRef}
                 src={captchaData.captchaImage}
                 alt="Captcha"
               />
@@ -337,7 +392,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
               type="button"
               id="captchaRefresh"
               className="retop-reload-btn"
-              disabled={loadingCaptcha || isSubmitting}
+              disabled={loadingCaptcha || isSubmitting || isSolvingCaptcha}
               onClick={handleRefreshCaptcha}
               title="Refresh Captcha"
             >

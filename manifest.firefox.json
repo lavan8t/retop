@@ -49,11 +49,12 @@
       "resources": [
         "injected.js",
         "webBridge.js",
+        "login.js",
+        "dashboard.js",
         "offline.js",
         "chunk-*.js",
         "style.css",
         "login.css",
-        "prelogin.css",
         "fonts/gsf.subset.woff2",
         "fonts/gsf.subset2.woff2",
         "fonts/*",

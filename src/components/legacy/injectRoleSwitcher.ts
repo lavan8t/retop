@@ -1,6 +1,6 @@
-import { get as idbGet, set as idbSet } from "idb-keyval";
+import { readRole, setRole, RetopRole } from "../../utils/roleStore";
 
-const ROLE_NAV_ITEMS = [
+const ROLE_NAV_ITEMS: { id: RetopRole; label: string; flag: string; svg: string }[] = [
   {
     id: "student",
     label: "Student",
@@ -65,10 +65,7 @@ export function updateSwitcherActiveState(activeRoleId: string): void {
 export async function injectRoleSwitcher(activeRole?: string): Promise<void> {
   if (typeof document === "undefined") return;
 
-  const role =
-    activeRole ||
-    ((await idbGet("retop-user-role")) as string) ||
-    "student";
+  const role = activeRole || (await readRole());
 
   // If already mounted, update state
   if (document.getElementById("retop-role-navrail")) {
@@ -202,10 +199,10 @@ export async function injectRoleSwitcher(activeRole?: string): Promise<void> {
       e.preventDefault();
       e.stopPropagation();
 
-      const current = ((await idbGet("retop-user-role")) as string) || "student";
+      const current = await readRole();
       if (current === r.id) return;
 
-      await idbSet("retop-user-role", r.id);
+      await setRole(r.id);
 
       const isStudentOrEmpTarget = r.id === "student" || r.id === "employee";
       const isStudentOrEmpCurrent = current === "student" || current === "employee";

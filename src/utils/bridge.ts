@@ -106,8 +106,10 @@ export function injectGlobalStyles() {
   injectGlobalFonts();
 }
 
-export function initializeContainer() {
+export function initializeContainer(opts?: { includeAppStylesheet?: boolean }) {
   if (isInitialized && document.getElementById("retop-host")) return;
+
+  const includeAppStylesheet = opts?.includeAppStylesheet !== false;
 
   if ((window as any).__RETOP_OFFLINE__ || (window as any).__RETOP_STANDALONE__) {
     const root = document.getElementById("root") || document.body;
@@ -131,7 +133,11 @@ export function initializeContainer() {
   host.style.cssText =
     "position: fixed !important; inset: 0 !important; z-index: 2147483647 !important; pointer-events: none; background: transparent !important;";
 
-  const parent = document.documentElement || document.body;
+  // Keep the host wherever it already lives. The login takeover mounts it inside
+  // <body> and owns the document; hoisting it to <html> would detach it from the
+  // body it was placed in. Only an unattached host gets a parent here, which is
+  // the dashboard path where the native VTOP body must survive.
+  const parent = host.parentElement || document.documentElement || document.body;
   if (parent && host.parentElement !== parent) {
     parent.appendChild(host);
   }
@@ -162,7 +168,10 @@ export function initializeContainer() {
       shadowRoot.insertBefore(earlyShadowStyle, shadowRoot.firstChild);
     }
 
-    if (!shadowRoot.querySelector("link[href*='dist/style.css']")) {
+    if (
+      includeAppStylesheet &&
+      !shadowRoot.querySelector("link[href*='dist/style.css']")
+    ) {
       const cssLink = document.createElement("link");
       cssLink.rel = "stylesheet";
       cssLink.href = getExtUrl("dist/style.css");
@@ -179,6 +188,46 @@ export function initializeContainer() {
   }
 
   isInitialized = true;
+}
+
+/**
+ * Installs compiled extension stylesheets into a shadow root as constructed
+ * stylesheets: one fetch, one parse, no <link> round trip. Callers await this
+ * before mounting React so the skeleton never flashes unstyled.
+ */
+export async function adoptExtensionStyles(
+  target: ShadowRoot,
+  paths: string[],
+): Promise<void> {
+  const cssTexts = await Promise.all(
+    paths.map(async (path) => {
+      try {
+        const res = await fetch(getExtUrl(path));
+        return res.ok ? await res.text() : "";
+      } catch {
+        return "";
+      }
+    }),
+  );
+
+  // A constructed stylesheet resolves relative url() against the document base,
+  // not the extension. Left alone, ./fonts/*.woff2 would be requested from
+  // vtop.vit.ac.in. Rewrite them to absolute extension URLs.
+  const base = getExtUrl("dist/assets/").slice(0, -"assets/".length);
+
+  for (const css of cssTexts) {
+    if (!css) continue;
+    const absolute = css.replace(/url\((['"]?)\.\//g, `url($1${base}`);
+    try {
+      const sheet = new CSSStyleSheet();
+      sheet.replaceSync(absolute);
+      target.adoptedStyleSheets = [...target.adoptedStyleSheets, sheet];
+    } catch {
+      const style = document.createElement("style");
+      style.textContent = absolute;
+      target.appendChild(style);
+    }
+  }
 }
 
 export function injectSplashScreen(showLogo: boolean = true) {
@@ -251,6 +300,7 @@ export function injectSplashScreen(showLogo: boolean = true) {
 export function removeSplashScreen() {
   const loader = document.getElementById("retop-open-loader");
   const cloak = document.getElementById("retop-early-cloak");
+  const bootCloak = document.getElementById("retop-boot-cloak");
 
   if (loader) {
     const splash = loader.querySelector(".vit-emblem-splash") || loader;
@@ -264,7 +314,8 @@ export function removeSplashScreen() {
 
       setTimeout(() => {
         loader.remove();
-        if (cloak) cloak.remove();
+        cloak?.remove();
+        bootCloak?.remove();
         if (document.body) {
           document.body.style.opacity = "1";
           document.body.style.visibility = "visible";
@@ -272,7 +323,8 @@ export function removeSplashScreen() {
       }, 50);
     }, 150);
   } else {
-    if (cloak) cloak.remove();
+    cloak?.remove();
+    bootCloak?.remove();
     if (document.body) {
       document.body.style.opacity = "1";
       document.body.style.visibility = "visible";

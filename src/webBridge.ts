@@ -49,6 +49,11 @@ if (typeof window !== "undefined") {
     });
   }
 
+  // ── Offline surface ──────────────────────────────────────────────────────
+  // getretop.web.app is offline-only: passcode plus cached data, never live VTOP.
+  // VTOP sends no CORS headers, so this page could not reach it even if it tried.
+  // Signing in happens once on vtop.vit.ac.in, which the extension mirrors here.
+
   const checkIsOfflineRoute = () => {
     const path = window.location.pathname.toLowerCase();
     const hash = window.location.hash.toLowerCase();

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import {
+  extractCaptchaDataUri,
   extractCSRFToken,
   extractJSessionId,
   extractServerId,
@@ -41,6 +42,18 @@ describe("vtopClient unit helpers", () => {
     expect(extractCSRFToken(jsVarHtml)).toBe("csrf-token-var-789");
 
     expect(extractCSRFToken("<div>No token here</div>")).toBeNull();
+  });
+
+  it("extracts the inline CAPTCHA data URI", () => {
+    const html = `<img id="captchaCheck" src="data:image/png;base64,iVBORw0KGgo=" />`;
+    expect(extractCaptchaDataUri(html)).toBe("data:image/png;base64,iVBORw0KGgo=");
+
+    const singleQuoted = `<img src='data:image/jpeg;base64,/9j/4AAQ' />`;
+    expect(extractCaptchaDataUri(singleQuoted)).toBe("data:image/jpeg;base64,/9j/4AAQ");
+
+    // The live handshake fails here if this returns null instead of falling
+    // through to /vtop/get/new/captcha.
+    expect(extractCaptchaDataUri("<div>No captcha here</div>")).toBeNull();
   });
 
   it("detects expired session HTML patterns accurately", () => {

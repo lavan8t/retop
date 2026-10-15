@@ -8,7 +8,7 @@
  * Steps:
  *   1. Clean dist/
  *   2. Bun.build() content scripts (content.ts, injected.ts, background.ts)
- *   3. Bun.build() popup + offline React apps
+ *   3. Bun.build() deferred ESM entries + offline & standalone React apps
  *   4. Tailwind CLI for CSS (input.css → style.css, login-theme.css → login.css)
  *   5. Copy HTML files into dist/ with rewritten script paths
  */
@@ -96,6 +96,33 @@ if (!contentBuild.success) {
 }
 console.log("  - content.js, injected.js, background.js, webBridge.js");
 
+// ── Step 1b: Deferred ESM entries for the document_start bootstrapper ────
+// content.js stays import-free so it can decide in the first task. These two
+// entries are fetched at runtime with import(chrome.runtime.getURL(...)), which
+// only works when they are real ES modules in their own chunk graph.
+console.log("Building deferred entries...");
+const deferredBuild = await Bun.build({
+  entrypoints: [
+    resolve(import.meta.dir, "src/content/login.tsx"),
+    resolve(import.meta.dir, "src/content/dashboard.ts"),
+  ],
+  outdir: DIST,
+  target: "browser",
+  format: "esm",
+  splitting: true,
+  minify: IS_PROD,
+  naming: "[name].[ext]",
+  define: commonDefine,
+  plugins: [ignoreCssPlugin],
+});
+
+if (!deferredBuild.success) {
+  console.error("Deferred entry build failed:");
+  for (const log of deferredBuild.logs) console.error(log);
+  process.exit(1);
+}
+console.log("  - login.js, dashboard.js");
+
 // ── Step 2: Build offline & standalone React bundles ────────────────
 console.log("Building offline & standalone...");
 const popupBuild = await Bun.build({
@@ -130,9 +157,40 @@ const sanitizeBundle = (filePath: string) => {
     writeFileSync(filePath, content);
   }
 };
-["content.js", "injected.js", "background.js", "webBridge.js", "offline.js", "standalone.js"].forEach((file) => {
+["content.js", "injected.js", "background.js", "webBridge.js", "login.js", "dashboard.js", "offline.js", "standalone.js"].forEach((file) => {
   sanitizeBundle(resolve(DIST, file));
 });
+
+// ── Step 2b: Neutralize pdf.js's eager eval probe ───────────────────────
+// pdf.js detects eval support by calling `new Function("")` at module load.
+// getretop.web.app forbids unsafe-eval, so that throws a CSP EvalError on every
+// page and logs it, even though pdf.js catches it and falls back to its
+// non-eval rendering path. The probe is rewritten to take the fallback branch
+// directly.
+//
+// injected.js is skipped on purpose: its `new Function` is an intentional,
+// validated call into VTOP's own main world.
+let patchedProbes = 0;
+for (const file of readdirSync(DIST)) {
+  if (!file.endsWith(".js") || file === "injected.js") continue;
+  const p = resolve(DIST, file);
+  let src = readFileSync(p, "utf-8");
+  if (!src.includes("new Function")) continue;
+  const before = src;
+  // Throwing makes the surrounding try/catch return false, which is exactly the
+  // value a blocked probe already produced.
+  src = src.replace(
+    /new Function\(\s*(["'])\1\s*\)/g,
+    "(() => { throw 0 })()",
+  );
+  if (src !== before) {
+    patchedProbes++;
+    writeFileSync(p, src);
+  }
+}
+if (patchedProbes > 0) {
+  console.log(`  - neutralized eval probe in ${patchedProbes} bundle file(s)`);
+}
 
 // ── Step 3: Tailwind CSS via CLI ────────────────────────────────────
 console.log("Building CSS with Tailwind...");
@@ -140,7 +198,6 @@ console.log("Building CSS with Tailwind...");
 const cssBuilds: [string, string, string][] = [
   ["src/input.css", "style.css", "style.css"],
   ["src/login-theme.css", "login.css", "login.css"],
-  ["src/styles/prelogin.css", "prelogin.css", "prelogin.css"],
 ];
 
 const tailwindCli = resolve(ROOT, "node_modules/@tailwindcss/cli/dist/index.mjs");

@@ -36,6 +36,7 @@ const GSF: React.CSSProperties = {
 };
 
 const isChennaiHost = () => window.location.hostname.includes("vtopcc");
+// Campus locked by host: vtopcc = Chennai, vtop.vit.ac.in = Vellore. No switching.
 
 /**
  * Header the old injected theme built on top of #vtopOpenPageHeader: the VIT
@@ -140,9 +141,11 @@ const LoginTakeover: React.FC = () => {
       localStorage.setItem("retop_lastAuthId", regNo);
     } catch {}
 
-    // The session cookie is already live; hand the browser to VTOP's own landing
-    // page so the dashboard entry boots on a fully parsed authenticated document.
-    const landing = client.landingUrl || `${getVtopBaseUrl(client.campus)}/vtop/content`;
+    // After a successful login, return to the current page so the user doesn't
+    // lose their place (e.g. timetable, attendance, grades). The session cookie
+    // is already live on this same origin.
+    const currentUrl = window.location.href;
+    const landing = (currentUrl && !currentUrl.includes("/vtop/login") && !currentUrl.includes("/vtop/open/page")) ? currentUrl : (client.landingUrl || `${getVtopBaseUrl(client.campus)}/vtop/content`);
     window.location.assign(landing);
   };
 
@@ -176,7 +179,7 @@ const LoginTakeover: React.FC = () => {
             window.location.reload();
           }}
         >
-          Parent or alumni? Sign in on VTOP
+          Teacher?
         </button>
       </div>
 
@@ -222,7 +225,11 @@ export async function mountLoginTakeover(): Promise<void> {
   // the whole document, so hand the pointer events back.
   setUIVisibility(true);
 
-  document.title = isChennaiHost() ? "retop Chennai" : "retop";
+  // Preserve the native VTOP page title instead of overwriting; retop works well.
+  try {
+    const originalTitle = document.title || "VTOP";
+    document.title = originalTitle.includes("retop") ? originalTitle : "retop - " + originalTitle;
+  } catch {}
 
   createRoot(rootEl).render(<LoginTakeover />);
 }

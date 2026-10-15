@@ -241,6 +241,7 @@ src/
 - Deleted the in-place login/prelogin DOM surgery (`injectLoginTheme`, `injectPreloginTheme`, `enhanceLegacyLogin`, `enhancePrelogin*`, the home-button MutationObserver, and the 30 s CAPTCHA poll) plus the duplicate field validation in `injected.ts`. Login now renders `VtopLoginCard` behind one shadow root.
 - Deleted `src/styles/prelogin.css`; `login.css` still styles `VtopLoginCard`.
 - Removed the `homeBtnObserver` MutationObserver that re-queried every button on each mutation, and the never-disconnected ASCII spark observer.
+- Fixed login theme colors in shadow root by adding missing theme variables to login-theme.css and centered ASCII art in login takeover.
 
 ---
 

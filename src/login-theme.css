@@ -882,6 +882,7 @@ img[src*="spinner" i] {
   pointer-events: auto; /* Enable clicks on actual footer text if needed */
 }
 
+#retop-root #retop-ascii-art,
 #retop-ascii-art {
   font-family: 'Courier New', Courier, monospace !important;
   font-size: 10px;

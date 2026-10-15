@@ -282,36 +282,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
 
       {/* Campus Selector Pills */}
       <div className="flex p-1 bg-(--bg-card) border border-(--border-main) rounded-full mb-6 max-w-70">
-        <button
-          type="button"
-          disabled={isSubmitting}
-          onClick={() => handleCampusChange("vellore")}
-          className={`flex-1 py-1.5 text-xs font-bold rounded-full transition-all cursor-pointer ${
-            campus === "vellore"
-              ? "bg-(--accent-base) text-white shadow-sm"
-              : "text-(--text-muted) hover:text-(--text-main)"
-          }`}
-          style={{
-            fontFamily: "'Google Sans Flex', system-ui, sans-serif",
-          }}
-        >
-          VIT Vellore
-        </button>
-        <button
-          type="button"
-          disabled={isSubmitting}
-          onClick={() => handleCampusChange("chennai")}
-          className={`flex-1 py-1.5 text-xs font-bold rounded-full transition-all cursor-pointer ${
-            campus === "chennai"
-              ? "bg-(--accent-base) text-white shadow-sm"
-              : "text-(--text-muted) hover:text-(--text-main)"
-          }`}
-          style={{
-            fontFamily: "'Google Sans Flex', system-ui, sans-serif",
-          }}
-        >
-          VIT Chennai
-        </button>
+        <div className="text-[10px] opacity-50 font-medium tracking-wide uppercase">VIT Vellore</div>
       </div>
 
       {/* Form */}

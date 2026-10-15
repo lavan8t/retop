@@ -212,7 +212,6 @@ export const AsciiPanel: React.FC<{ campus?: "chennai" | "vellore" }> = ({ campu
       ref: preRef,
       id: "retop-ascii-art",
       style: {
-        fontFamily: "monospace",
         fontSize,
         lineHeight: lineH,
         letterSpacing: "0px",

@@ -4,7 +4,7 @@
  */
 
 import { VtopClient, VtopCampus } from "./vtopClient";
-import { parseStudentProfile, fixBase64Image } from "../parsers/profile";
+import { parseStudentProfile, fixBase64Image, resolveProctorPhoto } from "../parsers/profile";
 import { parseSemesters, parseTimetable } from "../parsers/timetable";
 import { parseStudentAttendance } from "../parsers/attendance";
 import { parseCourseDetails } from "../parsers/dashboard";
@@ -47,7 +47,10 @@ export async function syncStudentData(
     try {
       const profileHtml = await client.getProfile();
       if (profileHtml && profileHtml.length > 100) {
-        const parsedProfile = parseStudentProfile(profileHtml);
+        let parsedProfile = parseStudentProfile(profileHtml);
+        // Resolve the faculty image before caching, otherwise the offline profile
+        // permanently shows whatever the parser saw — which is the student's photo.
+        parsedProfile = await resolveProctorPhoto(parsedProfile as any);
         const profileData = (parsedProfile as any)?.data || parsedProfile;
 
         if (profileData?.basic?.name) {

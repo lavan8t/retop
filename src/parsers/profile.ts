@@ -91,6 +91,119 @@ export function imageElementToBase64(img: HTMLImageElement | null | undefined): 
   }
 }
 
+/**
+ * True when an image src belongs to the student rather than to faculty.
+ *
+ * VTOP's profile page falls back to the student's own photo in the proctor
+ * section, either as an identifiable `studentPhoto` path or — when it is inlined
+ * — as the byte-identical data URI that belongs to the student. Both have to be
+ * caught, otherwise the proctor card shows the student's face.
+ */
+export function isStudentPhotoSrc(
+  src: string | null | undefined,
+  studentPhotoUrl?: string | null,
+): boolean {
+  if (!src) return false;
+  const lower = src.toLowerCase();
+  if (lower.includes("studentphoto") || lower.includes("users/image/student")) {
+    return true;
+  }
+  // Byte-identical inline copy. Short strings are ignored so two unrelated empty
+  // placeholders do not collide.
+  if (
+    studentPhotoUrl &&
+    studentPhotoUrl.length > 40 &&
+    src === studentPhotoUrl
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Downloads the real proctor photo when the profile HTML did not carry one.
+ *
+ * The parser cannot do this: it is synchronous and its result is cached. Mirrors
+ * the VTOP client's staffPhoto endpoint, which is the only source for faculty
+ * images. Leaves the parsed value untouched on any failure, so a network blip
+ * never costs the proctor's other fields.
+ */
+export async function resolveProctorPhoto<T extends {
+  basic?: { photoUrl?: string } | null;
+  proctor?: ProfileProctor | null;
+}>(profile: T): Promise<T> {
+  const proctor = profile?.proctor;
+  if (!proctor) return profile;
+
+  const current = proctor.photoUrl || "";
+  const isStudentPhoto = isStudentPhotoSrc(current, profile.basic?.photoUrl);
+
+  // Already a real inline faculty image: nothing to do.
+  if (!isStudentPhoto && current.startsWith("data:image") && current.length > 100) {
+    return profile;
+  }
+
+  const id = proctor.id || "";
+  const candidates: string[] = [];
+
+  if (!isStudentPhoto && current && current !== fixBase64Image(current)) {
+    // A server path or absolute URL, not an inline image.
+    candidates.push(current);
+  }
+  if (id) {
+    candidates.push(`${STAFF_PHOTO_PATH}?id=${encodeURIComponent(id)}`);
+  }
+  if (!candidates.length) {
+    return { ...profile, proctor: { ...proctor, photoUrl: "" } };
+  }
+
+  for (const candidate of candidates) {
+    const dataUri = await fetchImageAsDataUri(candidate);
+    if (dataUri) {
+      return { ...profile, proctor: { ...proctor, photoUrl: dataUri } };
+    }
+  }
+
+  return { ...profile, proctor: { ...proctor, photoUrl: "" } };
+}
+
+const STAFF_PHOTO_PATH = "users/image/staffPhoto";
+
+async function fetchImageAsDataUri(pathOrUrl: string): Promise<string> {
+  if (typeof window === "undefined") return "";
+  try {
+    const url = normalizeVtopImageUrl(pathOrUrl);
+    const res = await window.fetch(url, {
+      credentials: "include",
+      // VTOP rejects image requests that do not look like they came from the
+      // profile page.
+      headers: {
+        Referer: `${new URL(url).origin}/vtop/studentsRecord/StudentProfileAllView`,
+      },
+    });
+    if (!res.ok) return "";
+
+    const contentType = res.headers.get("content-type") || "";
+    if (!contentType.startsWith("image/")) return "";
+
+    const blob = await res.blob();
+    // VTOP answers with a 1x1 or truncated placeholder instead of 404.
+    if (!blob || blob.size < 100) return "";
+
+    return new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const str = (reader.result as string) || "";
+        resolve(str.startsWith("data:image") ? str : "");
+      };
+      reader.onerror = () => resolve("");
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return "";
+  }
+}
+
 export function normalizeVtopImageUrl(url: string): string {
   if (!url || url.startsWith("data:image")) return url;
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
@@ -352,9 +465,12 @@ export function parseStudentProfile(html: string): Versioned<StudentProfile> {
   };
 
   const procMap = parseSectionMap(doc, "collapseFour", 3);
-  const proctorImg = doc
-    .querySelector("#collapseFour img, [id*='collapseFour' i] img, img[src*='faculty' i], img[src*='emp' i]")
-    ?.getAttribute("src");
+  const proctorImgEl =
+    doc.querySelector("#collapseFour img, [id*='collapseFour' i] img") ||
+    doc.querySelector(
+      "img[src*='faculty' i], img[src*='staffPhoto' i], img[src*='staff' i], img[src*='emp' i]",
+    );
+  const rawProctorSrc = proctorImgEl?.getAttribute("src") || undefined;
 
   const proctor: ProfileProctor = {
     id: procMap.get("MAIN_FACULTY ID") || procMap.get("MAIN_STAFF ID") || procMap.get("MAIN_ID") || "",
@@ -365,7 +481,12 @@ export function parseStudentProfile(html: string): Versioned<StudentProfile> {
     dept: procMap.get("MAIN_FACULTY DEPARTMENT") || procMap.get("MAIN_DEPARTMENT") || procMap.get("MAIN_DEPT") || "",
     email: procMap.get("MAIN_FACULTY EMAIL") || procMap.get("MAIN_EMAIL") || procMap.get("MAIN_EMAIL ID") || "",
     mobile: procMap.get("MAIN_FACULTY MOBILE NUMBER") || procMap.get("MAIN_MOBILE NUMBER") || procMap.get("MAIN_MOBILE") || procMap.get("MAIN_PHONE") || "",
-    photoUrl: fixBase64Image(proctorImg),
+    // VTOP reuses the student's own photo inside the proctor section whenever the
+    // faculty has no image on file. Rendering that as the proctor is worse than
+    // rendering nothing, so drop it here and let resolveProctorPhoto re-fetch.
+    photoUrl: isStudentPhotoSrc(rawProctorSrc, basic.photoUrl)
+      ? ""
+      : fixBase64Image(rawProctorSrc),
   };
 
   const hMap = parseSectionMap(doc, "collapseFive", 4);

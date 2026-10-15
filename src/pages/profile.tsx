@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { VTOPNetwork } from "../utils/network";
 import { useDataStore } from "../store/dataStore";
 import { getCachedData, setCachedData } from "../utils/cache";
-import { parseStudentProfile } from "../parsers/profile";
+import { parseStudentProfile, resolveProctorPhoto } from "../parsers/profile";
 import { StudentProfile } from "../types/vtop";
 import { DigitalIDCard } from "../components/profile/DigitalIDCard";
 import {
@@ -298,6 +298,16 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
 
           setData(parsedData);
           setCachedData(`${userPrefix}student_profile_parsed`, parsedData);
+
+          // The parser drops VTOP's student-photo fallback, so the real faculty
+          // image has to be downloaded separately. Paint first, then swap it in.
+          resolveProctorPhoto(parsedData)
+            .then((withPhoto) => {
+              if (withPhoto.proctor?.photoUrl === parsedData.proctor?.photoUrl) return;
+              setData(withPhoto);
+              setCachedData(`${userPrefix}student_profile_parsed`, withPhoto);
+            })
+            .catch(() => {});
         }
       } catch (e) {
         console.error("Failed to load profile data:", e);
@@ -333,6 +343,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
 
           setData(parsedData);
           setCachedData(`${userPrefix}student_profile_parsed`, parsedData);
+
+          resolveProctorPhoto(parsedData)
+            .then((withPhoto) => {
+              if (withPhoto.proctor?.photoUrl === parsedData.proctor?.photoUrl) return;
+              setData(withPhoto);
+              setCachedData(`${userPrefix}student_profile_parsed`, withPhoto);
+            })
+            .catch(() => {});
         }
       } catch (e) {
         console.error("Failed to refresh profile:", e);

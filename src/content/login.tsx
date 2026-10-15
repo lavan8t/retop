@@ -181,7 +181,7 @@ const LoginTakeover: React.FC = () => {
       </div>
 
       <div className="hidden lg:flex w-1/2 min-h-screen relative overflow-hidden bg-(--bg-surface) flex-col items-center justify-center border-l border-(--border-main)/40">
-        <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 z-0 flex items-center justify-center">
           <AsciiPanel campus={isChennaiHost() ? "chennai" : "vellore"} />
         </div>
       </div>

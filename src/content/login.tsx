@@ -50,7 +50,7 @@ const BrandHeader: React.FC = () => {
       className="fixed top-0 left-0 right-0 z-10 flex items-center gap-4 px-6 sm:px-10 py-3"
       style={{ background: "var(--bg-surface)", borderBottom: "1px solid var(--border-main)" }}
     >
-      <img src={emblem} alt="VIT" style={{ height: "44px", width: "auto" }} />
+      <img src={emblem} alt="VIT" style={{ height: "44px", width: "auto", filter: `invert(var(--vit-logo-invert))` }} />
       <span
         className="text-xs font-bold tracking-widest"
         style={GSF}
@@ -181,7 +181,7 @@ const LoginTakeover: React.FC = () => {
       </div>
 
       <div className="hidden lg:flex w-1/2 min-h-screen relative overflow-hidden bg-(--bg-surface) flex-col items-center justify-center border-l border-(--border-main)/40">
-        <div className="absolute inset-0 z-0 flex items-center justify-center">
+        <div className="absolute inset-0 z-0 flex items-end justify-center">
           <AsciiPanel campus={isChennaiHost() ? "chennai" : "vellore"} />
         </div>
       </div>

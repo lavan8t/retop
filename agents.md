@@ -242,6 +242,7 @@ src/
 - Deleted `src/styles/prelogin.css`; `login.css` still styles `VtopLoginCard`.
 - Removed the `homeBtnObserver` MutationObserver that re-queried every button on each mutation, and the never-disconnected ASCII spark observer.
 - Fixed login theme colors in shadow root by adding missing theme variables to login-theme.css and centered ASCII art in login takeover.
+- Fixed login theme colors (pure black background), adjusted ASCII art (bigger, bottom-aligned, more opaque), and fixed VIT logo visibility with invert filter.
 
 ---
 

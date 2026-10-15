@@ -45,26 +45,45 @@
 }
 
 /* Material Brutalist Login Theme */
-:root, [data-theme="dark"] {
-  --duration-fast: 150ms;
-  --duration-normal: 250ms;
-  --duration-slow: 400ms;
-  --duration-dramatic: 600ms;
-  --easing-standard: cubic-bezier(0.2, 0, 0, 1);
-  --easing-overshoot: cubic-bezier(0.34, 1.56, 0.64, 1);
-
-  --accent-base: #3b82f6; /* Fallback, overridden by JS */
-
-  /* Default Professional Dark Theme mapped exactly to input.css */
-  --bg-main: color-mix(in srgb, var(--accent-base) 3%, #09090b);
-  --bg-card: color-mix(in srgb, var(--accent-base) 5%, #18181b);
-  --bg-surface: color-mix(in srgb, var(--accent-base) 5%, #18181b);
-  --border-main: color-mix(in srgb, var(--accent-base) 20%, #3f3f46);
-  --border-dim: color-mix(in srgb, var(--accent-base) 10%, #3f3f46);
-  --text-main: color-mix(in srgb, var(--accent-base) 10%, #f8fafc);
-  --text-muted: color-mix(in srgb, var(--accent-base) 10%, #94a3b8);
-  --text-inverse: color-mix(in srgb, var(--accent-base) 90%, #ffffff);
-  --shadow-main: color-mix(in srgb, color-mix(in srgb, var(--accent-base) 20%, #52525b) 30%, transparent); /* Lighter shadow for dark theme */
+:root {
+  --vit-logo-invert: 0;
+}
+[data-theme="dark"] {
+  --vit-logo-invert: 1;
+  /* Dark theme: pure black background for panels, very dark card */
+  --bg-main: #000000;
+  --bg-surface: #000000;
+  --bg-card: #121212; /* Very dark gray for card to have subtle contrast */
+  --border-main: #121212;
+  --border-dim: #121212;
+  --text-main: #ffffff;
+  --text-muted: #9ca3af;
+  --text-inverse: #000000;
+  --shadow-main: #000000;
+}
+[data-theme="light"] {
+  --accent-base: #3b82f6;
+  --bg-main: color-mix(in srgb, var(--accent-base) 2%, #f8fafc);
+  --bg-card: #ffffff;
+  --bg-surface: #ffffff;
+  --border-main: color-mix(in srgb, var(--accent-base) 15%, #e2e8f0);
+  --border-dim: color-mix(in srgb, var(--accent-base) 10%, #e2e8f0);
+  --text-main: color-mix(in srgb, var(--accent-base) 20%, #0f172a);
+  --text-muted: color-mix(in srgb, var(--accent-base) 15%, #475569);
+  --text-inverse: color-mix(in srgb, var(--accent-base) 80%, #1e293b);
+  --shadow-main: rgba(0, 0, 0, 0.3);
+}
+[data-theme="amoled"] {
+  --accent-base: #3b82f6;
+  --bg-main: #000000;
+  --bg-card: #000000;
+  --bg-surface: #000000;
+  --border-main: #000000;
+  --border-dim: #000000;
+  --text-main: #ffffff;
+  --text-muted: #a3a3a3;
+  --text-inverse: #ffffff;
+  --shadow-main: color-mix(in srgb, color-mix(in srgb, var(--accent-base) 20%, #3f3f46) 30%, transparent); /* Lighter shadow for amoled */
 }
 
 [data-theme="light"] {
@@ -865,7 +884,7 @@ img[src*="spinner" i] {
 
 #retop-ascii-art {
   font-family: monospace !important;
-  font-size: 7px;
+  font-size: 10px;
   line-height: 1 !important;
   color: rgba(255, 255, 255, 0.28) !important;
   pointer-events: none !important;
@@ -878,7 +897,7 @@ img[src*="spinner" i] {
 
 [data-theme="dark"] #retop-ascii-art,
 [data-theme="amoled"] #retop-ascii-art {
-  color: rgba(255, 255, 255, 0.28) !important;
+  color: rgba(255, 255, 255, 0.6) !important;
 }
 
 [data-theme="light"] #retop-ascii-art {

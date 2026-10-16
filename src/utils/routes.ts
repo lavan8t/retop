@@ -135,9 +135,9 @@ export const getDestinationView = (
     return "examSchedule";
   }
 
-  // 12. Late Hour Permission
+  // 12. Late Hour Reguest
   if (
-    lowerTitle === "late hour permission" ||
+    lowerTitle === "late hour request" ||
     lowerTitle === "late hour" ||
     lowerUrl.includes("hostels/late/hour")
   ) {
@@ -157,5 +157,7 @@ export const hasRetopPage = (link: QuickLink | string): boolean => {
 export const getSavedView = (): ViewType => {
   if (typeof sessionStorage === "undefined") return "dashboard";
   const saved = sessionStorage.getItem("vtop-retop-view");
-  return VALID_VIEWS.includes(saved as ViewType) ? (saved as ViewType) : "dashboard";
+  return VALID_VIEWS.includes(saved as ViewType)
+    ? (saved as ViewType)
+    : "dashboard";
 };

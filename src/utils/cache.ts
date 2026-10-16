@@ -1,4 +1,4 @@
-import { getStorageData, setStorageData, getAllStorageData } from "./storageAdapter";
+import { getStorageData, setStorageData, getAllStorageData, removeStorageKeys } from "./storageAdapter";
 import { del as idbDel, entries as idbEntries } from "idb-keyval";
 import { isSchemaStale, ParserModuleId, PARSER_SCHEMA_VERSIONS } from "../parsers/version";
 
@@ -119,26 +119,36 @@ export const clearAccountCache = async (accountRegNo?: string): Promise<void> =>
     ""
   ).toLowerCase();
 
-  try {
-    const entries = await idbEntries();
-    for (const [k] of entries) {
+  const allData = await getAllStorageData();
+  const keysToRemove: string[] = [];
+
+  for (const k of Object.keys(allData)) {
+    const keyStr = String(k).toLowerCase();
+    const matches = regNo
+      ? (keyStr.startsWith(`${CACHE_PREFIX.toLowerCase()}${regNo}_`) ||
+        keyStr.startsWith(`${regNo}_`) ||
+        keyStr === `${regNo}_profileimage`)
+      : keyStr.startsWith(CACHE_PREFIX.toLowerCase());
+    if (matches) keysToRemove.push(k);
+  }
+
+  // localStorage is not covered by getAllStorageData, so check it separately.
+  if (typeof localStorage !== "undefined") {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k) continue;
       const keyStr = String(k).toLowerCase();
-      if (regNo) {
-        // Only remove keys strictly prefixed with this account's regNo
-        if (
-          keyStr.startsWith(`${CACHE_PREFIX.toLowerCase()}${regNo}_`) ||
+      const matches = regNo
+        ? (keyStr.startsWith(`${CACHE_PREFIX.toLowerCase()}${regNo}_`) ||
           keyStr.startsWith(`${regNo}_`) ||
-          keyStr === `${regNo}_profileimage`
-        ) {
-          await idbDel(k);
-        }
-      } else {
-        // Fallback: only remove generic cache entries
-        if (keyStr.startsWith(CACHE_PREFIX.toLowerCase())) {
-          await idbDel(k);
-        }
-      }
+          keyStr === `${regNo}_profileimage`)
+        : keyStr.startsWith(CACHE_PREFIX.toLowerCase());
+      if (matches && !keysToRemove.includes(k)) keysToRemove.push(k);
     }
+  }
+
+  try {
+    await removeStorageKeys(keysToRemove);
   } catch (e) {
     console.warn("[Storage Engine] Account cache clear failed", e);
   }

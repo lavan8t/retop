@@ -104,8 +104,10 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
   const [facultyOpts, setFacultyOpts] = useState<SearchableOption[]>([]);
   const [blockOpts, setBlockOpts] = useState<SearchableOption[]>([]);
   const [venueOpts, setVenueOpts] = useState<SearchableOption[]>([]);
-  const [fromTimeOpts, setFromTimeOpts] = useState<SearchableOption[]>(DEFAULT_TIME_OPTS);
-  const [toTimeOpts, setToTimeOpts] = useState<SearchableOption[]>(DEFAULT_TIME_OPTS);
+  const [fromTimeOpts, setFromTimeOpts] =
+    useState<SearchableOption[]>(DEFAULT_TIME_OPTS);
+  const [toTimeOpts, setToTimeOpts] =
+    useState<SearchableOption[]>(DEFAULT_TIME_OPTS);
 
   // Loading states
   const [loadingSchool, setLoadingSchool] = useState(false);
@@ -114,17 +116,25 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
   const [loadingVenues, setLoadingVenues] = useState(false);
   const [loadingDateBlock, setLoadingDateBlock] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [submitMsg, setSubmitMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [submitMsg, setSubmitMsg] = useState<{
+    ok: boolean;
+    text: string;
+  } | null>(null);
 
   // Status / History
   const [statusEntries, setStatusEntries] = useState<LateHourStatusEntry[]>([]);
   const [statusLoading, setStatusLoading] = useState(false);
-  const [historyEntries, setHistoryEntries] = useState<LateHourStatusEntry[]>([]);
+  const [historyEntries, setHistoryEntries] = useState<LateHourStatusEntry[]>(
+    [],
+  );
   const [historyLoading, setHistoryLoading] = useState(false);
   const [cancelling, setCancelling] = useState<string | null>(null);
 
   const needsBuilding = venueType === "1" || venueType === "2";
-  const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
+  const todayStr = useMemo(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }, []);
 
   // Validation errors
   const errors = useMemo(() => {
@@ -168,7 +178,8 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
   ]);
 
   const canSubmit = Object.keys(errors).length === 0;
-  const touch = (field: string) => setTouched((prev) => ({ ...prev, [field]: true }));
+  const touch = (field: string) =>
+    setTouched((prev) => ({ ...prev, [field]: true }));
 
   // Step 1 & 2 Init: load school options
   useEffect(() => {
@@ -325,9 +336,20 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
         console.error("Fetch ToTime Options Error:", e);
       }
     },
-    [network, school, faculty, venueType, needsBuilding, block, venue, eventType, details, fromDate, toDate],
+    [
+      network,
+      school,
+      faculty,
+      venueType,
+      needsBuilding,
+      block,
+      venue,
+      eventType,
+      details,
+      fromDate,
+      toDate,
+    ],
   );
-
 
   // Status loader (cached with user-scoped keys)
   const loadStatus = useCallback(
@@ -335,7 +357,8 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
       setStatusLoading(true);
       try {
         const html = await network.getLateHourStatus(force);
-        const entries = typeof html === "string" ? parseLateHourRows(html) : html;
+        const entries =
+          typeof html === "string" ? parseLateHourRows(html) : html;
         setStatusEntries(Array.isArray(entries) ? entries : []);
       } catch (e) {
         console.error("Fetch Status Error:", e);
@@ -352,7 +375,8 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
       setHistoryLoading(true);
       try {
         const html = await network.getLateHourHistory(force);
-        const entries = typeof html === "string" ? parseLateHourRows(html) : html;
+        const entries =
+          typeof html === "string" ? parseLateHourRows(html) : html;
         setHistoryEntries(Array.isArray(entries) ? entries : []);
       } catch (e) {
         console.error("Fetch History Error:", e);
@@ -364,53 +388,50 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
   );
 
   // Redo / Modify existing request from history or status
-  const handleRedo = useCallback(
-    async (entry: LateHourStatusEntry) => {
-      setActiveTab("request");
-      setSubmitMsg(null);
+  const handleRedo = useCallback(async (entry: LateHourStatusEntry) => {
+    setActiveTab("request");
+    setSubmitMsg(null);
 
-      if (entry.details) setDetails(entry.details);
+    if (entry.details) setDetails(entry.details);
 
-      // Match event category
-      const matchedEvt = EVENT_TYPE_OPTS.find(
-        (opt) =>
-          opt.label.toLowerCase() === entry.eventType.toLowerCase() ||
-          opt.value.toLowerCase() === entry.eventType.toLowerCase() ||
-          entry.eventType.toLowerCase().includes(opt.label.toLowerCase()),
-      );
-      if (matchedEvt) {
-        setEventType(matchedEvt.value);
-      }
+    // Match event category
+    const matchedEvt = EVENT_TYPE_OPTS.find(
+      (opt) =>
+        opt.label.toLowerCase() === entry.eventType.toLowerCase() ||
+        opt.value.toLowerCase() === entry.eventType.toLowerCase() ||
+        entry.eventType.toLowerCase().includes(opt.label.toLowerCase()),
+    );
+    if (matchedEvt) {
+      setEventType(matchedEvt.value);
+    }
 
-      // Convert VTOP date like "18-AUG-2026" to YYYY-MM-DD
-      if (entry.fromDate) {
-        const parsed = parseVtopDate(entry.fromDate);
-        if (parsed && !isNaN(parsed.getTime())) {
-          setFromDate(parsed.toISOString().split("T")[0]);
-        }
+    // Convert VTOP date like "18-AUG-2026" to YYYY-MM-DD
+    if (entry.fromDate) {
+      const parsed = parseVtopDate(entry.fromDate);
+      if (parsed && !isNaN(parsed.getTime())) {
+        setFromDate(`${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, "0")}-${String(parsed.getDate()).padStart(2, "0")}`);
       }
-      if (entry.toDate) {
-        const parsed = parseVtopDate(entry.toDate);
-        if (parsed && !isNaN(parsed.getTime())) {
-          setToDate(parsed.toISOString().split("T")[0]);
-        }
+    }
+    if (entry.toDate) {
+      const parsed = parseVtopDate(entry.toDate);
+      if (parsed && !isNaN(parsed.getTime())) {
+        setToDate(`${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, "0")}-${String(parsed.getDate()).padStart(2, "0")}`);
       }
+    }
 
-      // Extract time slots
-      if (entry.time) {
-        const parts = entry.time.split(/to|-/i).map((s) => s.trim());
-        if (parts[0]) {
-          const formatted = formatTimeStr(parts[0], "12h-ampm");
-          if (formatted) setFromTime(formatted);
-        }
-        if (parts[1]) {
-          const formatted = formatTimeStr(parts[1], "12h-ampm");
-          if (formatted) setToTime(formatted);
-        }
+    // Extract time slots
+    if (entry.time) {
+      const parts = entry.time.split(/to|-/i).map((s) => s.trim());
+      if (parts[0]) {
+        const formatted = formatTimeStr(parts[0], "12h-ampm");
+        if (formatted) setFromTime(formatted);
       }
-    },
-    [],
-  );
+      if (parts[1]) {
+        const formatted = formatTimeStr(parts[1], "12h-ampm");
+        if (formatted) setToTime(formatted);
+      }
+    }
+  }, []);
 
   // Submit request
   const handleSubmit = async () => {
@@ -514,22 +535,24 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
       if (activeTab === "history") loadHistory(true);
     };
     window.addEventListener("retop-refresh-late-hour", onRefresh);
-    return () => window.removeEventListener("retop-refresh-late-hour", onRefresh);
+    return () =>
+      window.removeEventListener("retop-refresh-late-hour", onRefresh);
   }, [activeTab, loadStatus, loadHistory]);
 
-  const tabs: { id: Tab; label: string; icon: React.ElementType }[] = useMemo(() => {
-    if (isOffline) {
+  const tabs: { id: Tab; label: string; icon: React.ElementType }[] =
+    useMemo(() => {
+      if (isOffline) {
+        return [
+          { id: "status", label: "My Requests", icon: HourglassEmpty },
+          { id: "history", label: "History", icon: History },
+        ];
+      }
       return [
+        { id: "request", label: "New Request", icon: Add },
         { id: "status", label: "My Requests", icon: HourglassEmpty },
         { id: "history", label: "History", icon: History },
       ];
-    }
-    return [
-      { id: "request", label: "New Request", icon: Add },
-      { id: "status", label: "My Requests", icon: HourglassEmpty },
-      { id: "history", label: "History", icon: History },
-    ];
-  }, [isOffline]);
+    }, [isOffline]);
 
   const renderContent = () => {
     return (
@@ -579,7 +602,9 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
             </div>
 
             {/* Venue & Location */}
-            <div className={`grid grid-cols-1 ${needsBuilding ? "sm:grid-cols-3" : "sm:grid-cols-2"} gap-4`}>
+            <div
+              className={`grid grid-cols-1 ${needsBuilding ? "sm:grid-cols-3" : "sm:grid-cols-2"} gap-4`}
+            >
               <SearchableDropdown
                 label="Venue Type"
                 required
@@ -768,7 +793,8 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
                   submitMsg.ok
                     ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
                     : "bg-red-500/15 text-red-400 border border-red-500/30"
-                }`}>
+                }`}
+              >
                 {submitMsg.ok ? (
                   <CheckCircle className="w-4.5 h-4.5 shrink-0" />
                 ) : (
@@ -786,9 +812,13 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
                 canSubmit
                   ? "bg-(--accent-base) text-(--text-inverse) hover:opacity-90 active:scale-[0.99] cursor-pointer"
                   : "bg-(--bg-surface) text-(--text-muted) border border-(--border-dim)/50 opacity-60 cursor-not-allowed"
-              }`}>
+              }`}
+            >
               {submitting ? (
-                <>Submitting to <span className="font-vtop font-bold ml-1">VTOP</span>...</>
+                <>
+                  Submitting to{" "}
+                  <span className="font-vtop font-bold ml-1">VTOP</span>...
+                </>
               ) : (
                 "Submit Late Hour Request"
               )}
@@ -848,7 +878,7 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
               <EmptyState
                 icon={History}
                 msg="No Permission History"
-                subMsg="Previous late hour permissions will show up here."
+                subMsg="Previous late hour requests will show up here."
               />
             )}
           </div>
@@ -876,7 +906,8 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
                     isActive
                       ? "bg-(--accent-base) text-(--text-inverse) shadow-xs"
                       : "text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-highlight)/60"
-                  }`}>
+                  }`}
+                >
                   <Icon className="w-4 h-4 shrink-0" />
                   <span className="truncate">{t.label}</span>
                 </button>
@@ -908,7 +939,8 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
                     isActive
                       ? "bg-(--accent-base) text-(--text-inverse) shadow-xs"
                       : "text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-highlight)/60"
-                  }`}>
+                  }`}
+                >
                   <Icon className="w-4 h-4" />
                   <span>{t.label}</span>
                 </button>
@@ -925,4 +957,3 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
 };
 
 export default LateHourPage;
-

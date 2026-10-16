@@ -248,7 +248,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
         category: "Made for retop",
       },
       {
-        title: "Late Hour Permission",
+        title: "Late Hour Request",
         url: "hostels/late/hour/student/request/1",
         category: "Made for retop",
       },

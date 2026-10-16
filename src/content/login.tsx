@@ -53,8 +53,10 @@ const BrandHeader: React.FC = () => {
     >
       <img src={emblem} alt="VIT" style={{ height: "44px", width: "auto", filter: `invert(var(--vit-logo-invert))` }} />
       <span
-        className="text-xs font-bold tracking-widest"
-        style={GSF}
+        className="text-xs font-bold retop-campus-text"
+        style={{
+          fontFamily: "'Times New Roman', Times, serif",
+        }}
       >
         {campusLabel}
       </span>
@@ -114,6 +116,40 @@ const RoleGate: React.FC<{ role: RetopRole }> = ({ role }) => {
   );
 };
 
+const SpotLightStrip: React.FC = () => {
+  const [items, setItems] = useState<{ text: string; href: string }[]>([]);
+  useEffect(() => {
+    const host = isChennaiHost() ? "https://vtopcc.vit.ac.in" : "https://vtop.vit.ac.in";
+    fetch(`${host}/vtop/get/spotlight`, { headers: { "User-Agent": "Mozilla/5.0" }, redirect: "manual" })
+      .then(async (r) => {
+        if (r.status === 200) {
+          const text = await r.text();
+          const ids = [...text.matchAll(/downloadSpotLightViewFile\/([0-9]+)/g)].map(m => m[1]).filter((v,i,a)=>a.indexOf(v)===i).slice(0,6);
+          const announcements = ids.map(id => {
+            const idx = text.indexOf('downloadSpotLightViewFile/'+id);
+            const snippet = text.substring(idx, idx+300);
+            const txt = snippet.match(/<strong[^>]*>([^<]+)<\/strong>/);
+            return { id, text: txt ? txt[1].trim() : "Announcement" };
+          });
+          const itemsWithUrl = announcements.map(i => ({
+            text: i.text,
+            href: `https://${host}/vtop/downloadSpotLightViewFile/${i.id}`,
+          }));
+          setItems(itemsWithUrl.length ? itemsWithUrl : [{ text: "No announcements", href: "#" }]);
+        }
+      })
+      .catch(() => setItems([{ text: "Spotlight unavailable", href: "#" }]));
+  }, []);
+  return (
+    <div className="absolute top-24 right-6 z-10 hidden lg:block max-w-xs text-xs text-(--text-muted) space-y-2">
+      <div className="font-bold text-(--text-main) uppercase tracking-widest mb-1">Spotlight</div>
+      {items.map((item, i) => (
+        <a key={i} href={item.href || "#"} className="block hover:text-(--text-main) transition-colors leading-snug" target="_blank" rel="noopener noreferrer">{item.text}</a>
+      ))}
+    </div>
+  );
+};
+
 const LoginTakeover: React.FC = () => {
   const [role, setRoleState] = useState<RetopRole>(() => readRoleSync());
 
@@ -155,13 +191,20 @@ const LoginTakeover: React.FC = () => {
 
   return (
     <div
-      className="min-h-screen w-screen bg-(--bg-main) text-(--text-main) flex flex-col lg:flex-row overflow-x-hidden selection:bg-(--accent-base)/30 selection:text-(--text-main)"
-      style={GSF}
+      className="min-h-screen w-screen bg-(--bg-main) text-(--text-main) flex flex-col overflow-x-hidden selection:bg-(--accent-base)/30 selection:text-(--text-main) relative"
+      style={{ ...GSF, backgroundColor: "var(--bg-main)", color: "var(--text-main)" }}
     >
       <BrandHeader />
       <OfflineLink />
 
-      <div className="w-full lg:w-1/2 min-h-screen flex flex-col justify-center items-center px-4 pt-24 pb-16 sm:px-8 lg:px-16 z-10">
+      {/* Background ASCII art - sits behind, never goes out */}
+      <div className="absolute inset-0 z-0 pointer-events-none opacity-60 flex items-end justify-end overflow-hidden">
+        <AsciiPanel campus={isChennaiHost() ? "chennai" : "vellore"} />
+      </div>
+
+      <SpotLightStrip />
+
+      <div className="relative z-10 w-full flex flex-col justify-center items-center px-4 pt-24 pb-16 sm:px-8 lg:px-16 min-h-screen">
         <div className="w-full max-w-md mx-auto">
           <VtopLoginCard
             initialCampus={isChennaiHost() ? "chennai" : "vellore"}
@@ -170,6 +213,11 @@ const LoginTakeover: React.FC = () => {
             syncAfterLogin={false}
             onLoginSuccess={handleLoginSuccess}
           />
+        </div>
+        <div className="retop-forgot-links flex gap-3 justify-center mt-4">
+          <a href="/vtop/forgotPassword" className="hover:text-(--text-main)">Forgot Password?</a>
+          <span className="text-(--text-muted)">|</span>
+          <a href="/vtop/forgotUsername" className="hover:text-(--text-main)">Forgot Username?</a>
         </div>
         <button
           type="button"
@@ -181,12 +229,6 @@ const LoginTakeover: React.FC = () => {
         >
           Teacher?
         </button>
-      </div>
-
-      <div className="hidden lg:flex w-1/2 min-h-screen relative overflow-hidden bg-(--bg-surface) flex-col items-center justify-center border-l border-(--border-main)/40">
-        <div className="absolute inset-0 z-0 flex items-end justify-center">
-          <AsciiPanel campus={isChennaiHost() ? "chennai" : "vellore"} />
-        </div>
       </div>
     </div>
   );
@@ -228,7 +270,7 @@ export async function mountLoginTakeover(): Promise<void> {
   // Preserve the native VTOP page title instead of overwriting; retop works well.
   try {
     const originalTitle = document.title || "VTOP";
-    document.title = originalTitle.includes("retop") ? originalTitle : "retop - " + originalTitle;
+    document.title = originalTitle.includes("VTOP") ? originalTitle : "VTOP - " + originalTitle;
   } catch {}
 
   createRoot(rootEl).render(<LoginTakeover />);

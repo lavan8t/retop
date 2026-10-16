@@ -1,4 +1,4 @@
-import { getStorageData, setStorageData } from "./storageAdapter";
+import { getStorageData, setStorageData, removeStorageKeys } from "./storageAdapter";
 
 export interface PinRecord {
   salt: string;
@@ -119,18 +119,14 @@ export async function saveUserProfileImage(regNo: string, base64Data: string): P
 
   await setStorageData({
     [`retop_img_${lowerReg}`]: encrypted,
-    [`${upperReg}_profileImage`]: base64Data,
-    [`${lowerReg}_profileImage`]: base64Data,
-    retop_profileImage: base64Data,
   });
 
-  if (typeof localStorage !== "undefined") {
-    try {
-      localStorage.setItem(`${upperReg}_profileImage`, base64Data);
-      localStorage.setItem(`${lowerReg}_profileImage`, base64Data);
-      localStorage.setItem("retop_profileImage", base64Data);
-    } catch {}
-  }
+  // Remove any legacy plaintext photo copies so only the encrypted value remains.
+  await removeStorageKeys([
+    `${upperReg}_profileImage`,
+    `${lowerReg}_profileImage`,
+    "retop_profileImage",
+  ]);
 }
 
 /**
@@ -157,20 +153,22 @@ export async function getUserProfileImage(regNo: string): Promise<string> {
     if (decrypted && decrypted.startsWith("data:image")) return decrypted;
   }
 
-  // 2. Check plain storage values
+  // 2. Migrate and clean up any legacy plaintext photo copies
   for (const k of keys) {
     const val = res[k];
     if (val && typeof val === "string" && val.startsWith("data:image") && val.length > 50) {
+      await saveUserProfileImage(regNo, val);
       return val;
     }
   }
 
-  // 3. Fallback to direct localStorage scan
+  // 3. Fallback to direct localStorage scan, then migrate the legacy copy
   if (typeof localStorage !== "undefined") {
     for (const k of keys) {
       try {
         const val = localStorage.getItem(k);
         if (val && val.startsWith("data:image") && val.length > 50) {
+          await saveUserProfileImage(regNo, val);
           return val;
         }
       } catch {}

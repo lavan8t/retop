@@ -38,6 +38,8 @@ const LOGIN_ROUTES = [
   "/vtop/vtopLogin",
   "/vtop/prelogin",
   "/vtop/init/page",
+  "/vtop/forgotPassword",
+  "/vtop/forgotUsername",
 ];
 
 const path = window.location.pathname;
@@ -343,6 +345,9 @@ function waitForTokens(): Promise<boolean> {
 
     const check = () => {
       attempts++;
+      // Preserve JSESSIONID for /vtop/content after login redirect
+      const cookieMatch = document.cookie.match(/JSESSIONID=([^;]+)/);
+      if (cookieMatch) (window as any).__vtopSessionCookie = cookieMatch[1];
       const csrfInput = document.querySelector(
         'input[name="_csrf"]',
       ) as HTMLInputElement;

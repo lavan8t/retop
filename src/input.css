@@ -686,7 +686,7 @@ a:active,
   font-variation-settings: "wght" var(--app-font-wght, 700);
 }
 
-#retop-root *:not(i):not(.sem-text):not(.font-expanded):not(.font-logo):not(.retop-logo):not(.font-signature):not(.font-squish):not(.retop-about-logo) {
+#retop-root *:not(i):not(.sem-text):not(.font-expanded):not(.font-logo):not(.retop-logo):not(.font-signature):not(.font-squish):not(.retop-about-logo):not(.retop-campus-text) {
   font-family: var(--font-sans) !important;
 }
 

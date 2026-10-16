@@ -5,45 +5,96 @@ import {
 } from "./cache";
 import { useAppStore } from "../store/appStore";
 import { showAlertDialog } from "../components/ui/AlertDialog";
-import { parseAcademicStats, parseCourseDetails, parseDigitalAssignments } from "../parsers/dashboard";
+import {
+  parseAcademicStats,
+  parseCourseDetails,
+  parseDigitalAssignments,
+} from "../parsers/dashboard";
 import { parseEvents } from "../parsers/events";
 import { parseSemesters, parseTimetable } from "../parsers/timetable";
-import { parseCalendarSemesters, parseCalendarGroupsAndMonths } from "../parsers/calendar";
+import {
+  parseCalendarSemesters,
+  parseCalendarGroupsAndMonths,
+} from "../parsers/calendar";
 import { parseMarksSemesters, parseStudentMarks } from "../parsers/marks";
-import { parseGradesSemesters, parseGrades, parseGradeHistory, parseGradeDetails } from "../parsers/grades";
-import { parseDASemesters, parseDACourses, parseDAAssignments } from "../parsers/digital-assignments";
-import { parseStudentAttendance, parseAttendanceDetail } from "../parsers/attendance";
-import { parseExamSemesters, parseExamScheduleData } from "../parsers/exam-schedule";
+import {
+  parseGradesSemesters,
+  parseGrades,
+  parseGradeHistory,
+  parseGradeDetails,
+} from "../parsers/grades";
+import {
+  parseDASemesters,
+  parseDACourses,
+  parseDAAssignments,
+} from "../parsers/digital-assignments";
+import {
+  parseStudentAttendance,
+  parseAttendanceDetail,
+} from "../parsers/attendance";
+import {
+  parseExamSemesters,
+  parseExamScheduleData,
+} from "../parsers/exam-schedule";
 import { parseStudentProfile } from "../parsers/profile";
-import { parseCurriculumDashboard, parseCurriculumCourses } from "../parsers/curriculum";
+import {
+  parseCurriculumDashboard,
+  parseCurriculumCourses,
+} from "../parsers/curriculum";
 import { parseLateHourRows } from "../parsers/late-hour";
-import { executeVtopRequest, isNativeAndroidBridgeAvailable } from "./vtopBridge";
+import {
+  executeVtopRequest,
+  isNativeAndroidBridgeAvailable,
+} from "./vtopBridge";
 import { getVtopBaseUrl, VtopCampus } from "./vtopClient";
 
-export const getParserForKey = (key: string): ((html: string) => any) | null => {
+export const getParserForKey = (
+  key: string,
+): ((html: string) => any) | null => {
   if (key === "dashboard_stats") return parseAcademicStats;
   if (key === "dashboard_attendance") return parseCourseDetails;
   if (key === "dashboard_da") return parseDigitalAssignments;
   if (key === "dashboard_events") return parseEvents;
-  if (key === "tt_semester_list" || key === "tt_semesters") return parseSemesters;
-  if (key === "cal_semester_list" || key === "cal_semesters") return parseCalendarSemesters;
-  if (key === "exam_schedule_view" || key === "exam_semesters") return parseExamSemesters;
-  if (key === "marks_view" || key === "marks_view_initial" || key === "marks_semesters" || key === "marks_semester_list") return parseMarksSemesters;
-  if (key === "grades_view" || key === "grades_semesters" || key === "grades_semester_list") return parseGradesSemesters;
-  if (key === "grade_history_data" || key === "student_grade_history") return parseGradeHistory;
-  if (key === "curriculum_dashboard" || key === "curriculum") return parseCurriculumDashboard;
-  if (key === "student_profile_data" || key === "student_profile") return parseStudentProfile;
-  if (key === "late_hour_status" || key === "late_hour_history") return parseLateHourRows;
-  if (key === "da_semester_list" || key === "da_semesters") return parseDASemesters;
+  if (key === "tt_semester_list" || key === "tt_semesters")
+    return parseSemesters;
+  if (key === "cal_semester_list" || key === "cal_semesters")
+    return parseCalendarSemesters;
+  if (key === "exam_schedule_view" || key === "exam_semesters")
+    return parseExamSemesters;
+  if (
+    key === "marks_view" ||
+    key === "marks_view_initial" ||
+    key === "marks_semesters" ||
+    key === "marks_semester_list"
+  )
+    return parseMarksSemesters;
+  if (
+    key === "grades_view" ||
+    key === "grades_semesters" ||
+    key === "grades_semester_list"
+  )
+    return parseGradesSemesters;
+  if (key === "grade_history_data" || key === "student_grade_history")
+    return parseGradeHistory;
+  if (key === "curriculum_dashboard" || key === "curriculum")
+    return parseCurriculumDashboard;
+  if (key === "student_profile_data" || key === "student_profile")
+    return parseStudentProfile;
+  if (key === "late_hour_status" || key === "late_hour_history")
+    return parseLateHourRows;
+  if (key === "da_semester_list" || key === "da_semesters")
+    return parseDASemesters;
 
   if (key.startsWith("attendance_detailed_")) return parseStudentAttendance;
   if (key.startsWith("attendance_records_")) return parseAttendanceDetail;
-  if (key.startsWith("tt_") || key.startsWith("timetable_")) return parseTimetable;
+  if (key.startsWith("tt_") || key.startsWith("timetable_"))
+    return parseTimetable;
   if (key.startsWith("marks_data_")) return parseStudentMarks;
   if (key.startsWith("grades_data_")) return parseGrades;
   if (key.startsWith("grade_details_")) return parseGradeDetails;
   if (key.startsWith("da_courses_")) return parseDACourses;
-  if (key.startsWith("da_class_") || key.startsWith("da_view_")) return parseDAAssignments;
+  if (key.startsWith("da_class_") || key.startsWith("da_view_"))
+    return parseDAAssignments;
   if (key.startsWith("exam_schedule_data_")) return parseExamScheduleData;
   if (key.startsWith("curriculum_cat_")) return parseCurriculumCourses;
   if (key.startsWith("cal_groups_")) return parseCalendarGroupsAndMonths;
@@ -58,7 +109,8 @@ export function extractCsrfTokenFromHTML(html: string): string | null {
   const inputMatch =
     html.match(/<input[^>]*name=["']_csrf["'][^>]*value=["']([^"']+)["']/i) ||
     html.match(/<input[^>]*value=["']([^"']+)["'][^>]*name=["']_csrf["']/i);
-  if (inputMatch && inputMatch[1] && inputMatch[1].length > 5) return inputMatch[1];
+  if (inputMatch && inputMatch[1] && inputMatch[1].length > 5)
+    return inputMatch[1];
 
   // 2. JS variable csrfValue = "..." or _csrf = "..." or _csrf: "..."
   const jsMatch = html.match(/(?:csrfValue|_csrf)\s*[:=]\s*["']([^"']+)["']/i);
@@ -71,9 +123,15 @@ export function extractAuthIdFromHTML(html: string): string | null {
   if (!html || typeof html !== "string") return null;
 
   const match =
-    html.match(/<input[^>]*id=["']authorizedIDX["'][^>]*value=["']([^"']+)["']/i) ||
-    html.match(/<input[^>]*name=["']authorizedID["'][^>]*value=["']([^"']+)["']/i) ||
-    html.match(/<input[^>]*value=["']([^"']+)["'][^>]*id=["']authorizedIDX["']/i);
+    html.match(
+      /<input[^>]*id=["']authorizedIDX["'][^>]*value=["']([^"']+)["']/i,
+    ) ||
+    html.match(
+      /<input[^>]*name=["']authorizedID["'][^>]*value=["']([^"']+)["']/i,
+    ) ||
+    html.match(
+      /<input[^>]*value=["']([^"']+)["'][^>]*id=["']authorizedIDX["']/i,
+    );
   if (match && match[1] && match[1].length > 3) return match[1];
 
   return null;
@@ -185,7 +243,9 @@ export class VTOPNetwork {
     VTOPNetwork.setupDOMTokenObserver();
     if (typeof document === "undefined") return;
 
-    const csrfInput = document.querySelector('input[name="_csrf"]') as HTMLInputElement;
+    const csrfInput = document.querySelector(
+      'input[name="_csrf"]',
+    ) as HTMLInputElement;
     const domCsrf = csrfInput?.value || (window as any).csrfValue;
     if (domCsrf && domCsrf !== this.csrf && domCsrf.length > 5) {
       this.csrf = domCsrf;
@@ -194,7 +254,9 @@ export class VTOPNetwork {
 
     const authInput =
       (document.getElementById("authorizedIDX") as HTMLInputElement) ||
-      (document.querySelector('input[name="authorizedID"]') as HTMLInputElement);
+      (document.querySelector(
+        'input[name="authorizedID"]',
+      ) as HTMLInputElement);
     const domAuth = authInput?.value || (window as any).authorizedID;
     if (domAuth && domAuth !== this.authorizedID && domAuth.length > 3) {
       this.authorizedID = domAuth;
@@ -282,7 +344,8 @@ export class VTOPNetwork {
 
     if (isNativeAndroidBridgeAvailable()) {
       try {
-        const campus = (localStorage.getItem("retop_campus") as VtopCampus) || "vellore";
+        const campus =
+          (localStorage.getItem("retop_campus") as VtopCampus) || "vellore";
         const base = getVtopBaseUrl(campus);
         const fullUrl = urlStr.startsWith("http")
           ? urlStr
@@ -292,7 +355,8 @@ export class VTOPNetwork {
         const headers: Record<string, string> = {
           "User-Agent":
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
-          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          Accept:
+            "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
           Origin: base,
           Referer: `${base}/vtop/content`,
         };
@@ -345,12 +409,18 @@ export class VTOPNetwork {
       const response = await window.fetch(input, init);
       if (!response.ok) {
         const isFatalEndpoint =
-          urlStr.includes("open/page") ||
-          urlStr.includes("vtopLogin");
+          urlStr.includes("open/page") || urlStr.includes("vtopLogin");
         const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
 
-        if (isFatalEndpoint && !isOffline && (response.status === 401 || response.status === 403)) {
-          VTOPNetwork.handleNetworkFailure(`HTTP Status ${response.status}`, true);
+        if (
+          isFatalEndpoint &&
+          !isOffline &&
+          (response.status === 401 || response.status === 403)
+        ) {
+          VTOPNetwork.handleNetworkFailure(
+            `HTTP Status ${response.status}`,
+            true,
+          );
         }
         throw new Error(`HTTP Status ${response.status}`);
       }
@@ -362,7 +432,7 @@ export class VTOPNetwork {
 
   async fetchVtopApi(
     endpoint: string,
-    params: Record<string, string> = {}
+    params: Record<string, string> = {},
   ): Promise<string> {
     const isOfflineMode =
       !isNativeAndroidBridgeAvailable() &&
@@ -394,9 +464,10 @@ export class VTOPNetwork {
         body.append(key, value);
       }
     }
-    
+
     // Auto-append timestamp for cache busting if not specified
-    if (!params.x && !params.nocache) body.append("x", new Date().toUTCString());
+    if (!params.x && !params.nocache)
+      body.append("x", new Date().toUTCString());
 
     const response = await this.rateLimitedFetch(url, {
       method: "POST",
@@ -413,7 +484,9 @@ export class VTOPNetwork {
     // 3. Self-healing token update from response payload
     const newCsrf = extractCsrfTokenFromHTML(text);
     if (newCsrf && newCsrf !== this.csrf) {
-      console.log("[VTOPNetwork] Dynamic CSRF token self-healed from API response");
+      console.log(
+        "[VTOPNetwork] Dynamic CSRF token self-healed from API response",
+      );
       this.updateTokens(newCsrf, null);
     }
     const newAuthId = extractAuthIdFromHTML(text);
@@ -436,7 +509,11 @@ export class VTOPNetwork {
       this.csrf = csrf;
       (window as any).csrfValue = csrf;
     }
-    if (authorizedID && authorizedID !== this.authorizedID && authorizedID.length > 3) {
+    if (
+      authorizedID &&
+      authorizedID !== this.authorizedID &&
+      authorizedID.length > 3
+    ) {
       this.authorizedID = authorizedID;
       (window as any).authorizedID = authorizedID;
       try {
@@ -509,7 +586,10 @@ export class VTOPNetwork {
               setCachedData(userScopedKey, parsed);
               return parsed;
             } catch (err) {
-              console.warn(`[retop] Parsing before cache failed for ${key}:`, err);
+              console.warn(
+                `[retop] Parsing before cache failed for ${key}:`,
+                err,
+              );
               setCachedData(userScopedKey, data);
             }
           } else {
@@ -526,7 +606,11 @@ export class VTOPNetwork {
 
     const cachedInfo = await getCachedDataWithTimestamp<any>(userScopedKey);
 
-    if (cachedInfo && cachedInfo.data !== undefined && cachedInfo.data !== null) {
+    if (
+      cachedInfo &&
+      cachedInfo.data !== undefined &&
+      cachedInfo.data !== null
+    ) {
       let EXPIRY_MS =
         customExpiryMs !== undefined ? customExpiryMs : 5 * 24 * 60 * 60 * 1000;
 
@@ -603,7 +687,11 @@ export class VTOPNetwork {
     if (isOffline) {
       // One final attempt: check un-prefixed key in cache
       const unPrefixed = await getCachedDataWithTimestamp<any>(key);
-      if (unPrefixed && unPrefixed.data !== undefined && unPrefixed.data !== null) {
+      if (
+        unPrefixed &&
+        unPrefixed.data !== undefined &&
+        unPrefixed.data !== null
+      ) {
         let res = unPrefixed.data;
         if (typeof res === "string" && parser) {
           try {
@@ -654,7 +742,9 @@ export class VTOPNetwork {
       Array.from(oldScript.attributes).forEach((attr) =>
         newScript.setAttribute(attr.name, attr.value),
       );
-      newScript.appendChild(document.createTextNode(oldScript.textContent || ""));
+      newScript.appendChild(
+        document.createTextNode(oldScript.textContent || ""),
+      );
       oldScript.parentNode?.replaceChild(newScript, oldScript);
     });
   }
@@ -668,11 +758,17 @@ export class VTOPNetwork {
   }
 
   async getExamScheduleData(semesterSubId: string): Promise<string> {
-    return this.fetchWithCache(`exam_schedule_data_${semesterSubId}`, async () => {
-      return this.fetchVtopApi("examinations/doSearchExamScheduleForStudent", {
-        semesterSubId,
-      });
-    });
+    return this.fetchWithCache(
+      `exam_schedule_data_${semesterSubId}`,
+      async () => {
+        return this.fetchVtopApi(
+          "examinations/doSearchExamScheduleForStudent",
+          {
+            semesterSubId,
+          },
+        );
+      },
+    );
   }
 
   async getCurriculumDashboard(): Promise<string> {
@@ -1128,7 +1224,9 @@ export class VTOPNetwork {
         if (container) {
           container.replaceChildren();
           const doc = new DOMParser().parseFromString(html, "text/html");
-          Array.from(doc.body.childNodes).forEach((node) => container.appendChild(node.cloneNode(true)));
+          Array.from(doc.body.childNodes).forEach((node) =>
+            container.appendChild(node.cloneNode(true)),
+          );
         }
       }
     }
@@ -1148,14 +1246,14 @@ export class VTOPNetwork {
             var select = document.getElementById('semesterSubId');
             if (select) {
                 select.value = '${semesterSubId}';
-            
+
                 select.dispatchEvent(new Event('change', { bubbles: true }));
-                
-            
+
+
                 if (typeof dAOnChange === 'function') {
                     dAOnChange();
                 } else if (window.jQuery) {
-                
+
                     window.jQuery('#semesterSubId').trigger('change');
                 }
             }
@@ -1169,7 +1267,7 @@ export class VTOPNetwork {
   async getDigitalAssignmentDetails(classId: string): Promise<string> {
     this.injectScript(`
         (function() {
-        
+
             var buttons = document.querySelectorAll('button');
             for (var i = 0; i < buttons.length; i++) {
                 var onClick = buttons[i].getAttribute('onclick');
@@ -1194,7 +1292,7 @@ export class VTOPNetwork {
             var buttons = document.querySelectorAll('button');
             for (var i = 0; i < buttons.length; i++) {
                 var onClick = buttons[i].getAttribute('onclick');
-            
+
                 if (onClick && onClick.indexOf('processDigitalAssignmentUpload') !== -1 && onClick.indexOf('${assignmentCode}') !== -1) {
                     buttons[i].click();
                     break;
@@ -1208,7 +1306,11 @@ export class VTOPNetwork {
   }
 
   async uploadDA(action: string, formData: FormData): Promise<boolean> {
-    const origin = typeof window !== "undefined" && window.location.origin.includes("vit.ac.in") ? window.location.origin : "https://vtop.vit.ac.in";
+    const origin =
+      typeof window !== "undefined" &&
+      window.location.origin.includes("vit.ac.in")
+        ? window.location.origin
+        : "https://vtop.vit.ac.in";
     const path = action.startsWith("http")
       ? action
       : action.startsWith("/")
@@ -1234,7 +1336,11 @@ export class VTOPNetwork {
     );
   }
 
-  async downloadStudentDA(classId: string, code: string, defaultFilename?: string) {
+  async downloadStudentDA(
+    classId: string,
+    code: string,
+    defaultFilename?: string,
+  ) {
     await this.downloadWithBlob(
       "examinations/downloadSTudentDA/",
       {
@@ -1250,7 +1356,11 @@ export class VTOPNetwork {
     params: Record<string, string>,
     defaultFilename = "download.pdf",
   ) {
-    const origin = typeof window !== "undefined" && window.location.origin.includes("vit.ac.in") ? window.location.origin : "https://vtop.vit.ac.in";
+    const origin =
+      typeof window !== "undefined" &&
+      window.location.origin.includes("vit.ac.in")
+        ? window.location.origin
+        : "https://vtop.vit.ac.in";
     const url = `${origin}/vtop/${endpoint}`;
     const body = new URLSearchParams();
 
@@ -1310,7 +1420,7 @@ export class VTOPNetwork {
     }
   }
 
-  // ── Late Hour Permission ──────────────────────────────────────────────────
+  // ── Late Hour Request ──────────────────────────────────────────────────
 
   /** Step 1 & 2: Initialize Late Hour session and get Request Form with School options */
   async getLateHourInit(): Promise<string> {

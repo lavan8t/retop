@@ -23,6 +23,8 @@ const LOGIN_ROUTES = [
   "/vtop/vtopLogin",
   "/vtop/prelogin",
   "/vtop/init/page",
+  "/vtop/forgotPassword",
+  "/vtop/forgotUsername",
 ];
 
 /** Routes that carry an authenticated VTOP session. */

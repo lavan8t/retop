@@ -280,10 +280,6 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
         <p id="retop-welcome-text">{subtitle}</p>
       </div>
 
-      {/* Campus Selector Pills */}
-      <div className="flex p-1 bg-(--bg-card) border border-(--border-main) rounded-full mb-6 max-w-70">
-        <div className="text-[10px] opacity-50 font-medium tracking-wide uppercase">VIT Vellore</div>
-      </div>
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -340,7 +336,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
         {/* CAPTCHA Container Matching login-theme.css #retop-captcha-container */}
         <div
           id="retop-captcha-container"
-          className={captchaWiggle ? "retop-wiggle" : ""}
+          className={`${captchaWiggle ? "retop-wiggle" : ""} transition-all duration-300 ease-in-out overflow-hidden ${captchaInput.length >= 6 ? "max-h-0 opacity-0" : "max-h-40 opacity-100"}`}
         >
           {/* Captcha Image and Refresh Button */}
           <div id="captchaBlock">

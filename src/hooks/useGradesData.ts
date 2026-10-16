@@ -22,6 +22,15 @@ export function useGradesData(
   const [offlineMiss, setOfflineMiss] = useState(false);
 
   useEffect(() => {
+    if (selectedSem) {
+      localStorage.setItem("retop_selected_sem", selectedSem);
+    } else {
+      const saved = localStorage.getItem("retop_selected_sem");
+      if (saved) setSelectedSem(saved);
+    }
+  }, [selectedSem, setSelectedSem]);
+
+  useEffect(() => {
     const init = async () => {
       if (semesters.length > 0) {
         setLoading(false);

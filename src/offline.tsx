@@ -11,7 +11,7 @@ import {
   Error as ErrorIcon,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { renderDashboard } from "./pages/app";
-import { getStorageData, setStorageData } from "./utils/storageAdapter";
+import { getStorageData, setStorageData, clearAllStorage } from "./utils/storageAdapter";
 import { getUserPinRecord, saveUserPin, verifyUserPin, getUserProfileImage } from "./utils/pinSecurity";
 import { AsciiPanel } from "./components/asciiArt";
 import { applyTheme, DEFAULT_SETTINGS } from "./utils/settings-store";
@@ -19,7 +19,7 @@ import { VitLogo } from "./components/VitLogo";
 import { VitEmblemLoader } from "./components/common/VitEmblemLoader";
 import { ErrorBoundary } from "./components/common/ErrorBoundary";
 import { fixBase64Image } from "./parsers/profile";
-import { clear as idbClear, set as idbSet, get as idbGet } from "idb-keyval";
+import { set as idbSet, get as idbGet } from "idb-keyval";
 import { AlertDialogManager, showAlertDialog } from "./components/ui/AlertDialog";
 
 // Apply default theme immediately on module load so variables are present before first render
@@ -351,7 +351,9 @@ const OfflineApp = () => {
 
   const handleResetCacheAndRedirect = async () => {
     try {
-      await idbClear();
+      // chrome.storage.local feeds the web bridge, so clearing only IDB/localStorage
+      // would let the "cleared" data reappear after the redirect.
+      await clearAllStorage();
       localStorage.clear();
       sessionStorage.clear();
     } catch {}
@@ -894,7 +896,7 @@ const OfflineApp = () => {
         </div>
       </div>
 
-      {/* Exact ASCII Art Wrapper matching login-theme.css */}
+      {/* ASCII art scan, fixed to the viewport's bottom-right */}
       <div
         id="retop-right-footer-wrapper"
         className="hidden lg:flex"

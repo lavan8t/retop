@@ -36,46 +36,99 @@ const GSF: React.CSSProperties = {
 };
 
 const isChennaiHost = () => window.location.hostname.includes("vtopcc");
+/** Page-level marker that turns retop off. Read by the document_start bootstrap. */
+const DISABLED_KEY = "retop_disabled";
 // Campus locked by host: vtopcc = Chennai, vtop.vit.ac.in = Vellore. No switching.
 
 /**
- * Header the old injected theme built on top of #vtopOpenPageHeader: the VIT
- * emblem, swapped for the retop mark, and the campus label on the right.
+ * Tenant mark in the corner. The VIT campus header now sits where the card
+ * title used to be, so all that is left here is the retop wordmark — and a way
+ * out: tapping it turns retop off and hands VTOP back to the student.
  */
 const BrandHeader: React.FC = () => {
-  const campusLabel = isChennaiHost() ? "CHENNAI CAMPUS" : "VELLORE CAMPUS";
-  const emblem = getExtUrl("dist/assets/vitLogo.svg");
+  const disableRetop = () => {
+    // The page-level marker is what the document_start bootstrapper reads, so
+    // the very next load is plain VTOP.
+    try {
+      localStorage.setItem(DISABLED_KEY, "1");
+    } catch {}
+
+    let reloaded = false;
+    const reload = () => {
+      if (reloaded) return;
+      reloaded = true;
+      window.location.reload();
+    };
+
+    try {
+      // Wait for the background to store the switch before the page goes away.
+      chrome.runtime.sendMessage({ action: "SET_DISABLED" }, () => reload());
+      chrome.runtime.sendMessage({ action: "OPEN_DISABLE" }, () => void chrome.runtime.lastError);
+    } catch {}
+
+    setTimeout(reload, 800);
+  };
 
   return (
-    <nav
-      className="fixed top-0 left-0 right-0 z-10 flex items-center gap-4 px-6 sm:px-10 py-3"
-      style={{ background: "var(--bg-surface)", borderBottom: "1px solid var(--border-main)" }}
+    <button
+      type="button"
+      onClick={disableRetop}
+      title="Turn retop off and use VTOP"
+      className="fixed top-0 right-0 z-10 px-6 sm:px-10 py-3 select-none text-(--text-main) cursor-pointer bg-transparent border-0"
+      style={{ ...GSF, opacity: 0.5 }}
     >
-      <img src={emblem} alt="VIT" style={{ height: "44px", width: "auto", filter: `invert(var(--vit-logo-invert))` }} />
-      <span
-        className="text-xs font-bold retop-campus-text"
-        style={{
-          fontFamily: "'Times New Roman', Times, serif",
-        }}
-      >
-        {campusLabel}
+      <span className="lowercase" style={{ fontSize: "1.5rem", lineHeight: 1, fontVariationSettings: '"wdth" 151, "wght" 700, "GRAD" 100, "ROND" 100, "slnt" -10' }}>
+        re
       </span>
-    </nav>
+      <span className="lowercase" style={{ fontSize: "1.5rem", lineHeight: 1, fontVariationSettings: '"wdth" 120, "wght" 700, "GRAD" 100, "ROND" 100, "slnt" -10' }}>
+        top
+      </span>
+    </button>
   );
 };
 
-/** Bottom-left escape hatch the old theme exposed for the offline PWA. */
-const OfflineLink: React.FC = () => (
-  <a
-    href="https://getretop.web.app/"
-    target="_blank"
-    rel="noopener noreferrer"
-    className="fixed bottom-5 left-6 z-10 text-xs font-bold text-(--text-muted) hover:text-(--text-main) no-underline transition-colors"
-    style={GSF}
-  >
-    No internet?
-  </a>
-);
+/** Bottom-left escape hatch: opens the extension's own offline app window. */
+const OfflineLink: React.FC = () => {
+  const openOffline = () => {
+    const fallback = () => {
+      try {
+        window.open(getExtUrl("offline.html"), "_blank", "noopener");
+      } catch {
+        window.open("https://getretop.web.app/", "_blank", "noopener");
+      }
+    };
+
+    let answered = false;
+    const done = (ok: boolean) => {
+      if (answered) return;
+      answered = true;
+      if (!ok) fallback();
+    };
+
+    try {
+      chrome.runtime.sendMessage({ action: "OPEN_OFFLINE" }, (res) => {
+        done(!chrome.runtime.lastError && !!res?.success);
+      });
+    } catch {
+      done(false);
+    }
+
+    // If the background never answers, still open the app window.
+    setTimeout(() => done(false), 1500);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={openOffline}
+      title="Open the offline retop app"
+      className="fixed bottom-5 left-6 z-[99999] pointer-events-auto text-xs font-bold text-(--accent-base) hover:text-(--accent-hover) hover:underline underline-offset-4 transition-colors bg-transparent border-0 p-0 cursor-pointer"
+      style={GSF}
+    >
+      No internet?
+    </button>
+  );
+};
 
 const RoleGate: React.FC<{ role: RetopRole }> = ({ role }) => {
   const label = role === "alumni" ? "Alumni" : "Parent";
@@ -119,33 +172,59 @@ const RoleGate: React.FC<{ role: RetopRole }> = ({ role }) => {
 const SpotLightStrip: React.FC = () => {
   const [items, setItems] = useState<{ text: string; href: string }[]>([]);
   useEffect(() => {
-    const host = isChennaiHost() ? "https://vtopcc.vit.ac.in" : "https://vtop.vit.ac.in";
-    fetch(`${host}/vtop/get/spotlight`, { headers: { "User-Agent": "Mozilla/5.0" }, redirect: "manual" })
-      .then(async (r) => {
-        if (r.status === 200) {
-          const text = await r.text();
-          const ids = [...text.matchAll(/downloadSpotLightViewFile\/([0-9]+)/g)].map(m => m[1]).filter((v,i,a)=>a.indexOf(v)===i).slice(0,6);
-          const announcements = ids.map(id => {
-            const idx = text.indexOf('downloadSpotLightViewFile/'+id);
-            const snippet = text.substring(idx, idx+300);
-            const txt = snippet.match(/<strong[^>]*>([^<]+)<\/strong>/);
-            return { id, text: txt ? txt[1].trim() : "Announcement" };
+    let cancelled = false;
+    const base = getVtopBaseUrl(isChennaiHost() ? "chennai" : "vellore");
+
+    // /vtop/get/spotlight 302s to the login page without a session, but
+    // /vtop/open/page always renders the same announcements. Load that page
+    // once the form fields are on screen, then scrape its download links.
+    const load = async () => {
+      try {
+        const res = await fetch(`${base}/vtop/open/page`, { credentials: "same-origin" });
+        if (!res.ok) throw new Error(`open/page ${res.status}`);
+        const doc = new DOMParser().parseFromString(await res.text(), "text/html");
+        const seen = new Set<string>();
+        const found: { text: string; href: string }[] = [];
+        doc.querySelectorAll('a[onclick*="downloadSpotLightViewFile"], a[href*="downloadSpotLightViewFile"]').forEach((a) => {
+          const raw = a.getAttribute("onclick") || a.getAttribute("href") || "";
+          const id = raw.match(/downloadSpotLightViewFile\/(\d+)/)?.[1];
+          if (!id || seen.has(id)) return;
+          seen.add(id);
+          found.push({
+            text: a.querySelector("strong")?.textContent?.trim() || "Announcement",
+            href: `${base}/vtop/downloadSpotLightViewFile/${id}`,
           });
-          const itemsWithUrl = announcements.map(i => ({
-            text: i.text,
-            href: `https://${host}/vtop/downloadSpotLightViewFile/${i.id}`,
-          }));
-          setItems(itemsWithUrl.length ? itemsWithUrl : [{ text: "No announcements", href: "#" }]);
-        }
-      })
-      .catch(() => setItems([{ text: "Spotlight unavailable", href: "#" }]));
+        });
+        if (!cancelled) setItems(found.length ? found.slice(0, 6) : [{ text: "No announcements", href: "#" }]);
+      } catch {
+        if (!cancelled) setItems([{ text: "Spotlight unavailable", href: "#" }]);
+      }
+    };
+
+    let tries = 0;
+    const timer = setInterval(() => {
+      if (getAppRoot()?.querySelector("input") || ++tries >= 50) {
+        clearInterval(timer);
+        load();
+      }
+    }, 100);
+
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
   }, []);
   return (
-    <div className="absolute top-24 right-6 z-10 hidden lg:block max-w-xs text-xs text-(--text-muted) space-y-2">
-      <div className="font-bold text-(--text-main) uppercase tracking-widest mb-1">Spotlight</div>
-      {items.map((item, i) => (
-        <a key={i} href={item.href || "#"} className="block hover:text-(--text-main) transition-colors leading-snug" target="_blank" rel="noopener noreferrer">{item.text}</a>
-      ))}
+    <div className="w-full px-4 sm:px-8 pb-20 lg:absolute lg:top-24 lg:right-12 lg:w-auto lg:max-w-xs lg:px-0 lg:pb-0 z-10 text-sm text-(--text-muted) space-y-2">
+      <div className="text-(--text-main) uppercase mb-1 text-center" style={{ fontVariationSettings: '"wght" 700, "wdth" 100' }}>Spotlight</div>
+      <ul className="list-none m-0 p-0 space-y-2">
+        {items.map((item, i) => (
+          <li key={i} className="flex items-start gap-1.5 text-left">
+            <span aria-hidden="true" className="shrink-0 leading-snug" style={{ fontVariationSettings: '"wght" 600, "wdth" 100' }}>•</span>
+            <a href={item.href || "#"} className="hover:text-(--text-main) transition-colors leading-snug text-left" style={{ fontVariationSettings: '"wght" 600, "wdth" 100' }} target="_blank" rel="noopener noreferrer">{item.text}</a>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };
@@ -191,30 +270,51 @@ const LoginTakeover: React.FC = () => {
 
   return (
     <div
-      className="min-h-screen w-screen bg-(--bg-main) text-(--text-main) flex flex-col overflow-x-hidden selection:bg-(--accent-base)/30 selection:text-(--text-main) relative"
+      className="h-full w-full bg-(--bg-main) text-(--text-main) flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden overflow-x-hidden selection:bg-(--accent-base)/30 selection:text-(--text-main) relative"
       style={{ ...GSF, backgroundColor: "var(--bg-main)", color: "var(--text-main)" }}
     >
       <BrandHeader />
       <OfflineLink />
 
-      {/* Background ASCII art - sits behind, never goes out */}
-      <div className="absolute inset-0 z-0 pointer-events-none opacity-60 flex items-end justify-end overflow-hidden">
-        <AsciiPanel campus={isChennaiHost() ? "chennai" : "vellore"} />
+      {/* ASCII art background: 80vw, centred at the bottom on small screens,
+          full-width bottom-right on desktop. */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden flex items-end justify-center lg:justify-end">
+        <div className="w-[80vw] lg:w-full flex justify-center">
+          <AsciiPanel campus={isChennaiHost() ? "chennai" : "vellore"} scale={1.3} />
+        </div>
       </div>
 
-      <SpotLightStrip />
-
-      <div className="relative z-10 w-full flex flex-col justify-center items-center px-4 pt-24 pb-16 sm:px-8 lg:px-16 min-h-screen">
-        <div className="w-full max-w-md mx-auto">
+      {/* Left half: form. Right half stays empty so the ASCII art fills it. */}
+      <div className="relative z-10 w-full lg:w-1/2 flex flex-col justify-center items-start px-4 pt-24 pb-16 sm:px-8 lg:px-16 min-h-screen">
+        <div className="w-full max-w-md">
           <VtopLoginCard
             initialCampus={isChennaiHost() ? "chennai" : "vellore"}
-            title="retop"
-            subtitle="Welcome back."
+            title={
+              <span className="flex flex-col items-center gap-3">
+                <img
+                  src={getExtUrl("dist/assets/vitLogo.svg")}
+                  alt="VIT"
+                  style={{ height: "64px", width: "auto", filter: "invert(var(--vit-logo-invert))" }}
+                />
+                <span
+                  className="retop-campus-text"
+                  style={{
+                    fontFamily: "'Times New Roman', Times, serif",
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    textAlign: "center",
+                  }}
+                >
+                  {isChennaiHost() ? "CHENNAI CAMPUS" : "VELLORE CAMPUS"}
+                </span>
+              </span>
+            }
+            subtitle=""
             syncAfterLogin={false}
             onLoginSuccess={handleLoginSuccess}
           />
         </div>
-        <div className="retop-forgot-links flex gap-3 justify-center mt-4">
+        <div className="retop-forgot-links flex gap-3 justify-start mt-4">
           <a href="/vtop/forgotPassword" className="hover:text-(--text-main)">Forgot Password?</a>
           <span className="text-(--text-muted)">|</span>
           <a href="/vtop/forgotUsername" className="hover:text-(--text-main)">Forgot Username?</a>
@@ -230,6 +330,9 @@ const LoginTakeover: React.FC = () => {
           Teacher?
         </button>
       </div>
+
+      {/* Spotlight: below the form on small screens, top-right on desktop. */}
+      <SpotLightStrip />
     </div>
   );
 };

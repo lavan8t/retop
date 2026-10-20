@@ -31,10 +31,10 @@ export const AboutSection: React.FC = () => {
               return (
                 (typeof chrome !== "undefined" &&
                   chrome.runtime?.getManifest?.()?.version) ||
-                "0.3.0"
+                "dev"
               );
             } catch {
-              return "0.3.0";
+              return "dev";
             }
           })()}
         </div>

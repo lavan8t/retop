@@ -199,7 +199,9 @@ export const getAllStorageData = async (): Promise<Record<string, any>> => {
 export const removeStorageKeys = async (keys: string[]): Promise<void> => {
   if (hasChromeStorage()) {
     try {
-      chrome.storage.local.remove(keys);
+      await new Promise<void>((resolve) => {
+        chrome.storage.local.remove(keys, () => resolve());
+      });
     } catch (e) {}
   }
   if (typeof indexedDB !== "undefined") {
@@ -219,7 +221,9 @@ export const removeStorageKeys = async (keys: string[]): Promise<void> => {
 export const clearAllStorage = async (): Promise<void> => {
   if (hasChromeStorage()) {
     try {
-      chrome.storage.local.clear();
+      await new Promise<void>((resolve) => {
+        chrome.storage.local.clear(() => resolve());
+      });
     } catch (e) {}
   }
   if (typeof indexedDB !== "undefined") {

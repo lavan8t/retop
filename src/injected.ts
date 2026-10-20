@@ -92,7 +92,7 @@ window.addEventListener("retop-execute-legacy", (e: any) => {
     // Only allow code that calls ajaxB5Call or ajaxCall — nothing else
     const sanitized = code.replace(/\s+/g, " ").trim();
     const legacyCallMatch = sanitized.match(
-      /^(?:if\s*\(.*?\)\s*\{?\s*)?(ajaxB5Call|ajaxCall)\s*\(\s*["']([^"']+)["']\s*,\s*([^)]+)\)\s*;?\s*\}?/
+      /^(?:if\s*\(.*?\)\s*\{?\s*)?(ajaxB5Call|ajaxCall)\s*\(\s*["']([^"']+)["']\s*,\s*([^)]+)\)\s*;?\s*\}?\s*$/
     );
     if (legacyCallMatch) {
       const [, funcName] = legacyCallMatch;

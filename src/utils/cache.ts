@@ -1,5 +1,4 @@
 import { getStorageData, setStorageData, getAllStorageData, removeStorageKeys } from "./storageAdapter";
-import { del as idbDel, entries as idbEntries } from "idb-keyval";
 import { isSchemaStale, ParserModuleId, PARSER_SCHEMA_VERSIONS } from "../parsers/version";
 
 const CACHE_PREFIX = "retop_cache_";
@@ -106,10 +105,9 @@ export const getAllCachedKeys = async (accountRegNo?: string): Promise<{ key: st
 
 export const removeCacheKey = async (key: string): Promise<void> => {
   const cacheKey = key.startsWith(CACHE_PREFIX) ? key : `${CACHE_PREFIX}${key}`;
-  try {
-    await idbDel(cacheKey);
-    await idbDel(key);
-  } catch (e) {}
+  // The same key is written to chrome.storage, IndexedDB and localStorage, so it
+  // has to be removed from all three or the next read resurrects it.
+  await removeStorageKeys([cacheKey, key]);
 };
 
 export const clearAccountCache = async (accountRegNo?: string): Promise<void> => {

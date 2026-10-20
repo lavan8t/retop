@@ -3,20 +3,18 @@ import {
   Refresh,
   Visibility,
   VisibilityOff,
-  Sync,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { VtopClient, VtopCampus, CaptchaData } from "../../utils/vtopClient";
-import {
-  syncStudentData,
-  CachedUser,
-  SyncProgress,
-} from "../../utils/syncOrchestrator";
+import { syncStudentData, CachedUser, SyncProgress } from "../../utils/syncOrchestrator";
+import { getStorageData, setStorageData, removeStorageKeys } from "../../utils/storageAdapter";
+
+const REMEMBERED_USER_KEY = "retop_remembered_username";
 
 export interface VtopLoginCardProps {
   initialCampus?: VtopCampus;
   onLoginSuccess: (user: CachedUser, client: VtopClient) => void;
   onCancel?: () => void;
-  title?: string;
+  title?: React.ReactNode;
   subtitle?: string;
   /**
    * Download every module into the offline cache before handing over. Offline and
@@ -52,6 +50,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
   const [captchaWiggle, setCaptchaWiggle] = useState(false);
   const [isTitleHovered, setIsTitleHovered] = useState(false);
   const [isSolvingCaptcha, setIsSolvingCaptcha] = useState(false);
+  const [rememberUsername, setRememberUsername] = useState(false);
 
   const captchaImgRef = useRef<HTMLImageElement | null>(null);
 
@@ -124,6 +123,23 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
   useEffect(() => {
     fetchInitialCaptcha(campus);
   }, [campus]);
+
+  // Restore a username the user asked us to remember.
+  useEffect(() => {
+    let cancelled = false;
+    getStorageData([REMEMBERED_USER_KEY])
+      .then((data) => {
+        const saved = data[REMEMBERED_USER_KEY];
+        if (!cancelled && typeof saved === "string" && saved) {
+          setUsername(saved);
+          setRememberUsername(true);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Auto-solve the CAPTCHA, as the old enhanceLegacyLogin poll did. Re-runs on
   // every new image — VTOP rotates the CAPTCHA after each attempt — so a failed
@@ -222,6 +238,14 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
         return;
       }
 
+      try {
+        if (rememberUsername) {
+          await setStorageData({ [REMEMBERED_USER_KEY]: trimmedUser });
+        } else {
+          await removeStorageKeys([REMEMBERED_USER_KEY]);
+        }
+      } catch {}
+
       if (!syncAfterLogin) {
         const regNo = result.user?.registrationNumber || result.client.registrationNumber;
         onLoginSuccess(
@@ -261,7 +285,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
   return (
     <div id="loginBox" className="w-full max-w-md mx-auto select-none">
       {/* Card Header matching login-theme.css */}
-      <div className="card-header loginBoxBorder mb-4 text-left">
+      <div className="card-header loginBoxBorder mb-2 text-left">
         <h4
           style={{
             fontFamily: "'Google Sans Flex', system-ui, sans-serif",
@@ -277,7 +301,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
         >
           {title}
         </h4>
-        <p id="retop-welcome-text">{subtitle}</p>
+        {subtitle ? <p id="retop-welcome-text">{subtitle}</p> : null}
       </div>
 
 
@@ -294,6 +318,8 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
             disabled={isSubmitting}
             autoCapitalize="characters"
             autoComplete="username"
+            spellCheck={false}
+            autoCorrect="off"
             value={username}
             onChange={(e) => setUsername(e.target.value.toUpperCase())}
           />
@@ -312,6 +338,8 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
             required
             disabled={isSubmitting}
             autoComplete="current-password"
+            spellCheck={false}
+            autoCorrect="off"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
@@ -332,6 +360,28 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
             )}
           </button>
         </div>
+
+        {/* Remember username */}
+        <label className="flex items-center gap-2 cursor-pointer select-none w-fit">
+          <input
+            type="checkbox"
+            checked={rememberUsername}
+            disabled={isSubmitting}
+            onChange={(e) => {
+              const checked = e.target.checked;
+              setRememberUsername(checked);
+              if (!checked) removeStorageKeys([REMEMBERED_USER_KEY]).catch(() => {});
+            }}
+            className="h-4 w-4 cursor-pointer disabled:opacity-50"
+            style={{ accentColor: "var(--accent-base)" }}
+          />
+          <span
+            className="text-xs text-(--text-muted)"
+            style={{ fontVariationSettings: '"wght" 400, "wdth" 100' }}
+          >
+            Remember username
+          </span>
+        </label>
 
         {/* CAPTCHA Container Matching login-theme.css #retop-captcha-container */}
         <div
@@ -380,6 +430,8 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
               disabled={isSubmitting}
               maxLength={6}
               autoComplete="off"
+              spellCheck={false}
+              autoCorrect="off"
               value={captchaInput}
               onChange={(e) => setCaptchaInput(e.target.value.toUpperCase())}
             />
@@ -394,7 +446,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
           <div className="p-3 bg-(--bg-card) border border-(--border-main) rounded-2xl space-y-2 text-left animate-in fade-in duration-200">
             <div className="flex items-center justify-between text-xs font-bold">
               <span className="text-(--text-main) flex items-center gap-1.5">
-                <Sync className="w-3.5 h-3.5 animate-spin text-(--accent-base)" />
+                <span className="inline-block w-3.5 h-3.5 rounded-full border-2 border-current border-t-transparent animate-spin text-(--accent-base)" />
                 {syncProgress.step}
               </span>
               <span className="text-(--accent-base)">
@@ -422,7 +474,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
           >
             {isSubmitting ? (
               <span className="flex items-center justify-center gap-2">
-                <Sync className="w-4 h-4 animate-spin" />
+                <span className="inline-block w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
                 <span>
                   {syncProgress ? "SYNCHRONIZING..." : "LOGGING IN..."}
                 </span>

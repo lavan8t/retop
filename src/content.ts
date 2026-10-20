@@ -23,14 +23,18 @@ const LOGIN_ROUTES = [
   "/vtop/vtopLogin",
   "/vtop/prelogin",
   "/vtop/init/page",
-  "/vtop/forgotPassword",
-  "/vtop/forgotUsername",
 ];
+
+/** Routes retop must never own: users need VTOP's own recovery forms. */
+const PASSTHROUGH_ROUTES = ["/vtop/forgotPassword", "/vtop/forgotUsername"];
 
 /** Routes that carry an authenticated VTOP session. */
 const AUTH_ROUTES = ["/vtop/content", "/vtop/main", "/vtop/process"];
 
 const ROLE_KEY = "retop-user-role";
+
+/** Marker written when the user turns retop off from the login wordmark. */
+const DISABLED_KEY = "retop_disabled";
 
 const BACKDROP = "#09090b";
 
@@ -328,12 +332,61 @@ function takeOverLogin(): void {
   );
 }
 
+/**
+ * True while the user has turned retop off. The marker lives in the page's own
+ * localStorage so the document_start bootstrapper can read it synchronously
+ * and hand VTOP back without waiting for any extension round-trip.
+ */
+function isDisabled(): boolean {
+  try {
+    return localStorage.getItem(DISABLED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Watches for retop being turned back on. The extension owns the real switch
+ * (chrome.storage), the page marker is only the fast path, so a stale marker
+ * must not keep VTOP's own UI away forever.
+ */
+function watchForReEnable(): void {
+  const clear = () => {
+    try {
+      localStorage.removeItem(DISABLED_KEY);
+    } catch {}
+    window.location.reload();
+  };
+
+  try {
+    chrome.runtime.sendMessage({ action: "IS_DISABLED" }, (res) => {
+      if (chrome.runtime.lastError) return;
+      if (!res?.disabled) clear();
+    });
+  } catch {}
+
+  try {
+    chrome.runtime.onMessage.addListener((message: any) => {
+      if (message?.type === "RETOP_REENABLED") clear();
+    });
+  } catch {}
+}
+
 function main(): void {
   if (window.self !== window.top) return;
   if (!VTOP_HOST.test(window.location.hostname)) return;
 
+  // The user asked for plain VTOP: touch nothing.
+  if (isDisabled()) {
+    watchForReEnable();
+    return;
+  }
+
   const path = window.location.pathname;
   const role = readRoleSync();
+
+  // Never take over account recovery: the native form must stay usable.
+  if (matches(path, PASSTHROUGH_ROUTES)) return;
 
   if (matches(path, LOGIN_ROUTES) && isOwnableRole(role) && !consumeBypass()) {
     takeOverLogin();

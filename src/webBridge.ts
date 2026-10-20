@@ -2,17 +2,19 @@ import { getExtUrl } from "./utils/url";
 import { set as idbSet } from "idb-keyval";
 
 if (typeof window !== "undefined") {
+  const version =
+    (typeof chrome !== "undefined" && chrome.runtime?.getManifest?.().version) || "0.0.0";
   // Signal to the web application that the extension is active
   try {
     localStorage.setItem("__RETOP_EXT_PRESENT__", "true");
   } catch {}
   (window as any).__RETOP_EXTENSION_INSTALLED__ = true;
-  (window as any).__RETOP_EXTENSION_VERSION__ = "0.5.0";
+  (window as any).__RETOP_EXTENSION_VERSION__ = version;
   document.documentElement.setAttribute("data-retop-extension", "true");
 
-  window.dispatchEvent(new CustomEvent("retop-extension-ready", { detail: { version: "0.5.0" } }));
-  document.dispatchEvent(new CustomEvent("retop-extension-ready", { detail: { version: "0.5.0" } }));
-  window.postMessage({ type: "RETOP_EXT_PRESENT", version: "0.5.0" }, "*");
+  window.dispatchEvent(new CustomEvent("retop-extension-ready", { detail: { version } }));
+  document.dispatchEvent(new CustomEvent("retop-extension-ready", { detail: { version } }));
+  window.postMessage({ type: "RETOP_EXT_PRESENT", version }, "*");
 
   // Proactively fetch all cached extension storage to hydrate the web app
   if (typeof chrome !== "undefined" && chrome.runtime?.sendMessage) {
@@ -168,6 +170,13 @@ if (typeof window !== "undefined") {
         e.data?.action === "GO_TO_RETOP"
       ) {
         takeover();
+      }
+
+      // The /disable page asks the extension to turn retop back on.
+      if (e.data?.type === "RETOP_ENABLE_AGAIN" || e.data?.action === "RETOP_ENABLE_AGAIN") {
+        try {
+          chrome.runtime.sendMessage({ action: "CLEAR_DISABLED" }, () => {});
+        } catch {}
       }
     });
 

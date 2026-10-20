@@ -93,31 +93,6 @@ export const DefaultsSection: React.FC<DefaultsSectionProps> = ({
       </SettingTopicCard>
 
       <SettingTopicCard
-        title="Login Flow"
-        description="Skip role selection and go straight to student login"
-      >
-        <div className="flex items-center justify-between gap-4 w-full">
-          <div className="flex flex-col gap-1">
-            <span className="text-sm font-bold text-(--text-main)">
-              Skip Role Selection
-            </span>
-            <span className="text-xs text-(--text-muted)">
-              Automatically select "Student" on /open/page and proceed directly to login
-            </span>
-          </div>
-          <MaterialSwitch
-            selected={settings.skipRoleSelection}
-            onChange={() =>
-              updateSetting(
-                "skipRoleSelection",
-                !settings.skipRoleSelection,
-              )
-            }
-          />
-        </div>
-      </SettingTopicCard>
-
-      <SettingTopicCard
         title="Display & Privacy Preferences"
         description="Time format display and private data masking"
       >

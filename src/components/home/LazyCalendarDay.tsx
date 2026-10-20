@@ -12,7 +12,7 @@ import {
 import { useIsDark } from "../../hooks/useTheme";
 import { parseVtopDate, TimeFormatMode } from "../../utils/formatting";
 
-import { School } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
+import { School, KeyboardArrowDown } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 
 interface LazyCalendarDayProps {
   d: Date;
@@ -47,6 +47,7 @@ export const LazyCalendarDay = React.memo(
   }: LazyCalendarDayProps) => {
     const { settings } = useSettingsStore();
     const isDark = useIsDark();
+    const [showCompleted, setShowCompleted] = React.useState(false);
 
     const calHolidayBg = getMaterialThemeColor("red", isDark);
     const calHolidayFg = getMaterialOnThemeColor("red", isDark);
@@ -201,8 +202,9 @@ export const LazyCalendarDay = React.memo(
     return (
       <div
         ref={isToday ? todayRef : undefined}
-        className="@container mb-2 sm:mb-4 flex gap-1.5 sm:gap-3 relative select-none">
-        {/* Left Date Column */}
+        className="@container mb-2 sm:mb-4 flex gap-1.5 sm:gap-3 relative select-none animate-home-item"
+        style={{ animationDelay: `${Math.min(dIdx, 8) * 40}ms` }}
+      >        {/* Left Date Column */}
         <div className="flex flex-col items-center shrink-0 w-8 sm:w-12 pt-0.5 sm:pt-1 sticky top-4 h-fit z-10 select-none">
           <div
             className={`flex items-center justify-center font-black transition-all w-7 h-7 sm:w-10 sm:h-10 rounded-full text-xs sm:text-[clamp(0.85rem,3cqw,1.125rem)] ${
@@ -355,11 +357,29 @@ export const LazyCalendarDay = React.memo(
               ));
             };
 
-            const filteredDoneEvents = doneEvents;
-
             return (
               <>
-                {renderGroupedEvents(filteredDoneEvents, "done")}
+                {isToday && doneEvents.length > 0 ? (
+                  <div className="mb-1.5 sm:mb-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowCompleted((v) => !v)}
+                      className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-(--bg-highlight) border border-(--border-dim)/40 text-[10px] sm:text-xs font-black font-expanded uppercase tracking-wider text-(--text-muted) hover:text-(--text-main) transition-colors cursor-pointer"
+                    >
+                      <span>Completed · {doneEvents.length}</span>
+                      <KeyboardArrowDown
+                        className={`w-4 h-4 shrink-0 transition-transform duration-200 ${showCompleted ? "rotate-180" : ""}`}
+                      />
+                    </button>
+                    {showCompleted && (
+                      <div className="mt-1.5 sm:mt-2">
+                        {renderGroupedEvents(doneEvents, "done")}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  renderGroupedEvents(doneEvents, "done")
+                )}
 
                 {isToday && <div ref={nowRef} className="scroll-mt-[40vh]" />}
 

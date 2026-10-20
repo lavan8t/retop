@@ -10,6 +10,18 @@ chrome.runtime.onInstalled.addListener((details) => {
 });
 
 chrome.action.onClicked.addListener(() => {
+  // No network: the toolbar is the app launcher. Open the offline page in its
+  // own window so it behaves like an installed PWA.
+  if (typeof navigator !== "undefined" && !navigator.onLine) {
+    chrome.windows.create({
+      url: chrome.runtime.getURL("offline.html"),
+      type: "popup",
+      width: 1100,
+      height: 820,
+      focused: true,
+    });
+    return;
+  }
   chrome.tabs.create({ url: "https://vtop.vit.ac.in/vtop/" });
 });
 
@@ -86,7 +98,63 @@ if (typeof chrome !== "undefined" && chrome.downloads?.onDeterminingFilename) {
 }
 
 // Handle Google Drive sync and Portal-to-PWA data relay
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+const isBridgeSender = (sender: chrome.runtime.MessageSender): boolean => {
+  const source = sender.origin || sender.url || "";
+  return source.startsWith("https://getretop.web.app");
+};
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // ── Turn retop off / on ───────────────────────────────────────────────────
+  if (message.action === "SET_DISABLED") {
+    chrome.storage.local.set({ retop_disabled: true }, () =>
+      sendResponse({ success: true }),
+    );
+    return true;
+  }
+
+  if (message.action === "IS_DISABLED") {
+    chrome.storage.local.get(["retop_disabled"], (items) => {
+      sendResponse({ success: true, disabled: !!items?.retop_disabled });
+    });
+    return true;
+  }
+
+  if (message.action === "CLEAR_DISABLED") {
+    chrome.storage.local.remove(["retop_disabled"], () => {
+      // Tell open VTOP tabs to drop their page marker and come back to retop.
+      chrome.tabs.query(
+        { url: ["https://vtop.vit.ac.in/*", "https://vtopcc.vit.ac.in/*"] },
+        (tabs) => {
+          (tabs || []).forEach((tab) => {
+            if (tab.id !== undefined) {
+              chrome.tabs
+                .sendMessage(tab.id, { type: "RETOP_REENABLED" })
+                .catch(() => {});
+            }
+          });
+        },
+      );
+      sendResponse({ success: true });
+    });
+    return true;
+  }
+
+  if (message.action === "OPEN_DISABLE") {
+    chrome.tabs.create({ url: "https://getretop.web.app/disable" });
+    sendResponse({ success: true });
+    return true;
+  }
+
+  if (message.action === "OPEN_OFFLINE" || message.type === "OPEN_OFFLINE") {
+    const url = chrome.runtime.getURL("offline.html");
+    const win = chrome.windows?.create
+      ? chrome.windows.create({ url, type: "popup", width: 1100, height: 820, focused: true })
+      : null;
+    if (!win) chrome.tabs.create({ url });
+    sendResponse({ success: true });
+    return true;
+  }
+
   if (message.action === "PORTAL_SCRAPED_DATA" || message.type === "PORTAL_SCRAPED_DATA") {
     const payload = message.payload || message.data;
     if (payload) {
@@ -96,9 +164,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
       // 2. Relay incoming payload updates to any active tab running the PWA
       const pwaUrlPatterns = [
-        "https://getretop.web.app/*",
-        "http://localhost/*",
-        "http://127.0.0.1/*"
+        "https://getretop.web.app/*"
       ];
       chrome.tabs.query({ url: pwaUrlPatterns }, (tabs) => {
         if (tabs && tabs.length > 0) {
@@ -118,9 +184,18 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
 
   if (message.action === "GET_ALL_SYNC_DATA" || message.type === "GET_ALL_SYNC_DATA") {
+    if (!isBridgeSender(sender)) {
+      sendResponse({ success: false, data: {} });
+      return true;
+    }
     if (typeof chrome !== "undefined" && chrome.storage?.local) {
       chrome.storage.local.get(null, (items) => {
-        sendResponse({ success: true, data: items || {} });
+        // Only retop-owned keys cross into the page; never dump everything.
+        const data: Record<string, any> = {};
+        for (const [key, value] of Object.entries(items || {})) {
+          if (key.startsWith("retop_")) data[key] = value;
+        }
+        sendResponse({ success: true, data });
       });
     } else {
       sendResponse({ success: false, data: {} });

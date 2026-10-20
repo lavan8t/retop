@@ -8,7 +8,7 @@ import { UpcomingClass } from "../../utils/timetable-slots";
 import { ExamEntry } from "../../parsers/exam-schedule";
 import { formatTimeStr, parseVtopDate, TimeFormatMode } from "../../utils/formatting";
 
-import { useSettingsStore, MATERIAL_ACCENTS, getMaterialThemeColor, getMaterialOnThemeColor } from "../../utils/settings-store";
+import { useSettingsStore, MATERIAL_ACCENTS, getMaterialThemeColor, getMaterialOnThemeColor, getMaterialChipStyle } from "../../utils/settings-store";
 import { useIsDark } from "../../hooks/useTheme";
 import { useDataStore } from "../../store/dataStore";
 
@@ -140,7 +140,10 @@ export const ScheduleRow = React.memo(({
         {/* Right Side: Critical badge, Slot (left of venue), Venue on right end */}
         <div className="flex items-center gap-2 shrink-0 font-mono font-bold">
           {isCriticalAtt && (
-            <span className="text-[0.5625rem] font-mono font-bold uppercase px-1.5 py-0.5 rounded-full bg-red-500 text-white shrink-0 leading-none">
+            <span
+              className="text-[0.5625rem] font-mono font-bold uppercase px-1.5 py-0.5 rounded-full shrink-0 leading-none border"
+              style={getMaterialChipStyle("red", isDark)}
+            >
               ⚠️ {Math.round(attVal)}%
             </span>
           )}
@@ -168,7 +171,10 @@ export const ScheduleRow = React.memo(({
             {item.course.title}
           </span>
           {isCriticalAtt && (
-            <span className="text-[0.5625rem] font-mono font-bold uppercase px-1.5 py-0.5 rounded-full bg-red-500 text-white shrink-0 leading-none">
+            <span
+              className="text-[0.5625rem] font-mono font-bold uppercase px-1.5 py-0.5 rounded-full shrink-0 leading-none border"
+              style={getMaterialChipStyle("red", isDark)}
+            >
               ⚠️ {Math.round(attVal)}%
             </span>
           )}

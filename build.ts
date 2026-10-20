@@ -50,6 +50,11 @@ const buildNumber =
 const ROOT = resolve(".");
 const DIST = resolve("dist");
 
+// The archive is named after the manifest version, never a hardcoded number.
+const VERSION = JSON.parse(
+  readFileSync(resolve(ROOT, "manifest.json"), "utf-8"),
+).version as string;
+
 // ── Step 0: Clean dist/ ──────────────────────────────────────────────
 try { rmSync(DIST, { recursive: true, force: true }); } catch {}
 try { mkdirSync(resolve(DIST, "assets"), { recursive: true }); } catch {}
@@ -147,11 +152,10 @@ if (!popupBuild.success) {
 }
 console.log("  - offline.js, standalone.js");
 
-// Post-process bundled JS files (innerHTML obfuscation & import.meta removal)
+// Post-process bundled JS files (import.meta removal)
 const sanitizeBundle = (filePath: string) => {
   if (existsSync(filePath)) {
     let content = readFileSync(filePath, "utf-8");
-    content = content.replace(/\.innerHTML\s*=/g, '["inner" + "HTML"] =');
     content = content.replace(/import\.meta\.url/g, '""');
     content = content.replace(/import\.meta/g, '({})');
     writeFileSync(filePath, content);
@@ -505,7 +509,7 @@ function createZipArchive(sourceDir: string, outputFile: string) {
 if (archiveType) {
   // Alias crx to zip since CRX requires private key signing. Chrome expects ZIP for Web Store or unpacked.
   const actualArchiveType = archiveType === "crx" ? "zip" : archiveType;
-  const archiveFilename = `retop-v0.5.0.${actualArchiveType}`;
+  const archiveFilename = `retop-v${VERSION}.${actualArchiveType}`;
   const archivePath = resolve(ROOT, archiveFilename);
 
   if (archiveType === "xpi" && existsSync(resolve(ROOT, "manifest.firefox.json"))) {

@@ -8,8 +8,6 @@ interface GlobalDADropZoneProps {
   network: VTOPNetwork;
 }
 
-const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
-
 export const GlobalDADropZone: React.FC<GlobalDADropZoneProps> = ({ network }) => {
   const [isDragging, setIsDragging] = useState(false);
   const { setCurrentView, setDaDropFile } = useAppStore();

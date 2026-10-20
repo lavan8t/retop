@@ -22,7 +22,7 @@ export const getAsciiConfig = (type: AsciiArtType): AsciiLayoutConfig => {
       return { charW: 2.9, charH: 4.4, fontSize: "4.8px", lineH: "4.4px", marginRight: "0px" };
     case "TT":
     default:
-      return { charW: 4.2, charH: 7, fontSize: "7px", lineH: "7px", marginRight: "-15vw" };
+      return { charW: 4.2, charH: 7, fontSize: "7px", lineH: "7px", marginRight: "0px" };
   }
 };
 
@@ -177,7 +177,10 @@ export const runAsciiSparkAnimation = (
   return cleanup;
 };
 
-export const AsciiPanel: React.FC<{ campus?: "chennai" | "vellore" }> = ({ campus }) => {
+export const AsciiPanel: React.FC<{ campus?: "chennai" | "vellore"; scale?: number }> = ({
+  campus,
+  scale = 1,
+}) => {
   const preRef = useRef<HTMLPreElement>(null);
   const [pickedType, setPickedType] = useState<AsciiArtType>(() => pickAsciiType(campus));
   const [art, setArt] = useState<string>("");
@@ -188,16 +191,28 @@ export const AsciiPanel: React.FC<{ campus?: "chennai" | "vellore" }> = ({ campu
     loadAsciiArt(newType).then(setArt);
   }, [campus]);
 
-  const { fontSize, lineH, marginRight } = getAsciiConfig(pickedType);
+  const { fontSize, lineH, marginRight, charW } = getAsciiConfig(pickedType);
 
   useEffect(() => {
     const pre = preRef.current;
-    if (!pre) return;
-    pre.style.setProperty("font-size", fontSize, "important");
-    pre.style.setProperty("line-height", lineH, "important");
-    pre.style.setProperty("letter-spacing", "0px", "important");
-    pre.style.setProperty("margin-right", marginRight, "important");
-  }, [fontSize, lineH, marginRight]);
+    const parent = pre?.parentElement;
+    if (!pre || !parent) return;
+
+    const apply = () => {
+      // Shrink to the container when the art is wider, so it never runs off the right edge.
+      const maxLen = Math.max(1, ...art.split("\n").map((line) => line.trimEnd().length));
+      const ratio = charW / parseFloat(fontSize) || 0.6;
+      const size = Math.min(parseFloat(fontSize) * scale, parent.clientWidth / (maxLen * ratio));
+      pre.style.setProperty("font-size", `${size}px`, "important");
+      pre.style.setProperty("line-height", `${(parseFloat(lineH) / parseFloat(fontSize)) * size}px`, "important");
+      pre.style.setProperty("letter-spacing", "0px", "important");
+      pre.style.setProperty("margin-right", "0px", "important");
+    };
+
+    apply();
+    window.addEventListener("resize", apply);
+    return () => window.removeEventListener("resize", apply);
+  }, [art, fontSize, lineH, marginRight, charW, scale]);
 
   useEffect(() => {
     const pre = preRef.current;
@@ -224,7 +239,7 @@ export const AsciiPanel: React.FC<{ campus?: "chennai" | "vellore" }> = ({ campu
         overflow: "hidden",
         width: "100%",
         userSelect: "none",
-        pointerEvents: "auto",
+        pointerEvents: "none",
       },
     }
   );

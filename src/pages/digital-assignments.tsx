@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useDataStore } from "../store/dataStore";
 import { useAppStore } from "../store/appStore";
+import { useIsDark } from "../hooks/useTheme";
+import { getMaterialChipStyle } from "../utils/settings-store";
 import { OfflineNotSynced } from "../components/ui/OfflineNotSynced";
 import { VTOPNetwork } from "../utils/network";
 import { showAlertDialog } from "../components/ui/AlertDialog";
@@ -114,6 +116,7 @@ function checkDAUploadResponse(html: string): {
 }
 
 export default function DigitalAssignments({ network }: { network: VTOPNetwork }) {
+  const isDark = useIsDark();
   const {
     daSemesters,
     daCourses,
@@ -470,12 +473,18 @@ export default function DigitalAssignments({ network }: { network: VTOPNetwork }
                         }`}>
                           {course.code}
                         </span>
-                        <span className="px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 font-mono font-black text-[10px] uppercase">
+                        <span
+                          className="px-2 py-0.5 rounded-full font-mono font-black text-[10px] uppercase"
+                          style={getMaterialChipStyle("blue", isDark)}
+                        >
                           {course.type}
                         </span>
                       </div>
                       {pendingCount > 0 && (
-                        <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-mono text-[10px] font-black uppercase shrink-0">
+                        <span
+                          className="px-2 py-0.5 rounded-full font-mono text-[10px] font-black uppercase shrink-0"
+                          style={getMaterialChipStyle("amber", isDark)}
+                        >
                           {pendingCount} Pending
                         </span>
                       )}
@@ -512,7 +521,10 @@ export default function DigitalAssignments({ network }: { network: VTOPNetwork }
                   <span className="px-3 py-1 rounded-full bg-(--accent-base) text-(--text-inverse) text-xs font-mono font-bold">
                     {activeCourse.code}
                   </span>
-                  <span className="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-xs font-mono font-black uppercase">
+                  <span
+                    className="px-2.5 py-0.5 rounded-full text-xs font-mono font-black uppercase"
+                    style={getMaterialChipStyle("blue", isDark)}
+                  >
                     {activeCourse.type}
                   </span>
                   <span className="px-2.5 py-0.5 rounded-full bg-(--bg-highlight) text-(--text-muted) text-xs font-mono">
@@ -571,8 +583,16 @@ export default function DigitalAssignments({ network }: { network: VTOPNetwork }
 
                   {/* OTP Verification Prompt if Required */}
                   {otpState ? (
-                    <div className="flex flex-col gap-3 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30">
-                      <div className="flex items-center gap-2 text-amber-400 font-bold text-xs">
+                    <div
+                      className="flex flex-col gap-3 p-4 rounded-2xl border"
+                      style={{
+                        backgroundColor: `color-mix(in srgb, ${getMaterialChipStyle("amber", isDark).color} 10%, transparent)`,
+                        borderColor: `color-mix(in srgb, ${getMaterialChipStyle("amber", isDark).color} 30%, transparent)`,
+                      }}>
+                      <div
+                        className="flex items-center gap-2 font-bold text-xs"
+                        style={{ color: getMaterialChipStyle("amber", isDark).color }}
+                      >
                         <Lock className="w-4 h-4" />
                         <span>OTP Verification Required</span>
                       </div>
@@ -604,11 +624,10 @@ export default function DigitalAssignments({ network }: { network: VTOPNetwork }
 
                   {/* Status Banner */}
                   {statusMsg && (
-                    <div className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 ${
-                      statusMsg.type === "success"
-                        ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                        : "bg-red-500/15 text-red-400 border border-red-500/30"
-                    }`}>
+                    <div
+                      className="p-3 rounded-xl text-xs font-bold flex items-center gap-2 border"
+                      style={getMaterialChipStyle(statusMsg.type === "success" ? "emerald" : "red", isDark)}
+                    >
                       {statusMsg.type === "success" ? (
                         <CheckCircle className="w-4 h-4 shrink-0" />
                       ) : (
@@ -661,11 +680,10 @@ export default function DigitalAssignments({ network }: { network: VTOPNetwork }
                             <h3 className="font-bold text-base text-(--text-main) truncate">
                               {assgn.title}
                             </h3>
-                            <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-mono font-black uppercase shrink-0 ${
-                              isSubmitted
-                                ? "bg-emerald-500/20 text-emerald-400"
-                                : "bg-amber-500/20 text-amber-400"
-                            }`}>
+                            <span
+                              className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-black uppercase shrink-0"
+                              style={getMaterialChipStyle(isSubmitted ? "emerald" : "amber", isDark)}
+                            >
                               {isSubmitted ? "Submitted" : "Pending"}
                             </span>
                           </div>

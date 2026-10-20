@@ -38,8 +38,6 @@ const LOGIN_ROUTES = [
   "/vtop/vtopLogin",
   "/vtop/prelogin",
   "/vtop/init/page",
-  "/vtop/forgotPassword",
-  "/vtop/forgotUsername",
 ];
 
 const path = window.location.pathname;
@@ -49,8 +47,19 @@ const matches = (routes: string[]) => routes.some((r) => path.includes(r));
 const isAuthRoute = matches(AUTH_ROUTES);
 const isLoginRoute = matches(LOGIN_ROUTES);
 
-// Mirror IndexedDB cache to chrome.storage.local for offline tab access
+// Mirror IndexedDB cache to chrome.storage.local for offline tab access.
+// Cache writes already go there, so this is only a safety net for old IDB-only
+// entries; running it on every VTOP navigation duplicated megabytes per page.
+const MIRROR_STAMP_KEY = "retop_idb_mirrored_at";
+const MIRROR_INTERVAL_MS = 5 * 60 * 1000;
+
+let lastMirror = Date.now();
+try {
+  lastMirror = Number(localStorage.getItem(MIRROR_STAMP_KEY) || 0);
+} catch {}
+
 if (
+  Date.now() - lastMirror > MIRROR_INTERVAL_MS &&
   typeof chrome !== "undefined" &&
   chrome.storage &&
   chrome.storage.local &&
@@ -63,7 +72,11 @@ if (
         for (const [k, v] of entries) {
           if (typeof k === "string") payload[k] = v;
         }
-        chrome.storage.local.set(payload).catch(() => {});
+        return chrome.storage.local.set(payload).then(() => {
+          try {
+            localStorage.setItem(MIRROR_STAMP_KEY, String(Date.now()));
+          } catch {}
+        });
       }
     })
     .catch(() => {});

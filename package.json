@@ -1,6 +1,6 @@
 {
   "name": "vtop",
-  "version": "0.1.0",
+  "version": "0.5.0",
   "private": true,
   "scripts": {
     "build": "bun ./node_modules/typescript/lib/tsc.js --noEmit && bun run build.ts",

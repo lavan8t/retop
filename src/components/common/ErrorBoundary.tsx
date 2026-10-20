@@ -1,5 +1,7 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
 import { Warning, Refresh } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
+import { get as idbGet, set as idbSet } from "idb-keyval";
+import { clearAllStorage } from "../../utils/storageAdapter";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -49,11 +51,18 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   private handleClearCacheAndReload = async () => {
     try {
-      localStorage.clear();
-      sessionStorage.clear();
-      if (typeof chrome !== "undefined" && chrome?.storage?.local) {
-        await chrome.storage.local.clear();
+      // Never localStorage.clear() here: the dashboard shares the origin with
+      // VTOP, so that would wipe VTOP's own client state too.
+      const keys: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key?.startsWith("retop")) keys.push(key);
       }
+      keys.forEach((key) => localStorage.removeItem(key));
+      // Cached data goes, preferences stay.
+      const settings = await idbGet("retop-settings");
+      await clearAllStorage();
+      if (settings !== undefined) await idbSet("retop-settings", settings);
     } catch (e) {
       console.warn("Failed to clear local storage", e);
     }

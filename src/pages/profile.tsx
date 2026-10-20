@@ -71,48 +71,31 @@ const BentoBlock = ({
 }: any) => {
   if (value !== undefined && !isValid(value)) return null;
 
+  // Material 3 Expressive list item: leading icon in a tonal container,
+  // headline + supporting text stacked beside it.
   return (
     <div
-      className={`relative p-4 sm:p-5 md:p-6 bg-(--bg-surface) text-(--text-main) rounded-3xl sm:rounded-4xl transition-all duration-fast flex flex-col justify-between gap-3 sm:gap-4 overflow-hidden break-words whitespace-normal min-h-28 sm:min-h-35 ${span} ${className}`}
+      className={`relative p-4 sm:p-5 md:p-6 bg-(--bg-surface) text-(--text-main) rounded-3xl sm:rounded-4xl transition-all duration-fast flex items-start gap-3 sm:gap-4 overflow-hidden break-words whitespace-normal min-h-28 sm:min-h-35 ${span} ${className}`}
     >
-      <div className="relative z-10 flex flex-col justify-between h-full gap-3 sm:gap-4 w-full">
-        {Icon ? (
-          <div className="flex items-start justify-between w-full h-full gap-3 sm:gap-4">
-            <div className="flex flex-col items-start justify-start text-left h-full w-full min-w-0">
-              {title && (
-                <div className="text-[10px] sm:text-xs uppercase font-black font-expanded opacity-50 shrink-0 mb-1.5 sm:mb-2">
-                  {title}
-                </div>
-              )}
-              {value ? (
-                <div className="text-xl sm:text-2xl md:text-3xl font-black font-expanded leading-tight w-full break-words whitespace-normal py-0.5 sm:py-1">
-                  {value}
-                </div>
-              ) : (
-                <div className="w-full flex flex-col items-start justify-start text-sm md:text-base font-black font-expanded gap-1 break-words whitespace-normal">
-                  {children}
-                </div>
-              )}
-            </div>
-            <Icon className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 text-(--text-main) mix-blend-overlay opacity-80 shrink-0" />
+      {Icon && (
+        <div className="shrink-0 w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-(--bg-highlight) flex items-center justify-center">
+          <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-(--accent-base)" />
+        </div>
+      )}
+      <div className="relative z-10 flex flex-col items-start justify-center text-left min-w-0 flex-1 gap-1">
+        {title && (
+          <div className="text-[10px] sm:text-xs uppercase font-black font-expanded opacity-50 shrink-0 w-full break-words whitespace-normal">
+            {title}
+          </div>
+        )}
+        {value ? (
+          <div className="text-lg sm:text-xl md:text-2xl font-black font-expanded leading-tight w-full break-words whitespace-normal">
+            {value}
           </div>
         ) : (
-          <>
-            {title && (
-              <div className="text-[10px] sm:text-xs uppercase font-black font-expanded opacity-50 shrink-0 mb-1.5 sm:mb-2 text-left w-full">
-                {title}
-              </div>
-            )}
-            {value ? (
-              <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black font-expanded leading-tight w-full break-words whitespace-normal text-left">
-                {value}
-              </div>
-            ) : (
-              <div className="w-full h-full flex flex-col justify-start text-sm md:text-base font-black font-expanded gap-1 break-words whitespace-normal text-left">
-                {children}
-              </div>
-            )}
-          </>
+          <div className="w-full flex flex-col items-start justify-start text-sm md:text-base font-black font-expanded gap-1 break-words whitespace-normal">
+            {children}
+          </div>
         )}
       </div>
     </div>
@@ -474,16 +457,16 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
           {/* 5. Hostel Details / Day Scholar */}
           {data.hostel ? (
             <BentoBlock icon={Domain} span="md:col-span-2 lg:col-span-4">
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 justify-start sm:items-start py-1 w-full text-left">
-                <div className="flex items-start justify-start gap-3 shrink-0">
-                  <span className="text-4xl sm:text-6xl md:text-7xl font-black font-expanded leading-tight break-words whitespace-normal text-left">
+              <div className="flex flex-wrap gap-3 sm:gap-6 justify-start sm:items-start py-1 w-full text-left">
+                <div className="flex items-start justify-start gap-3 min-w-0 basis-64 grow">
+                  <span className="text-4xl sm:text-6xl md:text-7xl font-black font-expanded leading-tight break-words whitespace-normal text-left shrink-0">
                     {data.hostel.room}
                   </span>
-                  <span className="text-xl sm:text-2xl md:text-3xl opacity-60 pb-1 break-words whitespace-normal text-left">
+                  <span className="text-xl sm:text-2xl md:text-3xl opacity-60 pb-1 break-words whitespace-normal text-left min-w-0">
                     {data.hostel.block}
                   </span>
                 </div>
-                <div className="flex flex-col sm:items-start text-left flex-1 min-w-0">
+                <div className="flex flex-col sm:items-start text-left basis-64 grow min-w-0">
                   {isValid(data.hostel.mess) && (
                     <div className="text-lg sm:text-xl md:text-2xl leading-tight break-words">
                       {data.hostel.mess}

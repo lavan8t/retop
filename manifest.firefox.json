@@ -6,7 +6,6 @@
   "permissions": [
     "unlimitedStorage",
     "downloads",
-    "webNavigation",
     "storage"
   ],
   "content_security_policy": {
@@ -27,6 +26,17 @@
       "js": [
         "content.js"
       ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://vtop.vit.ac.in/*",
+        "https://vtopcc.vit.ac.in/*"
+      ],
+      "js": [
+        "injected.js"
+      ],
+      "world": "MAIN",
       "run_at": "document_start"
     },
     {
@@ -52,6 +62,7 @@
         "login.js",
         "dashboard.js",
         "offline.js",
+        "offline.html",
         "chunk-*.js",
         "style.css",
         "login.css",

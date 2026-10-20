@@ -43,6 +43,27 @@
   will-change: transform, opacity;
 }
 
+@keyframes homeItemRise {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-home-item {
+  animation: homeItemRise 340ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-home-item {
+    animation: none;
+  }
+}
+
 @keyframes retopTooltipPop {
   0% {
     opacity: 0;
@@ -303,22 +324,11 @@ a:active,
   #retop-root {
     --duration-shadow: var(--duration-fast);
   }
-
-  #retop-root [class*="hover:shadow"],
-  #retop-root [class*="hover:-translate"],
-  #retop-root [class*="hover:translate"] {
-    box-shadow: none !important;
-    transform: none !important;
-  }
 }
 
-/* Disable hover animations, font-squish, and transforms on mobile / touch view */
+/* Disable sticky hover states on touch view. Running keyframes are left alone —
+   pausing them froze marquees and entrance animations on the home page. */
 @media (hover: none), (max-width: 768px) {
-  #retop-root *:hover,
-  #retop-root .group:hover * {
-    animation-play-state: paused !important;
-  }
-  
   #retop-root .hover\:font-squish:hover,
   #retop-root .group:hover .group-hover\:font-squish,
   #retop-root .retop-logo:hover {

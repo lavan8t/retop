@@ -57,7 +57,7 @@ A 2 KB `document_start` bootstrapper (`src/content.ts`) carries no static import
 4. Load the extension in Chrome:
    - Navigate to `chrome://extensions/`
    - Toggle **Developer mode** on the top right.
-   - Click **Load unpacked** and select the root directory of this project.
+   - Click **Load unpacked** and select the generated `dist/` directory (run the build in step 3 first).
 
 <br />
 

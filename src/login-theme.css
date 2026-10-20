@@ -30,7 +30,6 @@ body {  display: flex !important;  flex-direction: column !important;  overflow-
 #vtopOpenPageHeader .retop-campus-text {  width: 280px !important;  max-width: 80vw !important;  text-align: center !important;  font-family: "Times New Roman", Times, serif !important;  font-weight: 700 !important;  font-size: 1rem !important;  letter-spacing: 0.15em !important;  color: var(--text-main) !important;  margin-top: 0.5rem !important;  text-transform: uppercase !important;  position: relative;  z-index: 10;}
 /* Base Header Font Styling */#vtopOpenPageHeader * {  color: var(--text-main) !important;}
 /* Footer on Right Side */#retop-custom-footer {  position: absolute !important;  bottom: 1rem !important;  left: 0 !important;  width: 100% !important;  text-align: center !important;  color: var(--text-muted) !important;  font-family: 'Google Sans Flex', system-ui, sans-serif !important;  font-size: 0.75rem !important;  z-index: 10;}
-/* ASCII Animation */#retop-ascii-anim {  position: absolute;  top: 0;  left: 0;  width: 100%;  height: 100%;  pointer-events: auto; /* interactive */  font-family: 'Courier New', Courier, monospace !important;  font-size: 14px !important;  line-height: 14px !important;  color: var(--accent-base) !important;  opacity: 0.25;  overflow: hidden;  z-index: 1;  display: flex;  align-items: center;  justify-content: center;  user-select: none;  white-space: pre;  margin: 0 !important;  padding: 0 !important;}
 /* Hide card styling to make it fully compact */#loginBox, .card, .bg-white, .bg-light, .pageBody, .wrapper, .container-fluid {  background-color: transparent !important;  border: none !important;  box-shadow: none !important;  color: var(--text-main) !important;}
 #loginBox {  padding: 0 1rem !important;  margin-top: 2rem !important;  margin-bottom: 2rem !important;}
 #loginBox:hover, .card:hover {  transform: none !important;  box-shadow: none !important;}
@@ -43,15 +42,27 @@ body {  display: flex !important;  flex-direction: column !important;  overflow-
 .input-group {  display: flex !important;  align-items: center !important;  gap: 0.75rem !important;  flex-wrap: nowrap !important;  margin-bottom: 1rem !important;  position: relative !important;}
 /* Icons Wrappers (Username & Eye) */.input-group-text, .btn-light {  background: transparent !important;  border: none !important;  box-shadow: none !important;  padding: 0 !important;  width: auto !important;  height: auto !important;  color: var(--text-muted) !important;  display: flex !important;  align-items: center !important;  justify-content: center !important;}
 /* Completely hide Username Icon & Lock Icon */#basic-addon1, #retop-lock-icon {  display: none !important;}
-/* Input Styling */.form-control {  background-color: var(--bg-main) !important;  border: 3px solid var(--accent-base) !important;  color: var(--text-main) !important;  border-radius: 0.75rem !important;  font-size: 1.1rem !important;  padding: 0.75rem 1rem !important;  height: 48px !important;  transition: all var(--duration-normal) ease;  flex: 1 1 auto;}
+/* Input Styling */.form-control {  background-color: var(--bg-main) !important;  border: 2px solid var(--accent-base) !important;  color: var(--text-main) !important;  border-radius: 0.75rem !important;  font-size: 1.1rem !important;  padding: 0.75rem 1rem !important;  height: 48px !important;  transition: border-color var(--duration-normal) ease, box-shadow var(--duration-normal) ease;  flex: 1 1 auto;}
+.form-control:hover {  border-color: color-mix(in srgb, var(--accent-base) 85%, black) !important;}
 /* Floating Label Animation */.retop-floating-label {  position: absolute !important;  left: 1rem !important;  top: 50% !important;  transform: translateY(-50%) !important;  background: var(--bg-main) !important;  padding: 0 0.5rem !important;  color: var(--text-muted) !important;  pointer-events: none !important;  transition: all var(--duration-normal) var(--easing-standard) !important;  font-size: 1.1rem !important;  z-index: 10 !important;  border-radius: 0.25rem !important;  margin: 0 !important;  transform-origin: left center !important;}
 .form-control:focus ~ .retop-floating-label,.form-control:not(:placeholder-shown) ~ .retop-floating-label,input:focus ~ .retop-floating-label,input:not(:placeholder-shown) ~ .retop-floating-label {  top: 0 !important;  left: 0.5rem !important;  transform: translateY(-50%) scale(0.85) !important;  color: var(--accent-base) !important;  font-family: 'Google Sans Flex', system-ui, sans-serif !important;  font-variation-settings: "wght" 800, "wdth" 125 !important;}
 .input-group-text svg, .btn-light svg {  width: 24px !important;  height: 24px !important;  color: var(--text-muted) !important;  transition: color var(--duration-normal), transform var(--duration-normal);}
 .btn-light:hover {  transform: none !important;  box-shadow: none !important;}
 .btn-light:active {  transform: none !important;  box-shadow: none !important;}
 .btn-light:hover svg,.btn-light:hover i,.btn-light:hover img,.btn-light:hover span,.btn-light:hover * {  transform: none !important;  animation: none !important;}
-.form-control:focus {  border-color: var(--accent-base) !important;  box-shadow: none !important;  transform: none !important;  outline: none !important;}
+.form-control:focus {  border-color: var(--accent-base) !important;  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-base) 25%, transparent) !important;  transform: none !important;  outline: none !important;}
 /* Color icon when input is focused */.form-control:focus ~ .input-group-text svg,.form-control:focus ~ .btn-light svg,.input-group-text:has(~ .form-control:focus) svg {  color: var(--accent-base) !important;}
+/* Autofill: keep the browser's autofill from painting a yellow background
+   that clashes with the active theme (dark or light). */
+.form-control:-webkit-autofill,
+.form-control:-webkit-autofill:hover,
+.form-control:-webkit-autofill:focus,
+.form-control:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px var(--bg-main) inset !important;
+  -webkit-text-fill-color: var(--text-main) !important;
+  caret-color: var(--text-main) !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
 /* Eye Toggle - Material Symbols filled visibility icon */#passwordIcon::before {  content: none !important;  display: none !important;}
 #passwordIcon {  color: var(--text-muted) !important;  transition: color var(--duration-normal) ease !important;}
 #passwordIcon:hover {  color: var(--accent-base) !important;}
@@ -70,9 +81,10 @@ body {  display: flex !important;  flex-direction: column !important;  overflow-
   40%, 80% { transform: translateX(6px); }
 }
 .retop-wiggle {  animation: retop-wiggle 0.35s ease-in-out !important;}
-/* Buttons */.btn-primary,.btn-success {  background-color: var(--accent-base) !important;  border: none !important;  color: white !important;  font-family: 'Google Sans Flex', system-ui, sans-serif !important;  font-variation-settings: "wdth" 151, "wght" 800, "GRAD" 100, "ROND" 100 !important;  text-transform: uppercase;  border-radius: 9999px !important;  box-shadow: none !important;  padding: 0.85rem 1.5rem !important;  font-size: 1rem;  letter-spacing: 0.05em;  transition: all var(--duration-font-var) ease-out;  width: 100%;  margin-top: 0.5rem;}
+/* Buttons */.btn-primary,.btn-success {  background-color: var(--accent-base) !important;  border: none !important;  color: var(--accent-on-dark, #0b0b0c) !important;  font-family: 'Google Sans Flex', system-ui, sans-serif !important;  font-variation-settings: "wdth" 151, "wght" 800, "GRAD" 100, "ROND" 100 !important;  text-transform: uppercase;  border-radius: 9999px !important;  box-shadow: none !important;  padding: 0.85rem 1.5rem !important;  font-size: 1rem;  letter-spacing: 0.05em;  transition: border-radius 320ms cubic-bezier(0.34, 1.56, 0.64, 1), transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1), background-color var(--duration-normal) ease, font-variation-settings var(--duration-font-var) ease-out;  width: 100%;  margin-top: 0.5rem;}
 .btn-primary:hover,.btn-success:hover {  background-color: color-mix(in srgb, var(--accent-base) 80%, black) !important;  filter: brightness(0.88) !important;  transform: none !important;  box-shadow: none !important;}
-.btn-primary:active,.btn-success:active {  transform: none !important;  box-shadow: none !important;}
+/* Material 3 Expressive shape morph: corners pull in on press, spring back on release. */
+.btn-primary:active,.btn-success:active {  border-radius: 1rem !important;  transform: scale(0.985) !important;  transition: border-radius 90ms cubic-bezier(0.2, 0, 0, 1), transform 90ms cubic-bezier(0.2, 0, 0, 1);  box-shadow: none !important;}
 /* Links at the bottom */.card-footer {  display: flex !important;  justify-content: space-between !important;  align-items: center !important;  margin-top: 1rem !important;  padding: 1rem 0.5rem 0 !important;  background: transparent !important;}
 .card-footer .text-end {  margin: 0 !important;  flex-shrink: 0 !important;}
 .retop-forgot-links {  color: var(--text-muted) !important;  font-size: 0.95rem !important;  font-variation-settings: "wght" 500 !important;}
@@ -98,16 +110,61 @@ body {  display: flex !important;  flex-direction: column !important;  overflow-
 .modal-title {  color: var(--text-main) !important;  font-variation-settings: "wdth" 151, "wght" 800 !important;}
 /* Global VTOP Loader Replacement */#processLoader {  background-color: color-mix(in srgb, var(--bg-main) 75%, transparent) !important;  backdrop-filter: blur(8px) !important;  display: flex !important;  align-items: center !important;  justify-content: center !important;}
 #processLoader img,img[src*="loader" i],img[src*="ajax" i],img[src*="loading" i],img[src*="spinner" i] {  display: none !important;}
-/* Footer and ASCII Art Wrapper */#retop-right-footer-wrapper {  position: fixed;  bottom: 0;  right: 0;  width: 100vw;  height: 100vh;  display: flex;  flex-direction: column;  align-items: flex-end;  justify-content: flex-end;  pointer-events: none; /* Let clicks pass through */  z-index: 1;}
-#retop-right-footer-wrapper > * {  pointer-events: auto; /* Enable clicks on actual footer text if needed */}
-#retop-root #retop-ascii-art,#retop-ascii-art {  font-family: 'Courier New', Courier, monospace !important;  font-size: 14px;  line-height: 1 !important;  color: rgba(255, 255, 255, 0.7) !important;  pointer-events: none !important;  white-space: pre;  margin: 0;  padding: 0;  text-align: right;  position: absolute;  right: 0;  bottom: 0;  overflow: hidden !important;}
-[data-theme="dark"] #retop-ascii-art,[data-theme="amoled"] #retop-ascii-art {  color: rgba(255, 255, 255, 0.7) !important;}
-[data-theme="light"] #retop-ascii-art {  color: rgba(0, 0, 0, 0.18) !important;}
-.retop-ascii-spark {  font-family: 'Courier New', Courier, monospace !important;  font-size: 14px !important;  line-height: 1 !important;  color: var(--accent-base, #3b82f6) !important;  font-weight: 700 !important;  pointer-events: none !important;  white-space: pre !important;  text-align: right !important;  position: absolute;  right: 0;  bottom: 0;  overflow: hidden !important;  text-shadow: 0 0 4px var(--accent-base, #3b82f6), 0 0 10px var(--accent-base, #3b82f6) !important;  display: inline !important;  letter-spacing: 0.02em !important;}
-.retop-ascii-glow {  font-family: 'Courier New', Courier, monospace !important;  font-size: 14px !important;  line-height: 1 !important;  color: var(--accent-base, #3b82f6) !important;  pointer-events: none !important;  white-space: pre !important;  text-align: right !important;  position: absolute;  right: 0;  bottom: 0;  overflow: hidden !important;  text-shadow: 0 0 3px var(--accent-base, #3b82f6), 0 0 8px var(--accent-base, #3b82f6) !important;  display: inline !important;  letter-spacing: 0.02em !important;}
-.retop-ascii-trail {  font-family: 'Courier New', Courier, monospace !important;  font-size: 14px !important;  line-height: 1 !important;  color: color-mix(in srgb, var(--accent-base, #3b82f6) 55%, transparent) !important;  pointer-events: none !important;  white-space: pre !important;  text-align: right !important;  position: absolute;  right: 0;  bottom: 0;  overflow: hidden !important;  text-shadow: 0 0 4px var(--accent-base, #3b82f6) !important;  display: inline !important;  letter-spacing: 0.02em !important;}
-@keyframes retop-ascii-rise {  0% {    transform: translateY(100vh);  }
-  100% {    transform: translateY(0);  }
+/* ASCII art — glow-reveal scan. Spans must stay inline so each line keeps its row. */
+#retop-ascii-art {
+  font-family: 'Courier New', Courier, monospace !important;
+  font-size: 7px;
+  line-height: 1 !important;
+  color: rgba(255, 255, 255, 0.28) !important;
+  pointer-events: none !important;
+  white-space: pre;
+  margin: 0;
+  padding: 0;
+  text-align: right;
+}
+/* Beat the app-wide Google Sans Flex rule inside the dashboard/takeover root. */
+#retop-root #retop-ascii-art,
+#retop-root #retop-ascii-art span,
+#retop-right-footer-wrapper #retop-ascii-art {
+  font-family: 'Courier New', Courier, monospace !important;
+  font-variation-settings: normal !important;
+}
+#retop-right-footer-wrapper, #retop-right-footer-wrapper * {
+  font-family: 'Courier New', Courier, monospace !important;
+}
+[data-theme="dark"] #retop-ascii-art,
+[data-theme="amoled"] #retop-ascii-art {
+  color: rgba(255, 255, 255, 0.28) !important;
+}
+[data-theme="light"] #retop-ascii-art {
+  color: rgba(0, 0, 0, 0.18) !important;
+}
+.retop-ascii-spark {
+  color: var(--accent-base, #3b82f6) !important;
+  font-weight: 700 !important;
+  line-height: inherit !important;
+  text-shadow: 0 0 6px var(--accent-base, #3b82f6), 0 0 16px var(--accent-base, #3b82f6), 0 0 30px var(--accent-base, #3b82f6) !important;
+  display: inline !important;
+}
+.retop-ascii-glow {
+  color: var(--accent-base, #3b82f6) !important;
+  line-height: inherit !important;
+  text-shadow: 0 0 8px var(--accent-base, #3b82f6), 0 0 18px var(--accent-base, #3b82f6) !important;
+  display: inline !important;
+}
+.retop-ascii-trail {
+  color: color-mix(in srgb, var(--accent-base, #3b82f6) 55%, transparent) !important;
+  line-height: inherit !important;
+  text-shadow: 0 0 8px var(--accent-base, #3b82f6) !important;
+  display: inline !important;
+}
+@keyframes retop-ascii-rise {
+  0% {
+    transform: translateY(100vh);
+  }
+  100% {
+    transform: translateY(0);
+  }
 }
 /* Home Icon */.retop-home-icon {  display: inline-flex;  align-items: center;  justify-content: center;  padding: 0.5rem;  color: var(--text-muted) !important;  transition: all var(--duration-normal) var(--easing-overshoot);  border: none !important;  background: transparent !important;  box-shadow: none !important;  text-decoration: none !important;}
 /* Invalid Input Validation State */.retop-input-invalid,input.retop-input-invalid {  border-color: #ef4444 !important;  outline: 2px solid #ef4444 !important;  animation: retop-shake 0.35s ease-in-out !important;}
@@ -115,6 +172,7 @@ body {  display: flex !important;  flex-direction: column !important;  overflow-
   20%, 60% { transform: translateX(-4px); }
   40%, 80% { transform: translateX(4px); }
 }
-.retop-campus-text { font-family: 'Times New Roman', Times, serif !important; }
-.retop-campus-text { font-family: 'Times New Roman', Times, serif !important; }
+.card-header h4 {  display: block !important;  width: 100% !important;  text-align: center !important;  margin-bottom: 0.1rem !important;}
+.retop-campus-text {  font-family: 'Times New Roman', Times, serif !important;  font-weight: 700 !important;}
+.card-header h4 .retop-campus-text { text-transform: uppercase !important; letter-spacing: 0 !important; font-size: 1.075rem !important; }
 

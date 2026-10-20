@@ -6,6 +6,7 @@ import {
   argbFromHex,
   hexFromArgb,
   Hct,
+  TonalPalette,
   SchemeVibrant,
   SchemeTonalSpot,
   SchemeExpressive,
@@ -43,21 +44,18 @@ export interface AppSettings {
   vtopThemeMode: "same" | "dark" | "light" | "amoled" | "none";
   accentColor: "grey" | "red" | "orange" | "yellow" | "green" | "blue" | "purple" | "pink" | "cyan" | "indigo" | "lime" | "monochrome";
   colorSchemeStyle?: ColorSchemeStyle;
-  randomAccentColor: boolean;
   blurCgpa: boolean;
   pureBlack: boolean;
   pinnedLinks: QuickLink[];
   use24HourTime: boolean;
   timeFormat?: "24h" | "12h" | "12h-ampm";
   animationScale: "1x" | "0.5x" | "0x";
-  searchHotkey: "/" | "space" | "instant";
   calendarClassColor: string;
   calendarEventColor: string;
   timetableMode: "weekly" | "slot" | "consolidated" | "fullMonth";
   dateFormat: DateFormatPattern;
   fontScale: number;
   fontWeight: "regular" | "medium" | "bold";
-  skipRoleSelection: boolean;
 }
 
 
@@ -68,20 +66,17 @@ export const DEFAULT_SETTINGS: AppSettings = {
   vtopThemeMode: "same",
   accentColor: "orange",
   colorSchemeStyle: "vibrant",
-  randomAccentColor: false,
   blurCgpa: false,
   pureBlack: false,
   use24HourTime: false,
   timeFormat: "12h",
   animationScale: "1x",
-  searchHotkey: "/",
   calendarClassColor: "blue",
   calendarEventColor: "purple",
   timetableMode: "weekly",
   dateFormat: "DD Mon YYYY",
   fontScale: 100,
   fontWeight: "bold",
-  skipRoleSelection: false,
 
   pinnedLinks: [
     { title: "Time Table", url: "studenttimetable", category: "Core" },
@@ -141,32 +136,38 @@ function createMaterialScheme(hct: Hct, isDark: boolean, style: ColorSchemeStyle
   }
 }
 
-export const getMaterialThemeColor = (colorKey: string, _isDark: boolean = true): string => {
-  if (colorKey === "grey" || colorKey === "monochrome") {
-    return "#27272a";
-  }
-  const hex = MATERIAL_ACCENTS[colorKey] || (colorKey && colorKey.startsWith("#") ? colorKey : MATERIAL_ACCENTS.blue);
+const resolveAccent = (colorKey: string): string =>
+  MATERIAL_ACCENTS[colorKey] || (colorKey && colorKey.startsWith("#") ? colorKey : MATERIAL_ACCENTS.blue);
+
+// Tonal palette tones keep the same hue as the chosen accent, so light and dark
+// containers stay in sync with the active theme instead of a fixed dark chip.
+const accentTone = (colorKey: string, tone: number, fallback: string): string => {
   try {
-    const hct = Hct.fromInt(argbFromHex(hex));
-    const containerHct = Hct.from(hct.hue, hct.chroma, 30);
-    return hexFromArgb(containerHct.toInt());
+    const palette = TonalPalette.fromHct(Hct.fromInt(argbFromHex(resolveAccent(colorKey))));
+    return hexFromArgb(palette.tone(tone));
   } catch {
-    return hex;
+    return fallback;
   }
 };
 
-export const getMaterialOnThemeColor = (colorKey: string, _isDark: boolean = true): string => {
-  if (colorKey === "grey" || colorKey === "monochrome") {
-    return "#f4f4f5";
-  }
-  const hex = MATERIAL_ACCENTS[colorKey] || (colorKey && colorKey.startsWith("#") ? colorKey : MATERIAL_ACCENTS.blue);
-  try {
-    const hct = Hct.fromInt(argbFromHex(hex));
-    const onContainerHct = Hct.from(hct.hue, hct.chroma, 95);
-    return hexFromArgb(onContainerHct.toInt());
-  } catch {
-    return "#ffffff";
-  }
+export const getMaterialThemeColor = (colorKey: string, isDark: boolean = true): string =>
+  accentTone(colorKey, isDark ? 30 : 90, resolveAccent(colorKey));
+
+export const getMaterialOnThemeColor = (colorKey: string, isDark: boolean = true): string =>
+  accentTone(colorKey, isDark ? 90 : 10, isDark ? "#ffffff" : "#000000");
+
+/**
+ * Material tonal chip: tinted container with the matching on-colour text.
+ * Keeps pills (pending, submitted, course type) on the theme's palette
+ * instead of fixed Tailwind colours.
+ */
+export const getMaterialChipStyle = (colorKey: string, isDark: boolean = true) => {
+  const fg = getMaterialOnThemeColor(colorKey, isDark);
+  return {
+    backgroundColor: `color-mix(in srgb, ${fg} 16%, transparent)`,
+    color: fg,
+    borderColor: `color-mix(in srgb, ${fg} 32%, transparent)`,
+  };
 };
 
 export const applyTheme = (settings: AppSettings) => {
@@ -213,6 +214,13 @@ export const applyTheme = (settings: AppSettings) => {
   if (root) root.style.setProperty("--accent-base", primaryHex);
   if (offlineRoot && offlineRoot !== root) offlineRoot.style.setProperty("--accent-base", primaryHex);
   docStyle.setProperty("--accent-base", primaryHex);
+
+  // Dark text tone for accent-filled surfaces (login button). Tone 20 of the
+  // accent hue stays legible on the light accent tones used in dark themes.
+  const accentOnDark = hexFromArgb(Hct.from(hct.hue, hct.chroma, 20).toInt());
+  if (root) root.style.setProperty("--accent-on-dark", accentOnDark);
+  if (offlineRoot && offlineRoot !== root) offlineRoot.style.setProperty("--accent-on-dark", accentOnDark);
+  docStyle.setProperty("--accent-on-dark", accentOnDark);
 
   const makeTonal = (hex: string) => {
     const colorHct = Hct.fromInt(argbFromHex(hex));
@@ -469,4 +477,15 @@ if (typeof window !== "undefined" && "BroadcastChannel" in window) {
       }
     };
   } catch {}
+}
+
+// "Auto" only resolves at apply time, so it must re-run when the OS flips.
+if (typeof window !== "undefined" && window.matchMedia) {
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+    const settings = useSettingsStore.getState().settings;
+    if (settings.themeMode !== "auto") return;
+    applyTheme(settings);
+    // New object: components that read isDark via the store must re-render.
+    useSettingsStore.setState({ settings: { ...settings } });
+  });
 }

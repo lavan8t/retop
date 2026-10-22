@@ -1,7 +1,6 @@
 import { CalendarMonthPreview, CalendarEvent, ClassGroup } from "../types/vtop";
 import { normalizeSemesterLabel } from "../utils/formatting";
 import { parseHTMLFast, validateParsed, wrapWithSchemaVersion, Versioned, findSemesterOptions } from "../utils/parser-utils";
-import { CalendarEventsListSchema } from "../schemas";
 
 export const CALENDAR_SCHEMA_VERSION = 1;
 
@@ -90,7 +89,7 @@ export function parseCalendarDays(
   html: string,
   monthLabel: string,
 ): Versioned<CalendarEvent[]> {
-  if (!html) return validateParsed(CalendarEventsListSchema, [], "calendar");
+  if (!html) return validateParsed([], "calendar");
   // VTOP HTML anomalies check
   const cleanHtml = html.replace(/<</g, "<");
   const doc = parseHTMLFast(cleanHtml);
@@ -144,5 +143,5 @@ export function parseCalendarDays(
     });
   });
 
-  return validateParsed(CalendarEventsListSchema, days, "calendar");
+  return validateParsed(days, "calendar");
 }

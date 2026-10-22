@@ -1,6 +1,17 @@
 import { scrapeMenu } from "../../parsers/menu";
 import { QuickLink } from "../../types/vtop";
 
+let isLegacyHotkeyRegistered = false;
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 export function injectLegacyMenuSearch(): void {
   if (typeof document === "undefined") return;
 
@@ -19,23 +30,23 @@ export function injectLegacyMenuSearch(): void {
   liWrapper.style.cssText = "min-width: 220px; max-width: 290px; height: 36px; z-index: 1050; font-family: OpenSans, 'Open Sans', 'Google Sans Flex', sans-serif; font-size: 14px;";
 
   liWrapper.innerHTML = `
-    <div class="input-group input-group-sm w-100 retop-legacy-search-box d-flex align-items-center" style="height: 34px; border-radius: 9999px; overflow: hidden; background: rgb(242, 244, 244); border: 1px solid rgba(0, 0, 0, 0.15); transition: all 0.15s ease;">
+    <div class="input-group input-group-sm w-100 retop-legacy-search-box d-flex align-items-center" style="height: 34px; border-radius: 9999px; overflow: hidden; background: linear-gradient(135deg, rgba(30, 60, 114, 0.85) 0%, rgba(42, 82, 152, 0.85) 100%); border: 1px solid rgba(255, 255, 255, 0.25); transition: none !important;">
       <span class="input-group-text bg-transparent border-0 py-0 ps-2.5 pe-1 text-muted d-flex align-items-center">
-        <i class="fa fa-search" style="font-size: 13px; color: #475569;"></i>
+        <i class="fa fa-search" style="font-size: 13px; color: rgba(255, 255, 255, 0.85);"></i>
       </span>
       <input
         type="text"
         id="retop-legacy-menu-search-input"
         class="form-control form-control-sm bg-transparent border-0 shadow-none ps-1 py-0 text-reset"
-        placeholder="Search menu ( Press Space )"
+        placeholder="Search menu..."
         autocomplete="off"
-        style="font-family: OpenSans, 'Open Sans', 'Google Sans Flex', sans-serif; font-size: 14px; font-weight: 600; color: #1e293b; height: 32px; line-height: 32px;"
+        style="font-family: OpenSans, 'Open Sans', 'Google Sans Flex', sans-serif; font-size: 14px; font-weight: 600; color: #ffffff; height: 32px; line-height: 32px;"
       />
       <button
         type="button"
         id="retop-legacy-menu-search-clear"
         class="btn btn-sm bg-transparent border-0 text-muted px-2 d-none d-flex align-items-center justify-content-center"
-        style="font-size: 12px;"
+        style="font-size: 12px; color: rgba(255, 255, 255, 0.85);"
       >
         <i class="fa fa-times"></i>
       </button>
@@ -43,7 +54,7 @@ export function injectLegacyMenuSearch(): void {
     <div
       id="retop-legacy-menu-search-dropdown"
       class="dropdown-menu shadow-lg p-1.5 position-absolute w-100 mt-1 custom-scrollbar"
-      style="display: none; max-height: min(450px, calc(100vh - 130px)); overflow-y: auto; z-index: 1055; top: 100%; left: 0; min-width: 320px; border-radius: 16px; font-family: OpenSans, 'Open Sans', 'Google Sans Flex', sans-serif;"
+      style="display: none; max-height: min(450px, calc(100vh - 130px)); overflow-y: auto; z-index: 1055; top: 100%; left: 0; min-width: 320px; border-radius: 16px; font-family: OpenSans, 'Open Sans', 'Google Sans Flex', sans-serif; background: linear-gradient(160deg, #162447 0%, #0f1c3f 100%); border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45); transition: none !important; animation: none !important;"
     >
     </div>
   `;
@@ -92,11 +103,11 @@ export function injectLegacyMenuSearch(): void {
               if (typeof ajaxB5Call === 'function') {
                 var auth = $("#authorizedIDX").val();
                 var data = "verifyMenu=true&authorizedID=" + auth + "&_csrf=" + (window.csrfValue || "") + "&nocache=" + new Date().getTime();
-                ajaxB5Call("${link.url}", data);
+                ajaxB5Call(${JSON.stringify(link.url)}, data);
               } else if (typeof ajaxCall === 'function') {
                 var auth = $("#authorizedIDX").val();
                 var data = "verifyMenu=true&authorizedID=" + auth + "&_csrf=" + (window.csrfValue || "") + "&nocache=" + new Date().getTime();
-                ajaxCall("${link.url}", data);
+                ajaxCall(${JSON.stringify(link.url)}, data);
               }
             `,
           },
@@ -157,21 +168,21 @@ export function injectLegacyMenuSearch(): void {
 
     dropdown.innerHTML = currentMatches
       .map((link, idx) => {
-        const catBadge = link.category ? `<span class="badge bg-primary-subtle text-primary border me-1.5" style="font-size: 9px; font-weight: 700; padding: 2px 6px;">${link.category}</span>` : "";
-        const subBadge = link.subheading ? `<small class="text-muted ms-1" style="font-size: 10.5px;">(${link.subheading})</small>` : "";
+        const catBadge = link.category ? `<span class="badge border me-1.5" style="font-size: 9px; font-weight: 700; padding: 2px 6px; background-color: rgba(59, 130, 246, 0.25); color: #93c5fd; border-color: rgba(147, 197, 253, 0.3); transition: none !important;">${escapeHtml(link.category)}</span>` : "";
+        const subBadge = link.subheading ? `<small class="ms-1" style="font-size: 10.5px; color: rgba(255, 255, 255, 0.7); transition: none !important;">(${escapeHtml(link.subheading)})</small>` : "";
         return `
           <a
             href="#"
             data-index="${idx}"
             class="dropdown-item d-flex align-items-center justify-content-between py-2 px-2.5 rounded-3 mb-0.5 ${idx === 0 ? "active" : ""}"
-            style="font-size: 12.5px; text-decoration: none; transition: background 0.1s ease;"
+            style="font-size: 12.5px; text-decoration: none; color: #ffffff; transition: none !important; animation: none !important;"
           >
             <div class="text-truncate me-2">
               ${catBadge}
-              <span class="fw-bold">${link.title}</span>
+              <span class="fw-bold">${escapeHtml(link.title)}</span>
               ${subBadge}
             </div>
-            <i class="fa fa-chevron-right text-muted" style="font-size: 10px;"></i>
+            <i class="fa fa-chevron-right" style="font-size: 10px; color: rgba(255, 255, 255, 0.5);"></i>
           </a>
         `;
       })
@@ -250,35 +261,39 @@ export function injectLegacyMenuSearch(): void {
     }
   });
 
-  // Hotkey: "/" or Ctrl/Cmd+K or Space opens legacy menu search ONLY when on legacy VTOP
-  window.addEventListener("keydown", (e: KeyboardEvent) => {
-    const isLegacyVisible =
-      document.body.classList.contains("show-legacy-ui") ||
-      document.documentElement.classList.contains("show-legacy-ui");
+  // Hotkey: "/" or Ctrl/Cmd+K opens legacy menu search ONLY when on legacy VTOP
+  if (!isLegacyHotkeyRegistered) {
+    isLegacyHotkeyRegistered = true;
+    window.addEventListener("keydown", (e: KeyboardEvent) => {
+      const isLegacyVisible =
+        document.body.classList.contains("show-legacy-ui") ||
+        document.documentElement.classList.contains("show-legacy-ui");
 
-    // Only process if legacy VTOP is active/visible
-    if (!isLegacyVisible) return;
+      // Only process if legacy VTOP is active/visible
+      if (!isLegacyVisible) return;
 
-    const target = (e.composedPath ? e.composedPath()[0] : e.target) as HTMLElement;
-    const isInput =
-      target &&
-      (target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.tagName === "SELECT" ||
-        target.isContentEditable);
+      const target = (e.composedPath ? e.composedPath()[0] : e.target) as HTMLElement;
+      const isInput =
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable);
 
-    if (isInput) return;
+      if (isInput) return;
 
-    if (
-      e.key === "/" ||
-      e.code === "Space" ||
-      e.key === " " ||
-      ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k")
-    ) {
-      e.preventDefault();
-      input.focus();
-      input.select();
-    }
-  });
+      if (
+        e.key === "/" ||
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k")
+      ) {
+        const legacyInput = document.getElementById("retop-legacy-menu-search-input") as HTMLInputElement | null;
+        if (legacyInput) {
+          e.preventDefault();
+          legacyInput.focus();
+          legacyInput.select();
+        }
+      }
+    });
+  }
 }
 

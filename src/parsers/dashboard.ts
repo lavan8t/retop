@@ -1,11 +1,6 @@
 import { Assignment, CourseSummary } from "../types/vtop";
 import { parseHTMLFast, validateParsed, Versioned } from "../utils/parser-utils";
 import { parseVtopDate } from "../utils/formatting";
-import {
-  AcademicStatsSchema,
-  DashboardAssignmentsListSchema,
-  DashboardCourseSummaryListSchema,
-} from "../schemas";
 
 export const DASHBOARD_SCHEMA_VERSION = 1;
 
@@ -22,14 +17,10 @@ export function parseAcademicStats(html: any): Versioned<{
   placement: string;
 }> {
   if (html && typeof html === "object" && !html.nodeType) {
-    return validateParsed(AcademicStatsSchema, html, "dashboard");
+    return validateParsed(html, "dashboard");
   }
   if (!html || typeof html !== "string") {
-    return validateParsed(
-      AcademicStatsSchema,
-      { cgpa: "...", credits: "...", totalCredits: "...", nonGraded: "...", placement: "..." },
-      "dashboard"
-    );
+    return validateParsed({ cgpa: "...", credits: "...", totalCredits: "...", nonGraded: "...", placement: "..." }, "dashboard");
   }
   const doc = parseHTMLFast(html);
   
@@ -56,7 +47,7 @@ export function parseAcademicStats(html: any): Versioned<{
     stats.placement = placementTd.textContent?.trim() || "...";
   }
   
-  return validateParsed(AcademicStatsSchema, stats, "dashboard");
+  return validateParsed(stats, "dashboard");
 }
 
 export function parseProctorMessage(html: string) {
@@ -65,7 +56,7 @@ export function parseProctorMessage(html: string) {
 }
 
 export function parseDigitalAssignments(html: any): Versioned<Assignment[]> {
-  if (Array.isArray(html)) return validateParsed(DashboardAssignmentsListSchema, html, "dashboard");
+  if (Array.isArray(html)) return validateParsed(html, "dashboard");
   if (
     !html ||
     typeof html !== "string" ||
@@ -73,7 +64,7 @@ export function parseDigitalAssignments(html: any): Versioned<Assignment[]> {
     html.includes("No Records") ||
     html.trim() === ""
   )
-    return validateParsed(DashboardAssignmentsListSchema, [], "dashboard");
+    return validateParsed([], "dashboard");
 
   // VTOP's HTML sometimes has malformed tags like <<td, so we sanitize it slightly
   const cleanHtml = html.replace(/<</g, "<");
@@ -103,12 +94,12 @@ export function parseDigitalAssignments(html: any): Versioned<Assignment[]> {
     }
   });
 
-  return validateParsed(DashboardAssignmentsListSchema, assignments, "dashboard");
+  return validateParsed(assignments, "dashboard");
 }
 
 export function parseCourseDetails(html: any): Versioned<CourseSummary[]> {
-  if (Array.isArray(html)) return validateParsed(DashboardCourseSummaryListSchema, html, "dashboard");
-  if (!html || typeof html !== "string") return validateParsed(DashboardCourseSummaryListSchema, [], "dashboard");
+  if (Array.isArray(html)) return validateParsed(html, "dashboard");
+  if (!html || typeof html !== "string") return validateParsed([], "dashboard");
 
   const doc = parseHTMLFast(html);
   const rows = doc.querySelectorAll("table tbody tr");
@@ -157,5 +148,5 @@ export function parseCourseDetails(html: any): Versioned<CourseSummary[]> {
     }
   });
 
-  return validateParsed(DashboardCourseSummaryListSchema, courses, "dashboard");
+  return validateParsed(courses, "dashboard");
 }

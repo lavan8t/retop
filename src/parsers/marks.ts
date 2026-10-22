@@ -1,6 +1,5 @@
 import { CourseMarks, AssessmentMark, Semester } from "../types/vtop";
 import { parseHTMLFast, validateParsed, Versioned, findSemesterOptions } from "../utils/parser-utils";
-import { CourseMarksListSchema } from "../schemas";
 
 export const MARKS_SCHEMA_VERSION = 1;
 
@@ -33,7 +32,7 @@ export function parseStudentMarks(html: string): Versioned<CourseMarks[]> {
   const courses: CourseMarks[] = [];
 
   const mainTable = doc.querySelector("table.customTable");
-  if (!mainTable) return validateParsed(CourseMarksListSchema, [], "marks");
+  if (!mainTable) return validateParsed([], "marks");
 
   const allRows = Array.from(mainTable.querySelectorAll("tr"));
 
@@ -108,5 +107,5 @@ export function parseStudentMarks(html: string): Versioned<CourseMarks[]> {
     }
   }
 
-  return validateParsed(CourseMarksListSchema, courses, "marks");
+  return validateParsed(courses, "marks");
 }

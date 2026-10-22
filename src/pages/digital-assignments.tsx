@@ -132,7 +132,6 @@ export default function DigitalAssignments({ network }: { network: VTOPNetwork }
   const { daDropFile, setDaDropFile } = useAppStore();
 
   const [selectedClassId, setSelectedClassId] = useState<string>("");
-  const [courseSearch, setCourseSearch] = useState<string>("");
 
   // Upload state
   const [activeUploadAssgn, setActiveUploadAssgn] = useState<{
@@ -208,18 +207,8 @@ export default function DigitalAssignments({ network }: { network: VTOPNetwork }
     });
   }, [activeCourse, daAssignments]);
 
-  // Filtered courses for left sidebar
-  const filteredCourses = useMemo(() => {
-    if (!daCourses) return [];
-    if (!courseSearch.trim()) return daCourses;
-    const q = courseSearch.toLowerCase();
-    return daCourses.filter(
-      (c) =>
-        c.code.toLowerCase().includes(q) ||
-        c.title.toLowerCase().includes(q) ||
-        c.faculty.toLowerCase().includes(q)
-    );
-  }, [daCourses, courseSearch]);
+  // Courses shown in the left sidebar (filter removed).
+  const filteredCourses = daCourses || [];
 
   // Handle Question Paper Download
   const handleDownloadQP = async (e: React.MouseEvent, assgn: DAAssignment) => {
@@ -428,19 +417,6 @@ export default function DigitalAssignments({ network }: { network: VTOPNetwork }
             )}
           </div>
 
-          {/* Compact Course Search */}
-          {daCourses.length > 4 && (
-            <div className="relative w-full">
-              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-(--text-muted) pointer-events-none" />
-              <input
-                type="text"
-                value={courseSearch}
-                onChange={(e) => setCourseSearch(e.target.value)}
-                placeholder="Filter courses..."
-                className="w-full pl-9.5 pr-4 py-2 rounded-full bg-(--bg-surface)/50 hover:bg-(--bg-surface)/80 focus:bg-(--bg-surface) border border-(--border-dim)/40 focus:border-(--accent-base) text-xs text-(--text-main) placeholder:text-(--text-muted) outline-none transition-all"
-              />
-            </div>
-          )}
 
           {/* Courses List */}
           <div className="flex flex-col gap-2 w-full">

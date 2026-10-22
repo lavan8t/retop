@@ -87,23 +87,30 @@ const findLegacyTarget = (title: string, url?: string): HTMLElement | null => {
 
 const navigateLegacy = (title: string, url?: string) => {
   const attemptFindAndClick = (attemptsLeft: number) => {
-    const target = findLegacyTarget(title, url);
-    if (target) {
-      const href = target.getAttribute("href") || "";
-      const onclick = target.getAttribute("onclick") || "";
-      if (href.toLowerCase().startsWith("javascript:")) {
-        const jsCode = href.slice(11);
-        window.dispatchEvent(
-          new CustomEvent("retop-execute-legacy", { detail: { code: jsCode } })
-        );
-      } else if (onclick) {
-        window.dispatchEvent(
-          new CustomEvent("retop-execute-legacy", { detail: { code: onclick } })
-        );
-      } else {
-        target.click();
+    // VTOP's own handlers can throw. That must not escape into the global
+    // error net, which would tear the whole page down.
+    try {
+      const target = findLegacyTarget(title, url);
+      if (target) {
+        const href = target.getAttribute("href") || "";
+        const onclick = target.getAttribute("onclick") || "";
+        if (href.toLowerCase().startsWith("javascript:")) {
+          const jsCode = href.slice(11);
+          window.dispatchEvent(
+            new CustomEvent("retop-execute-legacy", { detail: { code: jsCode } })
+          );
+        } else if (onclick) {
+          window.dispatchEvent(
+            new CustomEvent("retop-execute-legacy", { detail: { code: onclick } })
+          );
+        } else {
+          target.click();
+        }
+        return true;
       }
-      return true;
+    } catch (err) {
+      console.warn("[retop] Legacy navigation failed:", title, err);
+      return false;
     }
 
     if (attemptsLeft > 0) {
@@ -118,6 +125,7 @@ const navigateLegacy = (title: string, url?: string) => {
 };
 import { useAppStore } from "../store/appStore";
 import { ErrorBoundary } from "../components/common/ErrorBoundary";
+import { registerAppUnmount } from "../utils/teardown";
 
 export function renderDashboard() {
   initializeContainer();
@@ -132,6 +140,10 @@ export function renderDashboard() {
     } else {
       const root = createRoot(rootEl);
       (rootEl as any)._reactRoot = root;
+      // Let the teardown unmount the app. Without this the React tree keeps
+      // running after retop hands VTOP back: its timers keep firing and
+      // re-inject retop's search box into the native page.
+      registerAppUnmount(() => root.unmount());
       root.render(
         <ErrorBoundary variant="fullscreen" name="retop App">
           <DashboardApp />
@@ -484,6 +496,8 @@ export const DashboardApp = () => {
           campus,
         };
         setUser(loadedUser);
+      }).catch((err) => {
+        console.warn("[retop] Could not load the cached user.", err);
       });
     } else {
       const scrapedUser = scrapeUserProfile(document);
@@ -574,10 +588,16 @@ export const DashboardApp = () => {
             }).catch(() => {});
           } catch {}
         }
+      }).catch((err) => {
+        console.warn("[retop] Could not read the cached users.", err);
       });
     }
 
-    fetchDashboardData(networkRef.current, csrf, authId);
+    // The store slice handles its own errors; this only guards against a
+    // rejection escaping into the global error net.
+    fetchDashboardData(networkRef.current, csrf, authId).catch((err) => {
+      console.warn("[retop] Dashboard data load failed.", err);
+    });
 
     let menuPoller: ReturnType<typeof setInterval> | undefined;
     let feedbackPoller: ReturnType<typeof setInterval> | undefined;
@@ -605,14 +625,23 @@ export const DashboardApp = () => {
       let attempts = 0;
       menuPoller = setInterval(() => {
         attempts++;
-        const newSpotlight = scrapeSpotlight(document);
+        // A parser throw here would escape the interval and leave the app
+        // half-initialised. Skip this tick instead.
+        let newSpotlight: ReturnType<typeof scrapeSpotlight>;
+        let newMenu: MenuCategory[];
+        try {
+          newSpotlight = scrapeSpotlight(document);
+          newMenu = scrapeMenu(document);
+        } catch (err) {
+          console.warn("[retop] Menu scrape failed; retrying.", err);
+          return;
+        }
         if (newSpotlight.length > 0) {
           setSpotlightCategories(newSpotlight);
           setCachedData(`${authId}_vtop_spotlight`, newSpotlight);
           setCachedData("vtop_spotlight", newSpotlight);
         }
 
-        const newMenu = scrapeMenu(document);
         const count = newMenu.reduce((acc, cat) => acc + cat.links.length, 0);
         if (count > 0) {
           setMenu(newMenu);

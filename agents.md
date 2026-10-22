@@ -201,7 +201,7 @@ src/
 16. **Explicit TypeScript types.** Declare return types on parsers, store slices, and component props in `src/types/` or co-located files.
 17. **Tailwind v4 styling.** Apply Tailwind utilities inside the Shadow DOM. Store design tokens in `src/styles/tokens.css`.
 18. **Default to Google Sans Flex.** Do not introduce extra font families without discussion.
-19. **Follow the retop-page-builder guide.** Use `.agents/skills/retop-page-builder/SKILL.md` when adding or refactoring views (TopBar actions, left-aligned filters, empty states, and scoped caching).
+19. **No retop-page-builder skill file exists** (`.agents/skills/retop-page-builder/SKILL.md` missing). Follow `CONTRIBUTING.md` seams until added.
 
 ### Build and tooling
 
@@ -250,7 +250,7 @@ src/
 
 | Standard / Capability | Status | Notes |
 |-----------------------|--------|-------|
-| Runtime schema validation | Implemented | Zod schemas validate parsed contracts across all 16 parsers with graceful fallbacks. |
+| Runtime schema validation | Partial | `validateParsed` + `Versioned` provide versioned contracts; Zod schemas removed in refactor. |
 | Repository abstraction layer | Partial | `storageAdapter.ts` and `network.ts` wrap I/O. Formal data stores pending. |
 | Parser schema versioning | Implemented | All 16 parsers export `SCHEMA_VERSION` and register in `src/parsers/version.ts`. |
 | Cache TTL expiration | Implemented | Time-based cache expiration and force-refresh supported in `cache.ts`. |

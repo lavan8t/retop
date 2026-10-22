@@ -155,6 +155,30 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message.action === "FETCH_BARCODE") {
+    // The digital ID card renders its barcode from the TEC-IT service. The page
+    // origin cannot reach it, so the request goes through the worker, which
+    // holds the host permission.
+    const url = String(message.url || "");
+    if (!url.startsWith("https://barcode.tec-it.com/")) {
+      sendResponse({ error: "not allowed" });
+      return true;
+    }
+    fetch(url)
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`barcode ${res.status}`);
+        const buffer = await res.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        let binary = "";
+        for (let i = 0; i < bytes.length; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        sendResponse({ base64: btoa(binary) });
+      })
+      .catch((err) => sendResponse({ error: String(err) }));
+    return true;
+  }
+
   if (message.action === "PORTAL_SCRAPED_DATA" || message.type === "PORTAL_SCRAPED_DATA") {
     const payload = message.payload || message.data;
     if (payload) {

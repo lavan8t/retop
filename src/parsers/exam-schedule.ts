@@ -63,7 +63,6 @@ export function isSameDayExam(examDateStr: string, targetDate: Date): boolean {
 }
 
 import { parseHTMLFast, validateParsed, wrapWithSchemaVersion, Versioned, findSemesterOptions } from "../utils/parser-utils";
-import { ExamScheduleListSchema } from "../schemas";
 
 export const EXAM_SCHEDULE_SCHEMA_VERSION = 1;
 
@@ -107,7 +106,7 @@ export function parseExamScheduleData(html: string): { groups: Versioned<ExamGro
   const table = doc.querySelector(".customTable, table");
   if (!table) {
     return wrapWithSchemaVersion(
-      { groups: validateParsed(ExamScheduleListSchema, [], "examSchedule"), reportingNote },
+      { groups: validateParsed([], "examSchedule"), reportingNote },
       "examSchedule",
     );
   }
@@ -174,6 +173,6 @@ export function parseExamScheduleData(html: string): { groups: Versioned<ExamGro
     }
   });
 
-  const validatedGroups = validateParsed(ExamScheduleListSchema, groups, "examSchedule");
+  const validatedGroups = validateParsed(groups, "examSchedule");
   return wrapWithSchemaVersion({ groups: validatedGroups, reportingNote }, "examSchedule");
 }

@@ -1,5 +1,4 @@
 import { parseHTMLFast, validateParsed, Versioned } from "../utils/parser-utils";
-import { ResourcesListSchema } from "../schemas";
 
 export const RESOURCES_SCHEMA_VERSION = 1;
 
@@ -14,7 +13,7 @@ export interface OfficialResourceItem {
 }
 
 export function parseOfficialResources(html: string): Versioned<OfficialResourceItem[]> {
-  if (!html) return validateParsed(ResourcesListSchema, [], "resources");
+  if (!html) return validateParsed([], "resources");
   const doc = parseHTMLFast(html);
   const items: OfficialResourceItem[] = [];
   const seenUrls = new Set<string>();
@@ -55,5 +54,5 @@ export function parseOfficialResources(html: string): Versioned<OfficialResource
     });
   });
 
-  return validateParsed(ResourcesListSchema, items, "resources");
+  return validateParsed(items, "resources");
 }

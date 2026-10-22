@@ -8,7 +8,13 @@
  *
  * Usage: bun run scripts/verify-proctor-photo.ts
  */
-import { chromium } from "playwright";
+let chromium: typeof import("playwright")["chromium"] | undefined;
+try {
+  ({ chromium } = await import("playwright"));
+} catch {
+  console.error("playwright not installed: bun add -d playwright (optional dev dependency)");
+  process.exit(1);
+}
 import { mkdtempSync, writeFileSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join, resolve } from "path";

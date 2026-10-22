@@ -1,7 +1,6 @@
 import { SearchableOption } from "../components/ui/SearchableDropdown";
 import { LateHourStatusEntry } from "../types/vtop";
 import { parseHTMLFast, validateParsed, Versioned } from "../utils/parser-utils";
-import { LateHourStatusListSchema, LateHourResponseMsgSchema } from "../schemas";
 
 export const LATE_HOUR_SCHEMA_VERSION = 1;
 
@@ -59,7 +58,7 @@ export function parseLateHourSelectOpts(
  * Pure parser to extract status and history table rows into typed LateHourStatusEntry.
  */
 export function parseLateHourRows(html: string): Versioned<LateHourStatusEntry[]> {
-  if (!html) return validateParsed(LateHourStatusListSchema, [], "lateHour");
+  if (!html) return validateParsed([], "lateHour");
   const doc = parseHTMLFast(html);
   const rows = doc.querySelectorAll("tr");
   const entries: LateHourStatusEntry[] = [];
@@ -101,7 +100,7 @@ export function parseLateHourRows(html: string): Versioned<LateHourStatusEntry[]
     });
   });
 
-  return validateParsed(LateHourStatusListSchema, entries, "lateHour");
+  return validateParsed(entries, "lateHour");
 }
 
 /**
@@ -111,7 +110,7 @@ export function parseLateHourResponseMsg(html: string): Versioned<{
   ok: boolean;
   text: string;
 }> {
-  if (!html) return validateParsed(LateHourResponseMsgSchema, { ok: false, text: "No response from server" }, "lateHour");
+  if (!html) return validateParsed({ ok: false, text: "No response from server" }, "lateHour");
   const doc = parseHTMLFast(html);
   const dataMsg =
     doc.getElementById("DataBlockMessage")?.textContent?.trim() || "";
@@ -135,7 +134,7 @@ export function parseLateHourResponseMsg(html: string): Versioned<{
     upper.includes("INVALID") ||
     upper.includes("NOT ALLOWED");
 
-  return validateParsed(LateHourResponseMsgSchema, {
+  return validateParsed({
     ok: ok && !failed,
     text: msg || (ok ? "Submitted successfully" : "Operation completed"),
   }, "lateHour");

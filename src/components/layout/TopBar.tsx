@@ -253,7 +253,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         }}
       />
 
-      <header className="h-14 sm:h-16 md:h-18 bg-transparent fixed w-full top-0 z-50 px-2.5 sm:px-4 md:px-8 flex items-center justify-between shrink-0 transition-all pointer-events-none">
+      <header className="h-16 sm:h-18 md:h-20 bg-transparent fixed w-full top-0 z-50 px-2.5 sm:px-4 md:px-8 py-2 flex items-center justify-between shrink-0 transition-all pointer-events-none">
         <div className="flex items-center h-full pointer-events-auto min-w-0 flex-1">
           <div className="flex flex-col justify-center h-full gap-0.5 min-w-0 w-full">
             <div className="flex items-center gap-2 md:gap-3 min-w-0 w-full">

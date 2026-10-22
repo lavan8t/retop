@@ -1,6 +1,5 @@
 import { Semester, GradeCourse, GradeAssessment, GradesData } from "../types/vtop";
 import { parseHTMLFast, wrapWithSchemaVersion, validateParsed, Versioned, findSemesterOptions } from "../utils/parser-utils";
-import { GradesDataSchema } from "../schemas";
 
 export const GRADES_SCHEMA_VERSION = 1;
 
@@ -107,7 +106,7 @@ export function parseGrades(html: string): Versioned<GradesData> {
     }
   });
 
-  return validateParsed(GradesDataSchema, { gpa, courses }, "grades");
+  return validateParsed({ gpa, courses }, "grades");
 }
 
 export function parseGradeDetails(html: string): Partial<GradeCourse> {

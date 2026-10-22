@@ -1,6 +1,5 @@
 import { Semester, TimetableCourse } from "../types/vtop";
 import { parseHTMLFast, validateParsed, Versioned, findSemesterOptions } from "../utils/parser-utils";
-import { TimetableListSchema } from "../schemas";
 
 export const TIMETABLE_SCHEMA_VERSION = 1;
 
@@ -40,10 +39,10 @@ export function parseTimetable(html: string): Versioned<TimetableCourse[]> {
     th.textContent?.includes("Class Group"),
   );
 
-  if (!classGroupHeader) return validateParsed(TimetableListSchema, courses, "timetable");
+  if (!classGroupHeader) return validateParsed(courses, "timetable");
 
   const courseTable = classGroupHeader.closest("table");
-  if (!courseTable) return validateParsed(TimetableListSchema, courses, "timetable");
+  if (!courseTable) return validateParsed(courses, "timetable");
 
   const rows = courseTable.querySelectorAll("tr");
 
@@ -140,5 +139,5 @@ export function parseTimetable(html: string): Versioned<TimetableCourse[]> {
     });
   });
 
-  return validateParsed(TimetableListSchema, courses, "timetable");
+  return validateParsed(courses, "timetable");
 }

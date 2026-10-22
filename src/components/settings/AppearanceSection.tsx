@@ -97,6 +97,18 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
             />
           </div>
 
+          <div className="flex items-center justify-center gap-3 w-fit mx-auto px-4 py-1.5 rounded-full border-2 border-(--border-dim)">
+            <span className="text-sm font-bold text-(--text-muted)">
+              Apply theme to classic <span className="font-vtop font-bold">VTOP</span>
+            </span>
+            <MaterialSwitch
+              selected={settings.vtopThemeMode !== "none"}
+              onChange={(checked) =>
+                updateSetting("vtopThemeMode", checked ? "same" : "none")
+              }
+            />
+          </div>
+
           <div className="flex flex-col sm:flex-row gap-4 w-full items-start sm:items-center justify-between">
             <div className="flex flex-col gap-1">
               <span className="text-sm font-bold text-(--text-main)">Accent Color</span>
@@ -261,30 +273,6 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
         </div>
       </SettingTopicCard>
 
-      <SettingTopicCard
-        title={<><span className="font-vtop font-bold">VTOP</span> (Legacy View)</>}
-        description={<>Theme & appearance settings for the original <span className="font-vtop font-bold">VTOP</span> interface</>}
-      >
-        <div className="flex flex-col gap-6 w-full">
-          <div className="flex flex-col sm:flex-row gap-4 w-full items-start sm:items-center justify-between">
-            <div className="flex flex-col gap-1">
-              <span className="text-sm font-bold text-(--text-main)"><span className="font-vtop font-bold">VTOP</span> Dark Mode</span>
-              <span className="text-xs text-(--text-muted)">Dark mode styling for native <span className="font-vtop font-bold">VTOP</span> pages and tables</span>
-            </div>
-            <SettingsDropdown
-              options={[
-                { label: "Match retop theme", value: "same" },
-                { label: "Always Dark", value: "dark" },
-                { label: "Pure Black (AMOLED)", value: "amoled" },
-                { label: "Always Light", value: "light" },
-                { label: "Original (Untouched)", value: "none" },
-              ]}
-              value={settings.vtopThemeMode ?? "same"}
-              onChange={(val) => updateSetting("vtopThemeMode", val as any)}
-            />
-          </div>
-        </div>
-      </SettingTopicCard>
     </>
   );
 };

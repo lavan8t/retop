@@ -1,6 +1,5 @@
 import { DetailedAttendanceCourse, AttendanceRecord } from "../types/vtop";
 import { parseHTMLFast, validateParsed, Versioned } from "../utils/parser-utils";
-import { AttendanceListSchema } from "../schemas";
 
 export const ATTENDANCE_SCHEMA_VERSION = 1;
 
@@ -78,7 +77,7 @@ export function parseStudentAttendance(
     });
   });
 
-  return validateParsed(AttendanceListSchema, courses, "attendance");
+  return validateParsed(courses, "attendance");
 }
 
 export function parseAttendanceDetail(html: string): AttendanceRecord[] {

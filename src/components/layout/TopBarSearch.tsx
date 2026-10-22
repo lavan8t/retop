@@ -1239,7 +1239,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
             <div
               onMouseEnter={handleChildEnter}
               onMouseLeave={handleChildLeave}
-              className="hidden lg:flex fixed z-[999999] bg-(--bg-surface) border-2 border-(--border-main) rounded-2xl popup-shadow shadow-2xl p-2 flex-col transition-all duration-150"
+              className="hidden lg:flex fixed z-[999999] bg-(--bg-surface) border-2 border-(--border-main) rounded-2xl popup-shadow shadow-2xl p-2 flex-col transition-all duration-150 overflow-visible"
               style={{
                 transformOrigin: "left center",
                 left: leftPos,
@@ -1249,8 +1249,24 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
               }}
               onClick={(e) => e.stopPropagation()}
             >
+              {/* Hidden hover bridge (triangle): keeps the submenu open while the
+                  cursor travels between the category item and the submenu. */}
               <div
-                className="grid gap-1 p-0.5"
+                onMouseEnter={handleChildEnter}
+                onMouseLeave={handleChildLeave}
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  left: -16,
+                  top: 0,
+                  width: 16,
+                  height: estimatedHeight,
+                  clipPath: "polygon(100% 0%, 100% 100%, 0% 50%)",
+                  background: "transparent",
+                }}
+              />
+              <div
+                className="grid gap-1 p-0.5 overflow-hidden rounded-2xl"
                 style={{
                   gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
                 }}

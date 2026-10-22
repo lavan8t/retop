@@ -5,104 +5,164 @@ import { getCachedData, setCachedData } from "../utils/cache";
 import { parseStudentProfile, resolveProctorPhoto } from "../parsers/profile";
 import { StudentProfile } from "../types/vtop";
 import { DigitalIDCard } from "../components/profile/DigitalIDCard";
+import { CopyableText } from "../components/profile/CopyableText";
+import { Person } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import {
-  Mobile,
-  Mail,
-  LocationOn,
-  ProgressActivity,
-  School,
-  Work,
-  Domain,
-  Shield,
-  MonitorHeart,
-  AlternateEmail,
-  Cake,
-  Bloodtype,
-  Wc,
-  Public,
-} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
-
-const CopyableText = ({
-  text,
-  children,
-  className = "",
-}: {
-  text: string;
-  children?: React.ReactNode;
-  className?: string;
-}) => {
-  return (
-    <span
-      className={`cursor-pointer hover:underline decoration-2 underline-offset-4 transition-all ${className}`}
-      onClick={(e) => {
-        e.stopPropagation();
-        navigator.clipboard.writeText(text);
-        window.dispatchEvent(
-          new CustomEvent("retop-toast", {
-            detail: { message: "Copied!", type: "info" },
-          }),
-        );
-      }}
-      title="Click to copy"
-    >
-      {children || text}
-    </span>
-  );
-};
+  formatBedType,
+  formatHostelBlock,
+  formatHostelRoom,
+  formatMessDetails,
+} from "../utils/hostelFormat";
 
 interface ProfilePageProps {
   network: VTOPNetwork;
 }
 
-const isValid = (val: string | null | undefined) =>
-  val &&
+const isValid = (val: string | null | undefined): val is string =>
+  !!val &&
   val !== "-" &&
   val.trim() !== "" &&
   val.toUpperCase() !== "N/A" &&
   val.toUpperCase() !== "NA";
 
-const BentoBlock = ({
-  title,
-  value,
-  span = "col-span-1",
-  children,
-  className = "",
-  icon: Icon,
-}: any) => {
-  if (value !== undefined && !isValid(value)) return null;
-
-  // Material 3 Expressive list item: leading icon in a tonal container,
-  // headline + supporting text stacked beside it.
-  return (
-    <div
-      className={`relative p-4 sm:p-5 md:p-6 bg-(--bg-surface) text-(--text-main) rounded-3xl sm:rounded-4xl transition-all duration-fast flex items-start gap-3 sm:gap-4 overflow-hidden break-words whitespace-normal min-h-28 sm:min-h-35 ${span} ${className}`}
-    >
-      {Icon && (
-        <div className="shrink-0 w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-(--bg-highlight) flex items-center justify-center">
-          <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-(--accent-base)" />
-        </div>
-      )}
-      <div className="relative z-10 flex flex-col items-start justify-center text-left min-w-0 flex-1 gap-1">
-        {title && (
-          <div className="text-[10px] sm:text-xs uppercase font-black font-expanded opacity-50 shrink-0 w-full break-words whitespace-normal">
-            {title}
-          </div>
-        )}
-        {value ? (
-          <div className="text-lg sm:text-xl md:text-2xl font-black font-expanded leading-tight w-full break-words whitespace-normal">
-            {value}
-          </div>
-        ) : (
-          <div className="w-full flex flex-col items-start justify-start text-sm md:text-base font-black font-expanded gap-1 break-words whitespace-normal">
-            {children}
-          </div>
-        )}
-      </div>
-    </div>
-  );
+/** Same grouped-list geometry as the app: 18px on the outside, 4px inside. */
+const groupedShape = (index: number, total: number): string => {
+  if (total <= 1) return "rounded-[18px]";
+  if (index === 0) return "rounded-t-[18px] rounded-b-[4px]";
+  if (index === total - 1) return "rounded-t-[4px] rounded-b-[18px]";
+  return "rounded-[4px]";
 };
 
+const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <section>
+    <h2 className="mt-4 pl-1.5 text-xs font-bold text-(--accent-base)">{title}</h2>
+    <div className="mt-1 flex flex-col gap-0.5">{children}</div>
+  </section>
+);
 
+/**
+ * Loading placeholder that mirrors the real layout: the ID card plus the
+ * grouped-list sections, in the same two columns the page uses.
+ */
+const SkeletonSection = ({ title, rows }: { title: string; rows: number }) => (
+  <section>
+    <div className="mt-4 h-3 w-28 rounded bg-(--accent-base)/30" />
+    <div className="mt-1 flex flex-col gap-0.5">
+      {Array.from({ length: rows }).map((_, index) => (
+        <div
+          key={index}
+          className={`h-18 bg-(--bg-surface) ${groupedShape(index, rows)}`}
+        />
+      ))}
+    </div>
+  </section>
+);
+
+interface RowItem {
+  label: string;
+  value: string;
+  subtitle?: string;
+  badge?: string;
+  copy?: string;
+}
+
+const ListRow = ({
+  label,
+  value,
+  subtitle,
+  badge,
+  copy,
+  shape,
+}: RowItem & { shape: string }) => (
+  <div className={`bg-(--bg-surface) px-4 py-3 ${shape}`}>
+    <div className="flex items-start justify-between gap-3">
+      <div className="min-w-0 flex-1 whitespace-pre-line break-words text-[15px] font-bold leading-snug text-(--text-main)">
+        {copy ? <CopyableText text={copy}>{value}</CopyableText> : value}
+      </div>
+      {isValid(badge) && (
+        <span className="shrink-0 rounded-full bg-(--bg-highlight) px-2 py-0.5 text-[11px] font-bold text-(--accent-base)">
+          {badge}
+        </span>
+      )}
+    </div>
+    {isValid(subtitle) && (
+      <div className="mt-0.5 whitespace-pre-line break-words text-xs leading-snug opacity-70">
+        {subtitle}
+      </div>
+    )}
+    <div className="mt-1 text-[11px] font-medium opacity-50">{label}</div>
+  </div>
+);
+
+const ListRows = ({ items }: { items: RowItem[] }) =>
+  items.map((item, index) => (
+    <ListRow key={item.label} {...item} shape={groupedShape(index, items.length)} />
+  ));
+
+const ProctorCard = ({
+  data,
+  shape,
+}: {
+  data: StudentProfile["proctor"];
+  shape: string;
+}) => (
+  <div className={`flex min-h-27 overflow-hidden bg-(--bg-surface) ${shape}`}>
+    <div className="relative w-27 shrink-0 self-stretch bg-(--bg-highlight)">
+      {isValid(data.photoUrl) ? (
+        <img
+          src={data.photoUrl}
+          alt={data.name}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      ) : (
+        <Person className="absolute inset-0 m-auto h-10 w-10 opacity-40" />
+      )}
+    </div>
+    <div className="min-w-0 flex-1 px-3.5 py-3">
+      <div className="break-words text-base font-bold leading-snug">
+        {isValid(data.name) ? data.name : "Proctor"}
+      </div>
+      {isValid(data.designation) && (
+        <div className="mt-0.5 break-words text-xs font-medium leading-snug opacity-70">
+          {data.designation}
+        </div>
+      )}
+      {(isValid(data.school) || isValid(data.dept)) && (
+        <div className="mt-0.5 whitespace-pre-line break-words text-[11px] leading-snug opacity-60">
+          {[data.school, data.dept].filter(isValid).join("\n")}
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+const AddressRow = ({
+  title,
+  lines,
+  phone,
+  shape,
+}: {
+  title: string;
+  lines: string[];
+  phone?: string;
+  shape: string;
+}) => (
+  <div className={`bg-(--bg-surface) px-4 py-3 ${shape}`}>
+    <div className="space-y-0.5 text-[15px] font-bold leading-snug">
+      {lines.map((line, index) => (
+        <div key={index} className="break-words">
+          {line}
+        </div>
+      ))}
+    </div>
+    {isValid(phone) && (
+      <div className="mt-1 text-xs opacity-70">
+        <CopyableText text={phone}>Phone: {phone}</CopyableText>
+      </div>
+    )}
+    <div className="mt-1 text-[11px] font-medium opacity-50">{title}</div>
+  </div>
+);
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
   const [loading, setLoading] = useState(true);
@@ -347,15 +407,24 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
 
   if (loading) {
     return (
-      <div className="h-full overflow-y-auto bg-(--bg-main) p-3 sm:p-4 md:p-8 pt-18 sm:pt-20 md:pt-24 lg:pt-28 custom-scrollbar">
-        <div className="max-w-345 mx-auto flex flex-col gap-8 sm:gap-12 md:gap-20 animate-pulse pb-20 w-full">
-          <div className="w-full max-w-74 mx-auto aspect-64/100 bg-(--bg-surface) rounded-2xl" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <div className="md:col-span-2 h-36 bg-(--bg-surface) rounded-3xl" />
-            <div className="md:col-span-2 h-36 bg-(--bg-surface) rounded-3xl" />
-            <div className="md:col-span-2 h-36 bg-(--bg-surface) rounded-3xl" />
-            <div className="col-span-1 h-36 bg-(--bg-surface) rounded-3xl" />
-            <div className="col-span-1 h-36 bg-(--bg-surface) rounded-3xl" />
+      <div className="h-full w-full overflow-y-auto bg-(--bg-main) p-4 pt-18 font-mono custom-scrollbar sm:pt-20 md:pt-24 lg:pt-28">
+        <div className="mx-auto grid w-full max-w-6xl grid-cols-1 animate-pulse items-start gap-x-6 pb-24 lg:grid-cols-2">
+          <div className="flex flex-col">
+            <div className="flex justify-center">
+              <div className="aspect-64/100 w-full max-w-74 rounded-2xl bg-(--bg-surface)" />
+            </div>
+
+            <SkeletonSection title="Proctor Details" rows={3} />
+            <SkeletonSection title="Academic Program" rows={4} />
+            <SkeletonSection title="Residence" rows={4} />
+          </div>
+
+          <div className="flex flex-col">
+            <SkeletonSection title="Contact Information" rows={2} />
+            <SkeletonSection title="Personal Details" rows={6} />
+            <SkeletonSection title="Addresses" rows={2} />
+            <SkeletonSection title="Education History" rows={1} />
+            <SkeletonSection title="Family Details" rows={3} />
           </div>
         </div>
       </div>
@@ -364,391 +433,305 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
 
   if (!data) return null;
 
+  const proctorContacts: RowItem[] = [];
+  if (isValid(data.proctor.mobile)) {
+    proctorContacts.push({
+      label: "Proctor Mobile",
+      value: data.proctor.mobile,
+      copy: data.proctor.mobile,
+    });
+  }
+  if (isValid(data.proctor.email)) {
+    proctorContacts.push({
+      label: "Proctor Email",
+      value: data.proctor.email.toLowerCase(),
+      copy: data.proctor.email,
+    });
+  }
+  if (isValid(data.proctor.cabin)) {
+    proctorContacts.push({ label: "Proctor Cabin", value: data.proctor.cabin });
+  }
+
+  const academicItems: RowItem[] = [];
+  const program = isValid(data.education.degree) ? data.education.degree : data.basic.program;
+  if (isValid(program)) {
+    academicItems.push({
+      label: "Program & Degree",
+      value: program,
+      subtitle: isValid(data.basic.school) ? data.basic.school : undefined,
+    });
+  }
+  if (isValid(data.basic.regNo)) {
+    academicItems.push({ label: "Registration Number", value: data.basic.regNo });
+  }
+  if (isValid(data.personal.appNo)) {
+    academicItems.push({ label: "Application Number", value: data.personal.appNo });
+  }
+  if (isValid(data.education.branch)) {
+    academicItems.push({ label: "Branch", value: data.education.branch });
+  }
+
+  const residenceItems: RowItem[] = [];
+  if (data.hostel) {
+    const block = formatHostelBlock(data.hostel.block);
+    const room = formatHostelRoom(data.hostel.room);
+    const bed = formatBedType(data.hostel.bedType);
+    const mess = formatMessDetails(data.hostel.mess);
+    if (isValid(block.displayName)) {
+      residenceItems.push({
+        label: "Hostel Block",
+        value: block.displayName,
+        badge: block.badge,
+      });
+    }
+    if (isValid(room)) {
+      residenceItems.push({ label: "Room Number", value: room });
+    }
+    if (isValid(bed)) {
+      residenceItems.push({ label: "Bed Type", value: bed });
+    }
+    if (isValid(mess.messType)) {
+      residenceItems.push({
+        label: "Mess Facility",
+        value: mess.messType,
+        subtitle: mess.caterer,
+      });
+    }
+  } else {
+    residenceItems.push({
+      label: "Residence",
+      value: "Day Scholar",
+      subtitle: "Off-Campus Student",
+    });
+  }
+
+  const contactItems: RowItem[] = [];
+  const institutionalEmail = isValid(data.basic.email) ? data.basic.email : data.personal.email;
+  if (isValid(institutionalEmail)) {
+    contactItems.push({
+      label: "Institutional Email",
+      value: institutionalEmail.toLowerCase(),
+      copy: institutionalEmail,
+    });
+  }
+  if (isValid(data.personal.mobile)) {
+    contactItems.push({
+      label: "Student Mobile",
+      value: data.personal.mobile,
+      copy: data.personal.mobile,
+    });
+  }
+
+  const personalItems: RowItem[] = [];
+  if (isValid(data.personal.dob)) {
+    personalItems.push({ label: "Date of Birth", value: data.personal.dob.replace(/-/g, " ") });
+  }
+  if (isValid(data.personal.gender)) {
+    personalItems.push({ label: "Gender", value: data.personal.gender });
+  }
+  if (isValid(data.personal.bloodGroup)) {
+    personalItems.push({ label: "Blood Group", value: data.personal.bloodGroup });
+  }
+  if (isValid(data.personal.nativeLanguage)) {
+    personalItems.push({ label: "Native Language", value: data.personal.nativeLanguage });
+  }
+  if (isValid(data.personal.nativeState)) {
+    personalItems.push({ label: "Native State", value: data.personal.nativeState });
+  }
+  if (isValid(data.personal.nationality)) {
+    personalItems.push({ label: "Nationality", value: data.personal.nationality });
+  }
+  const religionCommunity = [data.personal.religion, data.personal.community]
+    .filter(isValid)
+    .join(" / ");
+  if (isValid(religionCommunity)) {
+    personalItems.push({ label: "Religion / Community", value: religionCommunity });
+  }
+
+  const addressItem = (title: string, address: StudentProfile["currentAddress"]) => {
+    const areaCity = [address.area, address.city].filter(isValid).join(", ");
+    const stateCountry = [address.state, address.country].filter(isValid).join(", ");
+    const statePin = [stateCountry, address.pincode].filter(isValid).join(" - ");
+    const lines = [address.street, areaCity, statePin].filter(isValid);
+    return lines.length > 0 ? { title, lines, phone: address.phone } : null;
+  };
+  const addressItems = [
+    addressItem("Current Address", data.currentAddress),
+    addressItem("Permanent Address", data.permanentAddress),
+  ].filter((item): item is NonNullable<typeof item> => item !== null);
+
+  const educationItems: RowItem[] = [];
+  if (isValid(data.education.school)) {
+    const boardMedium = [
+      isValid(data.education.board) ? `Board: ${data.education.board}` : "",
+      isValid(data.education.medium) ? `Medium: ${data.education.medium}` : "",
+    ]
+      .filter(isValid)
+      .join(" · ");
+    const year = [data.education.year, data.education.month].filter(isValid).join(" ");
+    const yearReg = [
+      isValid(year) ? `Year: ${year}` : "",
+      isValid(data.education.regNo) ? `Reg: ${data.education.regNo}` : "",
+    ]
+      .filter(isValid)
+      .join(" · ");
+    educationItems.push({
+      label: "Previous Education",
+      value: data.education.school,
+      subtitle: [boardMedium, yearReg].filter(isValid).join("\n") || undefined,
+    });
+  }
+
+  const familyItems: RowItem[] = [];
+  const parentSubtitle = (parent: StudentProfile["family"]["father"]) =>
+    [
+      [parent.designation, parent.organization].filter(isValid).join(" at "),
+      [
+        parent.qualification,
+        parent.occupation,
+        isValid(parent.income) ? `Income: ${parent.income}` : "",
+      ]
+        .filter(isValid)
+        .join(" / "),
+    ]
+      .filter(isValid)
+      .join("\n") || undefined;
+
+  if (isValid(data.family.father.name)) {
+    familyItems.push({
+      label: "Father",
+      value: data.family.father.name,
+      subtitle: parentSubtitle(data.family.father),
+    });
+    if (isValid(data.family.father.mobile)) {
+      familyItems.push({
+        label: "Father Mobile",
+        value: data.family.father.mobile,
+        copy: data.family.father.mobile,
+      });
+    }
+    if (isValid(data.family.father.email)) {
+      familyItems.push({
+        label: "Father Email",
+        value: data.family.father.email.toLowerCase(),
+        copy: data.family.father.email,
+      });
+    }
+  }
+  if (isValid(data.family.mother.name)) {
+    familyItems.push({
+      label: "Mother",
+      value: data.family.mother.name,
+      subtitle: parentSubtitle(data.family.mother),
+    });
+    if (isValid(data.family.mother.mobile)) {
+      familyItems.push({
+        label: "Mother Mobile",
+        value: data.family.mother.mobile,
+        copy: data.family.mother.mobile,
+      });
+    }
+    if (isValid(data.family.mother.email)) {
+      familyItems.push({
+        label: "Mother Email",
+        value: data.family.mother.email.toLowerCase(),
+        copy: data.family.mother.email,
+      });
+    }
+  }
+  if (isValid(data.family.guardian) && data.family.guardian.toUpperCase() !== "PARENT") {
+    familyItems.push({ label: "Local Guardian", value: data.family.guardian });
+  }
+  if (isValid(data.family.brothers) || isValid(data.family.sisters)) {
+    familyItems.push({
+      label: "Siblings",
+      value: `Brothers: ${data.family.brothers || "0"}\nSisters: ${data.family.sisters || "0"}`,
+    });
+  }
+  const familyIncome = [data.family.father.income, data.family.mother.income].find(isValid);
+  if (familyIncome) {
+    familyItems.push({ label: "Annual Income", value: familyIncome });
+  }
+  if (isValid(data.family.friendMobile)) {
+    familyItems.push({
+      label: "Emergency / Friend Mobile",
+      value: data.family.friendMobile,
+      copy: data.family.friendMobile,
+    });
+  }
+
   return (
-    <div className="h-full w-full overflow-y-auto bg-(--bg-main) p-3 sm:p-4 md:p-8 pt-18 sm:pt-20 md:pt-24 lg:pt-28 font-mono custom-scrollbar">
-      <div className="max-w-345 mx-auto flex flex-col pb-20 w-full">
-        {/* BENTO GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 grid-flow-dense w-full">
-          {/* 1. Digital ID Card (Top Left) */}
-          <div className="md:col-span-2 lg:col-span-2 lg:row-span-4 flex justify-center items-center z-10 w-full py-1 sm:py-2">
+    <div className="h-full w-full overflow-y-auto bg-(--bg-main) p-4 pt-18 font-mono custom-scrollbar sm:pt-20 md:pt-24 lg:pt-28">
+      {/* Two columns on wide screens. The source order is left column then
+          right column, so the stacked order on mobile is unchanged. */}
+      <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-x-6 pb-24 lg:grid-cols-2">
+        <div className="flex flex-col">
+          <div className="flex justify-center">
             <DigitalIDCard data={data} />
           </div>
 
-          {/* 2. Program & School */}
-          <BentoBlock span="md:col-span-2 lg:col-span-2" icon={School}>
-            <div className="text-base sm:text-lg md:text-xl font-black leading-tight break-words whitespace-normal text-left">
-              {data.basic.program}
-            </div>
-            <div className="opacity-70 text-xs sm:text-sm mt-1 break-words whitespace-normal text-left">
-              {data.basic.school}
-            </div>
-          </BentoBlock>
-
-          {/* 3. Institutional Email */}
-          {isValid(data.basic.email) && (
-            <BentoBlock
-              icon={AlternateEmail}
-              span="md:col-span-2 lg:col-span-2"
-            >
-              <div className="text-lg sm:text-xl md:text-2xl font-black leading-tight transition-all duration-fast origin-left w-full py-0.5 sm:py-1 break-words text-left">
-                <CopyableText text={data.basic.email} />
-              </div>
-            </BentoBlock>
+          {(isValid(data.proctor.name) ||
+            isValid(data.proctor.mobile) ||
+            isValid(data.proctor.email)) && (
+            <Section title="Proctor Details">
+              <ProctorCard data={data.proctor} shape={groupedShape(0, 1 + proctorContacts.length)} />
+              {proctorContacts.map((item, index) => (
+                <ListRow
+                  key={item.label}
+                  {...item}
+                  shape={groupedShape(index + 1, 1 + proctorContacts.length)}
+                />
+              ))}
+            </Section>
           )}
 
-          {/* 4. Proctor Information */}
-          {(isValid(data.proctor.name) || isValid(data.proctor.mobile)) && (
-            <div className="relative md:col-span-2 lg:col-span-2 bg-(--bg-surface) text-(--text-main) rounded-3xl sm:rounded-4xl transition-all duration-fast flex flex-col sm:flex-row overflow-hidden min-h-30 sm:min-h-35 max-h-max break-words whitespace-normal">
-              {data.proctor.photoUrl && (
-                <div className="relative z-10 w-full sm:w-[32%] h-44 sm:h-auto shrink-0 bg-(--bg-surface-dim)">
-                  <img
-                    src={data.proctor.photoUrl}
-                    className="w-full h-full object-cover transition-all duration-fast"
-                    alt="Proctor"
-                  />
-                </div>
-              )}
-              <div className="relative z-10 p-4 sm:p-5 md:p-6 flex flex-col justify-between gap-3 sm:gap-4 flex-1 w-full text-left">
-                <div className="text-[10px] sm:text-xs uppercase font-black font-expanded opacity-50 shrink-0 mb-1 sm:mb-2">
-                  Proctor Information
-                </div>
-                <div className="transition-all duration-fast origin-left w-full flex flex-col justify-between text-sm md:text-base font-black font-expanded gap-3 sm:gap-4">
-                  <div className="flex flex-col items-start justify-start gap-1 flex-1 min-w-0">
-                    {isValid(data.proctor.name) && (
-                      <div className="text-lg sm:text-xl md:text-2xl leading-tight break-words whitespace-normal">
-                        {data.proctor.name}
-                      </div>
-                    )}
-                    {isValid(data.proctor.designation) && (
-                      <div className="opacity-70 mt-1 break-words whitespace-normal text-xs sm:text-sm">
-                        {data.proctor.designation}
-                      </div>
-                    )}
-                    {isValid(data.proctor.school) && (
-                      <div className="opacity-50 text-[10px] sm:text-xs mt-1 break-words whitespace-normal">
-                        {data.proctor.school}{" "}
-                        {isValid(data.proctor.dept) && `/ ${data.proctor.dept}`}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col items-start justify-start gap-1 min-w-0 border-t-2 border-zinc-500/20 pt-3 mt-1">
-                    {isValid(data.proctor.mobile) && (
-                      <div className="text-lg sm:text-xl md:text-2xl leading-tight">
-                        <CopyableText text={data.proctor.mobile} />
-                      </div>
-                    )}
-                    {isValid(data.proctor.email) && (
-                      <div className="opacity-70 lowercase mt-1 break-words whitespace-normal text-xs sm:text-sm">
-                        <CopyableText text={data.proctor.email} />
-                      </div>
-                    )}
-                    {isValid(data.proctor.cabin) && (
-                      <div className="opacity-50 text-[10px] sm:text-xs mt-1 mb-1 break-words whitespace-normal">
-                        Cabin: {data.proctor.cabin}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
+          {academicItems.length > 0 && (
+            <Section title="Academic Program">
+              <ListRows items={academicItems} />
+            </Section>
           )}
 
-          {/* 5. Hostel Details / Day Scholar */}
-          {data.hostel ? (
-            <BentoBlock icon={Domain} span="md:col-span-2 lg:col-span-4">
-              <div className="flex flex-wrap gap-3 sm:gap-6 justify-start sm:items-start py-1 w-full text-left">
-                <div className="flex items-start justify-start gap-3 min-w-0 basis-64 grow">
-                  <span className="text-4xl sm:text-6xl md:text-7xl font-black font-expanded leading-tight break-words whitespace-normal text-left shrink-0">
-                    {data.hostel.room}
-                  </span>
-                  <span className="text-xl sm:text-2xl md:text-3xl opacity-60 pb-1 break-words whitespace-normal text-left min-w-0">
-                    {data.hostel.block}
-                  </span>
-                </div>
-                <div className="flex flex-col sm:items-start text-left basis-64 grow min-w-0">
-                  {isValid(data.hostel.mess) && (
-                    <div className="text-lg sm:text-xl md:text-2xl leading-tight break-words">
-                      {data.hostel.mess}
-                    </div>
-                  )}
-                  {isValid(data.hostel.bedType) && (
-                    <div className="text-xs sm:text-sm md:text-base opacity-60 mt-1 uppercase font-black font-expanded break-words text-left">
-                      {data.hostel.bedType} Bed
-                    </div>
-                  )}
-                </div>
-              </div>
-            </BentoBlock>
-          ) : (
-            <BentoBlock
-              icon={Domain}
-              value="Day Scholar"
-              span="md:col-span-2 lg:col-span-4"
-              className="bg-(--bg-highlight)! py-10 sm:py-16"
-            />
+          <Section title="Residence">
+            <ListRows items={residenceItems} />
+          </Section>
+        </div>
+
+        <div className="flex flex-col">
+          {contactItems.length > 0 && (
+            <Section title="Contact Information">
+              <ListRows items={contactItems} />
+            </Section>
           )}
 
-          {/* 6. Academic Program */}
-          {isValid(data.education.degree) && (
-            <BentoBlock
-              title="Academic Program"
-              span="md:col-span-2 lg:col-span-2"
-            >
-              <div className="text-lg sm:text-xl leading-tight break-words whitespace-normal text-left">
-                {data.education.degree} - {data.education.branch}
-              </div>
-              <div className="opacity-70 mt-1.5 break-words whitespace-normal text-left text-xs sm:text-sm">
-                {data.education.qualification}
-              </div>
-              <div className="opacity-50 text-[10px] sm:text-xs mt-1 text-left">
-                Class: {data.education.classObtained}
-              </div>
-              {data.education.breakInStudy === "Yes" && (
-                <div className="text-att-danger text-[10px] sm:text-xs mt-1 text-left">
-                  Break: {data.education.breakReason}
-                </div>
-              )}
-            </BentoBlock>
+          {personalItems.length > 0 && (
+            <Section title="Personal Details">
+              <ListRows items={personalItems} />
+            </Section>
           )}
 
-          {/* 7. Previous Education */}
-          {isValid(data.education.school) && (
-            <BentoBlock
-              title="Previous Education"
-              span="md:col-span-2 lg:col-span-2"
-            >
-              <div className="text-base sm:text-lg md:text-xl leading-tight break-words whitespace-normal text-left">
-                {data.education.school}
-              </div>
-              <div className="opacity-70 text-xs sm:text-sm mt-1.5 break-words whitespace-normal text-left">
-                {data.education.board}{" "}
-                {isValid(data.education.medium) &&
-                  `/ Medium: ${data.education.medium}`}
-              </div>
-              <div className="opacity-50 text-[10px] sm:text-xs mt-1 text-left">
-                Year: {data.education.year} {data.education.month} / Reg:{" "}
-                {data.education.regNo}
-              </div>
-            </BentoBlock>
+          {addressItems.length > 0 && (
+            <Section title="Addresses">
+              {addressItems.map((item, index) => (
+                <AddressRow
+                  key={item.title}
+                  {...item}
+                  shape={groupedShape(index, addressItems.length)}
+                />
+              ))}
+            </Section>
           )}
 
-          {/* 8. Blood Group, DOB, Gender */}
-          <BentoBlock icon={Bloodtype} value={data.personal.bloodGroup} />
-          <BentoBlock
-            icon={Cake}
-            value={data.personal.dob?.replace(/-/g, " ")}
-          />
-          <BentoBlock icon={Wc} value={data.personal.gender} />
-
-          {/* 9. Background (Nationality, Religion, Community, Language, State) */}
-          <BentoBlock icon={Public} span="col-span-1 lg:col-span-1">
-            <div className="flex flex-col items-start text-left gap-1 w-full">
-              {isValid(data.personal.nationality) && (
-                <div className="text-sm sm:text-base font-bold">{data.personal.nationality}</div>
-              )}
-              {isValid(data.personal.nativeLanguage) && (
-                <div className="opacity-70 text-xs sm:text-sm">
-                  {data.personal.nativeLanguage}
-                </div>
-              )}
-              {isValid(data.personal.religion) && (
-                <div className="opacity-50 text-[10px] sm:text-xs">
-                  {data.personal.religion}
-                </div>
-              )}
-            </div>
-          </BentoBlock>
-
-          {/* 10. Personal Contact */}
-          {(isValid(data.personal.mobile) || isValid(data.personal.email)) && (
-            <BentoBlock icon={Mobile} span="md:col-span-2 lg:col-span-2">
-              {isValid(data.personal.mobile) && (
-                <div className="text-xl sm:text-2xl md:text-3xl leading-tight">
-                  <CopyableText text={data.personal.mobile} />
-                </div>
-              )}
-              {isValid(data.personal.email) && (
-                <div className="text-xs sm:text-sm md:text-base opacity-70 lowercase mt-1 w-full text-left break-words">
-                  <CopyableText text={data.personal.email} />
-                </div>
-              )}
-            </BentoBlock>
+          {educationItems.length > 0 && (
+            <Section title="Education History">
+              <ListRows items={educationItems} />
+            </Section>
           )}
 
-          {/* 11 & 12. Address */}
-          {(isValid(data.currentAddress.street) ||
-            isValid(data.permanentAddress.street)) && (
-            <BentoBlock icon={LocationOn} span="md:col-span-2 lg:col-span-4">
-              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 w-full text-left justify-start">
-                {isValid(data.currentAddress.street) && (
-                  <div className="flex flex-col items-start flex-1 text-left break-words whitespace-normal">
-                    <div className="opacity-50 text-[10px] sm:text-xs mb-1 uppercase font-black font-expanded">
-                      Current Address
-                    </div>
-                    <div className="text-base sm:text-lg md:text-xl leading-tight break-words whitespace-normal">
-                      {data.currentAddress.street}
-                    </div>
-                    <div className="opacity-70 text-xs sm:text-sm mt-1.5 break-words whitespace-normal">
-                      {data.currentAddress.area}, {data.currentAddress.city}
-                    </div>
-                    <div className="opacity-50 text-[10px] sm:text-xs mt-1 mb-1 break-words whitespace-normal">
-                      {data.currentAddress.state}, {data.currentAddress.country}{" "}
-                      - {data.currentAddress.pincode}
-                    </div>
-                    {isValid(data.currentAddress.phone) && (
-                      <div className="mt-1 text-base sm:text-lg">
-                        <CopyableText text={data.currentAddress.phone} />
-                      </div>
-                    )}
-                  </div>
-                )}
-                {isValid(data.permanentAddress.street) && (
-                  <div className="flex flex-col items-start flex-1 text-left break-words whitespace-normal">
-                    <div className="opacity-50 text-[10px] sm:text-xs mb-1 uppercase font-black font-expanded">
-                      Permanent Address
-                    </div>
-                    <div className="text-base sm:text-lg md:text-xl leading-tight break-words whitespace-normal">
-                      {data.permanentAddress.street}
-                    </div>
-                    <div className="opacity-70 text-xs sm:text-sm mt-1.5 break-words whitespace-normal">
-                      {data.permanentAddress.area}, {data.permanentAddress.city}
-                    </div>
-                    <div className="opacity-50 text-[10px] sm:text-xs mt-1 mb-1 break-words whitespace-normal">
-                      {data.permanentAddress.state},{" "}
-                      {data.permanentAddress.country} -{" "}
-                      {data.permanentAddress.pincode}
-                    </div>
-                    {isValid(data.permanentAddress.phone) && (
-                      <div className="mt-1 text-base sm:text-lg">
-                        <CopyableText text={data.permanentAddress.phone} />
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </BentoBlock>
+          {familyItems.length > 0 && (
+            <Section title="Family Details">
+              <ListRows items={familyItems} />
+            </Section>
           )}
-
-          {/* 13. Parent Profile */}
-          {isValid(data.family.father.name) && (
-            <BentoBlock title="Parent" span="md:col-span-2 lg:col-span-2">
-              <div className="text-xl sm:text-2xl md:text-3xl leading-tight break-words whitespace-normal text-left">
-                {data.family.father.name}
-              </div>
-              <div className="opacity-70 text-xs sm:text-sm mt-1.5 break-words whitespace-normal text-left">
-                {[
-                  data.family.father.designation,
-                  data.family.father.organization,
-                ]
-                  .filter(isValid)
-                  .join(" at ") || "No Work Info"}
-              </div>
-              <div className="opacity-50 text-[10px] sm:text-xs mt-1 break-words whitespace-normal text-left">
-                {data.family.father.qualification} /{" "}
-                {data.family.father.occupation}{" "}
-                {isValid(data.family.father.income) &&
-                  `/ Income: ${data.family.father.income}`}
-              </div>
-              <div className="mt-3 sm:mt-4 flex flex-col items-start gap-1 w-full border-t-2 border-zinc-500/20 pt-3 sm:pt-4">
-                {isValid(data.family.father.mobile) && (
-                  <div className="text-lg sm:text-xl md:text-2xl leading-tight">
-                    <CopyableText text={data.family.father.mobile} />
-                  </div>
-                )}
-                {isValid(data.family.father.email) && (
-                  <div className="opacity-70 lowercase mt-1 break-words whitespace-normal text-left text-xs sm:text-sm">
-                    <CopyableText text={data.family.father.email} />
-                  </div>
-                )}
-                {isValid(data.family.father.address.city) && (
-                  <div className="opacity-50 text-[10px] sm:text-xs mt-1 mb-1 break-words whitespace-normal text-left">
-                    {data.family.father.address.city},{" "}
-                    {data.family.father.address.state}
-                  </div>
-                )}
-              </div>
-            </BentoBlock>
-          )}
-
-          {/* 14. Mother Profile */}
-          {isValid(data.family.mother.name) && (
-            <BentoBlock title="Mother" span="md:col-span-2 lg:col-span-2">
-              <div className="text-xl sm:text-2xl md:text-3xl leading-tight break-words whitespace-normal text-left">
-                {data.family.mother.name}
-              </div>
-              <div className="opacity-70 text-xs sm:text-sm mt-1.5 break-words whitespace-normal text-left">
-                {[
-                  data.family.mother.designation,
-                  data.family.mother.organization,
-                ]
-                  .filter(isValid)
-                  .join(" at ") || "No Work Info"}
-              </div>
-              <div className="opacity-50 text-[10px] sm:text-xs mt-1 break-words whitespace-normal text-left">
-                {data.family.mother.qualification} /{" "}
-                {data.family.mother.occupation}{" "}
-                {isValid(data.family.mother.income) &&
-                  `/ Income: ${data.family.mother.income}`}
-              </div>
-              <div className="mt-3 sm:mt-4 flex flex-col items-start gap-1 w-full border-t-2 border-zinc-500/20 pt-3 sm:pt-4">
-                {isValid(data.family.mother.mobile) && (
-                  <div className="text-lg sm:text-xl md:text-2xl leading-tight">
-                    <CopyableText text={data.family.mother.mobile} />
-                  </div>
-                )}
-                {isValid(data.family.mother.email) && (
-                  <div className="opacity-70 lowercase mt-1 break-words whitespace-normal text-left text-xs sm:text-sm">
-                    <CopyableText text={data.family.mother.email} />
-                  </div>
-                )}
-                {isValid(data.family.mother.address.city) && (
-                  <div className="opacity-50 text-[10px] sm:text-xs mt-1 mb-1 break-words whitespace-normal text-left">
-                    {data.family.mother.address.city},{" "}
-                    {data.family.mother.address.state}
-                  </div>
-                )}
-              </div>
-            </BentoBlock>
-          )}
-
-          {/* 15. Family Extras */}
-          <BentoBlock title="Family Extras" span="md:col-span-2 lg:col-span-2">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 w-full">
-              <div className="flex flex-col items-start">
-                <div className="opacity-50 text-[10px] mb-1">Siblings</div>
-                <div className="font-bold text-xs sm:text-sm">
-                  Brothers: {data.family.brothers}
-                </div>
-                <div className="font-bold text-xs sm:text-sm">
-                  Sisters: {data.family.sisters}
-                </div>
-              </div>
-              <div className="flex flex-col items-start">
-                <div className="opacity-50 text-[10px] mb-1">VIT Relations</div>
-                <div className="font-bold text-xs sm:text-sm">
-                  Studying: {data.family.studyingInVit}
-                </div>
-                <div className="font-bold text-xs sm:text-sm">
-                  Studied: {data.family.studiedInVit}
-                </div>
-              </div>
-              <div className="flex flex-col items-start">
-                <div className="opacity-50 text-[10px] mb-1">
-                  Local Guardian
-                </div>
-                <div className="font-bold text-xs sm:text-sm break-words whitespace-normal text-left">
-                  {data.family.guardian}
-                </div>
-              </div>
-              <div className="flex flex-col items-start">
-                <div className="opacity-50 text-[10px] mb-1">Friend Mobile</div>
-                <div className="font-bold text-xs sm:text-sm">
-                  <CopyableText text={data.family.friendMobile} />
-                </div>
-              </div>
-            </div>
-          </BentoBlock>
         </div>
       </div>
     </div>

@@ -31,8 +31,6 @@ const PASSTHROUGH_ROUTES = ["/vtop/forgotPassword", "/vtop/forgotUsername"];
 /** Routes that carry an authenticated VTOP session. */
 const AUTH_ROUTES = ["/vtop/content", "/vtop/main", "/vtop/process"];
 
-const ROLE_KEY = "retop-user-role";
-
 /** Marker written when the user turns retop off from the login wordmark. */
 const DISABLED_KEY = "retop_disabled";
 
@@ -46,6 +44,9 @@ const BACKDROP = "#09090b";
 const BOOT_CLOAK_ID = "retop-boot-cloak";
 
 const BYPASS_KEY = "retop-login-bypass";
+
+/** URL fallback for the bypass marker, used when sessionStorage is unavailable. */
+const BYPASS_PARAM = "retop_bypass";
 
 const DOCUMENT_SIZING_ID = "retop-document-sizing";
 
@@ -84,18 +85,6 @@ const DOCUMENT_SIZING = `
     overflow: hidden;
   }
 `;
-
-function readRoleSync(): string {
-  try {
-    return localStorage.getItem(ROLE_KEY) || "student";
-  } catch {
-    return "student";
-  }
-}
-
-function isOwnableRole(role: string): boolean {
-  return role === "student" || role === "employee";
-}
 
 /** Mirrors utils/url.ts so this file stays import free. */
 function extUrl(path: string): string {
@@ -164,9 +153,20 @@ function currentBody(): HTMLElement | null {
  * <body> exists means it is never created, and this wait never resolves.
  */
 function whenBodyReady(cb: (body: HTMLElement) => void, onGiveUp?: () => void): void {
+  // The callback tears the page down and mounts retop over it. If it throws
+  // halfway through, the page is left half-destroyed, so it must never throw.
+  const run = (body: HTMLElement) => {
+    try {
+      cb(body);
+    } catch (err) {
+      console.error("[retop] Bootstrapper step failed:", err);
+      revealNative(false);
+    }
+  };
+
   const body = currentBody();
   if (body) {
-    cb(body);
+    run(body);
     return;
   }
 
@@ -176,7 +176,7 @@ function whenBodyReady(cb: (body: HTMLElement) => void, onGiveUp?: () => void): 
     if (!ready || done) return;
     done = true;
     obs.disconnect();
-    cb(ready);
+    run(ready);
   });
   obs.observe(document, { childList: true, subtree: true });
 
@@ -198,8 +198,9 @@ function mountSkeleton(body: HTMLElement): ShadowRoot {
   const docEl = document.documentElement;
   if (!docEl) return body.attachShadow({ mode: "open" });
 
-  body.replaceChildren();
-
+  // Build everything before the native markup is cleared. A throw after
+  // replaceChildren() but before the host is attached would leave the page
+  // blank with nothing to show.
   if (!document.getElementById(DOCUMENT_SIZING_ID)) {
     const sizing = document.createElement("style");
     sizing.id = DOCUMENT_SIZING_ID;
@@ -232,6 +233,8 @@ function mountSkeleton(body: HTMLElement): ShadowRoot {
     "width: 100%; height: 100%; pointer-events: auto; background: transparent;";
 
   shadow.append(reset, root);
+
+  body.replaceChildren();
   body.appendChild(host);
 
   return shadow;
@@ -247,19 +250,82 @@ function mountSkeleton(body: HTMLElement): ShadowRoot {
  */
 function revealNative(takenOver: boolean): void {
   if (takenOver) {
-    armBypass();
+    // A reload without the bypass would run the takeover again: an endless
+    // reload loop on a blank page. Nothing can be recovered in place, so the
+    // marker has to survive the reload.
+    if (!armBypass()) {
+      console.error("[retop] Cannot arm the login bypass; leaving VTOP in place.");
+      document.getElementById("retop-host")?.remove();
+      document.getElementById(BOOT_CLOAK_ID)?.remove();
+      return;
+    }
     window.location.reload();
     return;
   }
 
-  document.getElementById(BOOT_CLOAK_ID)?.remove();
-  document.getElementById("retop-host")?.remove();
-  if (document.body) {
-    document.body.style.opacity = "1";
-    document.body.style.display = "block";
-    document.body.style.visibility = "visible";
-    document.body.classList.add("show-legacy-ui");
+  // The dashboard entry publishes the full teardown (DOM, styles, patched
+  // APIs, observers). Prefer it so there is exactly one teardown path; the
+  // local list below is the fallback for when the entry never loaded.
+  const dismantle = (window as any).__retopDismantle;
+  if (typeof dismantle === "function") {
+    try {
+      dismantle();
+      return;
+    } catch (err) {
+      console.error("[retop] Teardown failed; falling back to the local cleanup.", err);
+    }
   }
+
+  const ids = [
+    BOOT_CLOAK_ID,
+    "retop-early-cloak",
+    "retop-open-loader",
+    "retop-host",
+    DOCUMENT_SIZING_ID,
+    RESET_ID,
+    "retop-dark-stylesheet",
+    "retop-global-css",
+    "retop-material-symbols-style",
+    "retop-native-portals",
+    "retop-legacy-menu-search-wrapper",
+    "retop-session-dialog",
+    "retop-halted-banner",
+    "retop-hmenu-search-toggle",
+    "retop-vtop-search-menu",
+    "retop-splash-style",
+    "vtop-prelogin-theme",
+    "vtop-login-theme",
+    "vtop-early-theme",
+  ];
+  for (const id of ids) {
+    try {
+      document.getElementById(id)?.remove();
+    } catch {}
+  }
+  try {
+    document.documentElement?.removeAttribute("data-theme");
+    document.documentElement?.removeAttribute("data-retop-takeover");
+    document.documentElement?.removeAttribute("data-scrolling");
+  } catch {}
+
+  if (document.body) {
+    try {
+      document.body.style.opacity = "1";
+      document.body.style.display = "block";
+      document.body.style.visibility = "visible";
+      document.body.style.overflow = "";
+      document.body.classList.add("show-legacy-ui");
+    } catch {}
+  }
+  try {
+    const nativeEls = document.querySelectorAll<HTMLElement>(
+      "#page-wrapper, #page_outline, #vtop-body-content, .wrapper, body > table, body > form",
+    );
+    nativeEls.forEach((el) => {
+      el.style.opacity = "1";
+      el.style.pointerEvents = "auto";
+    });
+  } catch {}
 }
 
 /**
@@ -270,18 +336,65 @@ function revealNative(takenOver: boolean): void {
  */
 function consumeBypass(): boolean {
   try {
-    if (sessionStorage.getItem(BYPASS_KEY) !== "1") return false;
-    sessionStorage.removeItem(BYPASS_KEY);
+    if (sessionStorage.getItem(BYPASS_KEY) === "1") {
+      sessionStorage.removeItem(BYPASS_KEY);
+      return true;
+    }
+  } catch {}
+  try {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get(BYPASS_PARAM) === "1") {
+      url.searchParams.delete(BYPASS_PARAM);
+      window.history.replaceState(null, "", url.toString());
+      return true;
+    }
+  } catch {}
+  return false;
+}
+
+/**
+ * Arms the marker that makes the next load skip the takeover.
+ *
+ * Returns false when the marker could not be written at all. The caller must
+ * not reload in that case: the reload would run the takeover again and the
+ * user would sit in an endless reload loop on a blank page.
+ */
+function armBypass(): boolean {
+  try {
+    sessionStorage.setItem(BYPASS_KEY, "1");
+    return true;
+  } catch {}
+  // sessionStorage can be unavailable (storage blocked, some private modes).
+  // A URL marker survives the reload just as well.
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set(BYPASS_PARAM, "1");
+    window.history.replaceState(null, "", url.toString());
     return true;
   } catch {
     return false;
   }
 }
 
-function armBypass(): void {
+/** True when the bypass marker can actually be written and read back. */
+function canArmBypass(): boolean {
   try {
     sessionStorage.setItem(BYPASS_KEY, "1");
+    const ok = sessionStorage.getItem(BYPASS_KEY) === "1";
+    sessionStorage.removeItem(BYPASS_KEY);
+    if (ok) return true;
   } catch {}
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set(BYPASS_PARAM, "1");
+    window.history.replaceState(null, "", url.toString());
+    const ok = new URL(window.location.href).searchParams.get(BYPASS_PARAM) === "1";
+    url.searchParams.delete(BYPASS_PARAM);
+    window.history.replaceState(null, "", url.toString());
+    return ok;
+  } catch {
+    return false;
+  }
 }
 
 /** How long the login entry gets to paint before native VTOP is restored. */
@@ -294,6 +407,13 @@ function takeOverLogin(): void {
   // VTOP finish laying out its Bootstrap page.
   whenBodyReady(
     (body) => {
+      // Without a way to arm the bypass, a failure could only be recovered by
+      // reloading into the takeover again. Leave VTOP's own login alone.
+      if (!canArmBypass()) {
+        console.warn("[retop] Cannot arm the login bypass; leaving VTOP's login page alone.");
+        return;
+      }
+
       window.stop();
       document.title = "retop";
 
@@ -302,26 +422,35 @@ function takeOverLogin(): void {
 
     // If the entry fails to import, or mounts and then throws, the user would be
     // left staring at an empty shell. Nothing here can recover in place, so the
-    // only escape is one clean reload back to native VTOP.
-    const watchdog = setTimeout(() => {
-      if (!document.getElementById("retop-host")) return;
+    // only escape is one clean reload back to native VTOP. The render deadline
+    // only starts once the entry has arrived: a slow download is not a failure.
+    let gaveUp = false;
+    const giveUp = () => {
+      if (gaveUp) return;
+      gaveUp = true;
       console.warn("[retop] Login takeover produced no UI; restoring VTOP.");
       revealNative(true);
-    }, TAKEOVER_WATCHDOG_MS);
+    };
+
+    const loadTimeout = setTimeout(giveUp, 45000);
 
     loadEntry("login.js")
         .then(() => {
-          // Give the entry a moment to render before standing the watchdog down.
-          setTimeout(() => {
+          clearTimeout(loadTimeout);
+          const renderTimeout = setTimeout(giveUp, TAKEOVER_WATCHDOG_MS);
+          const poll = setInterval(() => {
             const root = document.getElementById("retop-host")?.shadowRoot
-              ?.getElementById("retop-root");
-            if (root && root.childElementCount > 0) clearTimeout(watchdog);
-          }, 1500);
+              ?.querySelector("#retop-root");
+            if (root && root.childElementCount > 0) {
+              clearTimeout(renderTimeout);
+              clearInterval(poll);
+            }
+          }, 250);
         })
         .catch((err) => {
           console.error("[retop] Login takeover failed to load:", err);
-          clearTimeout(watchdog);
-          revealNative(true);
+          clearTimeout(loadTimeout);
+          giveUp();
         });
     },
     () => {
@@ -343,6 +472,81 @@ function isDisabled(): boolean {
   } catch {
     return false;
   }
+}
+
+const RECOVERY_BACK_ID = "retop-recovery-back";
+
+/** Marker set by the retop login card before handing recovery to the native page. */
+const FORGOT_KEY = "retop-forgot-intent";
+
+function consumeForgotIntent(): "password" | "username" | null {
+  try {
+    const value = sessionStorage.getItem(FORGOT_KEY);
+    if (value !== "password" && value !== "username") return null;
+    sessionStorage.removeItem(FORGOT_KEY);
+    return value;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * VTOP's recovery forms are POST-only and only open through JS handlers on its
+ * own login page, so a plain link cannot reach them. The card sets an intent and
+ * lands here with the bypass armed; click the native link once the page is parsed.
+ */
+function openNativeRecovery(kind: "password" | "username"): void {
+  const selector =
+    kind === "username"
+      ? 'a[onclick*="forgotUserID"]'
+      : 'a[onclick*="resetPassword"]';
+  const click = () => {
+    (document.querySelector(selector) as HTMLElement | null)?.click();
+  };
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", click, { once: true });
+  } else {
+    click();
+  }
+}
+
+/**
+ * Native recovery pages stay VTOP's, but a user who followed a link from retop
+ * must not be stranded there. Plain inline styles so the bootstrapper stays
+ * import free and does not load the dashboard on these routes.
+ */
+function showRecoveryBackLink(): void {
+  if (document.getElementById(RECOVERY_BACK_ID)) return;
+  const back = document.createElement("a");
+  back.id = RECOVERY_BACK_ID;
+  back.href = "/vtop/login";
+  back.textContent = "re.";
+  back.setAttribute("aria-label", "Back to retop");
+  back.title = "Back to retop";
+  back.style.cssText = `
+    position: fixed !important; bottom: 20px !important; left: 50% !important;
+    transform: translateX(-50%) !important; z-index: 2147483647 !important;
+    display: inline-flex !important; align-items: center !important; justify-content: center !important;
+    padding: 12px 30px !important; border-radius: 9999px !important;
+    background: #09090b !important; color: #ffffff !important;
+    font: 700 15px/1 'Google Sans Flex', system-ui, sans-serif !important;
+    font-variation-settings: 'slnt' -10, 'wdth' 151, 'wght' 700 !important;
+    text-decoration: none !important; box-shadow: 0 1px 4px rgba(0,0,0,.4) !important;
+    transition: border-radius 90ms cubic-bezier(0.2, 0, 0, 1), transform 90ms cubic-bezier(0.2, 0, 0, 1) !important;
+  `;
+
+  const style = document.createElement("style");
+  style.textContent = `
+    #${RECOVERY_BACK_ID}:active {
+      border-radius: 16px !important;
+      transform: translateX(-50%) scale(0.985) !important;
+    }
+  `;
+
+  whenBodyReady((body) => {
+    body.appendChild(style);
+    body.appendChild(back);
+  });
 }
 
 /**
@@ -383,20 +587,66 @@ function main(): void {
   }
 
   const path = window.location.pathname;
-  const role = readRoleSync();
 
-  // Never take over account recovery: the native form must stay usable.
-  if (matches(path, PASSTHROUGH_ROUTES)) return;
+  // Recovery is delegated to VTOP's native login page; click its own link once
+  // that page is parsed, and leave a way back to retop.
+  if (matches(path, LOGIN_ROUTES)) {
+    const forgot = consumeForgotIntent();
+    if (forgot) {
+      openNativeRecovery(forgot);
+      showRecoveryBackLink();
+    }
+  }
 
-  if (matches(path, LOGIN_ROUTES) && isOwnableRole(role) && !consumeBypass()) {
+  // Never take over account recovery: the native form must stay usable, but
+  // leave a way back to retop's sign-in.
+  if (matches(path, PASSTHROUGH_ROUTES)) {
+    showRecoveryBackLink();
+    return;
+  }
+
+  if (matches(path, LOGIN_ROUTES) && !consumeBypass()) {
     takeOverLogin();
     return;
   }
 
-  if (matches(path, AUTH_ROUTES) && isOwnableRole(role)) {
+  if (matches(path, AUTH_ROUTES)) {
     // Only cloak routes retop will actually own. Anything else stays visible so a
     // failed dashboard entry degrades to plain VTOP instead of a blank screen.
     cloakNative();
+
+    // The dashboard entry is a megabyte of JavaScript and campus links are
+    // slow: it regularly takes longer to arrive than the old 8s budget, and
+    // the watchdog then handed VTOP back and aborted a dashboard that was
+    // about to work. So it only fires once the entry has loaded and still
+    // produced no UI.
+    let gaveUp = false;
+
+    const giveUp = () => {
+      if (gaveUp) return;
+      gaveUp = true;
+      console.warn("[retop] Auth dashboard produced no UI; revealing native VTOP.");
+      // The entry may still be starting up. Tell it to stop, or it would
+      // mount the dashboard over the page we just handed back.
+      (window as any).__retopAborted = true;
+      revealNative(false);
+    };
+
+    // A download that never arrives would leave the page cloaked forever.
+    const loadTimeout = setTimeout(giveUp, 45000);
+
+    loadEntry("dashboard.js")
+      .then(() => {
+        clearTimeout(loadTimeout);
+        // The entry is up and now owns the "did it paint?" question: it hands
+        // VTOP back itself if it cannot render.
+      })
+      .catch((err) => {
+        console.error("[retop] Dashboard entry failed to load:", err);
+        clearTimeout(loadTimeout);
+        giveUp();
+      });
+    return;
   }
 
   loadEntry("dashboard.js").catch((err) => {
@@ -405,4 +655,9 @@ function main(): void {
   });
 }
 
-main();
+try {
+  main();
+} catch (err) {
+  console.error("[retop] Bootstrapper error:", err);
+  revealNative(false);
+}

@@ -278,7 +278,7 @@ export const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={searchPlaceholder}
-                className="w-full bg-transparent text-xs font-medium text-(--text-main) placeholder:text-(--text-muted)/60 focus:outline-none"
+                className="w-full bg-transparent text-sm font-medium text-(--text-main) placeholder:text-(--text-muted)/60 focus:outline-none"
               />
               {searchQuery && (
                 <button

@@ -2,6 +2,7 @@ import React, { Component, ErrorInfo, ReactNode } from "react";
 import { Warning, Refresh } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 import { get as idbGet, set as idbSet } from "idb-keyval";
 import { clearAllStorage } from "../../utils/storageAdapter";
+import { teardownRetop } from "../../utils/teardown";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -32,6 +33,21 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error(`[retop] Error in ${this.props.name || "Component"}:`, error, errorInfo);
     this.setState({ errorInfo });
+
+    const isStandalone = typeof window !== "undefined" && (
+      !!(window as any).__RETOP_OFFLINE__ ||
+      !!(window as any).__RETOP_STANDALONE__ ||
+      window.location.pathname.includes("offline") ||
+      window.location.hostname.includes("web.app") ||
+      window.location.hostname.includes("localhost") ||
+      window.location.hostname === "127.0.0.1" ||
+      !window.location.hostname.includes("vit.ac.in")
+    );
+
+    if (this.props.variant === "fullscreen" && !isStandalone) {
+      // A crashed app must not leave the user on a dead page: hand VTOP back.
+      teardownRetop();
+    }
   }
 
   public componentDidUpdate(prevProps: ErrorBoundaryProps) {
@@ -75,6 +91,21 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     }
 
     const { name = "Component", variant = "card", fallback } = this.props;
+
+    const isStandalone = typeof window !== "undefined" && (
+      !!(window as any).__RETOP_OFFLINE__ ||
+      !!(window as any).__RETOP_STANDALONE__ ||
+      window.location.pathname.includes("offline") ||
+      window.location.hostname.includes("web.app") ||
+      window.location.hostname.includes("localhost") ||
+      window.location.hostname === "127.0.0.1" ||
+      !window.location.hostname.includes("vit.ac.in")
+    );
+
+    if (variant === "fullscreen" && !isStandalone) {
+      return null;
+    }
+
     const errorMsg = this.state.error?.message || "An unexpected error occurred.";
     const errorStack = this.state.error?.stack || this.state.errorInfo?.componentStack || "";
 

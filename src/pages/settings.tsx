@@ -96,11 +96,12 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
   });
 
   const handleExportICal = () => {
-    const { ttCourses, calGridData, examGroups } = useDataStore.getState();
+    const { ttCourses, calGridData, examGroups, events } = useDataStore.getState();
     downloadICalFile({
       courses: ttCourses,
       calGridData,
       examGroups,
+      events,
       includeTimetable: icalOptions.includeTimetable,
       includeCalendar: icalOptions.includeCalendar,
       includeEvents: icalOptions.includeEvents,

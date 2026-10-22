@@ -113,25 +113,58 @@ html[data-theme="amoled"] .headerBackgroundColor {
 
 /* Horizontal Menu Bar & Menu Row Search */
 #top-hmenu-bar .retop-legacy-search-box {
-  background-color: rgb(242, 244, 244) !important;
-  border: 1px solid rgba(0, 0, 0, 0.15) !important;
-  color: #1e293b !important;
+  background: linear-gradient(135deg, rgba(30, 60, 114, 0.85) 0%, rgba(42, 82, 152, 0.85) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+  transition: none !important;
+  animation: none !important;
 }
 
 #top-hmenu-bar .retop-legacy-search-box input {
   font-family: OpenSans, 'Open Sans', 'Google Sans Flex', -apple-system, sans-serif !important;
   font-size: 14px !important;
-  color: #1e293b !important;
+  color: #ffffff !important;
+  transition: none !important;
 }
 
 #top-hmenu-bar .retop-legacy-search-box input::placeholder {
-  color: #64748b !important;
+  color: rgba(255, 255, 255, 0.7) !important;
   font-size: 13.5px !important;
 }
 
 #top-hmenu-bar .retop-legacy-search-box:focus-within {
-  border-color: var(--accent-base, #3b82f6) !important;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25) !important;
+}
+
+#retop-legacy-menu-search-dropdown {
+  background: linear-gradient(160deg, #162447 0%, #0f1c3f 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45) !important;
+  transition: none !important;
+  animation: none !important;
+}
+
+#retop-legacy-menu-search-dropdown,
+#retop-legacy-menu-search-dropdown * {
+  transition: none !important;
+  animation: none !important;
+}
+
+#retop-legacy-menu-search-dropdown .dropdown-item {
+  color: #ffffff !important;
+  transition: none !important;
+}
+
+#retop-legacy-menu-search-dropdown .dropdown-item:hover {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+}
+
+#retop-legacy-menu-search-dropdown .dropdown-item.active {
+  background: linear-gradient(90deg, #2563eb, #1d4ed8) !important;
+  color: #ffffff !important;
 }
 
 /* Revamped Old Menu Panes (MG0001 - MG0015, Overlay Windows) */
@@ -199,32 +232,6 @@ html[data-theme="amoled"] #top-hmenu-bar .hmenuItem:hover {
   color: #ffffff !important;
 }
 
-/* Dropdown Menu Panes in HMenu (Light Theme Defaults) */
-#retop-legacy-menu-search-dropdown {
-  background-color: #ffffff !important;
-  color: #1e293b !important;
-  border: 1px solid rgba(0, 0, 0, 0.12) !important;
-}
-
-#retop-legacy-menu-search-dropdown .dropdown-item {
-  color: #334155 !important;
-  transition: all 0.1s ease !important;
-}
-
-#retop-legacy-menu-search-dropdown .dropdown-item:hover {
-  background-color: rgba(59, 130, 246, 0.08) !important;
-  color: #1d4ed8 !important;
-}
-
-#retop-legacy-menu-search-dropdown .dropdown-item.active {
-  background-color: #2563eb !important;
-  color: #ffffff !important;
-}
-
-#retop-legacy-menu-search-dropdown .dropdown-item.active * {
-  color: #ffffff !important;
-}
-
 /* Dropdown Menu Panes in HMenu (Dark / AMOLED) */
 html[data-theme="dark"] .hmenubox,
 html[data-theme="amoled"] .hmenubox,
@@ -233,9 +240,7 @@ html[data-theme="amoled"] .overlay-window,
 html[data-theme="dark"] .WhiteBackground,
 html[data-theme="amoled"] .WhiteBackground,
 html[data-theme="dark"] [id^="MG"],
-html[data-theme="amoled"] [id^="MG"],
-html[data-theme="dark"] #retop-legacy-menu-search-dropdown,
-html[data-theme="amoled"] #retop-legacy-menu-search-dropdown {
+html[data-theme="amoled"] [id^="MG"] {
   background-color: var(--vtop-dark-surface) !important;
   color: var(--vtop-dark-text) !important;
   border: 1px solid var(--vtop-dark-border) !important;
@@ -244,9 +249,7 @@ html[data-theme="amoled"] #retop-legacy-menu-search-dropdown {
 html[data-theme="dark"] .overlay-window .list-group-item,
 html[data-theme="amoled"] .overlay-window .list-group-item,
 html[data-theme="dark"] [id^="MG"] .list-group-item,
-html[data-theme="amoled"] [id^="MG"] .list-group-item,
-html[data-theme="dark"] #retop-legacy-menu-search-dropdown .dropdown-item,
-html[data-theme="amoled"] #retop-legacy-menu-search-dropdown .dropdown-item {
+html[data-theme="amoled"] [id^="MG"] .list-group-item {
   background-color: transparent !important;
   color: var(--vtop-dark-text) !important;
 }
@@ -254,21 +257,8 @@ html[data-theme="amoled"] #retop-legacy-menu-search-dropdown .dropdown-item {
 html[data-theme="dark"] .overlay-window .list-group-item:hover,
 html[data-theme="amoled"] .overlay-window .list-group-item:hover,
 html[data-theme="dark"] [id^="MG"] .list-group-item:hover,
-html[data-theme="amoled"] [id^="MG"] .list-group-item:hover,
-html[data-theme="dark"] #retop-legacy-menu-search-dropdown .dropdown-item:hover,
-html[data-theme="amoled"] #retop-legacy-menu-search-dropdown .dropdown-item:hover {
+html[data-theme="amoled"] [id^="MG"] .list-group-item:hover {
   background-color: var(--vtop-dark-surface-2) !important;
-  color: #ffffff !important;
-}
-
-html[data-theme="dark"] #retop-legacy-menu-search-dropdown .dropdown-item.active,
-html[data-theme="amoled"] #retop-legacy-menu-search-dropdown .dropdown-item.active {
-  background-color: var(--accent-base, #3b82f6) !important;
-  color: #ffffff !important;
-}
-
-html[data-theme="dark"] #retop-legacy-menu-search-dropdown .dropdown-item.active *,
-html[data-theme="amoled"] #retop-legacy-menu-search-dropdown .dropdown-item.active * {
   color: #ffffff !important;
 }
 

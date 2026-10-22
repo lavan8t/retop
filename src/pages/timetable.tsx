@@ -33,9 +33,7 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
   use24HourTime,
 }) => {
   useEffect(() => {
-    if (window.innerWidth < 768 && viewMode === "grid") {
-      setViewMode("week");
-    }
+    setViewMode("grid");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

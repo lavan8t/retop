@@ -225,7 +225,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
             placeholder="Search all categories & courses..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-(--bg-surface) border border-(--border-dim)/60 text-(--text-main) text-sm md:text-base rounded-full pl-12 pr-5 py-3.5 focus:outline-none focus:border-(--accent-base) focus:ring-4 focus:ring-(--accent-base)/10 transition-all duration-fast placeholder:text-(--text-muted)"
+            className="w-full bg-(--bg-surface) border-2 border-(--border-dim)/60 text-(--text-main) text-base md:text-lg rounded-full pl-12 pr-5 py-4.5 focus:outline-none focus:border-(--accent-base) focus:ring-4 focus:ring-(--accent-base)/10 transition-all duration-fast placeholder:text-(--text-muted)"
           />
           <Search className="w-5 h-5 text-(--text-muted) absolute left-4 top-3.5 group-focus-within:text-(--accent-base) transition-colors" />
         </div>

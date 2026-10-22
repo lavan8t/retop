@@ -243,20 +243,28 @@ export class VTOPNetwork {
     VTOPNetwork.setupDOMTokenObserver();
     if (typeof document === "undefined") return;
 
-    const csrfInput = document.querySelector(
-      'input[name="_csrf"]',
-    ) as HTMLInputElement;
-    const domCsrf = csrfInput?.value || (window as any).csrfValue;
+    // VTOP renders several _csrf / authorizedID inputs on a page (header form,
+    // legacy nav, and the DA form at the bottom). The first one is often stale
+    // after a fresh login, so prefer the LAST one, which is the one the active
+    // form (e.g. the DA form) actually submits.
+    const csrfInputs = Array.from(
+      document.querySelectorAll('input[name="_csrf"]'),
+    ) as HTMLInputElement[];
+    const domCsrf =
+      (csrfInputs.length
+        ? csrfInputs[csrfInputs.length - 1].value
+        : null) || (window as any).csrfValue;
     if (domCsrf && domCsrf !== this.csrf && domCsrf.length > 5) {
       this.csrf = domCsrf;
       (window as any).csrfValue = domCsrf;
     }
 
+    const authInputs = Array.from(
+      document.querySelectorAll('input[name="authorizedID"]'),
+    ) as HTMLInputElement[];
     const authInput =
       (document.getElementById("authorizedIDX") as HTMLInputElement) ||
-      (document.querySelector(
-        'input[name="authorizedID"]',
-      ) as HTMLInputElement);
+      (authInputs.length ? authInputs[authInputs.length - 1] : null);
     const domAuth = authInput?.value || (window as any).authorizedID;
     if (domAuth && domAuth !== this.authorizedID && domAuth.length > 3) {
       this.authorizedID = domAuth;
@@ -406,7 +414,19 @@ export class VTOPNetwork {
     }
 
     try {
-      const response = await window.fetch(input, init);
+      // A hung request must not leave the UI spinning forever: abort it and let
+      // the caller's catch handle it like any other failure.
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      let response: Response;
+      try {
+        response = await window.fetch(input, {
+          ...init,
+          signal: init?.signal ?? controller.signal,
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
       if (!response.ok) {
         const isFatalEndpoint =
           urlStr.includes("open/page") || urlStr.includes("vtopLogin");
@@ -731,6 +751,13 @@ export class VTOPNetwork {
             resolve();
           }
         }, 100);
+        // The loader can stay visible forever if VTOP never finishes. Give up
+        // instead of leaving the caller waiting for a promise that never
+        // settles.
+        setTimeout(() => {
+          clearInterval(checkInterval);
+          resolve();
+        }, 30000);
       }, 300);
     });
   }
@@ -1364,12 +1391,22 @@ export class VTOPNetwork {
     const url = `${origin}/vtop/${endpoint}`;
     const body = new URLSearchParams();
 
-    const domCsrf = document.querySelector(
-      'input[name="_csrf"]',
-    ) as HTMLInputElement;
-    const domAuth = document.querySelector(
-      'input[name="authorizedID"]',
-    ) as HTMLInputElement;
+    // Prefer the LAST _csrf / authorizedID inputs on the page (the ones in the
+    // active DA form at the bottom), which hold the freshest tokens.
+    const csrfInputs = Array.from(
+      document.querySelectorAll('input[name="_csrf"]'),
+    ) as HTMLInputElement[];
+    const domCsrf =
+      csrfInputs.length > 0
+        ? csrfInputs[csrfInputs.length - 1]
+        : (document.querySelector('input[name="_csrf"]') as HTMLInputElement);
+    const authInputs = Array.from(
+      document.querySelectorAll('input[name="authorizedID"]'),
+    ) as HTMLInputElement[];
+    const domAuth =
+      authInputs.length > 0
+        ? authInputs[authInputs.length - 1]
+        : (document.querySelector('input[name="authorizedID"]') as HTMLInputElement);
 
     body.append("_csrf", domCsrf?.value || this.csrf);
     body.append("authorizedID", domAuth?.value || this.authorizedID);

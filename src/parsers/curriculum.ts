@@ -1,6 +1,5 @@
 ﻿import { CurriculumCategory, CurriculumCourse } from "../types/vtop";
 import { parseHTMLFast, validateParsed, wrapWithSchemaVersion, Versioned } from "../utils/parser-utils";
-import { CurriculumDashboardSchema } from "../schemas";
 
 export const CURRICULUM_SCHEMA_VERSION = 1;
 
@@ -77,7 +76,7 @@ export function parseCurriculumDashboard(html: string): Versioned<{
     }
   });
 
-  return validateParsed(CurriculumDashboardSchema, {
+  return validateParsed({
     totalCredits,
     categories,
   }, "curriculum");

@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 import { getExtUrl } from "../utils/url";
-import { ASCII_ART_BUNDLED } from "./asciiArtData";
 
 export type AsciiArtType = "TT" | "SMV" | "MGR" | "CC";
 
@@ -51,21 +50,13 @@ export const loadAsciiArt = async (type: AsciiArtType): Promise<string> => {
   if (asciiCache.has(type)) {
     return asciiCache.get(type)!;
   }
-  if (ASCII_ART_BUNDLED[type]) {
-    const text = ASCII_ART_BUNDLED[type];
-    asciiCache.set(type, text);
-    return text;
-  }
   const filename = `assets/ascii_${type.toLowerCase()}.txt`;
   const candidates: string[] = [];
 
-  if (typeof chrome !== "undefined" && typeof chrome.runtime?.getURL === "function") {
-    try {
-      candidates.push(getExtUrl(filename));
-      candidates.push(chrome.runtime.getURL(filename));
-      candidates.push(chrome.runtime.getURL(`dist/${filename}`));
-    } catch {}
-  }
+  try {
+    candidates.push(getExtUrl(`dist/${filename}`));
+    candidates.push(getExtUrl(filename));
+  } catch {}
 
   candidates.push(`./${filename}`);
   candidates.push(`/${filename}`);
@@ -218,8 +209,24 @@ export const AsciiPanel: React.FC<{ campus?: "chennai" | "vellore"; scale?: numb
     const pre = preRef.current;
     if (!pre || !art) return;
 
-    return runAsciiSparkAnimation(pre, art);
-  }, [art]);
+    // Never replay the reveal on a re-mount: keep the finished art on screen.
+    const key = `retop_ascii_animated_${pickedType}`;
+    let already = false;
+    try {
+      already = sessionStorage.getItem(key) === "1";
+    } catch {}
+
+    if (already) {
+      pre.textContent = art;
+      return;
+    }
+
+    return runAsciiSparkAnimation(pre, art, () => {
+      try {
+        sessionStorage.setItem(key, "1");
+      } catch {}
+    });
+  }, [art, pickedType]);
 
   return React.createElement(
     "pre",

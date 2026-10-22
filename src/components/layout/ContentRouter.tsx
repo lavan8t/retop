@@ -148,7 +148,14 @@ export const ContentRouter = ({
   };
 
   return (
-    <ErrorBoundary name={currentView || "View"} resetKey={currentView}>
+    // "fullscreen" so a crashed view hands VTOP back instead of leaving a dead
+    // card on screen. On the standalone PWA the boundary still shows its own
+    // error UI, because there is no VTOP to hand back to.
+    <ErrorBoundary
+      variant="fullscreen"
+      name={currentView || "View"}
+      resetKey={currentView}
+    >
       {renderContent()}
     </ErrorBoundary>
   );

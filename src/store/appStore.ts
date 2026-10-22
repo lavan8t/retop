@@ -67,7 +67,7 @@ export const useAppStore = create<AppState>((set) => ({
   setIsModernUI: (val) => set({ isModernUI: val }),
   setIsPeeking: (val) => set({ isPeeking: val }),
   setCurrentView: (val) => {
-    set({ currentView: val });
+    set({ currentView: val, ...(val === "timetable" ? { ttViewMode: "grid" } : {}) });
     sessionStorage.setItem("vtop-retop-view", val);
     if (window.history.state?.view !== val) {
       window.history.pushState(
@@ -79,7 +79,7 @@ export const useAppStore = create<AppState>((set) => ({
   },
   addSnackbar: (snackbar) =>
     set((state) => ({
-      snackbars: [...state.snackbars, { ...snackbar, id: Math.random().toString(36).substr(2, 9) }].slice(-3),
+      snackbars: [...state.snackbars, { ...snackbar, id: Math.random().toString(36).slice(2, 11) }].slice(-3),
     })),
   removeSnackbar: (id) =>
     set((state) => ({

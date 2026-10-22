@@ -1,19 +1,15 @@
 /**
  * Dashboard entry — deferred ESM entry loaded by src/content.ts.
  *
- * Owns every VTOP route retop does not take over at document_start: authenticated
- * content pages, and the native sign-in pages of parent/alumni roles that retop
- * deliberately leaves alone.
- *
- * Login is not handled here. VtopLoginCard, VtopClient and the CAPTCHA solver all
- * live behind the login takeover entry; see src/content/login.tsx.
+ * Owns the authenticated content pages retop takes over after VTOP has read the
+ * session. Login is not handled here: VtopLoginCard, VtopClient and the CAPTCHA
+ * solver all live behind the login takeover entry; see src/content/login.tsx.
  */
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { renderDashboard } from "../pages/app";
 import { scrapeMenu } from "../parsers/menu";
 import { injectLegacyMenuSearch } from "../components/legacy/injectLegacyMenuSearch";
-import { injectRoleSwitcher } from "../components/legacy/injectRoleSwitcher";
 import {
   injectGlobalFonts,
   initializeContainer,
@@ -22,12 +18,37 @@ import {
   cleanupLegacyHMenuBar,
   setUIVisibility,
 } from "../utils/bridge";
+import {
+  dismantleRetopMods,
+  installErrorNet,
+  teardownRetop,
+} from "../utils/teardown";
 import { NativePortals } from "../components/NativePortals";
 import { VIT_EMBLEM_SVG_RAW } from "../components/common/VitEmblemSvg";
 import { interceptDashboardResponse } from "../utils/dashboardInterceptor";
 import { applyTheme } from "../utils/settings-store";
+import { getExtUrl } from "../utils/url";
+import { isStudentRegNo } from "../utils/studentId";
+
+// The bootstrapper cannot import the teardown (it must stay import free), so
+// publish it on window for the document_start side to reuse.
+(window as any).__retopDismantle = dismantleRetopMods;
+
+// Catch every uncaught error and unhandled rejection coming from the
+// extension, and hand VTOP back instead of leaving a half-built app on screen.
+installErrorNet();
+
+// Inject the VTOP dark-mode stylesheet into the document (not just the shadow
+// root) so native/legacy VTOP pages actually pick up the chosen theme.
+if (typeof document !== "undefined") {
+  const link = document.createElement("link");
+  link.id = "retop-dark-stylesheet";
+  link.rel = "stylesheet";
+  link.href = getExtUrl("vtop-dark.css");
+  (document.head || document.documentElement).appendChild(link);
+}
+
 import { get as idbGet, entries as idbEntries } from "idb-keyval";
-import { readRole, isOwnableRole, RetopRole } from "../utils/roleStore";
 
 const AUTH_ROUTES = ["/vtop/content", "/vtop/main", "/vtop/process"];
 
@@ -138,9 +159,9 @@ try {
     .catch(() => {});
 } catch (e) {}
 
-// The bootstrapper already cloaked the document for these roles; add the emblem
+// The bootstrapper already cloaked the document for auth routes; add the emblem
 // loader so the wait reads as retop rather than a blank page.
-if (isAuthRoute && isOwnableRole(localStorage.getItem("retop-user-role") || "student")) {
+if (isAuthRoute) {
   injectSplashScreen(true);
 }
 
@@ -176,6 +197,7 @@ if (typeof document !== "undefined") {
         }
       }
     });
+    (window as any).__retopProcessObserver = observer;
 
     observer.observe(document.documentElement || document.body, {
       childList: true,
@@ -191,6 +213,7 @@ if (typeof document !== "undefined") {
 }
 
 const originalFetch = window.fetch.bind(window);
+(window as any).__retopOriginalFetch = originalFetch;
 
 let isHandlingNetworkError = false;
 
@@ -283,7 +306,12 @@ function showErrorDialog(
 (window as any).fetch = async (...args: [any, any?]) => {
   try {
     const response = await originalFetch(...args);
-    const urlStr = typeof args[0] === "string" ? args[0] : (args[0] as any)?.url || "";
+    const urlStr =
+      typeof args[0] === "string"
+        ? args[0]
+        : args[0] instanceof URL
+          ? args[0].href
+          : (args[0] as any)?.url || "";
     if (response.ok && urlStr) {
       try {
         const clone = response.clone();
@@ -303,6 +331,7 @@ function showErrorDialog(
 };
 
 const originalXhrOpen = XMLHttpRequest.prototype.open;
+(window as any).__retopOriginalXhrOpen = originalXhrOpen;
 XMLHttpRequest.prototype.open = function (
   this: XMLHttpRequest,
   ...args: any[]
@@ -334,6 +363,9 @@ try {
     XMLHttpRequest.prototype,
     "responseType",
   );
+  // Keep the original so the teardown can put it back: leaving the patched
+  // setter in place would change VTOP's own XHR behaviour for good.
+  (window as any).__retopOriginalXhrResponseType = originalResponseTypeDesc;
   if (originalResponseTypeDesc && originalResponseTypeDesc.set) {
     const origSet = originalResponseTypeDesc.set;
     Object.defineProperty(XMLHttpRequest.prototype, "responseType", {
@@ -365,10 +397,14 @@ function waitForTokens(): Promise<boolean> {
         'input[name="_csrf"]',
       ) as HTMLInputElement;
       const authInput = (document.getElementById("authorizedIDX") ||
-        document.getElementById("authorizedID")) as HTMLInputElement;
+        document.getElementById("authorizedID") ||
+        document.querySelector('input[name="authorizedID"]')) as HTMLInputElement | null;
 
       if (csrfInput && csrfInput.value) vtopContext.csrf = csrfInput.value;
       if (authInput && authInput.value) vtopContext.authId = authInput.value;
+      else if ((window as any).authorizedID) {
+        vtopContext.authId = String((window as any).authorizedID);
+      }
 
       if (!vtopContext.authId || !vtopContext.csrf) {
         for (let i = 0; i < document.scripts.length; i++) {
@@ -412,39 +448,48 @@ const checkIsAuthPage = () => {
   );
 };
 
-const HALTED_BANNER_ID = "retop-halted-banner";
+/**
+ * Watches the app root: if the app rendered and then emptied itself, the
+ * dashboard is broken and the user is left staring at a blank page. Hand VTOP
+ * back instead.
+ */
+const watchForEmptyRoot = () => {
+  const root = document
+    .getElementById("retop-host")
+    ?.shadowRoot?.querySelector("#retop-root");
+  if (!root) return;
+
+  let rendered = false;
+  const observer = new MutationObserver(() => {
+    if (!rendered) {
+      rendered = root.childElementCount > 0;
+      return;
+    }
+    if (root.childElementCount === 0) {
+      observer.disconnect();
+      console.warn("[retop] The app rendered nothing; handing VTOP back.");
+      teardownRetop();
+    }
+  });
+  observer.observe(root, { childList: true });
+
+  // The app never painted at all: React mounted but produced no DOM. The
+  // observer above cannot see that, so it gets its own deadline.
+  setTimeout(() => {
+    if (rendered || root.childElementCount > 0) return;
+    observer.disconnect();
+    console.warn("[retop] The app never painted; handing VTOP back.");
+    teardownRetop();
+  }, 20000);
+};
 
 /**
- * Restores the native document and explains why retop stepped aside. Used when
- * retop cannot or must not own the page, so the user is never left on a blank
- * screen with no explanation.
+ * Steps aside and gives VTOP back. Silent by design: the user asked for retop
+ * to leave no trace, so there is no banner and no explanation.
  */
-const fallBackToNative = (reason: string) => {
-  document.getElementById(HALTED_BANNER_ID)?.remove();
-  document.getElementById("retop-host")?.remove();
-  document.getElementById("retop-boot-cloak")?.remove();
-  removeSplashScreen();
-
-  if (document.body) {
-    document.body.style.opacity = "1";
-    document.body.style.display = "block";
-    document.body.style.visibility = "visible";
-    document.body.classList.add("show-legacy-ui");
-  }
-
-  if (!reason || !document.body) return;
-  const banner = document.createElement("div");
-  banner.id = HALTED_BANNER_ID;
-  banner.textContent = reason;
-  banner.style.cssText = `
-    position: fixed; bottom: 0; left: 0; right: 0;
-    z-index: 2147483646; padding: 10px 16px;
-    background: #313033; color: #f4eff4;
-    font: 600 13px 'Google Sans Flex', system-ui, sans-serif;
-    text-align: center;
-  `;
-  document.body.appendChild(banner);
-  setTimeout(() => banner.remove(), 6000);
+const fallBackToNative = (reason?: string) => {
+  if (reason) console.warn(`[retop] ${reason}`);
+  teardownRetop();
 };
 
 const init = async () => {
@@ -454,18 +499,27 @@ const init = async () => {
     await run();
   } catch (err) {
     console.error("[retop] Dashboard entry failed:", err);
-    fallBackToNative("retop hit an error and stepped aside.");
+    fallBackToNative("");
   }
 };
 
 const run = async () => {
+  // The bootstrapper's watchdog already handed the page back to VTOP; mounting
+  // the dashboard now would take it over again.
+  if ((window as any).__retopAborted) {
+    console.warn("[retop] Dashboard start aborted; leaving VTOP alone.");
+    return;
+  }
+
   let pausedResult = null;
   let settingsResult = null;
+  const withTimeout = <T>(promise: Promise<T>, ms = 1500, fallback: T): Promise<T> =>
+    Promise.race([promise, new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms))]);
 
   try {
     [pausedResult, settingsResult] = await Promise.all([
-      idbGet("retop-paused-until"),
-      idbGet("retop-settings"),
+      withTimeout(idbGet("retop-paused-until"), 1500, null),
+      withTimeout(idbGet("retop-settings"), 1500, null),
     ]);
   } catch (err) {
     console.warn("[retop] Storage error. Falling back to native VTOP.", err);
@@ -514,10 +568,8 @@ const run = async () => {
   document.body.style.visibility = "visible";
   document.body.classList.add("show-legacy-ui");
 
-  const role: RetopRole = await readRole();
-
-  // Parent and alumni sign in on VTOP's own form. retop only contributes the role
-  // switcher and the native portals that already existed on that page.
+  // Parent and alumni used to sign in on VTOP's own form with a role switcher.
+  // Only the native portals remain, for the recovery handoff.
   if (isLoginRoute && !checkIsAuthPage()) {
     if (!document.getElementById("retop-native-portals")) {
       const portalsRoot = document.createElement("div");
@@ -528,17 +580,25 @@ const run = async () => {
     document.body.classList.add("show-legacy-ui");
     document.getElementById("retop-boot-cloak")?.remove();
     removeSplashScreen();
-    await injectRoleSwitcher(role);
-    return;
-  }
-
-  if (role !== "student") {
-    console.log(`[retop] Active role is ${role}. Extension disabled.`);
-    fallBackToNative("");
     return;
   }
 
   // --- Authenticated Pages Only ---
+  // Read VTOP's identity before touching its document. Anything that is not a
+  // student registration number gets plain VTOP back, silently.
+  await waitForTokens();
+  if (!isStudentRegNo(vtopContext.authId)) {
+    fallBackToNative("");
+    return;
+  }
+
+  // The bootstrapper may have handed the page back to VTOP while this entry
+  // was waiting for the session. Mounting now would take the page over again.
+  if ((window as any).__retopAborted) {
+    console.warn("[retop] Dashboard start aborted; leaving VTOP alone.");
+    return;
+  }
+
   // Legacy login/prelogin stylesheet hosts are gone with the takeover, but a tab
   // restored from bfcache mid-migration can still carry them.
   document.getElementById("vtop-prelogin-theme")?.remove();
@@ -552,37 +612,21 @@ const run = async () => {
   injectGlobalFonts();
   cleanupLegacyHMenuBar();
 
-  // Requires the registration number. The CSRF token is best-effort: VTOP omits it
-  // from some landing documents, and a missing token must not cost a valid session.
-  await waitForTokens();
   initializeContainer();
 
-  if (vtopContext.authId) {
-    console.log("[retop] Session Active. Verifying menu items...");
+  console.log("[retop] Session Active. Verifying menu items...");
 
-    // Fast check for DOM menu items (up to 1s max)
-    for (let i = 0; i < 10; i++) {
-      const newMenu = scrapeMenu(document);
-      const menuCount = newMenu.reduce((acc, cat) => acc + cat.links.length, 0);
-      if (menuCount > 0) break;
-      await new Promise((r) => setTimeout(r, 80));
-    }
-
-    renderDashboard();
-    injectLegacyMenuSearch();
-  } else {
-    // No usable session tokens. Hand the document back instead of mounting a
-    // dashboard that would only show errors.
-    fallBackToNative("retop could not read the VTOP session.");
-    injectLegacyMenuSearch();
-    // A missing token pair almost always means the session died mid-navigation.
-    // VTOP re-authenticates on its own login route, which the bootstrapper owns.
-    setTimeout(() => {
-      if (document.visibilityState === "visible") {
-        window.location.replace("/vtop/open/page");
-      }
-    }, 2500);
+  // Fast check for DOM menu items (up to 1s max)
+  for (let i = 0; i < 10; i++) {
+    const newMenu = scrapeMenu(document);
+    const menuCount = newMenu.reduce((acc, cat) => acc + cat.links.length, 0);
+    if (menuCount > 0) break;
+    await new Promise((r) => setTimeout(r, 80));
   }
+
+  renderDashboard();
+  watchForEmptyRoot();
+  injectLegacyMenuSearch();
 };
 
 if (document.readyState === "loading") {

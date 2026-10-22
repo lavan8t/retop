@@ -220,6 +220,13 @@ for (const [srcRel, outRel, label] of cssBuilds) {
   console.log(`  - ${label}`);
 }
 
+// Copy the standalone VTOP theme stylesheet into dist/ so the document (not
+// just the shadow root) can load it for legacy/native VTOP pages.
+try {
+  copyFileSync(resolve(ROOT, "src/styles/vtop-dark.css"), resolve(DIST, "vtop-dark.css"));
+} catch {}
+console.log("  - vtop-dark.css");
+
 // ── Step 4: Copy + rewrite HTML files ───────────────────────────────
 console.log("Processing HTML...");
 

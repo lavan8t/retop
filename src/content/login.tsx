@@ -19,15 +19,9 @@ import {
 } from "../utils/bridge";
 import { applyTheme, useSettingsStore } from "../utils/settings-store";
 import { getExtUrl } from "../utils/url";
+import { installErrorNet } from "../utils/teardown";
 import { setStorageData } from "../utils/storageAdapter";
 import { getVtopBaseUrl } from "../utils/vtopClient";
-import {
-  readRole,
-  readRoleSync,
-  setRole,
-  RetopRole,
-  isOwnableRole,
-} from "../utils/roleStore";
 import type { CachedUser } from "../utils/syncOrchestrator";
 import type { VtopClient } from "../utils/vtopClient";
 
@@ -38,7 +32,34 @@ const GSF: React.CSSProperties = {
 const isChennaiHost = () => window.location.hostname.includes("vtopcc");
 /** Page-level marker that turns retop off. Read by the document_start bootstrap. */
 const DISABLED_KEY = "retop_disabled";
+/** sessionStorage markers read by src/content.ts on the next load. */
+const BYPASS_KEY = "retop-login-bypass";
+const FORGOT_KEY = "retop-forgot-intent";
 // Campus locked by host: vtopcc = Chennai, vtop.vit.ac.in = Vellore. No switching.
+
+/**
+ * VTOP's reCAPTCHA cannot be solved for the user, so hand the whole login page
+ * back to VTOP instead of leaving a form that can never submit.
+ */
+const useNativeLogin = () => {
+  try {
+    sessionStorage.setItem(BYPASS_KEY, "1");
+  } catch {}
+  window.location.assign("/vtop/login");
+};
+
+/**
+ * Forgot password/username are POST-only handlers on VTOP's own login page, not
+ * routes. Mark the intent, let the native page load, and content.ts clicks the
+ * matching link there.
+ */
+const useNativeRecovery = (kind: "password" | "username") => {
+  try {
+    sessionStorage.setItem(FORGOT_KEY, kind);
+    sessionStorage.setItem(BYPASS_KEY, "1");
+  } catch {}
+  window.location.assign("/vtop/login");
+};
 
 /**
  * Tenant mark in the corner. The VIT campus header now sits where the card
@@ -130,45 +151,6 @@ const OfflineLink: React.FC = () => {
   );
 };
 
-const RoleGate: React.FC<{ role: RetopRole }> = ({ role }) => {
-  const label = role === "alumni" ? "Alumni" : "Parent";
-
-  return (
-    <div className="w-full max-w-md mx-auto text-left">
-      <div className="card-header loginBoxBorder mb-4">
-        <h4 style={GSF}>{label} portal</h4>
-        <p id="retop-welcome-text">Sign in on VTOP</p>
-      </div>
-      <p
-        className="text-sm text-(--text-muted) mb-6"
-        style={{ fontFamily: "'Google Sans Flex', system-ui, sans-serif" }}
-      >
-        {label} accounts still sign in on the native {label.toLowerCase()} form.
-        Your retop role is saved, so every other VTOP page uses the modern UI.
-      </p>
-      <div className="flex flex-col gap-3">
-        <button
-          type="button"
-          className="btn btn-primary cursor-pointer active:scale-98 transition-all"
-          onClick={() => window.location.reload()}
-        >
-          <span>CONTINUE ON VTOP</span>
-        </button>
-        <button
-          type="button"
-          className="text-xs text-(--text-muted) hover:text-(--text-main) font-medium cursor-pointer transition-colors"
-          onClick={async () => {
-            await setRole("student");
-            window.location.reload();
-          }}
-        >
-          Switch back to student
-        </button>
-      </div>
-    </div>
-  );
-};
-
 const SpotLightStrip: React.FC = () => {
   const [items, setItems] = useState<{ text: string; href: string }[]>([]);
   useEffect(() => {
@@ -191,7 +173,7 @@ const SpotLightStrip: React.FC = () => {
           if (!id || seen.has(id)) return;
           seen.add(id);
           found.push({
-            text: a.querySelector("strong")?.textContent?.trim() || "Announcement",
+            text: a.querySelector("strong")?.textContent?.trim() || a.textContent?.trim() || "Announcement",
             href: `${base}/vtop/downloadSpotLightViewFile/${id}`,
           });
         });
@@ -215,13 +197,13 @@ const SpotLightStrip: React.FC = () => {
     };
   }, []);
   return (
-    <div className="w-full px-4 sm:px-8 pb-20 lg:absolute lg:top-24 lg:right-12 lg:w-auto lg:max-w-xs lg:px-0 lg:pb-0 z-10 text-sm text-(--text-muted) space-y-2">
-      <div className="text-(--text-main) uppercase mb-1 text-center" style={{ fontVariationSettings: '"wght" 700, "wdth" 100' }}>Spotlight</div>
+    <div className="w-full px-4 sm:px-8 pb-20 lg:absolute lg:top-24 lg:right-12 lg:w-auto lg:max-w-xs lg:px-0 lg:pb-0 z-10 text-xs text-(--text-muted) space-y-2">
+      <div className="text-(--text-main) uppercase mb-2 text-center text-base" style={{ fontVariationSettings: '"wght" 800, "wdth" 125' }}>Spotlight</div>
       <ul className="list-none m-0 p-0 space-y-2">
         {items.map((item, i) => (
-          <li key={i} className="flex items-start gap-1.5 text-left">
-            <span aria-hidden="true" className="shrink-0 leading-snug" style={{ fontVariationSettings: '"wght" 600, "wdth" 100' }}>•</span>
-            <a href={item.href || "#"} className="hover:text-(--text-main) transition-colors leading-snug text-left" style={{ fontVariationSettings: '"wght" 600, "wdth" 100' }} target="_blank" rel="noopener noreferrer">{item.text}</a>
+          <li key={i} className="flex items-center gap-1.5 text-left">
+            <span aria-hidden="true" className="shrink-0 leading-snug" style={{ fontVariationSettings: '"wght" 400, "wdth" 100' }}>•</span>
+            <a href={item.href || "#"} className="hover:text-(--text-main) transition-colors leading-snug text-left flex-1" style={{ fontVariationSettings: '"wght" 400, "wdth" 100' }} target="_blank" rel="noopener noreferrer">{item.text}</a>
           </li>
         ))}
       </ul>
@@ -230,18 +212,6 @@ const SpotLightStrip: React.FC = () => {
 };
 
 const LoginTakeover: React.FC = () => {
-  const [role, setRoleState] = useState<RetopRole>(() => readRoleSync());
-
-  useEffect(() => {
-    let cancelled = false;
-    readRole().then((stored) => {
-      if (!cancelled) setRoleState(stored);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   const handleLoginSuccess = async (user: CachedUser, client: VtopClient) => {
     const regNo = user.regNo || client.registrationNumber;
     const record = {
@@ -259,14 +229,12 @@ const LoginTakeover: React.FC = () => {
     // After a successful login, return to the current page so the user doesn't
     // lose their place (e.g. timetable, attendance, grades). The session cookie
     // is already live on this same origin.
+    const isLoginUrl = (url: string) =>
+      ["/vtop/open/page", "/vtop/open/login", "/vtop/login", "/vtop/vtopLogin", "/vtop/prelogin", "/vtop/init/page"].some((r) => url.includes(r));
     const currentUrl = window.location.href;
-    const landing = (currentUrl && !currentUrl.includes("/vtop/login") && !currentUrl.includes("/vtop/open/page")) ? currentUrl : (client.landingUrl || `${getVtopBaseUrl(client.campus)}/vtop/content`);
+    const landing = (currentUrl && !isLoginUrl(currentUrl)) ? currentUrl : (client.landingUrl || `${getVtopBaseUrl(client.campus)}/vtop/content`);
     window.location.assign(landing);
   };
-
-  if (!isOwnableRole(role)) {
-    return <RoleGate role={role} />;
-  }
 
   return (
     <div
@@ -312,23 +280,32 @@ const LoginTakeover: React.FC = () => {
             subtitle=""
             syncAfterLogin={false}
             onLoginSuccess={handleLoginSuccess}
+            onRecaptchaRequired={useNativeLogin}
           />
         </div>
         <div className="retop-forgot-links flex gap-3 justify-start mt-4">
-          <a href="/vtop/forgotPassword" className="hover:text-(--text-main)">Forgot Password?</a>
+          <a
+            href="/vtop/login"
+            className="hover:text-(--text-main)"
+            onClick={(e) => {
+              e.preventDefault();
+              useNativeRecovery("password");
+            }}
+          >
+            Forgot Password?
+          </a>
           <span className="text-(--text-muted)">|</span>
-          <a href="/vtop/forgotUsername" className="hover:text-(--text-main)">Forgot Username?</a>
+          <a
+            href="/vtop/login"
+            className="hover:text-(--text-main)"
+            onClick={(e) => {
+              e.preventDefault();
+              useNativeRecovery("username");
+            }}
+          >
+            Forgot Username?
+          </a>
         </div>
-        <button
-          type="button"
-          className="mt-6 text-xs text-(--text-muted) hover:text-(--text-main) font-medium cursor-pointer transition-colors"
-          onClick={async () => {
-            await setRole("parent");
-            window.location.reload();
-          }}
-        >
-          Teacher?
-        </button>
       </div>
 
       {/* Spotlight: below the form on small screens, top-right on desktop. */}
@@ -337,7 +314,29 @@ const LoginTakeover: React.FC = () => {
   );
 };
 
+class LoginErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(err: any) {
+    console.error("[retop] Login error caught by boundary:", err);
+    try {
+      sessionStorage.setItem("retop-login-bypass", "1");
+    } catch {}
+    window.location.reload();
+  }
+  render() {
+    if (this.state.hasError) return null;
+    return this.props.children;
+  }
+}
+
 export async function mountLoginTakeover(): Promise<void> {
+  // Catch every uncaught error and unhandled rejection coming from the
+  // extension, and hand VTOP back instead of leaving a half-built app on screen.
+  installErrorNet();
+
   // Reuse the host and shadow root the bootstrapper already created, but skip
   // its <link> so both stylesheets can be installed before the first render.
   initializeContainer({ includeAppStylesheet: false });
@@ -376,7 +375,11 @@ export async function mountLoginTakeover(): Promise<void> {
     document.title = originalTitle.includes("VTOP") ? originalTitle : "VTOP - " + originalTitle;
   } catch {}
 
-  createRoot(rootEl).render(<LoginTakeover />);
+  createRoot(rootEl).render(
+    <LoginErrorBoundary>
+      <LoginTakeover />
+    </LoginErrorBoundary>
+  );
 }
 
 mountLoginTakeover().catch((err) => {

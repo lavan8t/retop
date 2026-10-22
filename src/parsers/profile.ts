@@ -10,7 +10,7 @@ import {
   ProfileFamilyMember,
 } from "../types/vtop";
 import { parseHTMLFast, validateParsed, Versioned } from "../utils/parser-utils";
-import { StudentProfileSchema } from "../schemas";
+import { cleanHostelField, parseHostelDetailsString } from "../utils/hostelFormat";
 
 export const PROFILE_SCHEMA_VERSION = 1;
 
@@ -498,18 +498,61 @@ export function parseStudentProfile(html: string): Versioned<StudentProfile> {
     hMap.size === 0;
 
   if (!hostelNotFound && hMap.size > 0) {
+    // Some VTOP builds pack the whole residence block into one cell instead of
+    // separate rows, so recover what the key/value map could not.
+    const packed = [
+      "MAIN_HOSTEL DETAILS",
+      "MAIN_HOSTEL DETAIL",
+      "MAIN_HOSTEL INFORMATION",
+      "MAIN_HOSTEL",
+      "MAIN_RESIDENCE DETAILS",
+    ]
+      .map((key) => hMap.get(key) || "")
+      .find((value) => value.length > 0);
+    const fromPacked = parseHostelDetailsString(packed);
+    // Unlabelled packed text is still useful when it is VTOP's block string.
+    const packedBlock =
+      fromPacked.block || (packed && Object.keys(fromPacked).length === 0 ? packed : "");
+
+    const mess =
+      hMap.get("MAIN_MESS INFORMATION") ||
+      hMap.get("MAIN_MESS TYPE") ||
+      hMap.get("MAIN_MESS") ||
+      hMap.get("MAIN_MESS NAME") ||
+      hMap.get("MAIN_FOOD TYPE") ||
+      fromPacked.mess ||
+      "";
+    const caterer = hMap.get("MAIN_CATERER") || hMap.get("MAIN_CATERER NAME") || fromPacked.caterer || "";
+    const messLine =
+      mess && caterer && !mess.toLowerCase().includes(caterer.toLowerCase())
+        ? `${mess} - ${caterer}`
+        : mess;
+
     hostel = {
       appNo: hMap.get("MAIN_APPLICATION NUMBER") || hMap.get("MAIN_APP NO") || "",
       regNo: hMap.get("MAIN_REGISTER NUMBER") || hMap.get("MAIN_REG NO") || basic.regNo || "",
-      block: hMap.get("MAIN_BLOCK NAME") || hMap.get("MAIN_BLOCK") || hMap.get("MAIN_HOSTEL BLOCK") || "",
-      room: hMap.get("MAIN_ROOM NO.") || hMap.get("MAIN_ROOM NO") || hMap.get("MAIN_ROOM NUMBER") || "",
-      bedType: hMap.get("MAIN_BED TYPE") || hMap.get("MAIN_BED") || "",
-      mess: hMap.get("MAIN_MESS INFORMATION") || hMap.get("MAIN_MESS TYPE") || hMap.get("MAIN_MESS") || "",
+      block: cleanHostelField(
+        hMap.get("MAIN_BLOCK NAME") ||
+          hMap.get("MAIN_BLOCK") ||
+          hMap.get("MAIN_HOSTEL BLOCK") ||
+          hMap.get("MAIN_HOSTEL BLOCK NAME") ||
+          packedBlock,
+      ),
+      room: cleanHostelField(
+        hMap.get("MAIN_ROOM NO.") ||
+          hMap.get("MAIN_ROOM NO") ||
+          hMap.get("MAIN_ROOM NUMBER") ||
+          hMap.get("MAIN_ROOM") ||
+          fromPacked.room,
+      ),
+      bedType: cleanHostelField(
+        hMap.get("MAIN_BED TYPE") || hMap.get("MAIN_BED") || fromPacked.bedType,
+      ),
+      mess: cleanHostelField(messLine),
     };
   }
 
   return validateParsed(
-    StudentProfileSchema,
     {
       basic,
       personal,

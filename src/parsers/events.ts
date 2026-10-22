@@ -1,11 +1,10 @@
 import { Event } from "../types/vtop";
 import { parseHTMLFast, validateParsed, Versioned } from "../utils/parser-utils";
-import { EventsListSchema } from "../schemas";
 
 export const EVENTS_SCHEMA_VERSION = 1;
 
 export function parseEvents(html: string): Versioned<Event[]> {
-  if (!html) return validateParsed(EventsListSchema, [], "events");
+  if (!html) return validateParsed([], "events");
 
   const doc = parseHTMLFast(html);
   const events: Event[] = [];
@@ -39,5 +38,5 @@ export function parseEvents(html: string): Versioned<Event[]> {
     }
   });
 
-  return validateParsed(EventsListSchema, events, "events");
+  return validateParsed(events, "events");
 }

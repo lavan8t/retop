@@ -1,0 +1,24 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: "1.4.3", cache: true }
+      - run: bun install --frozen-lockfile
+      - run: bun run build:prod
+      - run: bun run build.ts --archive=zip
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: retop-release-${{ github.ref_name }}
+          path: retop-v*.zip

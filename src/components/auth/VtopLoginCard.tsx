@@ -4,7 +4,7 @@ import {
   Visibility,
   VisibilityOff,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
-import { VtopClient, VtopCampus, CaptchaData } from "../../utils/vtopClient";
+import { VtopClient, VtopCampus, CaptchaData, RecaptchaRequiredError, RECAPTCHA_REQUIRED } from "../../utils/vtopClient";
 import { syncStudentData, CachedUser, SyncProgress } from "../../utils/syncOrchestrator";
 import { getStorageData, setStorageData, removeStorageKeys } from "../../utils/storageAdapter";
 
@@ -22,6 +22,11 @@ export interface VtopLoginCardProps {
    * dashboard entry fetches the same data through VTOPNetwork anyway.
    */
   syncAfterLogin?: boolean;
+  /**
+   * VTOP switched sign-in to Google reCAPTCHA. Live takeover hands the page back
+   * to VTOP; other surfaces just show an explanation.
+   */
+  onRecaptchaRequired?: () => void;
 }
 
 export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
@@ -31,13 +36,15 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
   title = "retop",
   subtitle = "vtop login",
   syncAfterLogin = true,
+  onRecaptchaRequired,
 }) => {
   const [campus, setCampus] = useState<VtopCampus>(initialCampus);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [captchaInput, setCaptchaInput] = useState("");
-
+  const captchaInputRef = useRef("");
+  useEffect(() => { captchaInputRef.current = captchaInput; }, [captchaInput]);
   const [captchaData, setCaptchaData] = useState<CaptchaData | null>(null);
   const [loadingCaptcha, setLoadingCaptcha] = useState(false);
 
@@ -71,6 +78,10 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
       setCaptchaInput("");
     } catch (err: any) {
       if (seq !== activeSeqRef.current) return;
+      if (err instanceof RecaptchaRequiredError && onRecaptchaRequired) {
+        onRecaptchaRequired();
+        return;
+      }
       console.error("[VtopLoginCard] Failed to fetch captcha:", err);
       setErrorMessage(
         err?.message || "Failed to load CAPTCHA from VTOP. Please retry.",
@@ -83,8 +94,8 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
   };
 
   // Refresh captcha for the existing session (does not reset session tokens)
-  const handleRefreshCaptcha = async () => {
-    if (loadingCaptcha || isSubmitting) return;
+  const handleRefreshCaptcha = async (): Promise<CaptchaData | null> => {
+    if (loadingCaptcha || isSubmitting) return null;
 
     if (captchaData?.jsessionid) {
       const seq = ++activeSeqRef.current;
@@ -98,17 +109,20 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
           captchaData.serverId,
           captchaData.csrf,
         );
-        if (seq !== activeSeqRef.current) return;
-        setCaptchaData({
+        if (seq !== activeSeqRef.current) return null;
+        const newData: CaptchaData = {
           captchaImage: refreshed.captchaImage,
           csrf: refreshed.csrf,
           jsessionid: refreshed.jsessionid,
           serverId: refreshed.serverId,
-        });
+        };
+        setCaptchaData(newData);
         setCaptchaInput("");
+        return newData;
       } catch (e) {
         // Fallback to full initial handshake if session expired
         fetchInitialCaptcha(campus);
+        return null;
       } finally {
         if (seq === activeSeqRef.current) {
           setLoadingCaptcha(false);
@@ -116,6 +130,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
       }
     } else {
       fetchInitialCaptcha(campus);
+      return null;
     }
   };
 
@@ -212,74 +227,114 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
     setErrorMessage("");
     setSyncProgress(null);
 
-    // Push login strictly with the current active captchaData
-    const activeCaptcha = captchaData;
+    const MAX_CAPTCHA_RETRIES = 3;
+    let captchaRetries = 0;
+    let activeCaptcha: CaptchaData = captchaData;
 
-    try {
-      const result = await VtopClient.login({
-        campus,
-        username: trimmedUser,
-        password: trimmedPass,
-        captcha: trimmedCaptcha,
-        csrf: activeCaptcha.csrf,
-        jsessionid: activeCaptcha.jsessionid,
-        serverId: activeCaptcha.serverId,
-      });
+    const attemptLogin = async (): Promise<void> => {
+      try {
+        const result = await VtopClient.login({
+          campus,
+          username: trimmedUser,
+          password: trimmedPass,
+          captcha: (captchaInputRef.current.trim().toUpperCase() || trimmedCaptcha),
+          csrf: activeCaptcha.csrf,
+          jsessionid: activeCaptcha.jsessionid,
+          serverId: activeCaptcha.serverId,
+        });
 
-      if (!result.success || !result.client) {
-        setCaptchaWiggle(true);
-        setTimeout(() => setCaptchaWiggle(false), 400);
+        // Google reCAPTCHA cannot be auto-filled; hand off before the CAPTCHA
+        // retry loop mistakes this for an image-CAPTCHA miss.
+        if (result.message === RECAPTCHA_REQUIRED) {
+          if (onRecaptchaRequired) {
+            onRecaptchaRequired();
+            return;
+          }
+          setErrorMessage(
+            "VTOP is asking for its own reCAPTCHA. Sign in at vtop.vit.ac.in.",
+          );
+          setIsSubmitting(false);
+          return;
+        }
+
+        const isCaptchaError = /captcha/i.test(result.message || "");
+
+        if (!result.success || !result.client) {
+          // Auto-retry up to 3 times on an invalid captcha.
+          if (isCaptchaError && captchaRetries < MAX_CAPTCHA_RETRIES) {
+            captchaRetries += 1;
+            setCaptchaWiggle(true);
+            setTimeout(() => setCaptchaWiggle(false), 400);
+            setErrorMessage(
+              `Invalid CAPTCHA. Retrying (${captchaRetries}/${MAX_CAPTCHA_RETRIES})...`,
+            );
+            const refreshed = await handleRefreshCaptcha();
+            if (refreshed) {
+              activeCaptcha = refreshed;
+              // Wait for auto-solve to populate the new captcha (up to 3s).
+              for (let i = 0; i < 30; i++) {
+                if (captchaInputRef.current.trim().length >= 6) break;
+                await new Promise((r) => setTimeout(r, 100));
+              }
+              return attemptLogin();
+            }
+          }
+
+          setCaptchaWiggle(true);
+          setTimeout(() => setCaptchaWiggle(false), 400);
+          setErrorMessage(
+            result.message || "Invalid credentials or CAPTCHA mismatch",
+          );
+          setIsSubmitting(false);
+          handleRefreshCaptcha();
+          return;
+        }
+
+        try {
+          if (rememberUsername) {
+            await setStorageData({ [REMEMBERED_USER_KEY]: trimmedUser });
+          } else {
+            await removeStorageKeys([REMEMBERED_USER_KEY]);
+          }
+        } catch {}
+
+        if (!syncAfterLogin) {
+          const regNo = result.user?.registrationNumber || result.client.registrationNumber;
+          onLoginSuccess(
+            {
+              regNo,
+              username: regNo,
+              name: result.user?.name || result.client.studentName || regNo,
+              lastActive: Date.now(),
+              campus: result.client.campus,
+            },
+            result.client,
+          );
+          return;
+        }
+
+        // Synchronize student data
+        setSyncProgress({
+          step: "Authenticating session...",
+          progressPercent: 10,
+        });
+
+        const syncResult = await syncStudentData(result.client, (progress) => {
+          setSyncProgress(progress);
+        });
+
+        onLoginSuccess(syncResult.user, result.client);
+      } catch (err: any) {
+        console.error("[VtopLoginCard] Login error:", err);
         setErrorMessage(
-          result.message || "Invalid credentials or CAPTCHA mismatch",
+          err?.message || "Login failed. Check your network connection.",
         );
         setIsSubmitting(false);
-        // Refresh captcha for next attempt
         handleRefreshCaptcha();
-        return;
       }
+    };
 
-      try {
-        if (rememberUsername) {
-          await setStorageData({ [REMEMBERED_USER_KEY]: trimmedUser });
-        } else {
-          await removeStorageKeys([REMEMBERED_USER_KEY]);
-        }
-      } catch {}
-
-      if (!syncAfterLogin) {
-        const regNo = result.user?.registrationNumber || result.client.registrationNumber;
-        onLoginSuccess(
-          {
-            regNo,
-            username: regNo,
-            name: result.user?.name || result.client.studentName || regNo,
-            lastActive: Date.now(),
-            campus: result.client.campus,
-          },
-          result.client,
-        );
-        return;
-      }
-
-      // Synchronize student data
-      setSyncProgress({
-        step: "Authenticating session...",
-        progressPercent: 10,
-      });
-
-      const syncResult = await syncStudentData(result.client, (progress) => {
-        setSyncProgress(progress);
-      });
-
-      onLoginSuccess(syncResult.user, result.client);
-    } catch (err: any) {
-      console.error("[VtopLoginCard] Login error:", err);
-      setErrorMessage(
-        err?.message || "Login failed. Check your network connection.",
-      );
-      setIsSubmitting(false);
-      handleRefreshCaptcha();
-    }
+    await attemptLogin();
   };
 
   return (
@@ -480,7 +535,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
                 </span>
               </span>
             ) : (
-              <span>LOGIN</span>
+              <span>Log In</span>
             )}
           </button>
         </div>

@@ -80,6 +80,24 @@ export interface CaptchaData {
   serverId: string | null;
 }
 
+/**
+ * VTOP sometimes validates with Google reCAPTCHA instead of its image CAPTCHA.
+ * retop cannot solve that, so callers hand the page back to VTOP.
+ */
+export const RECAPTCHA_REQUIRED = "RECAPTCHA_REQUIRED";
+
+export class RecaptchaRequiredError extends Error {
+  constructor() {
+    super(RECAPTCHA_REQUIRED);
+    this.name = "RecaptchaRequiredError";
+  }
+}
+
+/** VTOP's login page switches `captchaType` to 2 when Google reCAPTCHA is on. */
+function usesGoogleRecaptcha(html: string): boolean {
+  return /captchaType\s*=\s*2\b/.test(html);
+}
+
 export interface LoginParams {
   campus?: VtopCampus;
   username: string;
@@ -314,6 +332,12 @@ export class VtopClient {
       body: new URLSearchParams({ flag: "VTOP", _csrf: initialCsrf }).toString(),
     });
 
+    // The image CAPTCHA path cannot satisfy a reCAPTCHA challenge, so fail
+    // before showing a form that could never submit.
+    if (usesGoogleRecaptcha(setupResp.body)) {
+      throw new RecaptchaRequiredError();
+    }
+
     let loginCsrf = extractCSRFToken(setupResp.body) || initialCsrf;
 
     let captchaImage = extractCaptchaDataUri(setupResp.body);
@@ -451,6 +475,10 @@ export class VtopClient {
     }
 
     // Step 4: Extract CSRF and CAPTCHA from login page
+    if (usesGoogleRecaptcha(loginHtml)) {
+      throw new RecaptchaRequiredError();
+    }
+
     const loginCsrf = extractCSRFToken(loginHtml);
     let effectiveCsrf = loginCsrf || initialCsrf;
 
@@ -633,11 +661,28 @@ export class VtopClient {
           method: "GET",
           headers: cookieHeader(),
         });
-        const errHtml = errResp.body.toLowerCase();
+        const errHtml = errResp.body;
+        const errLower = errHtml.toLowerCase();
+
+        if (usesGoogleRecaptcha(errHtml)) {
+          return { success: false, message: RECAPTCHA_REQUIRED };
+        }
+
+        // VTOP renders the real reason inside an element with role="alert".
+        const alertMatch = errHtml.match(
+          /<[^>]*role=["']alert["'][^>]*>([\s\S]*?)<\/[a-zA-Z][^>]*>/i,
+        );
+        const alertText = alertMatch
+          ? alertMatch[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
+          : "";
+
+        if (alertText) {
+          return { success: false, message: alertText };
+        }
 
         if (
-          errHtml.includes("invalid captcha") ||
-          errHtml.includes("not match")
+          errLower.includes("invalid captcha") ||
+          errLower.includes("not match")
         ) {
           return {
             success: false,
@@ -645,13 +690,13 @@ export class VtopClient {
           };
         }
         if (
-          errHtml.includes("invalid user") ||
-          errHtml.includes("invalid password") ||
-          errHtml.includes("user does not exist")
+          errLower.includes("invalid user") ||
+          errLower.includes("invalid password") ||
+          errLower.includes("user does not exist")
         ) {
           return { success: false, message: "Invalid username or password." };
         }
-        if (errHtml.includes("locked") || errHtml.includes("disabled")) {
+        if (errLower.includes("locked") || errLower.includes("disabled")) {
           return { success: false, message: "Account is disabled or locked." };
         }
         return {
@@ -680,6 +725,22 @@ export class VtopClient {
     }
 
     const lower = responseText.toLowerCase();
+
+    // A page asking for Google reCAPTCHA means the image-CAPTCHA path is over.
+    if (usesGoogleRecaptcha(responseText)) {
+      return { success: false, message: RECAPTCHA_REQUIRED };
+    }
+
+    // VTOP renders the real reason inside an element with role="alert".
+    const alertMatch = responseText.match(
+      /<[^>]*role=["']alert["'][^>]*>([\s\S]*?)<\/[a-zA-Z][^>]*>/i,
+    );
+    const alertText = alertMatch
+      ? alertMatch[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
+      : "";
+    if (alertText) {
+      return { success: false, message: alertText };
+    }
 
     // Check specific error messages
     if (

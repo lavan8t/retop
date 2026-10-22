@@ -1,6 +1,5 @@
 import { parseHTMLFast, validateParsed, Versioned, findSemesterOptions } from "../utils/parser-utils";
 import { parseVtopDate } from "../utils/formatting";
-import { DACourseListSchema, DAAssignmentListSchema } from "../schemas";
 
 export const DA_SCHEMA_VERSION = 1;
 
@@ -40,7 +39,7 @@ function findTableBy(tables: Element[], test: (txt: string) => boolean, fallback
 export const parseDACourses = (html: string): Versioned<DACourse[]> => {
   const doc = parseHTMLFast(html);
   const tables = Array.from(doc.querySelectorAll("table"));
-  if (tables.length === 0) return validateParsed(DACourseListSchema, [], "digitalAssignments");
+  if (tables.length === 0) return validateParsed([], "digitalAssignments");
 
   const table = findTableBy(tables, (txt) =>
     (txt.includes("course") && txt.includes("title")) ||
@@ -120,13 +119,13 @@ export const parseDACourses = (html: string): Versioned<DACourse[]> => {
     }
   });
 
-  return validateParsed(DACourseListSchema, courses, "digitalAssignments");
+  return validateParsed(courses, "digitalAssignments");
 };
 
 export const parseDAAssignments = (html: string): Versioned<DAAssignment[]> => {
   const doc = parseHTMLFast(html);
   const tables = Array.from(doc.querySelectorAll("table"));
-  if (tables.length === 0) return validateParsed(DAAssignmentListSchema, [], "digitalAssignments");
+  if (tables.length === 0) return validateParsed([], "digitalAssignments");
 
   const table = findTableBy(
     tables,
@@ -241,5 +240,5 @@ export const parseDAAssignments = (html: string): Versioned<DAAssignment[]> => {
     }
   });
 
-  return validateParsed(DAAssignmentListSchema, assignments, "digitalAssignments");
+  return validateParsed(assignments, "digitalAssignments");
 };

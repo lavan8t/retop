@@ -2,20 +2,21 @@
   "manifest_version": 3,
   "name": "retop",
   "description": "uni portal done better.",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "permissions": [
     "unlimitedStorage",
     "downloads",
     "storage"
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self';"
+    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self';"
   },
 
   "host_permissions": [
     "https://vtop.vit.ac.in/*",
     "https://vtopcc.vit.ac.in/*",
-    "https://getretop.web.app/*"
+    "https://getretop.web.app/*",
+    "https://barcode.tec-it.com/*"
   ],
   "content_scripts": [
     {
@@ -66,11 +67,10 @@
         "chunk-*.js",
         "style.css",
         "login.css",
-        "fonts/gsf.subset.woff2",
+        "vtop-dark.css",        "fonts/gsf.subset.woff2",
         "fonts/gsf.subset2.woff2",
         "fonts/*",
         "assets/vitLogo.svg",
-        "assets/vit_emblem.svg",
         "assets/*",
         "pdf.js/*",
         "pdf.js/pdf.worker.min.mjs"
@@ -92,16 +92,16 @@
     }
   },
   "icons": {
-    "64": "icons/icon16.png",
-    "128": "icons/icon32.png",
-    "192": "icons/icon48.png",
-    "512": "icons/icon128.png"
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
   },
   "action": {
     "default_icon": {
-      "64": "icons/icon16.png",
-      "128": "icons/icon32.png",
-      "192": "icons/icon48.png"
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png"
     }
   }
 }

@@ -1,7 +1,6 @@
 import { MenuCategory, QuickLink } from "../types/vtop";
 import { fixBase64Image, imageElementToBase64 } from "./profile";
 import { validateParsed, Versioned } from "../utils/parser-utils";
-import { MenuCategoriesListSchema, UserProfileHeaderSchema } from "../schemas";
 
 export const MENU_SCHEMA_VERSION = 1;
 
@@ -330,7 +329,7 @@ export function scrapeMenu(doc: Document): Versioned<MenuCategory[]> {
     });
   }
 
-  return validateParsed(MenuCategoriesListSchema, categories, "menu");
+  return validateParsed(categories, "menu");
 }
 
 export function scrapeUserProfile(doc: Document) {
@@ -400,5 +399,5 @@ export function scrapeUserProfile(doc: Document) {
 
   const profileImgBase64 = fixBase64Image(rawImg) || undefined;
 
-  return validateParsed(UserProfileHeaderSchema, { name, regNo, profileImgBase64, campus }, "menu");
+  return validateParsed({ name, regNo, profileImgBase64, campus }, "menu");
 }

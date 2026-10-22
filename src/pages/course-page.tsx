@@ -540,7 +540,7 @@ export const CoursePage = ({
                     value={localSearchTerm}
                     onChange={(e) => setLocalSearchTerm(e.target.value)}
                     placeholder="Search course materials, topics, modules..."
-                    className="w-full pl-12 pr-10 py-3 bg-(--bg-surface) text-sm font-mono font-bold text-(--text-main) placeholder:text-(--text-muted) rounded-full border border-(--border-dim)/40 focus:border-(--accent-base) outline-none transition-colors" />
+                    className="w-full pl-12 pr-10 py-4 bg-(--bg-surface) text-base font-mono font-bold text-(--text-main) placeholder:text-(--text-muted) rounded-full border-2 border-(--border-dim)/40 focus:border-(--accent-base) outline-none transition-colors" />
                   {localSearchTerm && (
                     <button
                       onClick={() => setLocalSearchTerm("")}

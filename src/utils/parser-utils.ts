@@ -32,22 +32,20 @@ export const yieldToMainThread = (): Promise<void> =>
     ? (globalThis as any).scheduler.yield()
     : new Promise((r) => setTimeout(r, 0));
 
-import { ZodSchema } from "zod";
 import { ParserModuleId, wrapWithSchemaVersion, Versioned } from "../parsers/version";
 
 export * from "../parsers/version";
 
+export function validateParsed<T extends object>(data: T, moduleId: ParserModuleId): Versioned<T>;
+export function validateParsed<T extends object>(schema: unknown, data: T, moduleId: ParserModuleId): Versioned<T>;
 export function validateParsed<T extends object>(
-  schema: ZodSchema<T>,
-  data: unknown,
-  moduleId: ParserModuleId,
+  arg1: any,
+  arg2: any,
+  arg3?: ParserModuleId,
 ): Versioned<T> {
-  const result = schema.safeParse(data);
-  if (!result.success) {
-    console.warn(`[retop-schema] Validation failed for module '${moduleId}':`, result.error.format());
-    return wrapWithSchemaVersion(data as T, moduleId);
-  }
-  return wrapWithSchemaVersion(result.data, moduleId);
+  const data = (arg3 !== undefined ? arg2 : arg1) as T;
+  const mod = (arg3 !== undefined ? arg3 : arg2) as ParserModuleId;
+  return wrapWithSchemaVersion(data, mod);
 }
 
 /**

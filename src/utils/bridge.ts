@@ -334,7 +334,7 @@ export function removeSplashScreen() {
 
 export function setUIVisibility(visible: boolean) {
   const host = document.getElementById("retop-host");
-  const appRoot = shadowRoot ? shadowRoot.getElementById("retop-root") : null;
+  const appRoot = shadowRoot ? (shadowRoot.querySelector("#retop-root") as HTMLElement | null) : null;
 
   if (visible) {
     document.body.classList.remove("show-legacy-ui");
@@ -368,10 +368,14 @@ export function setUIVisibility(visible: boolean) {
 }
 
 export function cleanupLegacyHMenuBar() {
-  document.getElementById("vtop-search-menu-btn")?.remove();
-  document.getElementById("MG_SEARCH")?.remove();
   document.getElementById("retop-hmenu-search-toggle")?.remove();
   document.getElementById("retop-vtop-search-menu")?.remove();
+  // VTOP's own search is hidden, never removed: removing it would take the
+  // native search away for good, so the teardown could not give it back.
+  for (const id of ["vtop-search-menu-btn", "MG_SEARCH"]) {
+    const el = document.getElementById(id);
+    el?.style.setProperty("display", "none", "important");
+  }
 }
 
 export function revealLegacyUI() {
@@ -409,3 +413,8 @@ export function injectScriptFile(fileName: string) {
   };
   safeAppend(script);
 }
+
+// The teardown (removing every retop modification from VTOP) lives in
+// utils/teardown.ts, next to the global error net that calls it.
+
+

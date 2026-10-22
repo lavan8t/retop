@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: "1.4.3", cache: true }
+      - run: bun install --frozen-lockfile
+      - run: bun lt
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: "1.4.3", cache: true }
+      - run: bun install --frozen-lockfile
+      - run: bun test
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: "1.4.3", cache: true }
+      - run: bun install --frozen-lockfile
+      - run: bun run build:prod
+
+  firefox:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: "1.4.3", cache: true }
+      - run: bun install --frozen-lockfile
+      - run: bun run build.ts --archive=xpi
+      - run: test -n "$(ls retop-v*.xpi)"
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: "1.4.3", cache: true }
+      - run: bun install --frozen-lockfile
+      - run: bun audit --ignore=GHSA-vfj7-8cjw-p6xm

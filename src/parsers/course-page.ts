@@ -7,7 +7,6 @@ import {
 } from "../types/vtop";
 
 import { parseHTMLFast, validateParsed, Versioned } from "../utils/parser-utils";
-import { CoursePageDataSchema } from "../schemas";
 
 export const COURSE_PAGE_SCHEMA_VERSION = 1;
 
@@ -195,7 +194,6 @@ export const parseCoursePage = (html: string): Versioned<CoursePageData> => {
   }
 
   return validateParsed(
-    CoursePageDataSchema,
     {
       options,
       selectedCourseId: select?.getAttribute("value") || null,

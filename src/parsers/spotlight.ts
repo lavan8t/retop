@@ -1,6 +1,5 @@
 import { SpotlightCategoryGroup, SpotlightLinkItem } from "../types/vtop";
 import { validateParsed, Versioned } from "../utils/parser-utils";
-import { SpotlightCategoryGroupListSchema } from "../schemas";
 
 export const SPOTLIGHT_SCHEMA_VERSION = 1;
 
@@ -123,6 +122,6 @@ export function scrapeSpotlight(doc: Document): Versioned<SpotlightCategoryGroup
     }
   }
 
-  return validateParsed(SpotlightCategoryGroupListSchema, spotlightGroups, "spotlight");
+  return validateParsed(spotlightGroups, "spotlight");
 }
 

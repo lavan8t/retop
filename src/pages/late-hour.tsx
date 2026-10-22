@@ -560,15 +560,10 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
         {/* TAB 1: NEW REQUEST (Online only) */}
         {!isOffline && activeTab === "request" && (
           <div className="flex flex-col gap-4 w-full">
-            {/* Form Title */}
-            <div className="mb-1">
-              <h2 className="text-base font-bold text-(--text-main)">
-                Late Hour Permission Request
-              </h2>
-              <p className="text-xs text-(--text-muted) mt-0.5">
-                Fill in your faculty guide, venue, and designated working hours
-              </p>
-            </div>
+            {/* Form hint — the top bar already names the page */}
+            <p className="text-xs text-(--text-muted)">
+              Fill in your faculty guide, venue, and designated working hours
+            </p>
 
             {/* School & Faculty */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

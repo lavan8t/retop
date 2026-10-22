@@ -344,11 +344,15 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
     return (
       <div className="h-full w-full bg-(--color-surface) overflow-hidden flex">
         <div className="flex-1 flex w-full max-w-7xl mx-auto h-full">
-          <div className="w-full lg:w-1/2 flex flex-col px-4 md:px-6 lg:px-8 space-y-4 pt-25">
+          {/* Mirrors the loaded layout: same column width, same top spacer,
+              course cards only — the page has no heading of its own. */}
+          <div className="w-full lg:w-[420px] shrink-0 flex flex-col px-4 md:px-6 lg:px-8 space-y-4">
+            <div className="w-full h-21 md:h-25 shrink-0" />
             {[...Array(6)].map((_, i) => (
               <div
                 key={i}
-                className="h-20 bg-(--color-surface-container) rounded-2xl animate-pulse" />
+                className="h-20 bg-(--color-surface-container) rounded-2xl animate-pulse"
+              />
             ))}
           </div>
           <div className="w-full lg:w-1/2 hidden lg:flex flex-col px-4 md:px-6 lg:px-8 space-y-6 pt-25 border-l border-(--color-outline-variant)">
@@ -408,12 +412,6 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
             selectedCourse ? "hidden lg:flex" : "flex"
           }`}>
           <div className="w-full h-21 md:h-25 shrink-0" />
-
-          <div className="mb-4 flex flex-col gap-1">
-            <h1 className="text-2xl md:text-3xl font-black font-expanded tracking-tight text-(--color-on-surface)">
-              Attendance
-            </h1>
-          </div>
 
           <div className="flex flex-col gap-1">
             {detailedAttendance.map((course) => {

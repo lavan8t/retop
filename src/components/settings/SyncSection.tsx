@@ -15,14 +15,23 @@ interface SyncSectionProps {
     includeExams: boolean;
   }>>;
   handleExportICal: () => void;
+  googleCalendarName: string;
+  googleStatus: string;
+  googleBusy: boolean;
+  handleGoogleSync: () => void;
 }
 
 export const SyncSection: React.FC<SyncSectionProps> = ({
   icalOptions,
   setIcalOptions,
   handleExportICal,
+  googleCalendarName,
+  googleStatus,
+  googleBusy,
+  handleGoogleSync,
 }) => {
   return (
+    <>
     <SettingTopicCard
       title="Export iCal (.ics) File"
       description="Export your schedule, exams, and calendar events as a standard .ics calendar file for Apple Calendar, Outlook, or Google Calendar"
@@ -85,5 +94,38 @@ export const SyncSection: React.FC<SyncSectionProps> = ({
         </div>
       </div>
     </SettingTopicCard>
+
+    <SettingTopicCard
+      title="Google Calendar"
+      description="Push your schedule into a dedicated Google Calendar that keeps itself up to date on every device. Uses the same data selection as the iCal export above."
+    >
+      <div className="flex flex-col gap-4 w-full">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-bold uppercase font-expanded text-(--text-muted) tracking-wider">
+            Calendar
+          </span>
+          <span className="font-mono text-xs text-(--text-main) bg-(--bg-highlight) px-2.5 py-1 rounded-lg">
+            {googleCalendarName}
+          </span>
+        </div>
+
+        {googleStatus && (
+          <p className="text-xs md:text-sm text-(--text-muted) leading-relaxed">
+            {googleStatus}
+          </p>
+        )}
+
+        <div className="flex justify-end pt-2 border-t border-(--border-dim)">
+          <button
+            onClick={handleGoogleSync}
+            disabled={googleBusy}
+            className="px-6 py-2.5 rounded-full text-xs font-black uppercase bg-(--accent-base) text-(--text-inverse) transition-all border-0 cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {googleBusy ? "Syncing…" : "Sync to Google Calendar"}
+          </button>
+        </div>
+      </div>
+    </SettingTopicCard>
+    </>
   );
 };

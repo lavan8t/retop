@@ -23,6 +23,11 @@ const toICalDate = (d: Date): string => {
   return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
 };
 
+/** Format a Date to iCal YYYYMMDD format (all-day values) */
+const toICalDateOnly = (d: Date): string => {
+  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+};
+
 /** Generate a unique UID for an event */
 const generateUID = (courseCode: string, date: string, slot: string): string => {
   return `${courseCode}-${date}-${slot}@retop`;
@@ -467,6 +472,41 @@ export function generateICalFile(options: ICalExportOptions): string {
         lines.push("END:VEVENT");
       }
     }
+  }
+
+  // Export University Events (all-day) if available
+  if (includeEvents && events.length > 0) {
+    events.forEach((ev: any, idx: number) => {
+      const date = String(ev?.date || "").trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+
+      const start = new Date(`${date}T00:00:00`);
+      if (isNaN(start.getTime())) return;
+      const end = new Date(start);
+      end.setDate(end.getDate() + 1);
+
+      const title = String(ev?.title || "").trim() || "Event";
+      const organizer = String(ev?.organizer || "").trim();
+      const category = String(ev?.category || "").trim();
+
+      const descParts = [
+        organizer ? `Organizer: ${organizer}` : "",
+        category ? `Category: ${category}` : "",
+      ].filter(Boolean);
+
+      lines.push("BEGIN:VEVENT");
+      lines.push(`DTSTAMP:${nowUTC}`);
+      lines.push(`UID:event-${date}-${idx}@retop`);
+      lines.push(`DTSTART;VALUE=DATE:${toICalDateOnly(start)}`);
+      lines.push(`DTEND;VALUE=DATE:${toICalDateOnly(end)}`);
+      lines.push(`SUMMARY:${escapeIcal(title)}`);
+      if (descParts.length) {
+        lines.push(`DESCRIPTION:${escapeIcal(descParts.join("\n"))}`);
+      }
+      lines.push("CATEGORIES:EVENT");
+      lines.push("STATUS:CONFIRMED");
+      lines.push("END:VEVENT");
+    });
   }
 
   lines.push("END:VCALENDAR");

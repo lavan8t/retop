@@ -1,5 +1,9 @@
 import { getExtUrl } from "./utils/url";
 import { get as idbGet, set as idbSet } from "idb-keyval";
+import {
+  GOOGLE_CALENDAR_SCOPE,
+  syncICalToGoogleCalendar,
+} from "./utils/google-calendar";
 
 
 chrome.runtime.onInstalled.addListener((details) => {
@@ -103,6 +107,54 @@ const isBridgeSender = (sender: chrome.runtime.MessageSender): boolean => {
   return source.startsWith("https://getretop.web.app");
 };
 
+/**
+ * Google access token for the Calendar API.
+ *
+ * Chrome caches the token, so the common path is a silent (non-interactive)
+ * request. Only the first sync after install/revoke shows the consent screen.
+ */
+const getGoogleAccessToken = async (): Promise<string> => {
+  const identity = chrome.identity;
+  if (!identity?.getAuthToken) {
+    throw new Error("Google sign-in is not available in this browser.");
+  }
+
+  const clientId = chrome.runtime.getManifest().oauth2?.client_id || "";
+  if (!clientId || clientId.includes("REPLACE")) {
+    throw new Error(
+      "This build has no Google OAuth client configured yet. See GOOGLE_CALENDAR.md.",
+    );
+  }
+
+  try {
+    const cached = await identity.getAuthToken({
+      scopes: [GOOGLE_CALENDAR_SCOPE],
+      interactive: false,
+    });
+    if (cached?.token) return cached.token;
+  } catch {
+    // No cached grant — fall through to the consent screen.
+  }
+
+  // Focus a window first, otherwise Chrome can open the consent tab behind it.
+  try {
+    const windows = await chrome.windows.getAll();
+    const first = windows?.find((w) => w.type === "normal");
+    if (first?.id !== undefined) {
+      await chrome.windows.update(first.id, { focused: true });
+    }
+  } catch {
+    // Focus is best-effort.
+  }
+
+  const granted = await identity.getAuthToken({
+    scopes: [GOOGLE_CALENDAR_SCOPE],
+    interactive: true,
+  });
+  if (!granted?.token) throw new Error("Google did not return an access token.");
+  return granted.token;
+};
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // ── Turn retop off / on ───────────────────────────────────────────────────
   if (message.action === "SET_DISABLED") {
@@ -176,6 +228,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ base64: btoa(binary) });
       })
       .catch((err) => sendResponse({ error: String(err) }));
+    return true;
+  }
+
+  if (message.action === "GOOGLE_CALENDAR_SYNC") {
+    (async () => {
+      try {
+        const token = await getGoogleAccessToken();
+        const result = await syncICalToGoogleCalendar({
+          token,
+          ics: String(message.ics || ""),
+          regNo: String(message.regNo || ""),
+        });
+        sendResponse({ success: true, ...result });
+      } catch (err: any) {
+        sendResponse({ success: false, error: err?.message || String(err) });
+      }
+    })();
     return true;
   }
 

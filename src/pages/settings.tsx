@@ -10,7 +10,8 @@ import {
   ArrowBack,
 } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
 
-import { downloadICalFile } from "../utils/ical-export";
+import { downloadICalFile, generateICalFile } from "../utils/ical-export";
+import { googleCalendarName } from "../utils/google-calendar";
 import { useDataStore } from "../store/dataStore";
 
 import { AppearanceSection } from "../components/settings/AppearanceSection";
@@ -44,7 +45,7 @@ const CATEGORIES = [
   {
     id: "sync",
     label: "Sync",
-    description: "Calendar export (.ics)",
+    description: "Calendar export (.ics) and Google Calendar sync",
     icon: Sync,
   },
   {
@@ -95,6 +96,14 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
     includeExams: true,
   });
 
+  const [googleStatus, setGoogleStatus] = useState("");
+  const [googleBusy, setGoogleBusy] = useState(false);
+
+  const currentRegNo = (() => {
+    const { user } = useDataStore.getState();
+    return user?.regNo && user.regNo !== "..." ? user.regNo : "";
+  })();
+
   const handleExportICal = () => {
     const { ttCourses, calGridData, examGroups, events } = useDataStore.getState();
     downloadICalFile({
@@ -107,6 +116,56 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
       includeEvents: icalOptions.includeEvents,
       includeExams: icalOptions.includeExams,
     });
+  };
+
+  const handleGoogleSync = async () => {
+    if (typeof chrome === "undefined" || !chrome.runtime?.sendMessage) {
+      setGoogleStatus(
+        "Google Calendar sync needs the browser extension — it is not available in the offline app.",
+      );
+      return;
+    }
+    if (!currentRegNo) {
+      setGoogleStatus(
+        "Sign in to VTOP first — the calendar is named after your registration number.",
+      );
+      return;
+    }
+
+    setGoogleBusy(true);
+    setGoogleStatus("Connecting to Google…");
+    try {
+      const { ttCourses, calGridData, examGroups, events } = useDataStore.getState();
+      const ics = generateICalFile({
+        courses: ttCourses,
+        calGridData,
+        examGroups,
+        events,
+        includeTimetable: icalOptions.includeTimetable,
+        includeCalendar: icalOptions.includeCalendar,
+        includeEvents: icalOptions.includeEvents,
+        includeExams: icalOptions.includeExams,
+      });
+
+      setGoogleStatus("Syncing your schedule…");
+      const res: any = await chrome.runtime.sendMessage({
+        action: "GOOGLE_CALENDAR_SYNC",
+        ics,
+        regNo: currentRegNo,
+      });
+
+      if (res?.success) {
+        setGoogleStatus(
+          `Synced ${res.total} events to "${res.calendarName}" — ${res.created} new, ${res.updated} updated, ${res.removed} removed.`,
+        );
+      } else {
+        setGoogleStatus(res?.error || "Google Calendar sync failed.");
+      }
+    } catch (e: any) {
+      setGoogleStatus(e?.message || String(e));
+    } finally {
+      setGoogleBusy(false);
+    }
   };
 
 
@@ -153,6 +212,10 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
             icalOptions={icalOptions}
             setIcalOptions={setIcalOptions}
             handleExportICal={handleExportICal}
+            googleCalendarName={googleCalendarName(currentRegNo)}
+            googleStatus={googleStatus}
+            googleBusy={googleBusy}
+            handleGoogleSync={handleGoogleSync}
           />
         );
       case "data":

@@ -4,7 +4,12 @@
   "description": "uni portal done better.",
   "version": "0.6.0",
 
-  "permissions": ["unlimitedStorage", "downloads", "storage"],
+  "permissions": ["unlimitedStorage", "downloads", "storage", "identity"],
+
+  "oauth2": {
+    "client_id": "REPLACE-ME.apps.googleusercontent.com",
+    "scopes": ["https://www.googleapis.com/auth/calendar"]
+  },
 
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self';"
@@ -15,7 +20,8 @@
     "https://vtop.vit.ac.in/*",
     "https://vtopcc.vit.ac.in/*",
     "https://getretop.web.app/*",
-    "https://barcode.tec-it.com/*"
+    "https://barcode.tec-it.com/*",
+    "https://www.googleapis.com/*"
   ],
 
   "content_scripts": [

@@ -4,6 +4,7 @@ import {
   parseOfficialResources,
   OfficialResourceItem,
 } from '../../parsers/resources';
+import { isTypingEvent } from '../../utils/keyboard';
 
 export const DEFAULT_OFFICIAL_RESOURCES: OfficialResourceItem[] = [
   // Web Applications
@@ -237,6 +238,11 @@ export const OfficialResourcesMenu: React.FC<OfficialResourcesMenuProps> = ({
       if (e.key === 'Escape') {
         e.preventDefault();
         setIsOpen(false);
+        return;
+      }
+
+      // If typing in the search filter input, don't hijack spaces or arrows
+      if (isTypingEvent(e) && e.key !== 'Enter') {
         return;
       }
 

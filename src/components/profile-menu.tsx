@@ -14,6 +14,7 @@ import {
 import { QuickLink } from '../types/vtop';
 import { fixBase64Image } from '../parsers/profile';
 import { showAlertDialog } from './ui/AlertDialog';
+import { isTypingEvent } from '../utils/keyboard';
 
 import { entries as idbEntries, set as idbSet } from 'idb-keyval';
 
@@ -104,6 +105,8 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (isTypingEvent(e)) return;
+
       if (showLogoutDialog) {
         if (e.key === 'Escape') {
           e.preventDefault();

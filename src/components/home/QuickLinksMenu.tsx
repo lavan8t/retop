@@ -12,6 +12,7 @@ import { AttendanceRow } from './HomeRows';
 import { EmptyState } from '../EmptyState';
 import { useDataStore } from '../../store/dataStore';
 import { SpotlightSection } from './SpotlightSection';
+import { isTypingEvent } from '../../utils/keyboard';
 
 interface QuickLinksMenuProps {
   className?: string;
@@ -147,17 +148,10 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      if (e.defaultPrevented) return;
-
-      const isInput =
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable;
+      if (e.defaultPrevented || isTypingEvent(e)) return;
 
       // If typing an alphanumeric character and not already focused on an input field
       if (
-        !isInput &&
         e.key.length === 1 &&
         /[a-zA-Z0-9]/.test(e.key) &&
         !e.ctrlKey &&

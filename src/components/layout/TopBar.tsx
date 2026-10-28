@@ -36,6 +36,7 @@ import { useDataStore } from '../../store/dataStore';
 import { useAppStore } from '../../store/appStore';
 import { fixBase64Image } from '../../parsers/profile';
 import { UserProfileData } from '../../store/slices/profileSlice';
+import { isTypingEvent } from '../../utils/keyboard';
 
 interface TopBarProps {
   currentView: string;
@@ -198,24 +199,8 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if user is typing in an input field
-      const activeEl = document.activeElement as HTMLElement | null;
-      const target = e.target as HTMLElement | null;
-      const isInputEl = (el: EventTarget | null) =>
-        Boolean(
-          el &&
-          el instanceof Element &&
-          (el.tagName === 'INPUT' ||
-            el.tagName === 'TEXTAREA' ||
-            el.tagName === 'SELECT' ||
-            (el as HTMLElement).isContentEditable ||
-            (typeof el.closest === 'function' &&
-              Boolean(
-                el.closest("input, textarea, select, [contenteditable='true']"),
-              ))),
-        );
-
-      if (isInputEl(target) || isInputEl(activeEl)) {
+      // Ignore if user is typing in any input field or form control (shadow-DOM-aware)
+      if (isTypingEvent(e)) {
         return;
       }
 

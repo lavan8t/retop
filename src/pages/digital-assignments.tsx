@@ -6,6 +6,7 @@ import { getMaterialChipStyle } from '../utils/settings-store';
 import { OfflineNotSynced } from '../components/ui/OfflineNotSynced';
 import { VTOPNetwork } from '../utils/network';
 import { showAlertDialog } from '../components/ui/AlertDialog';
+import { useNavigationGuard } from '../utils/navigationGuard';
 import { EmptyState } from '../components/EmptyState';
 import { DACourse, DAAssignment } from '../parsers/digital-assignments';
 import {
@@ -169,6 +170,46 @@ export default function DigitalAssignments({
     otpPrefix: string;
     otpVal: string;
   } | null>(null);
+
+  // Arm navigation guard to protect active upload and OTP sessions from accidental exit
+  useNavigationGuard(
+    Boolean(otpState || isUploading || selectedFile),
+    {
+      title: otpState ? 'Exit OTP Verification?' : 'Discard Assignment Upload?',
+      message: otpState
+        ? 'You have an active OTP verification session for this assignment. If you leave, your upload will be cancelled and the verification code will expire.'
+        : 'You have an assignment upload in progress. Are you sure you want to exit without submitting?',
+      confirmText: 'Discard & Exit',
+      cancelText: 'Stay',
+    },
+    'da-upload-active',
+  );
+
+  const handleDismissModal = async () => {
+    if (otpState || isUploading) {
+      const confirmed = await showAlertDialog({
+        title: 'Cancel OTP Verification?',
+        message:
+          'You have an active OTP verification session in progress. Leaving will cancel the upload and invalidate this verification code. Are you sure?',
+        confirmText: 'Discard & Exit',
+        cancelText: 'Stay',
+      });
+      if (!confirmed) return;
+    } else if (selectedFile) {
+      const confirmed = await showAlertDialog({
+        title: 'Discard Selected File?',
+        message:
+          'You have attached a file for upload. Are you sure you want to discard it?',
+        confirmText: 'Discard',
+        cancelText: 'Keep',
+      });
+      if (!confirmed) return;
+    }
+    setSelectedFile(null);
+    setActiveUploadAssgn(null);
+    setOtpState(null);
+    setStatusMsg(null);
+  };
 
   // Downloading indicators
   const [downloadingQP, setDownloadingQP] = useState<string | null>(null);
@@ -603,12 +644,7 @@ export default function DigitalAssignments({
                       </span>
                     </div>
                     <button
-                      onClick={() => {
-                        setSelectedFile(null);
-                        setActiveUploadAssgn(null);
-                        setOtpState(null);
-                        setStatusMsg(null);
-                      }}
+                      onClick={handleDismissModal}
                       className="p-1 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-(--text-muted) cursor-pointer"
                     >
                       <Close className="w-4 h-4" />
@@ -672,6 +708,17 @@ export default function DigitalAssignments({
                               otpVal: e.target.value.replace(/[^0-9]/g, ''),
                             })
                           }
+                          onKeyDown={(e) => {
+                            e.stopPropagation();
+                            if (
+                              e.key === 'Enter' &&
+                              otpState.otpVal.length >= 4 &&
+                              !isUploading
+                            ) {
+                              e.preventDefault();
+                              handleOtpSubmit();
+                            }
+                          }}
                           placeholder="123456"
                           className="flex-1 px-3.5 py-2 rounded-xl bg-(--bg-main) border border-(--border-dim)/40 font-mono font-bold text-sm tracking-widest text-(--text-main) outline-none focus:border-(--accent-base)"
                         />
@@ -707,10 +754,7 @@ export default function DigitalAssignments({
                   {!otpState && (
                     <div className="flex items-center justify-end gap-2">
                       <button
-                        onClick={() => {
-                          setSelectedFile(null);
-                          setActiveUploadAssgn(null);
-                        }}
+                        onClick={handleDismissModal}
                         disabled={isUploading}
                         className="px-4 py-2 rounded-full text-xs font-bold bg-(--bg-surface) hover:bg-(--bg-highlight) text-(--text-muted) transition-colors cursor-pointer border border-(--border-dim)/40"
                       >

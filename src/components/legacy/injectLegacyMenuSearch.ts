@@ -1,5 +1,6 @@
 import { scrapeMenu } from '../../parsers/menu';
 import { QuickLink } from '../../types/vtop';
+import { isTypingEvent } from '../../utils/keyboard';
 
 let isLegacyHotkeyRegistered = false;
 
@@ -302,20 +303,8 @@ export function injectLegacyMenuSearch(): void {
         document.body.classList.contains('show-legacy-ui') ||
         document.documentElement.classList.contains('show-legacy-ui');
 
-      // Only process if legacy VTOP is active/visible
-      if (!isLegacyVisible) return;
-
-      const target = (
-        e.composedPath ? e.composedPath()[0] : e.target
-      ) as HTMLElement;
-      const isInput =
-        target &&
-        (target.tagName === 'INPUT' ||
-          target.tagName === 'TEXTAREA' ||
-          target.tagName === 'SELECT' ||
-          target.isContentEditable);
-
-      if (isInput) return;
+      // Only process if legacy VTOP is active/visible and user is not typing in an input
+      if (!isLegacyVisible || isTypingEvent(e)) return;
 
       if (
         e.key === '/' ||

@@ -40,6 +40,11 @@ import { FloatingViewToggle } from '../components/timetable/FloatingViewToggle';
 import { useSettings, applyTheme } from '../utils/settings-store';
 import { LegacyReturnButton } from '../components/LegacyReturnButton';
 import { SnackbarManager } from '../components/ui/Snackbar';
+import { isTypingEvent } from '../utils/keyboard';
+import {
+  confirmNavigation,
+  getActiveNavigationGuard,
+} from '../utils/navigationGuard';
 
 const findLegacyTarget = (title: string, url?: string): HTMLElement | null => {
   const links = Array.from(
@@ -454,8 +459,11 @@ export const DashboardApp = () => {
     }
   }, [status]);
 
-  const navigateToView = (view: ViewType, replace: boolean = false) => {
+  const navigateToView = async (view: ViewType, replace: boolean = false) => {
     if (view === currentView) return;
+    const canProceed = await confirmNavigation();
+    if (!canProceed) return;
+
     if (replace) {
       window.history.replaceState(
         { view },
@@ -473,7 +481,10 @@ export const DashboardApp = () => {
     sessionStorage.setItem('vtop-retop-view', view);
   };
 
-  const handleBack = () => {
+  const handleBack = async () => {
+    const canProceed = await confirmNavigation();
+    if (!canProceed) return;
+
     if (
       window.history.state?.view &&
       window.history.state.view !== 'dashboard'
@@ -501,10 +512,22 @@ export const DashboardApp = () => {
       );
     }
 
-    const handlePopState = (e: PopStateEvent) => {
-      const view = e.state?.view || 'dashboard';
-      setCurrentView(view);
-      sessionStorage.setItem('vtop-retop-view', view);
+    const handlePopState = async (e: PopStateEvent) => {
+      const targetView = (e.state?.view || 'dashboard') as ViewType;
+      if (getActiveNavigationGuard()) {
+        const canProceed = await confirmNavigation();
+        if (!canProceed) {
+          // Revert history state so browser URL and session remain on currentView
+          window.history.pushState(
+            { view: currentView },
+            '',
+            window.location.pathname + window.location.search,
+          );
+          return;
+        }
+      }
+      setCurrentView(targetView);
+      sessionStorage.setItem('vtop-retop-view', targetView);
     };
 
     const handleOpenSettings = () => {
@@ -851,23 +874,10 @@ export const DashboardApp = () => {
         return;
       }
 
-      // Get target element resolving through shadow DOM
-      const targetEl = (
-        e.composedPath ? e.composedPath()[0] : e.target
-      ) as HTMLElement;
-
-      const isInput = (el: HTMLElement | null) => {
-        if (!el) return false;
-        const tag = el.tagName?.toUpperCase();
-        return (
-          tag === 'INPUT' ||
-          tag === 'TEXTAREA' ||
-          tag === 'SELECT' ||
-          el.isContentEditable
-        );
-      };
-
-      if (isInput(targetEl)) return;
+      // Ignore if user is typing in any input field or form control (shadow-DOM-aware)
+      if (isTypingEvent(e)) {
+        return;
+      }
 
       if (e.key === 'Backspace') {
         if (isOmniboxOpenRef.current) return;
@@ -1016,6 +1026,9 @@ export const DashboardApp = () => {
       if (isStandalone) {
         return;
       }
+      const canProceed = await confirmNavigation();
+      if (!canProceed) return;
+
       setContentTitle(link.title);
       setTimeout(() => {
         setIsModernUI(false);

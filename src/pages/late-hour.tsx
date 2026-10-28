@@ -21,6 +21,7 @@ import {
 } from '../parsers/late-hour';
 import { showAlertDialog } from '../components/ui/AlertDialog';
 import { formatTimeStr, parseVtopDate } from '../utils/formatting';
+import { useNavigationGuard } from '../utils/navigationGuard';
 
 interface LateHourPageProps {
   network: VTOPNetwork;
@@ -180,6 +181,24 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
   const canSubmit = Object.keys(errors).length === 0;
   const touch = (field: string) =>
     setTouched((prev) => ({ ...prev, [field]: true }));
+
+  // Protect against accidental loss of in-progress late hour permit draft
+  const hasDraftForm = Boolean(
+    activeTab === 'request' &&
+    (details.trim().length > 0 || faculty || fromDate || submitting),
+  );
+
+  useNavigationGuard(
+    hasDraftForm,
+    {
+      title: 'Discard Late Hour Application?',
+      message:
+        'You have an in-progress late hour permit application. Navigating away will discard your draft. Are you sure you want to leave?',
+      confirmText: 'Discard & Exit',
+      cancelText: 'Stay',
+    },
+    'late-hour-draft',
+  );
 
   // Step 1 & 2 Init: load school options
   useEffect(() => {

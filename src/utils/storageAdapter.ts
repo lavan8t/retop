@@ -4,11 +4,11 @@ import {
   del as idbDel,
   entries as idbEntries,
   clear as idbClear,
-} from "idb-keyval";
+} from 'idb-keyval';
 
 const parseStored = (val: any) => {
   if (val === undefined || val === null) return val;
-  if (typeof val === "string") {
+  if (typeof val === 'string') {
     try {
       return JSON.parse(val);
     } catch {
@@ -21,7 +21,7 @@ const parseStored = (val: any) => {
 const hasChromeStorage = (): boolean => {
   try {
     return (
-      typeof chrome !== "undefined" &&
+      typeof chrome !== 'undefined' &&
       Boolean(chrome?.runtime?.id) &&
       Boolean(chrome.storage) &&
       Boolean(chrome.storage.local)
@@ -32,8 +32,8 @@ const hasChromeStorage = (): boolean => {
 };
 
 const isContextInvalidated = (e: any): boolean => {
-  const msg = e?.message || String(e || "");
-  return msg.toLowerCase().includes("extension context invalidated");
+  const msg = e?.message || String(e || '');
+  return msg.toLowerCase().includes('extension context invalidated');
 };
 
 export const getStorageData = async (
@@ -60,7 +60,7 @@ export const getStorageData = async (
       }
     } catch (e: any) {
       if (!isContextInvalidated(e)) {
-        console.warn("[Storage Adapter] chrome.storage.local read failed", e);
+        console.warn('[Storage Adapter] chrome.storage.local read failed', e);
       }
     }
   }
@@ -69,7 +69,7 @@ export const getStorageData = async (
   const missingKeys = keys.filter(
     (k) => result[k] === undefined || result[k] === null,
   );
-  if (missingKeys.length > 0 && typeof indexedDB !== "undefined") {
+  if (missingKeys.length > 0 && typeof indexedDB !== 'undefined') {
     try {
       await Promise.all(
         missingKeys.map(async (key) => {
@@ -87,7 +87,7 @@ export const getStorageData = async (
       );
     } catch (e: any) {
       if (!isContextInvalidated(e)) {
-        console.warn("[Storage Adapter] IndexedDB read failed", e);
+        console.warn('[Storage Adapter] IndexedDB read failed', e);
       }
     }
   }
@@ -96,7 +96,7 @@ export const getStorageData = async (
   const stillMissing = keys.filter(
     (k) => result[k] === undefined || result[k] === null,
   );
-  if (stillMissing.length > 0 && typeof localStorage !== "undefined") {
+  if (stillMissing.length > 0 && typeof localStorage !== 'undefined') {
     for (const key of stillMissing) {
       try {
         const item = localStorage.getItem(key);
@@ -124,32 +124,29 @@ export const setStorageData = async (
       });
     } catch (e: any) {
       if (!isContextInvalidated(e)) {
-        console.warn("[Storage Adapter] chrome.storage.local write failed", e);
+        console.warn('[Storage Adapter] chrome.storage.local write failed', e);
       }
     }
   }
 
   // 2. Write to IndexedDB
-  if (typeof indexedDB !== "undefined") {
+  if (typeof indexedDB !== 'undefined') {
     try {
       await Promise.all(
         Object.entries(data).map(([key, val]) => idbSet(key, val)),
       );
     } catch (e: any) {
       if (!isContextInvalidated(e)) {
-        console.warn("[Storage Adapter] IndexedDB write failed", e);
+        console.warn('[Storage Adapter] IndexedDB write failed', e);
       }
     }
   }
 
   // 3. Write to localStorage as safety backup
-  if (typeof localStorage !== "undefined") {
+  if (typeof localStorage !== 'undefined') {
     Object.entries(data).forEach(([k, v]) => {
       try {
-        localStorage.setItem(
-          k,
-          typeof v === "string" ? v : JSON.stringify(v),
-        );
+        localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v));
       } catch {}
     });
   }
@@ -172,13 +169,16 @@ export const getAllStorageData = async (): Promise<Record<string, any>> => {
       }
     } catch (e: any) {
       if (!isContextInvalidated(e)) {
-        console.warn("[Storage Adapter] chrome.storage.local read all failed", e);
+        console.warn(
+          '[Storage Adapter] chrome.storage.local read all failed',
+          e,
+        );
       }
     }
   }
 
   // 2. Read from IndexedDB
-  if (typeof indexedDB !== "undefined") {
+  if (typeof indexedDB !== 'undefined') {
     try {
       const entries = await idbEntries();
       for (const [k, v] of entries) {
@@ -188,7 +188,7 @@ export const getAllStorageData = async (): Promise<Record<string, any>> => {
       }
     } catch (e: any) {
       if (!isContextInvalidated(e)) {
-        console.warn("[Storage Adapter] IndexedDB read all failed", e);
+        console.warn('[Storage Adapter] IndexedDB read all failed', e);
       }
     }
   }
@@ -204,12 +204,12 @@ export const removeStorageKeys = async (keys: string[]): Promise<void> => {
       });
     } catch (e) {}
   }
-  if (typeof indexedDB !== "undefined") {
+  if (typeof indexedDB !== 'undefined') {
     try {
       await Promise.all(keys.map((k) => idbDel(k)));
     } catch (e) {}
   }
-  if (typeof localStorage !== "undefined") {
+  if (typeof localStorage !== 'undefined') {
     keys.forEach((k) => {
       try {
         localStorage.removeItem(k);
@@ -226,7 +226,7 @@ export const clearAllStorage = async (): Promise<void> => {
       });
     } catch (e) {}
   }
-  if (typeof indexedDB !== "undefined") {
+  if (typeof indexedDB !== 'undefined') {
     try {
       await idbClear();
     } catch (e) {}

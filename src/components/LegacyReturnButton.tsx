@@ -1,5 +1,5 @@
-import React from "react";
-import { SubdirectoryArrowLeft } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
+import React from 'react';
+import { SubdirectoryArrowLeft } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 
 interface LegacyReturnButtonProps {
   onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
@@ -14,7 +14,10 @@ export const LegacyReturnButton: React.FC<LegacyReturnButtonProps> = ({
 }) => {
   const handleRelease = (e: React.SyntheticEvent<HTMLButtonElement>) => {
     e.currentTarget.blur();
-    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+    if (
+      typeof document !== 'undefined' &&
+      document.activeElement instanceof HTMLElement
+    ) {
       document.activeElement.blur();
     }
   };

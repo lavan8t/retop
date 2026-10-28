@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode } from 'react';
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
@@ -12,10 +12,10 @@ interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export const Card = ({
   children,
-  className = "",
+  className = '',
   onClick,
   clickable = false,
-  borderClass = "border-(--border-main)",
+  borderClass = 'border-(--border-main)',
   ...rest
 }: CardProps) => {
   const isClickable = clickable || !!onClick;
@@ -25,7 +25,7 @@ export const Card = ({
       onClick={onClick}
       className={`
         border-4 ${borderClass} shadow-none transition-all duration-200
-        ${isClickable ? "cursor-pointer active:translate-y-0 active:shadow-(--brutal-shadow-active)" : ""}
+        ${isClickable ? 'cursor-pointer active:translate-y-0 active:shadow-(--brutal-shadow-active)' : ''}
         ${className}
       `}
       {...rest}

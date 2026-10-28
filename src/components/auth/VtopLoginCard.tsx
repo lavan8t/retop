@@ -1,14 +1,28 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Refresh,
   Visibility,
   VisibilityOff,
-} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
-import { VtopClient, VtopCampus, CaptchaData, RecaptchaRequiredError, RECAPTCHA_REQUIRED } from "../../utils/vtopClient";
-import { syncStudentData, CachedUser, SyncProgress } from "../../utils/syncOrchestrator";
-import { getStorageData, setStorageData, removeStorageKeys } from "../../utils/storageAdapter";
+} from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
+import {
+  VtopClient,
+  VtopCampus,
+  CaptchaData,
+  RecaptchaRequiredError,
+  RECAPTCHA_REQUIRED,
+} from '../../utils/vtopClient';
+import {
+  syncStudentData,
+  CachedUser,
+  SyncProgress,
+} from '../../utils/syncOrchestrator';
+import {
+  getStorageData,
+  setStorageData,
+  removeStorageKeys,
+} from '../../utils/storageAdapter';
 
-const REMEMBERED_USER_KEY = "retop_remembered_username";
+const REMEMBERED_USER_KEY = 'retop_remembered_username';
 
 export interface VtopLoginCardProps {
   initialCampus?: VtopCampus;
@@ -30,27 +44,29 @@ export interface VtopLoginCardProps {
 }
 
 export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
-  initialCampus = "vellore",
+  initialCampus = 'vellore',
   onLoginSuccess,
   onCancel,
-  title = "retop",
-  subtitle = "vtop login",
+  title = 'retop',
+  subtitle = 'vtop login',
   syncAfterLogin = true,
   onRecaptchaRequired,
 }) => {
   const [campus, setCampus] = useState<VtopCampus>(initialCampus);
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [captchaInput, setCaptchaInput] = useState("");
-  const captchaInputRef = useRef("");
-  useEffect(() => { captchaInputRef.current = captchaInput; }, [captchaInput]);
+  const [captchaInput, setCaptchaInput] = useState('');
+  const captchaInputRef = useRef('');
+  useEffect(() => {
+    captchaInputRef.current = captchaInput;
+  }, [captchaInput]);
   const [captchaData, setCaptchaData] = useState<CaptchaData | null>(null);
   const [loadingCaptcha, setLoadingCaptcha] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [syncProgress, setSyncProgress] = useState<SyncProgress | null>(null);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState('');
 
   const [usernameWiggle, setUsernameWiggle] = useState(false);
   const [passwordWiggle, setPasswordWiggle] = useState(false);
@@ -69,22 +85,22 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
   const fetchInitialCaptcha = async (targetCampus: VtopCampus) => {
     const seq = ++activeSeqRef.current;
     setLoadingCaptcha(true);
-    setErrorMessage("");
+    setErrorMessage('');
 
     try {
       const data = await VtopClient.getCaptcha(targetCampus);
       if (seq !== activeSeqRef.current) return;
       setCaptchaData(data);
-      setCaptchaInput("");
+      setCaptchaInput('');
     } catch (err: any) {
       if (seq !== activeSeqRef.current) return;
       if (err instanceof RecaptchaRequiredError && onRecaptchaRequired) {
         onRecaptchaRequired();
         return;
       }
-      console.error("[VtopLoginCard] Failed to fetch captcha:", err);
+      console.error('[VtopLoginCard] Failed to fetch captcha:', err);
       setErrorMessage(
-        err?.message || "Failed to load CAPTCHA from VTOP. Please retry.",
+        err?.message || 'Failed to load CAPTCHA from VTOP. Please retry.',
       );
     } finally {
       if (seq === activeSeqRef.current) {
@@ -100,7 +116,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
     if (captchaData?.jsessionid) {
       const seq = ++activeSeqRef.current;
       setLoadingCaptcha(true);
-      setErrorMessage("");
+      setErrorMessage('');
 
       try {
         const refreshed = await VtopClient.refreshCaptcha(
@@ -117,7 +133,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
           serverId: refreshed.serverId,
         };
         setCaptchaData(newData);
-        setCaptchaInput("");
+        setCaptchaInput('');
         return newData;
       } catch (e) {
         // Fallback to full initial handshake if session expired
@@ -145,7 +161,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
     getStorageData([REMEMBERED_USER_KEY])
       .then((data) => {
         const saved = data[REMEMBERED_USER_KEY];
-        if (!cancelled && typeof saved === "string" && saved) {
+        if (!cancelled && typeof saved === 'string' && saved) {
           setUsername(saved);
           setRememberUsername(true);
         }
@@ -167,14 +183,15 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
     let cancelled = false;
     setIsSolvingCaptcha(true);
 
-    import("../../utils/captchaSolver")
+    import('../../utils/captchaSolver')
       .then(({ autoSolveCaptcha }) => autoSolveCaptcha(img))
       .then((solved) => {
         if (cancelled || !solved) return;
         setCaptchaInput(solved);
       })
       .catch((e) => {
-        if (!cancelled) console.warn("[VtopLoginCard] CAPTCHA auto-solve failed:", e);
+        if (!cancelled)
+          console.warn('[VtopLoginCard] CAPTCHA auto-solve failed:', e);
       })
       .finally(() => {
         if (!cancelled) setIsSolvingCaptcha(false);
@@ -202,29 +219,29 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
     if (!trimmedUser) {
       setUsernameWiggle(true);
       setTimeout(() => setUsernameWiggle(false), 400);
-      setErrorMessage("Enter your username");
+      setErrorMessage('Enter your username');
       return;
     }
     if (!trimmedPass) {
       setPasswordWiggle(true);
       setTimeout(() => setPasswordWiggle(false), 400);
-      setErrorMessage("Enter your password");
+      setErrorMessage('Enter your password');
       return;
     }
     if (trimmedCaptcha.length !== 6) {
       setCaptchaWiggle(true);
       setTimeout(() => setCaptchaWiggle(false), 400);
-      setErrorMessage("Captcha must be 6 characters");
+      setErrorMessage('Captcha must be 6 characters');
       return;
     }
     if (!captchaData) {
-      setErrorMessage("Captcha session not ready. Refreshing...");
+      setErrorMessage('Captcha session not ready. Refreshing...');
       fetchInitialCaptcha(campus);
       return;
     }
 
     setIsSubmitting(true);
-    setErrorMessage("");
+    setErrorMessage('');
     setSyncProgress(null);
 
     const MAX_CAPTCHA_RETRIES = 3;
@@ -237,7 +254,8 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
           campus,
           username: trimmedUser,
           password: trimmedPass,
-          captcha: (captchaInputRef.current.trim().toUpperCase() || trimmedCaptcha),
+          captcha:
+            captchaInputRef.current.trim().toUpperCase() || trimmedCaptcha,
           csrf: activeCaptcha.csrf,
           jsessionid: activeCaptcha.jsessionid,
           serverId: activeCaptcha.serverId,
@@ -251,13 +269,13 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
             return;
           }
           setErrorMessage(
-            "VTOP is asking for its own reCAPTCHA. Sign in at vtop.vit.ac.in.",
+            'VTOP is asking for its own reCAPTCHA. Sign in at vtop.vit.ac.in.',
           );
           setIsSubmitting(false);
           return;
         }
 
-        const isCaptchaError = /captcha/i.test(result.message || "");
+        const isCaptchaError = /captcha/i.test(result.message || '');
 
         if (!result.success || !result.client) {
           // Auto-retry up to 3 times on an invalid captcha.
@@ -283,7 +301,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
           setCaptchaWiggle(true);
           setTimeout(() => setCaptchaWiggle(false), 400);
           setErrorMessage(
-            result.message || "Invalid credentials or CAPTCHA mismatch",
+            result.message || 'Invalid credentials or CAPTCHA mismatch',
           );
           setIsSubmitting(false);
           handleRefreshCaptcha();
@@ -299,7 +317,8 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
         } catch {}
 
         if (!syncAfterLogin) {
-          const regNo = result.user?.registrationNumber || result.client.registrationNumber;
+          const regNo =
+            result.user?.registrationNumber || result.client.registrationNumber;
           onLoginSuccess(
             {
               regNo,
@@ -315,7 +334,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
 
         // Synchronize student data
         setSyncProgress({
-          step: "Authenticating session...",
+          step: 'Authenticating session...',
           progressPercent: 10,
         });
 
@@ -325,9 +344,9 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
 
         onLoginSuccess(syncResult.user, result.client);
       } catch (err: any) {
-        console.error("[VtopLoginCard] Login error:", err);
+        console.error('[VtopLoginCard] Login error:', err);
         setErrorMessage(
-          err?.message || "Login failed. Check your network connection.",
+          err?.message || 'Login failed. Check your network connection.',
         );
         setIsSubmitting(false);
         handleRefreshCaptcha();
@@ -348,8 +367,8 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
               ? '"wdth" 151, "wght" 1, "GRAD" 100, "ROND" 100, "slnt" -10'
               : '"wdth" 151, "wght" 800, "GRAD" 100, "ROND" 100, "slnt" -10',
             transition:
-              "font-variation-settings 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
-            cursor: "default",
+              'font-variation-settings 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+            cursor: 'default',
           }}
           onMouseEnter={() => setIsTitleHovered(true)}
           onMouseLeave={() => setIsTitleHovered(false)}
@@ -359,11 +378,10 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
         {subtitle ? <p id="retop-welcome-text">{subtitle}</p> : null}
       </div>
 
-
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Username Input Group with Native Floating Label */}
-        <div className={`input-group ${usernameWiggle ? "retop-wiggle" : ""}`}>
+        <div className={`input-group ${usernameWiggle ? 'retop-wiggle' : ''}`}>
           <input
             type="text"
             id="username"
@@ -384,9 +402,9 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
         </div>
 
         {/* Password Input Group with Native Floating Label & Visibility Toggle */}
-        <div className={`input-group ${passwordWiggle ? "retop-wiggle" : ""}`}>
+        <div className={`input-group ${passwordWiggle ? 'retop-wiggle' : ''}`}>
           <input
-            type={showPassword ? "text" : "password"}
+            type={showPassword ? 'text' : 'password'}
             id="password"
             className="form-control"
             placeholder=" "
@@ -425,10 +443,11 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
             onChange={(e) => {
               const checked = e.target.checked;
               setRememberUsername(checked);
-              if (!checked) removeStorageKeys([REMEMBERED_USER_KEY]).catch(() => {});
+              if (!checked)
+                removeStorageKeys([REMEMBERED_USER_KEY]).catch(() => {});
             }}
             className="h-4 w-4 cursor-pointer disabled:opacity-50"
-            style={{ accentColor: "var(--accent-base)" }}
+            style={{ accentColor: 'var(--accent-base)' }}
           />
           <span
             className="text-xs text-(--text-muted)"
@@ -441,7 +460,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
         {/* CAPTCHA Container Matching login-theme.css #retop-captcha-container */}
         <div
           id="retop-captcha-container"
-          className={`${captchaWiggle ? "retop-wiggle" : ""} transition-all duration-300 ease-in-out overflow-hidden ${captchaInput.length >= 6 ? "max-h-0 opacity-0" : "max-h-40 opacity-100"}`}
+          className={`${captchaWiggle ? 'retop-wiggle' : ''} transition-all duration-300 ease-in-out overflow-hidden ${captchaInput.length >= 6 ? 'max-h-0 opacity-0' : 'max-h-40 opacity-100'}`}
         >
           {/* Captcha Image and Refresh Button */}
           <div id="captchaBlock">
@@ -455,9 +474,9 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
             ) : (
               <div
                 className="h-12 w-28 bg-(--bg-card) border border-(--border-main) rounded flex items-center justify-center text-xs text-(--text-muted) font-semibold"
-                style={{ height: "48px" }}
+                style={{ height: '48px' }}
               >
-                {loadingCaptcha ? "Loading..." : "No Captcha"}
+                {loadingCaptcha ? 'Loading...' : 'No Captcha'}
               </div>
             )}
             <button
@@ -469,7 +488,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
               title="Refresh Captcha"
             >
               <Refresh
-                className={`w-5 h-5 ${loadingCaptcha ? "animate-spin" : ""}`}
+                className={`w-5 h-5 ${loadingCaptcha ? 'animate-spin' : ''}`}
               />
             </button>
           </div>
@@ -513,7 +532,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
                 className="h-full transition-all duration-300 rounded-full"
                 style={{
                   width: `${syncProgress.progressPercent}%`,
-                  backgroundColor: "var(--accent-base)",
+                  backgroundColor: 'var(--accent-base)',
                 }}
               />
             </div>
@@ -531,7 +550,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
               <span className="flex items-center justify-center gap-2">
                 <span className="inline-block w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
                 <span>
-                  {syncProgress ? "SYNCHRONIZING..." : "LOGGING IN..."}
+                  {syncProgress ? 'SYNCHRONIZING...' : 'LOGGING IN...'}
                 </span>
               </span>
             ) : (
@@ -556,7 +575,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
 
       {/* Floating Error Toast */}
       {errorMessage && (
-        <div className="retop-error-toast" onClick={() => setErrorMessage("")}>
+        <div className="retop-error-toast" onClick={() => setErrorMessage('')}>
           <span>{errorMessage}</span>
         </div>
       )}

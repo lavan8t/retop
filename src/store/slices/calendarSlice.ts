@@ -1,21 +1,21 @@
-import { StateCreator } from "zustand";
-import { VTOPNetwork } from "../../utils/network";
-import { getCachedData, setCachedData } from "../../utils/cache";
+import { StateCreator } from 'zustand';
+import { VTOPNetwork } from '../../utils/network';
+import { getCachedData, setCachedData } from '../../utils/cache';
 import {
   parseCalendarDays,
   parseCalendarGroupsAndMonths,
-} from "../../parsers/calendar";
+} from '../../parsers/calendar';
 import {
   CalendarMonthPreview,
   CalendarEvent,
   ClassGroup,
-} from "../../types/vtop";
-import { DataState } from "../dataStore";
+} from '../../types/vtop';
+import { DataState } from '../dataStore';
 
 export interface CustomCalendarEvent {
   id: string;
   title: string;
-  type: "quiz" | "assessment" | "event" | "task" | "note";
+  type: 'quiz' | 'assessment' | 'event' | 'task' | 'note';
   date: string; // YYYY-MM-DD
   time?: string; // HH:MM
   venue?: string;
@@ -56,25 +56,30 @@ export interface CalendarSlice {
   ) => Promise<void>;
 }
 
-export const createCalendarSlice: StateCreator<DataState, [], [], CalendarSlice> = (set, get) => ({
+export const createCalendarSlice: StateCreator<
+  DataState,
+  [],
+  [],
+  CalendarSlice
+> = (set, get) => ({
   calSemesters: [],
   setCalSemesters: (calSemesters) => set({ calSemesters }),
-  calSelectedSem: "",
+  calSelectedSem: '',
   setCalSelectedSem: (calSelectedSem) => {
-    localStorage.setItem("retop-cal-selected-sem", calSelectedSem);
+    localStorage.setItem('retop-cal-selected-sem', calSelectedSem);
     set({
       calSelectedSem,
       calGridData: [],
       calAvailableMonths: [],
       calClassGroups: [],
-      calSelectedGroup: "",
+      calSelectedGroup: '',
     });
   },
 
   calClassGroups: [],
-  calSelectedGroup: localStorage.getItem("retop-cal-selected-group") || "",
+  calSelectedGroup: localStorage.getItem('retop-cal-selected-group') || '',
   setCalSelectedGroup: (id) => {
-    localStorage.setItem("retop-cal-selected-group", id);
+    localStorage.setItem('retop-cal-selected-group', id);
     set({ calSelectedGroup: id, calGridData: [] });
   },
   calAvailableMonths: [],
@@ -87,7 +92,10 @@ export const createCalendarSlice: StateCreator<DataState, [], [], CalendarSlice>
     set({ calLoadingMonths: true });
     try {
       const cacheKey = `cal_groups_${semId}`;
-      const cached = await getCachedData<{ groups: ClassGroup[]; months: CalendarMonthPreview[] }>(cacheKey);
+      const cached = await getCachedData<{
+        groups: ClassGroup[];
+        months: CalendarMonthPreview[];
+      }>(cacheKey);
 
       let groups: ClassGroup[] = cached?.groups || [];
       let months: CalendarMonthPreview[] = cached?.months || [];
@@ -107,13 +115,16 @@ export const createCalendarSlice: StateCreator<DataState, [], [], CalendarSlice>
       }
 
       if (groups.length > 0 && months.length > 0) {
-        const savedGroup = localStorage.getItem("retop-cal-selected-group");
-        const defaultGroup = (savedGroup && groups.some((g) => g.id === savedGroup))
-          ? savedGroup
-          : (groups.length > 1 ? groups[1].id : groups[0]?.id || "");
+        const savedGroup = localStorage.getItem('retop-cal-selected-group');
+        const defaultGroup =
+          savedGroup && groups.some((g) => g.id === savedGroup)
+            ? savedGroup
+            : groups.length > 1
+              ? groups[1].id
+              : groups[0]?.id || '';
 
         if (defaultGroup) {
-          localStorage.setItem("retop-cal-selected-group", defaultGroup);
+          localStorage.setItem('retop-cal-selected-group', defaultGroup);
         }
 
         set({
@@ -125,7 +136,7 @@ export const createCalendarSlice: StateCreator<DataState, [], [], CalendarSlice>
       }
 
       const isOfflineMode =
-        (typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
+        (typeof window !== 'undefined' && (window as any).__RETOP_OFFLINE__) ||
         !network ||
         !network.csrf;
 
@@ -135,17 +146,17 @@ export const createCalendarSlice: StateCreator<DataState, [], [], CalendarSlice>
       }
 
       const body = new URLSearchParams();
-      body.append("_csrf", network.csrf);
-      body.append("paramReturnId", "getDateForSemesterPreview");
-      body.append("semSubId", semId);
-      body.append("authorizedID", network.authorizedID);
-      body.append("x", new Date().toUTCString());
+      body.append('_csrf', network.csrf);
+      body.append('paramReturnId', 'getDateForSemesterPreview');
+      body.append('semSubId', semId);
+      body.append('authorizedID', network.authorizedID);
+      body.append('x', new Date().toUTCString());
 
-      const res = await fetch("/vtop/getDateForSemesterPreview", {
-        method: "POST",
+      const res = await fetch('/vtop/getDateForSemesterPreview', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          "X-Requested-With": "XMLHttpRequest",
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          'X-Requested-With': 'XMLHttpRequest',
         },
         body: body,
       });
@@ -154,19 +165,28 @@ export const createCalendarSlice: StateCreator<DataState, [], [], CalendarSlice>
       const parsed = parseCalendarGroupsAndMonths(html);
 
       if (parsed.groups.length > 0 && parsed.months.length > 0) {
-        await setCachedData(cacheKey, { groups: parsed.groups, months: parsed.months });
+        await setCachedData(cacheKey, {
+          groups: parsed.groups,
+          months: parsed.months,
+        });
         localStorage.setItem(
           `retop-cal-groups-${semId}`,
-          JSON.stringify({ date: new Date().toDateString(), data: { groups: parsed.groups, months: parsed.months } }),
+          JSON.stringify({
+            date: new Date().toDateString(),
+            data: { groups: parsed.groups, months: parsed.months },
+          }),
         );
 
-        const savedGroup = localStorage.getItem("retop-cal-selected-group");
-        const defaultGroup = (savedGroup && parsed.groups.some((g) => g.id === savedGroup))
-          ? savedGroup
-          : (parsed.groups.length > 1 ? parsed.groups[1].id : parsed.groups[0]?.id || "");
+        const savedGroup = localStorage.getItem('retop-cal-selected-group');
+        const defaultGroup =
+          savedGroup && parsed.groups.some((g) => g.id === savedGroup)
+            ? savedGroup
+            : parsed.groups.length > 1
+              ? parsed.groups[1].id
+              : parsed.groups[0]?.id || '';
 
         if (defaultGroup) {
-          localStorage.setItem("retop-cal-selected-group", defaultGroup);
+          localStorage.setItem('retop-cal-selected-group', defaultGroup);
         }
 
         set({
@@ -179,12 +199,18 @@ export const createCalendarSlice: StateCreator<DataState, [], [], CalendarSlice>
         set({ calLoadingMonths: false });
       }
     } catch (e) {
-      console.warn("Failed to fetch months and groups:", e);
+      console.warn('Failed to fetch months and groups:', e);
       set({ calLoadingMonths: false });
     }
   },
 
-  fetchCalendarGrid: async (network, semId, groupId, months, forceFetch = false) => {
+  fetchCalendarGrid: async (
+    network,
+    semId,
+    groupId,
+    months,
+    forceFetch = false,
+  ) => {
     set({ calLoadingGrid: true, calGridData: [] });
     try {
       const results = [];
@@ -193,7 +219,7 @@ export const createCalendarSlice: StateCreator<DataState, [], [], CalendarSlice>
         const html = await network.fetchWithCache(
           cacheKey,
           async () => {
-            return await network.fetchFragment("processViewCalendar", {
+            return await network.fetchFragment('processViewCalendar', {
               calDate: month.dateString,
               semSubId: semId,
               classGroupId: groupId,
@@ -202,8 +228,11 @@ export const createCalendarSlice: StateCreator<DataState, [], [], CalendarSlice>
           forceFetch,
           undefined,
           (data) => {
-            return data.includes("calendar-table") || data.includes("table-responsive");
-          }
+            return (
+              data.includes('calendar-table') ||
+              data.includes('table-responsive')
+            );
+          },
         );
 
         const days = parseCalendarDays(html, month.label);
@@ -218,7 +247,7 @@ export const createCalendarSlice: StateCreator<DataState, [], [], CalendarSlice>
       }
       set({ calGridData: results, calLoadingGrid: false });
     } catch (e) {
-      console.error("Failed to fetch grid data:", e);
+      console.error('Failed to fetch grid data:', e);
       set({ calLoadingGrid: false });
     }
   },

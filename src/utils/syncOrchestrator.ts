@@ -3,17 +3,21 @@
  * Fetches academic data from live VTOP session and persists to IndexedDB/chrome.storage.
  */
 
-import { VtopClient, VtopCampus } from "./vtopClient";
-import { parseStudentProfile, fixBase64Image, resolveProctorPhoto } from "../parsers/profile";
-import { parseSemesters, parseTimetable } from "../parsers/timetable";
-import { parseStudentAttendance } from "../parsers/attendance";
-import { parseCourseDetails } from "../parsers/dashboard";
-import { parseStudentMarks } from "../parsers/marks";
-import { parseGrades, parseGradeHistory } from "../parsers/grades";
-import { setCachedData } from "./cache";
-import { getStorageData, setStorageData } from "./storageAdapter";
-import { saveUserProfileImage } from "./pinSecurity";
-import { set as idbSet } from "idb-keyval";
+import { VtopClient, VtopCampus } from './vtopClient';
+import {
+  parseStudentProfile,
+  fixBase64Image,
+  resolveProctorPhoto,
+} from '../parsers/profile';
+import { parseSemesters, parseTimetable } from '../parsers/timetable';
+import { parseStudentAttendance } from '../parsers/attendance';
+import { parseCourseDetails } from '../parsers/dashboard';
+import { parseStudentMarks } from '../parsers/marks';
+import { parseGrades, parseGradeHistory } from '../parsers/grades';
+import { setCachedData } from './cache';
+import { getStorageData, setStorageData } from './storageAdapter';
+import { saveUserProfileImage } from './pinSecurity';
+import { set as idbSet } from 'idb-keyval';
 
 export interface SyncProgress {
   step: string;
@@ -31,7 +35,7 @@ export interface CachedUser {
 
 export async function syncStudentData(
   client: VtopClient,
-  onProgress?: (progress: SyncProgress) => void
+  onProgress?: (progress: SyncProgress) => void,
 ): Promise<{
   success: boolean;
   user: CachedUser;
@@ -39,11 +43,11 @@ export async function syncStudentData(
 }> {
   const regNo = client.registrationNumber.toUpperCase().trim();
   let studentName = client.studentName || regNo;
-  let profilePhoto = "";
+  let profilePhoto = '';
 
   try {
     // 1. Fetch Profile
-    onProgress?.({ step: "Fetching student profile...", progressPercent: 15 });
+    onProgress?.({ step: 'Fetching student profile...', progressPercent: 15 });
     try {
       const profileHtml = await client.getProfile();
       if (profileHtml && profileHtml.length > 100) {
@@ -59,28 +63,34 @@ export async function syncStudentData(
           studentName = profileData.name.trim();
         }
 
-        const rawImg = profileData?.profileImgBase64 || profileData?.basic?.profileImgBase64 || "";
+        const rawImg =
+          profileData?.profileImgBase64 ||
+          profileData?.basic?.profileImgBase64 ||
+          '';
         profilePhoto = fixBase64Image(rawImg);
 
         await setCachedData(`${regNo}_student_profile_data`, parsedProfile);
-        await setCachedData("student_profile_data", parsedProfile);
+        await setCachedData('student_profile_data', parsedProfile);
         if (profilePhoto) {
           await saveUserProfileImage(regNo, profilePhoto).catch(() => {});
         }
       }
     } catch (e) {
-      console.warn("[syncOrchestrator] Profile fetch failed:", e);
+      console.warn('[syncOrchestrator] Profile fetch failed:', e);
     }
 
     // 2. Fetch Semesters
-    onProgress?.({ step: "Discovering active semesters...", progressPercent: 35 });
-    let activeSemId = "";
+    onProgress?.({
+      step: 'Discovering active semesters...',
+      progressPercent: 35,
+    });
+    let activeSemId = '';
     try {
       const semHtml = await client.getSemesters();
       if (semHtml && semHtml.length > 50) {
         const semesters = parseSemesters(semHtml);
         await setCachedData(`${regNo}_tt_semester_list`, semesters);
-        await setCachedData("tt_semester_list", semesters);
+        await setCachedData('tt_semester_list', semesters);
 
         const activeSem = semesters.find((s) => s.isLatest) || semesters[0];
         if (activeSem) {
@@ -88,12 +98,15 @@ export async function syncStudentData(
         }
       }
     } catch (e) {
-      console.warn("[syncOrchestrator] Semesters fetch failed:", e);
+      console.warn('[syncOrchestrator] Semesters fetch failed:', e);
     }
 
     // 3. Parallel fetch of Academic Data for active semester
     if (activeSemId) {
-      onProgress?.({ step: "Syncing timetable, attendance & marks...", progressPercent: 55 });
+      onProgress?.({
+        step: 'Syncing timetable, attendance & marks...',
+        progressPercent: 55,
+      });
 
       await Promise.allSettled([
         // Timetable
@@ -105,7 +118,7 @@ export async function syncStudentData(
             await setCachedData(`tt_${activeSemId}`, courses);
             await setCachedData(`${regNo}_timetable_courses`, courses);
           } catch (err) {
-            console.warn("[syncOrchestrator] Timetable sync error:", err);
+            console.warn('[syncOrchestrator] Timetable sync error:', err);
           }
         })(),
 
@@ -114,7 +127,10 @@ export async function syncStudentData(
           try {
             const attHtml = await client.getAttendance(activeSemId);
             const attData = parseStudentAttendance(attHtml);
-            await setCachedData(`${regNo}_attendance_detailed_${activeSemId}`, attData);
+            await setCachedData(
+              `${regNo}_attendance_detailed_${activeSemId}`,
+              attData,
+            );
             await setCachedData(`attendance_detailed_${activeSemId}`, attData);
             // Also cache under dashboard keys for instant hydration in DashboardApp
             try {
@@ -123,7 +139,7 @@ export async function syncStudentData(
               await setCachedData(`dashboard_attendance`, dashAtt);
             } catch {}
           } catch (err) {
-            console.warn("[syncOrchestrator] Attendance sync error:", err);
+            console.warn('[syncOrchestrator] Attendance sync error:', err);
           }
         })(),
 
@@ -132,10 +148,13 @@ export async function syncStudentData(
           try {
             const marksHtml = await client.getMarks(activeSemId);
             const marksData = parseStudentMarks(marksHtml);
-            await setCachedData(`${regNo}_marks_data_${activeSemId}`, marksData);
+            await setCachedData(
+              `${regNo}_marks_data_${activeSemId}`,
+              marksData,
+            );
             await setCachedData(`marks_data_${activeSemId}`, marksData);
           } catch (err) {
-            console.warn("[syncOrchestrator] Marks sync error:", err);
+            console.warn('[syncOrchestrator] Marks sync error:', err);
           }
         })(),
 
@@ -144,10 +163,13 @@ export async function syncStudentData(
           try {
             const gradesHtml = await client.getGrades(activeSemId);
             const gradesData = parseGrades(gradesHtml);
-            await setCachedData(`${regNo}_grades_data_${activeSemId}`, gradesData);
+            await setCachedData(
+              `${regNo}_grades_data_${activeSemId}`,
+              gradesData,
+            );
             await setCachedData(`grades_data_${activeSemId}`, gradesData);
           } catch (err) {
-            console.warn("[syncOrchestrator] Grades sync error:", err);
+            console.warn('[syncOrchestrator] Grades sync error:', err);
           }
         })(),
 
@@ -162,25 +184,28 @@ export async function syncStudentData(
               // Extract CGPA and cache under dashboard_stats key
               if (history.cgpa) {
                 const dashStats = {
-                  cgpa: history.cgpa.cgpa || "...",
-                  credits: history.cgpa.creditsEarned || "...",
-                  totalCredits: history.cgpa.creditsRegistered || "...",
-                  nonGraded: "...",
-                  placement: "...",
+                  cgpa: history.cgpa.cgpa || '...',
+                  credits: history.cgpa.creditsEarned || '...',
+                  totalCredits: history.cgpa.creditsRegistered || '...',
+                  nonGraded: '...',
+                  placement: '...',
                 };
                 await setCachedData(`${regNo}_dashboard_stats`, dashStats);
                 await setCachedData(`dashboard_stats`, dashStats);
               }
             }
           } catch (err) {
-            console.warn("[syncOrchestrator] Grade history sync error:", err);
+            console.warn('[syncOrchestrator] Grade history sync error:', err);
           }
         })(),
       ]);
     }
 
     // 4. Update Cached Users and Auth State
-    onProgress?.({ step: "Saving account credentials & state...", progressPercent: 85 });
+    onProgress?.({
+      step: 'Saving account credentials & state...',
+      progressPercent: 85,
+    });
 
     const newUser: CachedUser = {
       regNo,
@@ -191,26 +216,29 @@ export async function syncStudentData(
       campus: client.campus,
     };
 
-    const storageRes = await getStorageData(["retop_cached_users"]);
+    const storageRes = await getStorageData(['retop_cached_users']);
     const existingUsers: CachedUser[] = storageRes.retop_cached_users || [];
-    const userIndex = existingUsers.findIndex((u) => u.regNo.toUpperCase() === regNo);
+    const userIndex = existingUsers.findIndex(
+      (u) => u.regNo.toUpperCase() === regNo,
+    );
 
     if (userIndex >= 0) {
       existingUsers[userIndex] = {
         ...existingUsers[userIndex],
         ...newUser,
-        profileImgBase64: profilePhoto || existingUsers[userIndex].profileImgBase64 || "",
+        profileImgBase64:
+          profilePhoto || existingUsers[userIndex].profileImgBase64 || '',
       };
     } else {
       existingUsers.push(newUser);
     }
 
-    await idbSet("retop_cached_users", existingUsers).catch(() => {});
+    await idbSet('retop_cached_users', existingUsers).catch(() => {});
 
     try {
-      localStorage.setItem("retop_lastAuthId", regNo);
-      localStorage.setItem("retop_active_user", regNo);
-      localStorage.setItem("retop_lastName", studentName);
+      localStorage.setItem('retop_lastAuthId', regNo);
+      localStorage.setItem('retop_active_user', regNo);
+      localStorage.setItem('retop_lastName', studentName);
       if (profilePhoto) {
         localStorage.setItem(`${regNo}_profileImage`, profilePhoto);
       }
@@ -221,23 +249,23 @@ export async function syncStudentData(
       retop_lastAuthId: regNo,
       retop_active_user: regNo,
       retop_lastName: studentName,
-      [`${regNo}_profileImage`]: profilePhoto || "",
+      [`${regNo}_profileImage`]: profilePhoto || '',
       [`${regNo}_user_basic_profile`]: {
         name: studentName,
         regNo,
-        profileImgBase64: profilePhoto || "",
+        profileImgBase64: profilePhoto || '',
         campus: client.campus,
       },
     });
 
-    onProgress?.({ step: "Sync complete!", progressPercent: 100 });
+    onProgress?.({ step: 'Sync complete!', progressPercent: 100 });
 
     return {
       success: true,
       user: newUser,
     };
   } catch (error: any) {
-    console.error("[syncOrchestrator] Full sync failed:", error);
+    console.error('[syncOrchestrator] Full sync failed:', error);
     return {
       success: false,
       user: {
@@ -246,7 +274,7 @@ export async function syncStudentData(
         lastActive: Date.now(),
         campus: client.campus,
       },
-      error: error?.message || "Sync failed",
+      error: error?.message || 'Sync failed',
     };
   }
 }

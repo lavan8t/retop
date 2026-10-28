@@ -1,5 +1,5 @@
-import { create } from "zustand";
-import { ViewType, CoursePageOption } from "../types/vtop";
+import { create } from 'zustand';
+import { ViewType, CoursePageOption } from '../types/vtop';
 
 export type SnackbarAction = {
   label: string;
@@ -25,11 +25,11 @@ type AppState = {
   addSnackbar: (snackbar: Omit<SnackbarData, 'id'>) => void;
   removeSnackbar: (id: string) => void;
 
-  ttViewMode: "grid" | "list" | "week";
-  setTtViewMode: (val: "grid" | "list" | "week") => void;
+  ttViewMode: 'grid' | 'list' | 'week';
+  setTtViewMode: (val: 'grid' | 'list' | 'week') => void;
 
-  calViewMode: "grid" | "list";
-  setCalViewMode: (val: "grid" | "list") => void;
+  calViewMode: 'grid' | 'list';
+  setCalViewMode: (val: 'grid' | 'list') => void;
 
   cpOptions: CoursePageOption[];
   setCpOptions: (val: CoursePageOption[]) => void;
@@ -60,65 +60,73 @@ type AppState = {
 };
 
 export const useAppStore = create<AppState>((set) => ({
-  isModernUI: sessionStorage.getItem("vtop-legacy-mode") !== "true",
+  isModernUI: sessionStorage.getItem('vtop-legacy-mode') !== 'true',
   isPeeking: false,
-  currentView: (sessionStorage.getItem("vtop-retop-view") as ViewType) || "dashboard",
+  currentView:
+    (sessionStorage.getItem('vtop-retop-view') as ViewType) || 'dashboard',
   snackbars: [],
   setIsModernUI: (val) => set({ isModernUI: val }),
   setIsPeeking: (val) => set({ isPeeking: val }),
   setCurrentView: (val) => {
-    set({ currentView: val, ...(val === "timetable" ? { ttViewMode: "grid" } : {}) });
-    sessionStorage.setItem("vtop-retop-view", val);
+    set({
+      currentView: val,
+      ...(val === 'timetable' ? { ttViewMode: 'grid' } : {}),
+    });
+    sessionStorage.setItem('vtop-retop-view', val);
     if (window.history.state?.view !== val) {
       window.history.pushState(
         { view: val },
-        "",
+        '',
         window.location.pathname + window.location.search,
       );
     }
   },
   addSnackbar: (snackbar) =>
     set((state) => ({
-      snackbars: [...state.snackbars, { ...snackbar, id: Math.random().toString(36).slice(2, 11) }].slice(-3),
+      snackbars: [
+        ...state.snackbars,
+        { ...snackbar, id: Math.random().toString(36).slice(2, 11) },
+      ].slice(-3),
     })),
   removeSnackbar: (id) =>
     set((state) => ({
       snackbars: state.snackbars.filter((s) => s.id !== id),
     })),
 
-  ttViewMode: "grid",
+  ttViewMode: 'grid',
   setTtViewMode: (val) => set({ ttViewMode: val }),
 
-  calViewMode: "grid",
+  calViewMode: 'grid',
   setCalViewMode: (val) => set({ calViewMode: val }),
 
   cpOptions: [],
   setCpOptions: (val) => set({ cpOptions: val }),
-  cpSearchTerm: "",
+  cpSearchTerm: '',
   setCpSearchTerm: (val) => set({ cpSearchTerm: val }),
-  cpSelectedCourseId: "",
+  cpSelectedCourseId: '',
   setCpSelectedCourseId: (val) => set({ cpSelectedCourseId: val }),
 
   marksSemesters: [],
   setMarksSemesters: (val) => set({ marksSemesters: val }),
-  marksSelectedSem: "",
+  marksSelectedSem: '',
   setMarksSelectedSem: (val) => set({ marksSelectedSem: val }),
-  marksSearchQuery: "",
+  marksSearchQuery: '',
   setMarksSearchQuery: (val) => set({ marksSearchQuery: val }),
   isMarksModernView: true,
   setIsMarksModernView: (val) => set({ isMarksModernView: val }),
 
   gradesSemesters: [],
   setGradesSemesters: (val) => set({ gradesSemesters: val }),
-  gradesSelectedSem: "",
+  gradesSelectedSem: '',
   setGradesSelectedSem: (val) => set({ gradesSelectedSem: val }),
 
   daDropFile: null,
   setDaDropFile: (val) => set({ daDropFile: val }),
 
-  curriculumHideCompleted: localStorage.getItem("curriculum_hide_completed") === "true",
+  curriculumHideCompleted:
+    localStorage.getItem('curriculum_hide_completed') === 'true',
   setCurriculumHideCompleted: (val) => {
-    localStorage.setItem("curriculum_hide_completed", String(val));
+    localStorage.setItem('curriculum_hide_completed', String(val));
     set({ curriculumHideCompleted: val });
   },
 }));

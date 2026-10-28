@@ -1,9 +1,9 @@
-import { StateCreator } from "zustand";
-import { VTOPNetwork } from "../../utils/network";
-import { parseTimetable } from "../../parsers/timetable";
-import { Semester, TimetableCourse } from "../../types/vtop";
-import { getUpcomingClasses } from "../../utils/timetable-slots";
-import { DataState } from "../dataStore";
+import { StateCreator } from 'zustand';
+import { VTOPNetwork } from '../../utils/network';
+import { parseTimetable } from '../../parsers/timetable';
+import { Semester, TimetableCourse } from '../../types/vtop';
+import { getUpcomingClasses } from '../../utils/timetable-slots';
+import { DataState } from '../dataStore';
 
 export interface TimetableSlice {
   ttSemesters: Semester[];
@@ -26,15 +26,20 @@ export interface TimetableSlice {
   setHighlightedCourseCode: (code: string | null) => void;
 }
 
-export const createTimetableSlice: StateCreator<DataState, [], [], TimetableSlice> = (set, get) => ({
+export const createTimetableSlice: StateCreator<
+  DataState,
+  [],
+  [],
+  TimetableSlice
+> = (set, get) => ({
   ttSemesters: [],
-  ttSelectedSem: localStorage.getItem("retop-tt-selected-sem") || "",
+  ttSelectedSem: localStorage.getItem('retop-tt-selected-sem') || '',
   ttCourses: [],
   ttLoading: true,
   highlightedCourseCode: null,
   setHighlightedCourseCode: (code) => set({ highlightedCourseCode: code }),
   setTtSelectedSem: (semId) => {
-    localStorage.setItem("retop-tt-selected-sem", semId);
+    localStorage.setItem('retop-tt-selected-sem', semId);
     set({ ttSelectedSem: semId });
   },
 
@@ -42,15 +47,19 @@ export const createTimetableSlice: StateCreator<DataState, [], [], TimetableSlic
     set({ ttLoading: true, ttSelectedSem: semId });
     try {
       const cacheKey = `tt_${semId}`;
-      console.log(`[VTOP] Request sent for TIMETABLE - /vtop/processViewTimeTable | params: { semesterSubId: ${semId} }`);
+      console.log(
+        `[VTOP] Request sent for TIMETABLE - /vtop/processViewTimeTable | params: { semesterSubId: ${semId} }`,
+      );
       const html = await network.fetchWithCache(
         cacheKey,
         async () => {
           try {
-            const rawHtml = await network.fetchVtopApi("processViewTimeTable", {
+            const rawHtml = await network.fetchVtopApi('processViewTimeTable', {
               semesterSubId: semId,
             });
-            console.log(`[VTOP] Response code 200, raw length: ${rawHtml.length}`);
+            console.log(
+              `[VTOP] Response code 200, raw length: ${rawHtml.length}`,
+            );
             return rawHtml;
           } catch (e: any) {
             console.log(`[VTOP] Response Error: ${e.message}`);
@@ -58,22 +67,29 @@ export const createTimetableSlice: StateCreator<DataState, [], [], TimetableSlic
           }
         },
         forceFetch,
-        (get().ttSemesters.length > 0 && semId !== get().ttSemesters[0].id) ? Infinity : undefined
+        get().ttSemesters.length > 0 && semId !== get().ttSemesters[0].id
+          ? Infinity
+          : undefined,
       );
 
-      if (typeof html === "string" && html.includes("data not available")) {
+      if (typeof html === 'string' && html.includes('data not available')) {
         set({ ttCourses: [], upcoming: [], ttLoading: false });
         return;
       }
 
-      const parsedCourses = typeof html === "string" ? parseTimetable(html) : html;
-      const courses = (Array.isArray(parsedCourses) ? parsedCourses : []).filter(
+      const parsedCourses =
+        typeof html === 'string' ? parseTimetable(html) : html;
+      const courses = (
+        Array.isArray(parsedCourses) ? parsedCourses : []
+      ).filter(
         (c) =>
-          !c.status.toLowerCase().includes("drop") &&
-          !c.status.toLowerCase().includes("withdrawn"),
+          !c.status.toLowerCase().includes('drop') &&
+          !c.status.toLowerCase().includes('withdrawn'),
       );
-      
-      console.log(`[VTOP] Timetable parsed data: ${courses.length} courses found.`);
+
+      console.log(
+        `[VTOP] Timetable parsed data: ${courses.length} courses found.`,
+      );
 
       if (courses.length > 0) {
         console.log(`[VTOP] Updating cache with latest for ${semId}`);
@@ -86,15 +102,15 @@ export const createTimetableSlice: StateCreator<DataState, [], [], TimetableSlic
         set({ ttCourses: [], upcoming: [], ttLoading: false });
       }
     } catch (e) {
-      if (e instanceof Error && e.message === "OFFLINE_CACHE_MISS") {
-         set({ status: "Offline - Not Synced" });
+      if (e instanceof Error && e.message === 'OFFLINE_CACHE_MISS') {
+        set({ status: 'Offline - Not Synced' });
       } else {
-         console.warn("Timetable load failed:", e);
+        console.warn('Timetable load failed:', e);
       }
       set({ ttCourses: [], upcoming: [], ttLoading: false });
     }
   },
 
-  cpSelectedSem: "",
+  cpSelectedSem: '',
   setCpSelectedSem: (semId) => set({ cpSelectedSem: semId }),
 });

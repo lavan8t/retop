@@ -1,5 +1,5 @@
-import { Card } from "../ui/Card";
-import { NorthEast } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
+import { Card } from '../ui/Card';
+import { NorthEast } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 
 export const ListCard = ({
   title,
@@ -21,7 +21,7 @@ export const ListCard = ({
     `}
   >
     <div
-      className={`${bgClass} px-5 py-3.5 border-b-4 border-(--border-main) flex justify-between items-center shrink-0 z-10 group/header relative ${onClickTitle ? "cursor-pointer" : ""}`}
+      className={`${bgClass} px-5 py-3.5 border-b-4 border-(--border-main) flex justify-between items-center shrink-0 z-10 group/header relative ${onClickTitle ? 'cursor-pointer' : ''}`}
       onClick={onClickTitle}
     >
       <h3 className="font-expanded font-black text-lg text-(--text-main) uppercase flex items-center gap-1.5 m-0 leading-none">
@@ -40,9 +40,7 @@ export const ListCard = ({
       </div>
     </div>
 
-    <div
-      className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar bg-(--bg-highlight) transition-opacity duration-200"
-    >
+    <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar bg-(--bg-highlight) transition-opacity duration-200">
       {children}
     </div>
   </Card>

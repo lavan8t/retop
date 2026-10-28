@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from 'react';
 import {
   GridView,
   List,
   CalendarMonth,
-} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
+} from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 
 interface FloatingViewToggleProps {
-  viewMode: "grid" | "list" | "week";
-  setViewMode: (mode: "grid" | "list" | "week") => void;
+  viewMode: 'grid' | 'list' | 'week';
+  setViewMode: (mode: 'grid' | 'list' | 'week') => void;
 }
 
 export const FloatingViewToggle: React.FC<FloatingViewToggleProps> = ({
@@ -21,7 +21,7 @@ export const FloatingViewToggle: React.FC<FloatingViewToggleProps> = ({
   useEffect(() => {
     const handleScroll = (e: Event) => {
       const target = e.target as HTMLElement;
-      if (!target || typeof target.scrollTop !== "number") return;
+      if (!target || typeof target.scrollTop !== 'number') return;
 
       const hasVerticalScroll = target.scrollHeight > target.clientHeight + 20;
       const hasHorizontalScroll = target.scrollWidth > target.clientWidth + 20;
@@ -49,28 +49,28 @@ export const FloatingViewToggle: React.FC<FloatingViewToggleProps> = ({
       if (currentScrollY <= 10 && currentScrollX <= 10) setIsVisible(true);
     };
 
-    window.addEventListener("scroll", handleScroll, {
+    window.addEventListener('scroll', handleScroll, {
       capture: true,
       passive: true,
     });
     return () =>
-      window.removeEventListener("scroll", handleScroll, { capture: true });
+      window.removeEventListener('scroll', handleScroll, { capture: true });
   }, []);
 
   const cycleView = () => {
-    if (viewMode === "grid") setViewMode("list");
-    else if (viewMode === "list") setViewMode("week");
-    else setViewMode("grid");
+    if (viewMode === 'grid') setViewMode('list');
+    else if (viewMode === 'list') setViewMode('week');
+    else setViewMode('grid');
   };
 
   const Icon =
-    viewMode === "grid" ? GridView : viewMode === "list" ? List : CalendarMonth;
+    viewMode === 'grid' ? GridView : viewMode === 'list' ? List : CalendarMonth;
 
   return (
     <>
       {isVisible && (
         <div
-          style={{ willChange: "transform, opacity" }}
+          style={{ willChange: 'transform, opacity' }}
           className="fixed bottom-32 right-4 sm:hidden z-9990 flex transition-all duration-300 animate-in fade-in slide-in-from-bottom-5"
         >
           <button

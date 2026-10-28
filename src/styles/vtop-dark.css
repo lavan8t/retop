@@ -7,15 +7,15 @@
    ═══════════════════════════════════════════════════════════════════════ */
 
 /* Apply full-page contrast inversion to native VTOP when dark / amoled theme is active */
-html[data-theme="dark"],
-html[data-theme="amoled"] {
+html[data-theme='dark'],
+html[data-theme='amoled'] {
   filter: invert(1) hue-rotate(180deg) !important;
   background-color: #ffffff !important;
   color: #000000 !important;
 }
 
-html[data-theme="dark"] body,
-html[data-theme="amoled"] body {
+html[data-theme='dark'] body,
+html[data-theme='amoled'] body {
   background-color: #ffffff !important;
   color: #000000 !important;
 }
@@ -25,40 +25,40 @@ html[data-theme="amoled"] body {
    ═══════════════════════════════════════════════════════════════════════ */
 
 /* 1. Images, photos, videos, canvases, embeds, iframes, and captchas */
-html[data-theme="dark"] img,
-html[data-theme="dark"] video,
-html[data-theme="dark"] canvas,
-html[data-theme="dark"] iframe,
-html[data-theme="dark"] embed,
-html[data-theme="dark"] object,
-html[data-theme="dark"] [data-no-invert],
-html[data-theme="amoled"] img,
-html[data-theme="amoled"] video,
-html[data-theme="amoled"] canvas,
-html[data-theme="amoled"] iframe,
-html[data-theme="amoled"] embed,
-html[data-theme="amoled"] object,
-html[data-theme="amoled"] [data-no-invert] {
+html[data-theme='dark'] img,
+html[data-theme='dark'] video,
+html[data-theme='dark'] canvas,
+html[data-theme='dark'] iframe,
+html[data-theme='dark'] embed,
+html[data-theme='dark'] object,
+html[data-theme='dark'] [data-no-invert],
+html[data-theme='amoled'] img,
+html[data-theme='amoled'] video,
+html[data-theme='amoled'] canvas,
+html[data-theme='amoled'] iframe,
+html[data-theme='amoled'] embed,
+html[data-theme='amoled'] object,
+html[data-theme='amoled'] [data-no-invert] {
   filter: invert(1) hue-rotate(180deg) !important;
 }
 
 /* 2. Retop UI itself (#retop-host) and extension dialogs must retain their native theme */
-html[data-theme="dark"] #retop-host,
-html[data-theme="dark"] #retop-session-dialog,
-html[data-theme="dark"] #retop-boot-cloak,
-html[data-theme="dark"] #retop-early-cloak,
-html[data-theme="dark"] #retop-native-portals,
-html[data-theme="dark"] #retop-legacy-menu-search-wrapper,
-html[data-theme="dark"] #retop-vtop-search-menu,
-html[data-theme="dark"] #retop-hmenu-search-toggle,
-html[data-theme="amoled"] #retop-host,
-html[data-theme="amoled"] #retop-session-dialog,
-html[data-theme="amoled"] #retop-boot-cloak,
-html[data-theme="amoled"] #retop-early-cloak,
-html[data-theme="amoled"] #retop-native-portals,
-html[data-theme="amoled"] #retop-legacy-menu-search-wrapper,
-html[data-theme="amoled"] #retop-vtop-search-menu,
-html[data-theme="amoled"] #retop-hmenu-search-toggle {
+html[data-theme='dark'] #retop-host,
+html[data-theme='dark'] #retop-session-dialog,
+html[data-theme='dark'] #retop-boot-cloak,
+html[data-theme='dark'] #retop-early-cloak,
+html[data-theme='dark'] #retop-native-portals,
+html[data-theme='dark'] #retop-legacy-menu-search-wrapper,
+html[data-theme='dark'] #retop-vtop-search-menu,
+html[data-theme='dark'] #retop-hmenu-search-toggle,
+html[data-theme='amoled'] #retop-host,
+html[data-theme='amoled'] #retop-session-dialog,
+html[data-theme='amoled'] #retop-boot-cloak,
+html[data-theme='amoled'] #retop-early-cloak,
+html[data-theme='amoled'] #retop-native-portals,
+html[data-theme='amoled'] #retop-legacy-menu-search-wrapper,
+html[data-theme='amoled'] #retop-vtop-search-menu,
+html[data-theme='amoled'] #retop-hmenu-search-toggle {
   filter: invert(1) hue-rotate(180deg) !important;
 }
 
@@ -109,14 +109,23 @@ html[data-theme="amoled"] #retop-hmenu-search-toggle {
 #top-hmenu-bar .hmenuItem,
 #top-hmenu-bar .nav-link,
 #top-hmenu-bar .navbar-brand {
-  font-family: OpenSans, 'Open Sans', 'Google Sans Flex', -apple-system, sans-serif !important;
+  font-family:
+    OpenSans,
+    'Open Sans',
+    'Google Sans Flex',
+    -apple-system,
+    sans-serif !important;
   font-size: 14px !important;
   line-height: 1.4 !important;
 }
 
 /* Horizontal Menu Bar & Menu Row Search */
 #top-hmenu-bar .retop-legacy-search-box {
-  background: linear-gradient(135deg, rgba(30, 60, 114, 0.85) 0%, rgba(42, 82, 152, 0.85) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(30, 60, 114, 0.85) 0%,
+    rgba(42, 82, 152, 0.85) 100%
+  ) !important;
   border: 1px solid rgba(255, 255, 255, 0.25) !important;
   color: #ffffff !important;
   transition: none !important;
@@ -124,7 +133,12 @@ html[data-theme="amoled"] #retop-hmenu-search-toggle {
 }
 
 #top-hmenu-bar .retop-legacy-search-box input {
-  font-family: OpenSans, 'Open Sans', 'Google Sans Flex', -apple-system, sans-serif !important;
+  font-family:
+    OpenSans,
+    'Open Sans',
+    'Google Sans Flex',
+    -apple-system,
+    sans-serif !important;
   font-size: 14px !important;
   color: #ffffff !important;
   transition: none !important;
@@ -174,7 +188,7 @@ html[data-theme="amoled"] #retop-hmenu-search-toggle {
 .overlay-window,
 .hmenubox,
 .WhiteBackground,
-[id^="MG"] {
+[id^='MG'] {
   max-height: calc(100vh - 120px) !important;
   overflow-y: auto !important;
   border-radius: 16px !important;
@@ -183,7 +197,7 @@ html[data-theme="amoled"] #retop-hmenu-search-toggle {
 
 .overlay-window .list-group-item,
 .hmenubox .list-group-item,
-[id^="MG"] .list-group-item {
+[id^='MG'] .list-group-item {
   border-radius: 8px !important;
   margin-bottom: 2px !important;
   transition: all 0.1s ease !important;
@@ -192,7 +206,7 @@ html[data-theme="amoled"] #retop-hmenu-search-toggle {
 /* Custom Scrollbars for Menu & Search Dropdowns */
 .overlay-window::-webkit-scrollbar,
 .hmenubox::-webkit-scrollbar,
-[id^="MG"]::-webkit-scrollbar,
+[id^='MG']::-webkit-scrollbar,
 #retop-legacy-menu-search-dropdown::-webkit-scrollbar {
   width: 6px !important;
   height: 6px !important;
@@ -200,7 +214,7 @@ html[data-theme="amoled"] #retop-hmenu-search-toggle {
 
 .overlay-window::-webkit-scrollbar-thumb,
 .hmenubox::-webkit-scrollbar-thumb,
-[id^="MG"]::-webkit-scrollbar-thumb,
+[id^='MG']::-webkit-scrollbar-thumb,
 #retop-legacy-menu-search-dropdown::-webkit-scrollbar-thumb {
   background: rgba(125, 125, 125, 0.35) !important;
   border-radius: 9999px !important;
@@ -208,7 +222,7 @@ html[data-theme="amoled"] #retop-hmenu-search-toggle {
 
 .overlay-window::-webkit-scrollbar-thumb:hover,
 .hmenubox::-webkit-scrollbar-thumb:hover,
-[id^="MG"]::-webkit-scrollbar-thumb:hover,
+[id^='MG']::-webkit-scrollbar-thumb:hover,
 #retop-legacy-menu-search-dropdown::-webkit-scrollbar-thumb:hover {
   background: rgba(125, 125, 125, 0.6) !important;
 }

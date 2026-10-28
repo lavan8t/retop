@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 
 interface GradeTickerProps {
   currentGrade: string;
@@ -18,18 +18,22 @@ export const GradeTicker: React.FC<GradeTickerProps> = ({
   const [isFocused, setIsFocused] = useState(false);
 
   const currentIndex = availableGrades.indexOf(
-    currentGrade === "-" ? availableGrades[availableGrades.length - 1] : currentGrade
+    currentGrade === '-'
+      ? availableGrades[availableGrades.length - 1]
+      : currentGrade,
   );
 
   const handleNext = () => {
     if (readonly || !availableGrades.length) return;
-    const newIdx = currentIndex < availableGrades.length - 1 ? currentIndex + 1 : 0;
+    const newIdx =
+      currentIndex < availableGrades.length - 1 ? currentIndex + 1 : 0;
     onChange(availableGrades[newIdx]);
   };
 
   const handlePrev = () => {
     if (readonly || !availableGrades.length) return;
-    const newIdx = currentIndex > 0 ? currentIndex - 1 : availableGrades.length - 1;
+    const newIdx =
+      currentIndex > 0 ? currentIndex - 1 : availableGrades.length - 1;
     onChange(availableGrades[newIdx]);
   };
 
@@ -45,16 +49,20 @@ export const GradeTicker: React.FC<GradeTickerProps> = ({
       return;
     }
 
-    if (e.key === "ArrowUp" || e.key === "ArrowRight" || e.key === "+") {
+    if (e.key === 'ArrowUp' || e.key === 'ArrowRight' || e.key === '+') {
       e.preventDefault();
       handleNext();
-    } else if (e.key === "ArrowDown" || e.key === "ArrowLeft" || e.key === "-") {
+    } else if (
+      e.key === 'ArrowDown' ||
+      e.key === 'ArrowLeft' ||
+      e.key === '-'
+    ) {
       e.preventDefault();
       handlePrev();
-    } else if (e.key === "Backspace" || e.key === "Delete") {
+    } else if (e.key === 'Backspace' || e.key === 'Delete') {
       e.preventDefault();
-      onChange("-");
-    } else if (e.key === " " || e.key === "Enter") {
+      onChange('-');
+    } else if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
       handleNext();
     }
@@ -69,15 +77,19 @@ export const GradeTicker: React.FC<GradeTickerProps> = ({
         onFocus={() => !readonly && setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         onKeyDown={handleKeyDown}
-        title={!readonly ? "Click or type grade key (S, A, B, C, D, E, F, N)" : undefined}
+        title={
+          !readonly
+            ? 'Click or type grade key (S, A, B, C, D, E, F, N)'
+            : undefined
+        }
         className={`shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center font-black text-3xl sm:text-4xl leading-none pt-1 shadow-none border-none outline-none transition-all duration-75 select-none ${
           isFocused
-            ? "bg-(--accent-base)/20 text-(--accent-base) ring-2 ring-(--accent-base) scale-105"
+            ? 'bg-(--accent-base)/20 text-(--accent-base) ring-2 ring-(--accent-base) scale-105'
             : gradeColorClass
         } ${
           !readonly
-            ? "cursor-pointer active:scale-95 hover:bg-(--bg-highlight)"
-            : "cursor-default"
+            ? 'cursor-pointer active:scale-95 hover:bg-(--bg-highlight)'
+            : 'cursor-default'
         }`}
       >
         {currentGrade}

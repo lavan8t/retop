@@ -1,5 +1,10 @@
-﻿import { CurriculumCategory, CurriculumCourse } from "../types/vtop";
-import { parseHTMLFast, validateParsed, wrapWithSchemaVersion, Versioned } from "../utils/parser-utils";
+﻿import { CurriculumCategory, CurriculumCourse } from '../types/vtop';
+import {
+  parseHTMLFast,
+  validateParsed,
+  wrapWithSchemaVersion,
+  Versioned,
+} from '../utils/parser-utils';
 
 export const CURRICULUM_SCHEMA_VERSION = 1;
 
@@ -9,11 +14,11 @@ export function parseCurriculumDashboard(html: string): Versioned<{
 }> {
   const doc = parseHTMLFast(html);
 
-  let totalCredits = "0";
-  const allElements = doc.body.getElementsByTagName("*");
+  let totalCredits = '0';
+  const allElements = doc.body.getElementsByTagName('*');
   for (let i = 0; i < allElements.length; i++) {
-    const text = allElements[i].textContent || "";
-    if (text.includes("Total Credits")) {
+    const text = allElements[i].textContent || '';
+    if (text.includes('Total Credits')) {
       const match = text.match(/Total Credits\s*[:=-]?\s*([\d.]+)/i);
       if (match) {
         totalCredits = match[1];
@@ -23,10 +28,10 @@ export function parseCurriculumDashboard(html: string): Versioned<{
   }
 
   const categories: CurriculumCategory[] = [];
-  const clickables = doc.querySelectorAll("[onclick]");
+  const clickables = doc.querySelectorAll('[onclick]');
 
   clickables.forEach((el) => {
-    const onclick = el.getAttribute("onclick") || "";
+    const onclick = el.getAttribute('onclick') || '';
     const idMatch = onclick.match(/['"]([A-Z]{2,4})['"]/);
 
     if (idMatch) {
@@ -35,13 +40,13 @@ export function parseCurriculumDashboard(html: string): Versioned<{
 
       let title = id;
       const titleEl =
-        el.querySelector(".col-6 span") || el.querySelector(".text-left");
+        el.querySelector('.col-6 span') || el.querySelector('.text-left');
       if (titleEl && titleEl.textContent) {
         title = titleEl.textContent.trim();
       } else {
-        const raw = el.textContent || "";
+        const raw = el.textContent || '';
         const lines = raw
-          .split("\n")
+          .split('\n')
           .map((l) => l.trim())
           .filter(Boolean);
         if (lines.length > 0) {
@@ -49,12 +54,12 @@ export function parseCurriculumDashboard(html: string): Versioned<{
         }
       }
 
-      let credits = "0";
-      let maxCredits = "0";
-      const creditsContainer = el.querySelectorAll(".col-6, .text-right, span");
+      let credits = '0';
+      let maxCredits = '0';
+      const creditsContainer = el.querySelectorAll('.col-6, .text-right, span');
 
       creditsContainer.forEach((c) => {
-        const text = c.textContent || "";
+        const text = c.textContent || '';
         const m = text.match(/(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/);
         if (m) {
           credits = m[1];
@@ -76,10 +81,13 @@ export function parseCurriculumDashboard(html: string): Versioned<{
     }
   });
 
-  return validateParsed({
-    totalCredits,
-    categories,
-  }, "curriculum");
+  return validateParsed(
+    {
+      totalCredits,
+      categories,
+    },
+    'curriculum',
+  );
 }
 
 export function parseCurriculumCourses(html: string): Versioned<{
@@ -90,11 +98,14 @@ export function parseCurriculumCourses(html: string): Versioned<{
   const courses: CurriculumCourse[] = [];
   const basketMaxCredits: Record<string, string> = {};
 
-  const navButtons = doc.querySelectorAll('.nav-pills button, .nav-tabs button, .nav-pills a, .nav-tabs a');
+  const navButtons = doc.querySelectorAll(
+    '.nav-pills button, .nav-tabs button, .nav-pills a, .nav-tabs a',
+  );
   const basketMap: Record<string, string> = {};
 
-  navButtons.forEach(btn => {
-    const target = btn.getAttribute('data-bs-target') || btn.getAttribute('href') || '';
+  navButtons.forEach((btn) => {
+    const target =
+      btn.getAttribute('data-bs-target') || btn.getAttribute('href') || '';
     const cleanTarget = target.replace('#', '').trim();
     const btnText = btn.textContent?.trim() || '';
     if (cleanTarget && btnText) {
@@ -103,7 +114,7 @@ export function parseCurriculumCourses(html: string): Versioned<{
   });
 
   const headers = doc.querySelectorAll('h4, h5, h6, .card-header, strong, b');
-  headers.forEach(h => {
+  headers.forEach((h) => {
     const text = h.textContent || '';
     const match = text.match(/([A-Za-z\s]+)\s*-\s*(\d+)\s*Credits/i);
     if (match) {
@@ -114,20 +125,23 @@ export function parseCurriculumCourses(html: string): Versioned<{
   });
 
   const rows = doc.querySelectorAll('table tr');
-  rows.forEach(row => {
+  rows.forEach((row) => {
     const cells = row.querySelectorAll('td');
     if (cells.length < 5) return;
 
     let codeIndex = -1;
     for (let i = 0; i < cells.length; i++) {
-      const txt = cells[i].textContent?.trim() || "";
-      if (/^[A-Z]{3,4}\d{3,4}[A-Z]?$/.test(txt) || /^[A-Z]{2,4}\d{2,4}$/.test(txt)) {
+      const txt = cells[i].textContent?.trim() || '';
+      if (
+        /^[A-Z]{3,4}\d{3,4}[A-Z]?$/.test(txt) ||
+        /^[A-Z]{2,4}\d{2,4}$/.test(txt)
+      ) {
         codeIndex = i;
         break;
       }
     }
 
-    let basket = "Core";
+    let basket = 'Core';
     let currentPane = row.closest('.tab-pane');
     while (currentPane) {
       if (currentPane.id && basketMap[currentPane.id]) {
@@ -137,34 +151,37 @@ export function parseCurriculumCourses(html: string): Versioned<{
       currentPane = currentPane.parentElement?.closest('.tab-pane') || null;
     }
 
-    if (basket === "Core") {
+    if (basket === 'Core') {
       if (navButtons.length === 1) {
-        basket = navButtons[0].textContent?.trim() || "Core";
+        basket = navButtons[0].textContent?.trim() || 'Core';
       } else if (navButtons.length > 1) {
-        basket = navButtons[0].textContent?.trim() || "Core";
+        basket = navButtons[0].textContent?.trim() || 'Core';
       }
     }
 
     if (codeIndex !== -1) {
       courses.push({
-        sl: cells[0]?.textContent?.trim() || "",
-        code: cells[codeIndex]?.textContent?.trim() || "",
-        title: cells[codeIndex + 1]?.textContent?.trim() || "",
-        type: cells[codeIndex + 2]?.textContent?.trim() || "TH",
-        credits: cells[codeIndex + 3]?.textContent?.trim() || "0",
-        l: cells[codeIndex + 4]?.textContent?.trim() || "0",
-        t: cells[codeIndex + 5]?.textContent?.trim() || "0",
-        p: cells[codeIndex + 6]?.textContent?.trim() || "0",
-        j: cells[codeIndex + 7]?.textContent?.trim() || "0",
+        sl: cells[0]?.textContent?.trim() || '',
+        code: cells[codeIndex]?.textContent?.trim() || '',
+        title: cells[codeIndex + 1]?.textContent?.trim() || '',
+        type: cells[codeIndex + 2]?.textContent?.trim() || 'TH',
+        credits: cells[codeIndex + 3]?.textContent?.trim() || '0',
+        l: cells[codeIndex + 4]?.textContent?.trim() || '0',
+        t: cells[codeIndex + 5]?.textContent?.trim() || '0',
+        p: cells[codeIndex + 6]?.textContent?.trim() || '0',
+        j: cells[codeIndex + 7]?.textContent?.trim() || '0',
         basket: basket,
-        isCompleted: row.getAttribute("style")?.toLowerCase().includes("background") || 
-                     row.className.toLowerCase().includes("success") || 
-                     Array.from(cells).some(c => c.textContent?.toLowerCase().includes("completed"))
+        isCompleted:
+          row.getAttribute('style')?.toLowerCase().includes('background') ||
+          row.className.toLowerCase().includes('success') ||
+          Array.from(cells).some((c) =>
+            c.textContent?.toLowerCase().includes('completed'),
+          ),
       });
     }
   });
 
-  return wrapWithSchemaVersion({ courses, basketMaxCredits }, "curriculum");
+  return wrapWithSchemaVersion({ courses, basketMaxCredits }, 'curriculum');
 }
 
 export const parseCurriculumCategoryTable = parseCurriculumCourses;

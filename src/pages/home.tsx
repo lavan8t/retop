@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
-import { AppSettings } from "../utils/settings-store";
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { AppSettings } from '../utils/settings-store';
 import {
   CourseSummary,
   Assignment,
@@ -8,23 +8,34 @@ import {
   TimetableCourse,
   Event as VTOPEvent,
   SpotlightCategoryGroup,
-} from "../types/vtop";
-import { UpcomingClass } from "../utils/timetable-slots";
-import { useDataStore } from "../store/dataStore";
-import { VTOPNetwork } from "../utils/network";
+} from '../types/vtop';
+import { UpcomingClass } from '../utils/timetable-slots';
+import { useDataStore } from '../store/dataStore';
+import { VTOPNetwork } from '../utils/network';
 // Extracted Component Imports
-import { AttendanceRow, AssignmentRow } from "../components/home/HomeRows";
-import { LazyCalendarDay } from "../components/home/LazyCalendarDay";
-import { QuickLinksMenu } from "../components/home/QuickLinksMenu";
-import { EmptyState } from "../components/EmptyState";
-import { HomeWidgets } from "../components/home/HomeWidgets";
-import { SpotlightSection } from "../components/home/SpotlightSection";
-import { getClassesForDate } from "../utils/timetable-slots";
-import { Add, Event, Apps, School, Close, Campaign } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
-import { Card } from "../components/ui/Card";
-import { formatTimeStr, parseVtopDate, TimeFormatMode } from "../utils/formatting";
+import { AttendanceRow, AssignmentRow } from '../components/home/HomeRows';
+import { LazyCalendarDay } from '../components/home/LazyCalendarDay';
+import { QuickLinksMenu } from '../components/home/QuickLinksMenu';
+import { EmptyState } from '../components/EmptyState';
+import { HomeWidgets } from '../components/home/HomeWidgets';
+import { SpotlightSection } from '../components/home/SpotlightSection';
+import { getClassesForDate } from '../utils/timetable-slots';
+import {
+  Add,
+  Event,
+  Apps,
+  School,
+  Close,
+  Campaign,
+} from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
+import { Card } from '../components/ui/Card';
+import {
+  formatTimeStr,
+  parseVtopDate,
+  TimeFormatMode,
+} from '../utils/formatting';
 
-export type EventFilterType = "all" | "classes" | "assignments" | "events";
+export type EventFilterType = 'all' | 'classes' | 'assignments' | 'events';
 
 interface HomeViewProps {
   settings: AppSettings;
@@ -65,17 +76,24 @@ export const HomeView: React.FC<HomeViewProps> = ({
   menuCategories,
   onNavigate,
   ttCourses,
-  use24HourTime = "12h" as TimeFormatMode,
+  use24HourTime = '12h' as TimeFormatMode,
 
   calSemesters = [],
-  calSelectedSem = "",
+  calSelectedSem = '',
   pinnedLinks = [],
   handleTogglePin,
   spotlightCategories,
   network,
   onSync,
 }) => {
-  const { calGridData, examGroups, fetchExamSemesters, fetchDetailedAttendance, attSelectedSem, isSyncing } = useDataStore();
+  const {
+    calGridData,
+    examGroups,
+    fetchExamSemesters,
+    fetchDetailedAttendance,
+    attSelectedSem,
+    isSyncing,
+  } = useDataStore();
   const [isFabVisible, setIsFabVisible] = useState(true);
   const [isMobileSpotlightOpen, setIsMobileSpotlightOpen] = useState(false);
   const [isSpotlightClosing, setIsSpotlightClosing] = useState(false);
@@ -120,7 +138,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const handleTouchMove = (e: React.TouchEvent) => {
     const currentY = e.touches[0].clientY;
     const deltaY = currentY - touchStartYRef.current;
-    const isAtTop = !sheetContentRef.current || sheetContentRef.current.scrollTop <= 0;
+    const isAtTop =
+      !sheetContentRef.current || sheetContentRef.current.scrollTop <= 0;
 
     if (deltaY > 0 && isAtTop) {
       isDraggingRef.current = true;
@@ -144,11 +163,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const isScrollingRef = useRef(false);
   const scrollTimeoutRef = useRef<any>(null);
 
-  const pendingCount = useMemo(() => assignments.filter((a) => a.status !== "submitted").length, [assignments]);
-  
+  const pendingCount = useMemo(
+    () => assignments.filter((a) => a.status !== 'submitted').length,
+    [assignments],
+  );
+
   const pendingAssignments = useMemo(() => {
     return assignments
-      .filter((a) => a.status !== "submitted")
+      .filter((a) => a.status !== 'submitted')
       .sort((a, b) => {
         const parseDate = (dStr: string) => {
           const d = parseVtopDate(dStr);
@@ -177,9 +199,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
   const overallAttPct = useMemo(() => {
     const valid = attendance.filter((a) => !isNaN(parseFloat(a.attendance)));
-    if (valid.length === 0) return "";
+    if (valid.length === 0) return '';
     const sum = valid.reduce((acc, a) => acc + parseFloat(a.attendance), 0);
-    return Math.round(sum / valid.length) + "%";
+    return Math.round(sum / valid.length) + '%';
   }, [attendance]);
 
   useEffect(() => {
@@ -190,7 +212,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
     if (attendance.length === 0 && attSelectedSem) {
       fetchDetailedAttendance(network, attSelectedSem);
     }
-  }, [network, examGroups.length, fetchExamSemesters, attendance.length, attSelectedSem, fetchDetailedAttendance]);
+  }, [
+    network,
+    examGroups.length,
+    fetchExamSemesters,
+    attendance.length,
+    attSelectedSem,
+    fetchDetailedAttendance,
+  ]);
 
   const handleCalendarScroll = (e: React.UIEvent<HTMLDivElement>) => {
     isScrollingRef.current = true;
@@ -258,24 +287,24 @@ export const HomeView: React.FC<HomeViewProps> = ({
   }, []);
 
   const monthDisplay = useMemo(() => {
-    if (calendarDays.length === 0) return { text: "", semName: "" };
-    const startM = calendarDays[0].toLocaleDateString("en-US", {
-      month: "long",
+    if (calendarDays.length === 0) return { text: '', semName: '' };
+    const startM = calendarDays[0].toLocaleDateString('en-US', {
+      month: 'long',
     });
     const endM = calendarDays[calendarDays.length - 1].toLocaleDateString(
-      "en-US",
-      { month: "long", year: "numeric" },
+      'en-US',
+      { month: 'long', year: 'numeric' },
     );
 
-    let base = "";
-    if (startM === endM.split(" ")[0]) {
+    let base = '';
+    if (startM === endM.split(' ')[0]) {
       base = endM;
     } else {
       base = `${startM} - ${endM}`;
     }
 
     const semName =
-      calSemesters.find((s) => s.id === calSelectedSem)?.label || "";
+      calSemesters.find((s) => s.id === calSelectedSem)?.label || '';
     return { text: base, semName };
   }, [calendarDays, calSemesters, calSelectedSem]);
 
@@ -305,9 +334,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 onClick={(e) => {
                   e.stopPropagation();
                   onNavigate({
-                    title: "Academic Calendar",
-                    url: "academics/common/CalendarPreview",
-                    category: "Academics",
+                    title: 'Academic Calendar',
+                    url: 'academics/common/CalendarPreview',
+                    category: 'Academics',
                   });
                 }}
                 className="text-base md:text-lg font-bold text-(--text-main) hover:text-(--accent-hover) cursor-pointer transition-colors text-left flex justify-start focus:outline-none"
@@ -317,18 +346,21 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
               {!calSelectedSem && calSemesters.length > 0 && (
                 <div className="flex items-center gap-1.5 overflow-x-auto max-w-[60%]">
-                  {calSemesters.filter((s) => !/industry|\(ind\)/i.test(s.label)).slice(0, 3).map((sem) => (
-                    <button
-                      key={sem.id}
-                      onClick={() => {
-                        useDataStore.getState().setCalSelectedSem(sem.id);
-                        useDataStore.getState().setTtSelectedSem(sem.id);
-                      }}
-                      className="text-[11px] font-bold px-3 py-1 rounded-full bg-(--bg-highlight) text-(--text-main) hover:bg-(--accent-base) hover:text-(--bg-main) transition-all cursor-pointer whitespace-nowrap shadow-xs border border-(--border-main)"
-                    >
-                      {sem.label}
-                    </button>
-                  ))}
+                  {calSemesters
+                    .filter((s) => !/industry|\(ind\)/i.test(s.label))
+                    .slice(0, 3)
+                    .map((sem) => (
+                      <button
+                        key={sem.id}
+                        onClick={() => {
+                          useDataStore.getState().setCalSelectedSem(sem.id);
+                          useDataStore.getState().setTtSelectedSem(sem.id);
+                        }}
+                        className="text-[11px] font-bold px-3 py-1 rounded-full bg-(--bg-highlight) text-(--text-main) hover:bg-(--accent-base) hover:text-(--bg-main) transition-all cursor-pointer whitespace-nowrap shadow-xs border border-(--border-main)"
+                      >
+                        {sem.label}
+                      </button>
+                    ))}
                 </div>
               )}
 
@@ -338,12 +370,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     .sem-text { font-variation-settings: "wdth" 151, "wght" 800; transition: font-variation-settings var(--duration-slow) ease-out; }
                     .sem-group:hover .sem-text { font-variation-settings: "wdth" 75, "wght" 1; }
                   `}</style>
-                  <div
-                    className="flex flex-col items-end justify-start relative group/sem sem-group"
-                  >
-                    <div
-                      className="absolute bottom-full right-0 mb-1 pointer-events-none flex justify-end items-center whitespace-nowrap opacity-0 translate-y-2 group-hover/sem:opacity-100 group-hover/sem:translate-y-0 transition-all duration-200"
-                    >
+                  <div className="flex flex-col items-end justify-start relative group/sem sem-group">
+                    <div className="absolute bottom-full right-0 mb-1 pointer-events-none flex justify-end items-center whitespace-nowrap opacity-0 translate-y-2 group-hover/sem:opacity-100 group-hover/sem:translate-y-0 transition-all duration-200">
                       <span className="font-black text-(--accent-base) text-right text-[0.625rem] md:text-[0.6875rem] drop-shadow-md uppercase tracking-wide">
                         {progress}% Completed
                       </span>
@@ -363,13 +391,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
                       </div>
                     </div>
 
-                    <div
-                      className="absolute top-full right-0 mt-1 pointer-events-none flex justify-end items-center whitespace-nowrap opacity-0 -translate-y-2 group-hover/sem:opacity-100 group-hover/sem:translate-y-0 transition-all duration-200"
-                    >
+                    <div className="absolute top-full right-0 mt-1 pointer-events-none flex justify-end items-center whitespace-nowrap opacity-0 -translate-y-2 group-hover/sem:opacity-100 group-hover/sem:translate-y-0 transition-all duration-200">
                       <span className="font-black text-(--accent-base) text-right text-[0.625rem] md:text-[0.6875rem] drop-shadow-md uppercase tracking-wide">
                         {progressInfo.lastDay
                           ? `${Math.max(0, Math.ceil((progressInfo.lastDay.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} days more`
-                          : "N/A"}
+                          : 'N/A'}
                       </span>
                     </div>
                   </div>
@@ -395,9 +421,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   <Card
                     onClick={() =>
                       onNavigate({
-                        title: "Class Attendance",
-                        url: "studentattendance",
-                        category: "Academics",
+                        title: 'Class Attendance',
+                        url: 'studentattendance',
+                        category: 'Academics',
                       })
                     }
                     className="shrink-0 snap-start min-w-[270px] sm:min-w-[300px] w-[80vw] max-w-[360px] bg-(--bg-highlight) rounded-3xl flex flex-col relative z-30 cursor-pointer overflow-hidden border-2 border-(--border-main) shadow-(--brutal-shadow-sm) hover:shadow-(--brutal-shadow-hover) transition-all h-fit"
@@ -425,9 +451,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   <Card
                     onClick={() =>
                       onNavigate({
-                        title: "Assignments",
-                        url: "examinations/StudentDA",
-                        category: "Examinations",
+                        title: 'Assignments',
+                        url: 'examinations/StudentDA',
+                        category: 'Examinations',
                       })
                     }
                     className="shrink-0 snap-start min-w-[270px] sm:min-w-[300px] w-[80vw] max-w-[360px] bg-(--bg-highlight) rounded-3xl flex flex-col relative z-30 cursor-pointer overflow-hidden border-2 border-(--border-main) shadow-(--brutal-shadow-sm) hover:shadow-(--brutal-shadow-hover) transition-all h-fit"
@@ -468,9 +494,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 onClick={(e) => {
                   e.stopPropagation();
                   onNavigate({
-                    title: "Academic Calendar",
-                    url: "academics/common/CalendarPreview",
-                    category: "Academics",
+                    title: 'Academic Calendar',
+                    url: 'academics/common/CalendarPreview',
+                    category: 'Academics',
                   });
                 }}
                 className="text-left flex flex-col gap-0.5 cursor-pointer focus:outline-none"
@@ -508,7 +534,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
             />
           ))}
         </div>
-
       </div>
 
       <HomeWidgets
@@ -531,7 +556,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <Campaign className="w-4 h-4 shrink-0" />
             <span
               className="font-expanded font-bold text-[9px] uppercase text-center"
-              style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}
+              style={{
+                writingMode: 'vertical-rl',
+                transform: 'rotate(180deg)',
+              }}
             >
               Spotlight
             </span>
@@ -542,7 +570,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
               {/* Backdrop: No blur, 150ms fade */}
               <div
                 className={`fixed inset-0 z-99998 bg-black/40 lg:hidden ${
-                  isSpotlightClosing ? "animate-fade-out-150" : "animate-fade-in-150"
+                  isSpotlightClosing
+                    ? 'animate-fade-out-150'
+                    : 'animate-fade-in-150'
                 }`}
                 onClick={closeSpotlight}
               />
@@ -554,16 +584,23 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   onTouchMove={handleTouchMove}
                   onTouchEnd={handleTouchEnd}
                   style={{
-                    transform: sheetDragY > 0 ? `translateY(${sheetDragY}px)` : undefined,
-                    transition: isDraggingRef.current ? "none" : sheetDragY === 0 && !isSpotlightClosing ? "transform 150ms cubic-bezier(0.16, 1, 0.3, 1)" : undefined,
-                    animation: sheetDragY > 0 ? "none" : undefined,
+                    transform:
+                      sheetDragY > 0
+                        ? `translateY(${sheetDragY}px)`
+                        : undefined,
+                    transition: isDraggingRef.current
+                      ? 'none'
+                      : sheetDragY === 0 && !isSpotlightClosing
+                        ? 'transform 150ms cubic-bezier(0.16, 1, 0.3, 1)'
+                        : undefined,
+                    animation: sheetDragY > 0 ? 'none' : undefined,
                   }}
                   className={`w-full max-w-lg mx-auto bg-(--bg-surface) border-2 border-(--border-main) rounded-[32px] p-4 sm:p-5 shadow-2xl flex flex-col gap-2 max-h-[80vh] overflow-hidden pointer-events-auto ${
                     isSpotlightClosing
-                      ? "animate-sheet-down"
+                      ? 'animate-sheet-down'
                       : sheetDragY > 0
-                      ? ""
-                      : "animate-sheet-up"
+                        ? ''
+                        : 'animate-sheet-up'
                   }`}
                 >
                   {/* Top Center Pill Handle */}
@@ -577,8 +614,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   </div>
 
                   {/* Scrollable Spotlight Content (No duplicate title, no cross button) */}
-                  <div ref={sheetContentRef} className="overflow-y-auto flex-1 custom-scrollbar pt-1">
-                    <SpotlightSection spotlightCategories={spotlightCategories} />
+                  <div
+                    ref={sheetContentRef}
+                    className="overflow-y-auto flex-1 custom-scrollbar pt-1"
+                  >
+                    <SpotlightSection
+                      spotlightCategories={spotlightCategories}
+                    />
                   </div>
                 </div>
               </div>
@@ -589,4 +631,3 @@ export const HomeView: React.FC<HomeViewProps> = ({
     </div>
   );
 };
-

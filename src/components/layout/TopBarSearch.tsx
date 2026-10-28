@@ -4,7 +4,7 @@ import React, {
   useMemo,
   useEffect,
   useDeferredValue,
-} from "react";
+} from 'react';
 import {
   Error,
   Search,
@@ -15,13 +15,13 @@ import {
   Star,
   ArrowBack,
   Close,
-} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
-import { QuickLink, MenuCategory } from "../../types/vtop";
-import { useDataStore } from "../../store/dataStore";
-import { useAppStore } from "../../store/appStore";
-import { getCategoryIcon } from "../../utils/icons";
-import { toTitleCase } from "../../utils/formatting";
-import { getDestinationView, hasRetopPage } from "../../utils/routes";
+} from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
+import { QuickLink, MenuCategory } from '../../types/vtop';
+import { useDataStore } from '../../store/dataStore';
+import { useAppStore } from '../../store/appStore';
+import { getCategoryIcon } from '../../utils/icons';
+import { toTitleCase } from '../../utils/formatting';
+import { getDestinationView, hasRetopPage } from '../../utils/routes';
 
 interface TopBarSearchProps {
   currentView: string;
@@ -42,7 +42,7 @@ interface TopBarSearchProps {
 
 const renderCategoryTitle = (catTitle: string) => {
   const titleStr = toTitleCase(catTitle);
-  if (titleStr.toLowerCase().includes("retop")) {
+  if (titleStr.toLowerCase().includes('retop')) {
     const parts = titleStr.split(/retop/i);
     return (
       <span>
@@ -50,14 +50,14 @@ const renderCategoryTitle = (catTitle: string) => {
         <span
           className="font-logo retop-logo inline-block lowercase text-inherit"
           style={{
-            fontFamily: "var(--font-expanded)",
+            fontFamily: 'var(--font-expanded)',
             fontVariationSettings:
               "'wdth' 125, 'wght' 900, 'ROND' 100, 'slnt' -10",
           }}
         >
           retop
         </span>
-        {parts[1] || ""}
+        {parts[1] || ''}
       </span>
     );
   }
@@ -72,8 +72,8 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
   pinnedLinks,
   onNavigate,
   onTogglePin,
-  initialQuery = "",
-  pageTitle = "Search",
+  initialQuery = '',
+  pageTitle = 'Search',
   onBack,
   status,
   onSync,
@@ -82,13 +82,13 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
 }) => {
   const { isModernUI, setIsModernUI } = useAppStore();
   const isOffline =
-    typeof window !== "undefined" &&
+    typeof window !== 'undefined' &&
     (!!(window as any).__RETOP_OFFLINE__ ||
-      window.location.pathname.includes("offline") ||
-      window.location.hostname.includes("web.app") ||
-      window.location.protocol === "file:");
+      window.location.pathname.includes('offline') ||
+      window.location.hostname.includes('web.app') ||
+      window.location.protocol === 'file:');
   const isHome =
-    currentView === "dashboard" || currentView === "home" || !currentView;
+    currentView === 'dashboard' || currentView === 'home' || !currentView;
   const [isLogoHovered, setIsLogoHovered] = useState(false);
   const [query, setQuery] = useState(initialQuery);
   const deferredQuery = useDeferredValue(query);
@@ -153,7 +153,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
         else if (inputRef.current) inputRef.current.focus();
       }, 50);
     } else {
-      setQuery("");
+      setQuery('');
       setActiveMenu(null);
     }
   }, [isExpanded]);
@@ -165,7 +165,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
   // Rule 1: If 1 is closed, 2 & 3 can NEVER be open.
   // Rule 2: If 2 is closed (!isExpanded || query), 3 can NEVER be open (3 is NEVER a zombie).
   useEffect(() => {
-    if (!isExpanded || query.trim() !== "") {
+    if (!isExpanded || query.trim() !== '') {
       if (activeMenu !== null) {
         setActiveMenu(null);
       }
@@ -187,76 +187,76 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
 
   useEffect(() => {
     const handleOmniboxType = (e: any) => {
-      setQuery((q) => q + (e.detail || ""));
+      setQuery((q) => q + (e.detail || ''));
       if (inputRef.current) inputRef.current.focus();
     };
-    window.addEventListener("vtop-omnibox-type", handleOmniboxType);
+    window.addEventListener('vtop-omnibox-type', handleOmniboxType);
     return () =>
-      window.removeEventListener("vtop-omnibox-type", handleOmniboxType);
+      window.removeEventListener('vtop-omnibox-type', handleOmniboxType);
   }, []);
 
   const allCategories = useMemo(() => {
     const retopNativeLinks: QuickLink[] = [
       {
-        title: "Time Table",
-        url: "academics/common/StudentTimeTable",
-        category: "Made for retop",
+        title: 'Time Table',
+        url: 'academics/common/StudentTimeTable',
+        category: 'Made for retop',
       },
       {
-        title: "Class Attendance",
-        url: "academics/common/StudentAttendance",
-        category: "Made for retop",
+        title: 'Class Attendance',
+        url: 'academics/common/StudentAttendance',
+        category: 'Made for retop',
       },
       {
-        title: "Assignments",
-        url: "examinations/StudentDA",
-        category: "Made for retop",
+        title: 'Assignments',
+        url: 'examinations/StudentDA',
+        category: 'Made for retop',
       },
       {
-        title: "Course Page Consolidated",
-        url: "academics/common/StudentCoursePage",
-        category: "Made for retop",
+        title: 'Course Page Consolidated',
+        url: 'academics/common/StudentCoursePage',
+        category: 'Made for retop',
       },
       {
-        title: "Marks View",
-        url: "examinations/StudentMarkView",
-        category: "Made for retop",
+        title: 'Marks View',
+        url: 'examinations/StudentMarkView',
+        category: 'Made for retop',
       },
       {
-        title: "Grades View",
-        url: "examinations/StudentGradeView",
-        category: "Made for retop",
+        title: 'Grades View',
+        url: 'examinations/StudentGradeView',
+        category: 'Made for retop',
       },
       {
-        title: "Academic Calendar",
-        url: "academics/common/CalendarPreview",
-        category: "Made for retop",
+        title: 'Academic Calendar',
+        url: 'academics/common/CalendarPreview',
+        category: 'Made for retop',
       },
       {
-        title: "Student Profile",
-        url: "studentsRecord/StudentProfileAllView",
-        category: "Made for retop",
+        title: 'Student Profile',
+        url: 'studentsRecord/StudentProfileAllView',
+        category: 'Made for retop',
       },
       {
-        title: "Curriculum",
-        url: "academics/common/CurriculumSyllabus",
-        category: "Made for retop",
+        title: 'Curriculum',
+        url: 'academics/common/CurriculumSyllabus',
+        category: 'Made for retop',
       },
       {
-        title: "Exam Schedule",
-        url: "examinations/StudExamSchedule",
-        category: "Made for retop",
+        title: 'Exam Schedule',
+        url: 'examinations/StudExamSchedule',
+        category: 'Made for retop',
       },
       {
-        title: "Late Hour Request",
-        url: "hostels/late/hour/student/request/1",
-        category: "Made for retop",
+        title: 'Late Hour Request',
+        url: 'hostels/late/hour/student/request/1',
+        category: 'Made for retop',
       },
     ];
 
     const madeForRetopCat: MenuCategory = {
-      id: "made-for-retop",
-      title: "Made for retop",
+      id: 'made-for-retop',
+      title: 'Made for retop',
       links: retopNativeLinks,
     };
 
@@ -265,7 +265,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
     }
 
     const otherCats = menuCategories
-      .filter((c) => c.title !== "Made for retop")
+      .filter((c) => c.title !== 'Made for retop')
       .filter((c) => c.links && c.links.length > 0);
 
     return [madeForRetopCat, ...otherCats];
@@ -292,88 +292,88 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
     }
 
     const itemAliases: Record<string, string[]> = {
-      "time table": [
-        "timetable",
-        "time table",
-        "schedule",
-        "class schedule",
-        "slots",
-        "weekly timetable",
+      'time table': [
+        'timetable',
+        'time table',
+        'schedule',
+        'class schedule',
+        'slots',
+        'weekly timetable',
       ],
-      "class attendance": [
-        "attendance",
-        "class attendance",
-        "attendance view",
-        "my attendance",
+      'class attendance': [
+        'attendance',
+        'class attendance',
+        'attendance view',
+        'my attendance',
       ],
       assignments: [
-        "digital assignments",
-        "digital assignment",
-        "da",
-        "da upload",
-        "assignment",
-        "assignments",
-        "digital assignment upload",
+        'digital assignments',
+        'digital assignment',
+        'da',
+        'da upload',
+        'assignment',
+        'assignments',
+        'digital assignment upload',
       ],
-      "marks view": [
-        "marks",
-        "marks view",
-        "cat marks",
-        "assessment marks",
-        "test marks",
-        "exam marks",
+      'marks view': [
+        'marks',
+        'marks view',
+        'cat marks',
+        'assessment marks',
+        'test marks',
+        'exam marks',
       ],
-      "grades view": [
-        "grades",
-        "grades view",
-        "grade history",
-        "cgpa",
-        "gpa",
-        "history",
-        "gpa calculator",
-        "grade calculator",
+      'grades view': [
+        'grades',
+        'grades view',
+        'grade history',
+        'cgpa',
+        'gpa',
+        'history',
+        'gpa calculator',
+        'grade calculator',
       ],
-      "academic calendar": [
-        "academic calendar",
-        "calendar",
-        "events",
-        "academics calendar",
-        "calendar preview",
+      'academic calendar': [
+        'academic calendar',
+        'calendar',
+        'events',
+        'academics calendar',
+        'calendar preview',
       ],
-      "student profile": [
-        "profile",
-        "student profile",
-        "digital id",
-        "id card",
-        "my profile",
+      'student profile': [
+        'profile',
+        'student profile',
+        'digital id',
+        'id card',
+        'my profile',
       ],
       curriculum: [
-        "curriculum",
-        "syllabus",
-        "curriculum syllabus",
-        "course syllabus",
+        'curriculum',
+        'syllabus',
+        'curriculum syllabus',
+        'course syllabus',
       ],
-      "exam schedule": [
-        "exam schedule",
-        "exams",
-        "fat",
-        "cat",
-        "exam",
-        "fat schedule",
-        "cat schedule",
-        "exam timetable",
+      'exam schedule': [
+        'exam schedule',
+        'exams',
+        'fat',
+        'cat',
+        'exam',
+        'fat schedule',
+        'cat schedule',
+        'exam timetable',
       ],
-      "course page consolidated": [
-        "course page",
-        "course page consolidated",
-        "consolidated course page",
-        "course",
-        "courses",
-        "course material",
-        "materials",
-        "class material",
-        "subject material",
-        "course page (consolidated)",
+      'course page consolidated': [
+        'course page',
+        'course page consolidated',
+        'consolidated course page',
+        'course',
+        'courses',
+        'course material',
+        'materials',
+        'class material',
+        'subject material',
+        'course page (consolidated)',
       ],
     };
 
@@ -421,16 +421,16 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
       // 1. Query mode OR offline/single-category flat list mode
       if (query.trim() || isOffline || allCategories.length <= 1) {
         if (flattenedLinks.length === 0) return;
-        if (e.key === "ArrowDown") {
+        if (e.key === 'ArrowDown') {
           e.preventDefault();
           setSelectedIndex((prev) => (prev + 1) % flattenedLinks.length);
-        } else if (e.key === "ArrowUp") {
+        } else if (e.key === 'ArrowUp') {
           e.preventDefault();
           setSelectedIndex(
             (prev) =>
               (prev - 1 + flattenedLinks.length) % flattenedLinks.length,
           );
-        } else if (e.key === "Enter" && flattenedLinks[selectedIndex]) {
+        } else if (e.key === 'Enter' && flattenedLinks[selectedIndex]) {
           e.preventDefault();
           const selLink = flattenedLinks[selectedIndex];
           const forceLegacy = isOffline
@@ -440,8 +440,8 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
               : !isModernUI;
           onNavigate(selLink, forceLegacy);
           setIsOmniboxOpen(false);
-          setQuery("");
-        } else if (e.key === "Escape") {
+          setQuery('');
+        } else if (e.key === 'Escape') {
           e.preventDefault();
           setIsOmniboxOpen(false);
         }
@@ -452,16 +452,16 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
       if (activeMenu) {
         const links = activeMenu.cat.links;
         if (links.length === 0) return;
-        if (e.key === "ArrowDown") {
+        if (e.key === 'ArrowDown') {
           e.preventDefault();
           setSelectedIndex((prev) => (prev + 1) % links.length);
-        } else if (e.key === "ArrowUp") {
+        } else if (e.key === 'ArrowUp') {
           e.preventDefault();
           setSelectedIndex((prev) => (prev - 1 + links.length) % links.length);
-        } else if (e.key === "ArrowLeft" || e.key === "Escape") {
+        } else if (e.key === 'ArrowLeft' || e.key === 'Escape') {
           e.preventDefault();
           setActiveMenu(null);
-        } else if (e.key === "Enter" && links[selectedIndex]) {
+        } else if (e.key === 'Enter' && links[selectedIndex]) {
           e.preventDefault();
           const selLink = links[selectedIndex];
           const forceLegacy = e.shiftKey ? isModernUI : !isModernUI;
@@ -471,7 +471,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
         }
       } else {
         if (allCategories.length === 0) return;
-        if (e.key === "ArrowDown") {
+        if (e.key === 'ArrowDown') {
           e.preventDefault();
           const nextIdx = (categoryIndex + 1) % allCategories.length;
           setCategoryIndex(nextIdx);
@@ -485,7 +485,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
             setActiveMenu({ cat: nextCat, rect });
             setSelectedIndex(0);
           }
-        } else if (e.key === "ArrowUp") {
+        } else if (e.key === 'ArrowUp') {
           e.preventDefault();
           const prevIdx =
             (categoryIndex - 1 + allCategories.length) % allCategories.length;
@@ -500,7 +500,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
             setActiveMenu({ cat: prevCat, rect });
             setSelectedIndex(0);
           }
-        } else if (e.key === "ArrowRight" || e.key === "Enter") {
+        } else if (e.key === 'ArrowRight' || e.key === 'Enter') {
           e.preventDefault();
           const targetCat = allCategories[categoryIndex];
           if (targetCat) {
@@ -514,14 +514,14 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
             setSelectedIndex(0);
             setActiveMenu({ cat: targetCat, rect });
           }
-        } else if (e.key === "Escape") {
+        } else if (e.key === 'Escape') {
           e.preventDefault();
           setIsOmniboxOpen(false);
         }
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [
     query,
     flattenedLinks,
@@ -540,13 +540,13 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
     if (!isExpanded) return;
     if (query.trim()) {
       const el = document.getElementById(`search-result-item-${selectedIndex}`);
-      el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     } else if (activeMenu) {
       const el = document.getElementById(`home-popup-item-${selectedIndex}`);
-      el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     } else {
       const el = document.getElementById(`topbar-cat-item-${categoryIndex}`);
-      el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }
   }, [isExpanded, query, activeMenu, selectedIndex, categoryIndex]);
 
@@ -560,7 +560,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
     setTimeout(() => {
       setIsOmniboxOpen(false);
       setIsMobileSearchClosing(false);
-      setQuery("");
+      setQuery('');
     }, 150);
   };
 
@@ -579,11 +579,11 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
     };
 
     if (isExpanded) {
-      document.addEventListener("mousedown", handleClickOutside, true);
+      document.addEventListener('mousedown', handleClickOutside, true);
     }
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside, true);
+      document.removeEventListener('mousedown', handleClickOutside, true);
     };
   }, [isExpanded, setIsOmniboxOpen]);
 
@@ -609,20 +609,20 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
             title={
               isOffline
                 ? isHome
-                  ? "retop"
-                  : "Return to Dashboard"
+                  ? 'retop'
+                  : 'Return to Dashboard'
                 : isHome
-                  ? "Go to VTOP"
-                  : "Return to Dashboard"
+                  ? 'Go to VTOP'
+                  : 'Return to Dashboard'
             }
             aria-label={
               isOffline
                 ? isHome
-                  ? "retop"
-                  : "Return to Dashboard"
+                  ? 'retop'
+                  : 'Return to Dashboard'
                 : isHome
-                  ? "Go to VTOP"
-                  : "Return to Dashboard"
+                  ? 'Go to VTOP'
+                  : 'Return to Dashboard'
             }
             onMouseEnter={() => {
               if (!isOffline) setIsLogoHovered(true);
@@ -637,8 +637,8 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
               <div
                 className={`absolute right-0 inset-y-0 flex items-end justify-end pb-1 transition-all duration-200 ${
                   !isOffline && isHome && isLogoHovered
-                    ? "opacity-0 -translate-y-1 scale-90 pointer-events-none"
-                    : "opacity-100 translate-y-0 scale-100"
+                    ? 'opacity-0 -translate-y-1 scale-90 pointer-events-none'
+                    : 'opacity-100 translate-y-0 scale-100'
                 }`}
               >
                 <span className="font-expanded font-black text-2xl md:text-3xl italic lowercase leading-none text-(--text-main) hover:text-(--accent-hover)">
@@ -647,15 +647,15 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                 <div
                   className={`relative ml-[-1.5px] md:ml-[-2.5px] mb-0.5 md:mb-0.75 flex items-center justify-center transition-all duration-300 origin-bottom-left rounded-full bg-(--accent-base) shrink-0 ${
                     isSearchActive
-                      ? "w-4.5 h-4.5 md:w-5 md:h-5"
-                      : "w-2.5 h-2.5 md:w-3 md:h-3"
+                      ? 'w-4.5 h-4.5 md:w-5 md:h-5'
+                      : 'w-2.5 h-2.5 md:w-3 md:h-3'
                   }`}
                 >
                   <Search
                     className={`text-(--text-inverse) transition-all duration-200 absolute ${
                       isSearchActive
-                        ? "opacity-100 scale-100 w-2.5 h-2.5 md:w-3 md:h-3"
-                        : "opacity-0 scale-0 w-1.5 h-1.5 pointer-events-none"
+                        ? 'opacity-100 scale-100 w-2.5 h-2.5 md:w-3 md:h-3'
+                        : 'opacity-0 scale-0 w-1.5 h-1.5 pointer-events-none'
                     }`}
                     strokeWidth={3.5}
                   />
@@ -667,8 +667,8 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                 <div
                   className={`absolute right-0 inset-y-0 flex items-center justify-end transition-all duration-200 ${
                     isLogoHovered
-                      ? "opacity-100 translate-y-0 scale-100"
-                      : "opacity-0 translate-y-1 scale-90 pointer-events-none"
+                      ? 'opacity-100 translate-y-0 scale-100'
+                      : 'opacity-0 translate-y-1 scale-90 pointer-events-none'
                   }`}
                 >
                   <span className="font-['Times_New_Roman',Times,serif]! font-bold text-xl md:text-2xl leading-none text-(--text-main) hover:text-(--accent-hover)">
@@ -701,10 +701,10 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
             placeholder={toTitleCase(pageTitle)}
             value={query}
             onChange={(e) => {
-              const sanitized = e.target.value.replace(/[^a-zA-Z\s]/g, "");
-              if (sanitized.toLowerCase() === "demo") {
+              const sanitized = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+              if (sanitized.toLowerCase() === 'demo') {
                 useDataStore.getState().enableDemoMode();
-                setQuery("");
+                setQuery('');
                 setIsOmniboxOpen(false);
                 return;
               }
@@ -722,7 +722,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
       {isSearchActive && (
         <div
           className={`fixed inset-0 z-999999 bg-(--bg-main) flex flex-col p-0 lg:hidden overflow-hidden w-screen h-screen ${
-            isMobileSearchClosing ? "animate-sheet-down" : "animate-sheet-up"
+            isMobileSearchClosing ? 'animate-sheet-down' : 'animate-sheet-up'
           }`}
         >
           {/* Mobile Overlay Header: matches compact main topbar dimensions (h-14 px-2.5) */}
@@ -751,10 +751,10 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                 placeholder={toTitleCase(pageTitle)}
                 value={query}
                 onChange={(e) => {
-                  const sanitized = e.target.value.replace(/[^a-zA-Z\s]/g, "");
-                  if (sanitized.toLowerCase() === "demo") {
+                  const sanitized = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+                  if (sanitized.toLowerCase() === 'demo') {
                     useDataStore.getState().enableDemoMode();
-                    setQuery("");
+                    setQuery('');
                     setIsOmniboxOpen(false);
                     return;
                   }
@@ -765,7 +765,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
               />
               {query && (
                 <button
-                  onClick={() => setQuery("")}
+                  onClick={() => setQuery('')}
                   className="p-1 rounded-full hover:bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) shrink-0 cursor-pointer"
                 >
                   <Close className="w-5 h-5" />
@@ -790,7 +790,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                             : !isModernUI;
                           onNavigate(link, forceLegacy);
                           setIsOmniboxOpen(false);
-                          setQuery("");
+                          setQuery('');
                         }}
                         className="flex items-center justify-between px-4 py-3 rounded-full bg-(--bg-surface) border border-(--border-dim)/40 active:scale-[0.98] transition-all cursor-pointer text-left"
                       >
@@ -830,7 +830,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                             const isPinned = pinnedLinks.some(
                               (p) =>
                                 p.url === link.url ||
-                                (linkDest !== "content" &&
+                                (linkDest !== 'content' &&
                                   getDestinationView(p) === linkDest),
                             );
                             return (
@@ -845,7 +845,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                                       : !isModernUI;
                                     onNavigate(link, forceLegacy);
                                     setIsOmniboxOpen(false);
-                                    setQuery("");
+                                    setQuery('');
                                   }}
                                   className="flex items-center gap-2 flex-1 min-w-0 text-left text-xs font-bold text-(--text-main) cursor-pointer border-0 bg-transparent"
                                 >
@@ -856,7 +856,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                                     <span
                                       className="re-badge inline-block text-[9px] font-black px-1 py-0.5 rounded leading-none shrink-0 bg-transparent text-(--accent-base)"
                                       style={{
-                                        fontFamily: "var(--font-expanded)",
+                                        fontFamily: 'var(--font-expanded)',
                                         fontVariationSettings:
                                           "'wdth' 151, 'wght' 700, 'ROND' 100, 'slnt' -10",
                                       }}
@@ -872,14 +872,14 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                                   }}
                                   className="p-1.5 text-(--text-muted) hover:text-(--accent-base) shrink-0 cursor-pointer"
                                   title={
-                                    isPinned ? "Unpin from Dock" : "Pin to Dock"
+                                    isPinned ? 'Unpin from Dock' : 'Pin to Dock'
                                   }
                                 >
                                   <Star
                                     className={`w-4 h-4 transition-all ${
                                       isPinned
-                                        ? "text-(--accent-base) fill-current"
-                                        : "opacity-50 hover:opacity-100"
+                                        ? 'text-(--accent-base) fill-current'
+                                        : 'opacity-50 hover:opacity-100'
                                     }`}
                                   />
                                 </button>
@@ -908,7 +908,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                     const isPinned = pinnedLinks.some(
                       (p) =>
                         p.url === link.url ||
-                        (linkDest !== "content" &&
+                        (linkDest !== 'content' &&
                           getDestinationView(p) === linkDest),
                     );
                     return (
@@ -920,7 +920,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                             : !isModernUI;
                           onNavigate(link, forceLegacy);
                           setIsOmniboxOpen(false);
-                          setQuery("");
+                          setQuery('');
                         }}
                         className="flex items-center justify-between px-4 py-3.5 rounded-full bg-(--bg-surface) border border-(--border-dim)/40 active:scale-[0.99] transition-all cursor-pointer"
                       >
@@ -932,7 +932,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                             <span
                               className="re-badge inline-block text-[9px] font-black px-1 py-0.5 rounded leading-none shrink-0 bg-transparent text-(--accent-base)"
                               style={{
-                                fontFamily: "var(--font-expanded)",
+                                fontFamily: 'var(--font-expanded)',
                                 fontVariationSettings:
                                   "'wdth' 151, 'wght' 700, 'ROND' 100, 'slnt' -10",
                               }}
@@ -947,13 +947,13 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                             onTogglePin(link);
                           }}
                           className="p-1.5 text-(--text-muted) hover:text-(--accent-base) shrink-0 cursor-pointer"
-                          title={isPinned ? "Unpin from Dock" : "Pin to Dock"}
+                          title={isPinned ? 'Unpin from Dock' : 'Pin to Dock'}
                         >
                           <Star
                             className={`w-4 h-4 transition-all ${
                               isPinned
-                                ? "text-(--accent-base) fill-current"
-                                : "opacity-50 hover:opacity-100"
+                                ? 'text-(--accent-base) fill-current'
+                                : 'opacity-50 hover:opacity-100'
                             }`}
                           />
                         </button>
@@ -979,9 +979,9 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
               className="flex flex-col gap-1 max-h-[50vh] overflow-y-auto search-scrollbar pr-1.5 py-1.5"
               style={{
                 maskImage:
-                  "linear-gradient(to bottom, transparent 0%, black 14px, black calc(100% - 14px), transparent 100%)",
+                  'linear-gradient(to bottom, transparent 0%, black 14px, black calc(100% - 14px), transparent 100%)',
                 WebkitMaskImage:
-                  "linear-gradient(to bottom, transparent 0%, black 14px, black calc(100% - 14px), transparent 100%)",
+                  'linear-gradient(to bottom, transparent 0%, black 14px, black calc(100% - 14px), transparent 100%)',
               }}
             >
               {!query && !isOffline && allCategories.length > 1 ? (
@@ -1001,7 +1001,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                         id={`topbar-cat-item-${catIdx}`}
                         onMouseEnter={(e) => {
                           handleMenuEnter();
-                          if (!isExpanded || query.trim() !== "") return;
+                          if (!isExpanded || query.trim() !== '') return;
                           setCategoryIndex(catIdx);
                           setSelectedIndex(0);
                           setActiveMenu({
@@ -1012,7 +1012,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                         onMouseLeave={handleMenuLeave}
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (!isExpanded || query.trim() !== "") return;
+                          if (!isExpanded || query.trim() !== '') return;
                           setCategoryIndex(catIdx);
                           setSelectedIndex(0);
                           setActiveMenu({
@@ -1020,14 +1020,14 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                             rect: e.currentTarget.getBoundingClientRect(),
                           });
                         }}
-                        className={`flex w-full items-center justify-start p-2 md:p-2.5 rounded-xl transition-all duration-fast ease-out group cursor-pointer ${isActive ? "bg-(--accent-base) text-(--text-inverse)" : "bg-transparent text-(--text-main) hover:bg-(--bg-highlight)"}`}
+                        className={`flex w-full items-center justify-start p-2 md:p-2.5 rounded-xl transition-all duration-fast ease-out group cursor-pointer ${isActive ? 'bg-(--accent-base) text-(--text-inverse)' : 'bg-transparent text-(--text-main) hover:bg-(--bg-highlight)'}`}
                       >
                         <div className="flex items-center gap-2.5">
                           <CatIcon
-                            className={`w-4 h-4 md:w-5 md:h-5 transition-colors ${isActive ? "text-(--text-inverse)" : "text-(--text-muted) group-hover:text-(--accent-base)"}`}
+                            className={`w-4 h-4 md:w-5 md:h-5 transition-colors ${isActive ? 'text-(--text-inverse)' : 'text-(--text-muted) group-hover:text-(--accent-base)'}`}
                           />
                           <span
-                            className={`font-expanded font-bold text-xs text-left transition-colors ${isActive ? "text-(--text-inverse)" : "text-(--text-main) group-hover:text-(--accent-base)"}`}
+                            className={`font-expanded font-bold text-xs text-left transition-colors ${isActive ? 'text-(--text-inverse)' : 'text-(--text-main) group-hover:text-(--accent-base)'}`}
                           >
                             {renderCategoryTitle(cat.title)}
                           </span>
@@ -1045,19 +1045,19 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                 </div>
               ) : (
                 (() => {
-                  let currentCategory = "";
+                  let currentCategory = '';
                   return flattenedLinks.map((link, i) => {
                     const isSelected = i === selectedIndex;
                     const linkDest = getDestinationView(link);
                     const isPinned = pinnedLinks.some(
                       (p) =>
                         p.url === link.url ||
-                        (linkDest !== "content" &&
+                        (linkDest !== 'content' &&
                           getDestinationView(p) === linkDest),
                     );
                     const category = hasRetopPage(link)
-                      ? "Made for retop"
-                      : link.category || "Other";
+                      ? 'Made for retop'
+                      : link.category || 'Other';
                     const isNewCategory =
                       !isOffline &&
                       allCategories.length > 1 &&
@@ -1083,7 +1083,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                                   : !isModernUI;
                               onNavigate(link, forceLegacy);
                               setIsOmniboxOpen(false);
-                              setQuery("");
+                              setQuery('');
                             }}
                             onClick={(e) => {
                               e.preventDefault();
@@ -1094,13 +1094,13 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                                   : !isModernUI;
                               onNavigate(link, forceLegacy);
                               setIsOmniboxOpen(false);
-                              setQuery("");
+                              setQuery('');
                             }}
                             onMouseEnter={() => setSelectedIndex(i)}
                             className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 border-2 ${
                               isSelected
-                                ? "bg-(--accent-base) text-(--text-inverse) border-(--border-main) shadow-none -translate-y-px"
-                                : "bg-transparent border-transparent text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main)"
+                                ? 'bg-(--accent-base) text-(--text-inverse) border-(--border-main) shadow-none -translate-y-px'
+                                : 'bg-transparent border-transparent text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main)'
                             }`}
                           >
                             <div className="flex-1 min-w-0 pr-8 flex items-center justify-between gap-2 h-5">
@@ -1109,12 +1109,12 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                               </span>
                               {hasRetopPage(link) && (
                                 <span
-                                  className={`re-badge inline-block text-[9px] font-black px-1 py-0.5 rounded leading-none shrink-0 bg-transparent ${isSelected ? "text-white" : "text-(--accent-base)"}`}
+                                  className={`re-badge inline-block text-[9px] font-black px-1 py-0.5 rounded leading-none shrink-0 bg-transparent ${isSelected ? 'text-white' : 'text-(--accent-base)'}`}
                                   style={{
-                                    fontFamily: "var(--font-expanded)",
+                                    fontFamily: 'var(--font-expanded)',
                                     fontVariationSettings:
                                       "'wdth' 151, 'wght' 700, 'ROND' 100, 'slnt' -10",
-                                    transform: "skewX(-10deg)",
+                                    transform: 'skewX(-10deg)',
                                   }}
                                 >
                                   re.
@@ -1130,14 +1130,14 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                               }}
                               className="pointer-events-auto p-1.5 rounded-xl transition-all border-2 border-transparent hover:bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) cursor-pointer"
                               title={
-                                isPinned ? "Unpin from Dock" : "Pin to Dock"
+                                isPinned ? 'Unpin from Dock' : 'Pin to Dock'
                               }
                             >
                               <Star
                                 className={`w-4.5 h-4.5 transition-transform ${
                                   isPinned
-                                    ? "text-(--accent-base) fill-current scale-110"
-                                    : "opacity-50 group-hover:opacity-100 hover:text-(--text-main)"
+                                    ? 'text-(--accent-base) fill-current scale-110'
+                                    : 'opacity-50 group-hover:opacity-100 hover:text-(--text-main)'
                                 }`}
                               />
                             </button>
@@ -1154,31 +1154,31 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                 <span>
                   <span className="font-mono font-bold text-(--accent-base)">
                     Enter
-                  </span>{" "}
-                  to open &nbsp;•&nbsp;{" "}
+                  </span>{' '}
+                  to open &nbsp;•&nbsp;{' '}
                   <span className="font-mono font-bold text-(--text-muted)">
                     Esc
-                  </span>{" "}
+                  </span>{' '}
                   to close
                 </span>
               ) : (
                 <span>
                   <span className="font-mono font-bold text-(--accent-base)">
                     Shift + Enter
-                  </span>{" "}
-                  for{" "}
+                  </span>{' '}
+                  for{' '}
                   {isModernUI ? (
                     <span className="font-vtop font-bold">VTOP</span>
                   ) : (
-                    "retop"
-                  )}{" "}
-                  &nbsp;•&nbsp;{" "}
+                    'retop'
+                  )}{' '}
+                  &nbsp;•&nbsp;{' '}
                   <span className="font-mono font-bold text-(--text-muted)">
                     Enter
-                  </span>{" "}
-                  for{" "}
+                  </span>{' '}
+                  for{' '}
                   {isModernUI ? (
-                    "retop"
+                    'retop'
                   ) : (
                     <span className="font-vtop font-bold">VTOP</span>
                   )}
@@ -1222,7 +1222,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
 
           const targetLeft = baseRight + 8;
           const maxLeft =
-            typeof window !== "undefined"
+            typeof window !== 'undefined'
               ? window.innerWidth - popupWidth - 16
               : targetLeft;
           const leftPos = Math.max(16, Math.min(targetLeft, maxLeft));
@@ -1230,7 +1230,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
           const targetTop = baseTop;
           const estimatedHeight = Math.ceil(itemCount / cols) * 38 + 24;
           const maxTop =
-            typeof window !== "undefined"
+            typeof window !== 'undefined'
               ? window.innerHeight - estimatedHeight - 16
               : targetTop;
           const topPos = Math.max(16, Math.min(targetTop, maxTop));
@@ -1241,11 +1241,11 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
               onMouseLeave={handleChildLeave}
               className="hidden lg:flex fixed z-[999999] bg-(--bg-surface) border-2 border-(--border-main) rounded-2xl popup-shadow shadow-2xl p-2 flex-col transition-all duration-150 overflow-visible"
               style={{
-                transformOrigin: "left center",
+                transformOrigin: 'left center',
                 left: leftPos,
                 top: topPos,
                 width: `${popupWidth}px`,
-                maxWidth: "calc(100vw - 32px)",
+                maxWidth: 'calc(100vw - 32px)',
               }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -1256,13 +1256,13 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                 onMouseLeave={handleChildLeave}
                 aria-hidden="true"
                 style={{
-                  position: "absolute",
+                  position: 'absolute',
                   left: -16,
                   top: 0,
                   width: 16,
                   height: estimatedHeight,
-                  clipPath: "polygon(100% 0%, 100% 100%, 0% 50%)",
-                  background: "transparent",
+                  clipPath: 'polygon(100% 0%, 100% 100%, 0% 50%)',
+                  background: 'transparent',
                 }}
               />
               <div
@@ -1276,7 +1276,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                   const isPinned = pinnedLinks.some(
                     (p) =>
                       p.url === link.url ||
-                      (linkDest !== "content" &&
+                      (linkDest !== 'content' &&
                         getDestinationView(p) === linkDest),
                   );
                   return (
@@ -1284,8 +1284,8 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                       key={i}
                       className={`relative w-full flex items-center rounded-xl transition-all group/item ${
                         i === selectedIndex && !query
-                          ? "bg-(--accent-base) text-(--text-inverse)"
-                          : "bg-transparent text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main)"
+                          ? 'bg-(--accent-base) text-(--text-inverse)'
+                          : 'bg-transparent text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main)'
                       }`}
                     >
                       <button
@@ -1316,12 +1316,12 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                         <span className="truncate">{link.title}</span>
                         {hasRetopPage(link) && (
                           <span
-                            className={`re-badge inline-block text-[9px] font-black px-1 py-0.5 rounded leading-none shrink-0 bg-transparent ${i === selectedIndex && !query ? "text-white" : "text-(--accent-base)"}`}
+                            className={`re-badge inline-block text-[9px] font-black px-1 py-0.5 rounded leading-none shrink-0 bg-transparent ${i === selectedIndex && !query ? 'text-white' : 'text-(--accent-base)'}`}
                             style={{
-                              fontFamily: "var(--font-expanded)",
+                              fontFamily: 'var(--font-expanded)',
                               fontVariationSettings:
                                 "'wdth' 151, 'wght' 700, 'ROND' 100, 'slnt' -10",
-                              transform: "skewX(-10deg)",
+                              transform: 'skewX(-10deg)',
                             }}
                           >
                             re.
@@ -1335,16 +1335,16 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                         }}
                         className={`absolute right-1.5 p-1 rounded-lg transition-all cursor-pointer shrink-0 z-20 ${
                           isPinned
-                            ? "text-(--accent-base) opacity-100"
-                            : "text-(--text-muted) opacity-0 group-hover/item:opacity-100 hover:text-(--text-main)"
+                            ? 'text-(--accent-base) opacity-100'
+                            : 'text-(--text-muted) opacity-0 group-hover/item:opacity-100 hover:text-(--text-main)'
                         }`}
-                        title={isPinned ? "Unpin from Dock" : "Pin to Dock"}
+                        title={isPinned ? 'Unpin from Dock' : 'Pin to Dock'}
                       >
                         <Star
                           className={`w-4 h-4 transition-transform ${
                             isPinned
-                              ? "fill-current scale-110"
-                              : "opacity-60 hover:opacity-100"
+                              ? 'fill-current scale-110'
+                              : 'opacity-60 hover:opacity-100'
                           }`}
                         />
                       </button>

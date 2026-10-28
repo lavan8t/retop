@@ -1,6 +1,6 @@
-import React from "react";
-import { SettingTopicCard } from "./SettingTopicCard";
-import { SyncManager } from "../SyncManager";
+import React from 'react';
+import { SettingTopicCard } from './SettingTopicCard';
+import { SyncManager } from '../SyncManager';
 
 interface DataStorageSectionProps {
   handleClearAllCache: () => void;
@@ -14,7 +14,12 @@ export const DataStorageSection: React.FC<DataStorageSectionProps> = ({
   return (
     <SettingTopicCard
       title="Cache & Storage Management"
-      description={<>Clear cached <span className="font-vtop font-bold">VTOP</span> portal data or manage specific cached endpoints</>}
+      description={
+        <>
+          Clear cached <span className="font-vtop font-bold">VTOP</span> portal
+          data or manage specific cached endpoints
+        </>
+      }
     >
       <div className="flex flex-col gap-4 w-full">
         <div className="flex items-center justify-between gap-4">
@@ -23,7 +28,8 @@ export const DataStorageSection: React.FC<DataStorageSectionProps> = ({
               Clear All Portal Cache
             </span>
             <span className="text-xs text-(--text-muted)">
-              Removes offline cached data for timetable, marks, attendance, and assignments
+              Removes offline cached data for timetable, marks, attendance, and
+              assignments
             </span>
           </div>
           <button

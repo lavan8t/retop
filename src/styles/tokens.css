@@ -1,5 +1,5 @@
 :root,
-[data-theme="dark"] {
+[data-theme='dark'] {
   --retop-font-weight: 700;
   /* Unified Font Size Hierarchy */
   --font-size-header: 1.5rem;
@@ -15,14 +15,34 @@
   --bg-main: var(--md-sys-color-background, #09090b);
   --bg-card: var(--md-sys-color-surface, #18181b);
   --bg-surface: var(--md-sys-color-surface-variant, #18181b);
-  --bg-primary-container: var(--md-sys-color-primary-container, color-mix(in srgb, var(--accent-base) 18%, var(--bg-card)));
-  --text-on-primary-container: var(--md-sys-color-on-primary-container, var(--text-main));
-  --bg-highlight: color-mix(in srgb, var(--md-sys-color-primary, #3b82f6) 15%, var(--md-sys-color-surface, #18181b));
-  --border-main: var(--md-sys-color-outline, color-mix(in srgb, var(--text-muted, #94a3b8) 35%, transparent));
-  --border-dim: var(--md-sys-color-outline-variant, color-mix(in srgb, var(--text-muted, #94a3b8) 20%, transparent));
+  --bg-primary-container: var(
+    --md-sys-color-primary-container,
+    color-mix(in srgb, var(--accent-base) 18%, var(--bg-card))
+  );
+  --text-on-primary-container: var(
+    --md-sys-color-on-primary-container,
+    var(--text-main)
+  );
+  --bg-highlight: color-mix(
+    in srgb,
+    var(--md-sys-color-primary, #3b82f6) 15%,
+    var(--md-sys-color-surface, #18181b)
+  );
+  --border-main: var(
+    --md-sys-color-outline,
+    color-mix(in srgb, var(--text-muted, #94a3b8) 35%, transparent)
+  );
+  --border-dim: var(
+    --md-sys-color-outline-variant,
+    color-mix(in srgb, var(--text-muted, #94a3b8) 20%, transparent)
+  );
   --text-main: var(--md-sys-color-on-background, #f8fafc);
   --text-muted: var(--md-sys-color-on-surface-variant, #94a3b8);
-  --text-dim: color-mix(in srgb, var(--md-sys-color-on-surface-variant, #94a3b8) 70%, transparent);
+  --text-dim: color-mix(
+    in srgb,
+    var(--md-sys-color-on-surface-variant, #94a3b8) 70%,
+    transparent
+  );
   --text-inverse: var(--md-sys-color-on-primary, #ffffff);
   --shadow-main: transparent;
 
@@ -106,30 +126,56 @@
   font-variation-settings: normal;
 }
 
-[data-theme="light"] {
+[data-theme='light'] {
   --accent-base: var(--md-sys-color-primary, #3b82f6);
   --bg-main: var(--md-sys-color-background, #f8fafc);
   --bg-card: var(--md-sys-color-surface, #ffffff);
   --bg-surface: var(--md-sys-color-surface-variant, #ffffff);
-  --bg-primary-container: var(--md-sys-color-primary-container, color-mix(in srgb, var(--accent-base) 14%, #ffffff));
-  --text-on-primary-container: var(--md-sys-color-on-primary-container, var(--text-main));
-  --bg-highlight: color-mix(in srgb, var(--md-sys-color-primary, #3b82f6) 10%, var(--md-sys-color-surface, #ffffff));
-  --border-main: var(--md-sys-color-outline, color-mix(in srgb, var(--text-muted, #475569) 35%, transparent));
-  --border-dim: var(--md-sys-color-outline-variant, color-mix(in srgb, var(--text-muted, #475569) 20%, transparent));
+  --bg-primary-container: var(
+    --md-sys-color-primary-container,
+    color-mix(in srgb, var(--accent-base) 14%, #ffffff)
+  );
+  --text-on-primary-container: var(
+    --md-sys-color-on-primary-container,
+    var(--text-main)
+  );
+  --bg-highlight: color-mix(
+    in srgb,
+    var(--md-sys-color-primary, #3b82f6) 10%,
+    var(--md-sys-color-surface, #ffffff)
+  );
+  --border-main: var(
+    --md-sys-color-outline,
+    color-mix(in srgb, var(--text-muted, #475569) 35%, transparent)
+  );
+  --border-dim: var(
+    --md-sys-color-outline-variant,
+    color-mix(in srgb, var(--text-muted, #475569) 20%, transparent)
+  );
   --text-main: var(--md-sys-color-on-background, #0f172a);
   --text-muted: var(--md-sys-color-on-surface-variant, #475569);
-  --text-dim: color-mix(in srgb, var(--md-sys-color-on-surface-variant, #475569) 70%, transparent);
+  --text-dim: color-mix(
+    in srgb,
+    var(--md-sys-color-on-surface-variant, #475569) 70%,
+    transparent
+  );
   --text-inverse: var(--md-sys-color-on-primary, #ffffff);
   --shadow-main: transparent;
 }
 
-[data-theme="amoled"] {
+[data-theme='amoled'] {
   --accent-base: var(--md-sys-color-primary, #3b82f6);
   --bg-main: #000000;
   --bg-card: #000000;
   --bg-surface: #000000;
-  --bg-primary-container: var(--md-sys-color-primary-container, color-mix(in srgb, var(--accent-base) 20%, #000000));
-  --text-on-primary-container: var(--md-sys-color-on-primary-container, #ffffff);
+  --bg-primary-container: var(
+    --md-sys-color-primary-container,
+    color-mix(in srgb, var(--accent-base) 20%, #000000)
+  );
+  --text-on-primary-container: var(
+    --md-sys-color-on-primary-container,
+    #ffffff
+  );
   --bg-highlight: #111111;
   --border-main: var(--md-sys-color-outline, #27272a);
   --border-dim: var(--md-sys-color-outline-variant, #18181b);
@@ -161,7 +207,7 @@
 .font-vtop,
 .font-times,
 [data-vtop] {
-  font-family: "Times New Roman", Times, serif !important;
+  font-family: 'Times New Roman', Times, serif !important;
   font-weight: 700 !important;
   font-variation-settings: normal !important;
 }
@@ -169,13 +215,21 @@
 /* Material 3 Selection & Shadow DOM Text Selection styling */
 ::selection,
 #retop-root ::selection {
-  background-color: color-mix(in srgb, var(--accent-base, #3b82f6) 35%, transparent) !important;
+  background-color: color-mix(
+    in srgb,
+    var(--accent-base, #3b82f6) 35%,
+    transparent
+  ) !important;
   color: var(--text-main, #ffffff) !important;
 }
 
 ::-moz-selection,
 #retop-root ::-moz-selection {
-  background-color: color-mix(in srgb, var(--accent-base, #3b82f6) 35%, transparent) !important;
+  background-color: color-mix(
+    in srgb,
+    var(--accent-base, #3b82f6) 35%,
+    transparent
+  ) !important;
   color: var(--text-main, #ffffff) !important;
 }
 
@@ -188,26 +242,40 @@
 .retop-menu-badge {
   display: inline-block !important;
   font-family: var(--font-expanded, sans-serif) !important;
-  font-variation-settings: "wdth" 151, "wght" 700, "ROND" 100, "slnt" -10 !important;
+  font-variation-settings:
+    'wdth' 151,
+    'wght' 700,
+    'ROND' 100,
+    'slnt' -10 !important;
 }
 
 #retop-root .retop-about-logo,
 .retop-about-logo {
   display: inline-block !important;
-  font-family: "Google Sans Flex", var(--font-expanded, sans-serif) !important;
-  font-variation-settings: "wdth" 125, "wght" 900, "ROND" 100, "slnt" -10 !important;
+  font-family: 'Google Sans Flex', var(--font-expanded, sans-serif) !important;
+  font-variation-settings:
+    'wdth' 125,
+    'wght' 900,
+    'ROND' 100,
+    'slnt' -10 !important;
   letter-spacing: -0.04em !important;
   line-height: 1 !important;
-  transition: font-variation-settings var(--duration-font-var) ease-out, color var(--duration-fast) ease !important;
+  transition:
+    font-variation-settings var(--duration-font-var) ease-out,
+    color var(--duration-fast) ease !important;
 }
 
 #retop-root .retop-about-logo:hover,
 .retop-about-logo:hover {
-  font-variation-settings: "wdth" 151, "wght" 100, "ROND" 100, "slnt" -10 !important;
+  font-variation-settings:
+    'wdth' 151,
+    'wght' 100,
+    'ROND' 100,
+    'slnt' -10 !important;
 }
 
 /* Range slider styling — no ghosting */
-input[type="range"] {
+input[type='range'] {
   -webkit-appearance: none;
   appearance: none;
   height: 6px;
@@ -217,7 +285,7 @@ input[type="range"] {
   cursor: pointer;
 }
 
-input[type="range"]::-webkit-slider-thumb {
+input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   width: 18px;
@@ -225,26 +293,25 @@ input[type="range"]::-webkit-slider-thumb {
   border-radius: 50%;
   background: var(--accent-base);
   border: 3px solid var(--bg-surface);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
   cursor: pointer;
   transition: transform var(--duration-font-var) ease;
 }
 
-input[type="range"]::-webkit-slider-thumb:hover {
+input[type='range']::-webkit-slider-thumb:hover {
   transform: scale(1.15);
 }
 
-input[type="range"]::-webkit-slider-thumb:active {
+input[type='range']::-webkit-slider-thumb:active {
   transform: scale(1.25);
 }
 
-input[type="range"]::-moz-range-thumb {
+input[type='range']::-moz-range-thumb {
   width: 18px;
   height: 18px;
   border-radius: 50%;
   background: var(--accent-base);
   border: 3px solid var(--bg-surface);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
   cursor: pointer;
 }
-

@@ -1,6 +1,10 @@
-import { TimetableCourse, CalendarEvent, CalendarMonthPreview } from "../types/vtop";
-import { CAMPUS_SLOTS, CAMPUS_SLOT_TIMINGS, DAYS } from "./timetable-slots";
-import { ExamGroup } from "../parsers/exam-schedule";
+import {
+  TimetableCourse,
+  CalendarEvent,
+  CalendarMonthPreview,
+} from '../types/vtop';
+import { CAMPUS_SLOTS, CAMPUS_SLOT_TIMINGS, DAYS } from './timetable-slots';
+import { ExamGroup } from '../parsers/exam-schedule';
 
 /**
  * Generates an iCal (.ics) file from timetable courses and academic calendar data.
@@ -16,7 +20,7 @@ import { ExamGroup } from "../parsers/exam-schedule";
 // ---- Helpers ----
 
 /** Pad number to 2 digits */
-const pad = (n: number) => n.toString().padStart(2, "0");
+const pad = (n: number) => n.toString().padStart(2, '0');
 
 /** Format a Date to iCal YYYYMMDD'T'HHMMSS format (local time, no Z) */
 const toICalDate = (d: Date): string => {
@@ -29,23 +33,27 @@ const toICalDateOnly = (d: Date): string => {
 };
 
 /** Generate a unique UID for an event */
-const generateUID = (courseCode: string, date: string, slot: string): string => {
+const generateUID = (
+  courseCode: string,
+  date: string,
+  slot: string,
+): string => {
   return `${courseCode}-${date}-${slot}@retop`;
 };
 
 /** Escape special characters for iCal text fields */
 const escapeIcal = (text: string): string => {
   return text
-    .replace(/\\/g, "\\\\")
-    .replace(/;/g, "\\;")
-    .replace(/,/g, "\\,")
-    .replace(/\n/g, "\\n");
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,')
+    .replace(/\n/g, '\\n');
 };
 
 /** Parse "HH:MM" to { hours, minutes } */
 const parseTime = (time: string): { hours: number; minutes: number } | null => {
-  if (!time || time === "-") return null;
-  const [h, m] = time.split(":").map(Number);
+  if (!time || time === '-') return null;
+  const [h, m] = time.split(':').map(Number);
   if (isNaN(h) || isNaN(m)) return null;
   return { hours: h, minutes: m };
 };
@@ -59,18 +67,18 @@ const parseTime = (time: string): { hours: number; minutes: number } | null => {
  * Returns the effective day name (e.g., "Monday") or null if no override.
  */
 const getDayOrderOverride = (event: CalendarEvent): string | null => {
-  const info = (event.info || "").toLowerCase();
-  const sub = (event.subInfo || "").toLowerCase();
+  const info = (event.info || '').toLowerCase();
+  const sub = (event.subInfo || '').toLowerCase();
 
   const combined = `${sub} ${info}`;
 
   // Primary check: VTOP uses "{DayName} Day Order" in the info field
   // This is the pattern used in home.tsx's getClassesForDate
-  if (combined.includes("monday day order")) return "Monday";
-  if (combined.includes("tuesday day order")) return "Tuesday";
-  if (combined.includes("wednesday day order")) return "Wednesday";
-  if (combined.includes("thursday day order")) return "Thursday";
-  if (combined.includes("friday day order")) return "Friday";
+  if (combined.includes('monday day order')) return 'Monday';
+  if (combined.includes('tuesday day order')) return 'Tuesday';
+  if (combined.includes('wednesday day order')) return 'Wednesday';
+  if (combined.includes('thursday day order')) return 'Thursday';
+  if (combined.includes('friday day order')) return 'Friday';
 
   // Secondary: check subInfo for "Day Order - Monday" patterns
   for (const dayName of DAYS) {
@@ -120,23 +128,25 @@ const getEffectiveDayName = (
 
   // Use natural day name
   const jsDay = calendarDate.getDay();
-  if (jsDay === 0) return "Sunday";
+  if (jsDay === 0) return 'Sunday';
   return DAYS[jsDay - 1];
 };
 
 interface SlotOccurrence {
   dayName: string; // "Monday", "Tuesday", etc.
-  colIdx: number;  // Column index in the CAMPUS_SLOT_TIMINGS
-  isLab: boolean;  // Whether this is a lab slot
+  colIdx: number; // Column index in the CAMPUS_SLOT_TIMINGS
+  isLab: boolean; // Whether this is a lab slot
 }
 
 /**
  * For a course, find all slot occurrences (which day + column + lab/theory).
  * A course with slot "A1+TA1" means it appears in multiple day/column combos.
  */
-const getCourseSlotOccurrences = (course: TimetableCourse): SlotOccurrence[] => {
+const getCourseSlotOccurrences = (
+  course: TimetableCourse,
+): SlotOccurrence[] => {
   const occurrences: SlotOccurrence[] = [];
-  const individualSlots = course.slot.split("+").map((s) => s.trim());
+  const individualSlots = course.slot.split('+').map((s) => s.trim());
 
   for (const dayName of DAYS) {
     const dayConfig = CAMPUS_SLOTS[dayName];
@@ -144,16 +154,18 @@ const getCourseSlotOccurrences = (course: TimetableCourse): SlotOccurrence[] => 
 
     // Check theory slots
     dayConfig.Theory.forEach((slot, colIdx) => {
-      if (individualSlots.includes(slot) && slot !== "-") {
+      if (individualSlots.includes(slot) && slot !== '-') {
         occurrences.push({ dayName, colIdx, isLab: false });
       }
     });
 
     // Check lab slots
     dayConfig.Lab.forEach((slot, colIdx) => {
-      if (individualSlots.includes(slot) && slot !== "-") {
+      if (individualSlots.includes(slot) && slot !== '-') {
         // Avoid duplicates if theory and lab are at the same position
-        if (!occurrences.some((o) => o.dayName === dayName && o.colIdx === colIdx)) {
+        if (
+          !occurrences.some((o) => o.dayName === dayName && o.colIdx === colIdx)
+        ) {
           occurrences.push({ dayName, colIdx, isLab: true });
         }
       }
@@ -168,7 +180,11 @@ const getCourseSlotOccurrences = (course: TimetableCourse): SlotOccurrence[] => 
  *   "YYYY-MM-DD" -> CalendarEvent
  */
 const buildCalendarLookup = (
-  calGridData: { month: CalendarMonthPreview; days: CalendarEvent[]; startOffset: number }[],
+  calGridData: {
+    month: CalendarMonthPreview;
+    days: CalendarEvent[];
+    startOffset: number;
+  }[],
 ): Map<string, CalendarEvent> => {
   const lookup = new Map<string, CalendarEvent>();
 
@@ -191,7 +207,11 @@ const buildCalendarLookup = (
  * Get the start and end date range from calendar grid data.
  */
 const getDateRange = (
-  calGridData: { month: CalendarMonthPreview; days: CalendarEvent[]; startOffset: number }[],
+  calGridData: {
+    month: CalendarMonthPreview;
+    days: CalendarEvent[];
+    startOffset: number;
+  }[],
 ): { start: Date; end: Date } | null => {
   let minDate: Date | null = null;
   let maxDate: Date | null = null;
@@ -211,7 +231,11 @@ const getDateRange = (
 
 export interface ICalExportOptions {
   courses?: TimetableCourse[];
-  calGridData?: { month: CalendarMonthPreview; days: CalendarEvent[]; startOffset: number }[];
+  calGridData?: {
+    month: CalendarMonthPreview;
+    days: CalendarEvent[];
+    startOffset: number;
+  }[];
   examGroups?: ExamGroup[];
   events?: any[];
   semesterLabel?: string;
@@ -247,11 +271,16 @@ const getMergedOccurrences = (course: TimetableCourse): MergedOccurrence[] => {
         if (!start || !end) return null;
         return { start, end };
       })
-      .filter((t) => t !== null) as { start: { hours: number; minutes: number }; end: { hours: number; minutes: number } }[];
+      .filter((t) => t !== null) as {
+      start: { hours: number; minutes: number };
+      end: { hours: number; minutes: number };
+    }[];
 
     times.sort(
       (a, b) =>
-        a.start.hours * 60 + a.start.minutes - (b.start.hours * 60 + b.start.minutes),
+        a.start.hours * 60 +
+        a.start.minutes -
+        (b.start.hours * 60 + b.start.minutes),
     );
 
     if (times.length > 0) {
@@ -305,22 +334,22 @@ export function generateICalFile(options: ICalExportOptions): string {
   const nowUTC = toICalDateUTC(new Date());
 
   const lines: string[] = [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//retop//VTOP Timetable Export//EN",
-    "CALSCALE:GREGORIAN",
-    "METHOD:PUBLISH",
-    `X-WR-CALNAME:${escapeIcal(semesterLabel ? `retop Export — ${semesterLabel}` : "retop Calendar Export")}`,
-    "X-WR-TIMEZONE:Asia/Kolkata",
-    "BEGIN:VTIMEZONE",
-    "TZID:Asia/Kolkata",
-    "BEGIN:STANDARD",
-    "DTSTART:19700101T000000",
-    "TZOFFSETFROM:+0530",
-    "TZOFFSETTO:+0530",
-    "TZNAME:IST",
-    "END:STANDARD",
-    "END:VTIMEZONE",
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//retop//VTOP Timetable Export//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    `X-WR-CALNAME:${escapeIcal(semesterLabel ? `retop Export — ${semesterLabel}` : 'retop Calendar Export')}`,
+    'X-WR-TIMEZONE:Asia/Kolkata',
+    'BEGIN:VTIMEZONE',
+    'TZID:Asia/Kolkata',
+    'BEGIN:STANDARD',
+    'DTSTART:19700101T000000',
+    'TZOFFSETFROM:+0530',
+    'TZOFFSETTO:+0530',
+    'TZNAME:IST',
+    'END:STANDARD',
+    'END:VTIMEZONE',
   ];
 
   const endDate = new Date(dateRange.end);
@@ -329,100 +358,106 @@ export function generateICalFile(options: ICalExportOptions): string {
 
   if (includeTimetable && courses.length > 0) {
     for (const course of courses) {
-    const mergedOccurrences = getMergedOccurrences(course);
+      const mergedOccurrences = getMergedOccurrences(course);
 
-    for (const occ of mergedOccurrences) {
-      // Find the first date in the range that matches the natural day name
-      let firstDayDate = new Date(dateRange.start);
-      firstDayDate.setHours(0, 0, 0, 0);
-      let found = false;
-      while (firstDayDate <= endDate) {
-        const jsDay = firstDayDate.getDay();
-        const naturalDayName = jsDay === 0 ? "Sunday" : DAYS[jsDay - 1];
-        if (naturalDayName === occ.dayName) {
-          found = true;
-          break;
-        }
-        firstDayDate.setDate(firstDayDate.getDate() + 1);
-      }
-
-      if (!found) continue; // Should practically never happen if range > 7 days
-
-      const eventStart = setTime(firstDayDate, occ.start);
-      const eventEnd = setTime(firstDayDate, occ.end);
-
-      const exdates: string[] = [];
-      const rdates: string[] = [];
-
-      let current = new Date(dateRange.start);
-      current.setHours(0, 0, 0, 0);
-
-      while (current <= endDate) {
-        const dateKey = `${current.getFullYear()}-${pad(current.getMonth() + 1)}-${pad(current.getDate())}`;
-        const calEvent = calLookup.get(dateKey);
-        const effectiveDay = getEffectiveDayName(current, calEvent);
-        const jsDay = current.getDay();
-        const naturalDayName = jsDay === 0 ? "Sunday" : DAYS[jsDay - 1];
-
-        const isNaturalDay = naturalDayName === occ.dayName;
-        const isEffectiveDay = effectiveDay === occ.dayName;
-
-        if (isNaturalDay && !isEffectiveDay) {
-          // It's normally this day, but it's overridden or skipped
-          exdates.push(toICalDate(setTime(current, occ.start)));
-        } else if (!isNaturalDay && isEffectiveDay) {
-          // It's a different day, but follows this day's schedule
-          rdates.push(toICalDate(setTime(current, occ.start)));
+      for (const occ of mergedOccurrences) {
+        // Find the first date in the range that matches the natural day name
+        let firstDayDate = new Date(dateRange.start);
+        firstDayDate.setHours(0, 0, 0, 0);
+        let found = false;
+        while (firstDayDate <= endDate) {
+          const jsDay = firstDayDate.getDay();
+          const naturalDayName = jsDay === 0 ? 'Sunday' : DAYS[jsDay - 1];
+          if (naturalDayName === occ.dayName) {
+            found = true;
+            break;
+          }
+          firstDayDate.setDate(firstDayDate.getDate() + 1);
         }
 
-        current.setDate(current.getDate() + 1);
-      }
+        if (!found) continue; // Should practically never happen if range > 7 days
 
-      const descParts = [
-        `Code: ${course.code}`,
-        `Type: ${course.type}`,
-        `Credits: ${course.credits}`,
-        `Faculty: ${course.faculty}`,
-        `Slot: ${course.slot}`,
-        `Category: ${course.category}`,
-        `Class ID: ${course.classId}`,
-      ];
+        const eventStart = setTime(firstDayDate, occ.start);
+        const eventEnd = setTime(firstDayDate, occ.end);
 
-      const uid = generateUID(course.code, toICalDate(eventStart), `${occ.dayName}`);
+        const exdates: string[] = [];
+        const rdates: string[] = [];
 
-      lines.push("BEGIN:VEVENT");
-      lines.push(`DTSTAMP:${nowUTC}`);
-      lines.push(`UID:${uid}`);
-      lines.push(`DTSTART;TZID=Asia/Kolkata:${toICalDate(eventStart)}`);
-      lines.push(`DTEND;TZID=Asia/Kolkata:${toICalDate(eventEnd)}`);
-      lines.push(`RRULE:FREQ=WEEKLY;UNTIL=${untilStr}`);
-      
-      for (const ex of exdates) {
-        lines.push(`EXDATE;TZID=Asia/Kolkata:${ex}`);
-      }
-      for (const r of rdates) {
-        lines.push(`RDATE;TZID=Asia/Kolkata:${r}`);
-      }
-      
-      lines.push(`SUMMARY:${escapeIcal(course.title)}`);
-      lines.push(`DESCRIPTION:${escapeIcal(descParts.join("\n"))}`);
-      if (course.venue && course.venue !== "N/A") {
-        lines.push(`LOCATION:${escapeIcal(course.venue)}`);
-      }
-      lines.push(`CATEGORIES:${escapeIcal(course.type)}`);
-      lines.push(`STATUS:CONFIRMED`);
-      lines.push(`TRANSP:OPAQUE`);
-      
-      // 10-minute reminder for class starting
-      lines.push("BEGIN:VALARM");
-      lines.push("TRIGGER:-PT10M");
-      lines.push("ACTION:DISPLAY");
-      lines.push(`DESCRIPTION:${escapeIcal(`Reminder: ${course.title} starting in 10 minutes`)}`);
-      lines.push("END:VALARM");
+        let current = new Date(dateRange.start);
+        current.setHours(0, 0, 0, 0);
 
-      lines.push("END:VEVENT");
+        while (current <= endDate) {
+          const dateKey = `${current.getFullYear()}-${pad(current.getMonth() + 1)}-${pad(current.getDate())}`;
+          const calEvent = calLookup.get(dateKey);
+          const effectiveDay = getEffectiveDayName(current, calEvent);
+          const jsDay = current.getDay();
+          const naturalDayName = jsDay === 0 ? 'Sunday' : DAYS[jsDay - 1];
+
+          const isNaturalDay = naturalDayName === occ.dayName;
+          const isEffectiveDay = effectiveDay === occ.dayName;
+
+          if (isNaturalDay && !isEffectiveDay) {
+            // It's normally this day, but it's overridden or skipped
+            exdates.push(toICalDate(setTime(current, occ.start)));
+          } else if (!isNaturalDay && isEffectiveDay) {
+            // It's a different day, but follows this day's schedule
+            rdates.push(toICalDate(setTime(current, occ.start)));
+          }
+
+          current.setDate(current.getDate() + 1);
+        }
+
+        const descParts = [
+          `Code: ${course.code}`,
+          `Type: ${course.type}`,
+          `Credits: ${course.credits}`,
+          `Faculty: ${course.faculty}`,
+          `Slot: ${course.slot}`,
+          `Category: ${course.category}`,
+          `Class ID: ${course.classId}`,
+        ];
+
+        const uid = generateUID(
+          course.code,
+          toICalDate(eventStart),
+          `${occ.dayName}`,
+        );
+
+        lines.push('BEGIN:VEVENT');
+        lines.push(`DTSTAMP:${nowUTC}`);
+        lines.push(`UID:${uid}`);
+        lines.push(`DTSTART;TZID=Asia/Kolkata:${toICalDate(eventStart)}`);
+        lines.push(`DTEND;TZID=Asia/Kolkata:${toICalDate(eventEnd)}`);
+        lines.push(`RRULE:FREQ=WEEKLY;UNTIL=${untilStr}`);
+
+        for (const ex of exdates) {
+          lines.push(`EXDATE;TZID=Asia/Kolkata:${ex}`);
+        }
+        for (const r of rdates) {
+          lines.push(`RDATE;TZID=Asia/Kolkata:${r}`);
+        }
+
+        lines.push(`SUMMARY:${escapeIcal(course.title)}`);
+        lines.push(`DESCRIPTION:${escapeIcal(descParts.join('\n'))}`);
+        if (course.venue && course.venue !== 'N/A') {
+          lines.push(`LOCATION:${escapeIcal(course.venue)}`);
+        }
+        lines.push(`CATEGORIES:${escapeIcal(course.type)}`);
+        lines.push(`STATUS:CONFIRMED`);
+        lines.push(`TRANSP:OPAQUE`);
+
+        // 10-minute reminder for class starting
+        lines.push('BEGIN:VALARM');
+        lines.push('TRIGGER:-PT10M');
+        lines.push('ACTION:DISPLAY');
+        lines.push(
+          `DESCRIPTION:${escapeIcal(`Reminder: ${course.title} starting in 10 minutes`)}`,
+        );
+        lines.push('END:VALARM');
+
+        lines.push('END:VEVENT');
+      }
     }
-  }
   }
 
   // Export Exams if available (with 30-minute reminder)
@@ -436,8 +471,8 @@ export function generateICalFile(options: ICalExportOptions): string {
         let startTimeHour = 9;
         let startTimeMin = 0;
 
-        if (entry.examTime && entry.examTime.includes("-")) {
-          const parts = entry.examTime.split("-")[0].trim().split(":");
+        if (entry.examTime && entry.examTime.includes('-')) {
+          const parts = entry.examTime.split('-')[0].trim().split(':');
           if (parts.length >= 2) {
             startTimeHour = parseInt(parts[0], 10);
             startTimeMin = parseInt(parts[1], 10);
@@ -451,25 +486,31 @@ export function generateICalFile(options: ICalExportOptions): string {
 
         const uid = `exam-${entry.courseCode}-${toICalDate(start)}@retop`;
 
-        lines.push("BEGIN:VEVENT");
+        lines.push('BEGIN:VEVENT');
         lines.push(`DTSTAMP:${nowUTC}`);
         lines.push(`UID:${uid}`);
         lines.push(`DTSTART;TZID=Asia/Kolkata:${toICalDate(start)}`);
         lines.push(`DTEND;TZID=Asia/Kolkata:${toICalDate(end)}`);
-        lines.push(`SUMMARY:${escapeIcal(`[EXAM] ${entry.courseTitle} (${entry.courseCode})`)}`);
-        lines.push(`DESCRIPTION:${escapeIcal(`Exam Group: ${group.examType}\nSlot: ${entry.slot}\nReporting Time: ${entry.reportingTime}\nVenue: ${entry.venue || "TBA"}\nSeat: ${entry.seatNo || "N/A"}`)}`);
+        lines.push(
+          `SUMMARY:${escapeIcal(`[EXAM] ${entry.courseTitle} (${entry.courseCode})`)}`,
+        );
+        lines.push(
+          `DESCRIPTION:${escapeIcal(`Exam Group: ${group.examType}\nSlot: ${entry.slot}\nReporting Time: ${entry.reportingTime}\nVenue: ${entry.venue || 'TBA'}\nSeat: ${entry.seatNo || 'N/A'}`)}`,
+        );
         if (entry.venue) lines.push(`LOCATION:${escapeIcal(entry.venue)}`);
         lines.push(`CATEGORIES:EXAM`);
-        lines.push("STATUS:CONFIRMED");
+        lines.push('STATUS:CONFIRMED');
 
         // 30-minute reminder before exams
-        lines.push("BEGIN:VALARM");
-        lines.push("TRIGGER:-PT30M");
-        lines.push("ACTION:DISPLAY");
-        lines.push(`DESCRIPTION:${escapeIcal(`Reminder: Exam ${entry.courseTitle} starting in 30 minutes`)}`);
-        lines.push("END:VALARM");
+        lines.push('BEGIN:VALARM');
+        lines.push('TRIGGER:-PT30M');
+        lines.push('ACTION:DISPLAY');
+        lines.push(
+          `DESCRIPTION:${escapeIcal(`Reminder: Exam ${entry.courseTitle} starting in 30 minutes`)}`,
+        );
+        lines.push('END:VALARM');
 
-        lines.push("END:VEVENT");
+        lines.push('END:VEVENT');
       }
     }
   }
@@ -477,7 +518,7 @@ export function generateICalFile(options: ICalExportOptions): string {
   // Export University Events (all-day) if available
   if (includeEvents && events.length > 0) {
     events.forEach((ev: any, idx: number) => {
-      const date = String(ev?.date || "").trim();
+      const date = String(ev?.date || '').trim();
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
 
       const start = new Date(`${date}T00:00:00`);
@@ -485,33 +526,33 @@ export function generateICalFile(options: ICalExportOptions): string {
       const end = new Date(start);
       end.setDate(end.getDate() + 1);
 
-      const title = String(ev?.title || "").trim() || "Event";
-      const organizer = String(ev?.organizer || "").trim();
-      const category = String(ev?.category || "").trim();
+      const title = String(ev?.title || '').trim() || 'Event';
+      const organizer = String(ev?.organizer || '').trim();
+      const category = String(ev?.category || '').trim();
 
       const descParts = [
-        organizer ? `Organizer: ${organizer}` : "",
-        category ? `Category: ${category}` : "",
+        organizer ? `Organizer: ${organizer}` : '',
+        category ? `Category: ${category}` : '',
       ].filter(Boolean);
 
-      lines.push("BEGIN:VEVENT");
+      lines.push('BEGIN:VEVENT');
       lines.push(`DTSTAMP:${nowUTC}`);
       lines.push(`UID:event-${date}-${idx}@retop`);
       lines.push(`DTSTART;VALUE=DATE:${toICalDateOnly(start)}`);
       lines.push(`DTEND;VALUE=DATE:${toICalDateOnly(end)}`);
       lines.push(`SUMMARY:${escapeIcal(title)}`);
       if (descParts.length) {
-        lines.push(`DESCRIPTION:${escapeIcal(descParts.join("\n"))}`);
+        lines.push(`DESCRIPTION:${escapeIcal(descParts.join('\n'))}`);
       }
-      lines.push("CATEGORIES:EVENT");
-      lines.push("STATUS:CONFIRMED");
-      lines.push("END:VEVENT");
+      lines.push('CATEGORIES:EVENT');
+      lines.push('STATUS:CONFIRMED');
+      lines.push('END:VEVENT');
     });
   }
 
-  lines.push("END:VCALENDAR");
+  lines.push('END:VCALENDAR');
 
-  return lines.join("\r\n");
+  return lines.join('\r\n');
 }
 
 /**
@@ -519,12 +560,12 @@ export function generateICalFile(options: ICalExportOptions): string {
  */
 export function downloadICalFile(options: ICalExportOptions): void {
   const icalContent = generateICalFile(options);
-  const blob = new Blob([icalContent], { type: "text/calendar;charset=utf-8" });
+  const blob = new Blob([icalContent], { type: 'text/calendar;charset=utf-8' });
   const url = URL.createObjectURL(blob);
 
-  const a = document.createElement("a");
+  const a = document.createElement('a');
   a.href = url;
-  a.download = `timetable${options.semesterLabel ? `-${options.semesterLabel.replace(/\s+/g, "-").toLowerCase()}` : ""}.ics`;
+  a.download = `timetable${options.semesterLabel ? `-${options.semesterLabel.replace(/\s+/g, '-').toLowerCase()}` : ''}.ics`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

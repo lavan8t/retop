@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { createRoot } from "react-dom/client";
-import { DashboardApp } from "./pages/app";
-import { VtopLoginCard } from "./components/auth/VtopLoginCard";
-import { AsciiPanel } from "./components/asciiArt";
-import { ErrorBoundary } from "./components/common/ErrorBoundary";
-import { applyTheme, DEFAULT_SETTINGS } from "./utils/settings-store";
-import { getStorageData, setStorageData } from "./utils/storageAdapter";
-import { CachedUser } from "./utils/syncOrchestrator";
-import { VtopClient, VtopCampus } from "./utils/vtopClient";
-import { get as idbGet } from "idb-keyval";
+import React, { useState, useEffect } from 'react';
+import { createRoot } from 'react-dom/client';
+import { DashboardApp } from './pages/app';
+import { VtopLoginCard } from './components/auth/VtopLoginCard';
+import { AsciiPanel } from './components/asciiArt';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { applyTheme, DEFAULT_SETTINGS } from './utils/settings-store';
+import { getStorageData, setStorageData } from './utils/storageAdapter';
+import { CachedUser } from './utils/syncOrchestrator';
+import { VtopClient, VtopCampus } from './utils/vtopClient';
+import { get as idbGet } from 'idb-keyval';
 
 // Mark global standalone flag
 (window as any).__RETOP_STANDALONE__ = true;
@@ -25,64 +25,71 @@ const GSF: React.CSSProperties = {
 const StandaloneRoot: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [campus, setCampus] = useState<VtopCampus>("vellore");
+  const [campus, setCampus] = useState<VtopCampus>('vellore');
 
   useEffect(() => {
     // 1. Load theme from settings
-    idbGet("retop-settings").then((savedSettings) => {
-      if (savedSettings) {
-        let parsed = savedSettings;
-        if (typeof savedSettings === "string") {
-          try {
-            parsed = JSON.parse(savedSettings);
-          } catch {}
+    idbGet('retop-settings')
+      .then((savedSettings) => {
+        if (savedSettings) {
+          let parsed = savedSettings;
+          if (typeof savedSettings === 'string') {
+            try {
+              parsed = JSON.parse(savedSettings);
+            } catch {}
+          }
+          const s = parsed?.state?.settings || parsed;
+          if (s) applyTheme(s);
         }
-        const s = parsed?.state?.settings || parsed;
-        if (s) applyTheme(s);
-      }
-    }).catch(() => {});
+      })
+      .catch(() => {});
 
     // 2. Check for active student session or cached credentials
     getStorageData([
-      "retop_active_user",
-      "retop_lastAuthId",
-      "retop_last_campus",
-    ]).then((res) => {
-      const activeUser =
-        (res.retop_active_user as string) ||
-        (res.retop_lastAuthId as string) ||
-        localStorage.getItem("retop_active_user") ||
-        localStorage.getItem("retop_lastAuthId");
+      'retop_active_user',
+      'retop_lastAuthId',
+      'retop_last_campus',
+    ])
+      .then((res) => {
+        const activeUser =
+          (res.retop_active_user as string) ||
+          (res.retop_lastAuthId as string) ||
+          localStorage.getItem('retop_active_user') ||
+          localStorage.getItem('retop_lastAuthId');
 
-      const savedCampus =
-        (res.retop_last_campus as VtopCampus) ||
-        (localStorage.getItem("retop_campus") as VtopCampus) ||
-        "vellore";
+        const savedCampus =
+          (res.retop_last_campus as VtopCampus) ||
+          (localStorage.getItem('retop_campus') as VtopCampus) ||
+          'vellore';
 
-      setCampus(savedCampus);
+        setCampus(savedCampus);
 
-      if (activeUser && activeUser.length >= 3) {
-        setupDomForUser(activeUser);
-        setIsLoggedIn(true);
-      } else {
+        if (activeUser && activeUser.length >= 3) {
+          setupDomForUser(activeUser);
+          setIsLoggedIn(true);
+        } else {
+          setIsLoggedIn(false);
+        }
+        setIsLoading(false);
+      })
+      .catch(() => {
         setIsLoggedIn(false);
-      }
-      setIsLoading(false);
-    }).catch(() => {
-      setIsLoggedIn(false);
-      setIsLoading(false);
-    });
+        setIsLoading(false);
+      });
   }, []);
 
   const setupDomForUser = (regNo: string, csrf?: string) => {
     (window as any).authorizedID = regNo;
-    (window as any).csrfValue = csrf || (window as any).csrfValue || "retop_csrf";
+    (window as any).csrfValue =
+      csrf || (window as any).csrfValue || 'retop_csrf';
 
-    let authInput = document.getElementById("authorizedIDX") as HTMLInputElement;
+    let authInput = document.getElementById(
+      'authorizedIDX',
+    ) as HTMLInputElement;
     if (!authInput) {
-      authInput = document.createElement("input");
-      authInput.type = "hidden";
-      authInput.id = "authorizedIDX";
+      authInput = document.createElement('input');
+      authInput.type = 'hidden';
+      authInput.id = 'authorizedIDX';
       document.body.appendChild(authInput);
     }
     authInput.value = regNo;
@@ -91,9 +98,9 @@ const StandaloneRoot: React.FC = () => {
   const handleLoginSuccess = async (user: CachedUser, client: VtopClient) => {
     setupDomForUser(user.regNo, client.csrf);
 
-    localStorage.setItem("retop_active_user", user.regNo);
-    localStorage.setItem("retop_lastAuthId", user.regNo);
-    localStorage.setItem("retop_campus", client.campus);
+    localStorage.setItem('retop_active_user', user.regNo);
+    localStorage.setItem('retop_lastAuthId', user.regNo);
+    localStorage.setItem('retop_campus', client.campus);
 
     await setStorageData({
       retop_active_user: user.regNo,
@@ -148,6 +155,6 @@ const StandaloneRoot: React.FC = () => {
 };
 
 // Mount to document
-const container = document.getElementById("root") || document.body;
+const container = document.getElementById('root') || document.body;
 const root = createRoot(container);
 root.render(<StandaloneRoot />);

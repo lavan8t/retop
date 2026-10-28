@@ -1,10 +1,10 @@
-import React from "react";
+import React from 'react';
 
 export const SettingTopicCard = ({
   title,
   description,
   children,
-  className = "",
+  className = '',
 }: {
   title?: React.ReactNode;
   description?: React.ReactNode;

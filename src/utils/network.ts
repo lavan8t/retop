@@ -2,108 +2,108 @@ import {
   getCachedData,
   setCachedData,
   getCachedDataWithTimestamp,
-} from "./cache";
-import { useAppStore } from "../store/appStore";
-import { showAlertDialog } from "../components/ui/AlertDialog";
+} from './cache';
+import { useAppStore } from '../store/appStore';
+import { showAlertDialog } from '../components/ui/AlertDialog';
 import {
   parseAcademicStats,
   parseCourseDetails,
   parseDigitalAssignments,
-} from "../parsers/dashboard";
-import { parseEvents } from "../parsers/events";
-import { parseSemesters, parseTimetable } from "../parsers/timetable";
+} from '../parsers/dashboard';
+import { parseEvents } from '../parsers/events';
+import { parseSemesters, parseTimetable } from '../parsers/timetable';
 import {
   parseCalendarSemesters,
   parseCalendarGroupsAndMonths,
-} from "../parsers/calendar";
-import { parseMarksSemesters, parseStudentMarks } from "../parsers/marks";
+} from '../parsers/calendar';
+import { parseMarksSemesters, parseStudentMarks } from '../parsers/marks';
 import {
   parseGradesSemesters,
   parseGrades,
   parseGradeHistory,
   parseGradeDetails,
-} from "../parsers/grades";
+} from '../parsers/grades';
 import {
   parseDASemesters,
   parseDACourses,
   parseDAAssignments,
-} from "../parsers/digital-assignments";
+} from '../parsers/digital-assignments';
 import {
   parseStudentAttendance,
   parseAttendanceDetail,
-} from "../parsers/attendance";
+} from '../parsers/attendance';
 import {
   parseExamSemesters,
   parseExamScheduleData,
-} from "../parsers/exam-schedule";
-import { parseStudentProfile } from "../parsers/profile";
+} from '../parsers/exam-schedule';
+import { parseStudentProfile } from '../parsers/profile';
 import {
   parseCurriculumDashboard,
   parseCurriculumCourses,
-} from "../parsers/curriculum";
-import { parseLateHourRows } from "../parsers/late-hour";
+} from '../parsers/curriculum';
+import { parseLateHourRows } from '../parsers/late-hour';
 import {
   executeVtopRequest,
   isNativeAndroidBridgeAvailable,
-} from "./vtopBridge";
-import { getVtopBaseUrl, VtopCampus } from "./vtopClient";
+} from './vtopBridge';
+import { getVtopBaseUrl, VtopCampus } from './vtopClient';
 
 export const getParserForKey = (
   key: string,
 ): ((html: string) => any) | null => {
-  if (key === "dashboard_stats") return parseAcademicStats;
-  if (key === "dashboard_attendance") return parseCourseDetails;
-  if (key === "dashboard_da") return parseDigitalAssignments;
-  if (key === "dashboard_events") return parseEvents;
-  if (key === "tt_semester_list" || key === "tt_semesters")
+  if (key === 'dashboard_stats') return parseAcademicStats;
+  if (key === 'dashboard_attendance') return parseCourseDetails;
+  if (key === 'dashboard_da') return parseDigitalAssignments;
+  if (key === 'dashboard_events') return parseEvents;
+  if (key === 'tt_semester_list' || key === 'tt_semesters')
     return parseSemesters;
-  if (key === "cal_semester_list" || key === "cal_semesters")
+  if (key === 'cal_semester_list' || key === 'cal_semesters')
     return parseCalendarSemesters;
-  if (key === "exam_schedule_view" || key === "exam_semesters")
+  if (key === 'exam_schedule_view' || key === 'exam_semesters')
     return parseExamSemesters;
   if (
-    key === "marks_view" ||
-    key === "marks_view_initial" ||
-    key === "marks_semesters" ||
-    key === "marks_semester_list"
+    key === 'marks_view' ||
+    key === 'marks_view_initial' ||
+    key === 'marks_semesters' ||
+    key === 'marks_semester_list'
   )
     return parseMarksSemesters;
   if (
-    key === "grades_view" ||
-    key === "grades_semesters" ||
-    key === "grades_semester_list"
+    key === 'grades_view' ||
+    key === 'grades_semesters' ||
+    key === 'grades_semester_list'
   )
     return parseGradesSemesters;
-  if (key === "grade_history_data" || key === "student_grade_history")
+  if (key === 'grade_history_data' || key === 'student_grade_history')
     return parseGradeHistory;
-  if (key === "curriculum_dashboard" || key === "curriculum")
+  if (key === 'curriculum_dashboard' || key === 'curriculum')
     return parseCurriculumDashboard;
-  if (key === "student_profile_data" || key === "student_profile")
+  if (key === 'student_profile_data' || key === 'student_profile')
     return parseStudentProfile;
-  if (key === "late_hour_status" || key === "late_hour_history")
+  if (key === 'late_hour_status' || key === 'late_hour_history')
     return parseLateHourRows;
-  if (key === "da_semester_list" || key === "da_semesters")
+  if (key === 'da_semester_list' || key === 'da_semesters')
     return parseDASemesters;
 
-  if (key.startsWith("attendance_detailed_")) return parseStudentAttendance;
-  if (key.startsWith("attendance_records_")) return parseAttendanceDetail;
-  if (key.startsWith("tt_") || key.startsWith("timetable_"))
+  if (key.startsWith('attendance_detailed_')) return parseStudentAttendance;
+  if (key.startsWith('attendance_records_')) return parseAttendanceDetail;
+  if (key.startsWith('tt_') || key.startsWith('timetable_'))
     return parseTimetable;
-  if (key.startsWith("marks_data_")) return parseStudentMarks;
-  if (key.startsWith("grades_data_")) return parseGrades;
-  if (key.startsWith("grade_details_")) return parseGradeDetails;
-  if (key.startsWith("da_courses_")) return parseDACourses;
-  if (key.startsWith("da_class_") || key.startsWith("da_view_"))
+  if (key.startsWith('marks_data_')) return parseStudentMarks;
+  if (key.startsWith('grades_data_')) return parseGrades;
+  if (key.startsWith('grade_details_')) return parseGradeDetails;
+  if (key.startsWith('da_courses_')) return parseDACourses;
+  if (key.startsWith('da_class_') || key.startsWith('da_view_'))
     return parseDAAssignments;
-  if (key.startsWith("exam_schedule_data_")) return parseExamScheduleData;
-  if (key.startsWith("curriculum_cat_")) return parseCurriculumCourses;
-  if (key.startsWith("cal_groups_")) return parseCalendarGroupsAndMonths;
+  if (key.startsWith('exam_schedule_data_')) return parseExamScheduleData;
+  if (key.startsWith('curriculum_cat_')) return parseCurriculumCourses;
+  if (key.startsWith('cal_groups_')) return parseCalendarGroupsAndMonths;
 
   return null;
 };
 
 export function extractCsrfTokenFromHTML(html: string): string | null {
-  if (!html || typeof html !== "string") return null;
+  if (!html || typeof html !== 'string') return null;
 
   // 1. Hidden input name="_csrf" value="..."
   const inputMatch =
@@ -120,7 +120,7 @@ export function extractCsrfTokenFromHTML(html: string): string | null {
 }
 
 export function extractAuthIdFromHTML(html: string): string | null {
-  if (!html || typeof html !== "string") return null;
+  if (!html || typeof html !== 'string') return null;
 
   const match =
     html.match(
@@ -139,15 +139,15 @@ export function extractAuthIdFromHTML(html: string): string | null {
 
 export async function diagnoseNetworkError(): Promise<string> {
   // 1. Check internet connectivity first
-  let hasInternet = typeof navigator !== "undefined" ? navigator.onLine : true;
+  let hasInternet = typeof navigator !== 'undefined' ? navigator.onLine : true;
   if (hasInternet) {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 2500);
-      await window.fetch("https://www.google.com/generate_204", {
-        method: "HEAD",
-        mode: "no-cors",
-        cache: "no-store",
+      await window.fetch('https://www.google.com/generate_204', {
+        method: 'HEAD',
+        mode: 'no-cors',
+        cache: 'no-store',
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
@@ -158,41 +158,41 @@ export async function diagnoseNetworkError(): Promise<string> {
   }
 
   if (!hasInternet) {
-    return "No internet connection. Please check your network.";
+    return 'No internet connection. Please check your network.';
   }
 
   // 2. Internet is working, now test VTOP server & session status
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3500);
-    const res = await window.fetch("/vtop/open/page", {
-      method: "POST",
-      cache: "no-store",
+    const res = await window.fetch('/vtop/open/page', {
+      method: 'POST',
+      cache: 'no-store',
       signal: controller.signal,
     });
     clearTimeout(timeoutId);
 
     if (!res.ok) {
       if (res.status === 401 || res.status === 403) {
-        return "VTOP session expired. You may need to log in again.";
+        return 'VTOP session expired. You may need to log in again.';
       }
-      return "VTOP server is slow or unreachable. You may need to log in again.";
+      return 'VTOP server is slow or unreachable. You may need to log in again.';
     }
 
     const html = await res.text();
     if (
-      html.includes("login") ||
-      html.includes("authorizedID") ||
-      html.includes("vtopLogin") ||
-      html.includes("Session Expired")
+      html.includes('login') ||
+      html.includes('authorizedID') ||
+      html.includes('vtopLogin') ||
+      html.includes('Session Expired')
     ) {
-      return "VTOP session expired. You may need to log in again.";
+      return 'VTOP session expired. You may need to log in again.';
     }
   } catch {
-    return "VTOP is slow or unreachable. You may need to log in again.";
+    return 'VTOP is slow or unreachable. You may need to log in again.';
   }
 
-  return "VTOP is slow or unreachable. You may need to log in again.";
+  return 'VTOP is slow or unreachable. You may need to log in again.';
 }
 
 export class VTOPNetwork {
@@ -206,7 +206,7 @@ export class VTOPNetwork {
 
   public static handleNetworkFailure(reason?: string, isFatal = false) {
     // Never trigger fatal lock if device is offline
-    if (typeof navigator !== "undefined" && !navigator.onLine) return;
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return;
 
     if (isFatal) {
       VTOPNetwork.has404Error = true;
@@ -216,8 +216,8 @@ export class VTOPNetwork {
 
         diagnoseNetworkError().then((msg) => {
           window.dispatchEvent(
-            new CustomEvent("retop-toast", {
-              detail: { message: msg, type: "error" },
+            new CustomEvent('retop-toast', {
+              detail: { message: msg, type: 'error' },
             }),
           );
         });
@@ -231,9 +231,9 @@ export class VTOPNetwork {
   }
 
   private static setupDOMTokenObserver() {
-    if (typeof window !== "undefined" && !VTOPNetwork.domObserverInitialized) {
+    if (typeof window !== 'undefined' && !VTOPNetwork.domObserverInitialized) {
       VTOPNetwork.domObserverInitialized = true;
-      window.addEventListener("online", () => {
+      window.addEventListener('online', () => {
         VTOPNetwork.resetNetworkErrorState();
       });
     }
@@ -241,7 +241,7 @@ export class VTOPNetwork {
 
   public syncTokensFromDOM() {
     VTOPNetwork.setupDOMTokenObserver();
-    if (typeof document === "undefined") return;
+    if (typeof document === 'undefined') return;
 
     // VTOP renders several _csrf / authorizedID inputs on a page (header form,
     // legacy nav, and the DA form at the bottom). The first one is often stale
@@ -251,9 +251,8 @@ export class VTOPNetwork {
       document.querySelectorAll('input[name="_csrf"]'),
     ) as HTMLInputElement[];
     const domCsrf =
-      (csrfInputs.length
-        ? csrfInputs[csrfInputs.length - 1].value
-        : null) || (window as any).csrfValue;
+      (csrfInputs.length ? csrfInputs[csrfInputs.length - 1].value : null) ||
+      (window as any).csrfValue;
     if (domCsrf && domCsrf !== this.csrf && domCsrf.length > 5) {
       this.csrf = domCsrf;
       (window as any).csrfValue = domCsrf;
@@ -263,14 +262,14 @@ export class VTOPNetwork {
       document.querySelectorAll('input[name="authorizedID"]'),
     ) as HTMLInputElement[];
     const authInput =
-      (document.getElementById("authorizedIDX") as HTMLInputElement) ||
+      (document.getElementById('authorizedIDX') as HTMLInputElement) ||
       (authInputs.length ? authInputs[authInputs.length - 1] : null);
     const domAuth = authInput?.value || (window as any).authorizedID;
     if (domAuth && domAuth !== this.authorizedID && domAuth.length > 3) {
       this.authorizedID = domAuth;
       (window as any).authorizedID = domAuth;
       try {
-        localStorage.setItem("retop_lastAuthId", domAuth);
+        localStorage.setItem('retop_lastAuthId', domAuth);
       } catch {}
     }
   }
@@ -328,24 +327,24 @@ export class VTOPNetwork {
     init?: RequestInit,
   ): Promise<Response> {
     if (VTOPNetwork.has404Error) {
-      throw new Error("Network requests halted due to previous VTOP error.");
+      throw new Error('Network requests halted due to previous VTOP error.');
     }
 
     const urlStr =
-      typeof input === "string"
+      typeof input === 'string'
         ? input
         : (input as any).url || input.toString();
 
     const isOfflineMode =
       !isNativeAndroidBridgeAvailable() &&
-      ((typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
-        (typeof location !== "undefined" &&
-          !location.hostname.includes("vit.ac.in") &&
-          !location.protocol.includes("chrome-extension") &&
-          !location.protocol.includes("moz-extension")));
+      ((typeof window !== 'undefined' && (window as any).__RETOP_OFFLINE__) ||
+        (typeof location !== 'undefined' &&
+          !location.hostname.includes('vit.ac.in') &&
+          !location.protocol.includes('chrome-extension') &&
+          !location.protocol.includes('moz-extension')));
 
     if (isOfflineMode) {
-      return new Response("", { status: 200 });
+      return new Response('', { status: 200 });
     }
 
     await this.enforceRateLimit();
@@ -353,18 +352,18 @@ export class VTOPNetwork {
     if (isNativeAndroidBridgeAvailable()) {
       try {
         const campus =
-          (localStorage.getItem("retop_campus") as VtopCampus) || "vellore";
+          (localStorage.getItem('retop_campus') as VtopCampus) || 'vellore';
         const base = getVtopBaseUrl(campus);
-        const fullUrl = urlStr.startsWith("http")
+        const fullUrl = urlStr.startsWith('http')
           ? urlStr
-          : `${base}${urlStr.startsWith("/") ? "" : "/"}${urlStr}`;
+          : `${base}${urlStr.startsWith('/') ? '' : '/'}${urlStr}`;
 
-        const method = (init?.method || "GET").toUpperCase() as "GET" | "POST";
+        const method = (init?.method || 'GET').toUpperCase() as 'GET' | 'POST';
         const headers: Record<string, string> = {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
           Accept:
-            "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
           Origin: base,
           Referer: `${base}/vtop/content`,
         };
@@ -385,7 +384,7 @@ export class VTOPNetwork {
 
         let bodyStr: string | undefined = undefined;
         if (init?.body) {
-          if (typeof init.body === "string") {
+          if (typeof init.body === 'string') {
             bodyStr = init.body;
           } else if (init.body instanceof URLSearchParams) {
             bodyStr = init.body.toString();
@@ -429,8 +428,8 @@ export class VTOPNetwork {
       }
       if (!response.ok) {
         const isFatalEndpoint =
-          urlStr.includes("open/page") || urlStr.includes("vtopLogin");
-        const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
+          urlStr.includes('open/page') || urlStr.includes('vtopLogin');
+        const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
 
         if (
           isFatalEndpoint &&
@@ -456,44 +455,44 @@ export class VTOPNetwork {
   ): Promise<string> {
     const isOfflineMode =
       !isNativeAndroidBridgeAvailable() &&
-      ((typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
-        (typeof location !== "undefined" &&
-          !location.hostname.includes("vit.ac.in") &&
-          !location.protocol.includes("chrome-extension") &&
-          !location.protocol.includes("moz-extension")));
+      ((typeof window !== 'undefined' && (window as any).__RETOP_OFFLINE__) ||
+        (typeof location !== 'undefined' &&
+          !location.hostname.includes('vit.ac.in') &&
+          !location.protocol.includes('chrome-extension') &&
+          !location.protocol.includes('moz-extension')));
 
     if (isOfflineMode) {
-      return "";
+      return '';
     }
 
     // 1. Sync live tokens from DOM prior to sending request
     this.syncTokensFromDOM();
 
-    const url = endpoint.startsWith("/") ? endpoint : `/vtop/${endpoint}`;
+    const url = endpoint.startsWith('/') ? endpoint : `/vtop/${endpoint}`;
     const body = new URLSearchParams();
 
     // 2. Always use current active instance tokens
     const activeCsrf = params._csrf || this.csrf;
     const activeAuthId = params.authorizedID || this.authorizedID;
 
-    body.append("_csrf", activeCsrf);
-    body.append("authorizedID", activeAuthId);
+    body.append('_csrf', activeCsrf);
+    body.append('authorizedID', activeAuthId);
 
     for (const [key, value] of Object.entries(params)) {
-      if (key !== "_csrf" && key !== "authorizedID") {
+      if (key !== '_csrf' && key !== 'authorizedID') {
         body.append(key, value);
       }
     }
 
     // Auto-append timestamp for cache busting if not specified
     if (!params.x && !params.nocache)
-      body.append("x", new Date().toUTCString());
+      body.append('x', new Date().toUTCString());
 
     const response = await this.rateLimitedFetch(url, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-        "X-Requested-With": "XMLHttpRequest",
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        'X-Requested-With': 'XMLHttpRequest',
       },
       body: body,
     });
@@ -505,7 +504,7 @@ export class VTOPNetwork {
     const newCsrf = extractCsrfTokenFromHTML(text);
     if (newCsrf && newCsrf !== this.csrf) {
       console.log(
-        "[VTOPNetwork] Dynamic CSRF token self-healed from API response",
+        '[VTOPNetwork] Dynamic CSRF token self-healed from API response',
       );
       this.updateTokens(newCsrf, null);
     }
@@ -537,7 +536,7 @@ export class VTOPNetwork {
       this.authorizedID = authorizedID;
       (window as any).authorizedID = authorizedID;
       try {
-        localStorage.setItem("retop_lastAuthId", authorizedID);
+        localStorage.setItem('retop_lastAuthId', authorizedID);
       } catch {}
     }
   }
@@ -547,22 +546,22 @@ export class VTOPNetwork {
    */
   async getNativeCaptcha(): Promise<{ captchaImage: string }> {
     try {
-      const response = await this.rateLimitedFetch("/vtop/get/new/captcha", {
-        method: "GET",
+      const response = await this.rateLimitedFetch('/vtop/get/new/captcha', {
+        method: 'GET',
         headers: {
-          "X-Requested-With": "XMLHttpRequest",
+          'X-Requested-With': 'XMLHttpRequest',
         },
       });
 
-      if (!response.ok) throw new Error("Failed to fetch captcha");
+      if (!response.ok) throw new Error('Failed to fetch captcha');
 
       const text = await response.text();
       const match = text.match(/src="([^"]+)"/);
-      const captchaImage = match ? match[1] : "";
+      const captchaImage = match ? match[1] : '';
 
       return { captchaImage };
     } catch (err) {
-      console.error("[VTOP Network] Captcha Fetch Failed", err);
+      console.error('[VTOP Network] Captcha Fetch Failed', err);
       throw err;
     }
   }
@@ -576,7 +575,7 @@ export class VTOPNetwork {
     customParser?: (html: string) => T,
   ): Promise<any> {
     const stableId =
-      localStorage.getItem("retop_lastAuthId") || this.authorizedID;
+      localStorage.getItem('retop_lastAuthId') || this.authorizedID;
     const userScopedKey = `${stableId}_${key}`;
     const parser = customParser || getParserForKey(key);
 
@@ -585,22 +584,22 @@ export class VTOPNetwork {
         const data = await fetcher();
 
         const isErrorPage =
-          typeof data === "string" &&
-          (data.includes("<title>404") ||
-            data.includes("HTTP Status 404") ||
-            data.includes("404 Not Found") ||
-            data.includes("404 - File or directory not found") ||
-            data.includes("<title>Error</title>"));
+          typeof data === 'string' &&
+          (data.includes('<title>404') ||
+            data.includes('HTTP Status 404') ||
+            data.includes('404 Not Found') ||
+            data.includes('404 - File or directory not found') ||
+            data.includes('<title>Error</title>'));
 
         if (isErrorPage) {
           console.warn(`[VTOP Network] 404/Error response for ${key}`);
         } else if (
           data &&
-          (typeof data !== "string" || data.length > 50) &&
-          (typeof data !== "string" || !data.includes("Invalid")) &&
-          (!validate || (typeof data === "string" && validate(data)))
+          (typeof data !== 'string' || data.length > 50) &&
+          (typeof data !== 'string' || !data.includes('Invalid')) &&
+          (!validate || (typeof data === 'string' && validate(data)))
         ) {
-          if (parser && typeof data === "string") {
+          if (parser && typeof data === 'string') {
             try {
               const parsed = parser(data);
               setCachedData(userScopedKey, parsed);
@@ -636,13 +635,13 @@ export class VTOPNetwork {
 
       if (customExpiryMs === undefined) {
         if (
-          key.includes("tt_") ||
-          key.includes("cal_") ||
-          key.includes("timetable") ||
-          key.includes("calendar")
+          key.includes('tt_') ||
+          key.includes('cal_') ||
+          key.includes('timetable') ||
+          key.includes('calendar')
         ) {
           EXPIRY_MS = 5 * 24 * 60 * 60 * 1000; // 5 days
-        } else if (key.includes("menu")) {
+        } else if (key.includes('menu')) {
           EXPIRY_MS = 2 * 24 * 60 * 60 * 1000; // 2 days
         } else {
           EXPIRY_MS = 1 * 24 * 60 * 60 * 1000; // 1 day default for others
@@ -653,15 +652,15 @@ export class VTOPNetwork {
 
       const isOffline =
         !isNativeAndroidBridgeAvailable() &&
-        ((typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
-          (typeof navigator !== "undefined" && !navigator.onLine) ||
-          (typeof location !== "undefined" &&
-            !location.hostname.includes("vit.ac.in") &&
-            !location.protocol.includes("chrome-extension") &&
-            !location.protocol.includes("moz-extension")));
+        ((typeof window !== 'undefined' && (window as any).__RETOP_OFFLINE__) ||
+          (typeof navigator !== 'undefined' && !navigator.onLine) ||
+          (typeof location !== 'undefined' &&
+            !location.hostname.includes('vit.ac.in') &&
+            !location.protocol.includes('chrome-extension') &&
+            !location.protocol.includes('moz-extension')));
 
       let resolvedData = cachedInfo.data;
-      if (typeof resolvedData === "string" && parser) {
+      if (typeof resolvedData === 'string' && parser) {
         try {
           resolvedData = parser(resolvedData);
           setCachedData(userScopedKey, resolvedData);
@@ -697,12 +696,12 @@ export class VTOPNetwork {
 
     const isOffline =
       !isNativeAndroidBridgeAvailable() &&
-      ((typeof window !== "undefined" && (window as any).__RETOP_OFFLINE__) ||
-        (typeof navigator !== "undefined" && !navigator.onLine) ||
-        (typeof location !== "undefined" &&
-          !location.hostname.includes("vit.ac.in") &&
-          !location.protocol.includes("chrome-extension") &&
-          !location.protocol.includes("moz-extension")));
+      ((typeof window !== 'undefined' && (window as any).__RETOP_OFFLINE__) ||
+        (typeof navigator !== 'undefined' && !navigator.onLine) ||
+        (typeof location !== 'undefined' &&
+          !location.hostname.includes('vit.ac.in') &&
+          !location.protocol.includes('chrome-extension') &&
+          !location.protocol.includes('moz-extension')));
 
     if (isOffline) {
       // One final attempt: check un-prefixed key in cache
@@ -713,7 +712,7 @@ export class VTOPNetwork {
         unPrefixed.data !== null
       ) {
         let res = unPrefixed.data;
-        if (typeof res === "string" && parser) {
+        if (typeof res === 'string' && parser) {
           try {
             res = parser(res);
             setCachedData(userScopedKey, res);
@@ -722,7 +721,7 @@ export class VTOPNetwork {
         return res;
       }
       console.warn(`[VTOP Network] Offline cache miss for: ${userScopedKey}`);
-      throw new Error("OFFLINE_CACHE_MISS");
+      throw new Error('OFFLINE_CACHE_MISS');
     }
 
     if (this.inFlightRequests.has(userScopedKey)) {
@@ -739,12 +738,12 @@ export class VTOPNetwork {
     return new Promise<void>((resolve) => {
       setTimeout(() => {
         const checkInterval = setInterval(() => {
-          const loader = document.getElementById("progressGIF");
+          const loader = document.getElementById('progressGIF');
 
           const isHidden =
             !loader ||
-            loader.style.display === "none" ||
-            loader.classList.contains("d-none");
+            loader.style.display === 'none' ||
+            loader.classList.contains('d-none');
 
           if (isHidden) {
             clearInterval(checkInterval);
@@ -763,23 +762,23 @@ export class VTOPNetwork {
   }
 
   private executeScripts(container: HTMLElement) {
-    const scripts = container.querySelectorAll("script");
+    const scripts = container.querySelectorAll('script');
     scripts.forEach((oldScript) => {
-      const newScript = document.createElement("script");
+      const newScript = document.createElement('script');
       Array.from(oldScript.attributes).forEach((attr) =>
         newScript.setAttribute(attr.name, attr.value),
       );
       newScript.appendChild(
-        document.createTextNode(oldScript.textContent || ""),
+        document.createTextNode(oldScript.textContent || ''),
       );
       oldScript.parentNode?.replaceChild(newScript, oldScript);
     });
   }
 
   async getExamScheduleView(): Promise<string> {
-    return this.fetchWithCache("exam_schedule_view", async () => {
-      return this.fetchVtopApi("examinations/StudExamSchedule", {
-        verifyMenu: "true",
+    return this.fetchWithCache('exam_schedule_view', async () => {
+      return this.fetchVtopApi('examinations/StudExamSchedule', {
+        verifyMenu: 'true',
       });
     });
   }
@@ -789,7 +788,7 @@ export class VTOPNetwork {
       `exam_schedule_data_${semesterSubId}`,
       async () => {
         return this.fetchVtopApi(
-          "examinations/doSearchExamScheduleForStudent",
+          'examinations/doSearchExamScheduleForStudent',
           {
             semesterSubId,
           },
@@ -799,9 +798,9 @@ export class VTOPNetwork {
   }
 
   async getCurriculumDashboard(): Promise<string> {
-    const cacheKey = "curriculum_dashboard";
+    const cacheKey = 'curriculum_dashboard';
     return this.fetchWithCache(cacheKey, async () => {
-      return this.fetchFragment("academics/common/Curriculum");
+      return this.fetchFragment('academics/common/Curriculum');
     });
   }
 
@@ -809,18 +808,18 @@ export class VTOPNetwork {
     const cacheKey = `curriculum_cat_${categoryId}`;
 
     return this.fetchWithCache(cacheKey, async () => {
-      const url = "academics/common/curriculumCategoryView";
+      const url = 'academics/common/curriculumCategoryView';
       const params = new URLSearchParams();
-      params.append("_csrf", this.csrf);
-      params.append("authorizedID", this.authorizedID);
-      params.append("categoryId", categoryId);
-      params.append("x", new Date().toUTCString());
+      params.append('_csrf', this.csrf);
+      params.append('authorizedID', this.authorizedID);
+      params.append('categoryId', categoryId);
+      params.append('x', new Date().toUTCString());
 
       const response = await this.rateLimitedFetch(`/vtop/${url}`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          "X-Requested-With": "XMLHttpRequest",
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          'X-Requested-With': 'XMLHttpRequest',
         },
         body: params,
       });
@@ -831,11 +830,11 @@ export class VTOPNetwork {
   }
 
   downloadSyllabus(courseCode: string) {
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = "/vtop/academics/common/courseSyllabusDownload1";
-    form.target = "_blank";
-    form.style.display = "none";
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/vtop/academics/common/courseSyllabusDownload1';
+    form.target = '_blank';
+    form.style.display = 'none';
 
     const inputs = {
       _csrf: this.csrf,
@@ -844,8 +843,8 @@ export class VTOPNetwork {
     };
 
     for (const [key, value] of Object.entries(inputs)) {
-      const input = document.createElement("input");
-      input.type = "hidden";
+      const input = document.createElement('input');
+      input.type = 'hidden';
       input.name = key;
       input.value = value;
       form.appendChild(input);
@@ -858,10 +857,10 @@ export class VTOPNetwork {
 
   async getDASemesters(forceRefresh = false): Promise<string> {
     return this.fetchWithCache(
-      "da_semesters",
+      'da_semesters',
       async () => {
-        return this.fetchFragment("examinations/StudentDA", {
-          verifyMenu: "true",
+        return this.fetchFragment('examinations/StudentDA', {
+          verifyMenu: 'true',
           nocache: `@(${new Date().getTime()})`,
         });
       },
@@ -878,7 +877,7 @@ export class VTOPNetwork {
     return this.fetchWithCache(
       cacheKey,
       async () => {
-        return await this.fetchVtopApi("processViewTimeTable", {
+        return await this.fetchVtopApi('processViewTimeTable', {
           semesterSubId: semesterSubId,
         });
       },
@@ -889,8 +888,8 @@ export class VTOPNetwork {
 
   async getMarksView(forceRefresh = false): Promise<string> {
     return this.fetchWithCache(
-      "marks_view_initial",
-      () => this.fetchFragment("examinations/StudentMarkView"),
+      'marks_view_initial',
+      () => this.fetchFragment('examinations/StudentMarkView'),
       forceRefresh,
     );
   }
@@ -905,18 +904,18 @@ export class VTOPNetwork {
     return this.fetchWithCache(
       cacheKey,
       async () => {
-        const url = "examinations/doStudentMarkView";
+        const url = 'examinations/doStudentMarkView';
         const body = new URLSearchParams();
-        body.append("_csrf", this.csrf);
-        body.append("authorizedID", this.authorizedID);
-        body.append("semesterSubId", semesterSubId);
-        body.append("x", new Date().toUTCString());
+        body.append('_csrf', this.csrf);
+        body.append('authorizedID', this.authorizedID);
+        body.append('semesterSubId', semesterSubId);
+        body.append('x', new Date().toUTCString());
 
         const response = await this.rateLimitedFetch(`/vtop/${url}`, {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-            "X-Requested-With": "XMLHttpRequest",
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'X-Requested-With': 'XMLHttpRequest',
           },
           body: body,
         });
@@ -938,7 +937,7 @@ export class VTOPNetwork {
     return this.fetchWithCache(
       cacheKey,
       async () => {
-        return this.fetchVtopApi("examinations/doDigitalAssignment", {
+        return this.fetchVtopApi('examinations/doDigitalAssignment', {
           semesterSubId,
         });
       },
@@ -956,7 +955,7 @@ export class VTOPNetwork {
     return this.fetchWithCache(
       cacheKey,
       async () => {
-        return this.fetchVtopApi("examinations/processDigitalAssignment", {
+        return this.fetchVtopApi('examinations/processDigitalAssignment', {
           classId,
         });
       },
@@ -968,7 +967,7 @@ export class VTOPNetwork {
   async getDAUploadView(classId: string, code: string): Promise<string> {
     const cacheKey = `da_upload_view_${classId}_${code}`;
     return this.fetchWithCache(cacheKey, async () => {
-      return this.fetchVtopApi("examinations/processDigitalAssignmentUpload", {
+      return this.fetchVtopApi('examinations/processDigitalAssignmentUpload', {
         classId,
         mode: code,
       });
@@ -981,18 +980,18 @@ export class VTOPNetwork {
     title: string,
     file: File,
   ): Promise<string> {
-    const url = "examinations/doDAssignmentUploadMethod";
+    const url = 'examinations/doDAssignmentUploadMethod';
     const formData = new FormData();
-    formData.append("_csrf", this.csrf);
-    formData.append("authorizedID", this.authorizedID);
-    formData.append("classId", classId);
-    formData.append("code", code);
-    formData.append("mCode", code);
-    formData.append("opt", title);
-    formData.append("studDaUpload", file);
+    formData.append('_csrf', this.csrf);
+    formData.append('authorizedID', this.authorizedID);
+    formData.append('classId', classId);
+    formData.append('code', code);
+    formData.append('mCode', code);
+    formData.append('opt', title);
+    formData.append('studDaUpload', file);
 
     const response = await this.rateLimitedFetch(`/vtop/${url}`, {
-      method: "POST",
+      method: 'POST',
       body: formData,
     });
     if (!response.ok) throw new Error(`Status ${response.status}`);
@@ -1003,14 +1002,14 @@ export class VTOPNetwork {
   }
 
   async submitDAUploadOtp(otp: string): Promise<string> {
-    const url = "examinations/doDAssignmentOtpUpload";
+    const url = 'examinations/doDAssignmentOtpUpload';
     const formData = new FormData();
-    formData.append("_csrf", this.csrf);
-    formData.append("authorizedID", this.authorizedID);
-    formData.append("otpEmail", otp.trim());
+    formData.append('_csrf', this.csrf);
+    formData.append('authorizedID', this.authorizedID);
+    formData.append('otpEmail', otp.trim());
 
     const response = await this.rateLimitedFetch(`/vtop/${url}`, {
-      method: "POST",
+      method: 'POST',
       body: formData,
     });
     if (!response.ok) throw new Error(`Status ${response.status}`);
@@ -1022,8 +1021,8 @@ export class VTOPNetwork {
 
   async getGradesView(forceRefresh = false): Promise<string> {
     return this.fetchWithCache(
-      "grades_view_initial",
-      () => this.fetchFragment("examinations/examGradeView/StudentGradeView"),
+      'grades_view_initial',
+      () => this.fetchFragment('examinations/examGradeView/StudentGradeView'),
       forceRefresh,
     );
   }
@@ -1036,18 +1035,18 @@ export class VTOPNetwork {
     const cacheKey = `grades_data_${semesterSubId}`;
 
     return this.fetchWithCache(cacheKey, async () => {
-      const url = "examinations/examGradeView/doStudentGradeView";
+      const url = 'examinations/examGradeView/doStudentGradeView';
       const body = new URLSearchParams();
-      body.append("_csrf", this.csrf);
-      body.append("authorizedID", this.authorizedID);
-      body.append("semesterSubId", semesterSubId);
-      body.append("x", new Date().toUTCString());
+      body.append('_csrf', this.csrf);
+      body.append('authorizedID', this.authorizedID);
+      body.append('semesterSubId', semesterSubId);
+      body.append('x', new Date().toUTCString());
 
       const response = await this.rateLimitedFetch(`/vtop/${url}`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          "X-Requested-With": "XMLHttpRequest",
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          'X-Requested-With': 'XMLHttpRequest',
         },
         body: body,
       });
@@ -1058,21 +1057,21 @@ export class VTOPNetwork {
   }
 
   async getStudentGradeHistory(): Promise<string> {
-    const cacheKey = "grade_history_data";
+    const cacheKey = 'grade_history_data';
 
     return this.fetchWithCache(cacheKey, async () => {
-      const url = "examinations/examGradeView/StudentGradeHistory";
+      const url = 'examinations/examGradeView/StudentGradeHistory';
       const body = new URLSearchParams();
-      body.append("_csrf", this.csrf);
-      body.append("authorizedID", this.authorizedID);
-      body.append("verifyMenu", "true");
-      body.append("x", new Date().toUTCString());
+      body.append('_csrf', this.csrf);
+      body.append('authorizedID', this.authorizedID);
+      body.append('verifyMenu', 'true');
+      body.append('x', new Date().toUTCString());
 
       const response = await this.rateLimitedFetch(`/vtop/${url}`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          "X-Requested-With": "XMLHttpRequest",
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          'X-Requested-With': 'XMLHttpRequest',
         },
         body: body,
       });
@@ -1088,19 +1087,19 @@ export class VTOPNetwork {
   ): Promise<string> {
     const cacheKey = `grade_details_${semesterSubId}_${courseId}`;
     return this.fetchWithCache(cacheKey, async () => {
-      const url = "examinations/examGradeView/getGradeViewDetails";
+      const url = 'examinations/examGradeView/getGradeViewDetails';
       const body = new URLSearchParams();
-      body.append("_csrf", this.csrf);
-      body.append("authorizedID", this.authorizedID);
-      body.append("semesterSubId", semesterSubId);
-      body.append("courseId", courseId);
-      body.append("x", new Date().toUTCString());
+      body.append('_csrf', this.csrf);
+      body.append('authorizedID', this.authorizedID);
+      body.append('semesterSubId', semesterSubId);
+      body.append('courseId', courseId);
+      body.append('x', new Date().toUTCString());
 
       const response = await this.rateLimitedFetch(`/vtop/${url}`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          "X-Requested-With": "XMLHttpRequest",
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          'X-Requested-With': 'XMLHttpRequest',
         },
         body: body,
       });
@@ -1111,22 +1110,22 @@ export class VTOPNetwork {
   }
 
   async getCoursePage(): Promise<string> {
-    const cacheKey = "course_page_consolidated";
+    const cacheKey = 'course_page_consolidated';
 
     return this.fetchWithCache(cacheKey, async () => {
       const body = new URLSearchParams();
-      body.append("_csrf", this.csrf);
-      body.append("authorizedID", this.authorizedID);
-      body.append("verifyMenu", "true");
-      body.append("nocache", "@(new Date().getTime())");
+      body.append('_csrf', this.csrf);
+      body.append('authorizedID', this.authorizedID);
+      body.append('verifyMenu', 'true');
+      body.append('nocache', '@(new Date().getTime())');
 
       const response = await this.rateLimitedFetch(
-        "/vtop/academics/common/CoursePageConsolidated",
+        '/vtop/academics/common/CoursePageConsolidated',
         {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-            "X-Requested-With": "XMLHttpRequest",
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'X-Requested-With': 'XMLHttpRequest',
           },
           body: body,
         },
@@ -1145,20 +1144,20 @@ export class VTOPNetwork {
     const cacheKey = `course_details_${semester}_${courseId}_${courseType}`;
 
     return this.fetchWithCache(cacheKey, async () => {
-      const url = "academics/CoursePageConsolidated/getCourseDetail";
+      const url = 'academics/CoursePageConsolidated/getCourseDetail';
       const body = new URLSearchParams();
-      body.append("_csrf", this.csrf);
-      body.append("authorizedID", this.authorizedID);
-      body.append("semester", semester);
-      body.append("CourseId", courseId);
-      body.append("CoursType", courseType);
-      body.append("x", new Date().toUTCString());
+      body.append('_csrf', this.csrf);
+      body.append('authorizedID', this.authorizedID);
+      body.append('semester', semester);
+      body.append('CourseId', courseId);
+      body.append('CoursType', courseType);
+      body.append('x', new Date().toUTCString());
 
       const response = await this.rateLimitedFetch(`/vtop/${url}`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          "X-Requested-With": "XMLHttpRequest",
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          'X-Requested-With': 'XMLHttpRequest',
         },
         body: body,
       });
@@ -1169,12 +1168,12 @@ export class VTOPNetwork {
   }
 
   downloadCourseMaterial(fileId: string) {
-    const form = document.createElement("form");
-    form.method = "POST";
+    const form = document.createElement('form');
+    form.method = 'POST';
 
-    form.action = "/vtop/downloadCourseMaterialFacultyPdf";
-    form.target = "_blank";
-    form.style.display = "none";
+    form.action = '/vtop/downloadCourseMaterialFacultyPdf';
+    form.target = '_blank';
+    form.style.display = 'none';
 
     const inputs = {
       _csrf: this.csrf,
@@ -1183,8 +1182,8 @@ export class VTOPNetwork {
     };
 
     for (const [key, value] of Object.entries(inputs)) {
-      const input = document.createElement("input");
-      input.type = "hidden";
+      const input = document.createElement('input');
+      input.type = 'hidden';
       input.name = key;
       input.value = value;
       form.appendChild(input);
@@ -1196,7 +1195,7 @@ export class VTOPNetwork {
   }
 
   private injectScript(code: string) {
-    const script = document.createElement("script");
+    const script = document.createElement('script');
     script.textContent = code;
     (document.head || document.documentElement).appendChild(script);
     script.remove();
@@ -1207,12 +1206,12 @@ export class VTOPNetwork {
     endpoint: string,
     data?: Record<string, string>, // Add this optional parameter
   ): Promise<string> {
-    const url = endpoint.startsWith("http") ? endpoint : `/vtop/${endpoint}`;
+    const url = endpoint.startsWith('http') ? endpoint : `/vtop/${endpoint}`;
 
     const body = new URLSearchParams();
-    body.append("_csrf", this.csrf);
-    body.append("authorizedID", this.authorizedID);
-    body.append("x", new Date().toUTCString()); // Browser cache-buster
+    body.append('_csrf', this.csrf);
+    body.append('authorizedID', this.authorizedID);
+    body.append('x', new Date().toUTCString()); // Browser cache-buster
 
     // Append custom parameters if they exist
     if (data) {
@@ -1220,10 +1219,10 @@ export class VTOPNetwork {
     }
 
     const res = await this.rateLimitedFetch(url, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-        "X-Requested-With": "XMLHttpRequest",
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        'X-Requested-With': 'XMLHttpRequest',
       },
       body: body,
     });
@@ -1234,23 +1233,23 @@ export class VTOPNetwork {
   }
 
   async getDigitalAssignmentLanding(): Promise<string> {
-    const sidebarLinks = Array.from(document.querySelectorAll("a"));
+    const sidebarLinks = Array.from(document.querySelectorAll('a'));
     const daLink = sidebarLinks.find(
       (l) =>
-        l.textContent?.includes("Digital Assignment Upload") ||
-        l.getAttribute("onclick")?.includes("StudentDA"),
+        l.textContent?.includes('Digital Assignment Upload') ||
+        l.getAttribute('onclick')?.includes('StudentDA'),
     );
 
     if (daLink) {
       daLink.click();
       await this.waitForLegacyLoad();
     } else {
-      if (!document.getElementById("semesterSubId")) {
-        const html = await this.fetchFragment("examinations/StudentDA");
-        const container = document.getElementById("main-section");
+      if (!document.getElementById('semesterSubId')) {
+        const html = await this.fetchFragment('examinations/StudentDA');
+        const container = document.getElementById('main-section');
         if (container) {
           container.replaceChildren();
-          const doc = new DOMParser().parseFromString(html, "text/html");
+          const doc = new DOMParser().parseFromString(html, 'text/html');
           Array.from(doc.body.childNodes).forEach((node) =>
             container.appendChild(node.cloneNode(true)),
           );
@@ -1262,7 +1261,7 @@ export class VTOPNetwork {
 
   async getDigitalAssignmentCourses(semesterSubId: string): Promise<string> {
     const select = document.getElementById(
-      "semesterSubId",
+      'semesterSubId',
     ) as HTMLSelectElement;
     if (!select) {
       await this.getDigitalAssignmentLanding();
@@ -1334,19 +1333,19 @@ export class VTOPNetwork {
 
   async uploadDA(action: string, formData: FormData): Promise<boolean> {
     const origin =
-      typeof window !== "undefined" &&
-      window.location.origin.includes("vit.ac.in")
+      typeof window !== 'undefined' &&
+      window.location.origin.includes('vit.ac.in')
         ? window.location.origin
-        : "https://vtop.vit.ac.in";
-    const path = action.startsWith("http")
+        : 'https://vtop.vit.ac.in';
+    const path = action.startsWith('http')
       ? action
-      : action.startsWith("/")
+      : action.startsWith('/')
         ? `${origin}${action}`
         : `${origin}/vtop/${action}`;
 
     const response = await this.rateLimitedFetch(path, {
-      method: "POST",
-      headers: { "X-Requested-With": "XMLHttpRequest" },
+      method: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
       body: formData,
     });
     return response.ok;
@@ -1354,7 +1353,7 @@ export class VTOPNetwork {
 
   async downloadQP(classId: string, code: string, defaultFilename?: string) {
     await this.downloadWithBlob(
-      "examinations/doDownloadQuestion/",
+      'examinations/doDownloadQuestion/',
       {
         code: code,
         classIdNumber: classId,
@@ -1369,7 +1368,7 @@ export class VTOPNetwork {
     defaultFilename?: string,
   ) {
     await this.downloadWithBlob(
-      "examinations/downloadSTudentDA/",
+      'examinations/downloadSTudentDA/',
       {
         code1: code,
         classId1: classId,
@@ -1381,13 +1380,13 @@ export class VTOPNetwork {
   private async downloadWithBlob(
     endpoint: string,
     params: Record<string, string>,
-    defaultFilename = "download.pdf",
+    defaultFilename = 'download.pdf',
   ) {
     const origin =
-      typeof window !== "undefined" &&
-      window.location.origin.includes("vit.ac.in")
+      typeof window !== 'undefined' &&
+      window.location.origin.includes('vit.ac.in')
         ? window.location.origin
-        : "https://vtop.vit.ac.in";
+        : 'https://vtop.vit.ac.in';
     const url = `${origin}/vtop/${endpoint}`;
     const body = new URLSearchParams();
 
@@ -1406,38 +1405,40 @@ export class VTOPNetwork {
     const domAuth =
       authInputs.length > 0
         ? authInputs[authInputs.length - 1]
-        : (document.querySelector('input[name="authorizedID"]') as HTMLInputElement);
+        : (document.querySelector(
+            'input[name="authorizedID"]',
+          ) as HTMLInputElement);
 
-    body.append("_csrf", domCsrf?.value || this.csrf);
-    body.append("authorizedID", domAuth?.value || this.authorizedID);
+    body.append('_csrf', domCsrf?.value || this.csrf);
+    body.append('authorizedID', domAuth?.value || this.authorizedID);
 
     Object.entries(params).forEach(([key, value]) => body.append(key, value));
 
     try {
       const response = await this.rateLimitedFetch(url, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          "X-Requested-With": "XMLHttpRequest",
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          'X-Requested-With': 'XMLHttpRequest',
         },
         body: body,
       });
 
-      if (!response.ok) throw new Error("Download failed");
+      if (!response.ok) throw new Error('Download failed');
 
       const blob = await response.blob();
       const blobUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.style.display = "none";
+      const a = document.createElement('a');
+      a.style.display = 'none';
       a.href = blobUrl;
 
-      const disposition = response.headers.get("Content-Disposition");
+      const disposition = response.headers.get('Content-Disposition');
       let filename = defaultFilename;
-      if (disposition && disposition.includes("filename=")) {
+      if (disposition && disposition.includes('filename=')) {
         const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(
           disposition,
         );
-        if (matches?.[1]) filename = matches[1].replace(/['"]/g, "");
+        if (matches?.[1]) filename = matches[1].replace(/['"]/g, '');
       }
       a.download = filename;
 
@@ -1449,10 +1450,10 @@ export class VTOPNetwork {
         document.body.removeChild(a);
       }, 1000);
     } catch (e) {
-      console.error("Download Error:", e);
+      console.error('Download Error:', e);
       showAlertDialog({
-        title: "Download Failed",
-        message: "Failed to download file. Please check console.",
+        title: 'Download Failed',
+        message: 'Failed to download file. Please check console.',
       });
     }
   }
@@ -1463,23 +1464,23 @@ export class VTOPNetwork {
   async getLateHourInit(): Promise<string> {
     try {
       // Warm up menu context
-      await this.fetchVtopApi("hostels/late/hour/student/request/1", {
-        verifyMenu: "true",
+      await this.fetchVtopApi('hostels/late/hour/student/request/1', {
+        verifyMenu: 'true',
       });
     } catch (_) {}
-    return this.fetchVtopApi("hostels/late/hour/student/request/2", {
-      apply: "",
-      form: "undefined",
-      control: "apply",
+    return this.fetchVtopApi('hostels/late/hour/student/request/2', {
+      apply: '',
+      form: 'undefined',
+      control: 'apply',
     });
   }
 
   /** Step 3: Get faculties for school (costCentreId) */
   async getLateHourFaculties(costCentreId: string): Promise<string> {
-    return this.fetchVtopApi("hostels/late/hour/student/request/3", {
+    return this.fetchVtopApi('hostels/late/hour/student/request/3', {
       costCentreId,
-      form: "undefined",
-      control: "costCentreId",
+      form: 'undefined',
+      control: 'costCentreId',
     });
   }
 
@@ -1489,18 +1490,18 @@ export class VTOPNetwork {
     appliedTo: string;
     roomTypeId: string;
   }): Promise<string> {
-    return this.fetchVtopApi("hostels/late/hour/student/request/4", {
+    return this.fetchVtopApi('hostels/late/hour/student/request/4', {
       costCentreId: params.costCentreId,
       appliedTo: params.appliedTo,
       roomTypeId: params.roomTypeId,
-      lateHourEventId: "",
-      details: "",
-      lateHourFromDate: "",
-      fromTime: "",
-      lateHourToDate: "",
-      toTime: "",
-      form: "LateHourRequestForm",
-      control: "roomTypeId",
+      lateHourEventId: '',
+      details: '',
+      lateHourFromDate: '',
+      fromTime: '',
+      lateHourToDate: '',
+      toTime: '',
+      form: 'LateHourRequestForm',
+      control: 'roomTypeId',
     });
   }
 
@@ -1511,20 +1512,20 @@ export class VTOPNetwork {
     roomTypeId: string;
     buildingId: string;
   }): Promise<string> {
-    return this.fetchVtopApi("hostels/late/hour/student/request/5", {
+    return this.fetchVtopApi('hostels/late/hour/student/request/5', {
       costCentreId: params.costCentreId,
       appliedTo: params.appliedTo,
       roomTypeId: params.roomTypeId,
       buildingId: params.buildingId,
-      venue: "",
-      lateHourEventId: "",
-      details: "",
-      lateHourFromDate: "",
-      fromTime: "",
-      lateHourToDate: "",
-      toTime: "",
-      form: "LateHourRequestForm",
-      control: "buildingId",
+      venue: '',
+      lateHourEventId: '',
+      details: '',
+      lateHourFromDate: '',
+      fromTime: '',
+      lateHourToDate: '',
+      toTime: '',
+      form: 'LateHourRequestForm',
+      control: 'buildingId',
     });
   }
 
@@ -1547,19 +1548,19 @@ export class VTOPNetwork {
       appliedTo: params.appliedTo,
       roomTypeId: params.roomTypeId,
       lateHourEventId: params.lateHourEventId,
-      details: params.details || "",
-      lateHourFromDate: params.lateHourFromDate || "",
-      fromTime: params.fromTime || "",
-      lateHourToDate: params.lateHourToDate || "",
-      toTime: params.toTime || "",
-      form: "LateHourRequestForm",
-      control: "lateHourEventId",
+      details: params.details || '',
+      lateHourFromDate: params.lateHourFromDate || '',
+      fromTime: params.fromTime || '',
+      lateHourToDate: params.lateHourToDate || '',
+      toTime: params.toTime || '',
+      form: 'LateHourRequestForm',
+      control: 'lateHourEventId',
     };
 
     if (params.buildingId) payload.buildingId = params.buildingId;
     if (params.venue) payload.venue = params.venue;
 
-    return this.fetchVtopApi("hostels/late/hour/student/request/6", payload);
+    return this.fetchVtopApi('hostels/late/hour/student/request/6', payload);
   }
 
   /** Step 7: Get To Time options based on selected From Time */
@@ -1580,19 +1581,19 @@ export class VTOPNetwork {
       appliedTo: params.appliedTo,
       roomTypeId: params.roomTypeId,
       lateHourEventId: params.lateHourEventId,
-      details: params.details || "",
+      details: params.details || '',
       lateHourFromDate: params.lateHourFromDate,
       fromTime: params.fromTime,
-      lateHourToDate: params.lateHourToDate || "",
-      toTime: "",
-      form: "LateHourRequestForm",
-      control: "fromTime",
+      lateHourToDate: params.lateHourToDate || '',
+      toTime: '',
+      form: 'LateHourRequestForm',
+      control: 'fromTime',
     };
 
     if (params.buildingId) payload.buildingId = params.buildingId;
     if (params.venue) payload.venue = params.venue;
 
-    return this.fetchVtopApi("hostels/late/hour/student/request/7", payload);
+    return this.fetchVtopApi('hostels/late/hour/student/request/7', payload);
   }
 
   /** Step 8: Submit Late Hour Request */
@@ -1619,26 +1620,26 @@ export class VTOPNetwork {
       fromTime: params.fromTime,
       lateHourToDate: params.lateHourToDate,
       toTime: params.toTime,
-      submitButton1: "",
-      form: "LateHourRequestForm",
-      control: "submitButton1",
+      submitButton1: '',
+      form: 'LateHourRequestForm',
+      control: 'submitButton1',
     };
 
     if (params.buildingId) payload.buildingId = params.buildingId;
     if (params.venue) payload.venue = params.venue;
 
-    return this.fetchVtopApi("hostels/late/hour/student/request/8", payload);
+    return this.fetchVtopApi('hostels/late/hour/student/request/8', payload);
   }
 
   /** Step 9: Get Late Hour status list (cached) */
   async getLateHourStatus(forceRefresh = false): Promise<string> {
     return this.fetchWithCache(
-      "late_hour_status",
+      'late_hour_status',
       () =>
-        this.fetchVtopApi("hostels/late/hour/student/request/9", {
-          status: "",
-          form: "undefined",
-          control: "status",
+        this.fetchVtopApi('hostels/late/hour/student/request/9', {
+          status: '',
+          form: 'undefined',
+          control: 'status',
         }),
       forceRefresh,
     );
@@ -1646,23 +1647,23 @@ export class VTOPNetwork {
 
   /** Step 10: Cancel Late Hour Request */
   async cancelLateHourRequest(lateHourId: string): Promise<string> {
-    return this.fetchVtopApi("hostels/late/hour/student/request/10", {
-      cancelButton: "",
+    return this.fetchVtopApi('hostels/late/hour/student/request/10', {
+      cancelButton: '',
       lateHourId,
-      form: "undefined",
-      control: "cancelButton",
+      form: 'undefined',
+      control: 'cancelButton',
     });
   }
 
   /** Step 11: Permissions history (cached) */
   async getLateHourHistory(forceRefresh = false): Promise<string> {
     return this.fetchWithCache(
-      "late_hour_history",
+      'late_hour_history',
       () =>
-        this.fetchVtopApi("hostels/late/hour/student/request/11", {
-          history: "",
-          form: "undefined",
-          control: "history",
+        this.fetchVtopApi('hostels/late/hour/student/request/11', {
+          history: '',
+          form: 'undefined',
+          control: 'history',
         }),
       forceRefresh,
     );

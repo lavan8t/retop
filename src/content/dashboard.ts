@@ -5,11 +5,11 @@
  * session. Login is not handled here: VtopLoginCard, VtopClient and the CAPTCHA
  * solver all live behind the login takeover entry; see src/content/login.tsx.
  */
-import React from "react";
-import { createRoot } from "react-dom/client";
-import { renderDashboard } from "../pages/app";
-import { scrapeMenu } from "../parsers/menu";
-import { injectLegacyMenuSearch } from "../components/legacy/injectLegacyMenuSearch";
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import { renderDashboard } from '../pages/app';
+import { scrapeMenu } from '../parsers/menu';
+import { injectLegacyMenuSearch } from '../components/legacy/injectLegacyMenuSearch';
 import {
   injectGlobalFonts,
   initializeContainer,
@@ -17,18 +17,18 @@ import {
   removeSplashScreen,
   cleanupLegacyHMenuBar,
   setUIVisibility,
-} from "../utils/bridge";
+} from '../utils/bridge';
 import {
   dismantleRetopMods,
   installErrorNet,
   teardownRetop,
-} from "../utils/teardown";
-import { NativePortals } from "../components/NativePortals";
-import { VIT_EMBLEM_SVG_RAW } from "../components/common/VitEmblemSvg";
-import { interceptDashboardResponse } from "../utils/dashboardInterceptor";
-import { applyTheme } from "../utils/settings-store";
-import { getExtUrl } from "../utils/url";
-import { isStudentRegNo } from "../utils/studentId";
+} from '../utils/teardown';
+import { NativePortals } from '../components/NativePortals';
+import { VIT_EMBLEM_SVG_RAW } from '../components/common/VitEmblemSvg';
+import { interceptDashboardResponse } from '../utils/dashboardInterceptor';
+import { applyTheme } from '../utils/settings-store';
+import { getExtUrl } from '../utils/url';
+import { isStudentRegNo } from '../utils/studentId';
 
 // The bootstrapper cannot import the teardown (it must stay import free), so
 // publish it on window for the document_start side to reuse.
@@ -40,25 +40,25 @@ installErrorNet();
 
 // Inject the VTOP dark-mode stylesheet into the document (not just the shadow
 // root) so native/legacy VTOP pages actually pick up the chosen theme.
-if (typeof document !== "undefined") {
-  const link = document.createElement("link");
-  link.id = "retop-dark-stylesheet";
-  link.rel = "stylesheet";
-  link.href = getExtUrl("vtop-dark.css");
+if (typeof document !== 'undefined') {
+  const link = document.createElement('link');
+  link.id = 'retop-dark-stylesheet';
+  link.rel = 'stylesheet';
+  link.href = getExtUrl('vtop-dark.css');
   (document.head || document.documentElement).appendChild(link);
 }
 
-import { get as idbGet, entries as idbEntries } from "idb-keyval";
+import { get as idbGet, entries as idbEntries } from 'idb-keyval';
 
-const AUTH_ROUTES = ["/vtop/content", "/vtop/main", "/vtop/process"];
+const AUTH_ROUTES = ['/vtop/content', '/vtop/main', '/vtop/process'];
 
 const LOGIN_ROUTES = [
-  "/vtop/open/page",
-  "/vtop/open/login",
-  "/vtop/login",
-  "/vtop/vtopLogin",
-  "/vtop/prelogin",
-  "/vtop/init/page",
+  '/vtop/open/page',
+  '/vtop/open/login',
+  '/vtop/login',
+  '/vtop/vtopLogin',
+  '/vtop/prelogin',
+  '/vtop/init/page',
 ];
 
 const path = window.location.pathname;
@@ -71,7 +71,7 @@ const isLoginRoute = matches(LOGIN_ROUTES);
 // Mirror IndexedDB cache to chrome.storage.local for offline tab access.
 // Cache writes already go there, so this is only a safety net for old IDB-only
 // entries; running it on every VTOP navigation duplicated megabytes per page.
-const MIRROR_STAMP_KEY = "retop_idb_mirrored_at";
+const MIRROR_STAMP_KEY = 'retop_idb_mirrored_at';
 const MIRROR_INTERVAL_MS = 5 * 60 * 1000;
 
 let lastMirror = Date.now();
@@ -81,17 +81,17 @@ try {
 
 if (
   Date.now() - lastMirror > MIRROR_INTERVAL_MS &&
-  typeof chrome !== "undefined" &&
+  typeof chrome !== 'undefined' &&
   chrome.storage &&
   chrome.storage.local &&
-  typeof indexedDB !== "undefined"
+  typeof indexedDB !== 'undefined'
 ) {
   idbEntries()
     .then((entries) => {
       if (entries && entries.length > 0) {
         const payload: Record<string, any> = {};
         for (const [k, v] of entries) {
-          if (typeof k === "string") payload[k] = v;
+          if (typeof k === 'string') payload[k] = v;
         }
         return chrome.storage.local.set(payload).then(() => {
           try {
@@ -104,15 +104,15 @@ if (
 }
 
 const vtopContext = {
-  csrf: "",
-  authId: "",
+  csrf: '',
+  authId: '',
 };
 
 // Apply theme immediately to prevent flashing, but strictly ignore /open/page
 const decodeStoragePayload = (str: any): string => {
-  if (typeof str !== "string") return str;
+  if (typeof str !== 'string') return str;
   try {
-    if (str.startsWith("enc_")) {
+    if (str.startsWith('enc_')) {
       return decodeURIComponent(atob(str.slice(4)));
     }
     return str;
@@ -124,7 +124,7 @@ const decodeStoragePayload = (str: any): string => {
 const parseSettingsPayload = (raw: any): any => {
   if (!raw) return null;
   try {
-    if (typeof raw === "string") {
+    if (typeof raw === 'string') {
       const decoded = decodeStoragePayload(raw);
       const parsed = JSON.parse(decoded);
       return (
@@ -133,7 +133,9 @@ const parseSettingsPayload = (raw: any): any => {
         (parsed?.defaultView ? parsed : null)
       );
     }
-    return raw?.state?.settings || raw?.settings || (raw?.defaultView ? raw : null);
+    return (
+      raw?.state?.settings || raw?.settings || (raw?.defaultView ? raw : null)
+    );
   } catch {
     return null;
   }
@@ -145,12 +147,12 @@ const applyThemeFromSettings = (saved: any) => {
     if (!settings) return;
     applyTheme(settings);
   } catch (err) {
-    console.warn("[retop] Failed to apply theme:", err);
+    console.warn('[retop] Failed to apply theme:', err);
   }
 };
 
 try {
-  idbGet("retop-settings")
+  idbGet('retop-settings')
     .then((saved) => {
       if (saved) {
         applyThemeFromSettings(saved);
@@ -169,28 +171,30 @@ if (isAuthRoute) {
 function enhanceProcessLoader(el: HTMLElement) {
   if (!isAuthRoute) return;
 
-  if (document.getElementById("retop-open-loader")) {
+  if (document.getElementById('retop-open-loader')) {
     // Splash screen is already handling early load
     return;
   }
-  if (!el.querySelector(".vit-emblem-splash")) {
+  if (!el.querySelector('.vit-emblem-splash')) {
     el.innerHTML = `<div class="vit-emblem-splash" style="width:210px;height:210px;display:flex;align-items:center;justify-content:center;">${VIT_EMBLEM_SVG_RAW}</div>`;
   }
 }
 
-if (typeof document !== "undefined") {
+if (typeof document !== 'undefined') {
   const initProcessLoaderObserver = () => {
-    const existing = document.getElementById("processLoader");
+    const existing = document.getElementById('processLoader');
     if (existing) enhanceProcessLoader(existing);
 
     const observer = new MutationObserver((mutations) => {
       for (const m of mutations) {
         for (const node of m.addedNodes) {
           if (node instanceof HTMLElement) {
-            if (node.id === "processLoader") {
+            if (node.id === 'processLoader') {
               enhanceProcessLoader(node);
             } else {
-              const nested = node.querySelector?.("#processLoader") as HTMLElement | null;
+              const nested = node.querySelector?.(
+                '#processLoader',
+              ) as HTMLElement | null;
               if (nested) enhanceProcessLoader(nested);
             }
           }
@@ -205,8 +209,10 @@ if (typeof document !== "undefined") {
     });
   };
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initProcessLoaderObserver, { once: true });
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initProcessLoaderObserver, {
+      once: true,
+    });
   } else {
     initProcessLoaderObserver();
   }
@@ -219,8 +225,8 @@ let isHandlingNetworkError = false;
 
 function showErrorSnackbar(message: string) {
   window.dispatchEvent(
-    new CustomEvent("retop-toast", {
-      detail: { message, type: "error" },
+    new CustomEvent('retop-toast', {
+      detail: { message, type: 'error' },
     }),
   );
 }
@@ -229,16 +235,16 @@ async function handleNetworkError(status?: number) {
   if (isHandlingNetworkError) return;
   isHandlingNetworkError = true;
   if (status === 404) {
-    showErrorSnackbar("E404: Something went wrong.");
+    showErrorSnackbar('E404: Something went wrong.');
   } else if (status === 401 || status === 403) {
     showErrorDialog(
-      "Session Expired",
-      "Your VTOP session has expired. Please login again to continue.",
-      "Return to Login",
-      "/vtop/open/page",
+      'Session Expired',
+      'Your VTOP session has expired. Please login again to continue.',
+      'Return to Login',
+      '/vtop/open/page',
     );
   } else {
-    showErrorSnackbar("An unexpected network error occurred.");
+    showErrorSnackbar('An unexpected network error occurred.');
   }
   isHandlingNetworkError = false;
 }
@@ -249,10 +255,10 @@ function showErrorDialog(
   btnText: string,
   btnAction: string,
 ) {
-  if (document.getElementById("retop-session-dialog")) return;
+  if (document.getElementById('retop-session-dialog')) return;
 
-  const dialog = document.createElement("div");
-  dialog.id = "retop-session-dialog";
+  const dialog = document.createElement('div');
+  dialog.id = 'retop-session-dialog';
   dialog.style.cssText = `
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
     z-index: 999999999; display: flex; flex-direction: column;
@@ -286,7 +292,7 @@ function showErrorDialog(
 
     </div>
   `,
-    "text/html",
+    'text/html',
   );
   while (parsedDoc.body.firstChild) {
     dialog.appendChild(parsedDoc.body.firstChild);
@@ -294,10 +300,10 @@ function showErrorDialog(
 
   document.body.appendChild(dialog);
 
-  const btn = document.getElementById("retop-error-action-btn");
+  const btn = document.getElementById('retop-error-action-btn');
   if (btn) {
-    btn.addEventListener("click", () => {
-      if (btnAction === "reload") window.location.reload();
+    btn.addEventListener('click', () => {
+      if (btnAction === 'reload') window.location.reload();
       else window.location.href = btnAction;
     });
   }
@@ -307,15 +313,18 @@ function showErrorDialog(
   try {
     const response = await originalFetch(...args);
     const urlStr =
-      typeof args[0] === "string"
+      typeof args[0] === 'string'
         ? args[0]
         : args[0] instanceof URL
           ? args[0].href
-          : (args[0] as any)?.url || "";
+          : (args[0] as any)?.url || '';
     if (response.ok && urlStr) {
       try {
         const clone = response.clone();
-        clone.text().then((text) => interceptDashboardResponse(urlStr, text)).catch(() => {});
+        clone
+          .text()
+          .then((text) => interceptDashboardResponse(urlStr, text))
+          .catch(() => {});
       } catch (e) {}
     }
     if (response.status === 401 || response.status === 403) {
@@ -336,12 +345,12 @@ XMLHttpRequest.prototype.open = function (
   this: XMLHttpRequest,
   ...args: any[]
 ) {
-  const urlStr = args[1] ? String(args[1]) : "";
-  this.addEventListener("load", function () {
+  const urlStr = args[1] ? String(args[1]) : '';
+  this.addEventListener('load', function () {
     if (this.status === 200 && urlStr) {
       try {
         const responseText = this.responseText;
-        if (typeof responseText === "string") {
+        if (typeof responseText === 'string') {
           interceptDashboardResponse(urlStr, responseText);
         }
       } catch (e) {}
@@ -350,7 +359,7 @@ XMLHttpRequest.prototype.open = function (
       handleNetworkError(this.status);
     }
   });
-  this.addEventListener("error", function () {
+  this.addEventListener('error', function () {
     if (!navigator.onLine) {
       handleNetworkError();
     }
@@ -361,14 +370,14 @@ XMLHttpRequest.prototype.open = function (
 try {
   const originalResponseTypeDesc = Object.getOwnPropertyDescriptor(
     XMLHttpRequest.prototype,
-    "responseType",
+    'responseType',
   );
   // Keep the original so the teardown can put it back: leaving the patched
   // setter in place would change VTOP's own XHR behaviour for good.
   (window as any).__retopOriginalXhrResponseType = originalResponseTypeDesc;
   if (originalResponseTypeDesc && originalResponseTypeDesc.set) {
     const origSet = originalResponseTypeDesc.set;
-    Object.defineProperty(XMLHttpRequest.prototype, "responseType", {
+    Object.defineProperty(XMLHttpRequest.prototype, 'responseType', {
       set: function (val: any) {
         try {
           origSet.call(this, val);
@@ -396,9 +405,11 @@ function waitForTokens(): Promise<boolean> {
       const csrfInput = document.querySelector(
         'input[name="_csrf"]',
       ) as HTMLInputElement;
-      const authInput = (document.getElementById("authorizedIDX") ||
-        document.getElementById("authorizedID") ||
-        document.querySelector('input[name="authorizedID"]')) as HTMLInputElement | null;
+      const authInput = (document.getElementById('authorizedIDX') ||
+        document.getElementById('authorizedID') ||
+        document.querySelector(
+          'input[name="authorizedID"]',
+        )) as HTMLInputElement | null;
 
       if (csrfInput && csrfInput.value) vtopContext.csrf = csrfInput.value;
       if (authInput && authInput.value) vtopContext.authId = authInput.value;
@@ -411,7 +422,9 @@ function waitForTokens(): Promise<boolean> {
           const text = document.scripts[i].textContent;
           if (!text) continue;
           if (!vtopContext.csrf) {
-            const csrfMatch = text.match(/var\s+csrfValue\s*=\s*["']([^"']+)["']/i);
+            const csrfMatch = text.match(
+              /var\s+csrfValue\s*=\s*["']([^"']+)["']/i,
+            );
             if (csrfMatch) vtopContext.csrf = csrfMatch[1];
           }
           if (!vtopContext.authId) {
@@ -441,10 +454,10 @@ function waitForTokens(): Promise<boolean> {
 const checkIsAuthPage = () => {
   return (
     isAuthRoute ||
-    document.getElementById("authorizedIDX") !== null ||
-    document.getElementById("authorizedID") !== null ||
-    document.getElementById("top-hmenu-bar") !== null ||
-    document.getElementById("vtop-header") !== null
+    document.getElementById('authorizedIDX') !== null ||
+    document.getElementById('authorizedID') !== null ||
+    document.getElementById('top-hmenu-bar') !== null ||
+    document.getElementById('vtop-header') !== null
   );
 };
 
@@ -455,8 +468,8 @@ const checkIsAuthPage = () => {
  */
 const watchForEmptyRoot = () => {
   const root = document
-    .getElementById("retop-host")
-    ?.shadowRoot?.querySelector("#retop-root");
+    .getElementById('retop-host')
+    ?.shadowRoot?.querySelector('#retop-root');
   if (!root) return;
 
   let rendered = false;
@@ -467,7 +480,7 @@ const watchForEmptyRoot = () => {
     }
     if (root.childElementCount === 0) {
       observer.disconnect();
-      console.warn("[retop] The app rendered nothing; handing VTOP back.");
+      console.warn('[retop] The app rendered nothing; handing VTOP back.');
       teardownRetop();
     }
   });
@@ -478,7 +491,7 @@ const watchForEmptyRoot = () => {
   setTimeout(() => {
     if (rendered || root.childElementCount > 0) return;
     observer.disconnect();
-    console.warn("[retop] The app never painted; handing VTOP back.");
+    console.warn('[retop] The app never painted; handing VTOP back.');
     teardownRetop();
   }, 20000);
 };
@@ -493,13 +506,13 @@ const fallBackToNative = (reason?: string) => {
 };
 
 const init = async () => {
-  console.log("[retop] Initializing...");
+  console.log('[retop] Initializing...');
 
   try {
     await run();
   } catch (err) {
-    console.error("[retop] Dashboard entry failed:", err);
-    fallBackToNative("");
+    console.error('[retop] Dashboard entry failed:', err);
+    fallBackToNative('');
   }
 };
 
@@ -507,23 +520,30 @@ const run = async () => {
   // The bootstrapper's watchdog already handed the page back to VTOP; mounting
   // the dashboard now would take it over again.
   if ((window as any).__retopAborted) {
-    console.warn("[retop] Dashboard start aborted; leaving VTOP alone.");
+    console.warn('[retop] Dashboard start aborted; leaving VTOP alone.');
     return;
   }
 
   let pausedResult = null;
   let settingsResult = null;
-  const withTimeout = <T>(promise: Promise<T>, ms = 1500, fallback: T): Promise<T> =>
-    Promise.race([promise, new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms))]);
+  const withTimeout = <T>(
+    promise: Promise<T>,
+    ms = 1500,
+    fallback: T,
+  ): Promise<T> =>
+    Promise.race([
+      promise,
+      new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+    ]);
 
   try {
     [pausedResult, settingsResult] = await Promise.all([
-      withTimeout(idbGet("retop-paused-until"), 1500, null),
-      withTimeout(idbGet("retop-settings"), 1500, null),
+      withTimeout(idbGet('retop-paused-until'), 1500, null),
+      withTimeout(idbGet('retop-settings'), 1500, null),
     ]);
   } catch (err) {
-    console.warn("[retop] Storage error. Falling back to native VTOP.", err);
-    fallBackToNative("");
+    console.warn('[retop] Storage error. Falling back to native VTOP.', err);
+    fallBackToNative('');
     return;
   }
 
@@ -531,28 +551,30 @@ const run = async () => {
     try {
       const settings = parseSettingsPayload(settingsResult);
       if (
-        settings?.defaultView === "legacy" &&
-        sessionStorage.getItem("vtop-legacy-mode") === null
+        settings?.defaultView === 'legacy' &&
+        sessionStorage.getItem('vtop-legacy-mode') === null
       ) {
-        sessionStorage.setItem("vtop-legacy-mode", "true");
+        sessionStorage.setItem('vtop-legacy-mode', 'true');
       }
     } catch (e) {}
   }
 
   if (pausedResult && Date.now() < parseInt(pausedResult as string, 10)) {
-    console.log("[retop] Extension is currently halted. Falling back to native VTOP.");
-    fallBackToNative("retop is paused. Showing VTOP.");
+    console.log(
+      '[retop] Extension is currently halted. Falling back to native VTOP.',
+    );
+    fallBackToNative('retop is paused. Showing VTOP.');
     return;
   }
 
   // Also listen for settings trigger from the popup
   try {
-    if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
+    if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
       chrome.runtime.onMessage.addListener((msg) => {
-        if (msg.action === "open_settings") {
-          const root = document.getElementById("retop-root");
+        if (msg.action === 'open_settings') {
+          const root = document.getElementById('retop-root');
           if (root) {
-            window.dispatchEvent(new CustomEvent("retop-open-settings"));
+            window.dispatchEvent(new CustomEvent('retop-open-settings'));
           }
         }
       });
@@ -563,22 +585,22 @@ const run = async () => {
 
   // CRITICAL: Force native DOM visibility immediately.
   // Prevents the page from going blank.
-  document.body.style.opacity = "1";
-  document.body.style.display = "block";
-  document.body.style.visibility = "visible";
-  document.body.classList.add("show-legacy-ui");
+  document.body.style.opacity = '1';
+  document.body.style.display = 'block';
+  document.body.style.visibility = 'visible';
+  document.body.classList.add('show-legacy-ui');
 
   // Parent and alumni used to sign in on VTOP's own form with a role switcher.
   // Only the native portals remain, for the recovery handoff.
   if (isLoginRoute && !checkIsAuthPage()) {
-    if (!document.getElementById("retop-native-portals")) {
-      const portalsRoot = document.createElement("div");
-      portalsRoot.id = "retop-native-portals";
+    if (!document.getElementById('retop-native-portals')) {
+      const portalsRoot = document.createElement('div');
+      portalsRoot.id = 'retop-native-portals';
       document.body.appendChild(portalsRoot);
       createRoot(portalsRoot).render(React.createElement(NativePortals));
     }
-    document.body.classList.add("show-legacy-ui");
-    document.getElementById("retop-boot-cloak")?.remove();
+    document.body.classList.add('show-legacy-ui');
+    document.getElementById('retop-boot-cloak')?.remove();
     removeSplashScreen();
     return;
   }
@@ -588,25 +610,25 @@ const run = async () => {
   // student registration number gets plain VTOP back, silently.
   await waitForTokens();
   if (!isStudentRegNo(vtopContext.authId)) {
-    fallBackToNative("");
+    fallBackToNative('');
     return;
   }
 
   // The bootstrapper may have handed the page back to VTOP while this entry
   // was waiting for the session. Mounting now would take the page over again.
   if ((window as any).__retopAborted) {
-    console.warn("[retop] Dashboard start aborted; leaving VTOP alone.");
+    console.warn('[retop] Dashboard start aborted; leaving VTOP alone.');
     return;
   }
 
   // Legacy login/prelogin stylesheet hosts are gone with the takeover, but a tab
   // restored from bfcache mid-migration can still carry them.
-  document.getElementById("vtop-prelogin-theme")?.remove();
-  document.getElementById("vtop-login-theme")?.remove();
-  document.getElementById("vtop-early-theme")?.remove();
+  document.getElementById('vtop-prelogin-theme')?.remove();
+  document.getElementById('vtop-login-theme')?.remove();
+  document.getElementById('vtop-early-theme')?.remove();
 
   setUIVisibility(true);
-  document.body.classList.remove("show-legacy-ui");
+  document.body.classList.remove('show-legacy-ui');
   // @font-face declarations MUST be in the main document to work across shadow DOM —
   // inject fonts only, NOT style.css (which would break native VTOP header/menu).
   injectGlobalFonts();
@@ -614,7 +636,7 @@ const run = async () => {
 
   initializeContainer();
 
-  console.log("[retop] Session Active. Verifying menu items...");
+  console.log('[retop] Session Active. Verifying menu items...');
 
   // Fast check for DOM menu items (up to 1s max)
   for (let i = 0; i < 10; i++) {
@@ -629,8 +651,8 @@ const run = async () => {
   injectLegacyMenuSearch();
 };
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", init, { once: true });
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init, { once: true });
 } else {
   init();
 }

@@ -1,12 +1,12 @@
-import { TimetableCourse, CalendarEvent } from "../types/vtop";
-import { CAMPUS_SLOTS, DAYS } from "./timetable-slots";
+import { TimetableCourse, CalendarEvent } from '../types/vtop';
+import { CAMPUS_SLOTS, DAYS } from './timetable-slots';
 
 export interface AttendanceForecast {
   futureScheduledClasses: number;
   safeSkips: number;
   requiredToPass: number;
   classesNeededBeforeExam: number;
-  status: "SAFE" | "WARNING" | "CRITICAL";
+  status: 'SAFE' | 'WARNING' | 'CRITICAL';
   examStartDate: Date | null;
   examName: string | null;
 }
@@ -17,10 +17,10 @@ export const calculateAttendanceForecast = (
   total: number,
   timetable: TimetableCourse[],
   calendarEvents: CalendarEvent[],
-  examGroups: any[] = []
+  examGroups: any[] = [],
 ): AttendanceForecast => {
   const course = timetable.find(
-    (c) => c.code === courseCode || c.title?.includes(courseCode)
+    (c) => c.code === courseCode || c.title?.includes(courseCode),
   );
 
   const today = new Date();
@@ -40,7 +40,7 @@ export const calculateAttendanceForecast = (
             if (!isNaN(d.getTime()) && d >= today) {
               if (!examStartDate || d < examStartDate) {
                 examStartDate = d;
-                examName = group.title || entry.examTitle || "Upcoming Exam";
+                examName = group.title || entry.examTitle || 'Upcoming Exam';
               }
             }
           }
@@ -58,13 +58,13 @@ export const calculateAttendanceForecast = (
     for (const event of sortedEvents) {
       if (event.isExam) {
         examStartDate = event.dateObj;
-        examName = event.info || event.subInfo || "Upcoming Exam";
+        examName = event.info || event.subInfo || 'Upcoming Exam';
         break;
       }
     }
     if (!examStartDate && sortedEvents.length > 0) {
       examStartDate = sortedEvents[sortedEvents.length - 1].dateObj;
-      examName = "End of Semester";
+      examName = 'End of Semester';
     }
   }
 
@@ -73,15 +73,15 @@ export const calculateAttendanceForecast = (
   const courseDays = new Set<string>();
 
   if (course && course.slot) {
-    const individualSlots = course.slot.split("+").map((s) => s.trim());
+    const individualSlots = course.slot.split('+').map((s) => s.trim());
     DAYS.forEach((dayName) => {
       const dayConfig = CAMPUS_SLOTS[dayName];
       if (!dayConfig) return;
       const matchingTheory = dayConfig.Theory.filter((s) =>
-        individualSlots.includes(s)
+        individualSlots.includes(s),
       ).length;
       const matchingLab = dayConfig.Lab.filter((s) =>
-        individualSlots.includes(s)
+        individualSlots.includes(s),
       ).length;
       const count = matchingTheory + matchingLab;
       if (count > 0) {
@@ -95,7 +95,7 @@ export const calculateAttendanceForecast = (
   let futureScheduledClasses = 0;
 
   if (courseDays.size > 0 && course?.slot) {
-    const individualSlots = course.slot.split("+").map((s) => s.trim());
+    const individualSlots = course.slot.split('+').map((s) => s.trim());
     if (examStartDate && calendarEvents.length > 0) {
       calendarEvents.forEach((event) => {
         if (
@@ -104,15 +104,15 @@ export const calculateAttendanceForecast = (
           !event.isHoliday
         ) {
           const jsDay = event.dateObj.getDay();
-          const dayName = jsDay === 0 ? "Sunday" : DAYS[jsDay - 1];
+          const dayName = jsDay === 0 ? 'Sunday' : DAYS[jsDay - 1];
           if (courseDays.has(dayName)) {
             const dayConfig = CAMPUS_SLOTS[dayName];
             if (dayConfig) {
               const matchingTheory = dayConfig.Theory.filter((s) =>
-                individualSlots.includes(s)
+                individualSlots.includes(s),
               ).length;
               const matchingLab = dayConfig.Lab.filter((s) =>
-                individualSlots.includes(s)
+                individualSlots.includes(s),
               ).length;
               futureScheduledClasses += matchingTheory + matchingLab;
             }
@@ -139,13 +139,13 @@ export const calculateAttendanceForecast = (
   const neededFloat = targetRequired - attended;
   const classesNeededBeforeExam = Math.max(0, Math.ceil(neededFloat));
 
-  let status: "SAFE" | "WARNING" | "CRITICAL" = "SAFE";
-  if (safeSkips > 2) status = "SAFE";
-  else if (safeSkips > 0) status = "WARNING";
-  else status = "CRITICAL";
+  let status: 'SAFE' | 'WARNING' | 'CRITICAL' = 'SAFE';
+  if (safeSkips > 2) status = 'SAFE';
+  else if (safeSkips > 0) status = 'WARNING';
+  else status = 'CRITICAL';
 
   let requiredToPass = 0;
-  if (status === "CRITICAL" || (total > 0 && attended / total < 0.75)) {
+  if (status === 'CRITICAL' || (total > 0 && attended / total < 0.75)) {
     // Current absolute deficit to reach 75% on past conducted classes
     requiredToPass = Math.max(0, Math.ceil(3 * total - 4 * attended));
   }
@@ -157,7 +157,6 @@ export const calculateAttendanceForecast = (
     classesNeededBeforeExam,
     status,
     examStartDate,
-    examName: examName || "Exams",
+    examName: examName || 'Exams',
   };
 };
-

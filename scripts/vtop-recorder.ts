@@ -1,9 +1,9 @@
-import net from "net";
-import fs from "fs";
-import path from "path";
+import net from 'net';
+import fs from 'fs';
+import path from 'path';
 
-const SOCKET_PATH = "\0chrome_devtools_remote";
-const CAPTURE_DIR = path.resolve(process.cwd(), "vtop_network_captures");
+const SOCKET_PATH = '\0chrome_devtools_remote';
+const CAPTURE_DIR = path.resolve(process.cwd(), 'vtop_network_captures');
 
 if (!fs.existsSync(CAPTURE_DIR)) {
   fs.mkdirSync(CAPTURE_DIR, { recursive: true });
@@ -12,18 +12,21 @@ if (!fs.existsSync(CAPTURE_DIR)) {
 function log(msg: string) {
   const line = `[${new Date().toLocaleTimeString()}] ${msg}`;
   console.log(line);
-  fs.appendFileSync(path.resolve(process.cwd(), "scripts/recorder.log"), line + "\n");
+  fs.appendFileSync(
+    path.resolve(process.cwd(), 'scripts/recorder.log'),
+    line + '\n',
+  );
 }
 
 function getTargets(): Promise<any[]> {
   return new Promise((resolve, reject) => {
     const client = net.connect({ path: SOCKET_PATH }, () => {
-      client.write("GET /json HTTP/1.1\r\nHost: localhost\r\n\r\n");
+      client.write('GET /json HTTP/1.1\r\nHost: localhost\r\n\r\n');
     });
-    let raw = "";
-    client.on("data", (d) => {
+    let raw = '';
+    client.on('data', (d) => {
       raw += d.toString();
-      const idx = raw.indexOf("\r\n\r\n");
+      const idx = raw.indexOf('\r\n\r\n');
       if (idx !== -1) {
         try {
           const json = JSON.parse(raw.slice(idx + 4));
@@ -32,17 +35,17 @@ function getTargets(): Promise<any[]> {
         } catch {}
       }
     });
-    client.on("error", reject);
+    client.on('error', reject);
     setTimeout(() => {
       client.destroy();
-      const idx = raw.indexOf("\r\n\r\n");
+      const idx = raw.indexOf('\r\n\r\n');
       if (idx !== -1) {
         try {
           resolve(JSON.parse(raw.slice(idx + 4)));
           return;
         } catch {}
       }
-      reject(new Error("timeout"));
+      reject(new Error('timeout'));
     }, 2000);
   });
 }
@@ -60,7 +63,7 @@ class DevToolsWS {
 
   async connect(): Promise<void> {
     return new Promise((resolve, reject) => {
-      const key = Buffer.from(Math.random().toString()).toString("base64");
+      const key = Buffer.from(Math.random().toString()).toString('base64');
       const req =
         `GET ${this.wsPath} HTTP/1.1\r\n` +
         `Host: localhost\r\n` +
@@ -74,19 +77,19 @@ class DevToolsWS {
       let upgraded = false;
       let buffer = Buffer.alloc(0);
 
-      this.socket.on("data", (chunk) => {
+      this.socket.on('data', (chunk) => {
         if (!upgraded) {
           buffer = Buffer.concat([buffer, chunk]);
-          const headerEnd = buffer.indexOf("\r\n\r\n");
+          const headerEnd = buffer.indexOf('\r\n\r\n');
           if (headerEnd !== -1) {
             const head = buffer.slice(0, headerEnd).toString();
-            if (head.includes("101 Switching Protocols")) {
+            if (head.includes('101 Switching Protocols')) {
               upgraded = true;
               this.isConnected = true;
               buffer = buffer.slice(headerEnd + 4);
               resolve();
             } else {
-              reject(new Error("WebSocket upgrade failed"));
+              reject(new Error('WebSocket upgrade failed'));
             }
           }
           return;
@@ -128,7 +131,7 @@ class DevToolsWS {
           buffer = buffer.slice(offset + payloadLen);
 
           try {
-            const msg = JSON.parse(payload.toString("utf8"));
+            const msg = JSON.parse(payload.toString('utf8'));
             if (msg.id && this.callbacks.has(msg.id)) {
               const cb = this.callbacks.get(msg.id)!;
               this.callbacks.delete(msg.id);
@@ -140,8 +143,8 @@ class DevToolsWS {
         }
       });
 
-      this.socket.on("error", reject);
-      this.socket.on("close", () => {
+      this.socket.on('error', reject);
+      this.socket.on('close', () => {
         this.isConnected = false;
       });
     });
@@ -183,15 +186,18 @@ class DevToolsWS {
 }
 
 let activeWS: DevToolsWS | null = null;
-let currentTabId = "";
+let currentTabId = '';
 
 async function attachToTab() {
   try {
     const targets = await getTargets();
-    const pages = targets.filter((t) => t.type === "page");
+    const pages = targets.filter((t) => t.type === 'page');
     if (pages.length === 0) return;
 
-    const vtopTab = pages.find((p) => p.url.includes("vtop") || p.title.toLowerCase().includes("vtop")) || pages[0];
+    const vtopTab =
+      pages.find(
+        (p) => p.url.includes('vtop') || p.title.toLowerCase().includes('vtop'),
+      ) || pages[0];
 
     if (activeWS?.isConnected && currentTabId === vtopTab.id) {
       return; // already attached
@@ -203,7 +209,9 @@ async function attachToTab() {
     }
 
     currentTabId = vtopTab.id;
-    const wsPath = vtopTab.webSocketDebuggerUrl?.replace("ws://localhost", "") || `/devtools/page/${vtopTab.id}`;
+    const wsPath =
+      vtopTab.webSocketDebuggerUrl?.replace('ws://localhost', '') ||
+      `/devtools/page/${vtopTab.id}`;
     log(`Attaching to Tab [${vtopTab.id}]: ${vtopTab.title} (${vtopTab.url})`);
 
     const ws = new DevToolsWS(wsPath);
@@ -211,61 +219,91 @@ async function attachToTab() {
     activeWS = ws;
     log(`WebSocket connected to Tab [${vtopTab.id}]`);
 
-    await ws.send("Network.enable", { maxResourceBufferSize: 15000000, maxTotalBufferSize: 30000000 });
-    await ws.send("Page.enable");
-    await ws.send("Runtime.enable");
+    await ws.send('Network.enable', {
+      maxResourceBufferSize: 15000000,
+      maxTotalBufferSize: 30000000,
+    });
+    await ws.send('Page.enable');
+    await ws.send('Runtime.enable');
 
     // Also take a snapshot of current DOM
     try {
-      const evalRes = await ws.send("Runtime.evaluate", {
-        expression: "JSON.stringify({ url: window.location.href, title: document.title, html: document.documentElement.outerHTML })",
+      const evalRes = await ws.send('Runtime.evaluate', {
+        expression:
+          'JSON.stringify({ url: window.location.href, title: document.title, html: document.documentElement.outerHTML })',
         returnByValue: true,
       });
       if (evalRes?.result?.result?.value) {
         const pageData = JSON.parse(evalRes.result.result.value);
-        const name = `snapshot_${Date.now()}_${pageData.url.replace(/[^a-zA-Z0-9_-]/g, "_").slice(-40)}.html`;
+        const name = `snapshot_${Date.now()}_${pageData.url.replace(/[^a-zA-Z0-9_-]/g, '_').slice(-40)}.html`;
         fs.writeFileSync(path.join(CAPTURE_DIR, name), pageData.html);
-        log(`Saved current DOM snapshot to: ${name} (${pageData.html.length} chars)`);
+        log(
+          `Saved current DOM snapshot to: ${name} (${pageData.html.length} chars)`,
+        );
       }
     } catch {}
 
     const requests = new Map<string, { url: string; method: string }>();
 
     ws.onEvent = async (method, params) => {
-      if (method === "Network.requestWillBeSent") {
+      if (method === 'Network.requestWillBeSent') {
         const { requestId, request } = params;
         requests.set(requestId, { url: request.url, method: request.method });
-        if (request.url.includes("vtop") || request.url.includes("process") || request.url.includes("Student") || request.url.includes("studentsRecord")) {
+        if (
+          request.url.includes('vtop') ||
+          request.url.includes('process') ||
+          request.url.includes('Student') ||
+          request.url.includes('studentsRecord')
+        ) {
           log(`--> [REQ] ${request.method} ${request.url}`);
         }
-      } else if (method === "Network.responseReceived") {
+      } else if (method === 'Network.responseReceived') {
         const { requestId, response } = params;
         const req = requests.get(requestId);
-        const url = response.url || req?.url || "";
+        const url = response.url || req?.url || '';
 
-        if (url.includes("vtop") || url.includes("studentsRecord") || url.includes("examinations") || url.includes("academics")) {
+        if (
+          url.includes('vtop') ||
+          url.includes('studentsRecord') ||
+          url.includes('examinations') ||
+          url.includes('academics')
+        ) {
           log(`<-- [RES] ${response.status} ${url} (${response.mimeType})`);
           setTimeout(async () => {
             try {
-              const bodyRes = await ws.send("Network.getResponseBody", { requestId });
+              const bodyRes = await ws.send('Network.getResponseBody', {
+                requestId,
+              });
               if (bodyRes?.result?.body) {
-                const safeName = url.split("?")[0].replace(/[^a-zA-Z0-9_-]/g, "_").slice(-50);
+                const safeName = url
+                  .split('?')[0]
+                  .replace(/[^a-zA-Z0-9_-]/g, '_')
+                  .slice(-50);
                 const filename = `resp_${Date.now()}_${safeName}.html`;
-                fs.writeFileSync(path.join(CAPTURE_DIR, filename), bodyRes.result.body);
-                log(`✓ Saved response: ${filename} (${bodyRes.result.body.length} bytes)`);
+                fs.writeFileSync(
+                  path.join(CAPTURE_DIR, filename),
+                  bodyRes.result.body,
+                );
+                log(
+                  `✓ Saved response: ${filename} (${bodyRes.result.body.length} bytes)`,
+                );
               }
             } catch {}
           }, 300);
         }
-      } else if (method === "Page.loadEventFired" || method === "Page.domContentEventFired") {
+      } else if (
+        method === 'Page.loadEventFired' ||
+        method === 'Page.domContentEventFired'
+      ) {
         try {
-          const evalRes = await ws.send("Runtime.evaluate", {
-            expression: "JSON.stringify({ url: window.location.href, title: document.title, html: document.documentElement.outerHTML })",
+          const evalRes = await ws.send('Runtime.evaluate', {
+            expression:
+              'JSON.stringify({ url: window.location.href, title: document.title, html: document.documentElement.outerHTML })',
             returnByValue: true,
           });
           if (evalRes?.result?.result?.value) {
             const pageData = JSON.parse(evalRes.result.result.value);
-            const name = `page_${Date.now()}_${pageData.url.replace(/[^a-zA-Z0-9_-]/g, "_").slice(-40)}.html`;
+            const name = `page_${Date.now()}_${pageData.url.replace(/[^a-zA-Z0-9_-]/g, '_').slice(-40)}.html`;
             fs.writeFileSync(path.join(CAPTURE_DIR, name), pageData.html);
             log(`✓ Page DOM captured: ${name}`);
           }
@@ -277,6 +315,6 @@ async function attachToTab() {
   }
 }
 
-log("Starting VTOP Network & DOM Recorder Daemon...");
+log('Starting VTOP Network & DOM Recorder Daemon...');
 setInterval(attachToTab, 2000);
 attachToTab();

@@ -1,6 +1,14 @@
-import React from "react";
+import React from 'react';
 
-export type PillVariant = "accent" | "surface" | "main" | "success" | "muted" | "outline" | "error" | "warning";
+export type PillVariant =
+  | 'accent'
+  | 'surface'
+  | 'main'
+  | 'success'
+  | 'muted'
+  | 'outline'
+  | 'error'
+  | 'warning';
 
 interface PillProps {
   children: React.ReactNode;
@@ -10,18 +18,24 @@ interface PillProps {
 
 export const Pill: React.FC<PillProps> = ({
   children,
-  variant = "surface",
-  className = "",
+  variant = 'surface',
+  className = '',
 }) => {
   const variantClasses: Record<PillVariant, string> = {
-    accent: "bg-(--accent-base) text-(--text-inverse) border border-(--accent-base)",
-    surface: "bg-(--bg-surface) text-(--text-main) border border-(--border-dim)/60",
-    main: "bg-(--bg-main) text-(--text-main) border border-(--border-dim)/60",
-    success: "bg-(--att-safe-container) text-(--att-safe) border border-(--att-safe)/30",
-    warning: "bg-(--att-warn-container) text-(--att-warn) border border-(--att-warn)/30",
-    error: "bg-(--att-danger-container) text-(--att-danger) border border-(--att-danger)/30",
-    muted: "bg-(--bg-highlight) text-(--text-muted) border border-(--border-dim)/40",
-    outline: "bg-transparent text-(--text-main) border border-(--border-dim)",
+    accent:
+      'bg-(--accent-base) text-(--text-inverse) border border-(--accent-base)',
+    surface:
+      'bg-(--bg-surface) text-(--text-main) border border-(--border-dim)/60',
+    main: 'bg-(--bg-main) text-(--text-main) border border-(--border-dim)/60',
+    success:
+      'bg-(--att-safe-container) text-(--att-safe) border border-(--att-safe)/30',
+    warning:
+      'bg-(--att-warn-container) text-(--att-warn) border border-(--att-warn)/30',
+    error:
+      'bg-(--att-danger-container) text-(--att-danger) border border-(--att-danger)/30',
+    muted:
+      'bg-(--bg-highlight) text-(--text-muted) border border-(--border-dim)/40',
+    outline: 'bg-transparent text-(--text-main) border border-(--border-dim)',
   };
 
   return (

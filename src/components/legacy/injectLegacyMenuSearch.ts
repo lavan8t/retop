@@ -1,33 +1,37 @@
-import { scrapeMenu } from "../../parsers/menu";
-import { QuickLink } from "../../types/vtop";
+import { scrapeMenu } from '../../parsers/menu';
+import { QuickLink } from '../../types/vtop';
 
 let isLegacyHotkeyRegistered = false;
 
 function escapeHtml(str: string): string {
   return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 export function injectLegacyMenuSearch(): void {
-  if (typeof document === "undefined") return;
+  if (typeof document === 'undefined') return;
 
-  const hmenuBar = document.getElementById("top-hmenu-bar");
+  const hmenuBar = document.getElementById('top-hmenu-bar');
   if (!hmenuBar) return;
 
-  if (document.getElementById("retop-legacy-menu-search-wrapper")) return;
+  if (document.getElementById('retop-legacy-menu-search-wrapper')) return;
 
   // Find the menu navbar row
-  const navList = hmenuBar.querySelector("#navbarSupportedContent ul.navbar-nav, .navbar-nav");
-  const containerFluid = hmenuBar.querySelector(".container-fluid") || hmenuBar;
+  const navList = hmenuBar.querySelector(
+    '#navbarSupportedContent ul.navbar-nav, .navbar-nav',
+  );
+  const containerFluid = hmenuBar.querySelector('.container-fluid') || hmenuBar;
 
-  const liWrapper = document.createElement("li");
-  liWrapper.id = "retop-legacy-menu-search-wrapper";
-  liWrapper.className = "nav-item d-inline-flex align-items-center position-relative my-auto ms-lg-2";
-  liWrapper.style.cssText = "min-width: 220px; max-width: 290px; height: 36px; z-index: 1050; font-family: OpenSans, 'Open Sans', 'Google Sans Flex', sans-serif; font-size: 14px;";
+  const liWrapper = document.createElement('li');
+  liWrapper.id = 'retop-legacy-menu-search-wrapper';
+  liWrapper.className =
+    'nav-item d-inline-flex align-items-center position-relative my-auto ms-lg-2';
+  liWrapper.style.cssText =
+    "min-width: 220px; max-width: 290px; height: 36px; z-index: 1050; font-family: OpenSans, 'Open Sans', 'Google Sans Flex', sans-serif; font-size: 14px;";
 
   liWrapper.innerHTML = `
     <div class="input-group input-group-sm w-100 retop-legacy-search-box d-flex align-items-center" style="height: 34px; border-radius: 9999px; overflow: hidden; background: linear-gradient(135deg, rgba(30, 60, 114, 0.85) 0%, rgba(42, 82, 152, 0.85) 100%); border: 1px solid rgba(255, 255, 255, 0.25); transition: none !important;">
@@ -63,7 +67,7 @@ export function injectLegacyMenuSearch(): void {
   if (navList) {
     navList.appendChild(liWrapper);
   } else {
-    const quickLinks = document.getElementById("quickLinks");
+    const quickLinks = document.getElementById('quickLinks');
     if (quickLinks) {
       quickLinks.appendChild(liWrapper);
     } else {
@@ -71,25 +75,38 @@ export function injectLegacyMenuSearch(): void {
     }
   }
 
-  const input = liWrapper.querySelector("#retop-legacy-menu-search-input") as HTMLInputElement;
-  const clearBtn = liWrapper.querySelector("#retop-legacy-menu-search-clear") as HTMLButtonElement;
-  const dropdown = liWrapper.querySelector("#retop-legacy-menu-search-dropdown") as HTMLDivElement;
+  const input = liWrapper.querySelector(
+    '#retop-legacy-menu-search-input',
+  ) as HTMLInputElement;
+  const clearBtn = liWrapper.querySelector(
+    '#retop-legacy-menu-search-clear',
+  ) as HTMLButtonElement;
+  const dropdown = liWrapper.querySelector(
+    '#retop-legacy-menu-search-dropdown',
+  ) as HTMLDivElement;
 
   let activeIndex = -1;
   let currentMatches: QuickLink[] = [];
 
   const triggerLegacyClick = (link: QuickLink) => {
     // 1. Search for matching anchor in DOM
-    const anchors = Array.from(document.querySelectorAll<HTMLElement>("a[data-url], #top-hmenu-bar a, .hmenubox a, [id^='MG'] a"));
+    const anchors = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        "a[data-url], #top-hmenu-bar a, .hmenubox a, [id^='MG'] a",
+      ),
+    );
     let target = anchors.find((a) => {
-      const u = a.getAttribute("data-url") || a.getAttribute("href") || "";
+      const u = a.getAttribute('data-url') || a.getAttribute('href') || '';
       return u.toLowerCase().includes(link.url.toLowerCase());
     });
 
     if (!target) {
       target = anchors.find((a) => {
-        const text = (a.textContent || "").trim().toLowerCase();
-        return text === link.title.toLowerCase() || text.includes(link.title.toLowerCase());
+        const text = (a.textContent || '').trim().toLowerCase();
+        return (
+          text === link.title.toLowerCase() ||
+          text.includes(link.title.toLowerCase())
+        );
       });
     }
 
@@ -97,7 +114,7 @@ export function injectLegacyMenuSearch(): void {
       target.click();
     } else {
       window.dispatchEvent(
-        new CustomEvent("retop-execute-legacy", {
+        new CustomEvent('retop-execute-legacy', {
           detail: {
             code: `
               if (typeof ajaxB5Call === 'function') {
@@ -111,25 +128,25 @@ export function injectLegacyMenuSearch(): void {
               }
             `,
           },
-        })
+        }),
       );
     }
 
-    dropdown.style.display = "none";
-    input.value = "";
-    clearBtn.classList.add("d-none");
+    dropdown.style.display = 'none';
+    input.value = '';
+    clearBtn.classList.add('d-none');
     input.blur();
   };
 
   const renderResults = (query: string) => {
     const q = query.trim().toLowerCase();
     if (!q) {
-      dropdown.style.display = "none";
-      clearBtn.classList.add("d-none");
+      dropdown.style.display = 'none';
+      clearBtn.classList.add('d-none');
       return;
     }
 
-    clearBtn.classList.remove("d-none");
+    clearBtn.classList.remove('d-none');
 
     const categories = scrapeMenu(document);
     const allLinks = categories.flatMap((c) => c.links);
@@ -144,37 +161,49 @@ export function injectLegacyMenuSearch(): void {
 
       const titleLower = link.title.toLowerCase();
       const urlLower = link.url.toLowerCase();
-      const catLower = (link.category || "").toLowerCase();
-      const subLower = (link.subheading || "").toLowerCase();
+      const catLower = (link.category || '').toLowerCase();
+      const subLower = (link.subheading || '').toLowerCase();
 
       let score = 0;
       if (titleLower === q) score = 100;
       else if (titleLower.startsWith(q)) score = 80;
       else if (titleLower.includes(q)) score = 60;
-      else if (subLower.includes(q) || catLower.includes(q) || urlLower.includes(q)) score = 40;
+      else if (
+        subLower.includes(q) ||
+        catLower.includes(q) ||
+        urlLower.includes(q)
+      )
+        score = 40;
 
       if (score > 0) matches.push({ link, score });
     }
 
-    currentMatches = matches.sort((a, b) => b.score - a.score).map((m) => m.link).slice(0, 16);
+    currentMatches = matches
+      .sort((a, b) => b.score - a.score)
+      .map((m) => m.link)
+      .slice(0, 16);
     activeIndex = currentMatches.length > 0 ? 0 : -1;
 
     if (currentMatches.length === 0) {
-      const escaped = query.replace(/[<>&"']/g, c => `&#${c.charCodeAt(0)};`);
+      const escaped = query.replace(/[<>&"']/g, (c) => `&#${c.charCodeAt(0)};`);
       dropdown.innerHTML = `<div class="p-3 text-muted text-center small">No menu items matching "<strong>${escaped}</strong>"</div>`;
-      dropdown.style.display = "block";
+      dropdown.style.display = 'block';
       return;
     }
 
     dropdown.innerHTML = currentMatches
       .map((link, idx) => {
-        const catBadge = link.category ? `<span class="badge border me-1.5" style="font-size: 9px; font-weight: 700; padding: 2px 6px; background-color: rgba(59, 130, 246, 0.25); color: #93c5fd; border-color: rgba(147, 197, 253, 0.3); transition: none !important;">${escapeHtml(link.category)}</span>` : "";
-        const subBadge = link.subheading ? `<small class="ms-1" style="font-size: 10.5px; color: rgba(255, 255, 255, 0.7); transition: none !important;">(${escapeHtml(link.subheading)})</small>` : "";
+        const catBadge = link.category
+          ? `<span class="badge border me-1.5" style="font-size: 9px; font-weight: 700; padding: 2px 6px; background-color: rgba(59, 130, 246, 0.25); color: #93c5fd; border-color: rgba(147, 197, 253, 0.3); transition: none !important;">${escapeHtml(link.category)}</span>`
+          : '';
+        const subBadge = link.subheading
+          ? `<small class="ms-1" style="font-size: 10.5px; color: rgba(255, 255, 255, 0.7); transition: none !important;">(${escapeHtml(link.subheading)})</small>`
+          : '';
         return `
           <a
             href="#"
             data-index="${idx}"
-            class="dropdown-item d-flex align-items-center justify-content-between py-2 px-2.5 rounded-3 mb-0.5 ${idx === 0 ? "active" : ""}"
+            class="dropdown-item d-flex align-items-center justify-content-between py-2 px-2.5 rounded-3 mb-0.5 ${idx === 0 ? 'active' : ''}"
             style="font-size: 12.5px; text-decoration: none; color: #ffffff; transition: none !important; animation: none !important;"
           >
             <div class="text-truncate me-2">
@@ -186,14 +215,17 @@ export function injectLegacyMenuSearch(): void {
           </a>
         `;
       })
-      .join("");
+      .join('');
 
-    dropdown.style.display = "block";
+    dropdown.style.display = 'block';
 
-    dropdown.querySelectorAll("a[data-index]").forEach((item) => {
-      item.addEventListener("click", (e) => {
+    dropdown.querySelectorAll('a[data-index]').forEach((item) => {
+      item.addEventListener('click', (e) => {
         e.preventDefault();
-        const idx = parseInt((item as HTMLElement).getAttribute("data-index") || "0", 10);
+        const idx = parseInt(
+          (item as HTMLElement).getAttribute('data-index') || '0',
+          10,
+        );
         if (currentMatches[idx]) {
           triggerLegacyClick(currentMatches[idx]);
         }
@@ -201,92 +233,97 @@ export function injectLegacyMenuSearch(): void {
     });
   };
 
-  input.addEventListener("input", (e) => {
+  input.addEventListener('input', (e) => {
     renderResults((e.target as HTMLInputElement).value);
   });
 
-  input.addEventListener("focus", () => {
+  input.addEventListener('focus', () => {
     if (input.value.trim()) {
       renderResults(input.value);
     }
   });
 
-  clearBtn.addEventListener("click", () => {
-    input.value = "";
-    dropdown.style.display = "none";
-    clearBtn.classList.add("d-none");
+  clearBtn.addEventListener('click', () => {
+    input.value = '';
+    dropdown.style.display = 'none';
+    clearBtn.classList.add('d-none');
     input.focus();
   });
 
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowDown") {
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') {
       e.preventDefault();
       if (currentMatches.length > 0) {
         activeIndex = (activeIndex + 1) % currentMatches.length;
         updateActiveDropdownItem();
       }
-    } else if (e.key === "ArrowUp") {
+    } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       if (currentMatches.length > 0) {
-        activeIndex = (activeIndex - 1 + currentMatches.length) % currentMatches.length;
+        activeIndex =
+          (activeIndex - 1 + currentMatches.length) % currentMatches.length;
         updateActiveDropdownItem();
       }
-    } else if (e.key === "Enter") {
+    } else if (e.key === 'Enter') {
       e.preventDefault();
       if (activeIndex >= 0 && currentMatches[activeIndex]) {
         triggerLegacyClick(currentMatches[activeIndex]);
       }
-    } else if (e.key === "Escape") {
+    } else if (e.key === 'Escape') {
       e.preventDefault();
-      dropdown.style.display = "none";
+      dropdown.style.display = 'none';
       input.blur();
     }
   });
 
   const updateActiveDropdownItem = () => {
-    dropdown.querySelectorAll("a[data-index]").forEach((el, idx) => {
+    dropdown.querySelectorAll('a[data-index]').forEach((el, idx) => {
       if (idx === activeIndex) {
-        el.classList.add("active");
-        (el as HTMLElement).scrollIntoView({ block: "nearest" });
+        el.classList.add('active');
+        (el as HTMLElement).scrollIntoView({ block: 'nearest' });
       } else {
-        el.classList.remove("active");
+        el.classList.remove('active');
       }
     });
   };
 
   // Close dropdown on outside click
-  document.addEventListener("click", (e) => {
+  document.addEventListener('click', (e) => {
     if (!liWrapper.contains(e.target as Node)) {
-      dropdown.style.display = "none";
+      dropdown.style.display = 'none';
     }
   });
 
   // Hotkey: "/" or Ctrl/Cmd+K opens legacy menu search ONLY when on legacy VTOP
   if (!isLegacyHotkeyRegistered) {
     isLegacyHotkeyRegistered = true;
-    window.addEventListener("keydown", (e: KeyboardEvent) => {
+    window.addEventListener('keydown', (e: KeyboardEvent) => {
       const isLegacyVisible =
-        document.body.classList.contains("show-legacy-ui") ||
-        document.documentElement.classList.contains("show-legacy-ui");
+        document.body.classList.contains('show-legacy-ui') ||
+        document.documentElement.classList.contains('show-legacy-ui');
 
       // Only process if legacy VTOP is active/visible
       if (!isLegacyVisible) return;
 
-      const target = (e.composedPath ? e.composedPath()[0] : e.target) as HTMLElement;
+      const target = (
+        e.composedPath ? e.composedPath()[0] : e.target
+      ) as HTMLElement;
       const isInput =
         target &&
-        (target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.tagName === "SELECT" ||
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
           target.isContentEditable);
 
       if (isInput) return;
 
       if (
-        e.key === "/" ||
-        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k")
+        e.key === '/' ||
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')
       ) {
-        const legacyInput = document.getElementById("retop-legacy-menu-search-input") as HTMLInputElement | null;
+        const legacyInput = document.getElementById(
+          'retop-legacy-menu-search-input',
+        ) as HTMLInputElement | null;
         if (legacyInput) {
           e.preventDefault();
           legacyInput.focus();
@@ -296,4 +333,3 @@ export function injectLegacyMenuSearch(): void {
     });
   }
 }
-

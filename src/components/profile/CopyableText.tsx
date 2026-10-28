@@ -1,9 +1,9 @@
-import React from "react";
+import React from 'react';
 
 export const CopyableText = ({
   text,
   children,
-  className = "",
+  className = '',
 }: {
   text: string;
   children?: React.ReactNode;
@@ -16,8 +16,8 @@ export const CopyableText = ({
         e.stopPropagation();
         navigator.clipboard.writeText(text);
         window.dispatchEvent(
-          new CustomEvent("retop-toast", {
-            detail: { message: "Copied!", type: "info" },
+          new CustomEvent('retop-toast', {
+            detail: { message: 'Copied!', type: 'info' },
           }),
         );
       }}

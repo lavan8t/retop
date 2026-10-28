@@ -1,11 +1,11 @@
-import React, { useMemo } from "react";
+import React, { useMemo } from 'react';
 import {
   Campaign,
   OpenInNew,
   Download,
-} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
-import { SpotlightCategoryGroup, SpotlightLinkItem } from "../../types/vtop";
-import { Card } from "../ui/Card";
+} from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
+import { SpotlightCategoryGroup, SpotlightLinkItem } from '../../types/vtop';
+import { Card } from '../ui/Card';
 
 interface SpotlightSectionProps {
   spotlightCategories: SpotlightCategoryGroup[];
@@ -16,35 +16,41 @@ interface SpotlightSectionProps {
 export const SpotlightSection: React.FC<SpotlightSectionProps> = ({
   spotlightCategories,
   isMobileWidget = false,
-  className = "",
+  className = '',
 }) => {
   const items = useMemo(() => {
     if (!spotlightCategories || spotlightCategories.length === 0) return [];
     return spotlightCategories.flatMap((g) => g.items || []);
   }, [spotlightCategories]);
 
-  if (!spotlightCategories || spotlightCategories.length === 0 || items.length === 0) {
+  if (
+    !spotlightCategories ||
+    spotlightCategories.length === 0 ||
+    items.length === 0
+  ) {
     return null;
   }
 
   const handleLinkClick = (item: SpotlightLinkItem) => {
     if (item.downloadId) {
-      const downloadUrl = item.downloadId.startsWith("http")
+      const downloadUrl = item.downloadId.startsWith('http')
         ? item.downloadId
         : `https://vtop.vit.ac.in/vtop/${item.downloadId}`;
-      window.open(downloadUrl, "_blank");
+      window.open(downloadUrl, '_blank');
     } else if (item.url) {
-      const targetUrl = item.url.startsWith("http")
+      const targetUrl = item.url.startsWith('http')
         ? item.url
         : `https://vtop.vit.ac.in/vtop/${item.url}`;
-      window.open(targetUrl, "_blank");
+      window.open(targetUrl, '_blank');
     }
   };
 
   // Compact Mobile Widget Mode
   if (isMobileWidget) {
     return (
-      <Card className={`w-full bg-(--bg-highlight) rounded-4xl flex flex-col relative z-30 overflow-hidden border-2 border-(--border-main) shadow-(--brutal-shadow-sm) hover:shadow-(--brutal-shadow-hover) transition-all ${className}`}>
+      <Card
+        className={`w-full bg-(--bg-highlight) rounded-4xl flex flex-col relative z-30 overflow-hidden border-2 border-(--border-main) shadow-(--brutal-shadow-sm) hover:shadow-(--brutal-shadow-hover) transition-all ${className}`}
+      >
         {/* Widget Header */}
         <div className="px-5 pt-4 pb-3 border-b-2 border-(--border-main) flex justify-between items-center shrink-0">
           <div className="flex items-center gap-2">

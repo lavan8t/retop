@@ -8,36 +8,36 @@
  * undone here rather than at each call site.
  */
 
-const TAKEOVER_ATTR = "data-retop-takeover";
-const BYPASS_KEY = "retop-login-bypass";
+const TAKEOVER_ATTR = 'data-retop-takeover';
+const BYPASS_KEY = 'retop-login-bypass';
 /** URL fallback for the bypass marker, used when sessionStorage is unavailable. */
-const BYPASS_PARAM = "retop_bypass";
+const BYPASS_PARAM = 'retop_bypass';
 
 /** Every node retop injects into the VTOP document. */
 const RETOP_NODE_IDS = [
-  "retop-host",
-  "retop-boot-cloak",
-  "retop-early-cloak",
-  "retop-open-loader",
-  "retop-document-sizing",
-  "retop-shadow-reset",
-  "retop-global-css",
-  "retop-dark-stylesheet",
-  "retop-material-symbols-style",
-  "retop-native-portals",
-  "retop-legacy-menu-search-wrapper",
-  "retop-session-dialog",
-  "retop-halted-banner",
-  "retop-hmenu-search-toggle",
-  "retop-vtop-search-menu",
-  "retop-splash-style",
-  "vtop-prelogin-theme",
-  "vtop-login-theme",
-  "vtop-early-theme",
+  'retop-host',
+  'retop-boot-cloak',
+  'retop-early-cloak',
+  'retop-open-loader',
+  'retop-document-sizing',
+  'retop-shadow-reset',
+  'retop-global-css',
+  'retop-dark-stylesheet',
+  'retop-material-symbols-style',
+  'retop-native-portals',
+  'retop-legacy-menu-search-wrapper',
+  'retop-session-dialog',
+  'retop-halted-banner',
+  'retop-hmenu-search-toggle',
+  'retop-vtop-search-menu',
+  'retop-splash-style',
+  'vtop-prelogin-theme',
+  'vtop-login-theme',
+  'vtop-early-theme',
 ];
 
 /** VTOP's own header elements retop hides. They are unhidden, never removed. */
-const NATIVE_HEADER_IDS = ["vtop-search-menu-btn", "MG_SEARCH"];
+const NATIVE_HEADER_IDS = ['vtop-search-menu-btn', 'MG_SEARCH'];
 
 let unmountApp: (() => void) | null = null;
 
@@ -67,7 +67,11 @@ function restorePatchedApis(): void {
   try {
     const descriptor = (window as any).__retopOriginalXhrResponseType;
     if (descriptor) {
-      Object.defineProperty(XMLHttpRequest.prototype, "responseType", descriptor);
+      Object.defineProperty(
+        XMLHttpRequest.prototype,
+        'responseType',
+        descriptor,
+      );
       delete (window as any).__retopOriginalXhrResponseType;
     }
   } catch {}
@@ -97,45 +101,45 @@ export function dismantleRetopMods(): void {
   }
 
   try {
-    document.documentElement.removeAttribute("data-theme");
+    document.documentElement.removeAttribute('data-theme');
     document.documentElement.removeAttribute(TAKEOVER_ATTR);
-    document.documentElement.removeAttribute("data-scrolling");
+    document.documentElement.removeAttribute('data-scrolling');
   } catch {}
 
   // Retop's own theme variables and font scale live on <html>; VTOP must not
   // inherit them.
   try {
     const docStyle = document.documentElement.style;
-    docStyle.removeProperty("--accent-base");
-    docStyle.removeProperty("--accent-on-dark");
-    docStyle.removeProperty("font-size");
+    docStyle.removeProperty('--accent-base');
+    docStyle.removeProperty('--accent-on-dark');
+    docStyle.removeProperty('font-size');
   } catch {}
 
   for (const id of NATIVE_HEADER_IDS) {
     try {
       const el = document.getElementById(id);
-      (el as HTMLElement | null)?.style.removeProperty("display");
+      (el as HTMLElement | null)?.style.removeProperty('display');
     } catch {}
   }
 
   if (document.body) {
     try {
-      document.body.style.opacity = "1";
-      document.body.style.display = "block";
-      document.body.style.visibility = "visible";
-      document.body.style.overflow = "";
-      document.body.classList.add("show-legacy-ui");
+      document.body.style.opacity = '1';
+      document.body.style.display = 'block';
+      document.body.style.visibility = 'visible';
+      document.body.style.overflow = '';
+      document.body.classList.add('show-legacy-ui');
     } catch {}
   }
 
   try {
     document
       .querySelectorAll<HTMLElement>(
-        "#page-wrapper, #page_outline, #vtop-body-content, .wrapper, body > table, body > form",
+        '#page-wrapper, #page_outline, #vtop-body-content, .wrapper, body > table, body > form',
       )
       .forEach((el) => {
-        el.style.opacity = "1";
-        el.style.pointerEvents = "auto";
+        el.style.opacity = '1';
+        el.style.pointerEvents = 'auto';
       });
   } catch {}
 
@@ -160,7 +164,7 @@ export function dismantleRetopMods(): void {
 
 function isLoginTakeover(): boolean {
   try {
-    return document.documentElement.getAttribute(TAKEOVER_ATTR) === "login";
+    return document.documentElement.getAttribute(TAKEOVER_ATTR) === 'login';
   } catch {
     return false;
   }
@@ -180,14 +184,14 @@ export function teardownRetop(): void {
     // for when sessionStorage is unavailable.
     let armed = false;
     try {
-      window.sessionStorage.setItem(BYPASS_KEY, "1");
+      window.sessionStorage.setItem(BYPASS_KEY, '1');
       armed = true;
     } catch {}
     if (!armed) {
       try {
         const url = new URL(window.location.href);
-        url.searchParams.set(BYPASS_PARAM, "1");
-        window.history.replaceState(null, "", url.toString());
+        url.searchParams.set(BYPASS_PARAM, '1');
+        window.history.replaceState(null, '', url.toString());
       } catch {}
     }
     window.location.reload();
@@ -197,13 +201,13 @@ export function teardownRetop(): void {
 }
 
 const isExtensionSource = (source: string) =>
-  source.startsWith("chrome-extension://") ||
-  source.startsWith("moz-extension://");
+  source.startsWith('chrome-extension://') ||
+  source.startsWith('moz-extension://');
 
 /** A failed request is not a crash: the page keeps working without retop. */
 const isNetworkFailure = (reason: any) =>
   /failed to fetch|networkerror|load failed|network request failed|aborted|timed? ?out|timeout/i.test(
-    String(reason?.message || reason || ""),
+    String(reason?.message || reason || ''),
   );
 
 /**
@@ -218,30 +222,30 @@ export function installErrorNet(): void {
   if ((window as any).__retopErrorNet) return;
   (window as any).__retopErrorNet = true;
 
-  window.addEventListener("error", (event) => {
+  window.addEventListener('error', (event) => {
     try {
       // VTOP's own page errors are not retop's problem.
       if (!event.filename || !isExtensionSource(event.filename)) return;
       console.error(
-        "[retop] Uncaught error in the extension; stepping aside from VTOP.",
+        '[retop] Uncaught error in the extension; stepping aside from VTOP.',
         event.error || event.message,
       );
       teardownRetop();
     } catch {}
   });
 
-  window.addEventListener("unhandledrejection", (event) => {
+  window.addEventListener('unhandledrejection', (event) => {
     try {
       const reason = event.reason;
       if (isNetworkFailure(reason)) return;
-      const stack = String(reason?.stack || "");
+      const stack = String(reason?.stack || '');
       const fromRetop =
-        isExtensionSource(stack.split("\n")[0] || "") ||
-        stack.includes("chrome-extension://") ||
-        stack.includes("moz-extension://");
+        isExtensionSource(stack.split('\n')[0] || '') ||
+        stack.includes('chrome-extension://') ||
+        stack.includes('moz-extension://');
       if (!fromRetop) return;
       console.error(
-        "[retop] Unhandled rejection in the extension; stepping aside from VTOP.",
+        '[retop] Unhandled rejection in the extension; stepping aside from VTOP.',
         reason,
       );
       try {

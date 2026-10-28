@@ -1,9 +1,9 @@
-import net from "net";
-import fs from "fs";
-import path from "path";
+import net from 'net';
+import fs from 'fs';
+import path from 'path';
 
-const SOCKET_PATH = "\0chrome_devtools_remote";
-const CAPTURE_DIR = path.resolve(process.cwd(), "vtop_network_captures");
+const SOCKET_PATH = '\0chrome_devtools_remote';
+const CAPTURE_DIR = path.resolve(process.cwd(), 'vtop_network_captures');
 
 if (!fs.existsSync(CAPTURE_DIR)) {
   fs.mkdirSync(CAPTURE_DIR, { recursive: true });
@@ -13,12 +13,12 @@ if (!fs.existsSync(CAPTURE_DIR)) {
 function getTargets(): Promise<any[]> {
   return new Promise((resolve, reject) => {
     const client = net.connect({ path: SOCKET_PATH }, () => {
-      client.write("GET /json HTTP/1.1\r\nHost: localhost\r\n\r\n");
+      client.write('GET /json HTTP/1.1\r\nHost: localhost\r\n\r\n');
     });
-    let raw = "";
-    client.on("data", (d) => {
+    let raw = '';
+    client.on('data', (d) => {
       raw += d.toString();
-      const idx = raw.indexOf("\r\n\r\n");
+      const idx = raw.indexOf('\r\n\r\n');
       if (idx !== -1) {
         try {
           const json = JSON.parse(raw.slice(idx + 4));
@@ -27,17 +27,17 @@ function getTargets(): Promise<any[]> {
         } catch {}
       }
     });
-    client.on("error", reject);
+    client.on('error', reject);
     setTimeout(() => {
       client.destroy();
-      const idx = raw.indexOf("\r\n\r\n");
+      const idx = raw.indexOf('\r\n\r\n');
       if (idx !== -1) {
         try {
           resolve(JSON.parse(raw.slice(idx + 4)));
           return;
         } catch {}
       }
-      reject(new Error("Timeout connecting to devtools socket"));
+      reject(new Error('Timeout connecting to devtools socket'));
     }, 3000);
   });
 }
@@ -55,7 +55,7 @@ class DevToolsWS {
 
   async connect(): Promise<void> {
     return new Promise((resolve, reject) => {
-      const key = Buffer.from(Math.random().toString()).toString("base64");
+      const key = Buffer.from(Math.random().toString()).toString('base64');
       const req =
         `GET ${this.wsPath} HTTP/1.1\r\n` +
         `Host: localhost\r\n` +
@@ -69,18 +69,18 @@ class DevToolsWS {
       let upgraded = false;
       let buffer = Buffer.alloc(0);
 
-      this.socket.on("data", (chunk) => {
+      this.socket.on('data', (chunk) => {
         if (!upgraded) {
           buffer = Buffer.concat([buffer, chunk]);
-          const headerEnd = buffer.indexOf("\r\n\r\n");
+          const headerEnd = buffer.indexOf('\r\n\r\n');
           if (headerEnd !== -1) {
             const head = buffer.slice(0, headerEnd).toString();
-            if (head.includes("101 Switching Protocols")) {
+            if (head.includes('101 Switching Protocols')) {
               upgraded = true;
               buffer = buffer.slice(headerEnd + 4);
               resolve();
             } else {
-              reject(new Error("WebSocket upgrade failed: " + head));
+              reject(new Error('WebSocket upgrade failed: ' + head));
             }
           }
           return;
@@ -123,7 +123,7 @@ class DevToolsWS {
 
           buffer = buffer.slice(offset + payloadLen);
 
-          const text = payload.toString("utf8");
+          const text = payload.toString('utf8');
           try {
             const msg = JSON.parse(text);
             if (msg.id && this.callbacks.has(msg.id)) {
@@ -137,7 +137,7 @@ class DevToolsWS {
         }
       });
 
-      this.socket.on("error", reject);
+      this.socket.on('error', reject);
     });
   }
 
@@ -174,38 +174,49 @@ class DevToolsWS {
 }
 
 async function main() {
-  console.log("Searching for active VTOP / Cromite tab...");
+  console.log('Searching for active VTOP / Cromite tab...');
   const targets = await getTargets();
-  const pages = targets.filter((t) => t.type === "page");
+  const pages = targets.filter((t) => t.type === 'page');
 
   if (pages.length === 0) {
-    console.error("No pages found in Cromite. Make sure Cromite is open.");
+    console.error('No pages found in Cromite. Make sure Cromite is open.');
     process.exit(1);
   }
 
   // Find VTOP tab or pick the most recent page
-  const vtopTab = pages.find((p) => p.url.includes("vtop") || p.title.toLowerCase().includes("vtop")) || pages[0];
+  const vtopTab =
+    pages.find(
+      (p) => p.url.includes('vtop') || p.title.toLowerCase().includes('vtop'),
+    ) || pages[0];
   console.log(`\nAttaching to Tab: [ID: ${vtopTab.id}] ${vtopTab.title}`);
   console.log(`URL: ${vtopTab.url}\n`);
 
-  const wsPath = vtopTab.webSocketDebuggerUrl?.replace("ws://localhost", "") || `/devtools/page/${vtopTab.id}`;
+  const wsPath =
+    vtopTab.webSocketDebuggerUrl?.replace('ws://localhost', '') ||
+    `/devtools/page/${vtopTab.id}`;
   const ws = new DevToolsWS(wsPath);
 
   await ws.connect();
-  console.log("DevTools WebSocket connected!");
+  console.log('DevTools WebSocket connected!');
 
   // Enable Network monitoring
-  await ws.send("Network.enable", { maxResourceBufferSize: 10000000, maxTotalBufferSize: 20000000 });
-  await ws.send("Page.enable");
+  await ws.send('Network.enable', {
+    maxResourceBufferSize: 10000000,
+    maxTotalBufferSize: 20000000,
+  });
+  await ws.send('Page.enable');
 
-  console.log("\n=======================================================");
-  console.log(" LIVE NETWORK MONITORING ACTIVE - READY FOR NAVIGATION ");
-  console.log("=======================================================\n");
+  console.log('\n=======================================================');
+  console.log(' LIVE NETWORK MONITORING ACTIVE - READY FOR NAVIGATION ');
+  console.log('=======================================================\n');
 
-  const capturedRequests = new Map<string, { url: string; method: string; postData?: string }>();
+  const capturedRequests = new Map<
+    string,
+    { url: string; method: string; postData?: string }
+  >();
 
   ws.onEvent = async (method, params) => {
-    if (method === "Network.requestWillBeSent") {
+    if (method === 'Network.requestWillBeSent') {
       const { requestId, request } = params;
       capturedRequests.set(requestId, {
         url: request.url,
@@ -213,30 +224,48 @@ async function main() {
         postData: request.postData,
       });
 
-      if (request.url.includes("vtop") || request.url.includes("studentsRecord") || request.url.includes("process")) {
+      if (
+        request.url.includes('vtop') ||
+        request.url.includes('studentsRecord') ||
+        request.url.includes('process')
+      ) {
         console.log(`\n[REQUEST] ${request.method} ${request.url}`);
         if (request.postData) {
           console.log(`  Payload: ${request.postData.slice(0, 200)}`);
         }
       }
-    } else if (method === "Network.responseReceived") {
+    } else if (method === 'Network.responseReceived') {
       const { requestId, response } = params;
       const req = capturedRequests.get(requestId);
-      const url = response.url || req?.url || "";
+      const url = response.url || req?.url || '';
 
-      if (url.includes("vtop") || url.includes("studentsRecord") || url.includes("examinations") || url.includes("academics")) {
-        console.log(`[RESPONSE] ${response.status} ${url} (${response.mimeType})`);
+      if (
+        url.includes('vtop') ||
+        url.includes('studentsRecord') ||
+        url.includes('examinations') ||
+        url.includes('academics')
+      ) {
+        console.log(
+          `[RESPONSE] ${response.status} ${url} (${response.mimeType})`,
+        );
 
         // Fetch response body
         setTimeout(async () => {
           try {
-            const bodyRes = await ws.send("Network.getResponseBody", { requestId });
+            const bodyRes = await ws.send('Network.getResponseBody', {
+              requestId,
+            });
             if (bodyRes?.result?.body) {
-              const safeName = url.split("?")[0].replace(/[^a-zA-Z0-9_-]/g, "_").slice(-60);
+              const safeName = url
+                .split('?')[0]
+                .replace(/[^a-zA-Z0-9_-]/g, '_')
+                .slice(-60);
               const filename = `${Date.now()}_${safeName}.html`;
               const filePath = path.join(CAPTURE_DIR, filename);
               fs.writeFileSync(filePath, bodyRes.result.body);
-              console.log(`  Saved payload to: vtop_network_captures/${filename} (${bodyRes.result.body.length} bytes)`);
+              console.log(
+                `  Saved payload to: vtop_network_captures/${filename} (${bodyRes.result.body.length} bytes)`,
+              );
             }
           } catch (e: any) {
             // body might be stream or not available
@@ -248,5 +277,5 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error("Capture error:", err);
+  console.error('Capture error:', err);
 });

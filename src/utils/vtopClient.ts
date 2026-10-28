@@ -8,14 +8,14 @@ import {
   clearNativeCookies,
   isAmbientSessionContext,
   VtopResponse,
-} from "./vtopBridge";
+} from './vtopBridge';
 
-export type VtopCampus = "vellore" | "chennai";
+export type VtopCampus = 'vellore' | 'chennai';
 
-export function getVtopBaseUrl(campus: VtopCampus = "vellore"): string {
-  return campus === "chennai"
-    ? "https://vtopcc.vit.ac.in"
-    : "https://vtop.vit.ac.in";
+export function getVtopBaseUrl(campus: VtopCampus = 'vellore'): string {
+  return campus === 'chennai'
+    ? 'https://vtopcc.vit.ac.in'
+    : 'https://vtop.vit.ac.in';
 }
 
 export function extractJSessionId(
@@ -60,15 +60,15 @@ export function extractCaptchaDataUri(html: string): string | null {
 
 export function isSessionExpiredResponse(html: string): boolean {
   return (
-    html.includes("vtop/open/page") ||
-    html.includes("captchaStr") ||
-    html.includes("prelogin/setup") ||
-    html.includes("sessionExpiredCall") ||
-    (html.includes("stdForm") &&
-      html.includes("empForm") &&
-      html.includes("parentForm")) ||
-    html.includes("HTTP Status 404") ||
-    html.includes("Your session has timed out")
+    html.includes('vtop/open/page') ||
+    html.includes('captchaStr') ||
+    html.includes('prelogin/setup') ||
+    html.includes('sessionExpiredCall') ||
+    (html.includes('stdForm') &&
+      html.includes('empForm') &&
+      html.includes('parentForm')) ||
+    html.includes('HTTP Status 404') ||
+    html.includes('Your session has timed out')
   );
 }
 
@@ -84,12 +84,12 @@ export interface CaptchaData {
  * VTOP sometimes validates with Google reCAPTCHA instead of its image CAPTCHA.
  * retop cannot solve that, so callers hand the page back to VTOP.
  */
-export const RECAPTCHA_REQUIRED = "RECAPTCHA_REQUIRED";
+export const RECAPTCHA_REQUIRED = 'RECAPTCHA_REQUIRED';
 
 export class RecaptchaRequiredError extends Error {
   constructor() {
     super(RECAPTCHA_REQUIRED);
-    this.name = "RecaptchaRequiredError";
+    this.name = 'RecaptchaRequiredError';
   }
 }
 
@@ -126,11 +126,11 @@ export interface LoginResult {
 /** Routes VTOP sends you to when the session is not (yet) authenticated. */
 function isAuthlessRoute(url: string): boolean {
   return (
-    url.includes("/vtop/open/page") ||
-    url.includes("/vtop/prelogin") ||
-    url.includes("/vtop/login") ||
-    url.includes("/vtop/vtopLogin") ||
-    url.includes("/error")
+    url.includes('/vtop/open/page') ||
+    url.includes('/vtop/prelogin') ||
+    url.includes('/vtop/login') ||
+    url.includes('/vtop/vtopLogin') ||
+    url.includes('/error')
   );
 }
 
@@ -157,7 +157,7 @@ export class VtopClient {
     studentName?: string;
     landingUrl?: string | null;
   }) {
-    this.campus = options.campus || "vellore";
+    this.campus = options.campus || 'vellore';
     this.jsessionid = options.jsessionid;
     this.serverId = options.serverId || null;
     this.csrf = options.csrf;
@@ -181,9 +181,9 @@ export class VtopClient {
 
   private get standardHeaders(): Record<string, string> {
     return {
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
-      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       Cookie: this.cookieHeader,
       Origin: this.baseUrl,
       Referer: `${this.baseUrl}/vtop/content`,
@@ -198,7 +198,7 @@ export class VtopClient {
     endpoint: string,
     bodyObj?: Record<string, string>,
   ): Promise<string> {
-    const fullUrl = endpoint.startsWith("http")
+    const fullUrl = endpoint.startsWith('http')
       ? endpoint
       : `${this.baseUrl}${endpoint}`;
     const payload = {
@@ -210,10 +210,10 @@ export class VtopClient {
 
     const response = await executeVtopRequest({
       url: fullUrl,
-      method: "POST",
+      method: 'POST',
       headers: {
         ...this.standardHeaders,
-        "Content-Type": "application/x-www-form-urlencoded",
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: formBody,
       followRedirects: false,
@@ -227,26 +227,26 @@ export class VtopClient {
     // Follow redirects (VTOP uses 302 for verifyMenu navigation, not just session expiry)
     if (response.status === 302 || response.status === 301) {
       const location =
-        response.headers["location"] || response.headers["Location"] || "";
+        response.headers['location'] || response.headers['Location'] || '';
 
       // Login/error redirect = real session expiry
       if (
-        location.includes("/login") ||
-        location.includes("/error") ||
-        location.includes("open/page") ||
-        location.includes("prelogin")
+        location.includes('/login') ||
+        location.includes('/error') ||
+        location.includes('open/page') ||
+        location.includes('prelogin')
       ) {
-        throw new Error("SESSION_EXPIRED");
+        throw new Error('SESSION_EXPIRED');
       }
 
       // Navigation redirect — follow it with GET
       if (location) {
-        const redirectUrl = location.startsWith("http")
+        const redirectUrl = location.startsWith('http')
           ? location
           : `${this.baseUrl}${location}`;
         const redirectResp = await executeVtopRequest({
           url: redirectUrl,
-          method: "GET",
+          method: 'GET',
           headers: this.standardHeaders,
         });
 
@@ -256,7 +256,7 @@ export class VtopClient {
         if (rServerId) this.serverId = rServerId;
 
         if (isSessionExpiredResponse(redirectResp.body)) {
-          throw new Error("SESSION_EXPIRED");
+          throw new Error('SESSION_EXPIRED');
         }
 
         const newCsrf = extractCSRFToken(redirectResp.body);
@@ -265,7 +265,7 @@ export class VtopClient {
         return redirectResp.body;
       }
 
-      throw new Error("SESSION_EXPIRED");
+      throw new Error('SESSION_EXPIRED');
     }
 
     if (response.status !== 200) {
@@ -273,7 +273,7 @@ export class VtopClient {
     }
 
     if (isSessionExpiredResponse(response.body)) {
-      throw new Error("SESSION_EXPIRED");
+      throw new Error('SESSION_EXPIRED');
     }
 
     const newCsrf = extractCSRFToken(response.body);
@@ -286,7 +286,7 @@ export class VtopClient {
    * Step 1 to 5: Initialize the session, establish prelogin setup, retrieve CAPTCHA.
    */
   public static async getCaptcha(
-    campus: VtopCampus = "vellore",
+    campus: VtopCampus = 'vellore',
   ): Promise<CaptchaData> {
     // On a live VTOP origin the browser already holds JSESSIONID/SERVERID and
     // attaches them to every same-origin request. The same is true behind the
@@ -305,31 +305,35 @@ export class VtopClient {
    * no cookie parsing and no manual redirect hops.
    */
   private static async getCaptchaLive(
-    campus: VtopCampus = "vellore",
+    campus: VtopCampus = 'vellore',
   ): Promise<CaptchaData> {
     const baseUrl = getVtopBaseUrl(campus);
 
     const openPageResp = await executeVtopRequest({
       url: `${baseUrl}/vtop/open/page`,
-      method: "GET",
+      method: 'GET',
       headers: {
-        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        Accept:
+          'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       },
     });
 
     const initialCsrf = extractCSRFToken(openPageResp.body);
     if (!initialCsrf) {
-      throw new Error("VTOP did not issue a CSRF token on /vtop/open/page");
+      throw new Error('VTOP did not issue a CSRF token on /vtop/open/page');
     }
 
     const setupResp = await executeVtopRequest({
       url: `${baseUrl}/vtop/prelogin/setup`,
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
+        'Content-Type': 'application/x-www-form-urlencoded',
         Referer: `${baseUrl}/vtop/open/page`,
       },
-      body: new URLSearchParams({ flag: "VTOP", _csrf: initialCsrf }).toString(),
+      body: new URLSearchParams({
+        flag: 'VTOP',
+        _csrf: initialCsrf,
+      }).toString(),
     });
 
     // The image CAPTCHA path cannot satisfy a reCAPTCHA challenge, so fail
@@ -349,11 +353,11 @@ export class VtopClient {
       // prelogin page, not the login page.
       const captchaResp = await executeVtopRequest({
         url: `${baseUrl}/vtop/get/new/captcha`,
-        method: "GET",
+        method: 'GET',
         headers: {
           Referer: `${baseUrl}/vtop/open/page`,
           Accept:
-            "text/html,application/xhtml+xml,application/xml;q=0.9,image/*,*/*;q=0.8",
+            'text/html,application/xhtml+xml,application/xml;q=0.9,image/*,*/*;q=0.8',
         },
       });
 
@@ -371,15 +375,15 @@ export class VtopClient {
     }
 
     if (!captchaImage) {
-      throw new Error("Unable to parse CAPTCHA image from VTOP response");
+      throw new Error('Unable to parse CAPTCHA image from VTOP response');
     }
 
-    return { captchaImage, csrf: loginCsrf, jsessionid: "", serverId: null };
+    return { captchaImage, csrf: loginCsrf, jsessionid: '', serverId: null };
   }
 
   /** Cookie-jar handshake, for extension pages and the Android bridge. */
   private static async getCaptchaJar(
-    campus: VtopCampus = "vellore",
+    campus: VtopCampus = 'vellore',
   ): Promise<CaptchaData> {
     clearNativeCookies();
     const baseUrl = getVtopBaseUrl(campus);
@@ -387,12 +391,12 @@ export class VtopClient {
     // Step 1: Open initial page
     const openPageResp = await executeVtopRequest({
       url: `${baseUrl}/vtop/open/page`,
-      method: "GET",
+      method: 'GET',
       headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
         Accept:
-          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       },
       followRedirects: false,
     });
@@ -401,10 +405,10 @@ export class VtopClient {
     let serverId = extractServerId(openPageResp.setCookies);
 
     if (!jsessionid) {
-      throw new Error("Failed to initialize session with VTOP");
+      throw new Error('Failed to initialize session with VTOP');
     }
 
-    const initialCsrf = extractCSRFToken(openPageResp.body) || "";
+    const initialCsrf = extractCSRFToken(openPageResp.body) || '';
     let cookieStr = serverId
       ? `JSESSIONID=${jsessionid}; SERVERID=${serverId}`
       : `JSESSIONID=${jsessionid}`;
@@ -412,16 +416,16 @@ export class VtopClient {
     // Step 2: Prelogin setup
     const setupResp = await executeVtopRequest({
       url: `${baseUrl}/vtop/prelogin/setup`,
-      method: "POST",
+      method: 'POST',
       headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
-        "Content-Type": "application/x-www-form-urlencoded",
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+        'Content-Type': 'application/x-www-form-urlencoded',
         Referer: `${baseUrl}/vtop/open/page`,
         Cookie: cookieStr,
       },
       body: new URLSearchParams({
-        flag: "VTOP",
+        flag: 'VTOP',
         _csrf: initialCsrf,
       }).toString(),
       followRedirects: false,
@@ -436,21 +440,21 @@ export class VtopClient {
       : `JSESSIONID=${jsessionid}`;
 
     // Step 3: Follow redirect chain to login page
-    let loginHtml = "";
-    let currentUrl: string | null = setupResp.headers["location"] || null;
+    let loginHtml = '';
+    let currentUrl: string | null = setupResp.headers['location'] || null;
     let currentReferer = `${baseUrl}/vtop/prelogin/setup`;
 
     for (let hop = 0; hop < 3 && currentUrl; hop++) {
-      const fullUrl = currentUrl.startsWith("http")
+      const fullUrl = currentUrl.startsWith('http')
         ? currentUrl
         : `${baseUrl}${currentUrl}`;
 
       const hopResp = await executeVtopRequest({
         url: fullUrl,
-        method: "GET",
+        method: 'GET',
         headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
           Cookie: cookieStr,
           Referer: currentReferer,
         },
@@ -467,7 +471,7 @@ export class VtopClient {
 
       if (hopResp.status === 302 || hopResp.status === 301) {
         currentReferer = fullUrl;
-        currentUrl = hopResp.headers["location"] || null;
+        currentUrl = hopResp.headers['location'] || null;
       } else {
         loginHtml = hopResp.body;
         currentUrl = null;
@@ -492,10 +496,10 @@ export class VtopClient {
     if (!captchaImage) {
       const captchaResp = await executeVtopRequest({
         url: `${baseUrl}/vtop/get/new/captcha`,
-        method: "GET",
+        method: 'GET',
         headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
           Cookie: cookieStr,
           Referer: `${baseUrl}/vtop/login`,
         },
@@ -516,7 +520,7 @@ export class VtopClient {
     }
 
     if (!captchaImage) {
-      throw new Error("Unable to parse CAPTCHA image from VTOP response");
+      throw new Error('Unable to parse CAPTCHA image from VTOP response');
     }
 
     return {
@@ -551,12 +555,12 @@ export class VtopClient {
 
     const resp = await executeVtopRequest({
       url: `${baseUrl}/vtop/get/new/captcha`,
-      method: "GET",
+      method: 'GET',
       headers: live
         ? { Referer: `${baseUrl}/vtop/login` }
         : {
-            "User-Agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+            'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
             Cookie: cookieStr,
             Referer: `${baseUrl}/vtop/login`,
           },
@@ -565,7 +569,7 @@ export class VtopClient {
     const captchaImage = extractCaptchaDataUri(resp.body);
 
     if (!captchaImage) {
-      throw new Error("Unable to refresh CAPTCHA from VTOP response");
+      throw new Error('Unable to refresh CAPTCHA from VTOP response');
     }
 
     const newCsrf = extractCSRFToken(resp.body) || csrf;
@@ -589,7 +593,7 @@ export class VtopClient {
    */
   public static async login(params: LoginParams): Promise<LoginResult> {
     const live = isAmbientSessionContext();
-    const campus = params.campus || "vellore";
+    const campus = params.campus || 'vellore';
     const baseUrl = getVtopBaseUrl(campus);
     const username = params.username.trim().toUpperCase();
 
@@ -605,7 +609,7 @@ export class VtopClient {
       username,
       password: params.password,
       captchaStr: params.captcha.trim(),
-      gResponse: "",
+      gResponse: '',
     }).toString();
 
     const cookieHeader = (): Record<string, string> =>
@@ -615,17 +619,17 @@ export class VtopClient {
 
     const response = await executeVtopRequest({
       url: `${baseUrl}/vtop/login`,
-      method: "POST",
+      method: 'POST',
       headers: live
         ? {
-            "Content-Type": "application/x-www-form-urlencoded",
+            'Content-Type': 'application/x-www-form-urlencoded',
             Origin: baseUrl,
             Referer: `${baseUrl}/vtop/login`,
           }
         : {
-            "User-Agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
-            "Content-Type": "application/x-www-form-urlencoded",
+            'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+            'Content-Type': 'application/x-www-form-urlencoded',
             Origin: baseUrl,
             Referer: `${baseUrl}/vtop/login`,
             ...cookieHeader(),
@@ -648,17 +652,20 @@ export class VtopClient {
     // and response.url is the destination, so there is nothing left to chase.
     const redirectUrl =
       response.status === 302 || response.status === 301
-        ? response.headers["location"]
+        ? response.headers['location']
         : undefined;
 
     if (!live && redirectUrl) {
-      if (redirectUrl.includes("/login/error") || redirectUrl.includes("/error")) {
-        const fullErrUrl = redirectUrl.startsWith("http")
+      if (
+        redirectUrl.includes('/login/error') ||
+        redirectUrl.includes('/error')
+      ) {
+        const fullErrUrl = redirectUrl.startsWith('http')
           ? redirectUrl
           : `${baseUrl}${redirectUrl}`;
         const errResp = await executeVtopRequest({
           url: fullErrUrl,
-          method: "GET",
+          method: 'GET',
           headers: cookieHeader(),
         });
         const errHtml = errResp.body;
@@ -673,44 +680,47 @@ export class VtopClient {
           /<[^>]*role=["']alert["'][^>]*>([\s\S]*?)<\/[a-zA-Z][^>]*>/i,
         );
         const alertText = alertMatch
-          ? alertMatch[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
-          : "";
+          ? alertMatch[1]
+              .replace(/<[^>]+>/g, ' ')
+              .replace(/\s+/g, ' ')
+              .trim()
+          : '';
 
         if (alertText) {
           return { success: false, message: alertText };
         }
 
         if (
-          errLower.includes("invalid captcha") ||
-          errLower.includes("not match")
+          errLower.includes('invalid captcha') ||
+          errLower.includes('not match')
         ) {
           return {
             success: false,
-            message: "Invalid CAPTCHA. Please try again.",
+            message: 'Invalid CAPTCHA. Please try again.',
           };
         }
         if (
-          errLower.includes("invalid user") ||
-          errLower.includes("invalid password") ||
-          errLower.includes("user does not exist")
+          errLower.includes('invalid user') ||
+          errLower.includes('invalid password') ||
+          errLower.includes('user does not exist')
         ) {
-          return { success: false, message: "Invalid username or password." };
+          return { success: false, message: 'Invalid username or password.' };
         }
-        if (errLower.includes("locked") || errLower.includes("disabled")) {
-          return { success: false, message: "Account is disabled or locked." };
+        if (errLower.includes('locked') || errLower.includes('disabled')) {
+          return { success: false, message: 'Account is disabled or locked.' };
         }
         return {
           success: false,
-          message: "Login failed. Please check your credentials.",
+          message: 'Login failed. Please check your credentials.',
         };
       }
 
-      const fullTargetUrl = redirectUrl.startsWith("http")
+      const fullTargetUrl = redirectUrl.startsWith('http')
         ? redirectUrl
         : `${baseUrl}${redirectUrl}`;
       const dashResp = await executeVtopRequest({
         url: fullTargetUrl,
-        method: "GET",
+        method: 'GET',
         headers: { ...cookieHeader(), Referer: `${baseUrl}/vtop/login` },
       });
 
@@ -736,49 +746,54 @@ export class VtopClient {
       /<[^>]*role=["']alert["'][^>]*>([\s\S]*?)<\/[a-zA-Z][^>]*>/i,
     );
     const alertText = alertMatch
-      ? alertMatch[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
-      : "";
+      ? alertMatch[1]
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+      : '';
     if (alertText) {
       return { success: false, message: alertText };
     }
 
     // Check specific error messages
     if (
-      lower.includes("invalid captcha") ||
-      lower.includes("captcha not match")
+      lower.includes('invalid captcha') ||
+      lower.includes('captcha not match')
     ) {
-      return { success: false, message: "Invalid CAPTCHA. Please try again." };
+      return { success: false, message: 'Invalid CAPTCHA. Please try again.' };
     }
     if (
-      lower.includes("invalid username") ||
-      lower.includes("invalid password") ||
-      lower.includes("user does not exist")
+      lower.includes('invalid username') ||
+      lower.includes('invalid password') ||
+      lower.includes('user does not exist')
     ) {
-      return { success: false, message: "Invalid username or password." };
+      return { success: false, message: 'Invalid username or password.' };
     }
-    if (lower.includes("account locked") || lower.includes("user disabled")) {
-      return { success: false, message: "Account is disabled or locked." };
+    if (lower.includes('account locked') || lower.includes('user disabled')) {
+      return { success: false, message: 'Account is disabled or locked.' };
     }
 
     // Success detection. A landed authenticated document is the only reliable
     // signal: VTOP renders authorizedIDX on the dashboard, while both the login
     // form and the error page render role-selection or captcha markup.
     const landedAuthenticated =
-      responseText.includes("authorizedIDX") ||
-      responseText.includes("authorizedID");
+      responseText.includes('authorizedIDX') ||
+      responseText.includes('authorizedID');
 
     const isSuccess = live
       ? landedAuthenticated
       : response.status === 302 ||
         landedAuthenticated ||
-        responseText.includes("dashboard") ||
-        responseText.includes("Welcome");
+        responseText.includes('dashboard') ||
+        responseText.includes('Welcome');
 
     if (isSuccess) {
       const landingUrl =
-        response.url && !isAuthlessRoute(response.url) ? response.url : undefined;
+        response.url && !isAuthlessRoute(response.url)
+          ? response.url
+          : undefined;
 
-      let regNo = "";
+      let regNo = '';
       const regMatch1 = responseText.match(
         /id="authorizedIDX"[^>]*value="([^"]+)"/i,
       );
@@ -807,11 +822,11 @@ export class VtopClient {
         return {
           success: false,
           message:
-            "Signed in, but VTOP returned no registration number. Open vtop.vit.ac.in to finish signing in.",
+            'Signed in, but VTOP returned no registration number. Open vtop.vit.ac.in to finish signing in.',
         };
       }
 
-      let studentName = "";
+      let studentName = '';
       const nameMatch = responseText.match(
         /navbar-text[^>]*>\s*([A-Za-z0-9]+)\s*-\s*([^<]+)</i,
       );
@@ -843,7 +858,7 @@ export class VtopClient {
 
     return {
       success: false,
-      message: "Login failed. Please verify credentials and try again.",
+      message: 'Login failed. Please verify credentials and try again.',
     };
   }
 
@@ -853,8 +868,8 @@ export class VtopClient {
    * Fetches the student attendance page to parse semester options.
    */
   public async getSemesters(): Promise<string> {
-    return this.authenticatedPost("/vtop/academics/common/StudentAttendance", {
-      verifyMenu: "true",
+    return this.authenticatedPost('/vtop/academics/common/StudentAttendance', {
+      verifyMenu: 'true',
       authorizedID: this.registrationNumber,
       _csrf: this.csrf,
     });
@@ -864,13 +879,13 @@ export class VtopClient {
    * Fetches detailed student attendance HTML for a given semesterSubId.
    */
   public async getAttendance(semesterSubId: string): Promise<string> {
-    await this.authenticatedPost("/vtop/academics/common/StudentAttendance", {
-      verifyMenu: "true",
+    await this.authenticatedPost('/vtop/academics/common/StudentAttendance', {
+      verifyMenu: 'true',
       authorizedID: this.registrationNumber,
       _csrf: this.csrf,
     });
 
-    return this.authenticatedPost("/vtop/processViewStudentAttendance", {
+    return this.authenticatedPost('/vtop/processViewStudentAttendance', {
       _csrf: this.csrf,
       semesterSubId,
       authorizedID: this.registrationNumber,
@@ -882,13 +897,13 @@ export class VtopClient {
    * Fetches timetable HTML for a given semesterSubId.
    */
   public async getTimetable(semesterSubId: string): Promise<string> {
-    await this.authenticatedPost("/vtop/academics/common/StudentTimeTable", {
-      verifyMenu: "true",
+    await this.authenticatedPost('/vtop/academics/common/StudentTimeTable', {
+      verifyMenu: 'true',
       authorizedID: this.registrationNumber,
       _csrf: this.csrf,
     });
 
-    return this.authenticatedPost("/vtop/processViewTimeTable", {
+    return this.authenticatedPost('/vtop/processViewTimeTable', {
       semesterSubId,
       authorizedID: this.registrationNumber,
       _csrf: this.csrf,
@@ -900,7 +915,7 @@ export class VtopClient {
    * Fetches student marks HTML for a given semesterSubId.
    */
   public async getMarks(semesterSubId: string): Promise<string> {
-    return this.authenticatedPost("/vtop/examinations/doStudentMarkView", {
+    return this.authenticatedPost('/vtop/examinations/doStudentMarkView', {
       semesterSubId,
       authorizedID: this.registrationNumber,
       _csrf: this.csrf,
@@ -912,16 +927,16 @@ export class VtopClient {
    */
   public async getGrades(semesterSubId: string): Promise<string> {
     await this.authenticatedPost(
-      "/vtop/examinations/examGradeView/StudentGradeHistory",
+      '/vtop/examinations/examGradeView/StudentGradeHistory',
       {
-        verifyMenu: "true",
+        verifyMenu: 'true',
         authorizedID: this.registrationNumber,
         _csrf: this.csrf,
       },
     );
 
     return this.authenticatedPost(
-      "/vtop/examinations/examGradeView/doStudentGradeView",
+      '/vtop/examinations/examGradeView/doStudentGradeView',
       {
         semesterSubId,
         authorizedID: this.registrationNumber,
@@ -935,9 +950,9 @@ export class VtopClient {
    */
   public async getProfile(): Promise<string> {
     return this.authenticatedPost(
-      "/vtop/studentsRecord/StudentProfileAllView",
+      '/vtop/studentsRecord/StudentProfileAllView',
       {
-        verifyMenu: "true",
+        verifyMenu: 'true',
         authorizedID: this.registrationNumber,
         _csrf: this.csrf,
         x: new Date().toUTCString(),
@@ -950,7 +965,7 @@ export class VtopClient {
    */
   public async getExamSchedule(semesterSubId: string): Promise<string> {
     return this.authenticatedPost(
-      "/vtop/examinations/doSearchExamScheduleForStudent",
+      '/vtop/examinations/doSearchExamScheduleForStudent',
       {
         semesterSubId,
         authorizedID: this.registrationNumber,
@@ -963,7 +978,7 @@ export class VtopClient {
    * Fetches digital assignment listing HTML for a given semesterSubId.
    */
   public async getDigitalAssignments(semesterSubId: string): Promise<string> {
-    return this.authenticatedPost("/vtop/examinations/doDigitalAssignment", {
+    return this.authenticatedPost('/vtop/examinations/doDigitalAssignment', {
       semesterSubId,
       authorizedID: this.registrationNumber,
       _csrf: this.csrf,
@@ -975,9 +990,9 @@ export class VtopClient {
    */
   public async getGradeHistory(): Promise<string> {
     return this.authenticatedPost(
-      "/vtop/examinations/examGradeView/StudentGradeHistory",
+      '/vtop/examinations/examGradeView/StudentGradeHistory',
       {
-        verifyMenu: "true",
+        verifyMenu: 'true',
         authorizedID: this.registrationNumber,
         _csrf: this.csrf,
       },

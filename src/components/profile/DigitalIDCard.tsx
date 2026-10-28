@@ -1,11 +1,11 @@
-import React from "react";
-import { StudentProfile } from "../../types/vtop";
-import { VitLogo } from "../VitLogo";
-import { Person } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
-import { Barcode } from "../common/Barcode";
+import React from 'react';
+import { StudentProfile } from '../../types/vtop';
+import { VitLogo } from '../VitLogo';
+import { Person } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
+import { Barcode } from '../common/Barcode';
 
 const toTitleCase = (str: string) => {
-  if (!str) return "";
+  if (!str) return '';
   return str.replace(
     /\w\S*/g,
     (txt) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase(),
@@ -17,23 +17,25 @@ export const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
   const isHosteller = !!data.hostel;
   const address = data.permanentAddress;
   const contactNo =
-    data.permanentAddress.phone || data.personal.mobile || "Not Provided";
+    data.permanentAddress.phone || data.personal.mobile || 'Not Provided';
 
   const fontArial = "font-['Arial',Helvetica,sans-serif]!";
   const fontTimes = "font-['Times_New_Roman',Times,serif]!";
 
-  const fullName = toTitleCase(data?.basic?.name ?? "");
+  const fullName = toTitleCase(data?.basic?.name ?? '');
   const isShortName = fullName.length < 17;
-  
-  const words = fullName.split(" ");
-  const line1 = words[0] || "";
-  const line2 = words.slice(1).join(" ") || "";
+
+  const words = fullName.split(' ');
+  const line1 = words[0] || '';
+  const line2 = words.slice(1).join(' ') || '';
 
   const isChennai =
-    (data as any).campus === "chennai" ||
-    (typeof window !== "undefined" && window.location.hostname.includes("vtopcc")) ||
-    (typeof window !== "undefined" && (window as any)._retopCampus === "chennai");
-  const campusName = isChennai ? "CHENNAI" : "VELLORE";
+    (data as any).campus === 'chennai' ||
+    (typeof window !== 'undefined' &&
+      window.location.hostname.includes('vtopcc')) ||
+    (typeof window !== 'undefined' &&
+      (window as any)._retopCampus === 'chennai');
+  const campusName = isChennai ? 'CHENNAI' : 'VELLORE';
 
   return (
     <div
@@ -42,7 +44,7 @@ export const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
       aria-label="Student ID card. Tap or click to flip."
       onClick={() => setIsFlipped((prev) => !prev)}
       onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
+        if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           setIsFlipped((prev) => !prev);
         }
@@ -52,14 +54,14 @@ export const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
       <div
         className={`relative w-full h-full transition-transform duration-500 transform-3d shadow-none rounded-2xl ${
           isFlipped
-            ? "transform-[rotateY(180deg)]"
-            : "md:group-hover:transform-[rotateY(180deg)]"
+            ? 'transform-[rotateY(180deg)]'
+            : 'md:group-hover:transform-[rotateY(180deg)]'
         }`}
       >
         {/* FRONT SIDE */}
         <div
           className={`absolute inset-0 backface-hidden rounded-2xl border-2 border-border-dim flex flex-col overflow-hidden ${fontArial}`}
-          style={{ backgroundColor: "white", color: "black" }}
+          style={{ backgroundColor: 'white', color: 'black' }}
         >
           <div className="flex flex-col items-center pt-3 px-3 shrink-0">
             <div className="w-47.5 mx-auto flex justify-center [&>svg]:w-full [&>svg]:h-[auto!important] [&>svg]:max-h-16.25">
@@ -74,7 +76,9 @@ export const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
           </div>
 
           <div className="flex-1 flex flex-col justify-center top-1 items-center px-4 w-full">
-            <div className={`overflow-hidden flex items-center justify-center z-10 transition-all w-[108px] h-[165px]`}>
+            <div
+              className={`overflow-hidden flex items-center justify-center z-10 transition-all w-[108px] h-[165px]`}
+            >
               {data.basic.photoUrl ? (
                 <img
                   src={data.basic.photoUrl}
@@ -87,7 +91,9 @@ export const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
             </div>
           </div>
 
-          <div className={`flex flex-col items-center justify-center text-center shrink-0 pb-1 w-full ${isShortName ? '' : '-mt-2'}`}>
+          <div
+            className={`flex flex-col items-center justify-center text-center shrink-0 pb-1 w-full ${isShortName ? '' : '-mt-2'}`}
+          >
             {isShortName ? (
               <div
                 className={`font-bold text-[25px] ${fontArial} text-[#181d79] leading-none text-center px-2 mt-6`}
@@ -102,7 +108,7 @@ export const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
                 <span className={`${fontArial}`}>{line2}</span>
               </div>
             )}
-            
+
             <div
               className={`font-bold text-[18px] ${fontArial} text-black mt-1 text-center`}
             >
@@ -113,20 +119,20 @@ export const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
           <div
             className={`text-[#ffffff] text-center py-1 font-bold text-[22px] shrink-0 ${fontArial}`}
             style={{
-              backgroundColor: isHosteller ? "#181d79" : "#C41E3A",
+              backgroundColor: isHosteller ? '#181d79' : '#C41E3A',
             }}
           >
-            {isHosteller ? "HOSTELLER" : "DAY SCHOLAR"}
+            {isHosteller ? 'HOSTELLER' : 'DAY SCHOLAR'}
           </div>
         </div>
 
         {/* BACK SIDE */}
         <div
           className={`absolute inset-0 backface-hidden transform-[rotateY(180deg)] rounded-2xl border-2 border-border-dim flex flex-col p-3 text-[12px] leading-tight overflow-hidden`}
-          style={{ backgroundColor: "white", color: "black" }}
+          style={{ backgroundColor: 'white', color: 'black' }}
         >
           <div className="flex gap-1">
-            <span className={`italic font-bold ${fontTimes}`}>App. No:</span>{" "}
+            <span className={`italic font-bold ${fontTimes}`}>App. No:</span>{' '}
             <span className={`font-bold ml-1 ${fontArial}`}>
               {data.personal.appNo}
             </span>
@@ -135,7 +141,7 @@ export const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
           <div className="flex gap-1 mt-1">
             <span className={`italic font-bold ${fontTimes}`}>
               Blood Group :
-            </span>{" "}
+            </span>{' '}
             <span className={`font-bold ml-1 ${fontArial}`}>
               {data.personal.bloodGroup}
             </span>
@@ -192,7 +198,7 @@ export const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
           <div className="mt-1.5 flex gap-1">
             <span className={`italic font-bold ${fontTimes}`}>
               Valid Upto :
-            </span>{" "}
+            </span>{' '}
             <span className={`font-bold text-[13px] ml-1 ${fontArial}`}>
               JUL-2028
             </span>
@@ -200,11 +206,15 @@ export const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
 
           <div className="mt-2 flex justify-between text-[11px] items-end px-2">
             <div className="text-center flex flex-col items-center">
-              <span className={`text-xl -mb-2 text-content-dim ${fontArial}`}></span>
+              <span
+                className={`text-xl -mb-2 text-content-dim ${fontArial}`}
+              ></span>
               <span className={fontArial}> </span>
             </div>
             <div className="text-center flex flex-col items-center">
-              <span className={`text-xl -mb-2 text-content-dim ${fontArial}`}></span>
+              <span
+                className={`text-xl -mb-2 text-content-dim ${fontArial}`}
+              ></span>
               <span className={fontArial}> </span>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 interface IconProps extends React.SVGProps<SVGSVGElement> {
   size?: number | string;
@@ -8,7 +8,7 @@ export const NoInternetIcon: React.FC<IconProps> = ({
   size = 24,
   width,
   height,
-  className = "",
+  className = '',
   style,
   ...props
 }) => {

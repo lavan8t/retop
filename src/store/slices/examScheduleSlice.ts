@@ -1,11 +1,11 @@
-import { StateCreator } from "zustand";
-import { DataState } from "../dataStore";
-import { VTOPNetwork } from "../../utils/network";
+import { StateCreator } from 'zustand';
+import { DataState } from '../dataStore';
+import { VTOPNetwork } from '../../utils/network';
 import {
   ExamGroup,
   parseExamSemesters,
   parseExamScheduleData,
-} from "../../parsers/exam-schedule";
+} from '../../parsers/exam-schedule';
 
 export interface ExamScheduleSlice {
   examSemesters: { id: string; label: string }[];
@@ -19,14 +19,16 @@ export interface ExamScheduleSlice {
   fetchExamSchedule: (network: VTOPNetwork, semId: string) => Promise<void>;
 }
 
-export const createExamScheduleSlice: StateCreator<DataState, [], [], ExamScheduleSlice> = (
-  set,
-  get,
-) => ({
+export const createExamScheduleSlice: StateCreator<
+  DataState,
+  [],
+  [],
+  ExamScheduleSlice
+> = (set, get) => ({
   examSemesters: [],
-  examSelectedSem: "",
+  examSelectedSem: '',
   examGroups: [],
-  examReportingNote: "",
+  examReportingNote: '',
   examLoading: false,
   examError: null,
 
@@ -36,17 +38,17 @@ export const createExamScheduleSlice: StateCreator<DataState, [], [], ExamSchedu
     set({ examLoading: true, examError: null });
     try {
       const html = await network.getExamScheduleView();
-      const sems = typeof html === "string" ? parseExamSemesters(html) : html;
+      const sems = typeof html === 'string' ? parseExamSemesters(html) : html;
       set({ examSemesters: sems });
       if (sems.length > 0 && !get().examSelectedSem) {
         set({ examSelectedSem: sems[0].id });
         get().fetchExamSchedule(network, sems[0].id);
       }
     } catch (e: any) {
-      if (e.message !== "OFFLINE_CACHE_MISS") {
-        set({ examError: e.message || "Failed to fetch exam semesters" });
+      if (e.message !== 'OFFLINE_CACHE_MISS') {
+        set({ examError: e.message || 'Failed to fetch exam semesters' });
       } else {
-        set({ status: "Offline - Not Synced" });
+        set({ status: 'Offline - Not Synced' });
       }
     } finally {
       set({ examLoading: false });
@@ -58,17 +60,17 @@ export const createExamScheduleSlice: StateCreator<DataState, [], [], ExamSchedu
     try {
       const html = await network.getExamScheduleData(semId);
       const { groups, reportingNote } =
-        typeof html === "string"
+        typeof html === 'string'
           ? parseExamScheduleData(html)
           : (html as any)?.groups
             ? (html as any)
-            : { groups: (html as any) || [], reportingNote: "" };
+            : { groups: (html as any) || [], reportingNote: '' };
       set({ examGroups: groups, examReportingNote: reportingNote });
     } catch (e: any) {
-      if (e.message !== "OFFLINE_CACHE_MISS") {
-        set({ examError: e.message || "Failed to fetch exam schedule" });
+      if (e.message !== 'OFFLINE_CACHE_MISS') {
+        set({ examError: e.message || 'Failed to fetch exam schedule' });
       } else {
-        set({ status: "Offline - Not Synced" });
+        set({ status: 'Offline - Not Synced' });
       }
     } finally {
       set({ examLoading: false });

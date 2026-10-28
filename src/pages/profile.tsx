@@ -1,18 +1,18 @@
-import React, { useState, useEffect } from "react";
-import { VTOPNetwork } from "../utils/network";
-import { useDataStore } from "../store/dataStore";
-import { getCachedData, setCachedData } from "../utils/cache";
-import { parseStudentProfile, resolveProctorPhoto } from "../parsers/profile";
-import { StudentProfile } from "../types/vtop";
-import { DigitalIDCard } from "../components/profile/DigitalIDCard";
-import { CopyableText } from "../components/profile/CopyableText";
-import { Person } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
+import React, { useState, useEffect } from 'react';
+import { VTOPNetwork } from '../utils/network';
+import { useDataStore } from '../store/dataStore';
+import { getCachedData, setCachedData } from '../utils/cache';
+import { parseStudentProfile, resolveProctorPhoto } from '../parsers/profile';
+import { StudentProfile } from '../types/vtop';
+import { DigitalIDCard } from '../components/profile/DigitalIDCard';
+import { CopyableText } from '../components/profile/CopyableText';
+import { Person } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 import {
   formatBedType,
   formatHostelBlock,
   formatHostelRoom,
   formatMessDetails,
-} from "../utils/hostelFormat";
+} from '../utils/hostelFormat';
 
 interface ProfilePageProps {
   network: VTOPNetwork;
@@ -20,22 +20,30 @@ interface ProfilePageProps {
 
 const isValid = (val: string | null | undefined): val is string =>
   !!val &&
-  val !== "-" &&
-  val.trim() !== "" &&
-  val.toUpperCase() !== "N/A" &&
-  val.toUpperCase() !== "NA";
+  val !== '-' &&
+  val.trim() !== '' &&
+  val.toUpperCase() !== 'N/A' &&
+  val.toUpperCase() !== 'NA';
 
 /** Same grouped-list geometry as the app: 18px on the outside, 4px inside. */
 const groupedShape = (index: number, total: number): string => {
-  if (total <= 1) return "rounded-[18px]";
-  if (index === 0) return "rounded-t-[18px] rounded-b-[4px]";
-  if (index === total - 1) return "rounded-t-[4px] rounded-b-[18px]";
-  return "rounded-[4px]";
+  if (total <= 1) return 'rounded-[18px]';
+  if (index === 0) return 'rounded-t-[18px] rounded-b-[4px]';
+  if (index === total - 1) return 'rounded-t-[4px] rounded-b-[18px]';
+  return 'rounded-[4px]';
 };
 
-const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+const Section = ({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) => (
   <section>
-    <h2 className="mt-4 pl-1.5 text-xs font-bold text-(--accent-base)">{title}</h2>
+    <h2 className="mt-4 pl-1.5 text-xs font-bold text-(--accent-base)">
+      {title}
+    </h2>
     <div className="mt-1 flex flex-col gap-0.5">{children}</div>
   </section>
 );
@@ -96,14 +104,18 @@ const ListRow = ({
 
 const ListRows = ({ items }: { items: RowItem[] }) =>
   items.map((item, index) => (
-    <ListRow key={item.label} {...item} shape={groupedShape(index, items.length)} />
+    <ListRow
+      key={item.label}
+      {...item}
+      shape={groupedShape(index, items.length)}
+    />
   ));
 
 const ProctorCard = ({
   data,
   shape,
 }: {
-  data: StudentProfile["proctor"];
+  data: StudentProfile['proctor'];
   shape: string;
 }) => (
   <div className={`flex min-h-27 overflow-hidden bg-(--bg-surface) ${shape}`}>
@@ -120,7 +132,7 @@ const ProctorCard = ({
     </div>
     <div className="min-w-0 flex-1 px-3.5 py-3">
       <div className="break-words text-base font-bold leading-snug">
-        {isValid(data.name) ? data.name : "Proctor"}
+        {isValid(data.name) ? data.name : 'Proctor'}
       </div>
       {isValid(data.designation) && (
         <div className="mt-0.5 break-words text-xs font-medium leading-snug opacity-70">
@@ -129,7 +141,7 @@ const ProctorCard = ({
       )}
       {(isValid(data.school) || isValid(data.dept)) && (
         <div className="mt-0.5 whitespace-pre-line break-words text-[11px] leading-snug opacity-60">
-          {[data.school, data.dept].filter(isValid).join("\n")}
+          {[data.school, data.dept].filter(isValid).join('\n')}
         </div>
       )}
     </div>
@@ -170,150 +182,153 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
 
   useEffect(() => {
     const loadProfile = async () => {
-      if (useDataStore.getState().status === "Demo Mode Active") {
+      if (useDataStore.getState().status === 'Demo Mode Active') {
         setData({
           basic: {
-            name: "Demo User",
-            regNo: "22ABC1234",
-            program: "B.Tech. Computer Science and Engineering",
-            school: "School of Computer Science and Engineering",
-            email: "demo.user2022@vitstudent.ac.in",
-            photoUrl: "",
+            name: 'Demo User',
+            regNo: '22ABC1234',
+            program: 'B.Tech. Computer Science and Engineering',
+            school: 'School of Computer Science and Engineering',
+            email: 'demo.user2022@vitstudent.ac.in',
+            photoUrl: '',
           },
           personal: {
-            appNo: "999999999",
-            bloodGroup: "O+ve",
-            dob: "01-Jan-2004",
-            gender: "Male",
-            nationality: "Indian",
-            religion: "N/A",
-            community: "N/A",
-            caste: "N/A",
-            nativeLanguage: "English",
-            nativeState: "Tamil Nadu",
-            physicallyChallenged: "No",
-            mobile: "9876543210",
-            email: "demo@gmail.com",
-            aadhar: "123412341234",
+            appNo: '999999999',
+            bloodGroup: 'O+ve',
+            dob: '01-Jan-2004',
+            gender: 'Male',
+            nationality: 'Indian',
+            religion: 'N/A',
+            community: 'N/A',
+            caste: 'N/A',
+            nativeLanguage: 'English',
+            nativeState: 'Tamil Nadu',
+            physicallyChallenged: 'No',
+            mobile: '9876543210',
+            email: 'demo@gmail.com',
+            aadhar: '123412341234',
           },
           hostel: {
-            appNo: "999999999",
-            regNo: "22ABC1234",
-            block: "Demo Block",
-            room: "101",
-            mess: "Special Mess",
-            bedType: "4",
+            appNo: '999999999',
+            regNo: '22ABC1234',
+            block: 'Demo Block',
+            room: '101',
+            mess: 'Special Mess',
+            bedType: '4',
           },
           proctor: {
-            id: "123",
-            name: "Dr. John Doe",
-            designation: "Associate Professor",
-            school: "SCOPE",
-            dept: "Software Systems",
-            mobile: "9988776655",
-            email: "john.doe@vit.ac.in",
-            cabin: "SJT 123",
-            photoUrl: "",
+            id: '123',
+            name: 'Dr. John Doe',
+            designation: 'Associate Professor',
+            school: 'SCOPE',
+            dept: 'Software Systems',
+            mobile: '9988776655',
+            email: 'john.doe@vit.ac.in',
+            cabin: 'SJT 123',
+            photoUrl: '',
           },
           currentAddress: {
-            street: "123 Demo Street",
-            area: "Demo Area",
-            city: "Vellore",
-            state: "Tamil Nadu",
-            country: "India",
-            pincode: "632014",
-            phone: "",
+            street: '123 Demo Street',
+            area: 'Demo Area',
+            city: 'Vellore',
+            state: 'Tamil Nadu',
+            country: 'India',
+            pincode: '632014',
+            phone: '',
           },
           permanentAddress: {
-            street: "123 Demo Street",
-            area: "Demo Area",
-            city: "Vellore",
-            state: "Tamil Nadu",
-            country: "India",
-            pincode: "632014",
-            phone: "9876543210",
+            street: '123 Demo Street',
+            area: 'Demo Area',
+            city: 'Vellore',
+            state: 'Tamil Nadu',
+            country: 'India',
+            pincode: '632014',
+            phone: '9876543210',
           },
           education: {
-            school: "Demo Public School",
-            board: "CBSE",
-            medium: "English",
-            year: "2022",
-            month: "March",
-            regNo: "1234567",
-            degree: "B.Tech",
-            branch: "CSE",
-            qualification: "High School",
-            classObtained: "First",
-            breakInStudy: "No",
-            breakReason: "",
+            school: 'Demo Public School',
+            board: 'CBSE',
+            medium: 'English',
+            year: '2022',
+            month: 'March',
+            regNo: '1234567',
+            degree: 'B.Tech',
+            branch: 'CSE',
+            qualification: 'High School',
+            classObtained: 'First',
+            breakInStudy: 'No',
+            breakReason: '',
             address: {
-              street: "",
-              area: "",
-              city: "Vellore",
-              state: "Tamil Nadu",
-              country: "India",
-              pincode: "632014",
-              phone: "",
+              street: '',
+              area: '',
+              city: 'Vellore',
+              state: 'Tamil Nadu',
+              country: 'India',
+              pincode: '632014',
+              phone: '',
             },
           },
           family: {
             father: {
-              name: "Mr. Demo Father",
-              designation: "Engineer",
-              organization: "Demo Corp",
-              qualification: "B.E.",
-              occupation: "Private Service",
-              income: "N/A",
-              mobile: "9999988888",
-              email: "father@demo.com",
+              name: 'Mr. Demo Father',
+              designation: 'Engineer',
+              organization: 'Demo Corp',
+              qualification: 'B.E.',
+              occupation: 'Private Service',
+              income: 'N/A',
+              mobile: '9999988888',
+              email: 'father@demo.com',
               address: {
-                street: "",
-                area: "",
-                city: "Vellore",
-                state: "Tamil Nadu",
-                country: "India",
-                pincode: "632014",
-                phone: "",
+                street: '',
+                area: '',
+                city: 'Vellore',
+                state: 'Tamil Nadu',
+                country: 'India',
+                pincode: '632014',
+                phone: '',
               },
             },
             mother: {
-              name: "Mrs. Demo Mother",
-              designation: "Teacher",
-              organization: "Demo School",
-              qualification: "M.Sc.",
-              occupation: "Teaching",
-              income: "N/A",
-              mobile: "8888899999",
-              email: "mother@demo.com",
+              name: 'Mrs. Demo Mother',
+              designation: 'Teacher',
+              organization: 'Demo School',
+              qualification: 'M.Sc.',
+              occupation: 'Teaching',
+              income: 'N/A',
+              mobile: '8888899999',
+              email: 'mother@demo.com',
               address: {
-                street: "",
-                area: "",
-                city: "Vellore",
-                state: "Tamil Nadu",
-                country: "India",
-                pincode: "632014",
-                phone: "",
+                street: '',
+                area: '',
+                city: 'Vellore',
+                state: 'Tamil Nadu',
+                country: 'India',
+                pincode: '632014',
+                phone: '',
               },
             },
-            brothers: "1",
-            sisters: "0",
-            studyingInVit: "0",
-            studiedInVit: "0",
-            studyingDetails: "",
-            studiedDetails: "",
-            guardian: "N/A",
-            friendMobile: "9876501234",
+            brothers: '1',
+            sisters: '0',
+            studyingInVit: '0',
+            studiedInVit: '0',
+            studyingDetails: '',
+            studiedDetails: '',
+            guardian: 'N/A',
+            friendMobile: '9876501234',
           },
         });
         setLoading(false);
         return;
       }
 
-      const authId = network.authorizedID || useDataStore.getState().user?.regNo;
-      const userPrefix = authId && authId !== "..." ? `${authId}_` : "";
+      const authId =
+        network.authorizedID || useDataStore.getState().user?.regNo;
+      const userPrefix = authId && authId !== '...' ? `${authId}_` : '';
 
       // 1. Fast restore from cached profile
-      const cachedParsed = await getCachedData<StudentProfile>(`${userPrefix}student_profile_parsed`);
+      const cachedParsed = await getCachedData<StudentProfile>(
+        `${userPrefix}student_profile_parsed`,
+      );
       if (cachedParsed?.basic?.name) {
         setData(cachedParsed);
         setLoading(false);
@@ -322,18 +337,23 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
       // 2. Fetch fresh profile data
       try {
         const html = await network.fetchWithCache(
-          "student_profile_data",
+          'student_profile_data',
           async () =>
-            await network.fetchFragment("studentsRecord/StudentProfileAllView"),
+            await network.fetchFragment('studentsRecord/StudentProfileAllView'),
         );
-        const parsedData: StudentProfile = typeof html === "string" ? parseStudentProfile(html) : html;
+        const parsedData: StudentProfile =
+          typeof html === 'string' ? parseStudentProfile(html) : html;
         if (parsedData?.basic) {
           const storeUser = useDataStore.getState().user;
-          if (!parsedData.basic.name && storeUser?.name && storeUser.name !== "Student") {
+          if (
+            !parsedData.basic.name &&
+            storeUser?.name &&
+            storeUser.name !== 'Student'
+          ) {
             parsedData.basic.name = storeUser.name;
           }
           if (!parsedData.basic.regNo && (authId || storeUser?.regNo)) {
-            parsedData.basic.regNo = authId || storeUser?.regNo || "";
+            parsedData.basic.regNo = authId || storeUser?.regNo || '';
           }
           if (!parsedData.basic.photoUrl && storeUser?.profileImgBase64) {
             parsedData.basic.photoUrl = storeUser.profileImgBase64;
@@ -346,14 +366,15 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
           // image has to be downloaded separately. Paint first, then swap it in.
           resolveProctorPhoto(parsedData)
             .then((withPhoto) => {
-              if (withPhoto.proctor?.photoUrl === parsedData.proctor?.photoUrl) return;
+              if (withPhoto.proctor?.photoUrl === parsedData.proctor?.photoUrl)
+                return;
               setData(withPhoto);
               setCachedData(`${userPrefix}student_profile_parsed`, withPhoto);
             })
             .catch(() => {});
         }
       } catch (e) {
-        console.error("Failed to load profile data:", e);
+        console.error('Failed to load profile data:', e);
       } finally {
         setLoading(false);
       }
@@ -363,22 +384,29 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
 
     const handleRefresh = async () => {
       setLoading(true);
-      const authId = network.authorizedID || useDataStore.getState().user?.regNo;
-      const userPrefix = authId && authId !== "..." ? `${authId}_` : "";
+      const authId =
+        network.authorizedID || useDataStore.getState().user?.regNo;
+      const userPrefix = authId && authId !== '...' ? `${authId}_` : '';
       try {
         const html = await network.fetchWithCache(
-          "student_profile_data",
-          async () => await network.fetchFragment("studentsRecord/StudentProfileAllView"),
+          'student_profile_data',
+          async () =>
+            await network.fetchFragment('studentsRecord/StudentProfileAllView'),
           true,
         );
-        const parsedData: StudentProfile = typeof html === "string" ? parseStudentProfile(html) : html;
+        const parsedData: StudentProfile =
+          typeof html === 'string' ? parseStudentProfile(html) : html;
         if (parsedData?.basic) {
           const storeUser = useDataStore.getState().user;
-          if (!parsedData.basic.name && storeUser?.name && storeUser.name !== "Student") {
+          if (
+            !parsedData.basic.name &&
+            storeUser?.name &&
+            storeUser.name !== 'Student'
+          ) {
             parsedData.basic.name = storeUser.name;
           }
           if (!parsedData.basic.regNo && (authId || storeUser?.regNo)) {
-            parsedData.basic.regNo = authId || storeUser?.regNo || "";
+            parsedData.basic.regNo = authId || storeUser?.regNo || '';
           }
           if (!parsedData.basic.photoUrl && storeUser?.profileImgBase64) {
             parsedData.basic.photoUrl = storeUser.profileImgBase64;
@@ -389,20 +417,22 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
 
           resolveProctorPhoto(parsedData)
             .then((withPhoto) => {
-              if (withPhoto.proctor?.photoUrl === parsedData.proctor?.photoUrl) return;
+              if (withPhoto.proctor?.photoUrl === parsedData.proctor?.photoUrl)
+                return;
               setData(withPhoto);
               setCachedData(`${userPrefix}student_profile_parsed`, withPhoto);
             })
             .catch(() => {});
         }
       } catch (e) {
-        console.error("Failed to refresh profile:", e);
+        console.error('Failed to refresh profile:', e);
       } finally {
         setLoading(false);
       }
     };
-    window.addEventListener("retop-refresh-profile", handleRefresh);
-    return () => window.removeEventListener("retop-refresh-profile", handleRefresh);
+    window.addEventListener('retop-refresh-profile', handleRefresh);
+    return () =>
+      window.removeEventListener('retop-refresh-profile', handleRefresh);
   }, [network]);
 
   if (loading) {
@@ -436,39 +466,47 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
   const proctorContacts: RowItem[] = [];
   if (isValid(data.proctor.mobile)) {
     proctorContacts.push({
-      label: "Proctor Mobile",
+      label: 'Proctor Mobile',
       value: data.proctor.mobile,
       copy: data.proctor.mobile,
     });
   }
   if (isValid(data.proctor.email)) {
     proctorContacts.push({
-      label: "Proctor Email",
+      label: 'Proctor Email',
       value: data.proctor.email.toLowerCase(),
       copy: data.proctor.email,
     });
   }
   if (isValid(data.proctor.cabin)) {
-    proctorContacts.push({ label: "Proctor Cabin", value: data.proctor.cabin });
+    proctorContacts.push({ label: 'Proctor Cabin', value: data.proctor.cabin });
   }
 
   const academicItems: RowItem[] = [];
-  const program = isValid(data.education.degree) ? data.education.degree : data.basic.program;
+  const program = isValid(data.education.degree)
+    ? data.education.degree
+    : data.basic.program;
   if (isValid(program)) {
     academicItems.push({
-      label: "Program & Degree",
+      label: 'Program & Degree',
       value: program,
       subtitle: isValid(data.basic.school) ? data.basic.school : undefined,
     });
   }
   if (isValid(data.basic.regNo)) {
-    academicItems.push({ label: "Registration Number", value: data.basic.regNo });
+    academicItems.push({
+      label: 'Registration Number',
+      value: data.basic.regNo,
+    });
   }
   if (isValid(data.personal.appNo)) {
-    academicItems.push({ label: "Application Number", value: data.personal.appNo });
+    academicItems.push({
+      label: 'Application Number',
+      value: data.personal.appNo,
+    });
   }
   if (isValid(data.education.branch)) {
-    academicItems.push({ label: "Branch", value: data.education.branch });
+    academicItems.push({ label: 'Branch', value: data.education.branch });
   }
 
   const residenceItems: RowItem[] = [];
@@ -479,44 +517,46 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
     const mess = formatMessDetails(data.hostel.mess);
     if (isValid(block.displayName)) {
       residenceItems.push({
-        label: "Hostel Block",
+        label: 'Hostel Block',
         value: block.displayName,
         badge: block.badge,
       });
     }
     if (isValid(room)) {
-      residenceItems.push({ label: "Room Number", value: room });
+      residenceItems.push({ label: 'Room Number', value: room });
     }
     if (isValid(bed)) {
-      residenceItems.push({ label: "Bed Type", value: bed });
+      residenceItems.push({ label: 'Bed Type', value: bed });
     }
     if (isValid(mess.messType)) {
       residenceItems.push({
-        label: "Mess Facility",
+        label: 'Mess Facility',
         value: mess.messType,
         subtitle: mess.caterer,
       });
     }
   } else {
     residenceItems.push({
-      label: "Residence",
-      value: "Day Scholar",
-      subtitle: "Off-Campus Student",
+      label: 'Residence',
+      value: 'Day Scholar',
+      subtitle: 'Off-Campus Student',
     });
   }
 
   const contactItems: RowItem[] = [];
-  const institutionalEmail = isValid(data.basic.email) ? data.basic.email : data.personal.email;
+  const institutionalEmail = isValid(data.basic.email)
+    ? data.basic.email
+    : data.personal.email;
   if (isValid(institutionalEmail)) {
     contactItems.push({
-      label: "Institutional Email",
+      label: 'Institutional Email',
       value: institutionalEmail.toLowerCase(),
       copy: institutionalEmail,
     });
   }
   if (isValid(data.personal.mobile)) {
     contactItems.push({
-      label: "Student Mobile",
+      label: 'Student Mobile',
       value: data.personal.mobile,
       copy: data.personal.mobile,
     });
@@ -524,95 +564,122 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
 
   const personalItems: RowItem[] = [];
   if (isValid(data.personal.dob)) {
-    personalItems.push({ label: "Date of Birth", value: data.personal.dob.replace(/-/g, " ") });
+    personalItems.push({
+      label: 'Date of Birth',
+      value: data.personal.dob.replace(/-/g, ' '),
+    });
   }
   if (isValid(data.personal.gender)) {
-    personalItems.push({ label: "Gender", value: data.personal.gender });
+    personalItems.push({ label: 'Gender', value: data.personal.gender });
   }
   if (isValid(data.personal.bloodGroup)) {
-    personalItems.push({ label: "Blood Group", value: data.personal.bloodGroup });
+    personalItems.push({
+      label: 'Blood Group',
+      value: data.personal.bloodGroup,
+    });
   }
   if (isValid(data.personal.nativeLanguage)) {
-    personalItems.push({ label: "Native Language", value: data.personal.nativeLanguage });
+    personalItems.push({
+      label: 'Native Language',
+      value: data.personal.nativeLanguage,
+    });
   }
   if (isValid(data.personal.nativeState)) {
-    personalItems.push({ label: "Native State", value: data.personal.nativeState });
+    personalItems.push({
+      label: 'Native State',
+      value: data.personal.nativeState,
+    });
   }
   if (isValid(data.personal.nationality)) {
-    personalItems.push({ label: "Nationality", value: data.personal.nationality });
+    personalItems.push({
+      label: 'Nationality',
+      value: data.personal.nationality,
+    });
   }
   const religionCommunity = [data.personal.religion, data.personal.community]
     .filter(isValid)
-    .join(" / ");
+    .join(' / ');
   if (isValid(religionCommunity)) {
-    personalItems.push({ label: "Religion / Community", value: religionCommunity });
+    personalItems.push({
+      label: 'Religion / Community',
+      value: religionCommunity,
+    });
   }
 
-  const addressItem = (title: string, address: StudentProfile["currentAddress"]) => {
-    const areaCity = [address.area, address.city].filter(isValid).join(", ");
-    const stateCountry = [address.state, address.country].filter(isValid).join(", ");
-    const statePin = [stateCountry, address.pincode].filter(isValid).join(" - ");
+  const addressItem = (
+    title: string,
+    address: StudentProfile['currentAddress'],
+  ) => {
+    const areaCity = [address.area, address.city].filter(isValid).join(', ');
+    const stateCountry = [address.state, address.country]
+      .filter(isValid)
+      .join(', ');
+    const statePin = [stateCountry, address.pincode]
+      .filter(isValid)
+      .join(' - ');
     const lines = [address.street, areaCity, statePin].filter(isValid);
     return lines.length > 0 ? { title, lines, phone: address.phone } : null;
   };
   const addressItems = [
-    addressItem("Current Address", data.currentAddress),
-    addressItem("Permanent Address", data.permanentAddress),
+    addressItem('Current Address', data.currentAddress),
+    addressItem('Permanent Address', data.permanentAddress),
   ].filter((item): item is NonNullable<typeof item> => item !== null);
 
   const educationItems: RowItem[] = [];
   if (isValid(data.education.school)) {
     const boardMedium = [
-      isValid(data.education.board) ? `Board: ${data.education.board}` : "",
-      isValid(data.education.medium) ? `Medium: ${data.education.medium}` : "",
+      isValid(data.education.board) ? `Board: ${data.education.board}` : '',
+      isValid(data.education.medium) ? `Medium: ${data.education.medium}` : '',
     ]
       .filter(isValid)
-      .join(" · ");
-    const year = [data.education.year, data.education.month].filter(isValid).join(" ");
+      .join(' · ');
+    const year = [data.education.year, data.education.month]
+      .filter(isValid)
+      .join(' ');
     const yearReg = [
-      isValid(year) ? `Year: ${year}` : "",
-      isValid(data.education.regNo) ? `Reg: ${data.education.regNo}` : "",
+      isValid(year) ? `Year: ${year}` : '',
+      isValid(data.education.regNo) ? `Reg: ${data.education.regNo}` : '',
     ]
       .filter(isValid)
-      .join(" · ");
+      .join(' · ');
     educationItems.push({
-      label: "Previous Education",
+      label: 'Previous Education',
       value: data.education.school,
-      subtitle: [boardMedium, yearReg].filter(isValid).join("\n") || undefined,
+      subtitle: [boardMedium, yearReg].filter(isValid).join('\n') || undefined,
     });
   }
 
   const familyItems: RowItem[] = [];
-  const parentSubtitle = (parent: StudentProfile["family"]["father"]) =>
+  const parentSubtitle = (parent: StudentProfile['family']['father']) =>
     [
-      [parent.designation, parent.organization].filter(isValid).join(" at "),
+      [parent.designation, parent.organization].filter(isValid).join(' at '),
       [
         parent.qualification,
         parent.occupation,
-        isValid(parent.income) ? `Income: ${parent.income}` : "",
+        isValid(parent.income) ? `Income: ${parent.income}` : '',
       ]
         .filter(isValid)
-        .join(" / "),
+        .join(' / '),
     ]
       .filter(isValid)
-      .join("\n") || undefined;
+      .join('\n') || undefined;
 
   if (isValid(data.family.father.name)) {
     familyItems.push({
-      label: "Father",
+      label: 'Father',
       value: data.family.father.name,
       subtitle: parentSubtitle(data.family.father),
     });
     if (isValid(data.family.father.mobile)) {
       familyItems.push({
-        label: "Father Mobile",
+        label: 'Father Mobile',
         value: data.family.father.mobile,
         copy: data.family.father.mobile,
       });
     }
     if (isValid(data.family.father.email)) {
       familyItems.push({
-        label: "Father Email",
+        label: 'Father Email',
         value: data.family.father.email.toLowerCase(),
         copy: data.family.father.email,
       });
@@ -620,41 +687,47 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
   }
   if (isValid(data.family.mother.name)) {
     familyItems.push({
-      label: "Mother",
+      label: 'Mother',
       value: data.family.mother.name,
       subtitle: parentSubtitle(data.family.mother),
     });
     if (isValid(data.family.mother.mobile)) {
       familyItems.push({
-        label: "Mother Mobile",
+        label: 'Mother Mobile',
         value: data.family.mother.mobile,
         copy: data.family.mother.mobile,
       });
     }
     if (isValid(data.family.mother.email)) {
       familyItems.push({
-        label: "Mother Email",
+        label: 'Mother Email',
         value: data.family.mother.email.toLowerCase(),
         copy: data.family.mother.email,
       });
     }
   }
-  if (isValid(data.family.guardian) && data.family.guardian.toUpperCase() !== "PARENT") {
-    familyItems.push({ label: "Local Guardian", value: data.family.guardian });
+  if (
+    isValid(data.family.guardian) &&
+    data.family.guardian.toUpperCase() !== 'PARENT'
+  ) {
+    familyItems.push({ label: 'Local Guardian', value: data.family.guardian });
   }
   if (isValid(data.family.brothers) || isValid(data.family.sisters)) {
     familyItems.push({
-      label: "Siblings",
-      value: `Brothers: ${data.family.brothers || "0"}\nSisters: ${data.family.sisters || "0"}`,
+      label: 'Siblings',
+      value: `Brothers: ${data.family.brothers || '0'}\nSisters: ${data.family.sisters || '0'}`,
     });
   }
-  const familyIncome = [data.family.father.income, data.family.mother.income].find(isValid);
+  const familyIncome = [
+    data.family.father.income,
+    data.family.mother.income,
+  ].find(isValid);
   if (familyIncome) {
-    familyItems.push({ label: "Annual Income", value: familyIncome });
+    familyItems.push({ label: 'Annual Income', value: familyIncome });
   }
   if (isValid(data.family.friendMobile)) {
     familyItems.push({
-      label: "Emergency / Friend Mobile",
+      label: 'Emergency / Friend Mobile',
       value: data.family.friendMobile,
       copy: data.family.friendMobile,
     });
@@ -674,7 +747,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
             isValid(data.proctor.mobile) ||
             isValid(data.proctor.email)) && (
             <Section title="Proctor Details">
-              <ProctorCard data={data.proctor} shape={groupedShape(0, 1 + proctorContacts.length)} />
+              <ProctorCard
+                data={data.proctor}
+                shape={groupedShape(0, 1 + proctorContacts.length)}
+              />
               {proctorContacts.map((item, index) => (
                 <ListRow
                   key={item.label}

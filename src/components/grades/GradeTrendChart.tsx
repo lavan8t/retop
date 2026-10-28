@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { VTOPNetwork } from "../../utils/network";
-import { parseGrades } from "../../parsers/grades";
-import { formatSemesterShorthand } from "../../utils/formatting";
-import { useDataStore } from "../../store/dataStore";
+import React, { useState, useEffect, useMemo } from 'react';
+import { VTOPNetwork } from '../../utils/network';
+import { parseGrades } from '../../parsers/grades';
+import { formatSemesterShorthand } from '../../utils/formatting';
+import { useDataStore } from '../../store/dataStore';
 
 interface GradeTrendPoint {
   semId: string;
@@ -43,9 +43,14 @@ const GRADE_POINTS: Record<string, number> = {
   F: 0,
 };
 
-function extractYearAndTerm(label: string, id: string): { startYear: number; termWeight: number; shorthand: string } {
-  const clean = label || "";
-  const match = clean.match(/(?:20)?(\d{2})[-/](?:20)?(\d{2})/) || id.match(/20(\d{2})(\d{2})/);
+function extractYearAndTerm(
+  label: string,
+  id: string,
+): { startYear: number; termWeight: number; shorthand: string } {
+  const clean = label || '';
+  const match =
+    clean.match(/(?:20)?(\d{2})[-/](?:20)?(\d{2})/) ||
+    id.match(/20(\d{2})(\d{2})/);
   const startYear = match ? parseInt(match[1], 10) : 0;
 
   let termWeight = 1;
@@ -73,10 +78,15 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
   onResetPredictions,
 }) => {
   const [loading, setLoading] = useState(true);
-  const [rawHistoryPoints, setRawHistoryPoints] = useState<GradeTrendPoint[]>([]);
+  const [rawHistoryPoints, setRawHistoryPoints] = useState<GradeTrendPoint[]>(
+    [],
+  );
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
-  const regNo = useDataStore((s) => s.user?.regNo) || localStorage.getItem("retop_lastAuthId") || "";
+  const regNo =
+    useDataStore((s) => s.user?.regNo) ||
+    localStorage.getItem('retop_lastAuthId') ||
+    '';
   const joinYear = useMemo(() => {
     const authId = network?.authorizedID || regNo;
     const match = authId.trim().match(/^(\d{2})/);
@@ -119,18 +129,20 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
           sortedSems.map(async (sem) => {
             try {
               const html = await network.getStudentGrades(sem.id);
-              const parsed = typeof html === "string" ? parseGrades(html) : html;
+              const parsed =
+                typeof html === 'string' ? parseGrades(html) : html;
               return { sem, parsed };
             } catch (err) {
               return { sem, parsed: null };
             }
-          })
+          }),
         );
 
         if (isCancelled) return;
 
         for (const { sem, parsed } of results) {
-          if (!parsed || !parsed.courses || parsed.courses.length === 0) continue;
+          if (!parsed || !parsed.courses || parsed.courses.length === 0)
+            continue;
 
           let semEarnedCredits = 0;
           let semGpaCredits = 0;
@@ -138,10 +150,10 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
           let gradedCount = 0;
 
           parsed.courses.forEach((c) => {
-            const creditVal = parseFloat(c.c || c.credits || "0");
-            const g = (c.grade || "").trim().toUpperCase();
+            const creditVal = parseFloat(c.c || c.credits || '0');
+            const g = (c.grade || '').trim().toUpperCase();
 
-            if (g && g !== "F" && g !== "N" && g !== "-") {
+            if (g && g !== 'F' && g !== 'N' && g !== '-') {
               semEarnedCredits += creditVal;
             }
 
@@ -155,19 +167,26 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
           });
 
           let semGpa = 0;
-          if (parsed.gpa && parsed.gpa !== "0.0" && parsed.gpa !== "0" && !isNaN(parseFloat(parsed.gpa))) {
+          if (
+            parsed.gpa &&
+            parsed.gpa !== '0.0' &&
+            parsed.gpa !== '0' &&
+            !isNaN(parseFloat(parsed.gpa))
+          ) {
             semGpa = parseFloat(parsed.gpa);
           } else if (semGpaCredits > 0) {
             semGpa = semGradePoints / semGpaCredits;
           }
 
-          if (gradedCount === 0 && semGpa === 0 && semEarnedCredits === 0) continue;
+          if (gradedCount === 0 && semGpa === 0 && semEarnedCredits === 0)
+            continue;
 
           cumGpaCredits += semGpaCredits;
           cumPoints += semGradePoints;
           cumEarnedCredits += semEarnedCredits;
 
-          const cumCgpa = cumGpaCredits > 0 ? cumPoints / cumGpaCredits : semGpa;
+          const cumCgpa =
+            cumGpaCredits > 0 ? cumPoints / cumGpaCredits : semGpa;
 
           points.push({
             semId: sem.id,
@@ -192,7 +211,7 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
 
         setRawHistoryPoints(points);
       } catch (err) {
-        console.error("Failed to generate grade trend data:", err);
+        console.error('Failed to generate grade trend data:', err);
       } finally {
         if (!isCancelled) setLoading(false);
       }
@@ -217,7 +236,11 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
 
     // Latest semester is ongoing, add it as a current / prediction node
     const lastPoint = rawHistoryPoints[rawHistoryPoints.length - 1];
-    const prevCgpa = officialCgpa ? parseFloat(officialCgpa) : lastPoint ? lastPoint.cgpa : 0;
+    const prevCgpa = officialCgpa
+      ? parseFloat(officialCgpa)
+      : lastPoint
+        ? lastPoint.cgpa
+        : 0;
     const prevCredits = lastPoint ? lastPoint.totalCreditsEarned : 0;
 
     const hasPrediction = Boolean(predictedGpa || predictedCgpa);
@@ -297,7 +320,10 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
       point: p,
     }));
 
-    const gpaMap: Record<string, { x: number; y: number; point: GradeTrendPoint }> = {};
+    const gpaMap: Record<
+      string,
+      { x: number; y: number; point: GradeTrendPoint }
+    > = {};
     const gpaPoints: { x: number; y: number; point: GradeTrendPoint }[] = [];
 
     trendPoints.forEach((p, i) => {
@@ -310,8 +336,11 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
 
     // Generate straight SVG paths (no curves)
     const makeStraightPath = (pts: { x: number; y: number }[]) => {
-      if (pts.length === 0) return "";
-      return pts.reduce((acc, pt, i) => `${acc} ${i === 0 ? "M" : "L"} ${pt.x} ${pt.y}`, "");
+      if (pts.length === 0) return '';
+      return pts.reduce(
+        (acc, pt, i) => `${acc} ${i === 0 ? 'M' : 'L'} ${pt.x} ${pt.y}`,
+        '',
+      );
     };
 
     const cgpaPath = makeStraightPath(cgpaPoints);
@@ -324,7 +353,9 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
     const cgpaAreaPath = `${cgpaPath} L ${lastX} ${bottomY} L ${firstX} ${bottomY} Z`;
 
     const step = yRange / 3;
-    const gridVals = [yMax, yMax - step, yMin + step, yMin].map((v) => Number(v.toFixed(1)));
+    const gridVals = [yMax, yMax - step, yMin + step, yMin].map((v) =>
+      Number(v.toFixed(1)),
+    );
     const uniqueGridVals = Array.from(new Set(gridVals));
 
     return {
@@ -361,14 +392,18 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
 
   const rawCompleted = rawHistoryPoints.filter((p) => !p.isPredicted);
   const latestCompleted = rawCompleted[rawCompleted.length - 1];
-  const displayCgpa = officialCgpa || (latestCompleted ? latestCompleted.cgpa?.toFixed(2) : "0.00");
+  const displayCgpa =
+    officialCgpa ||
+    (latestCompleted ? latestCompleted.cgpa?.toFixed(2) : '0.00');
 
   const totalCredits =
-    officialCredits !== undefined && officialCredits !== null && !isNaN(parseFloat(String(officialCredits)))
+    officialCredits !== undefined &&
+    officialCredits !== null &&
+    !isNaN(parseFloat(String(officialCredits)))
       ? parseFloat(String(officialCredits))
       : latestCompleted
-      ? latestCompleted.totalCreditsEarned
-      : 0;
+        ? latestCompleted.totalCreditsEarned
+        : 0;
 
   return (
     <div className="w-full bg-transparent p-0 text-left flex flex-col gap-3 shadow-none select-none">
@@ -388,7 +423,9 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
                 <span className="text-2xl sm:text-3xl font-black font-expanded text-(--accent-base) flex items-center gap-1">
                   <span className="text-sm text-(--text-muted)">→</span>
                   {predictedCgpa}
-                  <sup className="text-sm font-black text-(--accent-base)">*</sup>
+                  <sup className="text-sm font-black text-(--accent-base)">
+                    *
+                  </sup>
                 </span>
               )}
             </div>
@@ -399,11 +436,17 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
             <div className="flex flex-col text-left">
               <span className="text-[11px] font-black font-expanded uppercase tracking-wider text-(--text-muted) text-left flex items-center gap-1">
                 Semester GPA
-                {isPredictedGpa && <span className="text-emerald-500 font-black">*</span>}
+                {isPredictedGpa && (
+                  <span className="text-emerald-500 font-black">*</span>
+                )}
               </span>
               <span className="text-3xl sm:text-4xl font-black font-expanded text-emerald-500 tracking-tight leading-none text-left">
                 {currentSemGpa}
-                {isPredictedGpa && <sup className="text-sm font-black text-emerald-500 ml-0.5">*</sup>}
+                {isPredictedGpa && (
+                  <sup className="text-sm font-black text-emerald-500 ml-0.5">
+                    *
+                  </sup>
+                )}
               </span>
             </div>
           )}
@@ -427,12 +470,20 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
         <svg
           viewBox={`0 0 ${chartData.width} ${chartData.height}`}
           className="w-full h-auto overflow-visible select-none"
-          style={{ minHeight: "140px", maxHeight: "175px" }}
+          style={{ minHeight: '140px', maxHeight: '175px' }}
         >
           <defs>
             <linearGradient id="cgpaGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--accent-base)" stopOpacity="0.2" />
-              <stop offset="100%" stopColor="var(--accent-base)" stopOpacity="0.0" />
+              <stop
+                offset="0%"
+                stopColor="var(--accent-base)"
+                stopOpacity="0.2"
+              />
+              <stop
+                offset="100%"
+                stopColor="var(--accent-base)"
+                stopOpacity="0.0"
+              />
             </linearGradient>
           </defs>
 
@@ -608,7 +659,7 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
                           className="fill-(--accent-base) text-[15px] font-expanded font-black tracking-tight"
                         >
                           {pt.point.cgpa?.toFixed(2)}
-                          {pt.point.isPredicted ? "*" : ""}
+                          {pt.point.isPredicted ? '*' : ''}
                         </text>
 
                         {/* 2. SGPA */}
@@ -646,10 +697,10 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
                   textAnchor="middle"
                   className={`text-[9.5px] font-bold ${
                     isSelected
-                      ? "fill-(--accent-base) font-black"
+                      ? 'fill-(--accent-base) font-black'
                       : isHovered
-                      ? "fill-(--text-main)"
-                      : "fill-(--text-muted) opacity-80"
+                        ? 'fill-(--text-main)'
+                        : 'fill-(--text-muted) opacity-80'
                   }`}
                 >
                   {pt.point.semShort}

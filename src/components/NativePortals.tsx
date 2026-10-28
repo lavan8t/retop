@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef } from "react";
-import { createPortal } from "react-dom";
+import React, { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   School,
   Badge,
@@ -9,7 +9,7 @@ import {
   Visibility,
   Home,
   OpenInNew,
-} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
+} from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 
 // Inject a React element into a native DOM container via portal
 const PortalInject: React.FC<{
@@ -30,9 +30,9 @@ const PortalReplacer: React.FC<{
 
   useEffect(() => {
     const originalDisplay = (target as HTMLElement).style.display;
-    (target as HTMLElement).style.display = "none";
+    (target as HTMLElement).style.display = 'none';
 
-    const div = document.createElement("div");
+    const div = document.createElement('div');
     if (wrapperClass) div.className = wrapperClass;
     Object.assign(div.style, wrapperStyle || {});
 
@@ -86,9 +86,11 @@ export const NativePortals: React.FC = () => {
       const attachCardClick = (formId: string) => {
         const form = document.getElementById(formId);
         if (!form) return;
-        const card = (form.closest(".cardStudent, .cardEmployee, .cardParent, .cardAlumni, .card") || form) as HTMLElement;
+        const card = (form.closest(
+          '.cardStudent, .cardEmployee, .cardParent, .cardAlumni, .card',
+        ) || form) as HTMLElement;
         if (card) {
-          card.style.cursor = "pointer";
+          card.style.cursor = 'pointer';
           card.onclick = (e) => {
             e.preventDefault();
             (window as any).submitForm?.(formId);
@@ -96,56 +98,74 @@ export const NativePortals: React.FC = () => {
         }
       };
 
-      attachCardClick("stdForm");
-      attachCardClick("empForm");
-      attachCardClick("parentForm");
-      attachCardClick("alumniForm");
+      attachCardClick('stdForm');
+      attachCardClick('empForm');
+      attachCardClick('parentForm');
+      attachCardClick('alumniForm');
 
       // Card icons: find .w-50 inside each form, hide native img, use container
-      const stdW50 = document.querySelector("#stdForm .w-50") as HTMLElement;
-      const empW50 = document.querySelector("#empForm .w-50") as HTMLElement;
-      const parentW50 = document.querySelector("#parentForm .w-50") as HTMLElement;
-      const alumniW50 = document.querySelector("#alumniForm .w-50") as HTMLElement;
+      const stdW50 = document.querySelector('#stdForm .w-50') as HTMLElement;
+      const empW50 = document.querySelector('#empForm .w-50') as HTMLElement;
+      const parentW50 = document.querySelector(
+        '#parentForm .w-50',
+      ) as HTMLElement;
+      const alumniW50 = document.querySelector(
+        '#alumniForm .w-50',
+      ) as HTMLElement;
 
       // Hide native images
-      document.querySelectorAll("#stdForm img, #empForm img, #parentForm img, #alumniForm img").forEach(img => {
-        (img as HTMLElement).style.display = "none";
-      });
+      document
+        .querySelectorAll(
+          '#stdForm img, #empForm img, #parentForm img, #alumniForm img',
+        )
+        .forEach((img) => {
+          (img as HTMLElement).style.display = 'none';
+        });
 
       // Bolts: hide native, create containers
-      const nativeBolts = document.querySelectorAll(".fa-bolt");
+      const nativeBolts = document.querySelectorAll('.fa-bolt');
       const boltContainers: HTMLElement[] = [];
-      nativeBolts.forEach(bolt => {
-        (bolt as HTMLElement).style.display = "none";
-        const div = document.createElement("span");
-        div.className = "retop-spotlight-bolt";
+      nativeBolts.forEach((bolt) => {
+        (bolt as HTMLElement).style.display = 'none';
+        const div = document.createElement('span');
+        div.className = 'retop-spotlight-bolt';
         bolt.parentNode?.insertBefore(div, bolt);
         boltContainers.push(div);
       });
 
       // Spotlight More... button
-      const moreBtn = document.querySelector(".spotlightHeader button, .spotlightHeader a, .spotlightHeader .btn-link") as HTMLElement;
+      const moreBtn = document.querySelector(
+        '.spotlightHeader button, .spotlightHeader a, .spotlightHeader .btn-link',
+      ) as HTMLElement;
       let moreBtnContainer: HTMLElement | null = null;
       if (moreBtn) {
-        moreBtn.textContent = ""; // Clear native "More..." text
+        moreBtn.textContent = ''; // Clear native "More..." text
         moreBtnContainer = moreBtn;
       }
 
-      const eyeIcon = document.querySelector("#passwordIcon");
+      const eyeIcon = document.querySelector('#passwordIcon');
       const homeLinks = Array.from(
-        document.querySelectorAll('a[href="javascript:gotoHome()"]')
+        document.querySelectorAll('a[href="javascript:gotoHome()"]'),
       );
 
-      if (stdW50 || empW50 || parentW50 || alumniW50 || boltContainers.length > 0) {
+      if (
+        stdW50 ||
+        empW50 ||
+        parentW50 ||
+        alumniW50 ||
+        boltContainers.length > 0
+      ) {
         injectedRef.current = true;
 
         // Create icon container divs inside .w-50
-        const makeContainer = (parent: HTMLElement | null): HTMLElement | null => {
+        const makeContainer = (
+          parent: HTMLElement | null,
+        ): HTMLElement | null => {
           if (!parent) return null;
-          const existing = parent.querySelector(".retop-inline-icon");
+          const existing = parent.querySelector('.retop-inline-icon');
           if (existing) return existing as HTMLElement;
-          const div = document.createElement("div");
-          div.className = "retop-inline-icon";
+          const div = document.createElement('div');
+          div.className = 'retop-inline-icon';
           parent.appendChild(div);
           return div;
         };
@@ -161,7 +181,7 @@ export const NativePortals: React.FC = () => {
           homeLinks,
         });
 
-        console.log("[retop] NativePortals injected icons & click handlers");
+        console.log('[retop] NativePortals injected icons & click handlers');
       }
     };
 
@@ -172,7 +192,10 @@ export const NativePortals: React.FC = () => {
     if (!injectedRef.current) {
       const timer = setTimeout(inject, 500);
       const timer2 = setTimeout(inject, 1500);
-      return () => { clearTimeout(timer); clearTimeout(timer2); };
+      return () => {
+        clearTimeout(timer);
+        clearTimeout(timer2);
+      };
     }
   }, []);
 
@@ -218,7 +241,11 @@ export const NativePortals: React.FC = () => {
       {targets.eyeIcon && (
         <PortalReplacer
           target={targets.eyeIcon}
-          wrapperStyle={{ cursor: "pointer", display: "inline-flex", fontSize: "24px" }}
+          wrapperStyle={{
+            cursor: 'pointer',
+            display: 'inline-flex',
+            fontSize: '24px',
+          }}
         >
           <div onClick={() => (window as any).toggleEye()}>
             <Visibility size="24px" />
@@ -231,7 +258,7 @@ export const NativePortals: React.FC = () => {
         <PortalReplacer
           key={`home-${i}`}
           target={home}
-          wrapperStyle={{ display: "inline-flex", cursor: "pointer" }}
+          wrapperStyle={{ display: 'inline-flex', cursor: 'pointer' }}
         >
           <div onClick={() => (window as any).gotoHome()}>
             <Home size="24px" />

@@ -1,6 +1,6 @@
-import React from "react";
+import React from 'react';
 
-export type EventFilterType = "all" | "classes" | "assignments" | "events";
+export type EventFilterType = 'all' | 'classes' | 'assignments' | 'events';
 
 interface FilterChipsProps {
   eventFilter: EventFilterType;
@@ -16,12 +16,12 @@ export const FilterChips: React.FC<FilterChipsProps> = ({
       <button
         onClick={(e) => {
           e.stopPropagation();
-          setEventFilter("all");
+          setEventFilter('all');
         }}
         className={`px-3 md:px-5 py-1.5 text-xs font-bold transition-all duration-fast ${
-          eventFilter === "all"
-            ? "bg-(--text-main) text-(--bg-main) rounded-[20px] shadow-none"
-            : "bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-l-[20px] rounded-r-md shadow-none"
+          eventFilter === 'all'
+            ? 'bg-(--text-main) text-(--bg-main) rounded-[20px] shadow-none'
+            : 'bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-l-[20px] rounded-r-md shadow-none'
         }`}
       >
         All
@@ -29,12 +29,12 @@ export const FilterChips: React.FC<FilterChipsProps> = ({
       <button
         onClick={(e) => {
           e.stopPropagation();
-          setEventFilter("classes");
+          setEventFilter('classes');
         }}
         className={`px-3 md:px-5 py-1.5 text-xs font-bold transition-all duration-fast ${
-          eventFilter === "classes"
-            ? "bg-(--text-main) text-(--bg-main) rounded-[20px] shadow-none"
-            : "bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-md shadow-none"
+          eventFilter === 'classes'
+            ? 'bg-(--text-main) text-(--bg-main) rounded-[20px] shadow-none'
+            : 'bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-md shadow-none'
         }`}
       >
         Classes
@@ -42,12 +42,12 @@ export const FilterChips: React.FC<FilterChipsProps> = ({
       <button
         onClick={(e) => {
           e.stopPropagation();
-          setEventFilter("assignments");
+          setEventFilter('assignments');
         }}
         className={`px-3 md:px-5 py-1.5 text-xs font-bold transition-all duration-fast ${
-          eventFilter === "assignments"
-            ? "bg-(--text-main) text-(--bg-main) rounded-[20px] shadow-none"
-            : "bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-md shadow-none"
+          eventFilter === 'assignments'
+            ? 'bg-(--text-main) text-(--bg-main) rounded-[20px] shadow-none'
+            : 'bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-md shadow-none'
         }`}
       >
         Tasks
@@ -55,12 +55,12 @@ export const FilterChips: React.FC<FilterChipsProps> = ({
       <button
         onClick={(e) => {
           e.stopPropagation();
-          setEventFilter("events");
+          setEventFilter('events');
         }}
         className={`px-3 md:px-5 py-1.5 text-xs font-bold transition-all duration-fast ${
-          eventFilter === "events"
-            ? "bg-(--text-main) text-(--bg-main) rounded-[20px] shadow-none"
-            : "bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-l-md rounded-r-[20px] shadow-none"
+          eventFilter === 'events'
+            ? 'bg-(--text-main) text-(--bg-main) rounded-[20px] shadow-none'
+            : 'bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) rounded-l-md rounded-r-[20px] shadow-none'
         }`}
       >
         Events

@@ -1,27 +1,25 @@
-import React, { useEffect } from "react";
-import { TimetableCourse, CourseSummary } from "../types/vtop";
-import { TimeFormatMode } from "../utils/formatting";
+import React, { useEffect } from 'react';
+import { TimetableCourse, CourseSummary } from '../types/vtop';
+import { TimeFormatMode } from '../utils/formatting';
 import {
   Layers,
   ProgressActivity,
-} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
-import { EmptyState } from "../components/EmptyState";
-import { TimetableGrid } from "../components/timetable/TimetableGrid";
-import { TimetableList } from "../components/timetable/TimetableList";
-import { TimetableWeek } from "../components/timetable/TimetableWeek";
-import { OfflineNotSynced } from "../components/ui/OfflineNotSynced";
+} from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
+import { EmptyState } from '../components/EmptyState';
+import { TimetableGrid } from '../components/timetable/TimetableGrid';
+import { TimetableList } from '../components/timetable/TimetableList';
+import { TimetableWeek } from '../components/timetable/TimetableWeek';
+import { OfflineNotSynced } from '../components/ui/OfflineNotSynced';
 
-
-import { useDataStore } from "../store/dataStore";
+import { useDataStore } from '../store/dataStore';
 
 interface TimetableContentViewProps {
   courses: TimetableCourse[];
   loading: boolean;
-  viewMode: "grid" | "list" | "week";
-  setViewMode: (mode: "grid" | "list" | "week") => void;
+  viewMode: 'grid' | 'list' | 'week';
+  setViewMode: (mode: 'grid' | 'list' | 'week') => void;
   attendance: CourseSummary[];
   use24HourTime: TimeFormatMode;
-
 }
 
 export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
@@ -33,13 +31,13 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
   use24HourTime,
 }) => {
   useEffect(() => {
-    setViewMode("grid");
+    setViewMode('grid');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const status = useDataStore((s) => s.status);
 
-  if (status === "Offline - Not Synced") {
+  if (status === 'Offline - Not Synced') {
     return (
       <div className="h-full pt-16 md:pt-20 lg:pt-24 pb-32 md:pb-12">
         <OfflineNotSynced pageName="Timetable" />
@@ -54,47 +52,50 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
         {/* Added pb-32 lg:pb-0 to ensure the timetable has a safe scrolling area above the mobile dock & floating pill */}
         <div className="flex-1 min-h-0 relative lg:pb-0">
           {courses.length === 0 && !loading ? (
-            <div
- 
- 
-              className="h-full p-4">
-              <EmptyState 
-                msg="No Timetable Found" 
-                subMsg={<>If you have registered courses, please ensure <span className="font-vtop font-bold">VTOP</span> is responding and try selecting a different semester.</>} 
-                icon={Layers} />
+            <div className="h-full p-4">
+              <EmptyState
+                msg="No Timetable Found"
+                subMsg={
+                  <>
+                    If you have registered courses, please ensure{' '}
+                    <span className="font-vtop font-bold">VTOP</span> is
+                    responding and try selecting a different semester.
+                  </>
+                }
+                icon={Layers}
+              />
             </div>
           ) : (
             <div className="absolute inset-0 pb-20 lg:pb-0 overflow-hidden">
-              
-                <div
-                  key={viewMode}
- 
- 
- 
- 
-                  className="absolute inset-0 w-full h-full">
-                  {viewMode === "grid" && (
-                    <TimetableGrid
-                      courses={courses}
-                      attendance={attendance}
-                      use24HourTime={use24HourTime}
-                      onSelectCourse={() => setViewMode("list")} />
-                  )}
-                  {viewMode === "list" && (
-                    <TimetableList
-                      courses={courses}
-                      attendance={attendance}
-                      use24HourTime={use24HourTime} />
-                  )}
-                  {viewMode === "week" && (
-                    <TimetableWeek
-                      courses={courses}
-                      attendance={attendance}
-                      use24HourTime={use24HourTime}
-                      onSelectCourse={() => setViewMode("list")} />
-                  )}
-                </div>
-              
+              <div
+                key={viewMode}
+
+                className="absolute inset-0 w-full h-full"
+              >
+                {viewMode === 'grid' && (
+                  <TimetableGrid
+                    courses={courses}
+                    attendance={attendance}
+                    use24HourTime={use24HourTime}
+                    onSelectCourse={() => setViewMode('list')}
+                  />
+                )}
+                {viewMode === 'list' && (
+                  <TimetableList
+                    courses={courses}
+                    attendance={attendance}
+                    use24HourTime={use24HourTime}
+                  />
+                )}
+                {viewMode === 'week' && (
+                  <TimetableWeek
+                    courses={courses}
+                    attendance={attendance}
+                    use24HourTime={use24HourTime}
+                    onSelectCourse={() => setViewMode('list')}
+                  />
+                )}
+              </div>
             </div>
           )}
 
@@ -103,7 +104,9 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
               <div className="w-full h-full border-4 border-(--border-dim) rounded-4xl bg-(--bg-surface) p-4 flex flex-col gap-4 animate-pulse">
                 <div className="h-12 w-full bg-(--bg-highlight) rounded-2xl" />
                 <div className="flex-1 grid grid-cols-7 gap-2">
-                   {[...Array(35)].map((_, i) => <div key={i} className="bg-(--bg-highlight) rounded-2xl" />)}
+                  {[...Array(35)].map((_, i) => (
+                    <div key={i} className="bg-(--bg-highlight) rounded-2xl" />
+                  ))}
                 </div>
               </div>
             </div>

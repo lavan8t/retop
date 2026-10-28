@@ -15,29 +15,40 @@ export function getSharedDOMParser(): DOMParser {
  * Strips script tags, style blocks, and comments before parsing to minimize V8 heap & DOM tree allocations.
  */
 export function parseHTMLFast(html: string): Document {
-  if (!html || typeof html !== "string") {
-    return getSharedDOMParser().parseFromString("", "text/html");
+  if (!html || typeof html !== 'string') {
+    return getSharedDOMParser().parseFromString('', 'text/html');
   }
 
   const cleanHtml = html.replace(
     /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>|<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>|<!--[\s\S]*?-->/gi,
-    "",
+    '',
   );
 
-  return getSharedDOMParser().parseFromString(cleanHtml, "text/html");
+  return getSharedDOMParser().parseFromString(cleanHtml, 'text/html');
 }
 
 export const yieldToMainThread = (): Promise<void> =>
-  typeof (globalThis as any).scheduler?.yield === "function"
+  typeof (globalThis as any).scheduler?.yield === 'function'
     ? (globalThis as any).scheduler.yield()
     : new Promise((r) => setTimeout(r, 0));
 
-import { ParserModuleId, wrapWithSchemaVersion, Versioned } from "../parsers/version";
+import {
+  ParserModuleId,
+  wrapWithSchemaVersion,
+  Versioned,
+} from '../parsers/version';
 
-export * from "../parsers/version";
+export * from '../parsers/version';
 
-export function validateParsed<T extends object>(data: T, moduleId: ParserModuleId): Versioned<T>;
-export function validateParsed<T extends object>(schema: unknown, data: T, moduleId: ParserModuleId): Versioned<T>;
+export function validateParsed<T extends object>(
+  data: T,
+  moduleId: ParserModuleId,
+): Versioned<T>;
+export function validateParsed<T extends object>(
+  schema: unknown,
+  data: T,
+  moduleId: ParserModuleId,
+): Versioned<T>;
 export function validateParsed<T extends object>(
   arg1: any,
   arg2: any,
@@ -53,21 +64,24 @@ export function validateParsed<T extends object>(
  */
 export function findSemesterOptions(doc: Document): Element[] {
   const select = doc.querySelector(
-    "#semesterSubId, select[name='semesterSubId'], #semSubId, select[name='semSubId'], select[id*='semester' i], select[name*='semester' i], select.form-control, select"
+    "#semesterSubId, select[name='semesterSubId'], #semSubId, select[name='semSubId'], select[id*='semester' i], select[name*='semester' i], select.form-control, select",
   );
   if (!select) return [];
-  const options = Array.from(select.querySelectorAll("option"));
+  const options = Array.from(select.querySelectorAll('option'));
   return options.filter((opt) => {
-    const val = opt.getAttribute("value") || (opt as HTMLOptionElement).value || opt.textContent?.trim() || "";
-    const text = opt.textContent?.trim() || "";
+    const val =
+      opt.getAttribute('value') ||
+      (opt as HTMLOptionElement).value ||
+      opt.textContent?.trim() ||
+      '';
+    const text = opt.textContent?.trim() || '';
     const isSelectPlaceholder =
-      text.toLowerCase().includes("select") ||
-      text.toLowerCase().includes("choose") ||
-      val.toLowerCase().includes("select") ||
-      val.toLowerCase().includes("choose") ||
-      text === "-" ||
+      text.toLowerCase().includes('select') ||
+      text.toLowerCase().includes('choose') ||
+      val.toLowerCase().includes('select') ||
+      val.toLowerCase().includes('choose') ||
+      text === '-' ||
       !val;
-    return val && val.trim() !== "" && !isSelectPlaceholder;
+    return val && val.trim() !== '' && !isSelectPlaceholder;
   });
 }
-

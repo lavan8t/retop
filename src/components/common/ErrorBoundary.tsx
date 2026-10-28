@@ -1,13 +1,16 @@
-import React, { Component, ErrorInfo, ReactNode } from "react";
-import { Warning, Refresh } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
-import { get as idbGet, set as idbSet } from "idb-keyval";
-import { clearAllStorage } from "../../utils/storageAdapter";
-import { teardownRetop } from "../../utils/teardown";
+import React, { Component, ErrorInfo, ReactNode } from 'react';
+import {
+  Warning,
+  Refresh,
+} from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
+import { get as idbGet, set as idbSet } from 'idb-keyval';
+import { clearAllStorage } from '../../utils/storageAdapter';
+import { teardownRetop } from '../../utils/teardown';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
   name?: string;
-  variant?: "card" | "fullscreen" | "inline";
+  variant?: 'card' | 'fullscreen' | 'inline';
   resetKey?: any;
   onReset?: () => void;
   fallback?: ReactNode | ((error: Error, reset: () => void) => ReactNode);
@@ -19,39 +22,52 @@ interface ErrorBoundaryState {
   errorInfo: ErrorInfo | null;
 }
 
-export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
   public state: ErrorBoundaryState = {
     hasError: false,
     error: null,
     errorInfo: null,
   };
 
-  public static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
+  public static getDerivedStateFromError(
+    error: Error,
+  ): Partial<ErrorBoundaryState> {
     return { hasError: true, error };
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error(`[retop] Error in ${this.props.name || "Component"}:`, error, errorInfo);
+    console.error(
+      `[retop] Error in ${this.props.name || 'Component'}:`,
+      error,
+      errorInfo,
+    );
     this.setState({ errorInfo });
 
-    const isStandalone = typeof window !== "undefined" && (
-      !!(window as any).__RETOP_OFFLINE__ ||
-      !!(window as any).__RETOP_STANDALONE__ ||
-      window.location.pathname.includes("offline") ||
-      window.location.hostname.includes("web.app") ||
-      window.location.hostname.includes("localhost") ||
-      window.location.hostname === "127.0.0.1" ||
-      !window.location.hostname.includes("vit.ac.in")
-    );
+    const isStandalone =
+      typeof window !== 'undefined' &&
+      (!!(window as any).__RETOP_OFFLINE__ ||
+        !!(window as any).__RETOP_STANDALONE__ ||
+        window.location.pathname.includes('offline') ||
+        window.location.hostname.includes('web.app') ||
+        window.location.hostname.includes('localhost') ||
+        window.location.hostname === '127.0.0.1' ||
+        !window.location.hostname.includes('vit.ac.in'));
 
-    if (this.props.variant === "fullscreen" && !isStandalone) {
+    if (this.props.variant === 'fullscreen' && !isStandalone) {
       // A crashed app must not leave the user on a dead page: hand VTOP back.
       teardownRetop();
     }
   }
 
   public componentDidUpdate(prevProps: ErrorBoundaryProps) {
-    if (this.state.hasError && this.props.resetKey !== undefined && prevProps.resetKey !== this.props.resetKey) {
+    if (
+      this.state.hasError &&
+      this.props.resetKey !== undefined &&
+      prevProps.resetKey !== this.props.resetKey
+    ) {
       this.handleReset();
     }
   }
@@ -72,15 +88,15 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       const keys: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key?.startsWith("retop")) keys.push(key);
+        if (key?.startsWith('retop')) keys.push(key);
       }
       keys.forEach((key) => localStorage.removeItem(key));
       // Cached data goes, preferences stay.
-      const settings = await idbGet("retop-settings");
+      const settings = await idbGet('retop-settings');
       await clearAllStorage();
-      if (settings !== undefined) await idbSet("retop-settings", settings);
+      if (settings !== undefined) await idbSet('retop-settings', settings);
     } catch (e) {
-      console.warn("Failed to clear local storage", e);
+      console.warn('Failed to clear local storage', e);
     }
     window.location.reload();
   };
@@ -90,32 +106,34 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       return this.props.children;
     }
 
-    const { name = "Component", variant = "card", fallback } = this.props;
+    const { name = 'Component', variant = 'card', fallback } = this.props;
 
-    const isStandalone = typeof window !== "undefined" && (
-      !!(window as any).__RETOP_OFFLINE__ ||
-      !!(window as any).__RETOP_STANDALONE__ ||
-      window.location.pathname.includes("offline") ||
-      window.location.hostname.includes("web.app") ||
-      window.location.hostname.includes("localhost") ||
-      window.location.hostname === "127.0.0.1" ||
-      !window.location.hostname.includes("vit.ac.in")
-    );
+    const isStandalone =
+      typeof window !== 'undefined' &&
+      (!!(window as any).__RETOP_OFFLINE__ ||
+        !!(window as any).__RETOP_STANDALONE__ ||
+        window.location.pathname.includes('offline') ||
+        window.location.hostname.includes('web.app') ||
+        window.location.hostname.includes('localhost') ||
+        window.location.hostname === '127.0.0.1' ||
+        !window.location.hostname.includes('vit.ac.in'));
 
-    if (variant === "fullscreen" && !isStandalone) {
+    if (variant === 'fullscreen' && !isStandalone) {
       return null;
     }
 
-    const errorMsg = this.state.error?.message || "An unexpected error occurred.";
-    const errorStack = this.state.error?.stack || this.state.errorInfo?.componentStack || "";
+    const errorMsg =
+      this.state.error?.message || 'An unexpected error occurred.';
+    const errorStack =
+      this.state.error?.stack || this.state.errorInfo?.componentStack || '';
 
     if (fallback) {
-      return typeof fallback === "function" && this.state.error
+      return typeof fallback === 'function' && this.state.error
         ? fallback(this.state.error, this.handleReset)
         : (fallback as ReactNode);
     }
 
-    if (variant === "fullscreen") {
+    if (variant === 'fullscreen') {
       return (
         <div className="fixed inset-0 z-[2147483647] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 text-(--text-main) select-text pointer-events-auto">
           <div className="w-full max-w-lg bg-(--bg-surface) border-2 border-(--border-main) rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col gap-5 text-left animate-in fade-in zoom-in-95 duration-150">
@@ -171,7 +189,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       );
     }
 
-    if (variant === "inline") {
+    if (variant === 'inline') {
       return (
         <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center justify-between gap-3 text-xs text-red-500">
           <span className="truncate font-bold">{errorMsg}</span>

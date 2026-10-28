@@ -1,13 +1,13 @@
-import { StateCreator } from "zustand";
-import { DataState } from "../dataStore";
-import { VTOPNetwork } from "../../utils/network";
+import { StateCreator } from 'zustand';
+import { DataState } from '../dataStore';
+import { VTOPNetwork } from '../../utils/network';
 import {
   DACourse,
   DAAssignment,
   parseDASemesters,
   parseDACourses,
   parseDAAssignments,
-} from "../../parsers/digital-assignments";
+} from '../../parsers/digital-assignments';
 
 export interface DASlice {
   daSemesters: { id: string; label: string }[];
@@ -35,7 +35,7 @@ export const createDASlice: StateCreator<DataState, [], [], DASlice> = (
   get,
 ) => ({
   daSemesters: [],
-  daSelectedSem: "",
+  daSelectedSem: '',
   daCourses: [],
   daAssignments: {},
   daLoading: false,
@@ -45,29 +45,29 @@ export const createDASlice: StateCreator<DataState, [], [], DASlice> = (
 
   fetchDASemesters: async (network: VTOPNetwork, force = false) => {
     const { status } = get();
-    if (status === "Demo Mode Active") {
+    if (status === 'Demo Mode Active') {
       set({
-        daSemesters: [{ id: "demo", label: "Fall Semester 2026-27" }],
-        daSelectedSem: "demo",
+        daSemesters: [{ id: 'demo', label: 'Fall Semester 2026-27' }],
+        daSelectedSem: 'demo',
       });
-      get().fetchDACourses(network, "demo");
+      get().fetchDACourses(network, 'demo');
       return;
     }
 
     set({ daLoading: true, daError: null });
     try {
       const html = await network.getDASemesters(force);
-      const sems = typeof html === "string" ? parseDASemesters(html) : html;
+      const sems = typeof html === 'string' ? parseDASemesters(html) : html;
       set({ daSemesters: sems });
       if (sems.length > 0 && !get().daSelectedSem) {
         set({ daSelectedSem: sems[0].id });
         get().fetchDACourses(network, sems[0].id, force);
       }
     } catch (e: any) {
-      if (e.message !== "OFFLINE_CACHE_MISS") {
-        set({ daError: e.message || "Failed to fetch DA semesters" });
+      if (e.message !== 'OFFLINE_CACHE_MISS') {
+        set({ daError: e.message || 'Failed to fetch DA semesters' });
       } else {
-        set({ status: "Offline - Not Synced" });
+        set({ status: 'Offline - Not Synced' });
       }
     } finally {
       set({ daLoading: false });
@@ -80,15 +80,15 @@ export const createDASlice: StateCreator<DataState, [], [], DASlice> = (
     force = false,
   ) => {
     const { status } = get();
-    if (status === "Demo Mode Active") {
+    if (status === 'Demo Mode Active') {
       set({
         daCourses: [
           {
-            classId: "123",
-            code: "CS101",
-            title: "Problem Solving and Programming",
-            type: "TH",
-            faculty: "Dr. Demo",
+            classId: '123',
+            code: 'CS101',
+            title: 'Problem Solving and Programming',
+            type: 'TH',
+            faculty: 'Dr. Demo',
           },
         ],
       });
@@ -104,13 +104,13 @@ export const createDASlice: StateCreator<DataState, [], [], DASlice> = (
         force,
         isPastSemester,
       );
-      const courses = typeof html === "string" ? parseDACourses(html) : html;
+      const courses = typeof html === 'string' ? parseDACourses(html) : html;
       set({ daCourses: courses });
     } catch (e: any) {
-      if (e.message !== "OFFLINE_CACHE_MISS") {
-        set({ daError: e.message || "Failed to fetch DA courses" });
+      if (e.message !== 'OFFLINE_CACHE_MISS') {
+        set({ daError: e.message || 'Failed to fetch DA courses' });
       } else {
-        set({ status: "Offline - Not Synced" });
+        set({ status: 'Offline - Not Synced' });
       }
     } finally {
       set({ daLoading: false });
@@ -123,7 +123,7 @@ export const createDASlice: StateCreator<DataState, [], [], DASlice> = (
     force = false,
   ) => {
     const { status } = get();
-    if (status === "Demo Mode Active") return;
+    if (status === 'Demo Mode Active') return;
 
     set({ daLoading: true, daError: null });
     try {
@@ -134,7 +134,8 @@ export const createDASlice: StateCreator<DataState, [], [], DASlice> = (
         get().daSelectedSem !== get().daSemesters[0].id;
 
       const html = await network.getDAForCourse(classId, force, isPastSemester);
-      const assignments = typeof html === "string" ? parseDAAssignments(html) : html;
+      const assignments =
+        typeof html === 'string' ? parseDAAssignments(html) : html;
       set((state) => ({
         daAssignments: {
           ...state.daAssignments,
@@ -142,10 +143,10 @@ export const createDASlice: StateCreator<DataState, [], [], DASlice> = (
         },
       }));
     } catch (e: any) {
-      if (e.message !== "OFFLINE_CACHE_MISS") {
-        set({ daError: e.message || "Failed to fetch assignments" });
+      if (e.message !== 'OFFLINE_CACHE_MISS') {
+        set({ daError: e.message || 'Failed to fetch assignments' });
       } else {
-        set({ status: "Offline - Not Synced" });
+        set({ status: 'Offline - Not Synced' });
       }
     } finally {
       set({ daLoading: false });

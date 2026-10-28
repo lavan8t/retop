@@ -6,13 +6,13 @@
  * Usage: bun scripts/serve-login.ts [light|dark|amoled]
  */
 const PORT = Number(process.env.PORT) || 3100;
-const THEME = process.argv[2] || "dark";
-const ROOT = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
+const THEME = process.argv[2] || 'dark';
+const ROOT = new URL('..', import.meta.url).pathname.replace(/\/$/, '');
 
 const THEMES = {
-  light: { themeMode: "light", pureBlack: false },
-  dark: { themeMode: "dark", pureBlack: false },
-  amoled: { themeMode: "dark", pureBlack: true },
+  light: { themeMode: 'light', pureBlack: false },
+  dark: { themeMode: 'dark', pureBlack: false },
+  amoled: { themeMode: 'dark', pureBlack: true },
 };
 
 const page = `<!DOCTYPE html>
@@ -106,24 +106,26 @@ const server = Bun.serve({
   port: PORT,
   async fetch(req) {
     const url = new URL(req.url);
-    if (url.pathname === "/" || url.pathname === "/index.html") {
-      return new Response(page, { headers: { "Content-Type": "text/html" } });
+    if (url.pathname === '/' || url.pathname === '/index.html') {
+      return new Response(page, { headers: { 'Content-Type': 'text/html' } });
     }
     // Holds the load event open long enough for the takeover to render.
-    if (url.pathname === "/slow.png") {
+    if (url.pathname === '/slow.png') {
       await new Promise((r) => setTimeout(r, 4000));
       return new Response(
         Buffer.from(
-          "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
-          "base64",
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+          'base64',
         ),
-        { headers: { "Content-Type": "image/png" } },
+        { headers: { 'Content-Type': 'image/png' } },
       );
     }
     const file = Bun.file(ROOT + url.pathname);
     if (await file.exists()) return new Response(file);
-    return new Response("Not Found", { status: 404 });
+    return new Response('Not Found', { status: 404 });
   },
 });
 
-console.log(`\n Login harness (${THEME}) at http://localhost:${server.port}/\n`);
+console.log(
+  `\n Login harness (${THEME}) at http://localhost:${server.port}/\n`,
+);

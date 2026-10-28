@@ -1,12 +1,14 @@
-import React, { useState } from "react";
-import { useCourseAttendanceForecast } from "../../hooks/useCourseAttendanceForecast";
-import { KeyboardArrowDown } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
+import React, { useState } from 'react';
+import { useCourseAttendanceForecast } from '../../hooks/useCourseAttendanceForecast';
+import { KeyboardArrowDown } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 
 interface AttendanceMeterProps {
   courseCode: string;
 }
 
-export const AttendanceMeter: React.FC<AttendanceMeterProps> = ({ courseCode }) => {
+export const AttendanceMeter: React.FC<AttendanceMeterProps> = ({
+  courseCode,
+}) => {
   const forecast = useCourseAttendanceForecast(courseCode);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -21,20 +23,20 @@ export const AttendanceMeter: React.FC<AttendanceMeterProps> = ({ courseCode }) 
     examName,
   } = forecast;
 
-  let accentColor = "text-(--att-safe)";
-  let copy = `Safe! Can skip ${safeSkips} class${safeSkips !== 1 ? "es" : ""}.`;
+  let accentColor = 'text-(--att-safe)';
+  let copy = `Safe! Can skip ${safeSkips} class${safeSkips !== 1 ? 'es' : ''}.`;
 
-  if (status === "WARNING") {
-    accentColor = "text-(--att-warn)";
-    copy = `Caution! Only ${safeSkips} safe skip${safeSkips !== 1 ? "s" : ""} left.`;
-  } else if (status === "CRITICAL") {
-    accentColor = "text-(--att-danger)";
+  if (status === 'WARNING') {
+    accentColor = 'text-(--att-warn)';
+    copy = `Caution! Only ${safeSkips} safe skip${safeSkips !== 1 ? 's' : ''} left.`;
+  } else if (status === 'CRITICAL') {
+    accentColor = 'text-(--att-danger)';
     copy =
       safeSkips === 0
         ? `Must attend ${classesNeededBeforeExam || requiredToPass} class${
-            (classesNeededBeforeExam || requiredToPass) !== 1 ? "es" : ""
-          } before ${examName || "exams"}.`
-        : `Attend ${requiredToPass} class${requiredToPass !== 1 ? "es" : ""} to reach 75%.`;
+            (classesNeededBeforeExam || requiredToPass) !== 1 ? 'es' : ''
+          } before ${examName || 'exams'}.`
+        : `Attend ${requiredToPass} class${requiredToPass !== 1 ? 'es' : ''} to reach 75%.`;
   }
 
   return (
@@ -48,7 +50,7 @@ export const AttendanceMeter: React.FC<AttendanceMeterProps> = ({ courseCode }) 
         </span>
         <KeyboardArrowDown
           className={`w-4 h-4 ${accentColor} transition-transform duration-fast ${
-            isOpen ? "rotate-180" : ""
+            isOpen ? 'rotate-180' : ''
           }`}
         />
       </button>
@@ -58,7 +60,7 @@ export const AttendanceMeter: React.FC<AttendanceMeterProps> = ({ courseCode }) 
           <p className="text-[11px] text-center text-(--text-muted) font-mono font-bold uppercase tracking-wider">
             {futureScheduledClasses > 0
               ? `${futureScheduledClasses} classes remaining before ${
-                  examName || "Exams"
+                  examName || 'Exams'
                 }`
               : `Semester Schedule`}
           </p>

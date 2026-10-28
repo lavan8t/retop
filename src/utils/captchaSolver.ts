@@ -1,4 +1,4 @@
-import { bitmaps } from "./bitmaps";
+import { bitmaps } from './bitmaps';
 
 const pre_img = (img: number[][]) => {
   let avg = 0;
@@ -99,27 +99,34 @@ const max_soft = (a: number[]) => {
 export const autoSolveCaptcha = async (
   img: HTMLImageElement,
 ): Promise<string> => {
-  console.log("[retop-captcha] autoSolveCaptcha called with img:", img, "src:", img?.src);
+  console.log(
+    '[retop-captcha] autoSolveCaptcha called with img:',
+    img,
+    'src:',
+    img?.src,
+  );
 
   if (!bitmaps || !bitmaps.weights || !bitmaps.biases) {
     console.warn(
-      "[retop-captcha] bitmaps is not defined or missing NN data. Skipping auto-solver.",
+      '[retop-captcha] bitmaps is not defined or missing NN data. Skipping auto-solver.',
     );
-    return "";
+    return '';
   }
 
   if (!img || !img.src) {
-    console.warn("[retop-captcha] Image element or src is missing.");
-    return "";
+    console.warn('[retop-captcha] Image element or src is missing.');
+    return '';
   }
 
   let processImg: HTMLImageElement = img;
 
   // Convert to Data URL if src is a remote/relative URL to avoid canvas CORS tainting
-  if (!img.src.startsWith("data:")) {
+  if (!img.src.startsWith('data:')) {
     try {
-      console.log("[retop-captcha] Fetching captcha image bytes to create safe Data URL...");
-      const res = await fetch(img.src, { credentials: "include" });
+      console.log(
+        '[retop-captcha] Fetching captcha image bytes to create safe Data URL...',
+      );
+      const res = await fetch(img.src, { credentials: 'include' });
       const blob = await res.blob();
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -138,33 +145,55 @@ export const autoSolveCaptcha = async (
         }
       });
       processImg = tempImg;
-      console.log("[retop-captcha] Data URL created successfully.");
+      console.log('[retop-captcha] Data URL created successfully.');
     } catch (e) {
-      console.warn("[retop-captcha] Data URL conversion failed, falling back to direct img element:", e);
+      console.warn(
+        '[retop-captcha] Data URL conversion failed, falling back to direct img element:',
+        e,
+      );
     }
   }
 
   // Ensure image is loaded and has dimensions
   if (!processImg.complete || processImg.naturalWidth === 0) {
-    console.log("[retop-captcha] Waiting for image load...");
+    console.log('[retop-captcha] Waiting for image load...');
     await new Promise((resolve) => {
       const timeout = setTimeout(resolve, 1500);
-      processImg.addEventListener("load", () => { clearTimeout(timeout); resolve(true); }, { once: true });
-      processImg.addEventListener("error", () => { clearTimeout(timeout); resolve(false); }, { once: true });
+      processImg.addEventListener(
+        'load',
+        () => {
+          clearTimeout(timeout);
+          resolve(true);
+        },
+        { once: true },
+      );
+      processImg.addEventListener(
+        'error',
+        () => {
+          clearTimeout(timeout);
+          resolve(false);
+        },
+        { once: true },
+      );
     });
   }
 
-  console.log("[retop-captcha] Image ready for processing. Width:", processImg.naturalWidth, "Height:", processImg.naturalHeight);
+  console.log(
+    '[retop-captcha] Image ready for processing. Width:',
+    processImg.naturalWidth,
+    'Height:',
+    processImg.naturalHeight,
+  );
 
   const weights = bitmaps.weights as number[][];
   const biases = bitmaps.biases as number[];
-  const label_txt = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
+  const label_txt = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
 
   if (!ctx) {
-    console.error("[retop-captcha] Could not create 2D canvas context.");
-    return "";
+    console.error('[retop-captcha] Could not create 2D canvas context.');
+    return '';
   }
 
   canvas.width = 200;
@@ -174,7 +203,7 @@ export const autoSolveCaptcha = async (
     ctx.drawImage(processImg, 0, 0, 200, 40);
     const pd = ctx.getImageData(0, 0, 200, 40);
     const bls = saturation(pd.data);
-    let out = "";
+    let out = '';
 
     for (let i = 0; i < 6; i += 1) {
       let currentBls = pre_img(bls[i]);
@@ -186,10 +215,10 @@ export const autoSolveCaptcha = async (
       out += label_txt[index];
     }
 
-    console.log("[retop-captcha] Successfully predicted CAPTCHA code:", out);
+    console.log('[retop-captcha] Successfully predicted CAPTCHA code:', out);
     return out;
   } catch (err) {
-    console.error("[retop-captcha] Error processing captcha canvas:", err);
-    return "";
+    console.error('[retop-captcha] Error processing captcha canvas:', err);
+    return '';
   }
 };

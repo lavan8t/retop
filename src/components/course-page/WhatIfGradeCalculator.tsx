@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
-import { VTOPNetwork } from "../../utils/network";
-import { CourseMarks } from "../../types/vtop";
-import { parseStudentMarks } from "../../parsers/marks";
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { VTOPNetwork } from '../../utils/network';
+import { CourseMarks } from '../../types/vtop';
+import { parseStudentMarks } from '../../parsers/marks';
 import {
   Calculate,
   Error,
   CheckCircle,
-} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
+} from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 
 interface WhatIfGradeCalculatorProps {
   network: VTOPNetwork;
@@ -27,7 +27,7 @@ export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
 }) => {
   const [marksData, setMarksData] = useState<CourseMarks[]>([]);
   const [loading, setLoading] = useState(true);
-  const [hypotheticalFAT, setHypotheticalFAT] = useState<string>("");
+  const [hypotheticalFAT, setHypotheticalFAT] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -44,11 +44,11 @@ export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
         const html = await network.getStudentMarks(selectedSem);
         if (!isMounted) return;
         const parsed =
-          typeof html === "string" ? parseStudentMarks(html) : html;
+          typeof html === 'string' ? parseStudentMarks(html) : html;
         setMarksData(Array.isArray(parsed) ? parsed : []);
       } catch (err) {
-        console.error("Failed to fetch marks for calculator", err);
-        if (isMounted) setErrorMsg("Failed to load Marks.");
+        console.error('Failed to fetch marks for calculator', err);
+        if (isMounted) setErrorMsg('Failed to load Marks.');
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -69,12 +69,12 @@ export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
 
   // Check if FAT is already published
   const fatAssessment = courseMarks?.assessments.find((a) =>
-    a.title.toLowerCase().includes("fat"),
+    a.title.toLowerCase().includes('fat'),
   );
 
   const hasFatScore =
     fatAssessment &&
-    fatAssessment.scoredPercentage !== "-" &&
+    fatAssessment.scoredPercentage !== '-' &&
     parseFloat(fatAssessment.scoredPercentage) > 0;
 
   // Calculate Marks
@@ -83,7 +83,7 @@ export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
 
   if (courseMarks) {
     courseMarks.assessments.forEach((a) => {
-      if (!a.title.toLowerCase().includes("fat")) {
+      if (!a.title.toLowerCase().includes('fat')) {
         const s = parseFloat(a.scoredPercentage) || 0;
         const w = parseFloat(a.weightage) || 0;
         totalInternalScored += s;
@@ -93,10 +93,10 @@ export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
   }
 
   const internalScoreStr = loading
-    ? "..."
+    ? '...'
     : courseMarks
       ? totalInternalScored.toFixed(1)
-      : "0.0";
+      : '0.0';
 
   const fatInput = parseFloat(hypotheticalFAT) || 0;
   // FAT is usually scaled to 40% if max is 100
@@ -107,14 +107,14 @@ export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
   const isPassingTotal = totalScore >= 50;
   const isPass = isPassingFAT && isPassingTotal;
 
-  let gradeStr = "F";
+  let gradeStr = 'F';
   if (isPass) {
-    if (totalScore >= 90) gradeStr = "S";
-    else if (totalScore >= 80) gradeStr = "A";
-    else if (totalScore >= 70) gradeStr = "B";
-    else if (totalScore >= 60) gradeStr = "C";
-    else if (totalScore >= 55) gradeStr = "D";
-    else if (totalScore >= 50) gradeStr = "E";
+    if (totalScore >= 90) gradeStr = 'S';
+    else if (totalScore >= 80) gradeStr = 'A';
+    else if (totalScore >= 70) gradeStr = 'B';
+    else if (totalScore >= 60) gradeStr = 'C';
+    else if (totalScore >= 55) gradeStr = 'D';
+    else if (totalScore >= 50) gradeStr = 'E';
   }
 
   const lastPredicted = useRef<string | null>(undefined as any);
@@ -124,7 +124,7 @@ export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
 
     if (onGradePredicted) {
       const nextGrade =
-        hypotheticalFAT === "" || totalInternalWeightage < 60 ? null : gradeStr;
+        hypotheticalFAT === '' || totalInternalWeightage < 60 ? null : gradeStr;
       if (lastPredicted.current !== nextGrade) {
         lastPredicted.current = nextGrade;
         onGradePredicted(nextGrade);
@@ -149,7 +149,7 @@ export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
         <div className="p-4 rounded-2xl bg-(--att-danger-container) flex items-start gap-3">
           <Error className="w-5 h-5 text-(--att-danger) shrink-0" />
           <p className="text-sm font-bold text-(--att-danger)">
-            {errorMsg || "Marks not available for this course yet."}
+            {errorMsg || 'Marks not available for this course yet.'}
           </p>
         </div>
       ) : (
@@ -160,7 +160,7 @@ export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
                 Current Internal Marks
               </span>
               <span className="font-black text-cyan-400 text-xl font-mono">
-                {internalScoreStr}{" "}
+                {internalScoreStr}{' '}
                 <span className="text-sm text-content-dim">/ 60</span>
               </span>
             </div>
@@ -194,13 +194,13 @@ export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
               </div>
             )}
           </div>
-          {totalInternalWeightage >= 60 && hypotheticalFAT !== "" && (
+          {totalInternalWeightage >= 60 && hypotheticalFAT !== '' && (
             <div
-              className={`w-full lg:w-48 shrink-0 rounded-3xl p-5 flex flex-col items-center justify-center text-center transition-all duration-fast ${isPass ? "bg-card-lime" : "bg-att-danger"} shadow-none border-2 border-(--border-main)`}
+              className={`w-full lg:w-48 shrink-0 rounded-3xl p-5 flex flex-col items-center justify-center text-center transition-all duration-fast ${isPass ? 'bg-card-lime' : 'bg-att-danger'} shadow-none border-2 border-(--border-main)`}
             >
               <div className="mt-4 flex flex-col gap-1 w-full text-left">
                 <div
-                  className={`text-[10px] font-bold uppercase flex justify-between items-center ${isPassingFAT ? "text-black/70" : "text-black"}`}
+                  className={`text-[10px] font-bold uppercase flex justify-between items-center ${isPassingFAT ? 'text-black/70' : 'text-black'}`}
                 >
                   <span>FAT &gt;= 40</span>
                   {isPassingFAT ? (
@@ -210,7 +210,7 @@ export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
                   )}
                 </div>
                 <div
-                  className={`text-[10px] font-bold uppercase flex justify-between items-center ${isPassingTotal ? "text-black/70" : "text-black"}`}
+                  className={`text-[10px] font-bold uppercase flex justify-between items-center ${isPassingTotal ? 'text-black/70' : 'text-black'}`}
                 >
                   <span>Total &gt;= 50</span>
                   {isPassingTotal ? (

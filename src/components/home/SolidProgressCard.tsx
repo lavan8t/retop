@@ -1,5 +1,5 @@
-import { TrendingUp } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
-import { Card } from "../ui/Card";
+import { TrendingUp } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
+import { Card } from '../ui/Card';
 
 export const SolidProgressCard = ({ progress }: { progress: number }) => (
   <Card

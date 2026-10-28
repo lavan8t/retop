@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 import {
   ArrowLeft,
   Home,
@@ -15,8 +15,8 @@ import {
   Star,
   MoreVert,
   Delete,
-} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
-import { NoInternetIcon } from "../icons/NoInternetIcon";
+} from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
+import { NoInternetIcon } from '../icons/NoInternetIcon';
 import {
   QuickLink,
   Semester,
@@ -25,17 +25,17 @@ import {
   MenuCategory,
   CoursePageOption,
   CourseSummary,
-} from "../../types/vtop";
-import { MaterialSwitch } from "../MaterialSwitch";
-import { SemesterDropdown, ClassGroupDropdown } from "../ui/Dropdown";
-import { TopBarSearch } from "./TopBarSearch";
-import { OfficialResourcesMenu } from "../resources/OfficialResourcesMenu";
-import { SegmentedControl } from "../ui/SegmentedControl";
-import { getCategoryIcon } from "../../utils/icons";
-import { useDataStore } from "../../store/dataStore";
-import { useAppStore } from "../../store/appStore";
-import { fixBase64Image } from "../../parsers/profile";
-import { UserProfileData } from "../../store/slices/profileSlice";
+} from '../../types/vtop';
+import { MaterialSwitch } from '../MaterialSwitch';
+import { SemesterDropdown, ClassGroupDropdown } from '../ui/Dropdown';
+import { TopBarSearch } from './TopBarSearch';
+import { OfficialResourcesMenu } from '../resources/OfficialResourcesMenu';
+import { SegmentedControl } from '../ui/SegmentedControl';
+import { getCategoryIcon } from '../../utils/icons';
+import { useDataStore } from '../../store/dataStore';
+import { useAppStore } from '../../store/appStore';
+import { fixBase64Image } from '../../parsers/profile';
+import { UserProfileData } from '../../store/slices/profileSlice';
 
 interface TopBarProps {
   currentView: string;
@@ -63,36 +63,36 @@ interface TopBarProps {
 
 const getPageTitle = (view: string, dynamicTitle?: string) => {
   switch (view) {
-    case "dashboard":
-      return "Search";
-    case "timetable":
-      return "Timetable";
-    case "curriculum":
-      return "Curriculum";
-    case "marks":
-      return "Marks";
-    case "grades":
-      return "Grades & History";
-    case "profile":
-      return "Profile";
-    case "settings":
-      return "Settings";
-    case "coursePage":
-      return "Course Page";
-    case "digitalAssignments":
-      return "Assignments";
-    case "attendance":
-      return "Attendance";
-    case "examSchedule":
-      return "Exam Schedule";
-    case "calendar":
-      return "Calendar";
-    case "lateHour":
-      return "Late Hour";
-    case "content":
-      return dynamicTitle || "Legacy View";
+    case 'dashboard':
+      return 'Search';
+    case 'timetable':
+      return 'Timetable';
+    case 'curriculum':
+      return 'Curriculum';
+    case 'marks':
+      return 'Marks';
+    case 'grades':
+      return 'Grades & History';
+    case 'profile':
+      return 'Profile';
+    case 'settings':
+      return 'Settings';
+    case 'coursePage':
+      return 'Course Page';
+    case 'digitalAssignments':
+      return 'Assignments';
+    case 'attendance':
+      return 'Attendance';
+    case 'examSchedule':
+      return 'Exam Schedule';
+    case 'calendar':
+      return 'Calendar';
+    case 'lateHour':
+      return 'Late Hour';
+    case 'content':
+      return dynamicTitle || 'Legacy View';
     default:
-      return "";
+      return '';
   }
 };
 
@@ -112,7 +112,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   onTogglePin,
   onReorderPins,
   onNavigate,
-  initialQuery = "",
+  initialQuery = '',
   onTimetableSemChange,
   onSync,
   network,
@@ -188,8 +188,8 @@ export const TopBar: React.FC<TopBarProps> = ({
   const user = propUser || storeUser;
 
   const isLoading =
-    status === "Syncing..." ||
-    status === "Initializing..." ||
+    status === 'Syncing...' ||
+    status === 'Initializing...' ||
     isSyncing ||
     ttLoading ||
     calLoadingGrid ||
@@ -205,11 +205,11 @@ export const TopBar: React.FC<TopBarProps> = ({
         Boolean(
           el &&
           el instanceof Element &&
-          (el.tagName === "INPUT" ||
-            el.tagName === "TEXTAREA" ||
-            el.tagName === "SELECT" ||
+          (el.tagName === 'INPUT' ||
+            el.tagName === 'TEXTAREA' ||
+            el.tagName === 'SELECT' ||
             (el as HTMLElement).isContentEditable ||
-            (typeof el.closest === "function" &&
+            (typeof el.closest === 'function' &&
               Boolean(
                 el.closest("input, textarea, select, [contenteditable='true']"),
               ))),
@@ -220,9 +220,9 @@ export const TopBar: React.FC<TopBarProps> = ({
       }
 
       // Hotkey 0 for Home/Dashboard, 1-9 for Pinned Pages
-      if (e.key === "0") {
+      if (e.key === '0') {
         e.preventDefault();
-        setCurrentView("dashboard");
+        setCurrentView('dashboard');
         return;
       }
       const num = parseInt(e.key);
@@ -232,8 +232,8 @@ export const TopBar: React.FC<TopBarProps> = ({
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentView, pinnedLinks, handleLinkClick, setCurrentView]);
 
   return (
@@ -243,13 +243,13 @@ export const TopBar: React.FC<TopBarProps> = ({
         className="fixed top-0 left-0 right-0 h-16 sm:h-18 md:h-20 lg:h-22 pointer-events-none select-none z-[45]"
         style={{
           background:
-            "linear-gradient(180deg, var(--bg-main) 0%, var(--bg-main) 50%, color-mix(in srgb, var(--bg-main) 70%, transparent) 75%, transparent 100%)",
-          backdropFilter: "blur(8px)",
-          WebkitBackdropFilter: "blur(8px)",
+            'linear-gradient(180deg, var(--bg-main) 0%, var(--bg-main) 50%, color-mix(in srgb, var(--bg-main) 70%, transparent) 75%, transparent 100%)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
           maskImage:
-            "linear-gradient(180deg, black 0%, black 50%, rgba(0, 0, 0, 0.4) 80%, transparent 100%)",
+            'linear-gradient(180deg, black 0%, black 50%, rgba(0, 0, 0, 0.4) 80%, transparent 100%)',
           WebkitMaskImage:
-            "linear-gradient(180deg, black 0%, black 50%, rgba(0, 0, 0, 0.4) 80%, transparent 100%)",
+            'linear-gradient(180deg, black 0%, black 50%, rgba(0, 0, 0, 0.4) 80%, transparent 100%)',
         }}
       />
 
@@ -268,8 +268,8 @@ export const TopBar: React.FC<TopBarProps> = ({
                   onTogglePin={onTogglePin}
                   initialQuery={initialQuery}
                   pageTitle={getPageTitle(currentView, contentTitle)}
-                  onBack={onBack || (() => setCurrentView("dashboard"))}
-                  status={isLoading ? "loading" : "idle"}
+                  onBack={onBack || (() => setCurrentView('dashboard'))}
+                  status={isLoading ? 'loading' : 'idle'}
                   onSync={onSync}
                   isSyncing={isSyncing}
                   lastSyncTime={lastSyncTime}
@@ -282,7 +282,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         <div className="flex items-center gap-2 md:gap-4 h-full pointer-events-auto shrink-0">
           {/* Desktop inline page controls (hidden on mobile) */}
           <div className="hidden sm:flex items-center gap-2 md:gap-4 h-full pointer-events-auto">
-            {currentView === "timetable" && (
+            {currentView === 'timetable' && (
               <div
                 key="timetable-controls"
                 className="flex items-center gap-1.5 md:gap-3 lg:gap-4 pr-0 pointer-events-auto"
@@ -305,7 +305,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                             <GridView className="w-3.5 h-3.5" />
                           </div>
                         ),
-                        value: "grid",
+                        value: 'grid',
                       },
                       {
                         label: (
@@ -316,7 +316,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                             <List className="w-3.5 h-3.5" />
                           </div>
                         ),
-                        value: "list",
+                        value: 'list',
                       },
                       {
                         label: (
@@ -327,7 +327,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                             <CalendarMonth className="w-3.5 h-3.5" />
                           </div>
                         ),
-                        value: "week",
+                        value: 'week',
                       },
                     ]}
                     value={ttViewMode}
@@ -337,7 +337,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               </div>
             )}
 
-            {currentView === "calendar" && (
+            {currentView === 'calendar' && (
               <div
                 key="calendar-controls"
                 className="flex items-center gap-2 mr-1 md:mr-2 pointer-events-auto"
@@ -371,7 +371,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                             <GridView className="w-3.5 h-3.5" />
                           </div>
                         ),
-                        value: "grid",
+                        value: 'grid',
                       },
                       {
                         label: (
@@ -382,7 +382,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                             <List className="w-3.5 h-3.5" />
                           </div>
                         ),
-                        value: "list",
+                        value: 'list',
                       },
                     ]}
                     value={calViewMode}
@@ -392,7 +392,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               </div>
             )}
 
-            {currentView === "marks" && (
+            {currentView === 'marks' && (
               <div
                 key="marks-controls"
                 className="flex items-center gap-2 mr-1 md:mr-2"
@@ -401,13 +401,13 @@ export const TopBar: React.FC<TopBarProps> = ({
                   onClick={() => setIsMarksModernView(!isMarksModernView)}
                   title={
                     isMarksModernView
-                      ? "Switch to Legacy View"
-                      : "Switch to Modern View"
+                      ? 'Switch to Legacy View'
+                      : 'Switch to Modern View'
                   }
                   aria-label={
                     isMarksModernView
-                      ? "Switch to Legacy View"
-                      : "Switch to Modern View"
+                      ? 'Switch to Legacy View'
+                      : 'Switch to Modern View'
                   }
                   className="hidden sm:flex items-center justify-center bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) w-8 h-8 rounded-xl transition-colors cursor-pointer"
                 >
@@ -428,7 +428,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               </div>
             )}
 
-            {currentView === "grades" && (
+            {currentView === 'grades' && (
               <div
                 key="grades-controls"
                 className="flex items-center gap-2 mr-1 md:mr-2 pointer-events-auto"
@@ -441,7 +441,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               </div>
             )}
 
-            {currentView === "curriculum" && (
+            {currentView === 'curriculum' && (
               <div
                 key="curriculum-controls"
                 className="flex items-center gap-2 mr-1 md:mr-2 pointer-events-auto"
@@ -458,7 +458,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               </div>
             )}
 
-            {currentView === "coursePage" && (
+            {currentView === 'coursePage' && (
               <div
                 key="coursePage-controls"
                 className="flex items-center gap-2 mr-1 md:mr-2"
@@ -468,13 +468,13 @@ export const TopBar: React.FC<TopBarProps> = ({
                   selectedId={cpSelectedSem}
                   onChange={(sem: string) => {
                     setCpSelectedSem(sem);
-                    setCpSelectedCourseId("");
+                    setCpSelectedCourseId('');
                   }}
                 />
               </div>
             )}
 
-            {currentView === "digitalAssignments" && (
+            {currentView === 'digitalAssignments' && (
               <div
                 key="digitalAssignments-controls"
                 className="flex items-center gap-2 mr-1 md:mr-2 pointer-events-auto"
@@ -505,13 +505,13 @@ export const TopBar: React.FC<TopBarProps> = ({
                   className="p-1.5 md:p-2 bg-(--md-sys-color-surface-variant) border-2 border-(--md-sys-color-outline) hover:border-(--md-sys-color-on-surface) rounded-xl shadow-none hover:-translate-y-0.5 hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) transition-all disabled:opacity-50 text-(--md-sys-color-on-surface-variant)"
                 >
                   <Refresh
-                    className={`w-4 h-4 md:w-5 md:h-5 ${daLoading && !daCourses?.length ? "animate-spin" : ""}`}
+                    className={`w-4 h-4 md:w-5 md:h-5 ${daLoading && !daCourses?.length ? 'animate-spin' : ''}`}
                   />
                 </button>
               </div>
             )}
 
-            {currentView === "examSchedule" && (
+            {currentView === 'examSchedule' && (
               <div
                 key="examSchedule-controls"
                 className="flex items-center gap-2 mr-1 md:mr-2 pointer-events-auto"
@@ -529,7 +529,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               </div>
             )}
 
-            {currentView === "attendance" && (
+            {currentView === 'attendance' && (
               <div
                 key="attendance-controls"
                 className="flex items-center gap-2 mr-1 md:mr-2"
@@ -545,15 +545,15 @@ export const TopBar: React.FC<TopBarProps> = ({
 
           {/* Mobile 3-Dot Options Menu */}
           {[
-            "timetable",
-            "calendar",
-            "marks",
-            "grades",
-            "curriculum",
-            "coursePage",
-            "digitalAssignments",
-            "examSchedule",
-            "attendance",
+            'timetable',
+            'calendar',
+            'marks',
+            'grades',
+            'curriculum',
+            'coursePage',
+            'digitalAssignments',
+            'examSchedule',
+            'attendance',
           ].includes(currentView) && (
             <div className="sm:hidden relative flex items-center">
               <button
@@ -575,7 +575,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                       {/* Bottom Sheet Drag Handle */}
                       <div className="w-12 h-1.5 bg-(--border-main) rounded-full mx-auto -mt-1 mb-1 opacity-60" />
 
-                      {currentView === "timetable" && (
+                      {currentView === 'timetable' && (
                         <div className="flex flex-col gap-3">
                           <div className="flex bg-transparent rounded-full border-2 border-(--border-main) shadow-(--brutal-shadow-sm) items-center">
                             <SegmentedControl
@@ -589,7 +589,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                                       <GridView className="w-3.5 h-3.5" />
                                     </div>
                                   ),
-                                  value: "grid",
+                                  value: 'grid',
                                 },
                                 {
                                   label: (
@@ -600,7 +600,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                                       <List className="w-3.5 h-3.5" />
                                     </div>
                                   ),
-                                  value: "list",
+                                  value: 'list',
                                 },
                                 {
                                   label: (
@@ -611,7 +611,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                                       <CalendarMonth className="w-3.5 h-3.5" />
                                     </div>
                                   ),
-                                  value: "week",
+                                  value: 'week',
                                 },
                               ]}
                               value={ttViewMode}
@@ -629,7 +629,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                         </div>
                       )}
 
-                      {currentView === "calendar" && (
+                      {currentView === 'calendar' && (
                         <div className="flex flex-col gap-3">
                           <div className="flex bg-transparent rounded-full border-2 border-(--border-main) shadow-(--brutal-shadow-sm) items-center">
                             <SegmentedControl
@@ -643,7 +643,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                                       <GridView className="w-3.5 h-3.5" />
                                     </div>
                                   ),
-                                  value: "grid",
+                                  value: 'grid',
                                 },
                                 {
                                   label: (
@@ -654,7 +654,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                                       <List className="w-3.5 h-3.5" />
                                     </div>
                                   ),
-                                  value: "list",
+                                  value: 'list',
                                 },
                               ]}
                               value={calViewMode}
@@ -682,7 +682,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                         </div>
                       )}
 
-                      {currentView === "marks" && (
+                      {currentView === 'marks' && (
                         <div className="flex flex-col gap-3">
                           <SemesterDropdown
                             semesters={marksSemesters}
@@ -706,7 +706,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                         </div>
                       )}
 
-                      {currentView === "grades" && (
+                      {currentView === 'grades' && (
                         <SemesterDropdown
                           semesters={gradesSemesters}
                           selectedId={gradesSelectedSem}
@@ -717,7 +717,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                         />
                       )}
 
-                      {currentView === "curriculum" && (
+                      {currentView === 'curriculum' && (
                         <div className="flex items-center justify-between py-1">
                           <span className="text-xs font-bold text-(--text-main)">
                             Hide Completed
@@ -731,7 +731,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                         </div>
                       )}
 
-                      {currentView === "digitalAssignments" && (
+                      {currentView === 'digitalAssignments' && (
                         <div className="flex flex-col gap-3">
                           <SemesterDropdown
                             semesters={daSemesters}
@@ -753,14 +753,14 @@ export const TopBar: React.FC<TopBarProps> = ({
                             className="flex items-center justify-center gap-2 py-2.5 px-4 bg-(--bg-highlight) rounded-xl text-xs font-bold text-(--text-main) border border-(--border-dim) cursor-pointer"
                           >
                             <Refresh
-                              className={`w-4 h-4 ${daLoading ? "animate-spin" : ""}`}
+                              className={`w-4 h-4 ${daLoading ? 'animate-spin' : ''}`}
                             />
                             <span>Refresh</span>
                           </button>
                         </div>
                       )}
 
-                      {currentView === "examSchedule" && (
+                      {currentView === 'examSchedule' && (
                         <SemesterDropdown
                           semesters={examSemesters}
                           selectedId={examSelectedSem}
@@ -772,19 +772,19 @@ export const TopBar: React.FC<TopBarProps> = ({
                         />
                       )}
 
-                      {currentView === "coursePage" && (
+                      {currentView === 'coursePage' && (
                         <SemesterDropdown
                           semesters={ttSemesters}
                           selectedId={cpSelectedSem}
                           onChange={(sem: string) => {
                             setCpSelectedSem(sem);
-                            setCpSelectedCourseId("");
+                            setCpSelectedCourseId('');
                             setIsMobileControlsOpen(false);
                           }}
                         />
                       )}
 
-                      {currentView === "attendance" && (
+                      {currentView === 'attendance' && (
                         <SemesterDropdown
                           semesters={ttSemesters}
                           selectedId={attSelectedSem}
@@ -805,66 +805,66 @@ export const TopBar: React.FC<TopBarProps> = ({
             // Map currentView → QuickLink for pin toggle
             const VIEW_LINKS: Record<string, QuickLink> = {
               timetable: {
-                title: "Time Table",
-                url: "academics/common/StudentTimeTable",
-                category: "Made for retop",
+                title: 'Time Table',
+                url: 'academics/common/StudentTimeTable',
+                category: 'Made for retop',
               },
               attendance: {
-                title: "Class Attendance",
-                url: "academics/common/StudentAttendance",
-                category: "Made for retop",
+                title: 'Class Attendance',
+                url: 'academics/common/StudentAttendance',
+                category: 'Made for retop',
               },
               digitalAssignments: {
-                title: "Assignments",
-                url: "examinations/StudentDA",
-                category: "Made for retop",
+                title: 'Assignments',
+                url: 'examinations/StudentDA',
+                category: 'Made for retop',
               },
               coursePage: {
-                title: "Course Page Consolidated",
-                url: "academics/common/StudentCoursePage",
-                category: "Made for retop",
+                title: 'Course Page Consolidated',
+                url: 'academics/common/StudentCoursePage',
+                category: 'Made for retop',
               },
               marks: {
-                title: "Marks View",
-                url: "examinations/StudentMarkView",
-                category: "Made for retop",
+                title: 'Marks View',
+                url: 'examinations/StudentMarkView',
+                category: 'Made for retop',
               },
               grades: {
-                title: "Grades View",
-                url: "examinations/StudentGradeView",
-                category: "Made for retop",
+                title: 'Grades View',
+                url: 'examinations/StudentGradeView',
+                category: 'Made for retop',
               },
               calendar: {
-                title: "Academic Calendar",
-                url: "academics/common/CalendarPreview",
-                category: "Made for retop",
+                title: 'Academic Calendar',
+                url: 'academics/common/CalendarPreview',
+                category: 'Made for retop',
               },
               profile: {
-                title: "Student Profile",
-                url: "studentsRecord/StudentProfileAllView",
-                category: "Made for retop",
+                title: 'Student Profile',
+                url: 'studentsRecord/StudentProfileAllView',
+                category: 'Made for retop',
               },
               curriculum: {
-                title: "Curriculum",
-                url: "academics/common/CurriculumSyllabus",
-                category: "Made for retop",
+                title: 'Curriculum',
+                url: 'academics/common/CurriculumSyllabus',
+                category: 'Made for retop',
               },
               examSchedule: {
-                title: "Exam Schedule",
-                url: "examinations/StudExamSchedule",
-                category: "Made for retop",
+                title: 'Exam Schedule',
+                url: 'examinations/StudExamSchedule',
+                category: 'Made for retop',
               },
               lateHour: {
-                title: "Late Hour Request",
-                url: "hostels/late/hour/student/request/1",
-                category: "Made for retop",
+                title: 'Late Hour Request',
+                url: 'hostels/late/hour/student/request/1',
+                category: 'Made for retop',
               },
             };
             const currentLink = VIEW_LINKS[currentView];
             const isCurrentPinned = currentLink
               ? pinnedLinks.some((p) => p.url === currentLink.url)
               : false;
-            const canPinCurrent = !!currentLink && currentView !== "dashboard";
+            const canPinCurrent = !!currentLink && currentView !== 'dashboard';
 
             return (
               <div className="hidden xl:flex items-center relative pointer-events-auto shrink-0 mr-1">
@@ -887,19 +887,19 @@ export const TopBar: React.FC<TopBarProps> = ({
                   title={
                     canPinCurrent
                       ? isCurrentPinned
-                        ? "Unpin this page"
-                        : "Pin this page"
-                      : "Favourites"
+                        ? 'Unpin this page'
+                        : 'Pin this page'
+                      : 'Favourites'
                   }
                   aria-label="Favourites"
                   className={`flex items-center justify-center w-10 h-10 rounded-[14px] bg-transparent border-0 cursor-pointer transition-all shadow-none z-[999] ${
                     isCurrentPinned || isStarOpen
-                      ? "text-(--accent-base)"
-                      : "text-(--text-muted) hover:text-(--text-main)"
+                      ? 'text-(--accent-base)'
+                      : 'text-(--text-muted) hover:text-(--text-main)'
                   }`}
                 >
                   <Star
-                    className={`w-5 h-5 transition-all ${isCurrentPinned ? "scale-110" : "opacity-60 hover:opacity-100"}`}
+                    className={`w-5 h-5 transition-all ${isCurrentPinned ? 'scale-110' : 'opacity-60 hover:opacity-100'}`}
                   />
                 </button>
 
@@ -914,13 +914,13 @@ export const TopBar: React.FC<TopBarProps> = ({
                     <div className="flex items-center gap-1 mb-1">
                       <button
                         onClick={() => {
-                          setCurrentView("dashboard");
+                          setCurrentView('dashboard');
                           setIsStarOpen(false);
                         }}
                         className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl transition-colors text-left border-2 border-transparent hover:border-(--border-dim) hover:bg-(--bg-highlight) cursor-pointer ${
-                          currentView === "dashboard"
-                            ? "bg-(--accent-base)/10 text-(--accent-base)"
-                            : "text-(--text-main)"
+                          currentView === 'dashboard'
+                            ? 'bg-(--accent-base)/10 text-(--accent-base)'
+                            : 'text-(--text-main)'
                         }`}
                       >
                         <Home className="w-5 h-5 text-(--text-muted) shrink-0" />
@@ -947,12 +947,12 @@ export const TopBar: React.FC<TopBarProps> = ({
                             key={`${link.url}-${idx}`}
                             draggable
                             onDragStart={(e) => {
-                              e.dataTransfer.setData("text/plain", `${idx}`);
+                              e.dataTransfer.setData('text/plain', `${idx}`);
                               setDraggedIndex(idx);
                             }}
                             onDragOver={(e) => {
                               e.preventDefault();
-                              e.dataTransfer.dropEffect = "move";
+                              e.dataTransfer.dropEffect = 'move';
                               if (dragOverIndex !== idx) setDragOverIndex(idx);
                             }}
                             onDragLeave={() => {
@@ -978,10 +978,10 @@ export const TopBar: React.FC<TopBarProps> = ({
                             }}
                             className={`flex items-center gap-1.5 group/row rounded-2xl transition-all border-2 ${
                               isDragOver
-                                ? "border-(--accent-base) bg-(--accent-base)/10 scale-[1.01]"
+                                ? 'border-(--accent-base) bg-(--accent-base)/10 scale-[1.01]'
                                 : isDragging
-                                  ? "opacity-30 border-dashed border-(--border-dim)"
-                                  : "border-transparent hover:border-(--border-dim) bg-transparent hover:bg-(--bg-highlight)"
+                                  ? 'opacity-30 border-dashed border-(--border-dim)'
+                                  : 'border-transparent hover:border-(--border-dim) bg-transparent hover:bg-(--bg-highlight)'
                             }`}
                           >
                             <div
@@ -999,8 +999,8 @@ export const TopBar: React.FC<TopBarProps> = ({
                               }}
                               className={`flex-1 flex items-center gap-2.5 py-2.5 pr-1 rounded-xl transition-colors text-left min-w-0 cursor-pointer ${
                                 isThisCurrentPage
-                                  ? "text-(--accent-base) font-bold"
-                                  : "text-(--text-main)"
+                                  ? 'text-(--accent-base) font-bold'
+                                  : 'text-(--text-main)'
                               }`}
                             >
                               <div className="relative shrink-0">
@@ -1064,22 +1064,22 @@ export const TopBar: React.FC<TopBarProps> = ({
                 if (onSync && !isSyncing && !isLoading) {
                   onSync();
                 } else if (
-                  typeof window !== "undefined" &&
+                  typeof window !== 'undefined' &&
                   (window as any).__RETOP_OFFLINE__
                 ) {
-                  const isChennai = window.location.hostname.includes("vtopcc");
+                  const isChennai = window.location.hostname.includes('vtopcc');
                   window.open(
                     isChennai
-                      ? "https://vtopcc.vit.ac.in/vtop/open/page"
-                      : "https://vtop.vit.ac.in/vtop/open/page",
-                    "_blank",
+                      ? 'https://vtopcc.vit.ac.in/vtop/open/page'
+                      : 'https://vtop.vit.ac.in/vtop/open/page',
+                    '_blank',
                   );
                 }
               }}
               title={
                 isSyncing || isLoading
-                  ? "Syncing data..."
-                  : typeof window !== "undefined" &&
+                  ? 'Syncing data...'
+                  : typeof window !== 'undefined' &&
                       (window as any).__RETOP_OFFLINE__
                     ? `Offline Mode - Last saved ${
                         lastSyncTime > 0
@@ -1087,28 +1087,28 @@ export const TopBar: React.FC<TopBarProps> = ({
                               const ago = Math.floor(
                                 (Date.now() - lastSyncTime) / 1000,
                               );
-                              if (ago < 60) return "just now";
+                              if (ago < 60) return 'just now';
                               if (ago < 3600)
                                 return `${Math.floor(ago / 60)}m ago`;
                               return `${Math.floor(ago / 3600)}h ago`;
                             })()
-                          : "cached"
+                          : 'cached'
                       }`
-                    : "Sync now"
+                    : 'Sync now'
               }
-              aria-label={isSyncing || isLoading ? "Syncing" : "Sync now"}
+              aria-label={isSyncing || isLoading ? 'Syncing' : 'Sync now'}
               disabled={isSyncing || isLoading}
               className="flex flex-col items-center justify-center px-1.5 py-0.5 rounded-lg hover:bg-(--bg-hover) transition-colors cursor-pointer text-center disabled:opacity-50 shrink-0 min-w-[24px]"
             >
               <div
-                className={`shrink-0 flex items-center justify-center ${isSyncing || isLoading ? "animate-spin" : ""}`}
+                className={`shrink-0 flex items-center justify-center ${isSyncing || isLoading ? 'animate-spin' : ''}`}
               >
-                {typeof window !== "undefined" &&
+                {typeof window !== 'undefined' &&
                 (window as any).__RETOP_OFFLINE__ &&
                 !(window as any).VtopNativeBridge ? (
                   <NoInternetIcon
                     className="w-3.5 h-3.5 md:w-4 md:h-4 transition-colors"
-                    style={{ color: "var(--accent-base, #3b82f6)" }}
+                    style={{ color: 'var(--accent-base, #3b82f6)' }}
                   />
                 ) : (
                   <Refresh className="w-3.5 h-3.5 md:w-4 md:h-4 text-(--text-muted) hover:text-(--text-main) transition-colors" />
@@ -1118,7 +1118,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                 <span className="text-[9px] font-mono font-bold text-(--text-muted) leading-none mt-0.5">
                   {(() => {
                     const ago = Math.floor((Date.now() - lastSyncTime) / 1000);
-                    if (ago < 60) return "now";
+                    if (ago < 60) return 'now';
                     if (ago < 3600) return `${Math.floor(ago / 60)}m`;
                     return `${Math.floor(ago / 3600)}h`;
                   })()}
@@ -1127,18 +1127,18 @@ export const TopBar: React.FC<TopBarProps> = ({
             </button>
           </div>
 
-          {((typeof window !== "undefined" &&
-            window.location.hostname.includes("vtopcc")) ||
-            (typeof document !== "undefined" &&
-              document.documentElement.getAttribute("data-campus") ===
-                "chennai")) && (
+          {((typeof window !== 'undefined' &&
+            window.location.hostname.includes('vtopcc')) ||
+            (typeof document !== 'undefined' &&
+              document.documentElement.getAttribute('data-campus') ===
+                'chennai')) && (
             <div className="flex items-center pointer-events-auto mr-1 md:mr-2">
               <OfficialResourcesMenu />
             </div>
           )}
 
           <div
-            className={`relative shrink-0 flex items-center justify-center pointer-events-auto ${isOmniboxOpen ? "hidden lg:flex" : ""}`}
+            className={`relative shrink-0 flex items-center justify-center pointer-events-auto ${isOmniboxOpen ? 'hidden lg:flex' : ''}`}
           >
             <button
               id="topbar-profile-btn"
@@ -1151,18 +1151,18 @@ export const TopBar: React.FC<TopBarProps> = ({
                 <div
                   className={`w-10 h-10 md:w-12 md:h-12 absolute inset-0 rounded-full overflow-hidden shrink-0 border-2 border-(--border-main) group-hover:border-(--accent-base) shadow-sm transition-all duration-200 ease-out flex items-center justify-center bg-(--bg-highlight) ${
                     showProfileMenu
-                      ? "opacity-0 scale-90 pointer-events-none"
-                      : "opacity-100 scale-100"
+                      ? 'opacity-0 scale-90 pointer-events-none'
+                      : 'opacity-100 scale-100'
                   }`}
                 >
-                  {user.regNo !== "..." &&
+                  {user.regNo !== '...' &&
                   fixBase64Image(user.profileImgBase64) ? (
                     <img
                       src={fixBase64Image(user.profileImgBase64)}
                       className="w-full h-full object-cover"
                       alt="Profile"
                       onError={(e) => {
-                        (e.target as HTMLElement).style.display = "none";
+                        (e.target as HTMLElement).style.display = 'none';
                       }}
                     />
                   ) : (

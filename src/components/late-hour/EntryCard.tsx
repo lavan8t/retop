@@ -1,13 +1,13 @@
-import React from "react";
+import React from 'react';
 import {
   Cancel,
   Category,
   Person,
   Schedule,
   Autorenew,
-} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
-import { LateHourStatusEntry } from "../../types/vtop";
-import { StatusBadge } from "./StatusBadge";
+} from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
+import { LateHourStatusEntry } from '../../types/vtop';
+import { StatusBadge } from './StatusBadge';
 
 interface EntryCardProps {
   entry: LateHourStatusEntry;
@@ -23,25 +23,25 @@ export const EntryCard: React.FC<EntryCardProps> = ({
   cancelling = false,
 }) => {
   const isOffline =
-    typeof window !== "undefined" &&
+    typeof window !== 'undefined' &&
     (!!(window as any).__RETOP_OFFLINE__ ||
-      window.location.pathname.includes("offline") ||
-      window.location.hostname.includes("web.app") ||
-      window.location.protocol === "file:");
+      window.location.pathname.includes('offline') ||
+      window.location.hostname.includes('web.app') ||
+      window.location.protocol === 'file:');
 
   const isPending =
-    entry.status.toLowerCase().includes("pending") ||
-    entry.status.toLowerCase().includes("raised");
+    entry.status.toLowerCase().includes('pending') ||
+    entry.status.toLowerCase().includes('raised');
 
   return (
     <div className="bg-(--bg-surface) border border-(--border-dim)/40 rounded-3xl p-4 md:p-5 flex flex-col gap-3.5 hover:bg-(--bg-highlight)/60 transition-colors shadow-sm">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="flex-1 min-w-0">
           <p className="text-base font-bold text-(--text-main) truncate">
-            {entry.venue || "—"}
+            {entry.venue || '—'}
           </p>
           <p className="text-xs text-(--text-muted) mt-0.5 line-clamp-2">
-            {entry.details || "—"}
+            {entry.details || '—'}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -51,7 +51,8 @@ export const EntryCard: React.FC<EntryCardProps> = ({
               type="button"
               onClick={() => onRedo(entry)}
               className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-(--bg-main) border border-(--border-dim)/60 text-(--text-main) hover:bg-(--accent-base) hover:text-(--text-inverse) hover:border-(--accent-base) transition-all cursor-pointer shadow-xs active:scale-95"
-              title="Redo or modify this request">
+              title="Redo or modify this request"
+            >
               <Autorenew className="w-3.5 h-3.5" />
               <span>Redo</span>
             </button>
@@ -61,9 +62,10 @@ export const EntryCard: React.FC<EntryCardProps> = ({
               type="button"
               onClick={() => onCancel(entry.id)}
               disabled={cancelling}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-(--att-danger-container) text-(--att-danger) hover:opacity-80 transition-opacity cursor-pointer disabled:opacity-50">
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-(--att-danger-container) text-(--att-danger) hover:opacity-80 transition-opacity cursor-pointer disabled:opacity-50"
+            >
               <Cancel className="w-3 h-3" />
-              {cancelling ? "Cancelling..." : "Cancel"}
+              {cancelling ? 'Cancelling...' : 'Cancel'}
             </button>
           )}
         </div>
@@ -72,11 +74,11 @@ export const EntryCard: React.FC<EntryCardProps> = ({
       <div className="flex flex-wrap items-center gap-3">
         <span className="inline-flex items-center gap-1.5 text-[11px] font-mono text-(--text-muted)">
           <Category className="w-3 h-3 text-(--accent-base)" />
-          {entry.eventType || "—"}
+          {entry.eventType || '—'}
         </span>
         <span className="inline-flex items-center gap-1.5 text-[11px] font-mono text-(--text-muted)">
           <Person className="w-3 h-3 text-(--accent-base)" />
-          {entry.appliedTo || "—"}
+          {entry.appliedTo || '—'}
         </span>
       </div>
 
@@ -87,7 +89,7 @@ export const EntryCard: React.FC<EntryCardProps> = ({
             From
           </span>
           <span className="text-(--text-main) leading-none">
-            {entry.fromDate || "—"}
+            {entry.fromDate || '—'}
           </span>
         </div>
         <div className="flex-1 flex items-center justify-between py-2 px-4 rounded-2xl bg-(--bg-main)/60 border border-(--border-dim)/40 text-xs font-mono">
@@ -96,7 +98,7 @@ export const EntryCard: React.FC<EntryCardProps> = ({
               To
             </span>
             <span className="font-bold text-(--text-main)">
-              {entry.toDate || "—"}
+              {entry.toDate || '—'}
             </span>
           </div>
           {entry.time && (

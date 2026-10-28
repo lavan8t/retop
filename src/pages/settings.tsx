@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { AppSettings } from "../utils/settings-store";
-import { clearCache } from "../utils/cache";
+import { useState } from 'react';
+import { AppSettings } from '../utils/settings-store';
+import { clearCache } from '../utils/cache';
 import {
   Palette,
   Sync,
@@ -8,17 +8,17 @@ import {
   Storage,
   Info,
   ArrowBack,
-} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
+} from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 
-import { downloadICalFile, generateICalFile } from "../utils/ical-export";
-import { googleCalendarName } from "../utils/google-calendar";
-import { useDataStore } from "../store/dataStore";
+import { downloadICalFile, generateICalFile } from '../utils/ical-export';
+import { googleCalendarName } from '../utils/google-calendar';
+import { useDataStore } from '../store/dataStore';
 
-import { AppearanceSection } from "../components/settings/AppearanceSection";
-import { DefaultsSection } from "../components/settings/DefaultsSection";
-import { SyncSection } from "../components/settings/SyncSection";
-import { DataStorageSection } from "../components/settings/DataStorageSection";
-import { AboutSection } from "../components/settings/AboutSection";
+import { AppearanceSection } from '../components/settings/AppearanceSection';
+import { DefaultsSection } from '../components/settings/DefaultsSection';
+import { SyncSection } from '../components/settings/SyncSection';
+import { DataStorageSection } from '../components/settings/DataStorageSection';
+import { AboutSection } from '../components/settings/AboutSection';
 
 interface SettingsPageProps {
   settings: AppSettings;
@@ -31,63 +31,65 @@ interface SettingsPageProps {
 
 const CATEGORIES = [
   {
-    id: "appearance",
-    label: "Appearance",
-    description: "Colors, themes, and calendar card accents",
+    id: 'appearance',
+    label: 'Appearance',
+    description: 'Colors, themes, and calendar card accents',
     icon: Palette,
   },
   {
-    id: "defaults",
-    label: "Defaults",
-    description: "Timetable mode, launch view, and display preferences",
+    id: 'defaults',
+    label: 'Defaults',
+    description: 'Timetable mode, launch view, and display preferences',
     icon: Tune,
   },
   {
-    id: "sync",
-    label: "Sync",
-    description: "Calendar export (.ics) and Google Calendar sync",
+    id: 'sync',
+    label: 'Sync',
+    description: 'Calendar export (.ics) and Google Calendar sync',
     icon: Sync,
   },
   {
-    id: "data",
-    label: "Data & Storage",
-    description: "Cache management and endpoint storage explorer",
+    id: 'data',
+    label: 'Data & Storage',
+    description: 'Cache management and endpoint storage explorer',
     icon: Storage,
   },
   {
-    id: "about",
-    label: "About",
-    description: "retop version, links, and project info",
+    id: 'about',
+    label: 'About',
+    description: 'retop version, links, and project info',
     icon: Info,
   },
 ] as const;
 
-type CategoryId = (typeof CATEGORIES)[number]["id"];
+type CategoryId = (typeof CATEGORIES)[number]['id'];
 
 const COLORS = [
-  { id: "grey", hex: "#71717a", label: "Monochrome" },
-  { id: "red", hex: "#ef4444", label: "Red" },
-  { id: "orange", hex: "#f97316", label: "Orange" },
-  { id: "amber", hex: "#f59e0b", label: "Amber" },
-  { id: "yellow", hex: "#eab308", label: "Yellow" },
-  { id: "lime", hex: "#84cc16", label: "Lime" },
-  { id: "green", hex: "#22c55e", label: "Green" },
-  { id: "emerald", hex: "#10b981", label: "Emerald" },
-  { id: "teal", hex: "#14b8a6", label: "Teal" },
-  { id: "cyan", hex: "#06b6d4", label: "Cyan" },
-  { id: "sky", hex: "#0ea5e9", label: "Sky" },
-  { id: "blue", hex: "#3b82f6", label: "Blue" },
-  { id: "indigo", hex: "#6366f1", label: "Indigo" },
-  { id: "purple", hex: "#a855f7", label: "Purple" },
-  { id: "violet", hex: "#8b5cf6", label: "Violet" },
-  { id: "pink", hex: "#ec4899", label: "Pink" },
-  { id: "rose", hex: "#f43f5e", label: "Rose" },
+  { id: 'grey', hex: '#71717a', label: 'Monochrome' },
+  { id: 'red', hex: '#ef4444', label: 'Red' },
+  { id: 'orange', hex: '#f97316', label: 'Orange' },
+  { id: 'amber', hex: '#f59e0b', label: 'Amber' },
+  { id: 'yellow', hex: '#eab308', label: 'Yellow' },
+  { id: 'lime', hex: '#84cc16', label: 'Lime' },
+  { id: 'green', hex: '#22c55e', label: 'Green' },
+  { id: 'emerald', hex: '#10b981', label: 'Emerald' },
+  { id: 'teal', hex: '#14b8a6', label: 'Teal' },
+  { id: 'cyan', hex: '#06b6d4', label: 'Cyan' },
+  { id: 'sky', hex: '#0ea5e9', label: 'Sky' },
+  { id: 'blue', hex: '#3b82f6', label: 'Blue' },
+  { id: 'indigo', hex: '#6366f1', label: 'Indigo' },
+  { id: 'purple', hex: '#a855f7', label: 'Purple' },
+  { id: 'violet', hex: '#8b5cf6', label: 'Violet' },
+  { id: 'pink', hex: '#ec4899', label: 'Pink' },
+  { id: 'rose', hex: '#f43f5e', label: 'Rose' },
 ];
 
 export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
-  const [activeCategory, setActiveCategory] = useState<CategoryId>("appearance");
-  const [mobileSelectedCategory, setMobileSelectedCategory] = useState<CategoryId | null>(null);
-  const [clearStatus, setClearStatus] = useState<string>("");
+  const [activeCategory, setActiveCategory] =
+    useState<CategoryId>('appearance');
+  const [mobileSelectedCategory, setMobileSelectedCategory] =
+    useState<CategoryId | null>(null);
+  const [clearStatus, setClearStatus] = useState<string>('');
 
   const [icalOptions, setIcalOptions] = useState({
     includeTimetable: true,
@@ -96,16 +98,17 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
     includeExams: true,
   });
 
-  const [googleStatus, setGoogleStatus] = useState("");
+  const [googleStatus, setGoogleStatus] = useState('');
   const [googleBusy, setGoogleBusy] = useState(false);
 
   const currentRegNo = (() => {
     const { user } = useDataStore.getState();
-    return user?.regNo && user.regNo !== "..." ? user.regNo : "";
+    return user?.regNo && user.regNo !== '...' ? user.regNo : '';
   })();
 
   const handleExportICal = () => {
-    const { ttCourses, calGridData, examGroups, events } = useDataStore.getState();
+    const { ttCourses, calGridData, examGroups, events } =
+      useDataStore.getState();
     downloadICalFile({
       courses: ttCourses,
       calGridData,
@@ -119,23 +122,24 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
   };
 
   const handleGoogleSync = async () => {
-    if (typeof chrome === "undefined" || !chrome.runtime?.sendMessage) {
+    if (typeof chrome === 'undefined' || !chrome.runtime?.sendMessage) {
       setGoogleStatus(
-        "Google Calendar sync needs the browser extension — it is not available in the offline app.",
+        'Google Calendar sync needs the browser extension — it is not available in the offline app.',
       );
       return;
     }
     if (!currentRegNo) {
       setGoogleStatus(
-        "Sign in to VTOP first — the calendar is named after your registration number.",
+        'Sign in to VTOP first — the calendar is named after your registration number.',
       );
       return;
     }
 
     setGoogleBusy(true);
-    setGoogleStatus("Connecting to Google…");
+    setGoogleStatus('Connecting to Google…');
     try {
-      const { ttCourses, calGridData, examGroups, events } = useDataStore.getState();
+      const { ttCourses, calGridData, examGroups, events } =
+        useDataStore.getState();
       const ics = generateICalFile({
         courses: ttCourses,
         calGridData,
@@ -147,9 +151,9 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
         includeExams: icalOptions.includeExams,
       });
 
-      setGoogleStatus("Syncing your schedule…");
+      setGoogleStatus('Syncing your schedule…');
       const res: any = await chrome.runtime.sendMessage({
-        action: "GOOGLE_CALENDAR_SYNC",
+        action: 'GOOGLE_CALENDAR_SYNC',
         ics,
         regNo: currentRegNo,
       });
@@ -159,7 +163,7 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
           `Synced ${res.total} events to "${res.calendarName}" — ${res.created} new, ${res.updated} updated, ${res.removed} removed.`,
         );
       } else {
-        setGoogleStatus(res?.error || "Google Calendar sync failed.");
+        setGoogleStatus(res?.error || 'Google Calendar sync failed.');
       }
     } catch (e: any) {
       setGoogleStatus(e?.message || String(e));
@@ -168,29 +172,29 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
     }
   };
 
-
   const handleClearAllCache = async () => {
     try {
       const { user } = useDataStore.getState();
-      const currentRegNo = user?.regNo && user.regNo !== "..." ? user.regNo : undefined;
+      const currentRegNo =
+        user?.regNo && user.regNo !== '...' ? user.regNo : undefined;
       await clearCache(currentRegNo);
-      setClearStatus("Account cache cleared successfully!");
-      setTimeout(() => setClearStatus(""), 3000);
+      setClearStatus('Account cache cleared successfully!');
+      setTimeout(() => setClearStatus(''), 3000);
     } catch (e) {
-      setClearStatus("Failed to clear account cache.");
+      setClearStatus('Failed to clear account cache.');
     }
   };
 
   const handleThemeChange = (
     _e: any,
-    targetMode: "light" | "dark" | "amoled" | "auto",
+    targetMode: 'light' | 'dark' | 'amoled' | 'auto',
   ) => {
-    updateSetting("themeMode", targetMode as any);
+    updateSetting('themeMode', targetMode as any);
   };
 
   const renderSectionContent = (categoryId: CategoryId) => {
     switch (categoryId) {
-      case "appearance":
+      case 'appearance':
         return (
           <AppearanceSection
             settings={settings}
@@ -199,14 +203,11 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
             COLORS={COLORS}
           />
         );
-      case "defaults":
+      case 'defaults':
         return (
-          <DefaultsSection
-            settings={settings}
-            updateSetting={updateSetting}
-          />
+          <DefaultsSection settings={settings} updateSetting={updateSetting} />
         );
-      case "sync":
+      case 'sync':
         return (
           <SyncSection
             icalOptions={icalOptions}
@@ -218,21 +219,23 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
             handleGoogleSync={handleGoogleSync}
           />
         );
-      case "data":
+      case 'data':
         return (
           <DataStorageSection
             handleClearAllCache={handleClearAllCache}
             clearStatus={clearStatus}
           />
         );
-      case "about":
+      case 'about':
         return <AboutSection />;
       default:
         return null;
     }
   };
 
-  const currentMobileCatObj = CATEGORIES.find((c) => c.id === mobileSelectedCategory);
+  const currentMobileCatObj = CATEGORIES.find(
+    (c) => c.id === mobileSelectedCategory,
+  );
 
   return (
     <div className="h-full w-full flex flex-col md:flex-row gap-6 py-0 px-4 md:px-6 lg:px-8 overflow-y-auto md:overflow-hidden bg-(--bg-main) text-(--text-main) max-w-425 mx-auto relative custom-scrollbar">
@@ -246,10 +249,10 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
               const isFirst = i === 0;
               const isLast = i === CATEGORIES.length - 1;
               const roundingClass = isFirst
-                ? "rounded-t-3xl rounded-b-xl"
+                ? 'rounded-t-3xl rounded-b-xl'
                 : isLast
-                  ? "rounded-b-3xl rounded-t-xl"
-                  : "rounded-xl";
+                  ? 'rounded-b-3xl rounded-t-xl'
+                  : 'rounded-xl';
 
               return (
                 <button
@@ -313,10 +316,10 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
             const isFirst = i === 0;
             const isLast = i === CATEGORIES.length - 1;
             const roundingClass = isFirst
-              ? "rounded-t-4xl rounded-b-xl"
+              ? 'rounded-t-4xl rounded-b-xl'
               : isLast
-                ? "rounded-b-4xl rounded-t-xl"
-                : "rounded-xl";
+                ? 'rounded-b-4xl rounded-t-xl'
+                : 'rounded-xl';
 
             return (
               <button
@@ -324,12 +327,12 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
                 onClick={() => setActiveCategory(cat.id)}
                 className={`flex items-center gap-4 px-5 py-3.5 ${roundingClass} transition-all cursor-pointer text-left border-2 ${
                   isSelected
-                    ? "bg-(--accent-base) text-(--text-inverse) border-(--accent-base) shadow-none"
-                    : "bg-(--bg-surface) text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main) border-(--border-dim)"
+                    ? 'bg-(--accent-base) text-(--text-inverse) border-(--accent-base) shadow-none'
+                    : 'bg-(--bg-surface) text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main) border-(--border-dim)'
                 }`}
               >
                 <CatIcon
-                  className={`w-6 h-6 shrink-0 transition-transform ${isSelected ? "scale-105" : ""}`}
+                  className={`w-6 h-6 shrink-0 transition-transform ${isSelected ? 'scale-105' : ''}`}
                 />
                 <div className="flex flex-col gap-0.5 flex-1 min-w-0 justify-center">
                   <span className="font-expanded font-black text-sm md:text-base leading-tight">
@@ -338,8 +341,8 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
                   <span
                     className={`text-xs font-medium leading-normal ${
                       isSelected
-                        ? "opacity-90 text-(--text-inverse)"
-                        : "text-(--text-muted)"
+                        ? 'opacity-90 text-(--text-inverse)'
+                        : 'text-(--text-muted)'
                     }`}
                   >
                     {cat.description}

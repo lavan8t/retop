@@ -5,22 +5,22 @@
  */
 
 export type ParserModuleId =
-  | "attendance"
-  | "timetable"
-  | "marks"
-  | "grades"
-  | "digitalAssignments"
-  | "examSchedule"
-  | "profile"
-  | "curriculum"
-  | "coursePage"
-  | "calendar"
-  | "dashboard"
-  | "menu"
-  | "lateHour"
-  | "events"
-  | "spotlight"
-  | "resources";
+  | 'attendance'
+  | 'timetable'
+  | 'marks'
+  | 'grades'
+  | 'digitalAssignments'
+  | 'examSchedule'
+  | 'profile'
+  | 'curriculum'
+  | 'coursePage'
+  | 'calendar'
+  | 'dashboard'
+  | 'menu'
+  | 'lateHour'
+  | 'events'
+  | 'spotlight'
+  | 'resources';
 
 export const PARSER_SCHEMA_VERSIONS: Record<ParserModuleId, number> = {
   attendance: 1,
@@ -77,7 +77,7 @@ export function isSchemaStale(
   cachedData: any,
   module: ParserModuleId,
 ): boolean {
-  if (!cachedData || typeof cachedData !== "object") return true;
+  if (!cachedData || typeof cachedData !== 'object') return true;
   const version = cachedData._schemaVersion ?? 0;
   return version < PARSER_SCHEMA_VERSIONS[module];
 }

@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef } from "react";
-import { createRoot } from "react-dom/client";
+import React, { useEffect, useState, useRef } from 'react';
+import { createRoot } from 'react-dom/client';
 import {
   AccountCircle,
   Add,
@@ -9,18 +9,30 @@ import {
   Check,
   KeyboardArrowDown,
   Error as ErrorIcon,
-} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
-import { renderDashboard } from "./pages/app";
-import { getStorageData, setStorageData, clearAllStorage } from "./utils/storageAdapter";
-import { getUserPinRecord, saveUserPin, verifyUserPin, getUserProfileImage } from "./utils/pinSecurity";
-import { AsciiPanel } from "./components/asciiArt";
-import { applyTheme, DEFAULT_SETTINGS } from "./utils/settings-store";
-import { VitLogo } from "./components/VitLogo";
-import { VitEmblemLoader } from "./components/common/VitEmblemLoader";
-import { ErrorBoundary } from "./components/common/ErrorBoundary";
-import { fixBase64Image } from "./parsers/profile";
-import { set as idbSet, get as idbGet } from "idb-keyval";
-import { AlertDialogManager, showAlertDialog } from "./components/ui/AlertDialog";
+} from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
+import { renderDashboard } from './pages/app';
+import {
+  getStorageData,
+  setStorageData,
+  clearAllStorage,
+} from './utils/storageAdapter';
+import {
+  getUserPinRecord,
+  saveUserPin,
+  verifyUserPin,
+  getUserProfileImage,
+} from './utils/pinSecurity';
+import { AsciiPanel } from './components/asciiArt';
+import { applyTheme, DEFAULT_SETTINGS } from './utils/settings-store';
+import { VitLogo } from './components/VitLogo';
+import { VitEmblemLoader } from './components/common/VitEmblemLoader';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { fixBase64Image } from './parsers/profile';
+import { set as idbSet, get as idbGet } from 'idb-keyval';
+import {
+  AlertDialogManager,
+  showAlertDialog,
+} from './components/ui/AlertDialog';
 
 // Apply default theme immediately on module load so variables are present before first render
 try {
@@ -32,8 +44,11 @@ const GSF: React.CSSProperties = {
 };
 
 export const cleanUserString = (str?: string) => {
-  if (!str) return "";
-  return str.replace(/\s*\(offline\)/gi, "").replace(/\)+$/, "").trim();
+  if (!str) return '';
+  return str
+    .replace(/\s*\(offline\)/gi, '')
+    .replace(/\)+$/, '')
+    .trim();
 };
 
 export interface CachedUser {
@@ -42,7 +57,7 @@ export interface CachedUser {
   name: string;
   profileImgBase64?: string;
   lastActive: number;
-  campus?: "vellore" | "chennai";
+  campus?: 'vellore' | 'chennai';
 }
 
 /* ── Account Switcher Dropdown (retop custom dropdown style) ─────────────── */
@@ -54,11 +69,18 @@ interface AccountDropdownProps {
   onAddAccount?: () => void;
 }
 
-const AccountDropdown: React.FC<AccountDropdownProps> = ({ users, activeUser, onSelect, onImport, onAddAccount }) => {
+const AccountDropdown: React.FC<AccountDropdownProps> = ({
+  users,
+  activeUser,
+  onSelect,
+  onImport,
+  onAddAccount,
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const activeLabel = cleanUserString(activeUser.username) || cleanUserString(activeUser.regNo);
+  const activeLabel =
+    cleanUserString(activeUser.username) || cleanUserString(activeUser.regNo);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -72,11 +94,11 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ users, activeUser, on
         setIsOpen(false);
       }
     };
-    document.addEventListener("mousedown", onOutside, true);
-    document.addEventListener("touchstart", onOutside, true);
+    document.addEventListener('mousedown', onOutside, true);
+    document.addEventListener('touchstart', onOutside, true);
     return () => {
-      document.removeEventListener("mousedown", onOutside, true);
-      document.removeEventListener("touchstart", onOutside, true);
+      document.removeEventListener('mousedown', onOutside, true);
+      document.removeEventListener('touchstart', onOutside, true);
     };
   }, [isOpen]);
 
@@ -87,20 +109,27 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ users, activeUser, on
         type="button"
         onClick={() => setIsOpen((o) => !o)}
         className="w-full flex items-center justify-between gap-3 bg-(--bg-surface) hover:bg-(--bg-highlight) text-(--text-main) rounded-full px-5 py-3.5 sm:px-6 sm:py-4 transition-all cursor-pointer group shadow-lg border border-(--border-dim)/40"
-        style={GSF}>
+        style={GSF}
+      >
         <div className="flex items-center gap-3 min-w-0">
           {fixBase64Image(activeUser.profileImgBase64) ? (
-            <img src={fixBase64Image(activeUser.profileImgBase64)} alt={activeLabel} className="w-6 h-6 rounded-full object-cover shrink-0" />
+            <img
+              src={fixBase64Image(activeUser.profileImgBase64)}
+              alt={activeLabel}
+              className="w-6 h-6 rounded-full object-cover shrink-0"
+            />
           ) : (
             <div className="w-6 h-6 rounded-full bg-(--bg-highlight) flex items-center justify-center text-(--text-muted) shrink-0">
               <AccountCircle className="w-4 h-4" />
             </div>
           )}
-          <span className="text-xs sm:text-sm font-bold text-(--text-main) leading-none truncate">{activeLabel}</span>
+          <span className="text-xs sm:text-sm font-bold text-(--text-main) leading-none truncate">
+            {activeLabel}
+          </span>
         </div>
         <KeyboardArrowDown
-          className={`w-5 h-5 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-          style={{ color: "var(--accent-base)" }}
+          className={`w-5 h-5 shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+          style={{ color: 'var(--accent-base)' }}
         />
       </button>
 
@@ -108,36 +137,53 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ users, activeUser, on
       {isOpen && (
         <div
           className="absolute z-50 left-0 right-0 top-full pt-2 animate-in fade-in slide-in-from-top-1 duration-150"
-          style={{ willChange: "transform, opacity" }}>
+          style={{ willChange: 'transform, opacity' }}
+        >
           <div className="w-full bg-(--bg-surface) rounded-3xl overflow-hidden shadow-2xl p-2 space-y-1.5 border border-(--border-dim)/50 text-(--text-main)">
             <div className="max-h-56 overflow-y-auto space-y-1 custom-scrollbar p-1">
               {users.map((u) => {
-                const isSelected = u.regNo.toLowerCase() === activeUser.regNo.toLowerCase();
-                const itemLabel = cleanUserString(u.username) || cleanUserString(u.regNo);
+                const isSelected =
+                  u.regNo.toLowerCase() === activeUser.regNo.toLowerCase();
+                const itemLabel =
+                  cleanUserString(u.username) || cleanUserString(u.regNo);
                 return (
                   <button
                     key={u.regNo}
                     type="button"
-                    onClick={() => { onSelect(u); setIsOpen(false); }}
+                    onClick={() => {
+                      onSelect(u);
+                      setIsOpen(false);
+                    }}
                     className={`w-full flex items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-3.5 rounded-2xl transition-all cursor-pointer text-left ${
                       isSelected
-                        ? "text-(--text-inverse) font-bold shadow-md"
-                        : "text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main)"
+                        ? 'text-(--text-inverse) font-bold shadow-md'
+                        : 'text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main)'
                     }`}
                     style={{
-                      backgroundColor: isSelected ? "var(--accent-base)" : undefined,
-                    }}>
+                      backgroundColor: isSelected
+                        ? 'var(--accent-base)'
+                        : undefined,
+                    }}
+                  >
                     <div className="flex items-center gap-3 min-w-0">
                       {fixBase64Image(u.profileImgBase64) ? (
-                        <img src={fixBase64Image(u.profileImgBase64)} alt={itemLabel} className="w-6 h-6 rounded-full object-cover shrink-0" />
+                        <img
+                          src={fixBase64Image(u.profileImgBase64)}
+                          alt={itemLabel}
+                          className="w-6 h-6 rounded-full object-cover shrink-0"
+                        />
                       ) : (
                         <div className="w-6 h-6 rounded-full bg-(--bg-highlight) flex items-center justify-center text-(--text-muted) shrink-0">
                           <AccountCircle className="w-4 h-4" />
                         </div>
                       )}
-                      <span className="text-xs sm:text-sm truncate">{itemLabel}</span>
+                      <span className="text-xs sm:text-sm truncate">
+                        {itemLabel}
+                      </span>
                     </div>
-                    {isSelected && <Check className="w-5 h-5 shrink-0 text-(--text-inverse)" />}
+                    {isSelected && (
+                      <Check className="w-5 h-5 shrink-0 text-(--text-inverse)" />
+                    )}
                   </button>
                 );
               })}
@@ -147,19 +193,33 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ users, activeUser, on
               {onAddAccount && (
                 <button
                   type="button"
-                  onClick={() => { onAddAccount(); setIsOpen(false); }}
+                  onClick={() => {
+                    onAddAccount();
+                    setIsOpen(false);
+                  }}
                   className="w-full flex items-center gap-3 px-4 py-3 sm:px-5 sm:py-3.5 rounded-2xl text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-highlight) transition-all cursor-pointer text-xs font-bold text-left"
-                  style={GSF}>
-                  <AccountCircle className="w-5 h-5 shrink-0" style={{ color: "var(--accent-base)" }} />
+                  style={GSF}
+                >
+                  <AccountCircle
+                    className="w-5 h-5 shrink-0"
+                    style={{ color: 'var(--accent-base)' }}
+                  />
                   <span>Add VTOP account</span>
                 </button>
               )}
               <button
                 type="button"
-                onClick={() => { onImport(); setIsOpen(false); }}
+                onClick={() => {
+                  onImport();
+                  setIsOpen(false);
+                }}
                 className="w-full flex items-center gap-3 px-4 py-3 sm:px-5 sm:py-3.5 rounded-2xl text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-highlight) transition-all cursor-pointer text-xs font-bold text-left"
-                style={GSF}>
-                <Add className="w-5 h-5 shrink-0" style={{ color: "var(--accent-base)" }} />
+                style={GSF}
+              >
+                <Add
+                  className="w-5 h-5 shrink-0"
+                  style={{ color: 'var(--accent-base)' }}
+                />
                 <span>Import backup JSON</span>
               </button>
             </div>
@@ -171,12 +231,12 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ users, activeUser, on
 };
 
 /* ── Emblem Star Vector Component ────────────────────────────────────── */
-export const EmblemStar: React.FC<{ type?: "left" | "right"; className?: string; style?: React.CSSProperties }> = ({
-  type = "left",
-  className = "w-9 h-9",
-  style,
-}) => {
-  if (type === "right") {
+export const EmblemStar: React.FC<{
+  type?: 'left' | 'right';
+  className?: string;
+  style?: React.CSSProperties;
+}> = ({ type = 'left', className = 'w-9 h-9', style }) => {
+  if (type === 'right') {
     return (
       <svg
         viewBox="112 110.8 10 9"
@@ -184,9 +244,7 @@ export const EmblemStar: React.FC<{ type?: "left" | "right"; className?: string;
         className={className}
         style={style}
       >
-        <polygon
-          points="116.91,117.121 113.45,118.501 114.95,115.311 113.45,112.111 116.91,113.501 120.359,112.111 118.87,115.311 120.359,118.501"
-        />
+        <polygon points="116.91,117.121 113.45,118.501 114.95,115.311 113.45,112.111 116.91,113.501 120.359,112.111 118.87,115.311 120.359,118.501" />
       </svg>
     );
   }
@@ -197,9 +255,7 @@ export const EmblemStar: React.FC<{ type?: "left" | "right"; className?: string;
       className={className}
       style={style}
     >
-      <polygon
-        points="24.61,117.121 21.15,118.501 22.66,115.311 21.15,112.111 24.61,113.501 28.07,112.111 26.58,115.311 28.07,118.501"
-      />
+      <polygon points="24.61,117.121 21.15,118.501 22.66,115.311 21.15,112.111 24.61,113.501 28.07,112.111 26.58,115.311 28.07,118.501" />
     </svg>
   );
 };
@@ -220,7 +276,7 @@ const StarPinInput: React.FC<StarPinInputProps> = ({
   onChange,
   onSubmit,
   error = false,
-  prompt = "Enter your PIN",
+  prompt = 'Enter your PIN',
   autoFocus = true,
   maxDigits = 10,
 }) => {
@@ -233,7 +289,12 @@ const StarPinInput: React.FC<StarPinInputProps> = ({
 
     const onGlobalKeyDown = (e: KeyboardEvent) => {
       const activeEl = document.activeElement;
-      if (activeEl && activeEl !== hiddenInputRef.current && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")) return;
+      if (
+        activeEl &&
+        activeEl !== hiddenInputRef.current &&
+        (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')
+      )
+        return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
 
       if (/^[0-9]$/.test(e.key)) {
@@ -245,10 +306,10 @@ const StarPinInput: React.FC<StarPinInputProps> = ({
             onSubmit(newVal);
           }
         }
-      } else if (e.key === "Backspace") {
+      } else if (e.key === 'Backspace') {
         e.preventDefault();
         onChange(value.slice(0, -1));
-      } else if (e.key === "Enter") {
+      } else if (e.key === 'Enter') {
         e.preventDefault();
         if (value.length >= 4 && onSubmit) {
           onSubmit(value);
@@ -256,12 +317,12 @@ const StarPinInput: React.FC<StarPinInputProps> = ({
       }
     };
 
-    window.addEventListener("keydown", onGlobalKeyDown);
-    return () => window.removeEventListener("keydown", onGlobalKeyDown);
+    window.addEventListener('keydown', onGlobalKeyDown);
+    return () => window.removeEventListener('keydown', onGlobalKeyDown);
   }, [value, onChange, onSubmit, autoFocus, maxDigits]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value.replace(/[^0-9]/g, "").slice(0, maxDigits);
+    const raw = e.target.value.replace(/[^0-9]/g, '').slice(0, maxDigits);
     onChange(raw);
     if (onSubmit) {
       onSubmit(raw);
@@ -276,7 +337,7 @@ const StarPinInput: React.FC<StarPinInputProps> = ({
     <div
       onClick={handleContainerClick}
       className={`relative w-full py-10 px-4 sm:px-6 flex flex-col items-center justify-center cursor-pointer select-none transition-all duration-200 min-h-32.5 ${
-        error ? "animate-pin-shake" : ""
+        error ? 'animate-pin-shake' : ''
       }`}
     >
       {/* Hidden input for mobile keyboard support and accessibility */}
@@ -307,15 +368,14 @@ const StarPinInput: React.FC<StarPinInputProps> = ({
           {Array.from({ length: value.length }).map((_, idx) => {
             const isLeft = idx % 2 === 0;
             return (
-              <div
-                key={idx}
-                className="star-pin-slot animate-star-pin"
-              >
+              <div key={idx} className="star-pin-slot animate-star-pin">
                 <EmblemStar
-                  type={isLeft ? "left" : "right"}
+                  type={isLeft ? 'left' : 'right'}
                   className="w-8 h-8 sm:w-10 sm:h-10 transition-colors duration-150"
                   style={{
-                    color: error ? "var(--color-error, #ef4444)" : "var(--accent-base)",
+                    color: error
+                      ? 'var(--color-error, #ef4444)'
+                      : 'var(--accent-base)',
                   }}
                 />
               </div>
@@ -327,24 +387,23 @@ const StarPinInput: React.FC<StarPinInputProps> = ({
   );
 };
 
-
-const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*";
-
-
+const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*';
 
 const OfflineApp = () => {
-  const [step, setStep] = useState<"LOADING" | "NO_CACHE" | "PIN_LOCK" | "UNLOCKED">("LOADING");
+  const [step, setStep] = useState<
+    'LOADING' | 'NO_CACHE' | 'PIN_LOCK' | 'UNLOCKED'
+  >('LOADING');
   const [loaderFinishing, setLoaderFinishing] = useState<boolean>(false);
   const [loaderFading, setLoaderFading] = useState<boolean>(false);
   const [usersIndex, setUsersIndex] = useState<CachedUser[]>([]);
   const [activeUser, setActiveUser] = useState<CachedUser | null>(null);
   const [hasPinSet, setHasPinSet] = useState<boolean>(false);
-  const [pinInput, setPinInput] = useState<string>("");
+  const [pinInput, setPinInput] = useState<string>('');
   const [pinError, setPinError] = useState<boolean>(false);
 
   const [isSettingPin, setIsSettingPin] = useState<boolean>(false);
-  const [newPin, setNewPin] = useState<string>("");
-  const [pinSuccessMsg, setPinSuccessMsg] = useState<string>("");
+  const [newPin, setNewPin] = useState<string>('');
+  const [pinSuccessMsg, setPinSuccessMsg] = useState<string>('');
   const [showForgotPinModal, setShowForgotPinModal] = useState<boolean>(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -357,50 +416,55 @@ const OfflineApp = () => {
       localStorage.clear();
       sessionStorage.clear();
     } catch {}
-    window.location.href = "https://vtop.vit.ac.in/vtop/open/page";
+    window.location.href = 'https://vtop.vit.ac.in/vtop/open/page';
   };
 
   useEffect(() => {
     loadCachedProfiles();
-    if (typeof window !== "undefined" && "serviceWorker" in navigator && window.location.protocol.startsWith("http")) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    if (
+      typeof window !== 'undefined' &&
+      'serviceWorker' in navigator &&
+      window.location.protocol.startsWith('http')
+    ) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
   }, []);
 
   useEffect(() => {
-    let pageName = "Offline Cache";
-    if (step === "PIN_LOCK") pageName = "Login";
-    else if (step === "UNLOCKED") pageName = "Home";
+    let pageName = 'Offline Cache';
+    if (step === 'PIN_LOCK') pageName = 'Login';
+    else if (step === 'UNLOCKED') pageName = 'Home';
     const isChennai =
-      (typeof window !== "undefined" && window.location.hostname.includes("vtopcc")) ||
-      (activeUser as any)?.campus === "chennai";
-    const brand = isChennai ? "retop Chennai" : "retop";
+      (typeof window !== 'undefined' &&
+        window.location.hostname.includes('vtopcc')) ||
+      (activeUser as any)?.campus === 'chennai';
+    const brand = isChennai ? 'retop Chennai' : 'retop';
     document.title = `${pageName} - ${brand}`;
   }, [step, activeUser]);
 
   const loadCachedProfiles = async () => {
     const res = await getStorageData([
-      "retop_cached_users",
-      "retop_lastAuthId",
-      "retop-saved-username",
-      "retop_lastName",
-      "retop_profileImage",
-      "retop_active_user",
-      "retop-settings",
+      'retop_cached_users',
+      'retop_lastAuthId',
+      'retop-saved-username',
+      'retop_lastName',
+      'retop_profileImage',
+      'retop_active_user',
+      'retop-settings',
     ]);
 
     try {
-      let rawSettings = res["retop-settings"];
+      let rawSettings = res['retop-settings'];
       if (!rawSettings) {
         try {
-          rawSettings = await idbGet("retop-settings");
+          rawSettings = await idbGet('retop-settings');
         } catch {}
       }
       if (rawSettings) {
         let parsed = rawSettings;
-        if (typeof rawSettings === "string") {
+        if (typeof rawSettings === 'string') {
           try {
-            const decoded = rawSettings.startsWith("enc_")
+            const decoded = rawSettings.startsWith('enc_')
               ? decodeURIComponent(atob(rawSettings.slice(4)))
               : rawSettings;
             parsed = JSON.parse(decoded);
@@ -417,7 +481,7 @@ const OfflineApp = () => {
 
     let users: CachedUser[] = res.retop_cached_users || [];
     const lastAuthId = res.retop_lastAuthId as string;
-    const savedUsername = (res["retop-saved-username"] as string) || lastAuthId;
+    const savedUsername = (res['retop-saved-username'] as string) || lastAuthId;
     const lastName = res.retop_lastName as string;
     const profileImg = res.retop_profileImage as string;
 
@@ -426,54 +490,64 @@ const OfflineApp = () => {
         {
           regNo: lastAuthId,
           username: savedUsername,
-          name: lastName || "Student",
-          profileImgBase64: profileImg || "",
+          name: lastName || 'Student',
+          profileImgBase64: profileImg || '',
           lastActive: Date.now(),
         },
       ];
     } else {
       users = users.map((u) => ({
         ...u,
-        username: u.username || (u.regNo === lastAuthId ? savedUsername : u.regNo),
+        username:
+          u.username || (u.regNo === lastAuthId ? savedUsername : u.regNo),
       }));
     }
 
     // Comprehensive IndexedDB fallback scan if users list is still empty
     if (users.length === 0) {
       try {
-        const { getAllStorageData } = await import("./utils/storageAdapter");
+        const { getAllStorageData } = await import('./utils/storageAdapter');
         const allData = await getAllStorageData();
-        const portalData = allData["portal-app-storage"]?.state?.data || allData["portal-app-storage"]?.data;
+        const portalData =
+          allData['portal-app-storage']?.state?.data ||
+          allData['portal-app-storage']?.data;
         if (portalData?.user?.regNo) {
           const u = portalData.user;
           users.push({
             regNo: u.regNo,
             username: u.regNo,
-            name: u.name || "Student",
-            profileImgBase64: u.profileImgBase64 || "",
+            name: u.name || 'Student',
+            profileImgBase64: u.profileImgBase64 || '',
             lastActive: Date.now(),
-            campus: u.campus || "vellore",
+            campus: u.campus || 'vellore',
           });
-        } else if (allData["retop_lastAuthId"]) {
+        } else if (allData['retop_lastAuthId']) {
           users.push({
-            regNo: allData["retop_lastAuthId"],
-            username: allData["retop-saved-username"] || allData["retop_lastAuthId"],
-            name: allData["retop_lastName"] || "Student",
-            profileImgBase64: allData["retop_profileImage"] || "",
+            regNo: allData['retop_lastAuthId'],
+            username:
+              allData['retop-saved-username'] || allData['retop_lastAuthId'],
+            name: allData['retop_lastName'] || 'Student',
+            profileImgBase64: allData['retop_profileImage'] || '',
             lastActive: Date.now(),
           });
         } else {
           // Scan for any cached user keys like "21BCE0001_dashboard_stats"
           for (const k of Object.keys(allData)) {
-            const cleanKey = k.replace(/^retop_cache_/, "");
+            const cleanKey = k.replace(/^retop_cache_/, '');
             const match = cleanKey.match(/^([A-Za-z0-9]{8,12})_/);
-            if (match && match[1] && !match[1].toLowerCase().startsWith("retop")) {
+            if (
+              match &&
+              match[1] &&
+              !match[1].toLowerCase().startsWith('retop')
+            ) {
               const reg = match[1];
-              if (!users.some((u) => u.regNo.toLowerCase() === reg.toLowerCase())) {
+              if (
+                !users.some((u) => u.regNo.toLowerCase() === reg.toLowerCase())
+              ) {
                 users.push({
                   regNo: reg,
                   username: reg,
-                  name: "Student",
+                  name: 'Student',
                   lastActive: Date.now(),
                 });
               }
@@ -481,7 +555,7 @@ const OfflineApp = () => {
           }
         }
       } catch (e) {
-        console.warn("[retop] Storage recovery scan failed", e);
+        console.warn('[retop] Storage recovery scan failed', e);
       }
     }
 
@@ -493,16 +567,19 @@ const OfflineApp = () => {
       const key = regNo.toUpperCase();
       const existing = cleanUsersMap.get(key);
       const username = cleanUserString(rawUser.username) || regNo;
-      const name = cleanUserString(rawUser.name) || existing?.name || "Student";
-      let rawImg = rawUser.profileImgBase64 || existing?.profileImgBase64 || "";
-      if (!rawImg || !rawImg.startsWith("data:image")) {
+      const name = cleanUserString(rawUser.name) || existing?.name || 'Student';
+      let rawImg = rawUser.profileImgBase64 || existing?.profileImgBase64 || '';
+      if (!rawImg || !rawImg.startsWith('data:image')) {
         try {
           const stored = await getUserProfileImage(regNo);
           if (stored) rawImg = stored;
         } catch {}
       }
       const profileImgBase64 = fixBase64Image(rawImg);
-      const lastActive = Math.max(rawUser.lastActive || 0, existing?.lastActive || 0);
+      const lastActive = Math.max(
+        rawUser.lastActive || 0,
+        existing?.lastActive || 0,
+      );
 
       cleanUsersMap.set(key, {
         regNo,
@@ -514,7 +591,7 @@ const OfflineApp = () => {
     }
     users = Array.from(cleanUsersMap.values());
     if (users.length > 0) {
-      idbSet("retop_cached_users", users).catch(() => {});
+      idbSet('retop_cached_users', users).catch(() => {});
     }
 
     setUsersIndex(users);
@@ -530,14 +607,15 @@ const OfflineApp = () => {
     };
 
     if (users.length === 0) {
-      finishLoading(() => setStep("NO_CACHE"));
+      finishLoading(() => setStep('NO_CACHE'));
     } else {
-      const activeRegNo = (res.retop_active_user as string) || lastAuthId || users[0].regNo;
+      const activeRegNo =
+        (res.retop_active_user as string) || lastAuthId || users[0].regNo;
       const targetUser = users.find((u) => u.regNo === activeRegNo) || users[0];
 
       let isUnlocked = false;
       try {
-        const unlockedRegNo = sessionStorage.getItem("retop_session_unlocked");
+        const unlockedRegNo = sessionStorage.getItem('retop_session_unlocked');
         if (unlockedRegNo && unlockedRegNo === targetUser.regNo) {
           isUnlocked = true;
         }
@@ -554,10 +632,10 @@ const OfflineApp = () => {
 
   const selectUser = async (user: CachedUser) => {
     setActiveUser(user);
-    setPinInput("");
+    setPinInput('');
     setPinError(false);
     setIsSettingPin(false);
-    setPinSuccessMsg("");
+    setPinSuccessMsg('');
 
     const record = await getUserPinRecord(user.regNo);
     const pinExists = Boolean(record);
@@ -567,7 +645,7 @@ const OfflineApp = () => {
       setIsSettingPin(true);
     }
 
-    setStep("PIN_LOCK");
+    setStep('PIN_LOCK');
   };
 
   const handleUnlock = async (overridePin?: string) => {
@@ -596,13 +674,13 @@ const OfflineApp = () => {
     }
 
     try {
-      sessionStorage.setItem("retop_session_unlocked", activeUser.regNo);
+      sessionStorage.setItem('retop_session_unlocked', activeUser.regNo);
     } catch {}
 
     await setStorageData({
       retop_lastAuthId: activeUser.regNo,
       retop_lastName: activeUser.name,
-      retop_profileImage: activeUser.profileImgBase64 || "",
+      retop_profileImage: activeUser.profileImgBase64 || '',
       retop_active_user: activeUser.regNo,
     });
 
@@ -615,9 +693,9 @@ const OfflineApp = () => {
     setHasPinSet(true);
     setIsSettingPin(false);
     setPinInput(newPin);
-    setNewPin("");
-    setPinSuccessMsg("Security PIN encrypted and saved successfully!");
-    setTimeout(() => setPinSuccessMsg(""), 3000);
+    setNewPin('');
+    setPinSuccessMsg('Security PIN encrypted and saved successfully!');
+    setTimeout(() => setPinSuccessMsg(''), 3000);
   };
 
   const handleImportBackup = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -626,75 +704,71 @@ const OfflineApp = () => {
     try {
       const text = await file.text();
       const json = JSON.parse(text);
-      if (json && typeof json === "object") {
+      if (json && typeof json === 'object') {
         await setStorageData(json);
         window.location.reload();
       }
     } catch (err) {
       showAlertDialog({
-        title: "Import Error",
-        message: "Invalid backup file format.",
+        title: 'Import Error',
+        message: 'Invalid backup file format.',
       });
     }
   };
 
   const launchDashboard = (user: CachedUser) => {
-    setStep("UNLOCKED");
+    setStep('UNLOCKED');
 
     try {
       const safeImg = fixBase64Image(user.profileImgBase64);
-      localStorage.setItem("retop_lastAuthId", user.regNo);
-      localStorage.setItem("retop_active_user", user.regNo);
-      if (user.name) localStorage.setItem("retop_lastName", user.name);
+      localStorage.setItem('retop_lastAuthId', user.regNo);
+      localStorage.setItem('retop_active_user', user.regNo);
+      if (user.name) localStorage.setItem('retop_lastName', user.name);
       if (safeImg) {
         localStorage.setItem(`${user.regNo}_profileImage`, safeImg);
       }
       setStorageData({
         retop_lastAuthId: user.regNo,
         retop_active_user: user.regNo,
-        retop_lastName: user.name || "Student",
-        [`${user.regNo}_profileImage`]: safeImg || "",
+        retop_lastName: user.name || 'Student',
+        [`${user.regNo}_profileImage`]: safeImg || '',
         [`${user.regNo}_user_basic_profile`]: {
-          name: user.name || "Student",
+          name: user.name || 'Student',
           regNo: user.regNo,
-          profileImgBase64: safeImg || "",
-          campus: user.campus || "vellore",
+          profileImgBase64: safeImg || '',
+          campus: user.campus || 'vellore',
         },
       });
     } catch (e) {}
 
     document.body.replaceChildren();
 
-    const input = document.createElement("input");
-    input.id = "authorizedIDX";
+    const input = document.createElement('input');
+    input.id = 'authorizedIDX';
     input.value = user.regNo;
     document.body.appendChild(input);
 
-    const header = document.createElement("div");
-    header.className = "navbar-text text-light small fw-bold";
-    header.textContent = `${user.regNo} - ${user.name || "Student"}`;
+    const header = document.createElement('div');
+    header.className = 'navbar-text text-light small fw-bold';
+    header.textContent = `${user.regNo} - ${user.name || 'Student'}`;
     document.body.appendChild(header);
 
     const safeImg = fixBase64Image(user.profileImgBase64);
-    if (
-      safeImg &&
-      safeImg.length > 50 &&
-      !safeImg.endsWith("base64,")
-    ) {
-      const img = document.createElement("img");
-      img.id = "retop-profile-image-mock";
+    if (safeImg && safeImg.length > 50 && !safeImg.endsWith('base64,')) {
+      const img = document.createElement('img');
+      img.id = 'retop-profile-image-mock';
       img.src = safeImg;
-      img.style.display = "none";
+      img.style.display = 'none';
       document.body.appendChild(img);
     }
 
-    (window as any).csrfValue = "offline_csrf";
+    (window as any).csrfValue = 'offline_csrf';
     (window as any).__RETOP_OFFLINE__ = true;
 
     renderDashboard();
   };
 
-  if (step === "LOADING") {
+  if (step === 'LOADING') {
     return (
       <div
         className="h-screen w-screen bg-(--bg-main) flex flex-col items-center justify-center text-(--text-main) transition-opacity duration-50 ease-out"
@@ -703,68 +777,95 @@ const OfflineApp = () => {
           opacity: loaderFading ? 0 : 1,
         }}
       >
-        <VitEmblemLoader size={210} className="text-(--accent-base)" finishing={loaderFinishing} />
+        <VitEmblemLoader
+          size={210}
+          className="text-(--accent-base)"
+          finishing={loaderFinishing}
+        />
       </div>
     );
   }
 
-  if (step === "UNLOCKED") {
+  if (step === 'UNLOCKED') {
     return null;
   }
 
   return (
-    <div className="min-h-screen w-screen bg-(--bg-main) text-(--text-main) flex flex-col lg:flex-row overflow-x-hidden selection:bg-(--accent-base)/30 selection:text-(--text-main)" style={GSF}>
+    <div
+      className="min-h-screen w-screen bg-(--bg-main) text-(--text-main) flex flex-col lg:flex-row overflow-x-hidden selection:bg-(--accent-base)/30 selection:text-(--text-main)"
+      style={GSF}
+    >
       {/* Left 50% Column: Form (.container-fluid / #loginBox) */}
       <div className="w-full lg:w-1/2 min-h-[55vh] lg:min-h-screen flex flex-col justify-center items-center px-4 py-8 sm:px-8 lg:px-16 z-10">
         <div className="w-full max-w-md space-y-6 mx-auto">
           {/* Header matching login-theme.css .card-header h4 */}
-          {step === "PIN_LOCK" && (
+          {step === 'PIN_LOCK' && (
             <div className="text-left space-y-1">
               <h1
                 className="text-4xl sm:text-5xl font-black lowercase tracking-tighter text-(--text-main) select-none inline-block cursor-default"
                 style={{
                   fontFamily: "'Google Sans Flex', system-ui, sans-serif",
-                  fontVariationSettings: '"wdth" 151, "wght" 800, "GRAD" 100, "ROND" 100, "slnt" -10',
-                  transition: "font-variation-settings 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                  fontVariationSettings:
+                    '"wdth" 151, "wght" 800, "GRAD" 100, "ROND" 100, "slnt" -10',
+                  transition:
+                    'font-variation-settings 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
                 }}
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.fontVariationSettings = '"wdth" 151, "wght" 1, "GRAD" 100, "ROND" 100, "slnt" -10';
+                  (e.currentTarget as HTMLElement).style.fontVariationSettings =
+                    '"wdth" 151, "wght" 1, "GRAD" 100, "ROND" 100, "slnt" -10';
                 }}
                 onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.fontVariationSettings = '"wdth" 151, "wght" 800, "GRAD" 100, "ROND" 100, "slnt" -10';
-                }}>
+                  (e.currentTarget as HTMLElement).style.fontVariationSettings =
+                    '"wdth" 151, "wght" 800, "GRAD" 100, "ROND" 100, "slnt" -10';
+                }}
+              >
                 retop
               </h1>
-              <p className="text-(--text-muted) text-sm sm:text-base font-medium" style={GSF}>offline access portal</p>
+              <p
+                className="text-(--text-muted) text-sm sm:text-base font-medium"
+                style={GSF}
+              >
+                offline access portal
+              </p>
             </div>
           )}
 
-          {step === "NO_CACHE" && (
+          {step === 'NO_CACHE' && (
             <div className="space-y-6">
               <div className="text-left space-y-2">
                 <h1
                   className="text-4xl sm:text-5xl font-black lowercase tracking-tighter text-(--text-main) select-none inline-block cursor-default"
                   style={{
                     fontFamily: "'Google Sans Flex', system-ui, sans-serif",
-                    fontVariationSettings: '"wdth" 151, "wght" 800, "GRAD" 100, "ROND" 100, "slnt" -10',
-                  }}>
+                    fontVariationSettings:
+                      '"wdth" 151, "wght" 800, "GRAD" 100, "ROND" 100, "slnt" -10',
+                  }}
+                >
                   retop
                 </h1>
-                <p className="text-(--text-muted) text-sm sm:text-base font-medium" style={GSF}>
+                <p
+                  className="text-(--text-muted) text-sm sm:text-base font-medium"
+                  style={GSF}
+                >
                   Nothing cached yet.
                 </p>
               </div>
 
               <div className="bg-(--bg-surface) border border-(--border-dim)/40 rounded-3xl p-6 space-y-4 shadow-2xl">
-                <p className="text-sm text-(--text-muted) leading-relaxed" style={GSF}>
-                  This page is offline-only. Sign in on VTOP once and the extension
-                  mirrors your timetable, attendance, marks and profile here.
+                <p
+                  className="text-sm text-(--text-muted) leading-relaxed"
+                  style={GSF}
+                >
+                  This page is offline-only. Sign in on VTOP once and the
+                  extension mirrors your timetable, attendance, marks and
+                  profile here.
                 </p>
                 <a
                   href="https://vtop.vit.ac.in/vtop/open/page"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn btn-primary w-full inline-flex items-center justify-center cursor-pointer active:scale-98 transition-all no-underline">
+                  className="btn btn-primary w-full inline-flex items-center justify-center cursor-pointer active:scale-98 transition-all no-underline"
+                >
                   <span>GO TO VTOP AND SIGN IN</span>
                 </a>
               </div>
@@ -774,7 +875,8 @@ const OfflineApp = () => {
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   className="text-xs font-bold text-(--text-muted) hover:text-(--text-main) flex items-center justify-center gap-2 mx-auto cursor-pointer transition-colors"
-                  style={GSF}>
+                  style={GSF}
+                >
                   <Upload className="w-3.5 h-3.5 text-(--accent-base)" />
                   <span>Or import a backup JSON file</span>
                 </button>
@@ -783,7 +885,7 @@ const OfflineApp = () => {
           )}
 
           {/* Step 2: PIN LOCK SCREEN & MULTI-USER SELECTOR */}
-          {step === "PIN_LOCK" && activeUser && (
+          {step === 'PIN_LOCK' && activeUser && (
             <div className="space-y-6">
               {/* Account Switcher Dropdown */}
               <AccountDropdown
@@ -791,11 +893,17 @@ const OfflineApp = () => {
                 activeUser={activeUser}
                 onSelect={selectUser}
                 onImport={() => fileInputRef.current?.click()}
-                onAddAccount={() => window.open("https://vtop.vit.ac.in/vtop/open/page", "_blank", "noopener")} />
+                onAddAccount={() =>
+                  window.open(
+                    'https://vtop.vit.ac.in/vtop/open/page',
+                    '_blank',
+                    'noopener',
+                  )
+                }
+              />
 
               {/* Input Group matching login-theme.css */}
-              <div 
-                className="space-y-4">
+              <div className="space-y-4">
                 {!isSettingPin ? (
                   <>
                     <StarPinInput
@@ -803,7 +911,8 @@ const OfflineApp = () => {
                       onChange={setPinInput}
                       onSubmit={(p) => handleUnlock(p)}
                       error={pinError}
-                      prompt="Enter your PIN" />
+                      prompt="Enter your PIN"
+                    />
 
                     {pinError && (
                       <div className="text-red-400 text-xs font-medium bg-red-500/10 border border-red-500/20 p-3 rounded-2xl flex items-center justify-center gap-2 text-center animate-in fade-in duration-150">
@@ -821,16 +930,24 @@ const OfflineApp = () => {
 
                     <div className="flex items-center justify-center gap-3 text-xs pt-1">
                       <button
-                        onClick={() => window.open("https://vtop.vit.ac.in/vtop/open/page", "_blank", "noopener")}
+                        onClick={() =>
+                          window.open(
+                            'https://vtop.vit.ac.in/vtop/open/page',
+                            '_blank',
+                            'noopener',
+                          )
+                        }
                         className="px-4 py-2 rounded-full bg-transparent hover:bg-(--bg-surface) border border-transparent hover:border-(--border-dim)/50 text-(--accent-base) font-semibold text-xs transition-all cursor-pointer"
-                        style={GSF}>
+                        style={GSF}
+                      >
                         Re-sync on VTOP
                       </button>
                       <span className="text-(--text-muted)/40">•</span>
                       <button
                         onClick={() => setShowForgotPinModal(true)}
                         className="px-4 py-2 rounded-full bg-transparent hover:bg-(--bg-surface) border border-transparent hover:border-(--border-dim)/50 text-(--text-muted) hover:text-(--text-main) text-xs font-medium transition-all cursor-pointer"
-                        style={GSF}>
+                        style={GSF}
+                      >
                         Forgot PIN?
                       </button>
                     </div>
@@ -838,31 +955,41 @@ const OfflineApp = () => {
                 ) : (
                   <div className="bg-(--bg-surface) border border-(--border-dim)/40 rounded-3xl p-6 space-y-4 text-center shadow-2xl">
                     <h4 className="text-xs font-bold text-(--text-main) flex items-center justify-center gap-2 uppercase tracking-wider">
-                      <Key className="w-4 h-4" style={{ color: "var(--accent-base)" }} />
-                      <span>{hasPinSet ? "Update Security PIN" : "Setup Offline PIN"}</span>
+                      <Key
+                        className="w-4 h-4"
+                        style={{ color: 'var(--accent-base)' }}
+                      />
+                      <span>
+                        {hasPinSet
+                          ? 'Update Security PIN'
+                          : 'Setup Offline PIN'}
+                      </span>
                     </h4>
                     <p className="text-xs text-(--text-muted) text-center">
                       {hasPinSet
-                        ? "Enter a new 4–10 digit PIN to update your offline encryption passcode."
-                        : "Please create a 4–10 digit Security PIN to protect & access your offline data."}
+                        ? 'Enter a new 4–10 digit PIN to update your offline encryption passcode.'
+                        : 'Please create a 4–10 digit Security PIN to protect & access your offline data.'}
                     </p>
                     <StarPinInput
                       value={newPin}
                       onChange={setNewPin}
                       onSubmit={handleSaveNewPin}
-                      prompt={hasPinSet ? "Enter new PIN" : "Create PIN"} />
+                      prompt={hasPinSet ? 'Enter new PIN' : 'Create PIN'}
+                    />
                     <div className="flex gap-2.5 pt-1">
                       <button
                         onClick={handleSaveNewPin}
                         disabled={newPin.length < 4 || newPin.length > 10}
                         className="flex-1 text-(--text-inverse) font-bold text-xs py-3 rounded-full transition-all cursor-pointer hover:opacity-90 disabled:opacity-50"
-                        style={{ backgroundColor: "var(--accent-base)" }}>
+                        style={{ backgroundColor: 'var(--accent-base)' }}
+                      >
                         Save Encrypted PIN
                       </button>
                       {hasPinSet && (
                         <button
                           onClick={() => setIsSettingPin(false)}
-                          className="flex-1 bg-(--bg-main) hover:bg-(--bg-highlight) text-(--text-muted) font-bold text-xs py-3 rounded-full transition-all cursor-pointer border border-(--border-dim)/50">
+                          className="flex-1 bg-(--bg-main) hover:bg-(--bg-highlight) text-(--text-muted) font-bold text-xs py-3 rounded-full transition-all cursor-pointer border border-(--border-dim)/50"
+                        >
                           Cancel
                         </button>
                       )}
@@ -874,24 +1001,32 @@ const OfflineApp = () => {
           )}
 
           {/* Hidden File Input */}
-          <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={handleImportBackup} />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            className="hidden"
+            onChange={handleImportBackup}
+          />
         </div>
       </div>
 
       {/* Right 50% Column: Hero Branding (#vtopOpenPageHeader) */}
       <div
         id="vtopOpenPageHeader"
-        className="w-full lg:w-1/2 min-h-55 lg:min-h-screen border-b lg:border-b-0 lg:border-l border-(--border-dim)/50 flex flex-col justify-center items-center py-10 px-6 sm:px-12 relative overflow-hidden order-first lg:order-last z-10 shrink-0">
+        className="w-full lg:w-1/2 min-h-55 lg:min-h-screen border-b lg:border-b-0 lg:border-l border-(--border-dim)/50 flex flex-col justify-center items-center py-10 px-6 sm:px-12 relative overflow-hidden order-first lg:order-last z-10 shrink-0"
+      >
         <div className="relative z-10 text-center flex flex-col items-center max-w-sm w-full">
           <div className="mb-3 flex items-center justify-center p-2 text-(--text-main)">
-            <VitLogo
-              className="h-16 sm:h-20 md:h-24 w-auto max-w-65 sm:max-w-85 text-(--text-main) drop-shadow-md"
-            />
+            <VitLogo className="h-16 sm:h-20 md:h-24 w-auto max-w-65 sm:max-w-85 text-(--text-main) drop-shadow-md" />
           </div>
           <div
             className="text-(--text-muted) text-sm sm:text-base tracking-[0.15em] mt-2 uppercase font-bold"
-            style={{ fontFamily: "'Times New Roman', Times, serif" }}>
-            {activeUser?.campus === "chennai" ? "CHENNAI CAMPUS" : "VELLORE CAMPUS"}
+            style={{ fontFamily: "'Times New Roman', Times, serif" }}
+          >
+            {activeUser?.campus === 'chennai'
+              ? 'CHENNAI CAMPUS'
+              : 'VELLORE CAMPUS'}
           </div>
         </div>
       </div>
@@ -901,51 +1036,63 @@ const OfflineApp = () => {
         id="retop-right-footer-wrapper"
         className="hidden lg:flex"
         style={{
-          position: "fixed",
+          position: 'fixed',
           bottom: 0,
           right: 0,
-          width: "100vw",
-          height: "100vh",
-          flexDirection: "column",
-          alignItems: "flex-end",
-          justifyContent: "flex-end",
-          pointerEvents: "none",
+          width: '100vw',
+          height: '100vh',
+          flexDirection: 'column',
+          alignItems: 'flex-end',
+          justifyContent: 'flex-end',
+          pointerEvents: 'none',
           zIndex: 1,
-        }}>
+        }}
+      >
         <AsciiPanel campus={activeUser?.campus} />
       </div>
 
       {/* Forgot PIN Confirmation Modal */}
       {showForgotPinModal && (
         <div className="fixed inset-0 z-100 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div 
+          <div
             className="bg-(--bg-surface) border border-red-500/30 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl text-left"
-            style={GSF}>
+            style={GSF}
+          >
             <div className="flex items-center gap-3 text-red-400">
               <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-xl shrink-0 font-bold">
                 ⚠️
               </div>
               <div>
-                <h3 className="text-base font-bold text-(--text-main) leading-snug">Forgot Security PIN?</h3>
-                <p className="text-xs text-red-400 font-semibold">Action is irreversible</p>
+                <h3 className="text-base font-bold text-(--text-main) leading-snug">
+                  Forgot Security PIN?
+                </h3>
+                <p className="text-xs text-red-400 font-semibold">
+                  Action is irreversible
+                </p>
               </div>
             </div>
 
-            <p className="text-(--text-muted) text-xs leading-relaxed" style={GSF}>
-              You cannot access your offline profile without your PIN. Resetting your PIN will clear all cached profile data on this device.
+            <p
+              className="text-(--text-muted) text-xs leading-relaxed"
+              style={GSF}
+            >
+              You cannot access your offline profile without your PIN. Resetting
+              your PIN will clear all cached profile data on this device.
             </p>
 
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 onClick={() => setShowForgotPinModal(false)}
                 className="px-4 py-2.5 rounded-full border border-(--border-dim)/50 bg-(--bg-main) hover:bg-(--bg-highlight) text-(--text-muted) font-bold text-xs transition-colors cursor-pointer"
-                style={GSF}>
+                style={GSF}
+              >
                 Cancel
               </button>
               <button
                 onClick={handleResetCacheAndRedirect}
                 className="px-4 py-2.5 rounded-full bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-md transition-colors cursor-pointer"
-                style={GSF}>
+                style={GSF}
+              >
                 Reset & Clear Cache
               </button>
             </div>
@@ -958,18 +1105,16 @@ const OfflineApp = () => {
 };
 
 export const initializeOfflineMode = () => {
-  const container = document.createElement("div");
-  container.id = "offline-root";
+  const container = document.createElement('div');
+  container.id = 'offline-root';
   document.body.appendChild(container);
   const root = createRoot(container);
   root.render(
     <ErrorBoundary variant="fullscreen" name="retop Offline">
       <OfflineApp />
-    </ErrorBoundary>
+    </ErrorBoundary>,
   );
 };
 
 // Auto-initialize when loaded as a standalone script (injected by webBridge)
 initializeOfflineMode();
-
-

@@ -1,8 +1,8 @@
-import { useEffect, useState, useRef } from "react";
-import { useDataStore } from "../store/dataStore";
-import { VTOPNetwork } from "../utils/network";
-import { EmptyState } from "../components/EmptyState";
-import { OfflineNotSynced } from "../components/ui/OfflineNotSynced";
+import { useEffect, useState, useRef } from 'react';
+import { useDataStore } from '../store/dataStore';
+import { VTOPNetwork } from '../utils/network';
+import { EmptyState } from '../components/EmptyState';
+import { OfflineNotSynced } from '../components/ui/OfflineNotSynced';
 import {
   Refresh,
   ArrowBack,
@@ -15,10 +15,10 @@ import {
   Cancel,
   Check,
   Close,
-} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
-import { Pill } from "../components/ui/Pill";
-import { DetailedAttendanceCourse } from "../types/vtop";
-import { useCourseAttendanceForecast } from "../hooks/useCourseAttendanceForecast";
+} from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
+import { Pill } from '../components/ui/Pill';
+import { DetailedAttendanceCourse } from '../types/vtop';
+import { useCourseAttendanceForecast } from '../hooks/useCourseAttendanceForecast';
 
 const AttendanceCalculator = ({
   course,
@@ -36,8 +36,8 @@ const AttendanceCalculator = ({
   }, [course]);
 
   const isLab =
-    (course.courseType || "").toLowerCase().includes("lab") ||
-    (course.courseType || "").toLowerCase() === "ela";
+    (course.courseType || '').toLowerCase().includes('lab') ||
+    (course.courseType || '').toLowerCase() === 'ela';
   const weight = isLab ? 2 : 1;
 
   const present = course.attended || 0;
@@ -63,10 +63,10 @@ const AttendanceCalculator = ({
   const isInvalid = rawPercentage > 100;
   const percentage = isInvalid ? 100 : rawPercentage;
 
-  let ringColor = "stroke-(--attendance-green)";
-  if (isInvalid) ringColor = "stroke-(--attendance-red)";
-  else if (percentage <= 75) ringColor = "stroke-(--attendance-red)";
-  else if (percentage < 90) ringColor = "stroke-(--attendance-blue)";
+  let ringColor = 'stroke-(--attendance-green)';
+  if (isInvalid) ringColor = 'stroke-(--attendance-red)';
+  else if (percentage <= 75) ringColor = 'stroke-(--attendance-red)';
+  else if (percentage < 90) ringColor = 'stroke-(--attendance-blue)';
 
   const handleReset = () => {
     setAttendCount(0);
@@ -86,7 +86,8 @@ const AttendanceCalculator = ({
         <div className="flex justify-end">
           <button
             onClick={handleReset}
-            className="flex items-center gap-1 text-[10px] uppercase font-mono font-bold bg-(--color-surface-container) hover:bg-(--color-surface-container-high) text-(--color-on-surface) px-2.5 py-1 rounded-full transition-colors cursor-pointer border border-(--color-outline-variant)">
+            className="flex items-center gap-1 text-[10px] uppercase font-mono font-bold bg-(--color-surface-container) hover:bg-(--color-surface-container-high) text-(--color-on-surface) px-2.5 py-1 rounded-full transition-colors cursor-pointer border border-(--color-outline-variant)"
+          >
             <Refresh className="w-3 h-3 text-(--color-primary)" />
             Reset
           </button>
@@ -97,14 +98,16 @@ const AttendanceCalculator = ({
         <div className="relative w-44 h-44 flex items-center justify-center shrink-0">
           <svg
             className="absolute inset-0 w-full h-full -rotate-90"
-            viewBox="0 0 140 140">
+            viewBox="0 0 140 140"
+          >
             <circle
               cx="70"
               cy="70"
               r={circleRadius}
               className="stroke-(--color-surface-container-high)"
               strokeWidth="15"
-              fill="none" />
+              fill="none"
+            />
             <circle
               cx="70"
               cy="70"
@@ -114,11 +117,13 @@ const AttendanceCalculator = ({
               fill="none"
               strokeDasharray={circleCircumference}
               strokeDashoffset={strokeDashoffset}
-              strokeLinecap="round" />
+              strokeLinecap="round"
+            />
           </svg>
           <div className="flex flex-col items-center z-10 text-center">
             <span
-              className={`font-mono font-black text-4xl leading-none ${ringColor.replace("stroke-", "text-")}`}>
+              className={`font-mono font-black text-4xl leading-none ${ringColor.replace('stroke-', 'text-')}`}
+            >
               {percentage}%
             </span>
           </div>
@@ -126,18 +131,26 @@ const AttendanceCalculator = ({
 
         <div className="flex flex-col gap-2 w-full text-xs font-mono">
           <div className="flex justify-between items-center bg-(--color-surface-container-low) px-3.5 py-2 rounded-xl border border-(--color-outline-variant)">
-            <span className="text-(--color-on-surface-variant)">Conducted So Far</span>
-            <span className="font-bold text-(--color-on-surface)">{conductedSoFar}</span>
+            <span className="text-(--color-on-surface-variant)">
+              Conducted So Far
+            </span>
+            <span className="font-bold text-(--color-on-surface)">
+              {conductedSoFar}
+            </span>
           </div>
           <div className="flex justify-between items-center bg-(--color-surface-container-low) px-3.5 py-2 rounded-xl border border-(--color-outline-variant)">
-            <span className="text-(--color-on-surface-variant)">Attended So Far</span>
+            <span className="text-(--color-on-surface-variant)">
+              Attended So Far
+            </span>
             <span className="font-bold text-(--color-primary)">{present}</span>
           </div>
           <div className="flex justify-between items-center bg-(--color-surface-container-low) px-3.5 py-2 rounded-xl border border-(--color-outline-variant)">
             <span className="text-(--color-on-surface-variant)">
-              Left before {forecast?.examName || "Exams"}
+              Left before {forecast?.examName || 'Exams'}
             </span>
-            <span className="font-bold text-(--color-on-surface)">{remainingClasses}</span>
+            <span className="font-bold text-(--color-on-surface)">
+              {remainingClasses}
+            </span>
           </div>
         </div>
       </div>
@@ -145,21 +158,21 @@ const AttendanceCalculator = ({
       {forecast && (
         <div className="p-3 rounded-2xl bg-(--color-surface-container-low) text-xs font-mono flex items-center justify-between gap-2 border border-(--color-outline-variant)">
           <span className="text-(--color-on-surface-variant)">
-            {forecast.status === "CRITICAL"
+            {forecast.status === 'CRITICAL'
               ? `Need ${
                   forecast.classesNeededBeforeExam || forecast.requiredToPass
-                } classes before ${forecast.examName || "exams"} for 75%`
+                } classes before ${forecast.examName || 'exams'} for 75%`
               : `Can skip ${forecast.safeSkips} class${
-                  forecast.safeSkips !== 1 ? "es" : ""
+                  forecast.safeSkips !== 1 ? 'es' : ''
                 } safely`}
           </span>
           <Pill
             variant={
-              forecast.status === "SAFE"
-                ? "success"
-                : forecast.status === "WARNING"
-                  ? "main"
-                  : "error"
+              forecast.status === 'SAFE'
+                ? 'success'
+                : forecast.status === 'WARNING'
+                  ? 'main'
+                  : 'error'
             }
           >
             {forecast.status}
@@ -175,7 +188,8 @@ const AttendanceCalculator = ({
           <div className="flex items-center gap-3">
             <button
               onClick={decreaseAttend}
-              className="w-7 h-7 flex items-center justify-center bg-(--color-surface) rounded-full active:scale-90 transition-transform text-(--color-on-surface) cursor-pointer border border-(--color-outline)">
+              className="w-7 h-7 flex items-center justify-center bg-(--color-surface) rounded-full active:scale-90 transition-transform text-(--color-on-surface) cursor-pointer border border-(--color-outline)"
+            >
               <Remove className="w-3.5 h-3.5" />
             </button>
             <span className="font-mono font-black text-base w-5 text-center">
@@ -183,7 +197,8 @@ const AttendanceCalculator = ({
             </span>
             <button
               onClick={increaseAttend}
-              className="w-7 h-7 flex items-center justify-center bg-(--color-surface) rounded-full active:scale-90 transition-transform text-(--color-on-surface) cursor-pointer border border-(--color-outline)">
+              className="w-7 h-7 flex items-center justify-center bg-(--color-surface) rounded-full active:scale-90 transition-transform text-(--color-on-surface) cursor-pointer border border-(--color-outline)"
+            >
               <Add className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -196,7 +211,8 @@ const AttendanceCalculator = ({
           <div className="flex items-center gap-3">
             <button
               onClick={decreaseBunk}
-              className="w-7 h-7 flex items-center justify-center bg-(--color-surface) rounded-full active:scale-90 transition-transform text-(--color-on-surface) cursor-pointer border border-(--color-outline)">
+              className="w-7 h-7 flex items-center justify-center bg-(--color-surface) rounded-full active:scale-90 transition-transform text-(--color-on-surface) cursor-pointer border border-(--color-outline)"
+            >
               <Remove className="w-3.5 h-3.5" />
             </button>
             <span className="font-mono font-black text-base w-5 text-center">
@@ -204,7 +220,8 @@ const AttendanceCalculator = ({
             </span>
             <button
               onClick={increaseBunk}
-              className="w-7 h-7 flex items-center justify-center bg-(--color-surface) rounded-full active:scale-90 transition-transform text-(--color-on-surface) cursor-pointer border border-(--color-outline)">
+              className="w-7 h-7 flex items-center justify-center bg-(--color-surface) rounded-full active:scale-90 transition-transform text-(--color-on-surface) cursor-pointer border border-(--color-outline)"
+            >
               <Add className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -225,37 +242,39 @@ const CourseCard = ({
 }) => {
   const p = course.percentage;
 
-  let badgeVariant: "success" | "warning" | "error" | "muted" = "success";
-  let barColor = "bg-(--attendance-green-bg)";
+  let badgeVariant: 'success' | 'warning' | 'error' | 'muted' = 'success';
+  let barColor = 'bg-(--attendance-green-bg)';
 
   if (isNaN(p)) {
-    badgeVariant = "muted";
-    barColor = "bg-(--bg-highlight)";
+    badgeVariant = 'muted';
+    barColor = 'bg-(--bg-highlight)';
   } else if (p <= 75) {
-    badgeVariant = "error";
-    barColor = "bg-(--attendance-red-bg)";
+    badgeVariant = 'error';
+    barColor = 'bg-(--attendance-red-bg)';
   } else if (p < 90) {
-    badgeVariant = "warning";
-    barColor = "bg-(--attendance-blue-bg)";
+    badgeVariant = 'warning';
+    barColor = 'bg-(--attendance-blue-bg)';
   }
 
   return (
     <div
       className={`relative flex items-center justify-between py-2 px-3.5 rounded-2xl overflow-hidden transition-all duration-fast cursor-pointer group select-none border border-(--border-dim)/40 ${
         isSelected
-          ? "bg-(--accent-base)/15 border-(--accent-base)/40"
-          : "bg-(--bg-surface)/60 hover:bg-(--bg-highlight)"
+          ? 'bg-(--accent-base)/15 border-(--accent-base)/40'
+          : 'bg-(--bg-surface)/60 hover:bg-(--bg-highlight)'
       }`}
-      onClick={onClick}>
+      onClick={onClick}
+    >
       <div
         className={`absolute top-0 left-0 h-full ${barColor} transition-all duration-fast opacity-60`}
-        style={{ width: `${course.percentage}%` }} />
+        style={{ width: `${course.percentage}%` }}
+      />
       <div className="relative z-10 flex items-center gap-3 min-w-0 flex-1 pr-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
             <Pill variant="surface">{course.courseCode}</Pill>
             <Pill variant="surface">{course.classType}</Pill>
-            {course.debarStatus !== "-" && (
+            {course.debarStatus !== '-' && (
               <Pill variant="error">Debarred</Pill>
             )}
           </div>
@@ -265,8 +284,7 @@ const CourseCard = ({
         </div>
       </div>
 
-      <div
-        className={`relative z-10 shrink-0`}>
+      <div className={`relative z-10 shrink-0`}>
         <Pill variant={badgeVariant}>{course.percentage}%</Pill>
       </div>
     </div>
@@ -286,7 +304,7 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
   } = useDataStore();
 
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
-  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
 
   useEffect(() => {
     if (!attSelectedSem || !network) return;
@@ -296,7 +314,7 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
   useEffect(() => {
     if (detailedAttendance && detailedAttendance.length > 0) {
       const exists = detailedAttendance.some(
-        (c) => `${c.courseId}-${c.classType}` === selectedCourse
+        (c) => `${c.courseId}-${c.classType}` === selectedCourse,
       );
       if (!exists) {
         const first = detailedAttendance[0];
@@ -307,7 +325,7 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
             network,
             attSelectedSem,
             first.courseId,
-            first.classType
+            first.classType,
           );
         }
       }
@@ -328,8 +346,9 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
         state.fetchDetailedAttendance(network, sem, true);
       }
     };
-    window.addEventListener("retop-refresh-attendance", handleRefresh);
-    return () => window.removeEventListener("retop-refresh-attendance", handleRefresh);
+    window.addEventListener('retop-refresh-attendance', handleRefresh);
+    return () =>
+      window.removeEventListener('retop-refresh-attendance', handleRefresh);
   }, [network]);
 
   const handleSelectCourse = (courseId: string, classType: string) => {
@@ -365,7 +384,7 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
     );
   }
 
-  if (status === "Offline - Not Synced") {
+  if (status === 'Offline - Not Synced') {
     return (
       <div className="h-full pt-16 md:pt-20 lg:pt-24 pb-32 md:pb-12">
         <OfflineNotSynced pageName="Attendance" />
@@ -379,29 +398,33 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
         <EmptyState
           msg="No Attendance Data"
           subMsg="Attendance information is not available for the selected semester."
-          icon={Warning} />
+          icon={Warning}
+        />
       </div>
     );
   }
 
   const selectedCourseObj = detailedAttendance.find(
-    (c) => `${c.courseId}-${c.classType}` === selectedCourse
+    (c) => `${c.courseId}-${c.classType}` === selectedCourse,
   );
   const records = selectedCourse ? attendanceRecords[selectedCourse] : null;
 
-  const sortedRecords = records ? [...records].sort((a, b) => {
-    const parseDate = (dStr: string) => {
-      let d = new Date(dStr);
-      if (isNaN(d.getTime()) && dStr.includes("-")) {
-        const parts = dStr.split("-");
-        if (parts.length === 3) d = new Date(`${parts[1]} ${parts[0]} ${parts[2]}`);
-      }
-      return isNaN(d.getTime()) ? 0 : d.getTime();
-    };
-    const tA = parseDate(a.date);
-    const tB = parseDate(b.date);
-    return sortOrder === "desc" ? tB - tA : tA - tB;
-  }) : null;
+  const sortedRecords = records
+    ? [...records].sort((a, b) => {
+        const parseDate = (dStr: string) => {
+          let d = new Date(dStr);
+          if (isNaN(d.getTime()) && dStr.includes('-')) {
+            const parts = dStr.split('-');
+            if (parts.length === 3)
+              d = new Date(`${parts[1]} ${parts[0]} ${parts[2]}`);
+          }
+          return isNaN(d.getTime()) ? 0 : d.getTime();
+        };
+        const tA = parseDate(a.date);
+        const tB = parseDate(b.date);
+        return sortOrder === 'desc' ? tB - tA : tA - tB;
+      })
+    : null;
 
   return (
     <div className="h-full w-full bg-(--color-surface) text-(--color-on-surface) overflow-hidden relative z-0 flex">
@@ -409,8 +432,9 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
         {/* Course list — left, narrowed, centered */}
         <div
           className={`w-full lg:w-[420px] shrink-0 flex flex-col border-r-0 lg:border-r border-(--color-outline-variant) h-full overflow-y-auto custom-scrollbar px-4 md:px-6 lg:px-8 pb-32 lg:pb-12 ${
-            selectedCourse ? "hidden lg:flex" : "flex"
-          }`}>
+            selectedCourse ? 'hidden lg:flex' : 'flex'
+          }`}
+        >
           <div className="w-full h-21 md:h-25 shrink-0" />
 
           <div className="flex flex-col gap-1">
@@ -434,14 +458,16 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
           <div
             className={`flex-1 flex flex-col h-full overflow-y-auto custom-scrollbar px-4 md:px-6 lg:px-8 pb-32 lg:pb-12 ${
               !selectedCourse
-                ? "hidden lg:flex"
-                : "flex absolute inset-0 lg:static z-20 bg-(--color-surface)"
-            }`}>
+                ? 'hidden lg:flex'
+                : 'flex absolute inset-0 lg:static z-20 bg-(--color-surface)'
+            }`}
+          >
             <div className="w-full h-21 md:h-25 shrink-0 hidden lg:block" />
             <div className="lg:hidden flex items-center mb-4 pt-21 md:pt-25">
               <button
                 onClick={() => setSelectedCourse(null)}
-                className="flex items-center gap-2 text-(--color-on-surface) bg-(--color-surface-container) px-4 py-2 rounded-full font-bold uppercase font-mono text-xs cursor-pointer border border-(--color-outline-variant)">
+                className="flex items-center gap-2 text-(--color-on-surface) bg-(--color-surface-container) px-4 py-2 rounded-full font-bold uppercase font-mono text-xs cursor-pointer border border-(--color-outline-variant)"
+              >
                 <ArrowBack className="w-4 h-4" />
                 Back
               </button>
@@ -470,7 +496,8 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
             {/* Single Unified Clean Calculator & Forecast Meter */}
             <AttendanceCalculator
               course={selectedCourseObj}
-              historyLength={records ? records.length : null} />
+              historyLength={records ? records.length : null}
+            />
 
             {/* History Log with Dark Material You Color Shades */}
             <div className="mb-24 flex flex-col gap-3">
@@ -485,93 +512,92 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
                   {[...Array(3)].map((_, i) => (
                     <div
                       key={i}
-                      className="h-12 bg-(--bg-surface)/40 rounded-2xl animate-pulse" />
+                      className="h-12 bg-(--bg-surface)/40 rounded-2xl animate-pulse"
+                    />
                   ))}
                 </div>
               ) : sortedRecords && sortedRecords.length > 0 ? (
                 <div className="flex flex-col gap-2">
                   {sortedRecords.map((rec, rIdx) => {
-                      const isPresent = rec.status
-                        .toLowerCase()
-                        .includes("present");
-                      const isAbsent = rec.status
-                        .toLowerCase()
-                        .includes("absent");
+                    const isPresent = rec.status
+                      .toLowerCase()
+                      .includes('present');
+                    const isAbsent = rec.status
+                      .toLowerCase()
+                      .includes('absent');
 
-                      let historyBg =
-                        "bg-(--attendance-green-bg) text-(--text-main) border border-(--attendance-green)/30";
-                      let iconColor = "text-(--attendance-green-text)";
+                    let historyBg =
+                      'bg-(--attendance-green-bg) text-(--text-main) border border-(--attendance-green)/30';
+                    let iconColor = 'text-(--attendance-green-text)';
 
-                      if (isAbsent) {
-                        historyBg =
-                          "bg-(--attendance-red-bg) text-(--text-main) border border-(--attendance-red)/30";
-                        iconColor = "text-(--attendance-red-text)";
-                      } else if (!isPresent) {
-                        historyBg =
-                          "bg-(--attendance-blue-bg) text-(--text-main) border border-(--attendance-blue)/30";
-                        iconColor = "text-(--attendance-blue-text)";
-                      }
+                    if (isAbsent) {
+                      historyBg =
+                        'bg-(--attendance-red-bg) text-(--text-main) border border-(--attendance-red)/30';
+                      iconColor = 'text-(--attendance-red-text)';
+                    } else if (!isPresent) {
+                      historyBg =
+                        'bg-(--attendance-blue-bg) text-(--text-main) border border-(--attendance-blue)/30';
+                      iconColor = 'text-(--attendance-blue-text)';
+                    }
 
-                      let formattedDate = rec.date;
-                      if (rec.date) {
-                        let dateObj = new Date(rec.date);
-                        if (
-                          isNaN(dateObj.getTime()) &&
-                          rec.date.includes("-")
-                        ) {
-                          const parts = rec.date.split("-");
-                          if (parts.length === 3) {
-                            dateObj = new Date(
-                              `${parts[1]} ${parts[0]} ${parts[2]}`
-                            );
-                          }
-                        }
-                        if (!isNaN(dateObj.getTime())) {
-                          formattedDate = dateObj.toLocaleDateString("en-GB", {
-                            day: "numeric",
-                            month: "short",
-                          });
+                    let formattedDate = rec.date;
+                    if (rec.date) {
+                      let dateObj = new Date(rec.date);
+                      if (isNaN(dateObj.getTime()) && rec.date.includes('-')) {
+                        const parts = rec.date.split('-');
+                        if (parts.length === 3) {
+                          dateObj = new Date(
+                            `${parts[1]} ${parts[0]} ${parts[2]}`,
+                          );
                         }
                       }
+                      if (!isNaN(dateObj.getTime())) {
+                        formattedDate = dateObj.toLocaleDateString('en-GB', {
+                          day: 'numeric',
+                          month: 'short',
+                        });
+                      }
+                    }
 
-                      return (
-                        <div
-                          key={rIdx}
-                          className={`flex items-center justify-between px-4 py-2.5 rounded-xl font-mono transition-colors ${historyBg}`}>
-                          <div className="flex items-center gap-3">
-                            <span className="text-xs font-bold leading-none">
-                              {formattedDate}
-                            </span>
-                            <span className="text-[10px] font-bold uppercase opacity-75">
-                              {rec.dayTime
-                                .replace(/\s*(?:-|to)\s*(?:(?!-|to).)*$/i, "")
-                                .replace(/\//g, " • ")}
-                            </span>
-                          </div>
-                          {isPresent ? (
-                            <Check className={`w-5 h-5 shrink-0 ${iconColor}`} />
-                          ) : isAbsent ? (
-                            <Close className={`w-5 h-5 shrink-0 ${iconColor}`} />
-                          ) : (
-                            <span className={`text-xs font-bold ${iconColor}`}>
-                              {rec.status}
-                            </span>
-                          )}
+                    return (
+                      <div
+                        key={rIdx}
+                        className={`flex items-center justify-between px-4 py-2.5 rounded-xl font-mono transition-colors ${historyBg}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs font-bold leading-none">
+                            {formattedDate}
+                          </span>
+                          <span className="text-[10px] font-bold uppercase opacity-75">
+                            {rec.dayTime
+                              .replace(/\s*(?:-|to)\s*(?:(?!-|to).)*$/i, '')
+                              .replace(/\//g, ' • ')}
+                          </span>
                         </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <EmptyState
-                    msg="No Records Found"
-                    subMsg="No history records found for this class."
-                    icon={Warning}
-                    className="h-auto min-h-36" />
-                )}
-              </div>
+                        {isPresent ? (
+                          <Check className={`w-5 h-5 shrink-0 ${iconColor}`} />
+                        ) : isAbsent ? (
+                          <Close className={`w-5 h-5 shrink-0 ${iconColor}`} />
+                        ) : (
+                          <span className={`text-xs font-bold ${iconColor}`}>
+                            {rec.status}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <EmptyState
+                  msg="No Records Found"
+                  subMsg="No history records found for this class."
+                  icon={Warning}
+                  className="h-auto min-h-36"
+                />
+              )}
             </div>
-          )}
-        
+          </div>
+        )}
       </div>
     </div>
   );

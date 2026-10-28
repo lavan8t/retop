@@ -7,7 +7,7 @@
 
 export interface VtopRequestOptions {
   url: string;
-  method?: "GET" | "POST";
+  method?: 'GET' | 'POST';
   headers?: Record<string, string>;
   body?: string;
   followRedirects?: boolean;
@@ -30,8 +30,11 @@ export interface VtopResponse {
 
 export function isNativeAndroidBridgeAvailable(): boolean {
   return (
-    typeof window !== "undefined" &&
-    Boolean((window as any).VtopNativeBridge && typeof (window as any).VtopNativeBridge.request === "function")
+    typeof window !== 'undefined' &&
+    Boolean(
+      (window as any).VtopNativeBridge &&
+      typeof (window as any).VtopNativeBridge.request === 'function',
+    )
   );
 }
 
@@ -61,7 +64,7 @@ export function isLiveVtopContext(): boolean {
 export function isWebPageContext(): boolean {
   try {
     const h = window.location.hostname;
-    return h.endsWith("web.app") || h === "localhost" || h === "127.0.0.1";
+    return h.endsWith('web.app') || h === 'localhost' || h === '127.0.0.1';
   } catch {
     return false;
   }
@@ -78,8 +81,10 @@ export function isAmbientSessionContext(): boolean {
   return isLiveVtopContext();
 }
 
-export async function executeVtopRequest(options: VtopRequestOptions): Promise<VtopResponse> {
-  const method = (options.method || "GET").toUpperCase() as "GET" | "POST";
+export async function executeVtopRequest(
+  options: VtopRequestOptions,
+): Promise<VtopResponse> {
+  const method = (options.method || 'GET').toUpperCase() as 'GET' | 'POST';
   const timeoutMs = options.timeoutMs ?? 30000;
 
   // 1. Android Native OkHttp Bridge
@@ -92,22 +97,22 @@ export async function executeVtopRequest(options: VtopRequestOptions): Promise<V
           headers: options.headers || {},
           body: options.body || null,
           followRedirects: Boolean(options.followRedirects),
-        })
+        }),
       );
 
       const parsed = JSON.parse(rawResult);
       if (parsed.error) {
-        throw new Error(parsed.message || "Native Android request failed");
+        throw new Error(parsed.message || 'Native Android request failed');
       }
 
       return {
         status: parsed.status,
         headers: parsed.headers || {},
         setCookies: parsed.setCookies || [],
-        body: parsed.body || "",
-        bodyBase64: parsed.bodyBase64 || "",
+        body: parsed.body || '',
+        bodyBase64: parsed.bodyBase64 || '',
         isBinaryImage: Boolean(parsed.isBinaryImage),
-        imageMime: parsed.imageMime || "",
+        imageMime: parsed.imageMime || '',
         url: parsed.url || options.url,
       };
     } catch (e: any) {
@@ -124,7 +129,7 @@ export async function executeVtopRequest(options: VtopRequestOptions): Promise<V
     // actionable message instead of an opaque CORS "TypeError: Failed to fetch".
     if (isWebPageContext()) {
       throw new Error(
-        "Live VTOP is not available on this page. Sign in on vtop.vit.ac.in — cached data syncs here automatically.",
+        'Live VTOP is not available on this page. Sign in on vtop.vit.ac.in — cached data syncs here automatically.',
       );
     }
 
@@ -133,16 +138,16 @@ export async function executeVtopRequest(options: VtopRequestOptions): Promise<V
       ...(options.headers || {}),
     };
     if (ambient) {
-      delete fetchHeaders["Cookie"];
-      delete fetchHeaders["User-Agent"];
+      delete fetchHeaders['Cookie'];
+      delete fetchHeaders['User-Agent'];
     }
 
     const response = await fetch(options.url, {
       method,
       headers: fetchHeaders,
-      body: method === "POST" ? options.body : undefined,
-      redirect: ambient || options.followRedirects ? "follow" : "manual",
-      credentials: ambient ? "include" : undefined,
+      body: method === 'POST' ? options.body : undefined,
+      redirect: ambient || options.followRedirects ? 'follow' : 'manual',
+      credentials: ambient ? 'include' : undefined,
       signal: controller.signal,
     });
 
@@ -151,13 +156,13 @@ export async function executeVtopRequest(options: VtopRequestOptions): Promise<V
 
     response.headers.forEach((val, key) => {
       headers[key.toLowerCase()] = val;
-      if (key.toLowerCase() === "set-cookie") {
+      if (key.toLowerCase() === 'set-cookie') {
         setCookies.push(val);
       }
     });
 
-    const contentType = headers["content-type"] || "";
-    const isBinaryImage = contentType.startsWith("image/");
+    const contentType = headers['content-type'] || '';
+    const isBinaryImage = contentType.startsWith('image/');
 
     // /vtop/get/new/captcha answers with raw image bytes on some deployments and
     // with HTML containing a data URI on others. Decoding bytes as text corrupts
@@ -168,10 +173,10 @@ export async function executeVtopRequest(options: VtopRequestOptions): Promise<V
         status: response.status,
         headers,
         setCookies,
-        body: "",
+        body: '',
         bodyBase64: bytesToBase64(bytes),
         isBinaryImage: true,
-        imageMime: contentType.split(";")[0],
+        imageMime: contentType.split(';')[0],
         url: response.url || options.url,
       };
     }
@@ -182,9 +187,9 @@ export async function executeVtopRequest(options: VtopRequestOptions): Promise<V
       headers,
       setCookies,
       body,
-      bodyBase64: "",
+      bodyBase64: '',
       isBinaryImage: false,
-      imageMime: "",
+      imageMime: '',
       url: response.url || options.url,
     };
   } finally {
@@ -193,7 +198,7 @@ export async function executeVtopRequest(options: VtopRequestOptions): Promise<V
 }
 
 function bytesToBase64(bytes: Uint8Array): string {
-  let binary = "";
+  let binary = '';
   // Chunked to stay under the argument limit of String.fromCharCode.
   for (let i = 0; i < bytes.length; i += 0x8000) {
     binary += String.fromCharCode.apply(
@@ -209,7 +214,7 @@ export function clearNativeCookies(): void {
     try {
       (window as any).VtopNativeBridge.clearCookies();
     } catch (e) {
-      console.warn("Failed to clear native cookies", e);
+      console.warn('Failed to clear native cookies', e);
     }
   }
 }

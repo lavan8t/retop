@@ -1,6 +1,6 @@
-import { useMemo } from "react";
-import { useDataStore } from "../store/dataStore";
-import { calculateAttendanceForecast } from "../utils/attendanceForecaster";
+import { useMemo } from 'react';
+import { useDataStore } from '../store/dataStore';
+import { calculateAttendanceForecast } from '../utils/attendanceForecaster';
 
 export const useCourseAttendanceForecast = (courseCode: string) => {
   const timetable = useDataStore((state) => state.ttCourses || []);
@@ -10,7 +10,7 @@ export const useCourseAttendanceForecast = (courseCode: string) => {
 
   return useMemo(() => {
     const courseAttendance = attendanceCourses.find(
-      (c) => c.code === courseCode || c.name?.includes(courseCode)
+      (c) => c.code === courseCode || c.name?.includes(courseCode),
     );
     const attended = courseAttendance ? courseAttendance.attended || 0 : 0;
     const total = courseAttendance ? courseAttendance.total || 0 : 0;
@@ -34,7 +34,7 @@ export const useCourseAttendanceForecast = (courseCode: string) => {
       total,
       timetable,
       flatCalendarEvents,
-      examGroups
+      examGroups,
     );
   }, [courseCode, attendanceCourses, timetable, calGridData, examGroups]);
 };

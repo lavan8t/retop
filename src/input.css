@@ -1,11 +1,11 @@
-@import "tailwindcss";
-@import "./styles/fonts.css";
-@import "./styles/tokens.css";
+@import 'tailwindcss';
+@import './styles/fonts.css';
+@import './styles/tokens.css';
 
 @theme {
-  --font-sans: "Google Sans Flex", system-ui, sans-serif;
-  --font-expanded: "Google Sans Flex", system-ui, sans-serif;
-  
+  --font-sans: 'Google Sans Flex', system-ui, sans-serif;
+  --font-expanded: 'Google Sans Flex', system-ui, sans-serif;
+
   /* Unified Snappy Animation Timings & Physics */
   --duration-instant: calc(30ms * var(--anim-scale, 1));
   --duration-fast: calc(75ms * var(--anim-scale, 1));
@@ -38,7 +38,8 @@
 }
 
 .animate-page-crossfade {
-  animation: pageCrossfade var(--duration-fast, 75ms) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: pageCrossfade var(--duration-fast, 75ms)
+    cubic-bezier(0.16, 1, 0.3, 1) forwards;
   will-change: transform, opacity;
 }
 
@@ -95,7 +96,8 @@
 }
 
 .animate-popup-open {
-  animation: popupOpen var(--duration-fast, 75ms) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: popupOpen var(--duration-fast, 75ms) cubic-bezier(0.16, 1, 0.3, 1)
+    forwards;
   will-change: transform, opacity;
 }
 
@@ -139,32 +141,54 @@
 }
 
 @keyframes retop-dialog-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes retop-dialog-fade-out {
-  from { opacity: 1; }
-  to { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 
 @keyframes retop-dialog-zoom-in {
-  from { opacity: 0; transform: scale(0.92); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes retop-dialog-zoom-out {
-  from { opacity: 1; transform: scale(1); }
-  to { opacity: 0; transform: scale(0.92); }
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.92);
+  }
 }
 
 .animate-sheet-up {
-  animation: sheetSlideUp var(--duration-normal, 150ms) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: sheetSlideUp var(--duration-normal, 150ms)
+    cubic-bezier(0.16, 1, 0.3, 1) forwards;
   will-change: transform;
 }
 
 .animate-sheet-down {
-  animation: sheetSlideDown var(--duration-fast, 100ms) cubic-bezier(0.4, 0, 1, 1) forwards;
+  animation: sheetSlideDown var(--duration-fast, 100ms)
+    cubic-bezier(0.4, 0, 1, 1) forwards;
   will-change: transform;
 }
 
@@ -180,8 +204,9 @@
 .press-spring,
 button:not(:disabled):active,
 a:active,
-[role="button"]:active {
-  transition: transform var(--duration-instant, 50ms) cubic-bezier(0.16, 1, 0.3, 1);
+[role='button']:active {
+  transition: transform var(--duration-instant, 50ms)
+    cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* --- 1. GLOBAL RESET & VARIABLES --- */
@@ -198,11 +223,16 @@ a:active,
   }
 
   .popup-shadow {
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+    box-shadow:
+      0 10px 25px -5px rgba(0, 0, 0, 0.15),
+      0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
   }
 
   /* Zero Borders on all Retop cards, filter chips, attendance cards, CGPA cards */
-  :host, :host *, #retop-root, #retop-root * {
+  :host,
+  :host *,
+  #retop-root,
+  #retop-root * {
     border-color: transparent !important;
   }
 
@@ -241,10 +271,22 @@ a:active,
     --bg-main: var(--md-sys-color-background, #09090b);
     --bg-card: var(--md-sys-color-surface, #18181b);
     --bg-surface: var(--md-sys-color-surface-variant, #18181b);
-    --bg-highlight: color-mix(in srgb, var(--md-sys-color-surface-variant, #18181b) 80%, var(--md-sys-color-primary, #3b82f6) 20%);
+    --bg-highlight: color-mix(
+      in srgb,
+      var(--md-sys-color-surface-variant, #18181b) 80%,
+      var(--md-sys-color-primary, #3b82f6) 20%
+    );
 
-    --border-main: color-mix(in srgb, var(--text-muted, #94a3b8) 35%, transparent);
-    --border-dim: color-mix(in srgb, var(--text-muted, #94a3b8) 20%, transparent);
+    --border-main: color-mix(
+      in srgb,
+      var(--text-muted, #94a3b8) 35%,
+      transparent
+    );
+    --border-dim: color-mix(
+      in srgb,
+      var(--text-muted, #94a3b8) 20%,
+      transparent
+    );
 
     --text-main: var(--md-sys-color-on-background, #f8fafc);
     --text-muted: var(--md-sys-color-on-surface-variant, #94a3b8);
@@ -335,15 +377,15 @@ a:active,
     transform: none !important;
   }
 
-  #retop-root [class*="hover:-translate"],
-  #retop-root [class*="hover:translate"],
-  #retop-root [class*="hover:scale"] {
+  #retop-root [class*='hover:-translate'],
+  #retop-root [class*='hover:translate'],
+  #retop-root [class*='hover:scale'] {
     transform: none !important;
   }
 }
 
 /* --- 2. THEMES --- */
-#retop-root[data-theme="amoled"] {
+#retop-root[data-theme='amoled'] {
   --bg-main: #000000;
   --bg-surface: #000000;
   --bg-highlight: #111111;
@@ -356,12 +398,24 @@ a:active,
   --shadow-main: rgba(0, 0, 0, 0.3);
 }
 
-#retop-root[data-theme="light"] {
+#retop-root[data-theme='light'] {
   --shadow-main: rgba(0, 0, 0, 0.1);
   /* Inject strong primary tint into the light theme background to make the accent pop */
-  --bg-main: color-mix(in srgb, var(--md-sys-color-surface) 90%, var(--md-sys-color-primary) 10%);
-  --bg-surface: color-mix(in srgb, var(--md-sys-color-surface-variant) 85%, var(--md-sys-color-primary) 15%);
-  --bg-highlight: color-mix(in srgb, var(--md-sys-color-surface-variant) 75%, var(--md-sys-color-primary) 25%);
+  --bg-main: color-mix(
+    in srgb,
+    var(--md-sys-color-surface) 90%,
+    var(--md-sys-color-primary) 10%
+  );
+  --bg-surface: color-mix(
+    in srgb,
+    var(--md-sys-color-surface-variant) 85%,
+    var(--md-sys-color-primary) 15%
+  );
+  --bg-highlight: color-mix(
+    in srgb,
+    var(--md-sys-color-surface-variant) 75%,
+    var(--md-sys-color-primary) 25%
+  );
 
   /* Lighter professional blocks for Light mode Brutalism */
   --card-cyan: #0891b2;
@@ -413,7 +467,8 @@ a:active,
   opacity: 0;
   transform-box: fill-box;
   transform-origin: center;
-  animation: vit-ribbon-scale-down 0.28s cubic-bezier(0.12, 0.9, 0.2, 1) 0s forwards;
+  animation: vit-ribbon-scale-down 0.28s cubic-bezier(0.12, 0.9, 0.2, 1) 0s
+    forwards;
 }
 
 /* 2. Outer Circle draws stroke */
@@ -426,7 +481,7 @@ a:active,
   stroke-width: 1.8px !important;
   stroke-dasharray: 460;
   stroke-dashoffset: 460;
-  animation: vit-draw-outer 0.30s ease-out 0.25s both;
+  animation: vit-draw-outer 0.3s ease-out 0.25s both;
 }
 
 /* 3. Inner Circle draws stroke */
@@ -439,7 +494,7 @@ a:active,
   stroke-width: 1.8px !important;
   stroke-dasharray: 360;
   stroke-dashoffset: 360;
-  animation: vit-draw-inner 0.30s ease-out 0.40s both;
+  animation: vit-draw-inner 0.3s ease-out 0.4s both;
 }
 
 /* 4. Fort rises inside masked inner circle */
@@ -447,7 +502,7 @@ a:active,
 .vit-emblem-splash svg #fort {
   transform-box: fill-box;
   transform: translateY(105px);
-  animation: vit-fort-rise 0.50s cubic-bezier(0.16, 1, 0.3, 1) 0.60s both;
+  animation: vit-fort-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both;
 }
 
 /* 5. VIT center drops down */
@@ -508,29 +563,45 @@ a:active,
   transform-origin: center;
   will-change: transform;
   animation:
-    vit-right-star-stamp 0.24s cubic-bezier(0.12, 0.9, 0.2, 1) 1.50s forwards,
+    vit-right-star-stamp 0.24s cubic-bezier(0.12, 0.9, 0.2, 1) 1.5s forwards,
     vit-spin-ccw 6s linear 1.74s infinite;
 }
 
 @keyframes vit-spin-cw {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes vit-spin-ccw {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(-360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(-360deg);
+  }
 }
 
 /* --- KEYFRAMES --- */
 @keyframes vit-draw-outer {
-  from { stroke-dashoffset: 460; }
-  to { stroke-dashoffset: 0; }
+  from {
+    stroke-dashoffset: 460;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 
 @keyframes vit-draw-inner {
-  from { stroke-dashoffset: 360; }
-  to { stroke-dashoffset: 0; }
+  from {
+    stroke-dashoffset: 360;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 
 @keyframes vit-fort-rise {
@@ -609,8 +680,12 @@ a:active,
 }
 
 @keyframes vit-institute-fade {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* Fast completion trigger: finishes in 150ms, holds still for 50ms fade */
@@ -649,7 +724,10 @@ a:active,
   opacity: 1 !important;
   transform: none !important;
   stroke-dashoffset: 0 !important;
-  transition: opacity 150ms ease-out, transform 150ms cubic-bezier(0.16, 1, 0.3, 1), stroke-dashoffset 150ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition:
+    opacity 150ms ease-out,
+    transform 150ms cubic-bezier(0.16, 1, 0.3, 1),
+    stroke-dashoffset 150ms cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 @keyframes star-pin-enter {
@@ -675,27 +753,41 @@ a:active,
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+  transition:
+    transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.2s ease;
 }
 
 @keyframes pin-shake {
-  0%, 100% { transform: translateX(0); }
-  20%, 60% { transform: translateX(-10px); }
-  40%, 80% { transform: translateX(10px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-10px);
+  }
+  40%,
+  80% {
+    transform: translateX(10px);
+  }
 }
 
 .animate-pin-shake {
   animation: pin-shake 0.4s ease-in-out both;
 }
 
-
-
 /* --- 3. FONTS --- */
 #retop-root {
-  font-variation-settings: "wght" var(--app-font-wght, 700);
+  font-variation-settings: 'wght' var(--app-font-wght, 700);
 }
 
-#retop-root *:not(i):not(.sem-text):not(.font-expanded):not(.font-logo):not(.retop-logo):not(.font-signature):not(.font-squish):not(.retop-about-logo):not(.retop-campus-text) {
+#retop-root
+  *:not(i):not(.sem-text):not(.font-expanded):not(.font-logo):not(
+    .retop-logo
+  ):not(.font-signature):not(.font-squish):not(.retop-about-logo):not(
+    .retop-campus-text
+  ) {
   font-family: var(--font-sans) !important;
 }
 
@@ -705,10 +797,10 @@ a:active,
 #retop-root .font-expanded {
   font-family: var(--font-expanded) !important;
   font-variation-settings:
-    "wdth" 125,
-    "wght" 800,
-    "GRAD" 100,
-    "ROND" 100 !important;
+    'wdth' 125,
+    'wght' 800,
+    'GRAD' 100,
+    'ROND' 100 !important;
   line-height: 1 !important;
 }
 
@@ -717,10 +809,10 @@ a:active,
 #root .font-logo {
   font-family: var(--font-expanded) !important;
   font-variation-settings:
-    "wdth" 151,
-    "wght" 700,
-    "slnt" -10,
-    "ROND" 100 !important;
+    'wdth' 151,
+    'wght' 700,
+    'slnt' -10,
+    'ROND' 100 !important;
   line-height: 1 !important;
 }
 
@@ -732,10 +824,10 @@ a:active,
 #root .font-signature {
   font-family: var(--font-expanded) !important;
   font-variation-settings:
-    "wdth" 151,
-    "wght" 700,
-    "slnt" -10,
-    "ROND" 100 !important;
+    'wdth' 151,
+    'wght' 700,
+    'slnt' -10,
+    'ROND' 100 !important;
   line-height: 1 !important;
   transition: font-variation-settings var(--duration-font-var) ease-out !important;
 }
@@ -744,20 +836,23 @@ a:active,
 #retop-root .retop-logo:hover,
 #root .retop-logo:hover {
   font-variation-settings:
-    "wdth" 151,
-    "wght" 700,
-    "slnt" -10,
-    "ROND" 100 !important;
+    'wdth' 151,
+    'wght' 700,
+    'slnt' -10,
+    'ROND' 100 !important;
 }
 
-#retop-root .font-squish, #root .font-squish,
-#retop-root .hover\:font-squish:hover, #root .hover\:font-squish:hover,
-#retop-root .group:hover .group-hover\:font-squish, #root .group:hover .group-hover\:font-squish {
+#retop-root .font-squish,
+#root .font-squish,
+#retop-root .hover\:font-squish:hover,
+#root .hover\:font-squish:hover,
+#retop-root .group:hover .group-hover\:font-squish,
+#root .group:hover .group-hover\:font-squish {
   font-variation-settings:
-    "wdth" 125,
-    "wght" 1,
-    "GRAD" 100,
-    "ROND" 100 !important;
+    'wdth' 125,
+    'wght' 1,
+    'GRAD' 100,
+    'ROND' 100 !important;
 }
 
 /* --- 4. UTILITY OVERRIDES --- */
@@ -875,7 +970,7 @@ a:active,
 
 /* --- 5. SCROLLBARS --- */
 @property --scrollbar-thumb-color {
-  syntax: "<color>";
+  syntax: '<color>';
   inherits: true;
   initial-value: transparent;
 }
@@ -889,7 +984,7 @@ a:active,
   background: transparent !important;
 }
 
-#retop-root [class*="overflow-"],
+#retop-root [class*='overflow-'],
 #retop-root .custom-scrollbar {
   --scrollbar-thumb-color: transparent;
   transition: --scrollbar-thumb-color var(--duration-scrollbar) ease-out;
@@ -897,12 +992,16 @@ a:active,
   scrollbar-color: var(--scrollbar-thumb-color) transparent;
 }
 
-#retop-root [class*="overflow-"]:hover,
+#retop-root [class*='overflow-']:hover,
 #retop-root .custom-scrollbar:hover {
-  --scrollbar-thumb-color: color-mix(in srgb, var(--text-muted, #94a3b8) 40%, transparent);
+  --scrollbar-thumb-color: color-mix(
+    in srgb,
+    var(--text-muted, #94a3b8) 40%,
+    transparent
+  );
 }
 
-#retop-root [class*="overflow-"]:hover::-webkit-scrollbar-thumb:hover,
+#retop-root [class*='overflow-']:hover::-webkit-scrollbar-thumb:hover,
 #retop-root .custom-scrollbar:hover::-webkit-scrollbar-thumb:hover {
   background-color: var(--accent-base) !important;
 }
@@ -910,14 +1009,22 @@ a:active,
 /* Always-visible scrollbar for search menu to indicate scrollable content */
 #retop-root .search-scrollbar,
 #retop-root .always-visible-scrollbar {
-  --scrollbar-thumb-color: color-mix(in srgb, var(--text-muted, #94a3b8) 40%, transparent);
+  --scrollbar-thumb-color: color-mix(
+    in srgb,
+    var(--text-muted, #94a3b8) 40%,
+    transparent
+  );
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb-color) transparent;
 }
 
 #retop-root .search-scrollbar:hover,
 #retop-root .always-visible-scrollbar:hover {
-  --scrollbar-thumb-color: color-mix(in srgb, var(--text-muted, #94a3b8) 75%, transparent);
+  --scrollbar-thumb-color: color-mix(
+    in srgb,
+    var(--text-muted, #94a3b8) 75%,
+    transparent
+  );
 }
 
 #retop-root .search-scrollbar::-webkit-scrollbar-thumb,

@@ -1,7 +1,11 @@
-import React, { useEffect, useState } from "react";
-import { getAllCachedKeys, removeCacheKey } from "../utils/cache";
-import { useDataStore } from "../store/dataStore";
-import { Delete, KeyboardArrowDown, KeyboardArrowUp } from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
+import React, { useEffect, useState } from 'react';
+import { getAllCachedKeys, removeCacheKey } from '../utils/cache';
+import { useDataStore } from '../store/dataStore';
+import {
+  Delete,
+  KeyboardArrowDown,
+  KeyboardArrowUp,
+} from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 
 const formatTimeAgo = (timestamp: number) => {
   const seconds = Math.floor((Date.now() - timestamp) / 1000);
@@ -31,20 +35,22 @@ interface PageCacheGroup {
 export const SyncManager = () => {
   const [keys, setKeys] = useState<{ key: string; timestamp: number }[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedPages, setExpandedPages] = useState<Record<string, boolean>>({});
+  const [expandedPages, setExpandedPages] = useState<Record<string, boolean>>(
+    {},
+  );
   const user = useDataStore((s) => s.user);
 
   const fetchKeys = async () => {
     setLoading(true);
     try {
       const allKeys = await getAllCachedKeys(
-        user?.regNo && user.regNo !== "..." ? user.regNo : undefined
+        user?.regNo && user.regNo !== '...' ? user.regNo : undefined,
       );
       setKeys(
         allKeys.sort(
           (a: { timestamp: number }, b: { timestamp: number }) =>
-            b.timestamp - a.timestamp
-        )
+            b.timestamp - a.timestamp,
+        ),
       );
     } catch (e) {
       console.error(e);
@@ -76,46 +82,136 @@ export const SyncManager = () => {
     }));
   };
 
-  const categorizeKey = (key: string): { pageId: string; pageTitle: string; label: string; semester: string } => {
-    const stripped = key.substring(key.indexOf("_") + 1);
+  const categorizeKey = (
+    key: string,
+  ): { pageId: string; pageTitle: string; label: string; semester: string } => {
+    const stripped = key.substring(key.indexOf('_') + 1);
 
-    if (stripped === "dashboard_stats")
-      return { pageId: "dashboard", pageTitle: "Home & CGPA Stats", label: "CGPA & Academic Standing", semester: "Current" };
-    if (stripped === "dashboard_attendance")
-      return { pageId: "dashboard", pageTitle: "Home & CGPA Stats", label: "Attendance Summary", semester: "Current" };
-    if (stripped === "dashboard_da")
-      return { pageId: "dashboard", pageTitle: "Home & CGPA Stats", label: "Upcoming Assignments", semester: "Current" };
-    if (stripped === "dashboard_events")
-      return { pageId: "dashboard", pageTitle: "Home & CGPA Stats", label: "Campus Events", semester: "Global" };
+    if (stripped === 'dashboard_stats')
+      return {
+        pageId: 'dashboard',
+        pageTitle: 'Home & CGPA Stats',
+        label: 'CGPA & Academic Standing',
+        semester: 'Current',
+      };
+    if (stripped === 'dashboard_attendance')
+      return {
+        pageId: 'dashboard',
+        pageTitle: 'Home & CGPA Stats',
+        label: 'Attendance Summary',
+        semester: 'Current',
+      };
+    if (stripped === 'dashboard_da')
+      return {
+        pageId: 'dashboard',
+        pageTitle: 'Home & CGPA Stats',
+        label: 'Upcoming Assignments',
+        semester: 'Current',
+      };
+    if (stripped === 'dashboard_events')
+      return {
+        pageId: 'dashboard',
+        pageTitle: 'Home & CGPA Stats',
+        label: 'Campus Events',
+        semester: 'Global',
+      };
 
-    if (stripped.startsWith("tt_sem_") || stripped === "tt_semester_list")
-      return { pageId: "timetable", pageTitle: "Timetable", label: "Schedule & Slots", semester: stripped.replace("tt_sem_", "") };
+    if (stripped.startsWith('tt_sem_') || stripped === 'tt_semester_list')
+      return {
+        pageId: 'timetable',
+        pageTitle: 'Timetable',
+        label: 'Schedule & Slots',
+        semester: stripped.replace('tt_sem_', ''),
+      };
 
-    if (stripped.startsWith("marks_data_"))
-      return { pageId: "marks", pageTitle: "Marks", label: "Exam & Assessment Marks", semester: stripped.replace("marks_data_", "") };
+    if (stripped.startsWith('marks_data_'))
+      return {
+        pageId: 'marks',
+        pageTitle: 'Marks',
+        label: 'Exam & Assessment Marks',
+        semester: stripped.replace('marks_data_', ''),
+      };
 
-    if (stripped.startsWith("grades_data_") || stripped === "grade_history_data")
-      return { pageId: "grades", pageTitle: "Grades & GPA", label: "Grade History & Credits", semester: stripped.replace("grades_data_", "") };
+    if (
+      stripped.startsWith('grades_data_') ||
+      stripped === 'grade_history_data'
+    )
+      return {
+        pageId: 'grades',
+        pageTitle: 'Grades & GPA',
+        label: 'Grade History & Credits',
+        semester: stripped.replace('grades_data_', ''),
+      };
 
-    if (stripped.startsWith("da_courses_") || stripped.startsWith("da_class_") || stripped === "da_semesters")
-      return { pageId: "assignments", pageTitle: "Digital Assignments", label: "Course DA Submissions", semester: stripped.replace("da_courses_", "").replace("da_class_", "Class ") };
+    if (
+      stripped.startsWith('da_courses_') ||
+      stripped.startsWith('da_class_') ||
+      stripped === 'da_semesters'
+    )
+      return {
+        pageId: 'assignments',
+        pageTitle: 'Digital Assignments',
+        label: 'Course DA Submissions',
+        semester: stripped
+          .replace('da_courses_', '')
+          .replace('da_class_', 'Class '),
+      };
 
-    if (stripped.startsWith("curriculum_cat_") || stripped === "curriculum_dashboard")
-      return { pageId: "curriculum", pageTitle: "Curriculum", label: "Program Basket & Allocation", semester: "Global" };
+    if (
+      stripped.startsWith('curriculum_cat_') ||
+      stripped === 'curriculum_dashboard'
+    )
+      return {
+        pageId: 'curriculum',
+        pageTitle: 'Curriculum',
+        label: 'Program Basket & Allocation',
+        semester: 'Global',
+      };
 
-    if (stripped.startsWith("course_details_") || stripped === "course_page_consolidated")
-      return { pageId: "course_page", pageTitle: "Course Page", label: "Syllabus & Material Details", semester: stripped.replace("course_details_", "").split("_")[0] };
+    if (
+      stripped.startsWith('course_details_') ||
+      stripped === 'course_page_consolidated'
+    )
+      return {
+        pageId: 'course_page',
+        pageTitle: 'Course Page',
+        label: 'Syllabus & Material Details',
+        semester: stripped.replace('course_details_', '').split('_')[0],
+      };
 
-    if (stripped.startsWith("cal_") || stripped.startsWith("timetable"))
-      return { pageId: "calendar", pageTitle: "Academic Calendar", label: "Monthly Calendar & Holidays", semester: "Global" };
+    if (stripped.startsWith('cal_') || stripped.startsWith('timetable'))
+      return {
+        pageId: 'calendar',
+        pageTitle: 'Academic Calendar',
+        label: 'Monthly Calendar & Holidays',
+        semester: 'Global',
+      };
 
-    if (stripped.startsWith("profile") || stripped.startsWith("student_profile"))
-      return { pageId: "profile", pageTitle: "Student Profile", label: "Personal & Academic Bio", semester: "Global" };
+    if (
+      stripped.startsWith('profile') ||
+      stripped.startsWith('student_profile')
+    )
+      return {
+        pageId: 'profile',
+        pageTitle: 'Student Profile',
+        label: 'Personal & Academic Bio',
+        semester: 'Global',
+      };
 
-    if (stripped === "vtop_menu" || stripped.startsWith("menu"))
-      return { pageId: "menu", pageTitle: "VTOP Navigation", label: "Sidebar & Quick Links", semester: "Global" };
+    if (stripped === 'vtop_menu' || stripped.startsWith('menu'))
+      return {
+        pageId: 'menu',
+        pageTitle: 'VTOP Navigation',
+        label: 'Sidebar & Quick Links',
+        semester: 'Global',
+      };
 
-    return { pageId: "other", pageTitle: "Other System Cache", label: stripped, semester: "Global" };
+    return {
+      pageId: 'other',
+      pageTitle: 'Other System Cache',
+      label: stripped,
+      semester: 'Global',
+    };
   };
 
   // Group keys by Page
@@ -173,7 +269,7 @@ export const SyncManager = () => {
                         {group.title}
                       </span>
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-(--accent-base)/15 text-(--accent-base) shrink-0">
-                        {itemCount} {itemCount === 1 ? "entry" : "entries"}
+                        {itemCount} {itemCount === 1 ? 'entry' : 'entries'}
                       </span>
                     </div>
                     <span className="text-[11px] text-(--text-muted) mt-0.5">
@@ -185,9 +281,9 @@ export const SyncManager = () => {
                     <button
                       onClick={() => toggleExpand(group.id)}
                       className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-(--text-muted) hover:text-(--text-main) hover:bg-black/5 dark:hover:bg-white/5 border border-transparent transition-all cursor-pointer"
-                      title={isExpanded ? "Hide details" : "See details"}
+                      title={isExpanded ? 'Hide details' : 'See details'}
                     >
-                      <span>{isExpanded ? "Less" : "See More"}</span>
+                      <span>{isExpanded ? 'Less' : 'See More'}</span>
                       {isExpanded ? (
                         <KeyboardArrowUp className="w-4 h-4" />
                       ) : (
@@ -222,9 +318,10 @@ export const SyncManager = () => {
                               {item.label}
                             </span>
                             <span className="text-[10px] text-(--text-muted) truncate">
-                              {item.semester !== "Global" && item.semester !== "Current"
+                              {item.semester !== 'Global' &&
+                              item.semester !== 'Current'
                                 ? `Sem: ${item.semester} • `
-                                : ""}
+                                : ''}
                               Synced {formatTimeAgo(item.timestamp)} ago
                             </span>
                           </div>

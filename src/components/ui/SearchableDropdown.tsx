@@ -1,12 +1,18 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { createPortal } from "react-dom";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+} from 'react';
+import { createPortal } from 'react-dom';
 import {
   KeyboardArrowDown,
   Check,
   Search,
   Close,
-} from "@nine-thirty-five/material-symbols-react/rounded/700/filled";
-import { getAppRoot } from "../../utils/bridge";
+} from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
+import { getAppRoot } from '../../utils/bridge';
 
 export interface SearchableOption {
   value: string;
@@ -34,17 +40,17 @@ export const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   options,
   value,
   onChange,
-  placeholder = "— Select —",
-  searchPlaceholder = "Search...",
+  placeholder = '— Select —',
+  searchPlaceholder = 'Search...',
   disabled = false,
   loading = false,
   error,
   helperText,
   required = false,
-  className = "",
+  className = '',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
 
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -94,7 +100,7 @@ export const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   useEffect(() => {
     if (isOpen) {
       updatePosition();
-      setSearchQuery("");
+      setSearchQuery('');
       const selIdx = filteredOptions.findIndex((o) => o.value === value);
       setHighlightedIndex(selIdx >= 0 ? selIdx : 0);
 
@@ -103,11 +109,11 @@ export const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
         searchInputRef.current?.focus();
       }, 50);
 
-      window.addEventListener("resize", updatePosition);
-      window.addEventListener("scroll", updatePosition, true);
+      window.addEventListener('resize', updatePosition);
+      window.addEventListener('scroll', updatePosition, true);
       return () => {
-        window.removeEventListener("resize", updatePosition);
-        window.removeEventListener("scroll", updatePosition, true);
+        window.removeEventListener('resize', updatePosition);
+        window.removeEventListener('scroll', updatePosition, true);
       };
     }
   }, [isOpen, value, updatePosition]);
@@ -132,11 +138,11 @@ export const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside, true);
-    document.addEventListener("touchstart", handleClickOutside, true);
+    document.addEventListener('mousedown', handleClickOutside, true);
+    document.addEventListener('touchstart', handleClickOutside, true);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside, true);
-      document.removeEventListener("touchstart", handleClickOutside, true);
+      document.removeEventListener('mousedown', handleClickOutside, true);
+      document.removeEventListener('touchstart', handleClickOutside, true);
     };
   }, [isOpen]);
 
@@ -144,8 +150,8 @@ export const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   useEffect(() => {
     if (isOpen && highlightedIndex >= 0 && itemRefs.current[highlightedIndex]) {
       itemRefs.current[highlightedIndex]?.scrollIntoView({
-        block: "nearest",
-        behavior: "smooth",
+        block: 'nearest',
+        behavior: 'smooth',
       });
     }
   }, [isOpen, highlightedIndex]);
@@ -161,10 +167,10 @@ export const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
 
     if (!isOpen) {
       if (
-        e.key === "ArrowDown" ||
-        e.key === "ArrowUp" ||
-        e.key === "Enter" ||
-        e.key === " "
+        e.key === 'ArrowDown' ||
+        e.key === 'ArrowUp' ||
+        e.key === 'Enter' ||
+        e.key === ' '
       ) {
         e.preventDefault();
         setIsOpen(true);
@@ -174,23 +180,23 @@ export const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
 
     const count = filteredOptions.length;
     switch (e.key) {
-      case "ArrowDown":
+      case 'ArrowDown':
         e.preventDefault();
         setHighlightedIndex((prev) => (count > 0 ? (prev + 1) % count : -1));
         break;
-      case "ArrowUp":
+      case 'ArrowUp':
         e.preventDefault();
         setHighlightedIndex((prev) =>
           count > 0 ? (prev - 1 + count) % count : -1,
         );
         break;
-      case "Enter":
+      case 'Enter':
         e.preventDefault();
         if (highlightedIndex >= 0 && highlightedIndex < count) {
           handleSelect(filteredOptions[highlightedIndex].value);
         }
         break;
-      case "Escape":
+      case 'Escape':
         e.preventDefault();
         setIsOpen(false);
         triggerRef.current?.focus();
@@ -225,31 +231,37 @@ export const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
         onKeyDown={handleKeyDown}
         className={`w-full h-11 px-4 py-2.5 rounded-2xl bg-(--bg-surface) hover:bg-(--bg-highlight)/60 border text-left text-sm font-medium transition-all flex items-center justify-between gap-2 cursor-pointer select-none focus:outline-none focus:ring-2 focus:ring-(--accent-base)/30 ${
           error
-            ? "border-red-500/70 focus:border-red-500"
+            ? 'border-red-500/70 focus:border-red-500'
             : isOpen
-              ? "border-(--accent-base) ring-2 ring-(--accent-base)/30"
-              : "border-(--border-dim)/50 hover:border-(--border-dim) focus:border-(--accent-base)"
+              ? 'border-(--accent-base) ring-2 ring-(--accent-base)/30'
+              : 'border-(--border-dim)/50 hover:border-(--border-dim) focus:border-(--accent-base)'
         } ${
           disabled || loading || options.length === 0
-            ? "opacity-50 cursor-not-allowed bg-(--bg-surface)/40"
-            : ""
-        }`}>
+            ? 'opacity-50 cursor-not-allowed bg-(--bg-surface)/40'
+            : ''
+        }`}
+      >
         <span
           className={`truncate flex-1 ${
-            selectedOpt ? "text-(--text-main) font-medium" : "text-(--text-muted)/70"
-          }`}>
+            selectedOpt
+              ? 'text-(--text-main) font-medium'
+              : 'text-(--text-muted)/70'
+          }`}
+        >
           {selectedOpt ? selectedOpt.label : placeholder}
         </span>
 
         <KeyboardArrowDown
           className={`w-4 h-4 text-(--text-muted) shrink-0 transition-transform duration-150 ${
-            isOpen ? "rotate-180 text-(--accent-base)" : ""
+            isOpen ? 'rotate-180 text-(--accent-base)' : ''
           }`}
         />
       </button>
 
       {/* Inline Feedback / Error */}
-      {error && <span className="text-[10px] font-bold text-red-400">{error}</span>}
+      {error && (
+        <span className="text-[10px] font-bold text-red-400">{error}</span>
+      )}
       {!error && helperText && (
         <span className="text-[10px] text-(--text-muted)">{helperText}</span>
       )}
@@ -263,12 +275,13 @@ export const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
             tabIndex={-1}
             onKeyDown={handleKeyDown}
             style={{
-              position: "fixed",
+              position: 'fixed',
               top: `${menuPos.top}px`,
               left: `${menuPos.left}px`,
               width: `${menuPos.width}px`,
             }}
-            className="z-[999999] max-h-72 overflow-hidden rounded-2xl bg-(--bg-surface) border border-(--border-dim) popup-shadow shadow-2xl flex flex-col text-(--text-main) animate-popup-open focus:outline-none">
+            className="z-[999999] max-h-72 overflow-hidden rounded-2xl bg-(--bg-surface) border border-(--border-dim) popup-shadow shadow-2xl flex flex-col text-(--text-main) animate-popup-open focus:outline-none"
+          >
             {/* Search Input Field */}
             <div className="p-2 border-b border-(--border-dim)/50 bg-(--bg-main)/50 flex items-center gap-2">
               <Search className="w-4 h-4 text-(--text-muted) shrink-0" />
@@ -283,8 +296,9 @@ export const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
               {searchQuery && (
                 <button
                   type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="text-(--text-muted) hover:text-(--text-main) p-0.5 rounded-full cursor-pointer">
+                  onClick={() => setSearchQuery('')}
+                  className="text-(--text-muted) hover:text-(--text-main) p-0.5 rounded-full cursor-pointer"
+                >
                   <Close className="w-3.5 h-3.5" />
                 </button>
               )}
@@ -319,20 +333,22 @@ export const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                       onMouseEnter={() => setHighlightedIndex(idx)}
                       className={`w-full text-left px-3 py-2 rounded-xl text-xs font-medium transition-all flex items-center justify-between gap-2 cursor-pointer outline-none select-none ${
                         isSelected
-                          ? "bg-(--accent-base) text-(--text-inverse) font-bold"
+                          ? 'bg-(--accent-base) text-(--text-inverse) font-bold'
                           : isHighlighted
-                            ? "bg-(--bg-highlight) text-(--text-main)"
-                            : "text-(--text-main) hover:bg-(--bg-highlight)"
-                      }`}>
+                            ? 'bg-(--bg-highlight) text-(--text-main)'
+                            : 'text-(--text-main) hover:bg-(--bg-highlight)'
+                      }`}
+                    >
                       <div className="flex flex-col min-w-0 flex-1">
                         <span className="truncate">{opt.label}</span>
                         {opt.subLabel && (
                           <span
                             className={`text-[10px] truncate ${
                               isSelected
-                                ? "text-(--text-inverse)/80"
-                                : "text-(--text-muted)"
-                            }`}>
+                                ? 'text-(--text-inverse)/80'
+                                : 'text-(--text-muted)'
+                            }`}
+                          >
                             {opt.subLabel}
                           </span>
                         )}

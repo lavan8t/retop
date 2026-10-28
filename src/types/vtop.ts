@@ -1,4 +1,18 @@
-export type ViewType = "dashboard" | "timetable" | "curriculum" | "marks" | "grades" | "profile" | "settings" | "coursePage" | "calendar" | "attendance" | "digitalAssignments" | "examSchedule" | "lateHour" | "content";
+export type ViewType =
+  | 'dashboard'
+  | 'timetable'
+  | 'curriculum'
+  | 'marks'
+  | 'grades'
+  | 'profile'
+  | 'settings'
+  | 'coursePage'
+  | 'calendar'
+  | 'attendance'
+  | 'digitalAssignments'
+  | 'examSchedule'
+  | 'lateHour'
+  | 'content';
 
 export interface QuickLink {
   title: string;
@@ -85,7 +99,6 @@ export interface CurriculumCourse {
   basket: string;
   isCompleted?: boolean;
 }
-
 
 export interface AssessmentMark {
   title: string;
@@ -342,7 +355,6 @@ export interface AttendanceRecord {
   dayTime: string;
   status: string;
 }
-
 
 export interface GradeCourse {
   code: string;

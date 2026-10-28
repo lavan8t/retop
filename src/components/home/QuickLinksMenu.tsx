@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
-
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 
 import {
   QuickLink,
@@ -7,12 +6,12 @@ import {
   CourseSummary,
   TimetableCourse,
   SpotlightCategoryGroup,
-} from "../../types/vtop";
-import { Card } from "../ui/Card";
-import { AttendanceRow } from "./HomeRows";
-import { EmptyState } from "../EmptyState";
-import { useDataStore } from "../../store/dataStore";
-import { SpotlightSection } from "./SpotlightSection";
+} from '../../types/vtop';
+import { Card } from '../ui/Card';
+import { AttendanceRow } from './HomeRows';
+import { EmptyState } from '../EmptyState';
+import { useDataStore } from '../../store/dataStore';
+import { SpotlightSection } from './SpotlightSection';
 
 interface QuickLinksMenuProps {
   className?: string;
@@ -35,7 +34,7 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
   ttCourses,
   spotlightCategories,
 }) => {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
@@ -47,8 +46,8 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
     attRecordsLoading,
   } = useDataStore();
   const isLoading =
-    status === "Syncing..." ||
-    status === "Initializing..." ||
+    status === 'Syncing...' ||
+    status === 'Initializing...' ||
     ttLoading ||
     calLoadingGrid ||
     calLoadingMonths ||
@@ -57,7 +56,7 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
   // Recent Links State & Handler
   const [recentLinks, setRecentLinks] = useState<QuickLink[]>(() => {
     try {
-      return JSON.parse(localStorage.getItem("retop-recent-links") || "[]");
+      return JSON.parse(localStorage.getItem('retop-recent-links') || '[]');
     } catch {
       return [];
     }
@@ -67,7 +66,7 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
     setRecentLinks((prev) => {
       const filtered = prev.filter((l) => l.url !== link.url);
       const updated = [link, ...filtered].slice(0, 4); // Keep top 4
-      localStorage.setItem("retop-recent-links", JSON.stringify(updated));
+      localStorage.setItem('retop-recent-links', JSON.stringify(updated));
       return updated;
     });
     onNavigate(link);
@@ -119,19 +118,30 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
   useEffect(() => {
     const handleScroll = (e: Event) => {
       const target = e.target as HTMLElement;
-      if (target && target.closest && (target.closest(".custom-scrollbar") || target.closest(".popup-shadow"))) return;
+      if (
+        target &&
+        target.closest &&
+        (target.closest('.custom-scrollbar') || target.closest('.popup-shadow'))
+      )
+        return;
       setActiveMenu(null);
     };
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (target && target.closest && (target.closest("#retop-search-dropdown") || target.closest(".popup-shadow"))) return;
+      if (
+        target &&
+        target.closest &&
+        (target.closest('#retop-search-dropdown') ||
+          target.closest('.popup-shadow'))
+      )
+        return;
       setActiveMenu(null);
     };
-    window.addEventListener("scroll", handleScroll, true);
-    window.addEventListener("click", handleClick);
+    window.addEventListener('scroll', handleScroll, true);
+    window.addEventListener('click', handleClick);
     return () => {
-      window.removeEventListener("scroll", handleScroll, true);
-      window.removeEventListener("click", handleClick);
+      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('click', handleClick);
     };
   }, []);
 
@@ -141,8 +151,8 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
       if (e.defaultPrevented) return;
 
       const isInput =
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
         target.isContentEditable;
 
       // If typing an alphanumeric character and not already focused on an input field
@@ -158,8 +168,8 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
         // Intentionally do not preventDefault here so the character gets typed into the input
       }
     };
-    window.addEventListener("keydown", handleGlobalKeyDown);
-    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, []);
 
   const flattenedLinks = useMemo(() => {
@@ -176,7 +186,7 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
 
     const grouped = new Map<string, QuickLink[]>();
     matches.forEach((link) => {
-      const cat = link.category || "Other";
+      const cat = link.category || 'Other';
       if (!grouped.has(cat)) grouped.set(cat, []);
       grouped.get(cat)!.push(link);
     });
@@ -200,19 +210,19 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
 
   const overallAttendance = useMemo(() => {
     const valid = attendance.filter((a) => !isNaN(parseFloat(a.attendance)));
-    if (valid.length === 0) return "--";
+    if (valid.length === 0) return '--';
     const sum = valid.reduce((acc, a) => acc + parseFloat(a.attendance), 0);
-    return Math.round(sum / valid.length) + "%";
+    return Math.round(sum / valid.length) + '%';
   }, [attendance]);
 
   // Handle auto-scroll for keyboard nav
   useEffect(() => {
     if (query) {
       const el = document.getElementById(`home-search-item-${selectedIndex}`);
-      if (el) el.scrollIntoView({ block: "nearest" });
+      if (el) el.scrollIntoView({ block: 'nearest' });
     } else if (activeMenu) {
       const el = document.getElementById(`home-popup-item-${selectedIndex}`);
-      if (el) el.scrollIntoView({ block: "nearest" });
+      if (el) el.scrollIntoView({ block: 'nearest' });
     }
   }, [selectedIndex, query, activeMenu]);
 
@@ -221,42 +231,44 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
     const currentList = activeMenu ? activeMenu.cat.links : flattenedLinks;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowDown") {
+      if (e.key === 'ArrowDown') {
         e.preventDefault();
         setSelectedIndex((p) => (p + 1) % currentList.length);
-      } else if (e.key === "ArrowUp") {
+      } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         setSelectedIndex(
           (p) => (p - 1 + currentList.length) % currentList.length,
         );
-      } else if (e.key === "Enter") {
+      } else if (e.key === 'Enter') {
         e.preventDefault();
         if (currentList[selectedIndex]) {
           handleNavigate(currentList[selectedIndex]);
           setActiveMenu(null);
-          setQuery("");
+          setQuery('');
         }
-      } else if (e.key === "Escape") {
+      } else if (e.key === 'Escape') {
         e.preventDefault();
         setActiveMenu(null);
-        setQuery("");
+        setQuery('');
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [query, flattenedLinks, selectedIndex, activeMenu]); // Removed onNavigate since we use handleNavigate
 
   return (
     <>
-      <div className={`w-full lg:w-[27%] xl:w-[24%] flex-col shrink-0 h-auto lg:h-full overflow-y-auto custom-scrollbar scrollbar-gutter-stable relative z-40 pt-20 md:pt-23 lg:pt-25 pb-4 md:pb-6 lg:pb-8 pl-4 lg:pl-6 pr-2 lg:pr-3 gap-4 ${className || 'hidden lg:flex'}`}>
+      <div
+        className={`w-full lg:w-[27%] xl:w-[24%] flex-col shrink-0 h-auto lg:h-full overflow-y-auto custom-scrollbar scrollbar-gutter-stable relative z-40 pt-20 md:pt-23 lg:pt-25 pb-4 md:pb-6 lg:pb-8 pl-4 lg:pl-6 pr-2 lg:pr-3 gap-4 ${className || 'hidden lg:flex'}`}
+      >
         {/* Attendance Compact Box */}
         <div className="shrink-0 flex flex-col w-full">
           <Card
             onClick={() =>
               onNavigate({
-                title: "Class Attendance",
-                url: "studentattendance",
-                category: "Academics",
+                title: 'Class Attendance',
+                url: 'studentattendance',
+                category: 'Academics',
               })
             }
             className="group shrink-0 bg-(--bg-highlight) rounded-4xl flex flex-col relative z-30 cursor-pointer overflow-hidden border-2 border-transparent hover:border-(--border-main) transition-all h-fit"
@@ -292,62 +304,71 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
       </div>
 
       {/* Floating Menu Portal - Minimal Material Brutalism */}
-      {activeMenu && (() => {
-        const itemCount = activeMenu.cat.links.length;
-        const cols = Math.max(1, Math.min(5, Math.ceil(itemCount / 10)));
-        const colWidth = 200;
-        const popupWidth = cols * colWidth;
-        const targetLeft = activeMenu.rect.right ? activeMenu.rect.right + 12 : 0;
-        const maxLeft = typeof window !== "undefined" ? window.innerWidth - popupWidth - 16 : targetLeft;
-        const leftPos = Math.min(targetLeft, maxLeft);
+      {activeMenu &&
+        (() => {
+          const itemCount = activeMenu.cat.links.length;
+          const cols = Math.max(1, Math.min(5, Math.ceil(itemCount / 10)));
+          const colWidth = 200;
+          const popupWidth = cols * colWidth;
+          const targetLeft = activeMenu.rect.right
+            ? activeMenu.rect.right + 12
+            : 0;
+          const maxLeft =
+            typeof window !== 'undefined'
+              ? window.innerWidth - popupWidth - 16
+              : targetLeft;
+          const leftPos = Math.min(targetLeft, maxLeft);
 
-        const targetTop = activeMenu.rect.top ? activeMenu.rect.top : 0;
-        const estimatedHeight = Math.ceil(itemCount / cols) * 38 + 24;
-        const maxTop = typeof window !== "undefined" ? window.innerHeight - estimatedHeight - 16 : targetTop;
-        const topPos = Math.max(16, Math.min(targetTop, maxTop));
+          const targetTop = activeMenu.rect.top ? activeMenu.rect.top : 0;
+          const estimatedHeight = Math.ceil(itemCount / cols) * 38 + 24;
+          const maxTop =
+            typeof window !== 'undefined'
+              ? window.innerHeight - estimatedHeight - 16
+              : targetTop;
+          const topPos = Math.max(16, Math.min(targetTop, maxTop));
 
-        return (
-          <div
-            onMouseEnter={handleChildEnter}
-            onMouseLeave={handleChildLeave}
-            className="fixed z-999999 bg-(--bg-surface) border-0 rounded-2xl popup-shadow p-3 flex flex-col transition-all duration-200"
-            style={{
-              transformOrigin: "left center",
-              left: leftPos,
-              top: topPos,
-              width: `${popupWidth}px`,
-              maxWidth: "calc(100vw - 40px)",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
+          return (
             <div
-              className="grid gap-1 pt-1"
+              onMouseEnter={handleChildEnter}
+              onMouseLeave={handleChildLeave}
+              className="fixed z-999999 bg-(--bg-surface) border-0 rounded-2xl popup-shadow p-3 flex flex-col transition-all duration-200"
               style={{
-                gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+                transformOrigin: 'left center',
+                left: leftPos,
+                top: topPos,
+                width: `${popupWidth}px`,
+                maxWidth: 'calc(100vw - 40px)',
               }}
+              onClick={(e) => e.stopPropagation()}
             >
-              {activeMenu.cat.links.map((link, i) => (
-                <button
-                  key={i}
-                  id={`home-popup-item-${i}`}
-                  onMouseEnter={() => setSelectedIndex(i)}
-                  onClick={() => {
-                    handleNavigate(link);
-                    setActiveMenu(null);
-                  }}
-                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 group ${
-                    i === selectedIndex
-                      ? "bg-(--accent-base) text-(--text-inverse)"
-                      : "bg-transparent text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main)"
-                  }`}
-                >
-                  <span className="flex-1 truncate">{link.title}</span>
-                </button>
-              ))}
+              <div
+                className="grid gap-1 pt-1"
+                style={{
+                  gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+                }}
+              >
+                {activeMenu.cat.links.map((link, i) => (
+                  <button
+                    key={i}
+                    id={`home-popup-item-${i}`}
+                    onMouseEnter={() => setSelectedIndex(i)}
+                    onClick={() => {
+                      handleNavigate(link);
+                      setActiveMenu(null);
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 group ${
+                      i === selectedIndex
+                        ? 'bg-(--accent-base) text-(--text-inverse)'
+                        : 'bg-transparent text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main)'
+                    }`}
+                  >
+                    <span className="flex-1 truncate">{link.title}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
     </>
   );
 };

@@ -112,7 +112,20 @@ function checkDAUploadResponse(html: string): {
     };
   }
 
-  return { success: true, requiresOtp: false };
+  // VTOP's own failure page - without this the default below would claim success
+  if (
+    html.toLowerCase().includes("unable to process your request") ||
+    html.includes("HTTP Status 404") ||
+    html.includes("404 - Not Found")
+  ) {
+    return {
+      success: false,
+      requiresOtp: false,
+      error: "VTOP could not process the upload. Please try again.",
+    };
+  }
+
+  return { success: false, requiresOtp: false };
 }
 
 export default function DigitalAssignments({ network }: { network: VTOPNetwork }) {
@@ -375,9 +388,14 @@ export default function DigitalAssignments({ network }: { network: VTOPNetwork }
           setOtpState(null);
         }, 1200);
       } else {
+        // VTOP answers a wrong or stale code with the same OTP prompt and no error text
         setStatusMsg({
           type: "error",
-          text: checkResult.error || "OTP verification failed. Please check the code.",
+          text:
+            checkResult.error ||
+            (checkResult.requiresOtp
+              ? "That code was not accepted. Use the latest code from your email."
+              : "OTP verification failed. Please check the code."),
         });
       }
     } catch (err: any) {

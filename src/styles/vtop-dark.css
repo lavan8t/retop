@@ -1,67 +1,70 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   VTOP DARK MODE — STYLING FOR NATIVE / LEGACY VTOP PAGES
+   VTOP THEME — CLEAN CONTRAST INVERSION FOR NATIVE / LEGACY VTOP PAGES
+   ═══════════════════════════════════════════════════════════════════════
+   Inverts all whites and blacks across classic VTOP pages so every table,
+   form, label, and nested text remains completely readable with zero
+   patchy backgrounds or low-contrast text.
    ═══════════════════════════════════════════════════════════════════════ */
 
+/* Apply full-page contrast inversion to native VTOP when dark / amoled theme is active */
 html[data-theme="dark"],
-html[data-theme="amoled"],
-[data-theme="dark"] body,
-[data-theme="amoled"] body {
-  --vtop-dark-bg: #121214;
-  --vtop-dark-surface: #18181b;
-  --vtop-dark-surface-2: #222226;
-  --vtop-dark-border: #2e2e33;
-  --vtop-dark-border-subtle: #27272a;
-  --vtop-dark-text: #f4f4f5;
-  --vtop-dark-text-muted: #a1a1aa;
+html[data-theme="amoled"] {
+  filter: invert(1) hue-rotate(180deg) !important;
+  background-color: #ffffff !important;
+  color: #000000 !important;
 }
 
-html[data-theme="amoled"],
-[data-theme="amoled"] body {
-  --vtop-dark-bg: #000000;
-  --vtop-dark-surface: #09090b;
-  --vtop-dark-surface-2: #141417;
-  --vtop-dark-border: #1f1f23;
-  --vtop-dark-border-subtle: #18181b;
-}
-
-/* Base Body and Outlines in Dark Mode */
-html[data-theme="dark"] body.show-legacy-ui,
-html[data-theme="amoled"] body.show-legacy-ui,
 html[data-theme="dark"] body,
 html[data-theme="amoled"] body {
-  background-color: var(--vtop-dark-bg) !important;
-  color: var(--vtop-dark-text) !important;
+  background-color: #ffffff !important;
+  color: #000000 !important;
 }
 
-html[data-theme="dark"] #page_outline,
-html[data-theme="amoled"] #page_outline,
-html[data-theme="dark"] #page-holder,
-html[data-theme="amoled"] #page-holder,
-html[data-theme="dark"] #vtop-body-content,
-html[data-theme="amoled"] #vtop-body-content,
-html[data-theme="dark"] #core-container,
-html[data-theme="amoled"] #core-container,
-html[data-theme="dark"] #b5wrapper,
-html[data-theme="amoled"] #b5wrapper,
-html[data-theme="dark"] #b3wrapper,
-html[data-theme="amoled"] #b3wrapper,
-html[data-theme="dark"] #b5-pagewrapper,
-html[data-theme="amoled"] #b5-pagewrapper,
-html[data-theme="dark"] .bootstrap3-iso,
-html[data-theme="amoled"] .bootstrap3-iso {
-  background-color: var(--vtop-dark-bg) !important;
-  color: var(--vtop-dark-text) !important;
+/* ═══════════════════════════════════════════════════════════════════════
+   COUNTER-INVERSION: Preserve original appearance for media and UI
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* 1. Images, photos, videos, canvases, embeds, iframes, and captchas */
+html[data-theme="dark"] img,
+html[data-theme="dark"] video,
+html[data-theme="dark"] canvas,
+html[data-theme="dark"] iframe,
+html[data-theme="dark"] embed,
+html[data-theme="dark"] object,
+html[data-theme="dark"] [data-no-invert],
+html[data-theme="amoled"] img,
+html[data-theme="amoled"] video,
+html[data-theme="amoled"] canvas,
+html[data-theme="amoled"] iframe,
+html[data-theme="amoled"] embed,
+html[data-theme="amoled"] object,
+html[data-theme="amoled"] [data-no-invert] {
+  filter: invert(1) hue-rotate(180deg) !important;
 }
 
-/* Header & Navbar */
-html[data-theme="dark"] #vtop-header,
-html[data-theme="amoled"] #vtop-header,
-html[data-theme="dark"] .headerBackgroundColor,
-html[data-theme="amoled"] .headerBackgroundColor {
-  background-color: var(--vtop-dark-surface) !important;
-  border-bottom: 1px solid var(--vtop-dark-border) !important;
-  color: var(--vtop-dark-text) !important;
+/* 2. Retop UI itself (#retop-host) and extension dialogs must retain their native theme */
+html[data-theme="dark"] #retop-host,
+html[data-theme="dark"] #retop-session-dialog,
+html[data-theme="dark"] #retop-boot-cloak,
+html[data-theme="dark"] #retop-early-cloak,
+html[data-theme="dark"] #retop-native-portals,
+html[data-theme="dark"] #retop-legacy-menu-search-wrapper,
+html[data-theme="dark"] #retop-vtop-search-menu,
+html[data-theme="dark"] #retop-hmenu-search-toggle,
+html[data-theme="amoled"] #retop-host,
+html[data-theme="amoled"] #retop-session-dialog,
+html[data-theme="amoled"] #retop-boot-cloak,
+html[data-theme="amoled"] #retop-early-cloak,
+html[data-theme="amoled"] #retop-native-portals,
+html[data-theme="amoled"] #retop-legacy-menu-search-wrapper,
+html[data-theme="amoled"] #retop-vtop-search-menu,
+html[data-theme="amoled"] #retop-hmenu-search-toggle {
+  filter: invert(1) hue-rotate(180deg) !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   CLASSIC VTOP MENU BAR & ENHANCEMENTS LAYOUT
+   ═══════════════════════════════════════════════════════════════════════ */
 
 /* Horizontal Menu Bar & Single-Line Navbar Alignment */
 #top-hmenu-bar,
@@ -208,258 +211,4 @@ html[data-theme="amoled"] .headerBackgroundColor {
 [id^="MG"]::-webkit-scrollbar-thumb:hover,
 #retop-legacy-menu-search-dropdown::-webkit-scrollbar-thumb:hover {
   background: rgba(125, 125, 125, 0.6) !important;
-}
-
-html[data-theme="dark"] #top-hmenu-bar,
-html[data-theme="amoled"] #top-hmenu-bar,
-html[data-theme="dark"] .horizontal-menu-color,
-html[data-theme="amoled"] .horizontal-menu-color {
-  background-color: var(--vtop-dark-surface) !important;
-  border-bottom: 1px solid var(--vtop-dark-border) !important;
-  color: var(--vtop-dark-text) !important;
-}
-
-html[data-theme="dark"] #top-hmenu-bar .hmenuItem,
-html[data-theme="amoled"] #top-hmenu-bar .hmenuItem,
-html[data-theme="dark"] #top-hmenu-bar .navbar-brand,
-html[data-theme="amoled"] #top-hmenu-bar .navbar-brand {
-  color: var(--vtop-dark-text) !important;
-}
-
-html[data-theme="dark"] #top-hmenu-bar .hmenuItem:hover,
-html[data-theme="amoled"] #top-hmenu-bar .hmenuItem:hover {
-  background-color: var(--vtop-dark-surface-2) !important;
-  color: #ffffff !important;
-}
-
-/* Dropdown Menu Panes in HMenu (Dark / AMOLED) */
-html[data-theme="dark"] .hmenubox,
-html[data-theme="amoled"] .hmenubox,
-html[data-theme="dark"] .overlay-window,
-html[data-theme="amoled"] .overlay-window,
-html[data-theme="dark"] .WhiteBackground,
-html[data-theme="amoled"] .WhiteBackground,
-html[data-theme="dark"] [id^="MG"],
-html[data-theme="amoled"] [id^="MG"] {
-  background-color: var(--vtop-dark-surface) !important;
-  color: var(--vtop-dark-text) !important;
-  border: 1px solid var(--vtop-dark-border) !important;
-}
-
-html[data-theme="dark"] .overlay-window .list-group-item,
-html[data-theme="amoled"] .overlay-window .list-group-item,
-html[data-theme="dark"] [id^="MG"] .list-group-item,
-html[data-theme="amoled"] [id^="MG"] .list-group-item {
-  background-color: transparent !important;
-  color: var(--vtop-dark-text) !important;
-}
-
-html[data-theme="dark"] .overlay-window .list-group-item:hover,
-html[data-theme="amoled"] .overlay-window .list-group-item:hover,
-html[data-theme="dark"] [id^="MG"] .list-group-item:hover,
-html[data-theme="amoled"] [id^="MG"] .list-group-item:hover {
-  background-color: var(--vtop-dark-surface-2) !important;
-  color: #ffffff !important;
-}
-
-/* Cards & Containers */
-html[data-theme="dark"] .card,
-html[data-theme="amoled"] .card,
-html[data-theme="dark"] .card-body,
-html[data-theme="amoled"] .card-body,
-html[data-theme="dark"] .lightGoldenbackground2,
-html[data-theme="amoled"] .lightGoldenbackground2 {
-  background-color: var(--vtop-dark-surface) !important;
-  color: var(--vtop-dark-text) !important;
-  border-color: var(--vtop-dark-border) !important;
-}
-
-html[data-theme="dark"] .card-header,
-html[data-theme="amoled"] .card-header {
-  background-color: var(--vtop-dark-surface-2) !important;
-  color: var(--vtop-dark-text) !important;
-  border-color: var(--vtop-dark-border) !important;
-}
-
-html[data-theme="dark"] .card-footer,
-html[data-theme="amoled"] .card-footer {
-  background-color: var(--vtop-dark-surface) !important;
-  border-color: var(--vtop-dark-border) !important;
-}
-
-/* List Groups */
-html[data-theme="dark"] .list-group,
-html[data-theme="amoled"] .list-group,
-html[data-theme="dark"] .list-group-item,
-html[data-theme="amoled"] .list-group-item {
-  background-color: var(--vtop-dark-surface) !important;
-  color: var(--vtop-dark-text) !important;
-  border-color: var(--vtop-dark-border-subtle) !important;
-}
-
-html[data-theme="dark"] a.list-group-item:hover,
-html[data-theme="amoled"] a.list-group-item:hover,
-html[data-theme="dark"] .list-group-item-action:hover,
-html[data-theme="amoled"] .list-group-item-action:hover {
-  background-color: var(--vtop-dark-surface-2) !important;
-  color: #ffffff !important;
-}
-
-/* Text Overrides */
-html[data-theme="dark"] .text-dark,
-html[data-theme="amoled"] .text-dark,
-html[data-theme="dark"] .fg-black,
-html[data-theme="amoled"] .fg-black,
-html[data-theme="dark"] .fontcolor1,
-html[data-theme="amoled"] .fontcolor1,
-html[data-theme="dark"] .fontcolor3,
-html[data-theme="amoled"] .fontcolor3,
-html[data-theme="dark"] .primaryColor1,
-html[data-theme="amoled"] .primaryColor1 {
-  color: var(--vtop-dark-text) !important;
-}
-
-html[data-theme="dark"] .text-muted,
-html[data-theme="amoled"] .text-muted {
-  color: var(--vtop-dark-text-muted) !important;
-}
-
-/* Dropdown menus & Profile Area */
-html[data-theme="dark"] .dropdown-menu,
-html[data-theme="amoled"] .dropdown-menu {
-  background-color: var(--vtop-dark-surface-2) !important;
-  border: 1px solid var(--vtop-dark-border) !important;
-  color: var(--vtop-dark-text) !important;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
-}
-
-html[data-theme="dark"] .dropdown-item,
-html[data-theme="amoled"] .dropdown-item {
-  color: var(--vtop-dark-text) !important;
-}
-
-html[data-theme="dark"] .dropdown-item:hover,
-html[data-theme="amoled"] .dropdown-item:hover,
-html[data-theme="dark"] .dropdown-item:focus,
-html[data-theme="amoled"] .dropdown-item:focus {
-  background-color: var(--vtop-dark-border) !important;
-  color: #ffffff !important;
-}
-
-html[data-theme="dark"] .dropdown-divider,
-html[data-theme="amoled"] .dropdown-divider {
-  border-top-color: var(--vtop-dark-border) !important;
-}
-
-/* Tables */
-html[data-theme="dark"] .table,
-html[data-theme="amoled"] .table,
-html[data-theme="dark"] table,
-html[data-theme="amoled"] table {
-  background-color: var(--vtop-dark-surface) !important;
-  color: var(--vtop-dark-text) !important;
-  border-color: var(--vtop-dark-border) !important;
-}
-
-html[data-theme="dark"] .table th,
-html[data-theme="amoled"] .table th,
-html[data-theme="dark"] .table td,
-html[data-theme="amoled"] .table td,
-html[data-theme="dark"] table th,
-html[data-theme="amoled"] table th,
-html[data-theme="dark"] table td,
-html[data-theme="amoled"] table td {
-  background-color: var(--vtop-dark-surface) !important;
-  color: var(--vtop-dark-text) !important;
-  border-color: var(--vtop-dark-border) !important;
-}
-
-html[data-theme="dark"] .table-striped tbody tr:nth-of-type(odd),
-html[data-theme="amoled"] .table-striped tbody tr:nth-of-type(odd) {
-  background-color: var(--vtop-dark-surface-2) !important;
-}
-
-html[data-theme="dark"] .table-hover tbody tr:hover,
-html[data-theme="amoled"] .table-hover tbody tr:hover {
-  background-color: var(--vtop-dark-border) !important;
-}
-
-/* Forms & Inputs */
-html[data-theme="dark"] .form-control,
-html[data-theme="amoled"] .form-control,
-html[data-theme="dark"] .form-select,
-html[data-theme="amoled"] .form-select,
-html[data-theme="dark"] input[type="text"],
-html[data-theme="amoled"] input[type="text"],
-html[data-theme="dark"] input[type="password"],
-html[data-theme="amoled"] input[type="password"],
-html[data-theme="dark"] select,
-html[data-theme="amoled"] select,
-html[data-theme="dark"] textarea,
-html[data-theme="amoled"] textarea {
-  background-color: var(--vtop-dark-surface-2) !important;
-  color: var(--vtop-dark-text) !important;
-  border: 1px solid var(--vtop-dark-border) !important;
-}
-
-html[data-theme="dark"] .form-control:focus,
-html[data-theme="amoled"] .form-control:focus,
-html[data-theme="dark"] .form-select:focus,
-html[data-theme="amoled"] .form-select:focus {
-  background-color: var(--vtop-dark-surface-2) !important;
-  color: #ffffff !important;
-  border-color: var(--accent-base, #3b82f6) !important;
-}
-
-/* Modals & Offcanvas */
-html[data-theme="dark"] .modal-content,
-html[data-theme="amoled"] .modal-content,
-html[data-theme="dark"] .offcanvas,
-html[data-theme="amoled"] .offcanvas {
-  background-color: var(--vtop-dark-surface) !important;
-  color: var(--vtop-dark-text) !important;
-  border-color: var(--vtop-dark-border) !important;
-}
-
-html[data-theme="dark"] .modal-header,
-html[data-theme="amoled"] .modal-header,
-html[data-theme="dark"] .modal-footer,
-html[data-theme="amoled"] .modal-footer,
-html[data-theme="dark"] .offcanvas-header,
-html[data-theme="amoled"] .offcanvas-header {
-  background-color: var(--vtop-dark-surface-2) !important;
-  border-color: var(--vtop-dark-border) !important;
-  color: var(--vtop-dark-text) !important;
-}
-
-/* Spotlight sections */
-html[data-theme="dark"] .spotlight-background,
-html[data-theme="amoled"] .spotlight-background,
-html[data-theme="dark"] .spotlightMsgDivs,
-html[data-theme="amoled"] .spotlightMsgDivs {
-  background-color: var(--vtop-dark-surface) !important;
-  color: var(--vtop-dark-text) !important;
-}
-
-/* Borders */
-html[data-theme="dark"] .border-3,
-html[data-theme="amoled"] .border-3,
-html[data-theme="dark"] .border-md-end,
-html[data-theme="amoled"] .border-md-end {
-  border-color: var(--vtop-dark-border) !important;
-}
-
-html[data-theme="dark"] .goldenBorderTop,
-html[data-theme="amoled"] .goldenBorderTop,
-html[data-theme="dark"] .primaryBorderTop,
-html[data-theme="amoled"] .primaryBorderTop {
-  border-top-color: var(--accent-base, #3b82f6) !important;
-}
-
-/* Buttons */
-html[data-theme="dark"] .btn-light,
-html[data-theme="amoled"] .btn-light {
-  background-color: var(--vtop-dark-surface-2) !important;
-  color: var(--vtop-dark-text) !important;
-  border-color: var(--vtop-dark-border) !important;
 }

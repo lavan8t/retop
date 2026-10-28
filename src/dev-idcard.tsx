@@ -1,11 +1,11 @@
-﻿import React from "react";
+import React from "react";
 import { createRoot } from "react-dom/client";
 import { DigitalIDCard } from "./components/profile/DigitalIDCard";
 import { StudentProfile } from "./types/vtop";
 
 const defaultMockProfile: StudentProfile = {
   basic: {
-    name: " S",
+    name: "Alex Doe",
     regNo: "22BCE1234",
     email: "alex.doe2022@vitstudent.ac.in",
     program: "B.Tech Computer Science and Engineering",

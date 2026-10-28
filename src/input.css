@@ -1,7 +1,6 @@
 @import "tailwindcss";
 @import "./styles/fonts.css";
 @import "./styles/tokens.css";
-@import "./styles/vtop-dark.css";
 
 @theme {
   --font-sans: "Google Sans Flex", system-ui, sans-serif;

@@ -45,6 +45,5 @@ dist*/
 scratch/
 .agents/
 .superpowers/
-docs/
 *.zip
-*.xpi
+*.xpi

@@ -18,8 +18,6 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"scripts/*.ts\" \"*.html\" --no-error-on-unmatched-pattern",
     "build": "bun ./node_modules/typescript/lib/tsc.js --noEmit && bun run build.ts",
     "build:prod": "bun ./node_modules/typescript/lib/tsc.js --noEmit && bun run build.ts --prod",
-    "build:copy": "bun run build && bun scripts/copy-dist.ts",
-    "copy:dist": "bun scripts/copy-dist.ts",
     "serve:idcard": "bun run scripts/serve-idcard.ts",
     "css:watch": "bun ./node_modules/@tailwindcss/cli/dist/index.mjs -i src/input.css -o dist/style.css --watch"
   },

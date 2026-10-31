@@ -33,6 +33,11 @@ yarn-error.log*
 .pnpm-debug.log*
 vtop_network_captures/
 
+# VTOP telemetry captures (contain registration numbers, usernames and raw HTML)
+telemetry/
+vtop-trace-*.json
+vtop-page-*.html
+
 # env files
 .env*
 

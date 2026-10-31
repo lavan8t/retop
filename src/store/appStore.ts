@@ -55,6 +55,15 @@ type AppState = {
   daDropFile: File | null;
   setDaDropFile: (val: File | null) => void;
 
+  /**
+   * Course + assignment the user asked to open from a home/calendar row.
+   * The assignments page consumes and clears it once its course list is ready.
+   */
+  daTarget: { courseTitle: string; assignmentTitle: string } | null;
+  setDaTarget: (
+    val: { courseTitle: string; assignmentTitle: string } | null,
+  ) => void;
+
   curriculumHideCompleted: boolean;
   setCurriculumHideCompleted: (val: boolean) => void;
 };
@@ -122,6 +131,9 @@ export const useAppStore = create<AppState>((set) => ({
 
   daDropFile: null,
   setDaDropFile: (val) => set({ daDropFile: val }),
+
+  daTarget: null,
+  setDaTarget: (val) => set({ daTarget: val }),
 
   curriculumHideCompleted:
     localStorage.getItem('curriculum_hide_completed') === 'true',

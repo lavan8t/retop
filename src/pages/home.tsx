@@ -20,6 +20,8 @@ import { EmptyState } from '../components/EmptyState';
 import { HomeWidgets } from '../components/home/HomeWidgets';
 import { SpotlightSection } from '../components/home/SpotlightSection';
 import { getClassesForDate } from '../utils/timetable-slots';
+import { mergeAssignmentStatuses } from '../utils/daStatus';
+import { openAssignmentInDA } from '../utils/daNavigation';
 import {
   Add,
   Event,
@@ -93,6 +95,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
     fetchDetailedAttendance,
     attSelectedSem,
     isSyncing,
+    daCourses,
+    daAssignments,
   } = useDataStore();
   const [isFabVisible, setIsFabVisible] = useState(true);
   const [isMobileSpotlightOpen, setIsMobileSpotlightOpen] = useState(false);
@@ -163,13 +167,21 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const isScrollingRef = useRef(false);
   const scrollTimeoutRef = useRef<any>(null);
 
+  // VTOP's dashboard payload has no upload status. Once the assignments page
+  // has loaded a course we know which rows were submitted, so use that to keep
+  // the home list honest for the rest of the session.
+  const assignmentsWithStatus = useMemo(
+    () => mergeAssignmentStatuses(assignments, daCourses, daAssignments),
+    [assignments, daCourses, daAssignments],
+  );
+
   const pendingCount = useMemo(
-    () => assignments.filter((a) => a.status !== 'submitted').length,
-    [assignments],
+    () => assignmentsWithStatus.filter((a) => a.status !== 'submitted').length,
+    [assignmentsWithStatus],
   );
 
   const pendingAssignments = useMemo(() => {
-    return assignments
+    return assignmentsWithStatus
       .filter((a) => a.status !== 'submitted')
       .sort((a, b) => {
         const parseDate = (dStr: string) => {
@@ -183,7 +195,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         if (isNaN(dateB)) return -1;
         return dateA - dateB;
       });
-  }, [assignments]);
+  }, [assignmentsWithStatus]);
 
   const sortedAttendance = useMemo(() => {
     if (!attendance) return [];
@@ -411,9 +423,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
           onScroll={handleCalendarScroll}
           className="h-auto lg:h-full lg:flex-1 lg:min-h-0 overflow-visible lg:overflow-y-auto lg:overflow-x-hidden custom-scrollbar flex flex-col gap-4 pr-3 pb-32 pt-16 lg:pt-15 mt-0 lg:-mt-24 -mb-12 relative z-0 pointer-events-auto empty-events-container w-full max-w-full lg:[mask-image:linear-gradient(to_bottom,transparent,black_5%,black_15%)]"
         >
-          {/* MOBILE FEED HEADER (< lg screens): 1. Carousel Row (Attendance & Pending Assignments) -> 2. Merged CGPA/Credits Card -> 3. Month & Sem Title */}
+          {/* MOBILE FEED HEADER (< lg screens): 1. Carousel Row (Attendance & Upcoming Assignments) -> 2. Merged CGPA/Credits Card -> 3. Month & Sem Title */}
           <div className="flex lg:hidden flex-col gap-3 w-full max-w-full pt-1 pb-2 px-0 overflow-x-hidden">
-            {/* 1. Carousel Row: Attendance Card & Pending Assignments Card */}
+            {/* 1. Carousel Row: Attendance Card & Upcoming Assignments Card */}
             {(attendance.length > 0 || pendingAssignments.length > 0) && (
               <div className="w-full max-w-full flex overflow-x-auto snap-x snap-mandatory gap-2.5 hide-scrollbar pb-1 px-1 shrink-0">
                 {/* Card 1: Attendance Card */}
@@ -446,7 +458,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   </Card>
                 )}
 
-                {/* Card 2: Pending Assignments Card */}
+                {/* Card 2: Upcoming Assignments Card */}
                 {pendingAssignments.length > 0 && (
                   <Card
                     onClick={() =>
@@ -460,7 +472,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   >
                     <div className="px-4 pt-3 pb-2 border-b-2 border-(--border-main) flex justify-between items-center shrink-0">
                       <span className="text-[0.5625rem] font-expanded font-bold uppercase text-(--text-muted)">
-                        Pending Assignments ({pendingAssignments.length})
+                        Upcoming Assignments ({pendingAssignments.length})
                       </span>
                     </div>
                     <div className="p-2.5 flex flex-col gap-0.5 rounded-2xl max-h-56 overflow-y-auto custom-scrollbar">
@@ -468,6 +480,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         <AssignmentRow
                           key={idx}
                           assignment={assignment}
+                          onClick={(e, selected) => {
+                            e.stopPropagation();
+                            openAssignmentInDA(selected, onNavigate);
+                          }}
                           className="rounded-sm first:rounded-t-2xl last:rounded-b-2xl"
                         />
                       ))}
@@ -483,7 +499,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               settings={settings}
               stats={stats}
               attendance={attendance}
-              assignments={assignments}
+              assignments={assignmentsWithStatus}
               onNavigate={onNavigate}
               isMobileFeed={true}
             />
@@ -540,7 +556,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         settings={settings}
         stats={stats}
         attendance={attendance}
-        assignments={assignments}
+        assignments={assignmentsWithStatus}
         onNavigate={onNavigate}
       />
 

@@ -6,6 +6,7 @@ import { Card } from '../ui/Card';
 import { Assignment, CourseSummary } from '../../types/vtop';
 import { AssignmentRow } from './HomeRows';
 import { parseVtopDate } from '../../utils/formatting';
+import { openAssignmentInDA } from '../../utils/daNavigation';
 
 interface HomeWidgetsProps {
   className?: string;
@@ -186,7 +187,7 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
           <div className="px-5 pt-5 border-b-2 border-(--border-main) flex justify-between items-center shrink-0">
             <div className="flex flex-col">
               <span className="text-[0.625rem] font-expanded font-bold uppercase text-(--text-muted) mb-1 leading-none">
-                Pending Assignments
+                Upcoming Assignments
               </span>
             </div>
           </div>
@@ -196,6 +197,10 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
                 <AssignmentRow
                   key={idx}
                   assignment={assignment}
+                  onClick={(e, selected) => {
+                    e.stopPropagation();
+                    openAssignmentInDA(selected, onNavigate);
+                  }}
                   className="rounded-sm first:rounded-t-2xl last:rounded-b-2xl"
                 />
               ))

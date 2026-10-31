@@ -3,6 +3,7 @@ import { useDataStore } from '../store/dataStore';
 import { useAppStore } from '../store/appStore';
 import { useIsDark } from '../hooks/useTheme';
 import { getMaterialChipStyle } from '../utils/settings-store';
+import { parseVtopDate } from '../utils/formatting';
 import { OfflineNotSynced } from '../components/ui/OfflineNotSynced';
 import { VTOPNetwork } from '../utils/network';
 import { showAlertDialog } from '../components/ui/AlertDialog';
@@ -144,17 +145,20 @@ export default function DigitalAssignments({
     fetchDACourses,
     fetchDAAssignments,
     daSelectedSem,
+    daError,
   } = useDataStore();
 
-  const { daDropFile, setDaDropFile } = useAppStore();
+  const { daDropFile, setDaDropFile, daTarget, setDaTarget } = useAppStore();
 
   const [selectedClassId, setSelectedClassId] = useState<string>('');
+  const [focusTitle, setFocusTitle] = useState<string | null>(null);
 
   // Upload state
   const [activeUploadAssgn, setActiveUploadAssgn] = useState<{
     classId: string;
     code: string;
     title: string;
+    opt: string;
   } | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -224,12 +228,34 @@ export default function DigitalAssignments({
     }
   }, [status, daSemesters.length, fetchDASemesters, network]);
 
-  // 2. Default to first course when courses load
+  // 2. Keep the selected course inside the current list. This also handles a
+  // semester switch, where fetchDACourses replaces the list but the previous
+  // class id is still in state.
   useEffect(() => {
-    if (daCourses && daCourses.length > 0 && !selectedClassId) {
+    if (daCourses.length === 0) return;
+    if (!daCourses.some((course) => course.classId === selectedClassId)) {
       setSelectedClassId(daCourses[0].classId);
     }
   }, [daCourses, selectedClassId]);
+
+  // 2b. A click on a home/calendar assignment asks for a specific course.
+  // Resolve it by title once the course list is available, then highlight the
+  // matching assignment row.
+  useEffect(() => {
+    if (!daTarget || daCourses.length === 0) return;
+
+    const wanted = daTarget.courseTitle.trim().toLowerCase();
+    const match = daCourses.find(
+      (course) => course.title.trim().toLowerCase() === wanted,
+    );
+
+    if (match) {
+      setSelectedClassId(match.classId);
+      setFocusTitle(daTarget.assignmentTitle);
+      window.setTimeout(() => setFocusTitle(null), 4000);
+    }
+    setDaTarget(null);
+  }, [daTarget, daCourses, setDaTarget]);
 
   // 3. Automatically fetch assignments for selected course
   useEffect(() => {
@@ -240,12 +266,31 @@ export default function DigitalAssignments({
     }
   }, [selectedClassId, daAssignments, fetchDAAssignments, network]);
 
-  // 4. Handle global drag and drop file from anywhere in retop
+  // 4. Handle global drag and drop file from anywhere in retop. The file is
+  // attached now and used when the user picks the assignment to upload it to.
   useEffect(() => {
-    if (daDropFile) {
-      setSelectedFile(daDropFile);
-      setDaDropFile(null);
+    if (!daDropFile) return;
+
+    const file = daDropFile;
+    setDaDropFile(null);
+
+    if (!isAllowedFile(file)) {
+      showAlertDialog({
+        title: 'Unsupported File Format',
+        message: 'Allowed formats: PDF, XLS, XLSX, DOC, DOCX.',
+      });
+      return;
     }
+    if (file.size > MAX_FILE_SIZE && getFileExtension(file.name) !== 'pdf') {
+      showAlertDialog({
+        title: 'File Size Limit Exceeded',
+        message: 'File size exceeds the 4MB limit.',
+      });
+      return;
+    }
+
+    setSelectedFile(file);
+    setStatusMsg(null);
   }, [daDropFile, setDaDropFile]);
 
   // Active selected course
@@ -277,7 +322,7 @@ export default function DigitalAssignments({
   // Handle Question Paper Download
   const handleDownloadQP = async (e: React.MouseEvent, assgn: DAAssignment) => {
     e.stopPropagation();
-    if (!activeCourse) return;
+    if (!activeCourse || !assgn.code) return;
     try {
       setDownloadingQP(assgn.code);
       await network.downloadQP(
@@ -301,7 +346,7 @@ export default function DigitalAssignments({
     assgn: DAAssignment,
   ) => {
     e.stopPropagation();
-    if (!activeCourse) return;
+    if (!activeCourse || !assgn.code) return;
     try {
       setDownloadingDA(assgn.code);
       await network.downloadStudentDA(
@@ -321,15 +366,17 @@ export default function DigitalAssignments({
 
   // Trigger file selection for an assignment
   const handleOpenUploadForAssgn = (assgn: DAAssignment) => {
-    if (!activeCourse) return;
+    if (!activeCourse || !assgn.canUpload || !assgn.code) return;
     setActiveUploadAssgn({
       classId: activeCourse.classId,
       code: assgn.code,
       title: assgn.title,
+      opt: assgn.opt || assgn.title,
     });
     setOtpState(null);
     setStatusMsg(null);
-    fileInputRef.current?.click();
+    // A file dropped from the global drop zone is already attached.
+    if (!selectedFile) fileInputRef.current?.click();
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -396,14 +443,17 @@ export default function DigitalAssignments({
       }
 
       setStatusMsg({ type: 'success', text: 'Uploading to VTOP...' });
+      // VTOP's own flow opens the upload view before every submit. It also
+      // refreshes the CSRF token from the DOM, which a cached view would skip.
       await network.getDAUploadView(
         activeUploadAssgn.classId,
         activeUploadAssgn.code,
+        true,
       );
       const responseHtml = await network.uploadStudentDA(
         activeUploadAssgn.classId,
         activeUploadAssgn.code,
-        activeUploadAssgn.title,
+        activeUploadAssgn.opt,
         fileToUpload,
       );
 
@@ -502,6 +552,27 @@ export default function DigitalAssignments({
     >
       {/* Clearance for floating TopBar */}
       <div className="w-full h-20 md:h-24 shrink-0" />
+
+      {daError && (
+        <div className="mx-4 sm:mx-6 md:mx-8 mb-4 flex items-center justify-between gap-3 rounded-2xl border border-(--att-danger)/40 bg-(--att-danger-container) px-4 py-3 text-xs font-bold text-(--att-danger)">
+          <span className="min-w-0 truncate">{daError}</span>
+          <button
+            onClick={() => {
+              if (!daSelectedSem) {
+                fetchDASemesters(network, true);
+              } else {
+                fetchDACourses(network, daSelectedSem, true);
+                if (selectedClassId) {
+                  fetchDAAssignments(network, selectedClassId, true);
+                }
+              }
+            }}
+            className="shrink-0 px-3 py-1.5 rounded-full border border-(--att-danger)/40 bg-(--bg-main)/40 cursor-pointer"
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Main Container: Leftward aligned */}
       <div className="px-4 sm:px-6 md:px-8 pb-16 w-full max-w-7xl mx-auto flex flex-col md:flex-row gap-6 items-start">
@@ -784,11 +855,27 @@ export default function DigitalAssignments({
                     const isSubmitted = Boolean(
                       assgn.lastUpdated && assgn.lastUpdated.trim() !== '',
                     );
+                    const dueMs =
+                      assgn.dueDateMs ??
+                      parseVtopDate(assgn.dueDate)?.getTime();
+                    // A bare date means the whole day is still valid.
+                    const isOverdue =
+                      !isSubmitted &&
+                      dueMs !== undefined &&
+                      Date.now() > dueMs + 24 * 60 * 60 * 1000;
+                    const isFocused =
+                      focusTitle !== null &&
+                      assgn.title.trim().toLowerCase() ===
+                        focusTitle.trim().toLowerCase();
 
                     return (
                       <div
                         key={idx}
-                        className="p-5 rounded-3xl bg-(--bg-surface)/40 hover:bg-(--bg-surface)/70 border border-(--border-dim)/30 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
+                        className={`p-5 rounded-3xl bg-(--bg-surface)/40 hover:bg-(--bg-surface)/70 border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+                          isFocused
+                            ? 'border-(--accent-base) ring-2 ring-(--accent-base)/40'
+                            : 'border-(--border-dim)/30'
+                        }`}
                       >
                         {/* Assignment Details */}
                         <div className="flex flex-col gap-2 flex-1 min-w-0">
@@ -799,11 +886,19 @@ export default function DigitalAssignments({
                             <span
                               className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-black uppercase shrink-0"
                               style={getMaterialChipStyle(
-                                isSubmitted ? 'emerald' : 'amber',
+                                isSubmitted
+                                  ? 'emerald'
+                                  : isOverdue
+                                    ? 'red'
+                                    : 'amber',
                                 isDark,
                               )}
                             >
-                              {isSubmitted ? 'Submitted' : 'Pending'}
+                              {isSubmitted
+                                ? 'Submitted'
+                                : isOverdue
+                                  ? 'Overdue'
+                                  : 'Pending'}
                             </span>
                           </div>
 
@@ -829,7 +924,13 @@ export default function DigitalAssignments({
                           <div className="flex flex-col items-start md:items-end text-xs font-mono">
                             <div className="text-(--text-muted)">
                               Due:{' '}
-                              <span className="text-(--text-main) font-bold">
+                              <span
+                                className={`font-bold ${
+                                  isOverdue
+                                    ? 'text-(--att-danger)'
+                                    : 'text-(--text-main)'
+                                }`}
+                              >
                                 {assgn.dueDate || 'N/A'}
                               </span>
                             </div>
@@ -841,7 +942,7 @@ export default function DigitalAssignments({
                           {/* Action Pill Buttons */}
                           <div className="flex items-center gap-2 flex-wrap">
                             {/* Question Paper Download */}
-                            {assgn.hasQP && (
+                            {assgn.hasQP && assgn.code && (
                               <button
                                 onClick={(e) => handleDownloadQP(e, assgn)}
                                 disabled={downloadingQP === assgn.code}
@@ -856,7 +957,7 @@ export default function DigitalAssignments({
                             )}
 
                             {/* Submission Download */}
-                            {isSubmitted && (
+                            {isSubmitted && assgn.code && (
                               <button
                                 onClick={(e) =>
                                   handleDownloadStudentDA(e, assgn)
@@ -872,14 +973,22 @@ export default function DigitalAssignments({
                               </button>
                             )}
 
-                            {/* Upload / Re-upload Button */}
-                            <button
-                              onClick={() => handleOpenUploadForAssgn(assgn)}
-                              className="px-4 py-1.5 rounded-full flex items-center gap-1.5 bg-(--accent-base) text-(--text-inverse) hover:opacity-90 transition-opacity text-xs font-mono font-bold uppercase cursor-pointer border-0 shadow-xs"
-                            >
-                              <Upload className="w-3.5 h-3.5" />
-                              {isSubmitted ? 'Re-upload' : 'Upload'}
-                            </button>
+                            {/* Upload / Re-upload Button. Only rows that VTOP
+                                actually exposes a submit control + code for
+                                are actionable; everything else is read-only. */}
+                            {assgn.canUpload ? (
+                              <button
+                                onClick={() => handleOpenUploadForAssgn(assgn)}
+                                className="px-4 py-1.5 rounded-full flex items-center gap-1.5 bg-(--accent-base) text-(--text-inverse) hover:opacity-90 transition-opacity text-xs font-mono font-bold uppercase cursor-pointer border-0 shadow-xs"
+                              >
+                                <Upload className="w-3.5 h-3.5" />
+                                {isSubmitted ? 'Re-upload' : 'Upload'}
+                              </button>
+                            ) : !isSubmitted ? (
+                              <span className="px-3.5 py-1.5 rounded-full text-xs font-mono font-bold uppercase text-(--text-muted) bg-(--bg-main) border border-(--border-dim)/40">
+                                {isOverdue ? 'Closed' : 'Not open'}
+                              </span>
+                            ) : null}
                           </div>
                         </div>
                       </div>

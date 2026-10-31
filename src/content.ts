@@ -48,6 +48,10 @@ const BYPASS_KEY = 'retop-login-bypass';
 /** URL fallback for the bypass marker, used when sessionStorage is unavailable. */
 const BYPASS_PARAM = 'retop_bypass';
 
+/** Mirrored by applyTheme() so the first paint can match the saved theme. */
+const VTOP_THEME_KEY = 'retop_vtop_theme';
+const DARK_STYLESHEET_ID = 'retop-dark-stylesheet';
+
 const DOCUMENT_SIZING_ID = 'retop-document-sizing';
 
 const RESET_ID = 'retop-shadow-reset';
@@ -125,6 +129,40 @@ function cloakNative(): void {
     }
   `;
   (document.head || document.documentElement).appendChild(style);
+}
+
+/**
+ * Applies the last resolved VTOP theme before VTOP's first paint. The full
+ * settings live in IndexedDB, which cannot answer at document_start, so
+ * applyTheme() mirrors just the resolved theme into localStorage.
+ *
+ * Without this the native page paints light and then flips to dark once the
+ * dashboard entry finishes reading settings.
+ */
+function applyEarlyVtopTheme(): void {
+  try {
+    const saved = localStorage.getItem(VTOP_THEME_KEY);
+    const theme = saved || 'dark';
+
+    if (theme === 'none') {
+      document.documentElement.removeAttribute('data-theme');
+      return;
+    }
+
+    if (theme !== 'dark' && theme !== 'amoled' && theme !== 'light') return;
+    document.documentElement.setAttribute('data-theme', theme);
+
+    if (
+      (theme === 'dark' || theme === 'amoled') &&
+      !document.getElementById(DARK_STYLESHEET_ID)
+    ) {
+      const link = document.createElement('link');
+      link.id = DARK_STYLESHEET_ID;
+      link.rel = 'stylesheet';
+      link.href = extUrl('vtop-dark.css');
+      (document.head || document.documentElement).appendChild(link);
+    }
+  } catch {}
 }
 
 /**
@@ -601,6 +639,13 @@ function main(): void {
   }
 
   const path = window.location.pathname;
+
+  // Paint the saved native-page theme in the first frame, before IDB is ready.
+  // Only authenticated routes get the native-page filter: the login takeover
+  // owns its own theme and aborts the parser, which could cancel the stylesheet.
+  if (matches(path, AUTH_ROUTES)) {
+    applyEarlyVtopTheme();
+  }
 
   // Recovery is delegated to VTOP's native login page; click its own link once
   // that page is parsed, and leave a way back to retop.

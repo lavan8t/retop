@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { getAppRoot } from '../../utils/bridge';
 
 export interface AlertDialogOptions {
   title?: string;
@@ -171,6 +172,9 @@ export const AlertDialogManager: React.FC = () => {
         </div>
       </div>
     </div>,
-    document.body,
+    // Stay inside the shadow root so the legacy-page invert filter does not
+    // flip the dialog's own dark theme. `document.body` sits outside
+    // #retop-host and would be inverted with the native page.
+    getAppRoot() || document.body,
   );
 };

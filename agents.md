@@ -293,6 +293,7 @@ src/
     - `/vtop/get/new/captcha` wants `Referer: /vtop/open/page` (observed), not `/vtop/login`, and `Accept: text/html,...,image/*,*/*;q=0.8`. Without `image/*` it can answer with the role-selection page instead.
     - The login POST sends `_csrf, username, password, captchaStr, gResponse`. Send `gResponse` empty: it matches Variant A's form, and Variant B ignores it.
 12. **pdf.js must never be statically imported.** It probes for `eval` support with `new Function("")` at module load, which `getretop.web.app` blocks under its CSP. The probe is caught by pdf.js and only degrades rendering, but it logs a CSP violation on every page load. Import `@quicktoolsone/pdf-compress` dynamically inside the one function that needs it (large-PDF DA upload). `build.ts` also rewrites the probe in emitted bundles; `injected.js` is deliberately excluded because its `new Function` is an intentional, validated call into VTOP's main world.
+13. **Never portal retop UI to `document.body` on native VTOP pages.** The legacy-page dark theme inverts `html`, and `#retop-host` is counter-inverted. A portal into `document.body` sits outside that counter-inversion and renders with inverted colors. Portal into `getAppRoot()` (inside the shadow root) or add the container to the counter-invert list in `src/styles/vtop-dark.css`. See `docs/agents/dark-theme.md`.
 
 ---
 

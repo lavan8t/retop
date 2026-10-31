@@ -45,6 +45,7 @@ html[data-theme='amoled'] [data-no-invert] {
 /* 2. Retop UI itself (#retop-host) and extension dialogs must retain their native theme */
 html[data-theme='dark'] #retop-host,
 html[data-theme='dark'] #retop-session-dialog,
+html[data-theme='dark'] #retop-open-loader,
 html[data-theme='dark'] #retop-boot-cloak,
 html[data-theme='dark'] #retop-early-cloak,
 html[data-theme='dark'] #retop-native-portals,
@@ -53,6 +54,7 @@ html[data-theme='dark'] #retop-vtop-search-menu,
 html[data-theme='dark'] #retop-hmenu-search-toggle,
 html[data-theme='amoled'] #retop-host,
 html[data-theme='amoled'] #retop-session-dialog,
+html[data-theme='amoled'] #retop-open-loader,
 html[data-theme='amoled'] #retop-boot-cloak,
 html[data-theme='amoled'] #retop-early-cloak,
 html[data-theme='amoled'] #retop-native-portals,
@@ -60,6 +62,25 @@ html[data-theme='amoled'] #retop-legacy-menu-search-wrapper,
 html[data-theme='amoled'] #retop-vtop-search-menu,
 html[data-theme='amoled'] #retop-hmenu-search-toggle {
   filter: invert(1) hue-rotate(180deg) !important;
+}
+
+/* Native widgets whose popups are rendered by the browser, not by VTOP's CSS.
+   The invert filter cannot reach those popups, so ask the browser for its dark
+   variants. Do not include file inputs: their button becomes a bright block
+   after the page inversion. */
+html[data-theme='dark'] select,
+html[data-theme='dark'] input[type='date'],
+html[data-theme='dark'] input[type='time'],
+html[data-theme='dark'] input[type='datetime-local'],
+html[data-theme='dark'] input[type='month'],
+html[data-theme='dark'] input[type='week'],
+html[data-theme='amoled'] select,
+html[data-theme='amoled'] input[type='date'],
+html[data-theme='amoled'] input[type='time'],
+html[data-theme='amoled'] input[type='datetime-local'],
+html[data-theme='amoled'] input[type='month'],
+html[data-theme='amoled'] input[type='week'] {
+  color-scheme: dark;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -74,6 +95,9 @@ html[data-theme='amoled'] #retop-hmenu-search-toggle {
   align-items: center !important;
 }
 
+/* VTOP's current nav has a bare div.px-3 as the row; older builds used a
+   Bootstrap container. Support both. */
+#top-hmenu-bar > div,
 #top-hmenu-bar .container-fluid,
 #top-hmenu-bar .container {
   display: flex !important;
@@ -117,6 +141,10 @@ html[data-theme='amoled'] #retop-hmenu-search-toggle {
     sans-serif !important;
   font-size: 14px !important;
   line-height: 1.4 !important;
+}
+
+#top-hmenu-bar .hmenuItem {
+  flex-shrink: 0 !important;
 }
 
 /* Horizontal Menu Bar & Menu Row Search */
@@ -184,11 +212,11 @@ html[data-theme='amoled'] #retop-hmenu-search-toggle {
   color: #ffffff !important;
 }
 
-/* Revamped Old Menu Panes (MG0001 - MG0015, Overlay Windows) */
+/* Revamped old menu panes. Every pane carries .overlay-window / .hmenubox;
+   the old `[id^='MG']` catch-all also hit unrelated MG-prefixed nodes. */
 .overlay-window,
 .hmenubox,
-.WhiteBackground,
-[id^='MG'] {
+.WhiteBackground {
   max-height: calc(100vh - 120px) !important;
   overflow-y: auto !important;
   border-radius: 16px !important;
@@ -196,17 +224,15 @@ html[data-theme='amoled'] #retop-hmenu-search-toggle {
 }
 
 .overlay-window .list-group-item,
-.hmenubox .list-group-item,
-[id^='MG'] .list-group-item {
+.hmenubox .list-group-item {
   border-radius: 8px !important;
   margin-bottom: 2px !important;
   transition: all 0.1s ease !important;
 }
 
-/* Custom Scrollbars for Menu & Search Dropdowns */
+/* Custom scrollbars for menu panes and the menu search dropdown */
 .overlay-window::-webkit-scrollbar,
 .hmenubox::-webkit-scrollbar,
-[id^='MG']::-webkit-scrollbar,
 #retop-legacy-menu-search-dropdown::-webkit-scrollbar {
   width: 6px !important;
   height: 6px !important;
@@ -214,7 +240,6 @@ html[data-theme='amoled'] #retop-hmenu-search-toggle {
 
 .overlay-window::-webkit-scrollbar-thumb,
 .hmenubox::-webkit-scrollbar-thumb,
-[id^='MG']::-webkit-scrollbar-thumb,
 #retop-legacy-menu-search-dropdown::-webkit-scrollbar-thumb {
   background: rgba(125, 125, 125, 0.35) !important;
   border-radius: 9999px !important;
@@ -222,7 +247,6 @@ html[data-theme='amoled'] #retop-hmenu-search-toggle {
 
 .overlay-window::-webkit-scrollbar-thumb:hover,
 .hmenubox::-webkit-scrollbar-thumb:hover,
-[id^='MG']::-webkit-scrollbar-thumb:hover,
 #retop-legacy-menu-search-dropdown::-webkit-scrollbar-thumb:hover {
   background: rgba(125, 125, 125, 0.6) !important;
 }

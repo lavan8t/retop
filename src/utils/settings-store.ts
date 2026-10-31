@@ -230,6 +230,12 @@ export const applyTheme = (settings: AppSettings) => {
     document.documentElement.setAttribute('data-theme', appliedVtopTheme);
   }
 
+  // IndexedDB is too slow to answer during document_start. Mirror the resolved
+  // value so the bootstrapper can apply it before VTOP's first paint.
+  try {
+    localStorage.setItem('retop_vtop_theme', appliedVtopTheme);
+  } catch {}
+
   const isMonochrome =
     settings.accentColor === 'grey' ||
     (settings as any).accentColor === 'monochrome' ||

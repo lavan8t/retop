@@ -40,7 +40,10 @@ installErrorNet();
 
 // Inject the VTOP dark-mode stylesheet into the document (not just the shadow
 // root) so native/legacy VTOP pages actually pick up the chosen theme.
-if (typeof document !== 'undefined') {
+if (
+  typeof document !== 'undefined' &&
+  !document.getElementById('retop-dark-stylesheet')
+) {
   const link = document.createElement('link');
   link.id = 'retop-dark-stylesheet';
   link.rel = 'stylesheet';

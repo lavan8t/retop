@@ -96,8 +96,9 @@ html[data-theme='amoled'] input[type='week'] {
 }
 
 /* VTOP's current nav has a bare div.px-3 as the row; older builds used a
-   Bootstrap container. Support both. */
-#top-hmenu-bar > div,
+   Bootstrap container. Only the first child is the row: the MG panes are
+   direct children too, and forcing display on them left every menu open. */
+#top-hmenu-bar > div:first-child,
 #top-hmenu-bar .container-fluid,
 #top-hmenu-bar .container {
   display: flex !important;

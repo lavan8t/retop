@@ -111,6 +111,11 @@ describe('parseDAAssignments codes', () => {
 
   it('does not allow an upload without a resolvable code', () => {
     expect(parsed.find((a) => a.title === 'Review 1')?.canUpload).toBe(false);
+    expect(
+      parsed.find(
+        (a) => a.title === 'Broken row with a submit button but no code',
+      )?.canUpload,
+    ).toBe(false);
     expect(parsed.every((a) => !a.canUpload || a.code.length > 0)).toBe(true);
   });
 });

@@ -27,7 +27,7 @@ export const PARSER_SCHEMA_VERSIONS: Record<ParserModuleId, number> = {
   timetable: 1,
   marks: 1,
   grades: 1,
-  digitalAssignments: 1,
+  digitalAssignments: 2,
   examSchedule: 1,
   profile: 1,
   curriculum: 1,

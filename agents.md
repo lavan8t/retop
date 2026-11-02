@@ -278,7 +278,7 @@ src/
 2. **VTOP image URL normalization.** Relative endpoints such as `users/image/studentPhoto` must resolve against `/vtop/` with credentials. In offline mode, store images as encrypted Base64 strings in IndexedDB.
 2b. **The proctor section can contain the student's photo.** When a faculty member has no image on file, VTOP reuses the student's own photo inside `#collapseFour` — either as a `studentPhoto` path or as the byte-identical inlined data URI. `isStudentPhotoSrc` rejects both, and `resolveProctorPhoto` then fetches the real image from `/vtop/users/image/staffPhoto?id=<FACULTY ID>` with a `StudentProfileAllView` Referer. Never render `proctor.photoUrl` without that resolver having run; the parser alone cannot fetch.
 3. **Spacebar hotkey conflicts.** Always check whether document focus is inside an `<input>`, `<textarea>`, `<select>`, or `contentEditable` element before intercepting spacebar events. Retop Omnibox handles spacebar in capture phase only when the retop UI is active.
-4. **Digital assignment endpoints.** The semester selector uses `examinations/StudentDA`. Course listings use `examinations/doDigitalAssignment?semesterSubId=...`. Assignment detail requests must call `examinations/processDigitalAssignment` (not `processViewStudentDA`).
+4. **Digital assignment endpoints and codes.** The semester selector uses `examinations/StudentDA`. Course listings use `examinations/doDigitalAssignment?semesterSubId=...`. Assignment detail requests must call `examinations/processDigitalAssignment` (not `processViewStudentDA`). The upload flow is `processDigitalAssignmentUpload` (`classId`, `mode=<code>`) → `doDAssignmentUploadMethod` (`authorizedID`, `_csrf`, `studDaUpload`, `code`, `opt`, `classId`, `mCode`). Never derive `code` from the title or serial number: VTOP only exposes it through the active row's hidden `code`/`mCode` inputs or a submitted row's `data-code`. A guessed code 404s or targets the wrong assignment. Modifying an existing submission triggers `doDAssignmentOtpUpload` with `otpEmail` only; a new submission does not.
 5. **Parser schema invalidation.** All parsers in `src/parsers/` must export `SCHEMA_VERSION`. Update the version in `src/parsers/version.ts` whenever VTOP HTML structure changes to invalidate outdated caches.
 6. **Manual redirects are opaque same-origin.** In `executeVtopRequest`, `redirect: "manual"` on a live VTOP page yields a filtered response with status 0 and no `Location`. The client-side redirect chain in `VtopClient` only runs on the Android bridge and extension pages. On live pages read the final URL off `response.url` and treat the body as the destination page.
 7. **`window.stop()` is not free to undo.** Once the bootstrapper stops the parser on a login route, the VTOP login markup never exists. Parent and alumni sign-in therefore runs unstyled, on the entry they navigated to. Do not add logic that depends on native login DOM on student routes.
@@ -321,4 +321,8 @@ Canonical 5-role triage vocabulary (`needs-triage`, `needs-info`, `ready-for-age
 ### Domain docs
 
 Single-context layout (`GLOSSARY.md` + `docs/adr/` at repo root). See `docs/agents/domain.md`.
+
+### Known issues
+
+Open findings and follow-ups from the VTOP telemetry audit: `docs/agents/known-issues.md`.
 

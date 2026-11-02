@@ -11,6 +11,7 @@ import {
 } from '../../utils/settings-store';
 import { useIsDark } from '../../hooks/useTheme';
 import { parseVtopDate, TimeFormatMode } from '../../utils/formatting';
+import { openAssignmentInDA } from '../../utils/daNavigation';
 
 import {
   School,
@@ -352,14 +353,12 @@ export const LazyCalendarDay = React.memo(
                         ) : evt.type === 'assignment' ? (
                           <AssignmentRow
                             assignment={evt.data as Assignment}
-                            onClick={() =>
-                              onNavigate &&
-                              onNavigate({
-                                title: 'Assignments',
-                                url: 'examinations/StudentDA',
-                                category: 'Examinations',
-                              })
-                            }
+                            onClick={(e, selected) => {
+                              e.stopPropagation();
+                              if (onNavigate) {
+                                openAssignmentInDA(selected, onNavigate);
+                              }
+                            }}
                             progress={evt.progress}
                             className={radiusClass}
                           />

@@ -964,20 +964,31 @@ export class VTOPNetwork {
     );
   }
 
-  async getDAUploadView(classId: string, code: string): Promise<string> {
+  async getDAUploadView(
+    classId: string,
+    code: string,
+    forceRefresh = false,
+  ): Promise<string> {
     const cacheKey = `da_upload_view_${classId}_${code}`;
-    return this.fetchWithCache(cacheKey, async () => {
-      return this.fetchVtopApi('examinations/processDigitalAssignmentUpload', {
-        classId,
-        mode: code,
-      });
-    });
+    return this.fetchWithCache(
+      cacheKey,
+      async () => {
+        return this.fetchVtopApi(
+          'examinations/processDigitalAssignmentUpload',
+          {
+            classId,
+            mode: code,
+          },
+        );
+      },
+      forceRefresh,
+    );
   }
 
   async uploadStudentDA(
     classId: string,
     code: string,
-    title: string,
+    opt: string,
     file: File,
   ): Promise<string> {
     const url = 'examinations/doDAssignmentUploadMethod';
@@ -987,7 +998,7 @@ export class VTOPNetwork {
     formData.append('classId', classId);
     formData.append('code', code);
     formData.append('mCode', code);
-    formData.append('opt', title);
+    formData.append('opt', opt);
     formData.append('studDaUpload', file);
 
     const response = await this.rateLimitedFetch(`/vtop/${url}`, {
@@ -1426,7 +1437,28 @@ export class VTOPNetwork {
 
       if (!response.ok) throw new Error('Download failed');
 
+      // A 200 does not mean a file. VTOP answers an expired session (or a bad
+      // code) with its HTML error/login page, which would otherwise be saved
+      // as a corrupt PDF.
+      const contentType = (response.headers.get('Content-Type') || '')
+        .trim()
+        .toLowerCase();
+      if (contentType.includes('text/html') || contentType.includes('json')) {
+        const errorText = await response.text();
+        const pageTitle = errorText
+          .match(/<title[^>]*>([^<]*)<\/title>/i)?.[1]
+          ?.trim();
+        throw new Error(
+          pageTitle
+            ? pageTitle.slice(0, 120)
+            : 'VTOP returned an error page instead of a file.',
+        );
+      }
+
       const blob = await response.blob();
+      if (blob.size === 0) {
+        throw new Error('VTOP returned an empty file.');
+      }
       const blobUrl = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.style.display = 'none';
@@ -1453,7 +1485,10 @@ export class VTOPNetwork {
       console.error('Download Error:', e);
       showAlertDialog({
         title: 'Download Failed',
-        message: 'Failed to download file. Please check console.',
+        message:
+          e instanceof Error && e.message
+            ? e.message
+            : 'Failed to download file. Please check console.',
       });
     }
   }

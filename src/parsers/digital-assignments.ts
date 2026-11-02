@@ -6,7 +6,7 @@ import {
 } from '../utils/parser-utils';
 import { parseVtopDate } from '../utils/formatting';
 
-export const DA_SCHEMA_VERSION = 1;
+export const DA_SCHEMA_VERSION = 2;
 
 export interface DACourse {
   classId: string;
@@ -24,7 +24,12 @@ export interface DAAssignment {
   dueDate: string;
   dueDateMs?: number;
   lastUpdated: string;
-  code: string; // The assignment code (e.g., 'CS1', 'AST02')
+  code: string; // The assignment code (e.g., 'CS1', 'AST02'); empty when VTOP exposes none
+  /**
+   * VTOP's hidden `opt` value. This is what the upload endpoint expects;
+   * the visible title is not always byte-identical (entities, spacing).
+   */
+  opt?: string;
   hasQP?: boolean;
   canUpload?: boolean;
   canDownloadSubmission?: boolean;
@@ -204,9 +209,13 @@ export const parseDAAssignments = (html: string): Versioned<DAAssignment[]> => {
           qpCell?.querySelector('button')),
       );
 
-      // Extract assignment code: hidden input → data attribute → onclick regex → title → slNo
+      // Extract assignment code. VTOP only exposes a code for rows it is
+      // willing to act on: the active upload row carries hidden `code`/`mCode`
+      // inputs, and submitted rows carry `data-code` on the download button.
+      // Never guess from the title or serial number: a wrong code produces a
+      // 404 (or, worse, targets a different assignment).
       const rowHtml = row.innerHTML;
-      const code =
+      const rawCode =
         (
           row.querySelector(
             "input[name='code'], input[name='code1'], input[name='mCode'], input[name='assignmentCode']",
@@ -218,10 +227,13 @@ export const parseDAAssignments = (html: string): Versioned<DAAssignment[]> => {
         rowHtml.match(
           /(?:doDownloadQuestion|downloadSTudentDA|doDAssignmentProcess|myFunction|doEdit)\s*\(\s*['"]([A-Za-z0-9_]+)['"]/i,
         )?.[1] ||
-        title
-          .match(/\b([A-Z]{2,4}\d{1,2}|CS\d|AST\d|DA\d|EXP\d)\b/i)?.[1]
-          ?.toUpperCase() ||
-        (slNo && !isNaN(parseInt(slNo, 10)) ? `AST0${slNo}` : 'AST01');
+        '';
+      const code = rawCode.trim();
+
+      const opt =
+        (
+          row.querySelector("input[name='opt']") as HTMLInputElement | null
+        )?.value?.trim() || title;
 
       // Download submission check
       const downloadBtn = row.querySelector(
@@ -236,11 +248,12 @@ export const parseDAAssignments = (html: string): Versioned<DAAssignment[]> => {
             lastUpdated.includes('PM'))),
       );
 
-      // Upload/edit check — uploadCell is always defined so was always true; check for editBtn only
+      // Upload/edit check. Require both the submit control and a real code:
+      // an upload without one cannot be addressed to a specific assignment.
       const editBtn = row.querySelector(
-        "button[name='editAssignment'], button[id='editAssignment'], [onclick*='doDAssignmentProcess'], button[name='digitalAssignmentSubmit']",
+        "button[name='editAssignment'], button[id='editAssignment'], [onclick*='doDAssignmentProcess'], button[name='digitalAssignmentSubmit'], button[id='digitalAssignmentSubmit'], input[name='studDaUpload']",
       );
-      const canUpload = Boolean(editBtn);
+      const canUpload = Boolean(editBtn) && Boolean(code);
 
       if (title && (maxMark || dueDate || weightage)) {
         const parsedDate = dueDate ? parseVtopDate(dueDate) : null;
@@ -260,6 +273,7 @@ export const parseDAAssignments = (html: string): Versioned<DAAssignment[]> => {
               ? lastUpdated
               : '',
           code,
+          opt,
           hasQP,
           canUpload,
           canDownloadSubmission,

@@ -27,25 +27,29 @@ import { NativePortals } from '../components/NativePortals';
 import { VIT_EMBLEM_SVG_RAW } from '../components/common/VitEmblemSvg';
 import { interceptDashboardResponse } from '../utils/dashboardInterceptor';
 import { applyTheme } from '../utils/settings-store';
+import { DARK_STYLESHEET_ID } from '../utils/retopIds';
 import { getExtUrl } from '../utils/url';
 import { isStudentRegNo } from '../utils/studentId';
 
 // The bootstrapper cannot import the teardown (it must stay import free), so
 // publish it on window for the document_start side to reuse.
-(window as any).__retopDismantle = dismantleRetopMods;
+window.__retopDismantle = dismantleRetopMods;
 
 // Catch every uncaught error and unhandled rejection coming from the
 // extension, and hand VTOP back instead of leaving a half-built app on screen.
 installErrorNet();
 
 // Inject the VTOP dark-mode stylesheet into the document (not just the shadow
-// root) so native/legacy VTOP pages actually pick up the chosen theme.
+// root) so native/legacy VTOP pages actually pick up the chosen theme. Skip it
+// when the bootstrapper already handed the page back to VTOP. This mirrors the
+// inline injection in content.ts, which must stay import free.
 if (
   typeof document !== 'undefined' &&
-  !document.getElementById('retop-dark-stylesheet')
+  !window.__retopAborted &&
+  !document.getElementById(DARK_STYLESHEET_ID)
 ) {
   const link = document.createElement('link');
-  link.id = 'retop-dark-stylesheet';
+  link.id = DARK_STYLESHEET_ID;
   link.rel = 'stylesheet';
   link.href = getExtUrl('vtop-dark.css');
   (document.head || document.documentElement).appendChild(link);
@@ -166,7 +170,7 @@ try {
 
 // The bootstrapper already cloaked the document for auth routes; add the emblem
 // loader so the wait reads as retop rather than a blank page.
-if (isAuthRoute) {
+if (isAuthRoute && !window.__retopAborted) {
   injectSplashScreen(true);
 }
 
@@ -522,7 +526,7 @@ const init = async () => {
 const run = async () => {
   // The bootstrapper's watchdog already handed the page back to VTOP; mounting
   // the dashboard now would take it over again.
-  if ((window as any).__retopAborted) {
+  if (window.__retopAborted) {
     console.warn('[retop] Dashboard start aborted; leaving VTOP alone.');
     return;
   }
@@ -619,7 +623,7 @@ const run = async () => {
 
   // The bootstrapper may have handed the page back to VTOP while this entry
   // was waiting for the session. Mounting now would take the page over again.
-  if ((window as any).__retopAborted) {
+  if (window.__retopAborted) {
     console.warn('[retop] Dashboard start aborted; leaving VTOP alone.');
     return;
   }

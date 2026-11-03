@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
 import { getAppRoot } from './bridge';
+import { MirroredVtopTheme, writeMirroredVtopTheme } from './vtopThemeMirror';
 import { QuickLink } from '../types/vtop';
 import {
   argbFromHex,
@@ -200,11 +201,14 @@ export const getMaterialChipStyle = (
 
 export const applyTheme = (settings: AppSettings) => {
   if (typeof document === 'undefined') return;
+  // Teardown has handed the page back to VTOP. Late IDB reads and the
+  // BroadcastChannel/matchMedia subscriptions must not re-darken it.
+  if (window.__retopAborted) return;
   const root = getAppRoot();
   const offlineRoot = document.getElementById('offline-root');
 
-  let appliedTheme = settings.themeMode;
-  if (appliedTheme === 'auto') {
+  let appliedTheme: 'dark' | 'light' | 'amoled' = 'light';
+  if (settings.themeMode === 'auto') {
     const systemDark =
       typeof window !== 'undefined' &&
       window.matchMedia &&
@@ -214,16 +218,20 @@ export const applyTheme = (settings: AppSettings) => {
         ? 'amoled'
         : 'dark'
       : 'light';
-  } else if (appliedTheme === 'dark' && settings.pureBlack) {
-    appliedTheme = 'amoled';
+  } else {
+    appliedTheme = settings.themeMode;
+    if (appliedTheme === 'dark' && settings.pureBlack) {
+      appliedTheme = 'amoled';
+    }
   }
 
   if (root) root.setAttribute('data-theme', appliedTheme);
   if (offlineRoot && offlineRoot !== root)
     offlineRoot.setAttribute('data-theme', appliedTheme);
 
-  let vtopTheme = settings.vtopThemeMode || 'same';
-  let appliedVtopTheme = vtopTheme === 'same' ? appliedTheme : vtopTheme;
+  const vtopTheme = settings.vtopThemeMode || 'same';
+  const appliedVtopTheme: MirroredVtopTheme =
+    vtopTheme === 'same' ? appliedTheme : vtopTheme;
   if (appliedVtopTheme === 'none') {
     document.documentElement.removeAttribute('data-theme');
   } else {
@@ -232,9 +240,7 @@ export const applyTheme = (settings: AppSettings) => {
 
   // IndexedDB is too slow to answer during document_start. Mirror the resolved
   // value so the bootstrapper can apply it before VTOP's first paint.
-  try {
-    localStorage.setItem('retop_vtop_theme', appliedVtopTheme);
-  } catch {}
+  writeMirroredVtopTheme(appliedVtopTheme);
 
   const isMonochrome =
     settings.accentColor === 'grey' ||

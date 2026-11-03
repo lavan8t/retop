@@ -51,7 +51,7 @@ Every Pull Request must satisfy these acceptance standards:
 
 1. **Focused Scope:** Keep PRs centered on a single vertical slice or fix. Avoid bundling unrelated formatting or refactoring changes.
 2. **Regression Proof:** Include automated unit tests under `src/**/__tests__/` whenever modifying parsers, storage logic, or session helpers.
-3. **Shadow DOM Isolation:** Retop renders exclusively inside `#retop-host`. Never inject global styles directly into the host document without prior architectural discussion.
+3. **Shadow DOM Isolation:** Retop renders exclusively inside `#retop-host`. Never inject global styles directly into the host document without prior architectural discussion. The approved exception is the native-VTOP theme stylesheet `src/styles/vtop-dark.css` (see `docs/agents/dark-theme.md`), which must live in the host document.
 4. **Teardown Invariant:** Ensure changes do not prevent `dismantleRetopMods()` from restoring native VTOP if an error occurs.
 5. **No Secrets / PII:** Ensure zero registration numbers, real emails, or private student information are included in test fixtures or code.
 

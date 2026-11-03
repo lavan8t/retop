@@ -4,6 +4,7 @@ import {
   registerAppUnmount,
   teardownRetop,
 } from '../teardown';
+import { DARK_STYLESHEET_ID, RETOP_NODE_IDS } from '../retopIds';
 
 /**
  * The teardown runs against the live document, so these tests drive a real
@@ -32,37 +33,16 @@ describe('dismantleRetopMods', () => {
   });
 
   it('removes every retop node it injected', () => {
-    for (const id of [
-      'retop-host',
-      'retop-boot-cloak',
-      'retop-early-cloak',
-      'retop-open-loader',
-      'retop-document-sizing',
-      'retop-shadow-reset',
-      'retop-global-css',
-      'retop-dark-stylesheet',
-      'retop-material-symbols-style',
-      'retop-native-portals',
-      'retop-legacy-menu-search-wrapper',
-      'retop-session-dialog',
-      'retop-halted-banner',
-      'retop-hmenu-search-toggle',
-      'retop-vtop-search-menu',
-      'retop-splash-style',
-      'vtop-prelogin-theme',
-      'vtop-login-theme',
-      'vtop-early-theme',
-    ]) {
+    for (const id of RETOP_NODE_IDS) {
       makeHost(id);
     }
 
     dismantleRetopMods();
 
-    expect(document.getElementById('retop-host')).toBeNull();
-    expect(document.getElementById('retop-boot-cloak')).toBeNull();
-    expect(document.getElementById('retop-dark-stylesheet')).toBeNull();
-    expect(document.getElementById('retop-open-loader')).toBeNull();
-    expect(document.getElementById('vtop-login-theme')).toBeNull();
+    for (const id of RETOP_NODE_IDS) {
+      expect(document.getElementById(id)).toBeNull();
+    }
+    expect(document.getElementById(DARK_STYLESHEET_ID)).toBeNull();
   });
 
   it('restores the document to a usable VTOP state', () => {
@@ -91,6 +71,22 @@ describe('dismantleRetopMods', () => {
     expect(document.body.style.visibility).toBe('visible');
     expect(document.body.style.overflow).toBe('');
     expect(document.body.classList.contains('show-legacy-ui')).toBe(true);
+  });
+
+  it('removes retop theme vars without deleting VTOP-owned custom properties', () => {
+    const style = document.documentElement.style;
+    style.setProperty('--md-sys-color-primary', '#123456');
+    style.setProperty('--app-font-wght', '700');
+    style.setProperty('--anim-scale', '1');
+    style.setProperty('--vtop-owned', 'keep');
+
+    dismantleRetopMods();
+
+    expect(style.getPropertyValue('--md-sys-color-primary')).toBe('');
+    expect(style.getPropertyValue('--app-font-wght')).toBe('');
+    expect(style.getPropertyValue('--anim-scale')).toBe('');
+    expect(style.getPropertyValue('--vtop-owned')).toBe('keep');
+    style.removeProperty('--vtop-owned');
   });
 
   it('unhides the native header elements it had hidden', () => {

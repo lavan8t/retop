@@ -8,33 +8,12 @@
  * undone here rather than at each call site.
  */
 
+import { RETOP_NODE_IDS } from './retopIds';
+
 const TAKEOVER_ATTR = 'data-retop-takeover';
 const BYPASS_KEY = 'retop-login-bypass';
 /** URL fallback for the bypass marker, used when sessionStorage is unavailable. */
 const BYPASS_PARAM = 'retop_bypass';
-
-/** Every node retop injects into the VTOP document. */
-const RETOP_NODE_IDS = [
-  'retop-host',
-  'retop-boot-cloak',
-  'retop-early-cloak',
-  'retop-open-loader',
-  'retop-document-sizing',
-  'retop-shadow-reset',
-  'retop-global-css',
-  'retop-dark-stylesheet',
-  'retop-material-symbols-style',
-  'retop-native-portals',
-  'retop-legacy-menu-search-wrapper',
-  'retop-session-dialog',
-  'retop-halted-banner',
-  'retop-hmenu-search-toggle',
-  'retop-vtop-search-menu',
-  'retop-splash-style',
-  'vtop-prelogin-theme',
-  'vtop-login-theme',
-  'vtop-early-theme',
-];
 
 /** VTOP's own header elements retop hides. They are unhidden, never removed. */
 const NATIVE_HEADER_IDS = ['vtop-search-menu-btn', 'MG_SEARCH'];
@@ -92,7 +71,7 @@ export function dismantleRetopMods(): void {
   // Once retop has stepped aside it must not come back on this page load: a
   // deferred entry that is still starting up would otherwise re-mount itself
   // over the native VTOP page that was just handed back.
-  (window as any).__retopAborted = true;
+  window.__retopAborted = true;
 
   for (const id of RETOP_NODE_IDS) {
     try {
@@ -107,11 +86,19 @@ export function dismantleRetopMods(): void {
   } catch {}
 
   // Retop's own theme variables and font scale live on <html>; VTOP must not
-  // inherit them.
+  // inherit them. Only remove retop-owned properties: a blanket `--*` sweep
+  // could delete custom properties VTOP itself owns.
   try {
     const docStyle = document.documentElement.style;
-    docStyle.removeProperty('--accent-base');
-    docStyle.removeProperty('--accent-on-dark');
+    const isRetopVar = (prop: string) =>
+      prop.startsWith('--accent-') ||
+      prop.startsWith('--md-sys-color-') ||
+      prop.startsWith('--retop-') ||
+      prop === '--app-font-wght' ||
+      prop === '--anim-scale';
+    for (const prop of Array.from(docStyle)) {
+      if (isRetopVar(prop)) docStyle.removeProperty(prop);
+    }
     docStyle.removeProperty('font-size');
   } catch {}
 

@@ -35,7 +35,7 @@ This document outlines the core architectural boundaries, extension lifecycles, 
 ## 2. Core Invariants
 
 1. **Keep Shadow DOM Isolated:**
-   All retop React components mount inside the `#retop-host` Shadow DOM. Never inject styling rules into the host document head that could interfere with native VTOP pages.
+   All retop React components mount inside the `#retop-host` Shadow DOM. Never inject styling rules into the host document head that could interfere with native VTOP pages. The documented exception is `src/styles/vtop-dark.css`, which themes VTOP itself and is scoped away from `#vtop-header` (see `docs/agents/dark-theme.md`).
 2. **Teardown Safety Guarantee:**
    If an uncaught exception or unrecoverable error occurs, retop calls `dismantleRetopMods()` to immediately tear down injected elements, uncloak the native document, and restore standard portal controls. VTOP must never be left in an unusable state.
 3. **Pure HTML Parsers:**

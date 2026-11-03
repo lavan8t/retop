@@ -23,7 +23,7 @@
 - **Academic Calendar & Schedule Sync**: Deeply integrates with the VTOP semester calendar, instructional days, and Saturday day-order overrides.
 - **1-Click Google Calendar & iCal Export**: Syncs entire course timetables and exam schedules directly to Google Calendar or downloadable `.ics` files.
 - **Universal Omnibox**: Press `/` from anywhere to launch fuzzy navigation to any menu, form, or document.
-- **Full Contrast Inversion for Classic VTOP**: A mathematical contrast inversion engine (`filter: invert(1) hue-rotate(180deg)`) provides deep dark mode across native VTOP without unreadable text or inverted photos.
+- **Native VTOP Dark Theme**: A component-level dark theme for classic VTOP pages (near-black layered surfaces, VTOP blue/gold accents) with no colour inversion, so images, charts and the native header keep their real appearance.
 - **Zero-Damage Teardown**: An error-net monitors execution; if an uncaught error occurs, retop instantly removes all modifications and restores native VTOP cleanly.
 
 ---

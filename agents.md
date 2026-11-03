@@ -178,7 +178,7 @@ src/
 1. **Git commits on verified completion.** When a task is properly verified and completed, create a git commit for the changes before moving on to the next task. Never run `git push`, `git checkout -b`, or `git rebase` unless explicitly asked.
 2. **Check branch before making changes.** Always verify the active git branch and working tree status before editing code or starting work on a task.
 3. **Do not mutate legacy navigation elements.** Never delete or inject into `#vtop-header`, `#top-hmenu-bar`, or native navigation buttons in legacy mode.
-4. **Keep Shadow DOM isolated.** All retop UI renders inside `#retop-host`. Never inject global styles into the host document head.
+4. **Keep Shadow DOM isolated.** All retop UI renders inside `#retop-host`. Never inject global styles into the host document head. The one exception is `src/styles/vtop-dark.css`, the documented native-VTOP theme (`docs/agents/dark-theme.md`): it must live in the host document because it themes VTOP's own DOM, not retop's.
 4b. **Never hand-roll a second sign-in form.** Live VTOP login, the offline PWA, and standalone mode all render `VtopLoginCard` with `VtopClient`. Validation, CAPTCHA solving, and submission belong to that one module. Native VTOP login markup is only ever restyled for parent/alumni roles, which retop does not own.
 5. **Preserve variable font transitions.** Never set `!important` on `font-variation-settings` or apply universal font rules on `*`.
 6. **Protect element transitions.** Never declare global `transition-property` on `*, ::before, ::after` in `@layer base`.
@@ -293,6 +293,7 @@ src/
     - `/vtop/get/new/captcha` wants `Referer: /vtop/open/page` (observed), not `/vtop/login`, and `Accept: text/html,...,image/*,*/*;q=0.8`. Without `image/*` it can answer with the role-selection page instead.
     - The login POST sends `_csrf, username, password, captchaStr, gResponse`. Send `gResponse` empty: it matches Variant A's form, and Variant B ignores it.
 12. **pdf.js must never be statically imported.** It probes for `eval` support with `new Function("")` at module load, which `getretop.web.app` blocks under its CSP. The probe is caught by pdf.js and only degrades rendering, but it logs a CSP violation on every page load. Import `@quicktoolsone/pdf-compress` dynamically inside the one function that needs it (large-PDF DA upload). `build.ts` also rewrites the probe in emitted bundles; `injected.js` is deliberately excluded because its `new Function` is an intentional, validated call into VTOP's main world.
+13. **Never portal retop UI to `document.body` on native VTOP pages.** The native-page theme lives in the light DOM; retop's Tailwind and shadow-root styles do not apply outside `#retop-host`, so a body portal renders unstyled. Portal into `getAppRoot()` (inside the shadow root) instead. See `docs/agents/dark-theme.md`.
 
 ---
 

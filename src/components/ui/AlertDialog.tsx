@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { getAppRoot } from '../../utils/bridge';
 
 export interface AlertDialogOptions {
   title?: string;
@@ -112,6 +113,12 @@ export const AlertDialogManager: React.FC = () => {
 
   if (!dialog || typeof document === 'undefined') return null;
 
+  // The dialog only renders from inside retop, so the app root must exist.
+  // Never fall back to document.body: it is outside #retop-host and renders
+  // unstyled on native VTOP pages (agents.md rule 13).
+  const portalRoot = getAppRoot();
+  if (!portalRoot) return null;
+
   return createPortal(
     <div
       role="dialog"
@@ -171,6 +178,8 @@ export const AlertDialogManager: React.FC = () => {
         </div>
       </div>
     </div>,
-    document.body,
+    // Stay inside the shadow root: retop's Tailwind and token styles only apply
+    // under #retop-host.
+    portalRoot,
   );
 };

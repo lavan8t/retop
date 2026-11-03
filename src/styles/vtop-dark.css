@@ -1,69 +1,1941 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   VTOP THEME — CLEAN CONTRAST INVERSION FOR NATIVE / LEGACY VTOP PAGES
+   VTOP DARK THEME — NATIVE COMPONENT THEME
    ═══════════════════════════════════════════════════════════════════════
-   Inverts all whites and blacks across classic VTOP pages so every table,
-   form, label, and nested text remains completely readable with zero
-   patchy backgrounds or low-contrast text.
+   This is a real component theme: dark surfaces, light text and VTOP's own
+   blue/gold accents. There is no page-level inversion, so images, charts and
+   native widgets keep their real colors. `filter: invert()` is used only to
+   recolour two black Bootstrap icons (close button, accordion chevron).
+
+   #vtop-header is deliberately never targeted. It keeps VTOP's native blue
+   header, logo, icons and dropdown in every theme.
+
+   Most rules are scoped to the page content (#vtop-body-content), the
+   horizontal menu (#top-hmenu-bar) and VTOP's body-level modals (.modal).
+   Legacy `.bootstrap3-iso` pages and body-level widgets (blockUI, jQuery-UI
+   pickers) get their own scoped rules; none reach the header.
+
+   `html:is([data-theme='dark'], [data-theme='amoled'])` is abbreviated as
+   "D" in comments below. `light` is never matched.
    ═══════════════════════════════════════════════════════════════════════ */
 
-/* Apply full-page contrast inversion to native VTOP when dark / amoled theme is active */
-html[data-theme='dark'],
+/* ── Design tokens ─────────────────────────────────────────────────────── */
+
+html[data-theme='dark'] {
+  /* Near-black canvas, layered up by surface tone. Borders stay almost
+     invisible so the hierarchy comes from depth, not from outlines. */
+  --vt-bg: #08090b;
+  --vt-bg-elevated: #0c0e11;
+  --vt-surface: #111316;
+  --vt-surface-2: #16191d;
+  --vt-surface-3: #1d2126;
+  --vt-border: #202429;
+  --vt-border-strong: #2c3238;
+  --vt-text: #cbd2d9;
+  --vt-text-strong: #e2e7ec;
+  --vt-text-muted: #8a929a;
+  --vt-text-faint: #69717a;
+  --vt-link: #6fa9df;
+  --vt-link-hover: #9ac5ec;
+  --vt-accent: #5b9bd1;
+  --vt-accent-strong: #2a6394;
+  --vt-accent-soft: rgba(91, 155, 209, 0.12);
+  --vt-table-head: #16232e;
+  --vt-table-head-text: #d3dbe3;
+  --vt-gold: #b99a66;
+  --vt-gold-soft: rgba(185, 154, 102, 0.12);
+  --vt-danger: #d97c7c;
+  --vt-danger-soft: rgba(217, 124, 124, 0.12);
+  --vt-success: #6cbb8e;
+  --vt-success-soft: rgba(108, 187, 142, 0.12);
+  --vt-warning: #d6a95f;
+  --vt-warning-soft: rgba(214, 169, 95, 0.12);
+  --vt-info: #6fb6cd;
+  --vt-info-soft: rgba(111, 182, 205, 0.12);
+  --vt-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
+}
+
 html[data-theme='amoled'] {
-  filter: invert(1) hue-rotate(180deg) !important;
-  background-color: #ffffff !important;
-  color: #000000 !important;
+  --vt-bg: #000000;
+  --vt-bg-elevated: #050607;
+  --vt-surface: #0a0b0d;
+  --vt-surface-2: #0f1114;
+  --vt-surface-3: #16191d;
+  --vt-border: #1b1f23;
+  --vt-border-strong: #272d33;
+  --vt-text: #c9d0d7;
+  --vt-text-strong: #e0e5ea;
+  --vt-text-muted: #88909a;
+  --vt-text-faint: #666e76;
+  --vt-link: #74aee4;
+  --vt-link-hover: #a0c9ee;
+  --vt-accent: #5f9fd5;
+  --vt-accent-strong: #2a6394;
+  --vt-accent-soft: rgba(95, 159, 213, 0.12);
+  --vt-table-head: #101a22;
+  --vt-table-head-text: #ccd5de;
+  --vt-gold: #b99a66;
+  --vt-gold-soft: rgba(185, 154, 102, 0.12);
+  --vt-danger: #d97c7c;
+  --vt-danger-soft: rgba(217, 124, 124, 0.12);
+  --vt-success: #6cbb8e;
+  --vt-success-soft: rgba(108, 187, 142, 0.12);
+  --vt-warning: #d6a95f;
+  --vt-warning-soft: rgba(214, 169, 95, 0.12);
+  --vt-info: #6fb6cd;
+  --vt-info-soft: rgba(111, 182, 205, 0.12);
+  --vt-shadow: 0 8px 22px rgba(0, 0, 0, 0.6);
 }
 
-html[data-theme='dark'] body,
-html[data-theme='amoled'] body {
-  background-color: #ffffff !important;
-  color: #000000 !important;
+@media (prefers-contrast: more) {
+  html[data-theme='dark'] {
+    --vt-border: #3a444f;
+    --vt-border-strong: #4b5866;
+    --vt-text: #e4e9ee;
+    --vt-text-muted: #aab4bf;
+    --vt-text-faint: #8b95a1;
+  }
+
+  html[data-theme='amoled'] {
+    --vt-border: #38424c;
+    --vt-border-strong: #4a5663;
+    --vt-text: #e6ebf0;
+    --vt-text-muted: #adb7c2;
+    --vt-text-faint: #8d97a3;
+  }
+}
+
+/* ── Base document ─────────────────────────────────────────────────────── */
+
+html:is([data-theme='dark'], [data-theme='amoled']) {
+  background-color: var(--vt-bg);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled']) body {
+  background-color: var(--vt-bg) !important;
+}
+
+/* Content and native select/date popups. Kept off the header on purpose. */
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal) {
+  color: var(--vt-text);
+  color-scheme: dark;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  ::selection {
+  background: var(--vt-accent-strong);
+  color: #ffffff;
+}
+
+/* Scrollbars for the internal VTOP viewports (VTOP hard-codes a light one).
+   Scoped so the native header keeps its own scrollbars. */
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  * {
+  scrollbar-color: var(--vt-border-strong) var(--vt-bg);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  ::-webkit-scrollbar-track {
+  background: var(--vt-bg);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  ::-webkit-scrollbar-thumb {
+  background: var(--vt-border-strong);
+  border: 2px solid var(--vt-bg);
+  border-radius: 9999px;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  ::-webkit-scrollbar-thumb:hover {
+  background: var(--vt-text-faint);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#page-wrapper, #b5-pagewrapper) {
+  scrollbar-color: var(--vt-border-strong) var(--vt-bg);
+}
+
+/* ── Typography & links ────────────────────────────────────────────────── */
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6) {
+  color: var(--vt-text-strong);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  a:not(.btn):not(.list-group-item):not(.dropdown-item):not(.nav-link):not(
+    .page-link
+  ) {
+  color: var(--vt-link);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  a:not(.btn):not(.list-group-item):not(.dropdown-item):not(.nav-link):not(
+    .page-link
+  ):hover {
+  color: var(--vt-link-hover);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  hr {
+  border-color: var(--vt-border);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(pre, code) {
+  background-color: var(--vt-surface-2);
+  color: var(--vt-text);
+  border-color: var(--vt-border);
+}
+
+/* ── Bootstrap text utilities ──────────────────────────────────────────── */
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(.text-dark, .text-black, .text-body, .fg-black) {
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(.text-muted, .text-secondary, .text-black-50) {
+  color: var(--vt-text-muted) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .text-primary {
+  color: var(--vt-accent) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .text-danger {
+  color: var(--vt-danger) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .text-success {
+  color: var(--vt-success) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .text-warning {
+  color: var(--vt-warning) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .text-info {
+  color: var(--vt-info) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(.text-white, .text-light) {
+  color: var(--vt-text-strong) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(.bg-white, .bg-light, .bg-body) {
+  background-color: var(--vt-surface) !important;
+}
+
+/* VTOP's dialogs and dashboard buttons put white text on Bootstrap semantic
+   backgrounds. In dark mode those backgrounds become tinted surfaces. */
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .bg-primary {
+  background-color: color-mix(
+    in srgb,
+    var(--vt-accent) 22%,
+    var(--vt-surface)
+  ) !important;
+  color: var(--vt-text-strong) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .bg-secondary {
+  background-color: var(--vt-surface-2) !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .bg-info {
+  background-color: color-mix(
+    in srgb,
+    var(--vt-info) 20%,
+    var(--vt-surface)
+  ) !important;
+  color: var(--vt-text-strong) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .bg-success {
+  background-color: color-mix(
+    in srgb,
+    var(--vt-success) 20%,
+    var(--vt-surface)
+  ) !important;
+  color: var(--vt-text-strong) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .bg-warning {
+  background-color: color-mix(
+    in srgb,
+    var(--vt-warning) 20%,
+    var(--vt-surface)
+  ) !important;
+  color: var(--vt-text-strong) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .bg-danger {
+  background-color: color-mix(
+    in srgb,
+    var(--vt-danger) 20%,
+    var(--vt-surface)
+  ) !important;
+  color: var(--vt-text-strong) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .bg-dark {
+  background-color: var(--vt-surface-3) !important;
+  color: var(--vt-text) !important;
+}
+
+/* ── Cards (Bootstrap 5 dashboard) ─────────────────────────────────────── */
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .card {
+  background-color: var(--vt-surface) !important;
+  border-color: var(--vt-border) !important;
+  color: var(--vt-text);
+  box-shadow: none;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(.card-header, .card-footer) {
+  background-color: var(--vt-surface-2) !important;
+  border-color: var(--vt-border) !important;
+  color: var(--vt-text);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .card-body {
+  color: var(--vt-text);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .card.goldenBorderTop,
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .goldenBorderTop {
+  border-top-color: var(--vt-gold) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .primaryBorderTop {
+  border-top-color: var(--vt-accent-strong) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .lightBlueBorderTop {
+  border-top-color: var(--vt-info) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .lightGoldenbackground2 {
+  background-color: var(--vt-surface) !important;
+  background-color: color-mix(
+    in srgb,
+    var(--vt-gold) 6%,
+    var(--vt-surface)
+  ) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .primaryShadeColor {
+  background-color: var(--vt-surface-2) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .card-background {
+  background-color: var(--vt-surface) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(.title, .subtitle) {
+  color: var(--vt-link) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(.sub-subtitle, .body-text) {
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .footer {
+  background-color: var(--vt-surface-2) !important;
+  border-color: var(--vt-border) !important;
+  color: var(--vt-warning) !important;
+}
+
+/* ── List groups ───────────────────────────────────────────────────────── */
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .list-group-item {
+  background-color: transparent !important;
+  border-color: var(--vt-border) !important;
+  color: var(--vt-text);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(.list-group-item-action:hover, .list-group-item-action:focus) {
+  background-color: var(--vt-surface-2) !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .list-group-item.active {
+  background-color: var(--vt-accent-strong) !important;
+  border-color: var(--vt-accent-strong) !important;
+  color: #ffffff !important;
+}
+
+/* ── Tables ────────────────────────────────────────────────────────────── */
+
+/* Course Page Archive writes `background-color:#fff` inline on <table>
+   itself, so the transparent !important below is the archive fix. */
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .table {
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--vt-text);
+  --bs-table-border-color: transparent;
+  --bs-table-striped-bg: rgba(255, 255, 255, 0.035);
+  --bs-table-striped-color: var(--vt-text);
+  --bs-table-hover-bg: rgba(255, 255, 255, 0.06);
+  --bs-table-hover-color: var(--vt-text);
+  --bs-table-active-bg: var(--vt-surface-3);
+  background-color: transparent !important;
+  color: var(--vt-text);
+  border-color: transparent !important;
+}
+
+/* VTOP writes its blue header rows and pale highlight rows as inline styles.
+   A normal rule cannot win against the style attribute, so cells are pinned
+   with !important and the inline colours are neutralised. Result/Grade View
+   uses #3c8dbc header rows and #C0D8C0 highlight rows, both covered here. */
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .table
+  > :not(caption)
+  > *
+  > * {
+  border-color: transparent !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .table
+  th:not([scope='row']) {
+  background-color: var(--vt-table-head) !important;
+  border-color: transparent !important;
+  border-bottom-color: var(--vt-border) !important;
+  color: var(--vt-table-head-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .table
+  td {
+  background-color: transparent;
+  color: var(--vt-text);
+}
+
+/* No cell grid: separate rows with a faint zebra instead. */
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .table
+  > tbody
+  > tr:nth-child(even)
+  > td {
+  background-color: rgba(255, 255, 255, 0.018);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .table
+  tbody
+  > tr[style*='background-color' i] {
+  background-color: var(--vt-surface-2) !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .table
+  td[style*='background-color' i] {
+  background-color: var(--vt-surface-2) !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .table
+  td[style*='color: white' i],
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .table
+  td[style*='color:#fff' i],
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .table
+  td[style*='color: #fff' i] {
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(.table, .table-bordered)
+  :is(tr, td, th) {
+  border-color: transparent !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .table-striped
+  > tbody
+  > tr:nth-of-type(odd)
+  > * {
+  background-color: var(--bs-table-striped-bg);
+}
+
+/* Contextual rows keep their pale Bootstrap backgrounds otherwise. */
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(
+    .table-primary,
+    .table-secondary,
+    .table-success,
+    .table-info,
+    .table-warning,
+    .table-danger,
+    .table-light,
+    .table-dark,
+    .table-active
+  ) {
+  --bs-table-bg: var(--vt-surface-2);
+  --bs-table-color: var(--vt-text);
+  --bs-table-striped-bg: var(--vt-surface-3);
+  --bs-table-striped-color: var(--vt-text);
+  --bs-table-active-bg: var(--vt-surface-3);
+  --bs-table-hover-bg: var(--vt-surface-3);
+  --bs-table-hover-color: var(--vt-text);
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(
+    .table-primary,
+    .table-secondary,
+    .table-success,
+    .table-info,
+    .table-warning,
+    .table-danger,
+    .table-light,
+    .table-dark,
+    .table-active
+  )
+  > :not(caption)
+  > *
+  > * {
+  background-color: var(--vt-surface-2) !important;
+  color: var(--vt-text) !important;
+}
+
+/* ── Bootstrap 3 / legacy page components ──────────────────────────────── */
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  .bootstrap3-iso
+  :is(.box, .panel, .well, .thumbnail, .jumbotron) {
+  background-color: var(--vt-surface) !important;
+  border-color: var(--vt-border) !important;
+  color: var(--vt-text);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  .bootstrap3-iso
+  :is(.box-header, .box-footer, .panel-heading, .panel-footer) {
+  background-color: var(--vt-surface-2) !important;
+  border-color: var(--vt-border) !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  .bootstrap3-iso
+  .panel-default {
+  border-color: var(--vt-border) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  .bootstrap3-iso
+  .panel-default
+  > .panel-heading {
+  background-color: var(--vt-surface-2) !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  .bootstrap3-iso
+  .panel-body {
+  background-color: var(--vt-surface) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled']) .bootstrap3-iso .well {
+  background-image: none !important;
+  border-color: var(--vt-border) !important;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.4);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  .bootstrap3-iso
+  .page-header {
+  border-bottom-color: var(--vt-border);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  .bootstrap3-iso
+  :is(.table, .table-bordered) {
+  border-color: transparent;
+  color: var(--vt-text);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  .bootstrap3-iso
+  :is(
+    .table-bordered > thead > tr > th,
+    .table-bordered > tbody > tr > td,
+    .table-bordered > tbody > tr > th,
+    .table-bordered > tfoot > tr > td,
+    .table > thead > tr > th,
+    .table > tbody > tr > td,
+    .table > tbody > tr > th
+  ) {
+  border-color: transparent !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  .bootstrap3-iso
+  .table-striped
+  > tbody
+  > tr:nth-of-type(odd) {
+  background-color: var(--vt-surface-2) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  .bootstrap3-iso
+  .table-hover
+  > tbody
+  > tr:hover {
+  background-color: var(--vt-surface-3) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  .bootstrap3-iso
+  .table
+  > thead
+  > tr
+  > th {
+  background-color: var(--vt-table-head) !important;
+  border-bottom-color: var(--vt-border) !important;
+  color: var(--vt-table-head-text) !important;
+}
+
+/* BS3 contextual rows + dropdown menus (which use li > a, not .dropdown-item). */
+html:is([data-theme='dark'], [data-theme='amoled'])
+  .bootstrap3-iso
+  .table
+  > tbody
+  > tr:is(.success, .info, .warning, .danger, .active)
+  > :is(td, th) {
+  background-color: var(--vt-surface-2) !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  .bootstrap3-iso
+  .dropdown-menu
+  > li
+  > a {
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  .bootstrap3-iso
+  .dropdown-menu
+  > li
+  > a:is(:hover, :focus) {
+  background-color: var(--vt-surface-2) !important;
+  color: var(--vt-text-strong) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  .bootstrap3-iso
+  .dropdown-menu
+  > .active
+  > a {
+  background-color: var(--vt-accent-strong) !important;
+  color: #ffffff !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  .bootstrap3-iso
+  .dropdown-menu
+  > .disabled
+  > a {
+  color: var(--vt-text-faint) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  .bootstrap3-iso
+  .dropdown-header {
+  color: var(--vt-text-muted) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  .bootstrap3-iso
+  .dropdown-menu
+  .divider {
+  background-color: var(--vt-border) !important;
+}
+
+/* ── AdminLTE / legacy components (used inside the BS5 shell too) ──────── */
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  :is(.panel, .panel-default, .well, .thumbnail, .jumbotron, .box) {
+  background-color: var(--vt-surface) !important;
+  border-color: var(--vt-border) !important;
+  color: var(--vt-text);
+  box-shadow: none;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  :is(.panel-heading, .panel-footer, .box-header, .box-footer) {
+  background-color: var(--vt-surface-2) !important;
+  border-color: var(--vt-border) !important;
+  color: var(--vt-text-strong) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  :is(.panel-body, .box-body) {
+  background-color: var(--vt-surface) !important;
+  color: var(--vt-text);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  :is(.panel-title, .box-title) {
+  color: var(--vt-text-strong) !important;
+}
+
+/* Course Page sections use bare <fieldset><legend>; the legend keeps a white
+   background from VTOP's stylesheet and spans the full content width. */
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  fieldset {
+  border-color: var(--vt-border) !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  legend {
+  background-color: var(--vt-surface-2) !important;
+  border-color: var(--vt-border) !important;
+  color: var(--vt-text-strong) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  .download-btn {
+  background-color: var(--vt-accent-strong) !important;
+  border-color: var(--vt-accent-strong) !important;
+  color: #ffffff !important;
+}
+
+/* ── Accordions (Course Page detail sections) ──────────────────────────── */
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  .accordion-item {
+  background-color: var(--vt-surface) !important;
+  border-color: var(--vt-border) !important;
+  color: var(--vt-text);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  .accordion-button {
+  background-color: var(--vt-surface-2) !important;
+  box-shadow: none !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  .accordion-button:not(.collapsed) {
+  background-color: var(--vt-surface-3) !important;
+  color: var(--vt-text-strong) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  .accordion-button::after {
+  filter: invert(1) grayscale(1) brightness(1.6);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  .accordion-body {
+  background-color: var(--vt-surface) !important;
+  color: var(--vt-text);
+}
+
+/* ── Forms ─────────────────────────────────────────────────────────────── */
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(.form-control, .form-select, .custom-select, .input-group-addon) {
+  background-color: var(--vt-bg-elevated) !important;
+  border-color: var(--vt-border-strong) !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(.form-control, .form-select):focus {
+  background-color: var(--vt-surface) !important;
+  border-color: var(--vt-accent) !important;
+  box-shadow: 0 0 0 0.2rem var(--vt-accent-soft) !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .form-control::placeholder {
+  color: var(--vt-text-faint) !important;
+}
+
+/* Bootstrap's chevron is a dark SVG, invisible on a near-black field. */
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .form-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23cbd2d9' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .input-group-text {
+  background-color: var(--vt-surface-2) !important;
+  border-color: var(--vt-border-strong) !important;
+  color: var(--vt-text-muted) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(.form-control, .form-select):is(:disabled, [readonly]) {
+  background-color: var(--vt-surface-2) !important;
+  color: var(--vt-text-muted) !important;
+  opacity: 1;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(.form-check-input, .form-check-label) {
+  color: var(--vt-text);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .form-check-input {
+  background-color: var(--vt-bg-elevated);
+  border-color: var(--vt-border-strong);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .form-check-input:checked {
+  background-color: var(--vt-accent-strong);
+  border-color: var(--vt-accent-strong);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .form-range::-webkit-slider-runnable-track {
+  background-color: var(--vt-surface-3);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .form-range::-webkit-slider-thumb {
+  background-color: var(--vt-accent);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(.control-label, .form-label, .help-block, .form-text) {
+  color: var(--vt-text-muted) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  option {
+  background-color: var(--vt-surface);
+  color: var(--vt-text);
+}
+
+/* VTOP's custom date/time pickers hard-code white cells. */
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(.cdtpickerhour, .cdtpickermin, .cdtpTableContainer, .cdpDateStyle) {
+  background-color: var(--vt-surface-2) !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(td.cdpWeek:hover, td.cdtpWeek:hover) {
+  background-color: var(--vt-surface-3) !important;
+}
+
+/* Pickers and jQuery-UI widgets are appended to <body>, not the content box. */
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(
+    .cdtpDateStyle,
+    .cdpDropMenuStyle,
+    .cdtpDropMenuStyle,
+    .month_css,
+    .year_css,
+    .month_year_button_css
+  ) {
+  background-color: var(--vt-surface-2) !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(.ui-widget-content, .ui-datepicker, .ui-dialog) {
+  background-color: var(--vt-surface) !important;
+  border-color: var(--vt-border) !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(.ui-widget-header, .ui-datepicker-header, .ui-dialog-titlebar) {
+  background-color: var(--vt-surface-2) !important;
+  border-color: var(--vt-border) !important;
+  color: var(--vt-text-strong) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(.ui-state-default, .ui-datepicker-calendar a) {
+  background-color: var(--vt-surface-2) !important;
+  border-color: var(--vt-border) !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(.ui-state-hover, .ui-state-focus) {
+  background-color: var(--vt-surface-3) !important;
+  border-color: var(--vt-border-strong) !important;
+  color: var(--vt-text-strong) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled']) .ui-state-active {
+  background-color: var(--vt-accent-strong) !important;
+  border-color: var(--vt-accent-strong) !important;
+  color: #ffffff !important;
+}
+
+/* Bootstrap tooltips/popovers are appended to <body> with no origin, and the
+   header uses them. Leave them native so the header stays untouched. */
+
+/* ── Buttons ───────────────────────────────────────────────────────────── */
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .btn {
+  background-image: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .btn-outline {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(.btn-outline-primary, .btn-outline-secondary, .btn-outline-info) {
+  background-color: transparent !important;
+  border-color: var(--vt-border-strong) !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .btn-outline:hover {
+  background-color: var(--vt-surface-2) !important;
+  border-color: transparent !important;
+  color: var(--vt-text-strong) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(.btn-outline-primary, .btn-outline-secondary, .btn-outline-info):hover {
+  background-color: var(--vt-surface-3) !important;
+  border-color: var(--vt-accent) !important;
+  color: var(--vt-text-strong) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .btn-outline-danger {
+  border-color: color-mix(
+    in srgb,
+    var(--vt-danger) 55%,
+    transparent
+  ) !important;
+  color: var(--vt-danger) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(.btn-light, .btn-default) {
+  background-color: var(--vt-surface-2) !important;
+  border-color: var(--vt-border-strong) !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(.btn-light, .btn-default):hover {
+  background-color: var(--vt-surface-3) !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .btn-primary {
+  background-color: var(--vt-accent-strong) !important;
+  border-color: var(--vt-accent-strong) !important;
+  color: #ffffff !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .btn-primary:hover {
+  background-color: var(--vt-accent) !important;
+  border-color: var(--vt-accent) !important;
+  color: #07131f !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .btn-secondary {
+  background-color: var(--vt-surface-2) !important;
+  border-color: var(--vt-border-strong) !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .btn-info {
+  background-color: color-mix(
+    in srgb,
+    var(--vt-info) 22%,
+    var(--vt-surface)
+  ) !important;
+  border-color: color-mix(in srgb, var(--vt-info) 45%, transparent) !important;
+  color: var(--vt-info) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .btn-success {
+  background-color: color-mix(
+    in srgb,
+    var(--vt-success) 20%,
+    var(--vt-surface)
+  ) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--vt-success) 45%,
+    transparent
+  ) !important;
+  color: var(--vt-success) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .btn-warning {
+  background-color: color-mix(
+    in srgb,
+    var(--vt-warning) 20%,
+    var(--vt-surface)
+  ) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--vt-warning) 45%,
+    transparent
+  ) !important;
+  color: var(--vt-warning) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .btn-danger {
+  background-color: color-mix(
+    in srgb,
+    var(--vt-danger) 20%,
+    var(--vt-surface)
+  ) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--vt-danger) 45%,
+    transparent
+  ) !important;
+  color: var(--vt-danger) !important;
+}
+
+/* ── Focus visibility ──────────────────────────────────────────────────── */
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(
+    a,
+    button,
+    .btn,
+    .nav-link,
+    .list-group-item,
+    .page-link,
+    .accordion-button,
+    .form-control,
+    .form-select,
+    input,
+    select,
+    textarea
+  ):focus-visible {
+  outline: 2px solid var(--vt-accent);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+/* ── Modals, dropdowns, offcanvas ──────────────────────────────────────── */
+
+html:is([data-theme='dark'], [data-theme='amoled']) .modal-content {
+  background-color: var(--vt-surface) !important;
+  border-color: var(--vt-border) !important;
+  color: var(--vt-text);
+  box-shadow: var(--vt-shadow);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(.modal-header, .modal-footer) {
+  background-color: var(--vt-surface-2) !important;
+  border-color: var(--vt-border) !important;
+  color: var(--vt-text-strong) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled']) .modal-body {
+  background-color: var(--vt-surface);
+  color: var(--vt-text);
+}
+
+/* blockUI reparents #popup under a body-level wrapper, outside the themed
+   content container. */
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(.blockUI, .blockOverlay, .blockMsg) {
+  background-color: transparent !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  .blockUI
+  :is(.card, .card-header, .card-body, .h6) {
+  background-color: var(--vt-surface) !important;
+  border-color: var(--vt-border) !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled']) .modal-backdrop {
+  background-color: #000000;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(.modal, #vtop-body-content, #top-hmenu-bar)
+  .btn-close {
+  filter: invert(1) grayscale(1) brightness(1.7);
+  opacity: 0.75;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(.modal, #vtop-body-content, #top-hmenu-bar)
+  .dropdown-menu {
+  background-color: var(--vt-surface) !important;
+  border-color: var(--vt-border) !important;
+  color: var(--vt-text);
+  box-shadow: var(--vt-shadow);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(.modal, #vtop-body-content, #top-hmenu-bar)
+  .dropdown-item {
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(.modal, #vtop-body-content, #top-hmenu-bar)
+  :is(.dropdown-item:hover, .dropdown-item:focus) {
+  background-color: var(--vt-surface-2) !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(.modal, #vtop-body-content, #top-hmenu-bar)
+  .dropdown-item.disabled {
+  color: var(--vt-text-faint) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(.modal, #vtop-body-content, #top-hmenu-bar)
+  .dropdown-divider {
+  border-color: var(--vt-border) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled']) .offcanvas {
+  background-color: var(--vt-surface) !important;
+  color: var(--vt-text);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled']) .spotlight-background {
+  background-color: transparent !important;
+}
+
+/* ── Nav, pagination, alerts, badges, progress ─────────────────────────── */
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(.nav-tabs, .nav-pills) {
+  border-color: var(--vt-border);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .nav-tabs
+  .nav-link {
+  color: var(--vt-text-muted);
+  border-color: transparent;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .nav-tabs
+  .nav-link:hover {
+  border-color: var(--vt-border);
+  color: var(--vt-text);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .nav-tabs
+  .nav-link.active {
+  background-color: var(--vt-surface) !important;
+  border-color: var(--vt-border) var(--vt-border) var(--vt-surface) !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .nav-pills
+  .nav-link {
+  color: var(--vt-text-muted);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .nav-pills
+  .nav-link:hover {
+  background-color: var(--vt-surface-2);
+  color: var(--vt-text);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .nav-pills
+  .nav-link.active {
+  background-color: var(--vt-accent-strong) !important;
+  color: #ffffff !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  .bootstrap3-iso
+  .nav-tabs
+  > li
+  > a {
+  color: var(--vt-text-muted);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  .bootstrap3-iso
+  .nav-tabs
+  > li.active
+  > a {
+  background-color: var(--vt-surface) !important;
+  border-color: var(--vt-border) !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  .bootstrap3-iso
+  .nav
+  > li
+  > a:hover {
+  background-color: var(--vt-surface-2);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .pagination
+  .page-link {
+  background-color: var(--vt-surface);
+  border-color: var(--vt-border);
+  color: var(--vt-link);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .pagination
+  .page-item.active
+  .page-link {
+  background-color: var(--vt-accent-strong);
+  border-color: var(--vt-accent-strong);
+  color: #ffffff;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  .bootstrap3-iso
+  .pagination
+  > li
+  > a {
+  background-color: var(--vt-surface);
+  border-color: var(--vt-border);
+  color: var(--vt-link);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  .bootstrap3-iso
+  .pagination
+  > .active
+  > a {
+  background-color: var(--vt-accent-strong);
+  border-color: var(--vt-accent-strong);
+  color: #ffffff;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .pagination
+  .page-link:is(:hover, :focus) {
+  background-color: var(--vt-surface-2);
+  border-color: var(--vt-border);
+  color: var(--vt-text-strong);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .pagination
+  .page-item.disabled
+  .page-link {
+  background-color: var(--vt-surface-2);
+  border-color: var(--vt-border);
+  color: var(--vt-text-faint);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  .bootstrap3-iso
+  .pagination
+  > li
+  > a:is(:hover, :focus) {
+  background-color: var(--vt-surface-2);
+  border-color: var(--vt-border);
+  color: var(--vt-text-strong);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  .bootstrap3-iso
+  .pagination
+  > .disabled
+  > :is(a, span) {
+  background-color: var(--vt-surface-2);
+  border-color: var(--vt-border);
+  color: var(--vt-text-faint);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .breadcrumb {
+  background-color: var(--vt-surface-2);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .alert-success {
+  background-color: var(--vt-success-soft);
+  border-color: color-mix(in srgb, var(--vt-success) 45%, transparent);
+  color: var(--vt-success);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .alert-info {
+  background-color: var(--vt-info-soft);
+  border-color: color-mix(in srgb, var(--vt-info) 45%, transparent);
+  color: var(--vt-info);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .alert-warning {
+  background-color: var(--vt-warning-soft);
+  border-color: color-mix(in srgb, var(--vt-warning) 45%, transparent);
+  color: var(--vt-warning);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .alert-danger {
+  background-color: var(--vt-danger-soft);
+  border-color: color-mix(in srgb, var(--vt-danger) 45%, transparent);
+  color: var(--vt-danger);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .alert-primary {
+  background-color: var(--vt-accent-soft);
+  border-color: color-mix(in srgb, var(--vt-accent) 45%, transparent);
+  color: var(--vt-accent);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(.alert-secondary, .alert-light, .alert-dark) {
+  background-color: var(--vt-surface-2);
+  border-color: var(--vt-border);
+  color: var(--vt-text);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(.badge, .label) {
+  background-color: var(--vt-surface-3);
+  color: var(--vt-text);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(.label-default, .label-light) {
+  background-color: var(--vt-surface-3);
+  color: var(--vt-text);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(.label-success, .badge.bg-success) {
+  background-color: color-mix(
+    in srgb,
+    var(--vt-success) 24%,
+    var(--vt-surface)
+  ) !important;
+  color: var(--vt-success) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(.label-warning, .badge.bg-warning) {
+  background-color: color-mix(
+    in srgb,
+    var(--vt-warning) 24%,
+    var(--vt-surface)
+  ) !important;
+  color: var(--vt-warning) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(.label-danger, .badge.bg-danger) {
+  background-color: color-mix(
+    in srgb,
+    var(--vt-danger) 24%,
+    var(--vt-surface)
+  ) !important;
+  color: var(--vt-danger) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(.label-info, .badge.bg-info) {
+  background-color: color-mix(
+    in srgb,
+    var(--vt-info) 24%,
+    var(--vt-surface)
+  ) !important;
+  color: var(--vt-info) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .progress {
+  background-color: var(--vt-surface-2);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .progress-bar {
+  background-color: var(--vt-accent-strong);
+  color: #ffffff;
+}
+
+/* ── VTOP custom palette classes ───────────────────────────────────────── */
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(.primaryColor1, .primaryColor2) {
+  color: var(--vt-accent) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .menuColor1 {
+  color: #e6a3a3 !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .hightlight1 {
+  color: var(--vt-gold) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .fontcolor1 {
+  color: var(--vt-link) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .fontcolor2 {
+  color: #b3b1ea !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .fontcolor3 {
+  color: #e8a3a3 !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .fontcolor4 {
+  color: #f0b07a !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .fontcolor5 {
+  color: var(--vt-gold) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(.textColor1, .textColor2) {
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(
+    .WhiteBackground,
+    .whitebackground,
+    .bgcolor,
+    .btnBarColor,
+    .websiteBackground,
+    .lightGoldenBackground,
+    .lightGoldenBorderBottom
+  ) {
+  background-color: var(--vt-surface) !important;
+  border-color: var(--vt-border) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .lightGoldenBorderBottom {
+  border-bottom-color: var(--vt-gold) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .menuHeaderColor {
+  background-color: var(--vt-surface-2) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .goldBackground {
+  background: linear-gradient(
+    90deg,
+    #2a2416,
+    #332b18,
+    #3a3119,
+    #2f2817
+  ) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  :is(.primaryBorderBottom, .primaryBorderTop) {
+  border-color: var(--vt-accent-strong) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .warningBorderTop {
+  border-color: var(--vt-warning) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .successBorderTop {
+  border-color: var(--vt-success) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, #top-hmenu-bar, .modal)
+  .dangerBorderTop {
+  border-color: var(--vt-danger) !important;
+}
+
+/* AdminLTE-style boxes and info boxes. */
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  :is(.box, .info-box) {
+  background: var(--vt-surface) !important;
+  color: var(--vt-text);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  .box-header {
+  color: var(--vt-text);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  :is(.box-footer, .info-box-icon) {
+  background-color: var(--vt-surface-2);
+  color: var(--vt-text);
+}
+
+/* ── VTOP legacy tables ────────────────────────────────────────────────── */
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  :is(
+    .customTable,
+    .customTable > tbody > tr > td,
+    .customTable > thead > tr > th,
+    .customTable-level1 tr,
+    .customTable-level1 > tbody > tr > :is(td, th)
+  ) {
+  border-color: transparent !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  :is(.customTable, .customTable-level1) {
+  background-color: transparent !important;
+}
+
+/* Inline row/cell colours on marks and attendance tables. Kept before the
+   header rules so tableHeader cells still win. */
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  :is(.customTable, .customTable-level1)
+  :is(td, th)[style*='background-color' i] {
+  background: var(--vt-surface-2) !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  .customTable
+  tr:is(.tableHeader, .panelHead) {
+  background: var(--vt-table-head) !important;
+  color: var(--vt-table-head-text) !important;
+}
+
+/* scrollableTable.css paints the header and alternate cells directly, so the
+   row rule alone is not enough. */
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  .customTable
+  tr:is(.tableHeader, .panelHead)
+  > :is(td, th) {
+  background: var(--vt-table-head) !important;
+  border-color: transparent !important;
+  border-bottom-color: var(--vt-border) !important;
+  color: var(--vt-table-head-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  .customTable
+  tr.alternateRow
+  > :is(td, th) {
+  background: var(--vt-surface-2) !important;
+  border-color: transparent !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  .customTable
+  tbody.scrollContent
+  tr.normalRow
+  > td {
+  background: var(--vt-surface) !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  .customTable
+  :is(tr.tableContent, tr.tableContent-level1)
+  > :is(td, th) {
+  background: transparent !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  :is(.customTable tr.tableContent, .customTable tr.tableContent-level1) {
+  background: var(--vt-surface) !important;
+  color: var(--vt-text);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  :is(
+    .customTable tr.alternateRow,
+    .customTable tr.editable,
+    .customTable-level1 tr.tableHeader-level1
+  ) {
+  background: var(--vt-surface-2) !important;
+  color: var(--vt-text);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  .customTable-level1
+  tr.tableHeader-level1
+  > :is(td, th) {
+  background: var(--vt-surface-2) !important;
+  border-color: transparent !important;
+  border-bottom-color: var(--vt-border) !important;
+  color: var(--vt-text-strong) !important;
+}
+
+/* No cell grid in legacy tables either; zebra separates the rows. */
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  :is(.customTable, .customTable-level1)
+  > tbody
+  > tr:nth-child(even):not(.tableHeader):not(.tableHeader-level1):not(
+    .panelHead
+  )
+  > :is(td, th) {
+  background-color: rgba(255, 255, 255, 0.018) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  .panelHead-secondary {
+  background: var(--vt-surface-2) !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  td.panelHead {
+  background: var(--vt-table-head) !important;
+  color: var(--vt-table-head-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  :is(div.scrollableContainer, div.fixedTableContainer) {
+  border-color: var(--vt-border) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  .glyphiconDefault {
+  color: var(--vt-accent);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  :is(#vtop-body-content, .modal)
+  .glyphiconDanger {
+  color: var(--vt-danger);
+}
+
+/* ── Horizontal menu bar ───────────────────────────────────────────────── */
+
+html:is([data-theme='dark'], [data-theme='amoled']) #top-hmenu-bar,
+html:is([data-theme='dark'], [data-theme='amoled'])
+  #top-hmenu-bar.horizontal-menu-color {
+  background-color: var(--vt-surface-2) !important;
+  border-bottom: 1px solid var(--vt-border) !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  #top-hmenu-bar
+  :is(.menuHeaderColor, .navbar-collapse) {
+  background-color: transparent !important;
+  border-color: var(--vt-border) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  #top-hmenu-bar
+  :is(.hmenuItem, .nav-link, .navbar-brand) {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  #top-hmenu-bar
+  .hmenuItem:hover,
+html:is([data-theme='dark'], [data-theme='amoled'])
+  #top-hmenu-bar
+  .hmenuItem:focus {
+  background-color: var(--vt-surface-3) !important;
+  border-radius: 6px !important;
+  color: var(--vt-text-strong) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  #top-hmenu-bar
+  .hmenuItem
+  :is(.primaryColor1, .primaryColor2, i) {
+  color: var(--vt-accent) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  #top-hmenu-bar
+  .menuBorderStyle {
+  border-bottom-color: var(--vt-border-strong) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  #top-hmenu-bar
+  :is(.overlay-window, .hmenubox) {
+  background-color: var(--vt-surface) !important;
+  color: var(--vt-text) !important;
+  border-bottom-color: var(--vt-gold) !important;
+  box-shadow: var(--vt-shadow) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  #top-hmenu-bar
+  :is(.overlay-window, .hmenubox)
+  :is(.card, .card-body, .card-header) {
+  background-color: transparent !important;
+  color: var(--vt-text);
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  #top-hmenu-bar
+  :is(.overlay-window, .hmenubox)
+  .h5 {
+  color: var(--vt-text) !important;
+}
+
+html:is([data-theme='dark'], [data-theme='amoled'])
+  #top-hmenu-bar
+  :is(.overlay-window, .hmenubox)
+  .border-md-end {
+  border-color: var(--vt-border) !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   COUNTER-INVERSION: Preserve original appearance for media and UI
-   ═══════════════════════════════════════════════════════════════════════ */
-
-/* 1. Images, photos, videos, canvases, embeds, iframes, and captchas */
-html[data-theme='dark'] img,
-html[data-theme='dark'] video,
-html[data-theme='dark'] canvas,
-html[data-theme='dark'] iframe,
-html[data-theme='dark'] embed,
-html[data-theme='dark'] object,
-html[data-theme='dark'] [data-no-invert],
-html[data-theme='amoled'] img,
-html[data-theme='amoled'] video,
-html[data-theme='amoled'] canvas,
-html[data-theme='amoled'] iframe,
-html[data-theme='amoled'] embed,
-html[data-theme='amoled'] object,
-html[data-theme='amoled'] [data-no-invert] {
-  filter: invert(1) hue-rotate(180deg) !important;
-}
-
-/* 2. Retop UI itself (#retop-host) and extension dialogs must retain their native theme */
-html[data-theme='dark'] #retop-host,
-html[data-theme='dark'] #retop-session-dialog,
-html[data-theme='dark'] #retop-boot-cloak,
-html[data-theme='dark'] #retop-early-cloak,
-html[data-theme='dark'] #retop-native-portals,
-html[data-theme='dark'] #retop-legacy-menu-search-wrapper,
-html[data-theme='dark'] #retop-vtop-search-menu,
-html[data-theme='dark'] #retop-hmenu-search-toggle,
-html[data-theme='amoled'] #retop-host,
-html[data-theme='amoled'] #retop-session-dialog,
-html[data-theme='amoled'] #retop-boot-cloak,
-html[data-theme='amoled'] #retop-early-cloak,
-html[data-theme='amoled'] #retop-native-portals,
-html[data-theme='amoled'] #retop-legacy-menu-search-wrapper,
-html[data-theme='amoled'] #retop-vtop-search-menu,
-html[data-theme='amoled'] #retop-hmenu-search-toggle {
-  filter: invert(1) hue-rotate(180deg) !important;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
-   CLASSIC VTOP MENU BAR & ENHANCEMENTS LAYOUT
+   CLASSIC VTOP MENU BAR & ENHANCEMENTS LAYOUT (non-theme)
    ═══════════════════════════════════════════════════════════════════════ */
 
 /* Horizontal Menu Bar & Single-Line Navbar Alignment */
@@ -74,6 +1946,10 @@ html[data-theme='amoled'] #retop-hmenu-search-toggle {
   align-items: center !important;
 }
 
+/* VTOP's current nav has a bare div.px-3 as the row; older builds used a
+   Bootstrap container. Only the first child is the row: the MG panes are
+   direct children too, and forcing display on them left every menu open. */
+#top-hmenu-bar > div:first-child,
 #top-hmenu-bar .container-fluid,
 #top-hmenu-bar .container {
   display: flex !important;
@@ -117,6 +1993,10 @@ html[data-theme='amoled'] #retop-hmenu-search-toggle {
     sans-serif !important;
   font-size: 14px !important;
   line-height: 1.4 !important;
+}
+
+#top-hmenu-bar .hmenuItem {
+  flex-shrink: 0 !important;
 }
 
 /* Horizontal Menu Bar & Menu Row Search */
@@ -184,29 +2064,32 @@ html[data-theme='amoled'] #retop-hmenu-search-toggle {
   color: #ffffff !important;
 }
 
-/* Revamped Old Menu Panes (MG0001 - MG0015, Overlay Windows) */
+/* Revamped old menu panes. Every pane carries .overlay-window / .hmenubox;
+   the old `[id^='MG']` catch-all also hit unrelated MG-prefixed nodes. */
 .overlay-window,
-.hmenubox,
-.WhiteBackground,
-[id^='MG'] {
+.hmenubox {
   max-height: calc(100vh - 120px) !important;
   overflow-y: auto !important;
   border-radius: 16px !important;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2) !important;
 }
 
+/* hmenu.css pins mobile panes to 900px, taller than the viewport. */
+#top-hmenu-bar .hmenubox {
+  min-height: 0 !important;
+  height: auto !important;
+}
+
 .overlay-window .list-group-item,
-.hmenubox .list-group-item,
-[id^='MG'] .list-group-item {
+.hmenubox .list-group-item {
   border-radius: 8px !important;
   margin-bottom: 2px !important;
   transition: all 0.1s ease !important;
 }
 
-/* Custom Scrollbars for Menu & Search Dropdowns */
+/* Custom scrollbars for menu panes and the menu search dropdown */
 .overlay-window::-webkit-scrollbar,
 .hmenubox::-webkit-scrollbar,
-[id^='MG']::-webkit-scrollbar,
 #retop-legacy-menu-search-dropdown::-webkit-scrollbar {
   width: 6px !important;
   height: 6px !important;
@@ -214,7 +2097,6 @@ html[data-theme='amoled'] #retop-hmenu-search-toggle {
 
 .overlay-window::-webkit-scrollbar-thumb,
 .hmenubox::-webkit-scrollbar-thumb,
-[id^='MG']::-webkit-scrollbar-thumb,
 #retop-legacy-menu-search-dropdown::-webkit-scrollbar-thumb {
   background: rgba(125, 125, 125, 0.35) !important;
   border-radius: 9999px !important;
@@ -222,7 +2104,6 @@ html[data-theme='amoled'] #retop-hmenu-search-toggle {
 
 .overlay-window::-webkit-scrollbar-thumb:hover,
 .hmenubox::-webkit-scrollbar-thumb:hover,
-[id^='MG']::-webkit-scrollbar-thumb:hover,
 #retop-legacy-menu-search-dropdown::-webkit-scrollbar-thumb:hover {
   background: rgba(125, 125, 125, 0.6) !important;
 }

@@ -48,6 +48,13 @@ const BYPASS_KEY = 'retop-login-bypass';
 /** URL fallback for the bypass marker, used when sessionStorage is unavailable. */
 const BYPASS_PARAM = 'retop_bypass';
 
+/** Mirrored by applyTheme() so the first paint can match the saved theme.
+ *  Keep in sync with src/utils/vtopThemeMirror.ts (this file must stay
+ *  import free). */
+const VTOP_THEME_KEY = 'retop_vtop_theme';
+/** Keep in sync with src/utils/retopIds.ts (import-free bootstrapper). */
+const DARK_STYLESHEET_ID = 'retop-dark-stylesheet';
+
 const DOCUMENT_SIZING_ID = 'retop-document-sizing';
 
 const RESET_ID = 'retop-shadow-reset';
@@ -125,6 +132,43 @@ function cloakNative(): void {
     }
   `;
   (document.head || document.documentElement).appendChild(style);
+}
+
+/**
+ * Applies the last resolved VTOP theme before VTOP's first paint. The full
+ * settings live in IndexedDB, which cannot answer at document_start, so
+ * applyTheme() mirrors just the resolved theme into localStorage.
+ *
+ * Without this the native page paints light and then flips to dark once the
+ * dashboard entry finishes reading settings.
+ */
+function applyEarlyVtopTheme(): void {
+  try {
+    const theme = localStorage.getItem(VTOP_THEME_KEY);
+
+    // No mirror yet: paint nothing rather than guessing 'dark'. A wrong guess
+    // sticks for light/none users until the dashboard resolves settings.
+    if (!theme) return;
+
+    if (theme === 'none') {
+      document.documentElement.removeAttribute('data-theme');
+      return;
+    }
+
+    if (theme !== 'dark' && theme !== 'amoled' && theme !== 'light') return;
+    document.documentElement.setAttribute('data-theme', theme);
+
+    if (
+      (theme === 'dark' || theme === 'amoled') &&
+      !document.getElementById(DARK_STYLESHEET_ID)
+    ) {
+      const link = document.createElement('link');
+      link.id = DARK_STYLESHEET_ID;
+      link.rel = 'stylesheet';
+      link.href = extUrl('vtop-dark.css');
+      (document.head || document.documentElement).appendChild(link);
+    }
+  } catch {}
 }
 
 /**
@@ -271,7 +315,7 @@ function revealNative(takenOver: boolean): void {
   // The dashboard entry publishes the full teardown (DOM, styles, patched
   // APIs, observers). Prefer it so there is exactly one teardown path; the
   // local list below is the fallback for when the entry never loaded.
-  const dismantle = (window as any).__retopDismantle;
+  const dismantle = window.__retopDismantle;
   if (typeof dismantle === 'function') {
     try {
       dismantle();
@@ -284,6 +328,7 @@ function revealNative(takenOver: boolean): void {
     }
   }
 
+  // Mirrors src/utils/retopIds.ts; content.ts must stay import free.
   const ids = [
     BOOT_CLOAK_ID,
     'retop-early-cloak',
@@ -291,7 +336,7 @@ function revealNative(takenOver: boolean): void {
     'retop-host',
     DOCUMENT_SIZING_ID,
     RESET_ID,
-    'retop-dark-stylesheet',
+    DARK_STYLESHEET_ID,
     'retop-global-css',
     'retop-material-symbols-style',
     'retop-native-portals',
@@ -602,6 +647,13 @@ function main(): void {
 
   const path = window.location.pathname;
 
+  // Paint the saved native-page theme in the first frame, before IDB is ready.
+  // Only authenticated routes get the native-page filter: the login takeover
+  // owns its own theme and aborts the parser, which could cancel the stylesheet.
+  if (matches(path, AUTH_ROUTES)) {
+    applyEarlyVtopTheme();
+  }
+
   // Recovery is delegated to VTOP's native login page; click its own link once
   // that page is parsed, and leave a way back to retop.
   if (matches(path, LOGIN_ROUTES)) {
@@ -644,7 +696,7 @@ function main(): void {
       );
       // The entry may still be starting up. Tell it to stop, or it would
       // mount the dashboard over the page we just handed back.
-      (window as any).__retopAborted = true;
+      window.__retopAborted = true;
       revealNative(false);
     };
 

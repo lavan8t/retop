@@ -149,7 +149,7 @@ export const SyncSection: React.FC<SyncSectionProps> = ({
             <button
               onClick={handleGoogleSync}
               disabled={googleBusy}
-              className="min-h-12 px-6 py-2.5 rounded-full text-xs font-black uppercase bg-(--md-sys-color-error) text-(--md-sys-color-on-error) outline-none focus-visible:ring-2 focus-visible:ring-(--md-sys-color-error) transition-all border-0 cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="min-h-12 px-6 py-2.5 rounded-full text-xs font-black uppercase bg-(--accent-base) text-(--text-inverse) outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) transition-all border-0 cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {googleBusy ? 'Syncing…' : 'Sync to Google Calendar'}
             </button>

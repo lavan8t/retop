@@ -35,9 +35,7 @@ import { getDestinationView, getSavedView } from '../utils/routes';
 import { TopBar } from '../components/layout/TopBar';
 import { ContentRouter } from '../components/layout/ContentRouter';
 import {
-  NavigationShell,
   getPageTitle,
-  DISPLAY_LARGE_CLASS,
   CONTENT_WIDTH_CLASS,
   isFullWidthView,
 } from '../components/layout/appShell';
@@ -230,7 +228,6 @@ export const DashboardApp = () => {
   >([]);
   const [isOmniboxOpen, setIsOmniboxOpen] = useState(false);
   const [omniboxInitial, setOmniboxInitial] = useState('');
-  const [isNavOpen, setIsNavOpen] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const { settings, updateSetting } = useSettings();
@@ -245,10 +242,6 @@ export const DashboardApp = () => {
     ttViewMode,
     setTtViewMode,
   } = useAppStore();
-
-  useEffect(() => {
-    setIsNavOpen(false);
-  }, [currentView]);
 
   const [contentTitle, setContentTitle] = useState('');
   const [hasSlideCompleted, setHasSlideCompleted] = useState(false);
@@ -1096,16 +1089,10 @@ export const DashboardApp = () => {
         }`}
       >
         <div className="flex flex-col h-full pointer-events-auto overflow-hidden">
-          <NavigationShell
-            currentView={currentView}
-            open={isNavOpen}
-            onClose={() => setIsNavOpen(false)}
-            onNavigate={navigateToView}
-          />
           <TopBar
             currentView={currentView}
+            contentTitle={contentTitle}
             showProfileMenu={showProfileMenu}
-            onOpenNav={() => setIsNavOpen(true)}
             setShowProfileMenu={setShowProfileMenu}
             handleLinkClick={handleLinkClick}
             handleLogout={handleLogout}
@@ -1136,39 +1123,32 @@ export const DashboardApp = () => {
             }}
             network={networkRef.current}
           />
-          <main className="flex-1 overflow-hidden relative pt-16 sm:pt-18 md:pt-20 min-[600px]:pl-20">
+          <main className="flex-1 overflow-hidden relative">
             <div
-              className={`flex h-full flex-col ${
+              className={`relative h-full ${
                 isFullWidthView(currentView) ? '' : CONTENT_WIDTH_CLASS
               }`}
             >
-              <div className="shrink-0 px-4 pb-1 sm:px-6">
-                <h1 className={DISPLAY_LARGE_CLASS}>
-                  {getPageTitle(currentView, contentTitle)}
-                </h1>
-              </div>
-              <div className="relative min-h-0 flex-1">
-                <div
-                  key={currentView}
-                  className="absolute inset-0 flex h-full w-full flex-col overflow-hidden animate-page-crossfade"
-                >
-                  <ContentRouter
-                    currentView={currentView}
-                    networkRef={networkRef}
-                    settings={settings}
-                    updateSetting={updateSetting}
-                    menu={menu}
-                    handleLinkClick={handleLinkClick}
-                    events={events}
-                    spotlightCategories={spotlightCategories}
-                    upcoming={upcoming}
-                    pinnedLinks={pinnedLinks}
-                    handleTogglePin={handleTogglePin}
-                    onSync={() => {
-                      handleSyncCurrentView().catch(console.warn);
-                    }}
-                  />
-                </div>
+              <div
+                key={currentView}
+                className="absolute inset-0 flex h-full w-full flex-col overflow-hidden animate-page-crossfade"
+              >
+                <ContentRouter
+                  currentView={currentView}
+                  networkRef={networkRef}
+                  settings={settings}
+                  updateSetting={updateSetting}
+                  menu={menu}
+                  handleLinkClick={handleLinkClick}
+                  events={events}
+                  spotlightCategories={spotlightCategories}
+                  upcoming={upcoming}
+                  pinnedLinks={pinnedLinks}
+                  handleTogglePin={handleTogglePin}
+                  onSync={() => {
+                    handleSyncCurrentView().catch(console.warn);
+                  }}
+                />
               </div>
             </div>
           </main>

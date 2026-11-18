@@ -324,7 +324,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
   }, [calGridData]);
 
   return (
-    <div className="h-full w-full flex flex-col bg-(--bg-main) font-mono text-(--text-main) overflow-hidden px-1 sm:px-3 md:px-6 max-w-425 mx-auto">
+    <div className="h-full w-full flex flex-col bg-(--bg-main) text-(--text-main) overflow-hidden px-1 sm:px-3 md:px-6 max-w-425 mx-auto">
       {calLoadingMonths ? (
         <div className="flex-1 flex flex-col pt-32 pb-8 px-2 animate-pulse min-h-0 h-full overflow-hidden">
           <div className="flex-1 grid grid-cols-7 gap-1 sm:gap-1.5 md:gap-2 auto-rows-[minmax(38px,auto)] sm:auto-rows-[minmax(50px,auto)] md:auto-rows-[minmax(64px,auto)]">
@@ -343,7 +343,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
             <OfflineNotSynced pageName="Academic Calendar" />
           ) : (
             <EmptyState
-              msg="No Calendar Data"
+              msg="No calendar data"
               subMsg="The calendar grid for this semester could not be fetched or does not exist yet."
               icon={CalendarIcon}
             />
@@ -359,7 +359,9 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
                   <div
                     key={day}
                     className={`text-center font-expanded font-black text-[10px] sm:text-xs md:text-sm uppercase tracking-normal sm:tracking-widest ${
-                      i === 0 ? 'text-att-danger' : 'text-(--text-muted)'
+                      i === 0
+                        ? 'text-(--md-sys-color-error)'
+                        : 'text-(--text-muted)'
                     }`}
                   >
                     {day}

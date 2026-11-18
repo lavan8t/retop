@@ -166,7 +166,7 @@ const SeatMapPopoverCard = ({
       }}
       className="z-999999 p-3.5 rounded-2xl bg-(--bg-surface) border-2 border-(--border-main) popup-shadow shadow-2xl flex flex-col gap-2.5 w-65 text-(--text-main) pointer-events-none transition-all duration-150 ease-in-out animate-popup-open"
     >
-      <div className="w-full text-center py-0.5 rounded bg-(--bg-main) border border-(--border-dim)/40 text-[8px] font-mono font-bold uppercase text-(--text-muted)">
+      <div className="w-full text-center py-0.5 rounded bg-(--bg-main) border border-(--border-dim)/40 text-[8px] font-bold uppercase text-(--text-muted)">
         FRONT / BOARD
       </div>
 
@@ -247,7 +247,7 @@ const ExamCardM3 = ({
             ref={triggerRef}
             onMouseEnter={() => setShowSeatMap(true)}
             onMouseLeave={() => setShowSeatMap(false)}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-transparent border border-(--border-dim)/60 text-(--text-main) text-xs font-mono font-bold cursor-pointer hover:bg-(--bg-main) transition-all relative"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-transparent border border-(--border-dim)/60 text-(--text-main) text-xs font-bold cursor-pointer hover:bg-(--bg-main) transition-all relative"
           >
             <LocationOn className="w-3.5 h-3.5 text-(--accent-base) shrink-0" />
             <span>{entry.venue || 'Venue TBA'}</span>
@@ -656,7 +656,7 @@ export const ExamSchedulePage: React.FC<ExamSchedulePageProps> = ({
                     {doneEntries.length > 0 && (
                       <button
                         onClick={() => setShowDone((v) => !v)}
-                        className="flex items-center gap-2 text-xs font-mono text-(--text-muted) hover:text-(--text-main) cursor-pointer py-2 group w-full max-w-2xl transition-colors"
+                        className="flex items-center gap-2 text-xs text-(--text-muted) hover:text-(--text-main) cursor-pointer py-2 group w-full max-w-2xl transition-colors"
                       >
                         <span className="flex-1 h-px bg-(--border-dim)/50 group-hover:bg-(--border-dim)" />
                         <span className="shrink-0 font-bold">
@@ -679,7 +679,7 @@ export const ExamSchedulePage: React.FC<ExamSchedulePageProps> = ({
           ) : (
             <EmptyState
               icon={Event}
-              msg="No Exams Scheduled"
+              msg="No exams scheduled"
               subMsg="Could not find any exam schedule entries for the selected category or semester."
             />
           )}

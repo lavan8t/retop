@@ -687,27 +687,43 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
                 onChange={handleEventTypeChange}
               />
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-(--text-muted) flex items-center gap-1">
+                <label
+                  htmlFor="lh-details"
+                  className="text-xs font-semibold text-(--text-muted) flex items-center gap-1"
+                >
                   Brief Work Summary
-                  <span className="text-red-400 font-bold">*</span>
+                  <span className="text-xs font-medium text-(--text-muted)">
+                    (Required)
+                  </span>
                 </label>
                 <input
+                  id="lh-details"
                   type="text"
                   value={details}
+                  aria-invalid={touched.details && !!errors.details}
+                  aria-describedby={
+                    touched.details && errors.details
+                      ? 'lh-details-error'
+                      : undefined
+                  }
                   onChange={(e) => {
                     setDetails(e.target.value);
                     touch('details');
                   }}
                   onBlur={() => touch('details')}
                   placeholder="e.g. Project prototype testing & validation"
-                  className={`w-full h-11 px-4 rounded-2xl bg-(--bg-surface) border text-sm font-medium text-(--text-main) placeholder:text-(--text-muted)/50 focus:outline-none transition-all ${
+                  className={`w-full min-h-12 px-4 rounded-2xl bg-(--bg-surface) border text-sm font-medium text-(--text-main) placeholder:text-(--text-muted)/50 outline-none focus-visible:ring-2 transition-all ${
                     touched.details && errors.details
-                      ? 'border-red-500/70 focus:ring-2 focus:ring-red-500/30'
-                      : 'border-(--border-dim)/50 focus:border-(--accent-base) focus:ring-2 focus:ring-(--accent-base)/20'
+                      ? 'border-(--md-sys-color-error) focus-visible:ring-(--md-sys-color-error)'
+                      : 'border-(--border-dim)/50 focus-visible:border-(--accent-base) focus-visible:ring-(--accent-base)'
                   }`}
                 />
                 {touched.details && errors.details && (
-                  <span className="text-[10px] font-bold text-red-400">
+                  <span
+                    id="lh-details-error"
+                    role="alert"
+                    className="text-xs font-medium text-(--md-sys-color-error)"
+                  >
                     {errors.details}
                   </span>
                 )}
@@ -719,14 +735,26 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
               {/* From Date & Time */}
               <div className="flex flex-col gap-3">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-(--text-muted) flex items-center gap-1">
+                  <label
+                    htmlFor="lh-from-date"
+                    className="text-xs font-semibold text-(--text-muted) flex items-center gap-1"
+                  >
                     From Date
-                    <span className="text-red-400 font-bold">*</span>
+                    <span className="text-xs font-medium text-(--text-muted)">
+                      (Required)
+                    </span>
                   </label>
                   <input
+                    id="lh-from-date"
                     type="date"
                     min={todayStr}
                     value={fromDate}
+                    aria-invalid={touched.fromDate && !!errors.fromDate}
+                    aria-describedby={
+                      touched.fromDate && errors.fromDate
+                        ? 'lh-from-date-error'
+                        : undefined
+                    }
                     onChange={(e) => {
                       setFromDate(e.target.value);
                       touch('fromDate');
@@ -735,14 +763,18 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
                       }
                     }}
                     onBlur={() => touch('fromDate')}
-                    className={`w-full h-11 px-4 rounded-2xl bg-(--bg-surface) border text-sm font-medium text-(--text-main) focus:outline-none transition-all ${
+                    className={`w-full min-h-12 px-4 rounded-2xl bg-(--bg-surface) border text-sm font-medium text-(--text-main) outline-none focus-visible:ring-2 transition-all ${
                       touched.fromDate && errors.fromDate
-                        ? 'border-red-500/70 focus:ring-2 focus:ring-red-500/30'
-                        : 'border-(--border-dim)/50 focus:border-(--accent-base) focus:ring-2 focus:ring-(--accent-base)/20'
+                        ? 'border-(--md-sys-color-error) focus-visible:ring-(--md-sys-color-error)'
+                        : 'border-(--border-dim)/50 focus-visible:border-(--accent-base) focus-visible:ring-(--accent-base)'
                     }`}
                   />
                   {touched.fromDate && errors.fromDate && (
-                    <span className="text-[10px] font-bold text-red-400">
+                    <span
+                      id="lh-from-date-error"
+                      role="alert"
+                      className="text-xs font-medium text-(--md-sys-color-error)"
+                    >
                       {errors.fromDate}
                     </span>
                   )}
@@ -763,27 +795,43 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
               {/* To Date & Time */}
               <div className="flex flex-col gap-3">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-(--text-muted) flex items-center gap-1">
+                  <label
+                    htmlFor="lh-to-date"
+                    className="text-xs font-semibold text-(--text-muted) flex items-center gap-1"
+                  >
                     To Date
-                    <span className="text-red-400 font-bold">*</span>
+                    <span className="text-xs font-medium text-(--text-muted)">
+                      (Required)
+                    </span>
                   </label>
                   <input
+                    id="lh-to-date"
                     type="date"
                     min={fromDate || todayStr}
                     value={toDate}
+                    aria-invalid={touched.toDate && !!errors.toDate}
+                    aria-describedby={
+                      touched.toDate && errors.toDate
+                        ? 'lh-to-date-error'
+                        : undefined
+                    }
                     onChange={(e) => {
                       setToDate(e.target.value);
                       touch('toDate');
                     }}
                     onBlur={() => touch('toDate')}
-                    className={`w-full h-11 px-4 rounded-2xl bg-(--bg-surface) border text-sm font-medium text-(--text-main) focus:outline-none transition-all ${
+                    className={`w-full min-h-12 px-4 rounded-2xl bg-(--bg-surface) border text-sm font-medium text-(--text-main) outline-none focus-visible:ring-2 transition-all ${
                       touched.toDate && errors.toDate
-                        ? 'border-red-500/70 focus:ring-2 focus:ring-red-500/30'
-                        : 'border-(--border-dim)/50 focus:border-(--accent-base) focus:ring-2 focus:ring-(--accent-base)/20'
+                        ? 'border-(--md-sys-color-error) focus-visible:ring-(--md-sys-color-error)'
+                        : 'border-(--border-dim)/50 focus-visible:border-(--accent-base) focus-visible:ring-(--accent-base)'
                     }`}
                   />
                   {touched.toDate && errors.toDate && (
-                    <span className="text-[10px] font-bold text-red-400">
+                    <span
+                      id="lh-to-date-error"
+                      role="alert"
+                      className="text-xs font-medium text-(--md-sys-color-error)"
+                    >
                       {errors.toDate}
                     </span>
                   )}
@@ -807,10 +855,11 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
 
             {submitMsg && (
               <div
+                role={submitMsg.ok ? 'status' : 'alert'}
                 className={`p-3.5 rounded-2xl font-semibold text-xs flex items-center gap-2.5 ${
                   submitMsg.ok
-                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                    : 'bg-red-500/15 text-red-400 border border-red-500/30'
+                    ? 'bg-(--md-sys-color-success-container) text-(--md-sys-color-on-success-container) border border-(--md-sys-color-success)/30'
+                    : 'bg-(--md-sys-color-error-container) text-(--md-sys-color-on-error-container) border border-(--md-sys-color-error)/30'
                 }`}
               >
                 {submitMsg.ok ? (
@@ -869,7 +918,7 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
             ) : (
               <EmptyState
                 icon={HourglassEmpty}
-                msg="No Active Requests"
+                msg="No active requests"
                 subMsg="You do not have any pending or active late hour requests."
               />
             )}
@@ -895,7 +944,7 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
             ) : (
               <EmptyState
                 icon={History}
-                msg="No Permission History"
+                msg="No permission history"
                 subMsg="Previous late hour requests will show up here."
               />
             )}

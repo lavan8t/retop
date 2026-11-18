@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useId } from 'react';
 import { VTOPNetwork } from '../../utils/network';
 import { CourseMarks } from '../../types/vtop';
 import { parseStudentMarks } from '../../parsers/marks';
@@ -29,6 +29,9 @@ export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
   const [loading, setLoading] = useState(true);
   const [hypotheticalFAT, setHypotheticalFAT] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const uid = useId();
+  const fatInputId = `${uid}-fat`;
+  const fatErrorId = `${uid}-fat-error`;
 
   useEffect(() => {
     if (!isLatestSem) {
@@ -99,6 +102,9 @@ export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
       : '0.0';
 
   const fatInput = parseFloat(hypotheticalFAT) || 0;
+  const fatInvalid =
+    hypotheticalFAT !== '' &&
+    (isNaN(fatInput) || fatInput < 0 || fatInput > 100);
   // FAT is usually scaled to 40% if max is 100
   const fatScaled = (fatInput / 100) * 40;
   const totalScore = totalInternalScored + fatScaled;
@@ -159,31 +165,51 @@ export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
               <span className="text-sm font-bold text-content-muted uppercase">
                 Current Internal Marks
               </span>
-              <span className="font-black text-cyan-400 text-xl font-mono">
+              <span className="font-black text-(--color-info) text-xl font-mono">
                 {internalScoreStr}{' '}
-                <span className="text-sm text-content-dim">/ 60</span>
+                <span className="text-sm text-(--text-muted)">/ 60</span>
               </span>
             </div>
 
             {totalInternalWeightage >= 60 ? (
               <div className="bg-(--bg-main) p-4 rounded-2xl flex flex-col gap-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-bold text-content-muted uppercase">
-                    Hypothetical FAT Score
-                  </span>
-                  <span className="text-xs font-bold text-content-dim bg-surface px-2 py-1 rounded border border-border-default">
+                  <label
+                    htmlFor={fatInputId}
+                    className="text-sm font-bold text-(--text-muted) uppercase"
+                  >
+                    Hypothetical FAT Score{' '}
+                    <span className="text-xs font-medium normal-case">
+                      (Required)
+                    </span>
+                  </label>
+                  <span className="text-xs font-bold text-(--text-muted) bg-(--bg-surface) px-2 py-1 rounded border border-(--border-dim)">
                     Out of 100
                   </span>
                 </div>
                 <input
+                  id={fatInputId}
                   type="number"
                   min="0"
                   max="100"
+                  aria-invalid={fatInvalid}
+                  aria-describedby={fatInvalid ? fatErrorId : undefined}
                   placeholder="Enter FAT Score (e.g. 75)"
-                  className="w-full bg-(--bg-surface) rounded-xl px-4 py-3 font-mono text-(--text-main) text-lg focus:outline-none focus:ring-2 focus:ring-(--accent-base) transition-all placeholder:text-zinc-600 placeholder:text-sm"
+                  className={`w-full min-h-12 bg-(--bg-surface) rounded-xl px-4 py-3 font-mono text-(--text-main) text-lg outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) transition-all placeholder:text-(--text-dim) placeholder:text-sm ${
+                    fatInvalid ? 'border-2 border-(--md-sys-color-error)' : ''
+                  }`}
                   value={hypotheticalFAT}
                   onChange={(e) => setHypotheticalFAT(e.target.value)}
                 />
+                {fatInvalid && (
+                  <p
+                    id={fatErrorId}
+                    role="alert"
+                    className="text-xs font-medium text-(--md-sys-color-error)"
+                  >
+                    Enter a score between 0 and 100.
+                  </p>
+                )}
               </div>
             ) : (
               <div className="bg-(--bg-main) p-4 rounded-2xl flex items-center justify-center text-center border-2 border-dashed border-border-dim">
@@ -196,27 +222,27 @@ export const WhatIfGradeCalculator: React.FC<WhatIfGradeCalculatorProps> = ({
           </div>
           {totalInternalWeightage >= 60 && hypotheticalFAT !== '' && (
             <div
-              className={`w-full lg:w-48 shrink-0 rounded-3xl p-5 flex flex-col items-center justify-center text-center transition-all duration-fast ${isPass ? 'bg-card-lime' : 'bg-att-danger'} shadow-none border-2 border-(--border-main)`}
+              className={`w-full lg:w-48 shrink-0 rounded-3xl p-5 flex flex-col items-center justify-center text-center transition-all duration-fast ${
+                isPass
+                  ? 'bg-(--md-sys-color-success-container) text-(--md-sys-color-on-success-container)'
+                  : 'bg-(--md-sys-color-error-container) text-(--md-sys-color-on-error-container)'
+              } shadow-none border-2 border-(--border-main)`}
             >
               <div className="mt-4 flex flex-col gap-1 w-full text-left">
-                <div
-                  className={`text-[10px] font-bold uppercase flex justify-between items-center ${isPassingFAT ? 'text-black/70' : 'text-black'}`}
-                >
+                <div className="text-xs font-bold uppercase flex justify-between items-center">
                   <span>FAT &gt;= 40</span>
                   {isPassingFAT ? (
                     <CheckCircle className="w-3 h-3" />
                   ) : (
-                    <Error className="w-3 h-3 text-att-danger" />
+                    <Error className="w-3 h-3" />
                   )}
                 </div>
-                <div
-                  className={`text-[10px] font-bold uppercase flex justify-between items-center ${isPassingTotal ? 'text-black/70' : 'text-black'}`}
-                >
+                <div className="text-xs font-bold uppercase flex justify-between items-center">
                   <span>Total &gt;= 50</span>
                   {isPassingTotal ? (
                     <CheckCircle className="w-3 h-3" />
                   ) : (
-                    <Error className="w-3 h-3 text-att-danger" />
+                    <Error className="w-3 h-3" />
                   )}
                 </div>
               </div>

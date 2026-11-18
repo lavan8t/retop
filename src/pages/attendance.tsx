@@ -19,6 +19,7 @@ import {
 import { Pill } from '../components/ui/Pill';
 import { DetailedAttendanceCourse } from '../types/vtop';
 import { useCourseAttendanceForecast } from '../hooks/useCourseAttendanceForecast';
+import { SelectableRow } from '../components/ui/SelectableRow';
 
 const AttendanceCalculator = ({
   course,
@@ -86,9 +87,9 @@ const AttendanceCalculator = ({
         <div className="flex justify-end">
           <button
             onClick={handleReset}
-            className="flex items-center gap-1 text-[10px] uppercase font-mono font-bold bg-(--color-surface-container) hover:bg-(--color-surface-container-high) text-(--color-on-surface) px-2.5 py-1 rounded-full transition-colors cursor-pointer border border-(--color-outline-variant)"
+            className="flex items-center gap-1 text-[10px] uppercase font-bold bg-(--bg-highlight) hover:bg-(--bg-highlight) text-(--text-main) px-2.5 py-1 rounded-full transition-colors cursor-pointer border border-(--border-dim)"
           >
-            <Refresh className="w-3 h-3 text-(--color-primary)" />
+            <Refresh className="w-3 h-3 text-(--accent-base)" />
             Reset
           </button>
         </div>
@@ -104,7 +105,7 @@ const AttendanceCalculator = ({
               cx="70"
               cy="70"
               r={circleRadius}
-              className="stroke-(--color-surface-container-high)"
+              className="stroke-(--bg-highlight)"
               strokeWidth="15"
               fill="none"
             />
@@ -129,26 +130,24 @@ const AttendanceCalculator = ({
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 w-full text-xs font-mono">
-          <div className="flex justify-between items-center bg-(--color-surface-container-low) px-3.5 py-2 rounded-xl border border-(--color-outline-variant)">
-            <span className="text-(--color-on-surface-variant)">
-              Conducted So Far
-            </span>
-            <span className="font-bold text-(--color-on-surface)">
+        <div className="flex flex-col gap-2 w-full text-xs">
+          <div className="flex justify-between items-center bg-(--bg-highlight) px-3.5 py-2 rounded-xl border border-(--border-dim)">
+            <span className="text-(--text-muted)">Conducted So Far</span>
+            <span className="font-bold font-mono text-(--text-main)">
               {conductedSoFar}
             </span>
           </div>
-          <div className="flex justify-between items-center bg-(--color-surface-container-low) px-3.5 py-2 rounded-xl border border-(--color-outline-variant)">
-            <span className="text-(--color-on-surface-variant)">
-              Attended So Far
+          <div className="flex justify-between items-center bg-(--bg-highlight) px-3.5 py-2 rounded-xl border border-(--border-dim)">
+            <span className="text-(--text-muted)">Attended So Far</span>
+            <span className="font-bold font-mono text-(--accent-base)">
+              {present}
             </span>
-            <span className="font-bold text-(--color-primary)">{present}</span>
           </div>
-          <div className="flex justify-between items-center bg-(--color-surface-container-low) px-3.5 py-2 rounded-xl border border-(--color-outline-variant)">
-            <span className="text-(--color-on-surface-variant)">
+          <div className="flex justify-between items-center bg-(--bg-highlight) px-3.5 py-2 rounded-xl border border-(--border-dim)">
+            <span className="text-(--text-muted)">
               Left before {forecast?.examName || 'Exams'}
             </span>
-            <span className="font-bold text-(--color-on-surface)">
+            <span className="font-bold font-mono text-(--text-main)">
               {remainingClasses}
             </span>
           </div>
@@ -156,8 +155,8 @@ const AttendanceCalculator = ({
       </div>
 
       {forecast && (
-        <div className="p-3 rounded-2xl bg-(--color-surface-container-low) text-xs font-mono flex items-center justify-between gap-2 border border-(--color-outline-variant)">
-          <span className="text-(--color-on-surface-variant)">
+        <div className="p-3 rounded-2xl bg-(--bg-highlight) text-xs flex items-center justify-between gap-2 border border-(--border-dim)">
+          <span className="text-(--text-muted)">
             {forecast.status === 'CRITICAL'
               ? `Need ${
                   forecast.classesNeededBeforeExam || forecast.requiredToPass
@@ -181,14 +180,14 @@ const AttendanceCalculator = ({
       )}
 
       <div className="flex gap-3 justify-center pt-1">
-        <div className="flex-1 flex flex-col items-center bg-(--color-surface-container-low) rounded-2xl p-2.5 border border-(--color-outline-variant)">
-          <span className="text-[10px] font-mono font-bold uppercase text-(--color-on-surface-variant) mb-1">
+        <div className="flex-1 flex flex-col items-center bg-(--bg-highlight) rounded-2xl p-2.5 border border-(--border-dim)">
+          <span className="text-[10px] font-bold uppercase text-(--text-muted) mb-1">
             Attend
           </span>
           <div className="flex items-center gap-3">
             <button
               onClick={decreaseAttend}
-              className="w-7 h-7 flex items-center justify-center bg-(--color-surface) rounded-full active:scale-90 transition-transform text-(--color-on-surface) cursor-pointer border border-(--color-outline)"
+              className="w-7 h-7 flex items-center justify-center bg-(--bg-surface) rounded-full active:scale-90 transition-transform text-(--text-main) cursor-pointer border border-(--border-main)"
             >
               <Remove className="w-3.5 h-3.5" />
             </button>
@@ -197,21 +196,21 @@ const AttendanceCalculator = ({
             </span>
             <button
               onClick={increaseAttend}
-              className="w-7 h-7 flex items-center justify-center bg-(--color-surface) rounded-full active:scale-90 transition-transform text-(--color-on-surface) cursor-pointer border border-(--color-outline)"
+              className="w-7 h-7 flex items-center justify-center bg-(--bg-surface) rounded-full active:scale-90 transition-transform text-(--text-main) cursor-pointer border border-(--border-main)"
             >
               <Add className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col items-center bg-(--color-surface-container-low) rounded-2xl p-2.5 border border-(--color-outline-variant)">
-          <span className="text-[10px] font-mono font-bold uppercase text-(--color-on-surface-variant) mb-1">
+        <div className="flex-1 flex flex-col items-center bg-(--bg-highlight) rounded-2xl p-2.5 border border-(--border-dim)">
+          <span className="text-[10px] font-bold uppercase text-(--text-muted) mb-1">
             Bunk
           </span>
           <div className="flex items-center gap-3">
             <button
               onClick={decreaseBunk}
-              className="w-7 h-7 flex items-center justify-center bg-(--color-surface) rounded-full active:scale-90 transition-transform text-(--color-on-surface) cursor-pointer border border-(--color-outline)"
+              className="w-7 h-7 flex items-center justify-center bg-(--bg-surface) rounded-full active:scale-90 transition-transform text-(--text-main) cursor-pointer border border-(--border-main)"
             >
               <Remove className="w-3.5 h-3.5" />
             </button>
@@ -220,7 +219,7 @@ const AttendanceCalculator = ({
             </span>
             <button
               onClick={increaseBunk}
-              className="w-7 h-7 flex items-center justify-center bg-(--color-surface) rounded-full active:scale-90 transition-transform text-(--color-on-surface) cursor-pointer border border-(--color-outline)"
+              className="w-7 h-7 flex items-center justify-center bg-(--bg-surface) rounded-full active:scale-90 transition-transform text-(--text-main) cursor-pointer border border-(--border-main)"
             >
               <Add className="w-3.5 h-3.5" />
             </button>
@@ -257,15 +256,18 @@ const CourseCard = ({
   }
 
   return (
-    <div
-      className={`relative flex items-center justify-between py-2 px-3.5 rounded-2xl overflow-hidden transition-all duration-fast cursor-pointer group select-none border border-(--border-dim)/40 ${
+    <SelectableRow
+      label={`${course.courseTitle}, ${course.courseCode}, ${course.percentage} attendance`}
+      selected={isSelected}
+      onActivate={onClick}
+      className={`relative flex items-center justify-between py-2 px-3.5 rounded-2xl overflow-hidden transition-all duration-fast group select-none border border-(--border-dim)/40 ${
         isSelected
           ? 'bg-(--accent-base)/15 border-(--accent-base)/40'
           : 'bg-(--bg-surface)/60 hover:bg-(--bg-highlight)'
       }`}
-      onClick={onClick}
     >
       <div
+        aria-hidden="true"
         className={`absolute top-0 left-0 h-full ${barColor} transition-all duration-fast opacity-60`}
         style={{ width: `${course.percentage}%` }}
       />
@@ -278,16 +280,16 @@ const CourseCard = ({
               <Pill variant="error">Debarred</Pill>
             )}
           </div>
-          <span className="text-base md:text-lg font-black leading-tight font-expanded transition-colors text-(--color-on-surface) wrap-break-word">
+          <span className="text-base md:text-lg font-black leading-tight font-expanded transition-colors text-(--text-main) wrap-break-word">
             {course.courseTitle}
           </span>
         </div>
       </div>
 
-      <div className={`relative z-10 shrink-0`}>
+      <div className="relative z-10 shrink-0">
         <Pill variant={badgeVariant}>{course.percentage}%</Pill>
       </div>
-    </div>
+    </SelectableRow>
   );
 };
 
@@ -361,7 +363,7 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
 
   if (attLoading) {
     return (
-      <div className="h-full w-full bg-(--color-surface) overflow-hidden flex">
+      <div className="h-full w-full bg-(--bg-surface) overflow-hidden flex">
         <div className="flex-1 flex w-full max-w-7xl mx-auto h-full">
           {/* Mirrors the loaded layout: same column width, same top spacer,
               course cards only — the page has no heading of its own. */}
@@ -370,14 +372,14 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
             {[...Array(6)].map((_, i) => (
               <div
                 key={i}
-                className="h-20 bg-(--color-surface-container) rounded-2xl animate-pulse"
+                className="h-20 bg-(--bg-highlight) rounded-2xl animate-pulse"
               />
             ))}
           </div>
-          <div className="w-full lg:w-1/2 hidden lg:flex flex-col px-4 md:px-6 lg:px-8 space-y-6 pt-25 border-l border-(--color-outline-variant)">
-            <div className="h-10 w-2/3 bg-(--color-surface-container) rounded animate-pulse" />
-            <div className="h-64 w-full bg-(--color-surface-container) rounded-3xl animate-pulse" />
-            <div className="h-24 w-full bg-(--color-surface-container) rounded-3xl animate-pulse" />
+          <div className="w-full lg:w-1/2 hidden lg:flex flex-col px-4 md:px-6 lg:px-8 space-y-6 pt-25 border-l border-(--border-dim)">
+            <div className="h-10 w-2/3 bg-(--bg-highlight) rounded animate-pulse" />
+            <div className="h-64 w-full bg-(--bg-highlight) rounded-3xl animate-pulse" />
+            <div className="h-24 w-full bg-(--bg-highlight) rounded-3xl animate-pulse" />
           </div>
         </div>
       </div>
@@ -394,11 +396,11 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
 
   if (!detailedAttendance || detailedAttendance.length === 0) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-8 bg-(--color-surface) font-mono relative z-0">
+      <div className="flex-1 flex flex-col items-center justify-center p-8 bg-(--bg-surface) relative z-0">
         <EmptyState
-          msg="No Attendance Data"
+          msg="No attendance data"
           subMsg="Attendance information is not available for the selected semester."
-          icon={Warning}
+          icon={School}
         />
       </div>
     );
@@ -427,11 +429,11 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
     : null;
 
   return (
-    <div className="h-full w-full bg-(--color-surface) text-(--color-on-surface) overflow-hidden relative z-0 flex">
+    <div className="h-full w-full bg-(--bg-surface) text-(--text-main) overflow-hidden relative z-0 flex">
       <div className="flex-1 flex flex-col lg:flex-row w-full max-w-5xl mx-auto h-full overflow-y-auto lg:overflow-hidden">
         {/* Course list — left, narrowed, centered */}
         <div
-          className={`w-full lg:w-[420px] shrink-0 flex flex-col border-r-0 lg:border-r border-(--color-outline-variant) h-full overflow-y-auto custom-scrollbar px-4 md:px-6 lg:px-8 pb-32 lg:pb-12 ${
+          className={`w-full lg:w-[420px] shrink-0 flex flex-col border-r-0 lg:border-r border-(--border-dim) h-full overflow-y-auto custom-scrollbar px-4 md:px-6 lg:px-8 pb-32 lg:pb-12 ${
             selectedCourse ? 'hidden lg:flex' : 'flex'
           }`}
         >
@@ -459,14 +461,14 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
             className={`flex-1 flex flex-col h-full overflow-y-auto custom-scrollbar px-4 md:px-6 lg:px-8 pb-32 lg:pb-12 ${
               !selectedCourse
                 ? 'hidden lg:flex'
-                : 'flex absolute inset-0 lg:static z-20 bg-(--color-surface)'
+                : 'flex absolute inset-0 lg:static z-20 bg-(--bg-surface)'
             }`}
           >
             <div className="w-full h-21 md:h-25 shrink-0 hidden lg:block" />
             <div className="lg:hidden flex items-center mb-4 pt-21 md:pt-25">
               <button
                 onClick={() => setSelectedCourse(null)}
-                className="flex items-center gap-2 text-(--color-on-surface) bg-(--color-surface-container) px-4 py-2 rounded-full font-bold uppercase font-mono text-xs cursor-pointer border border-(--color-outline-variant)"
+                className="flex items-center gap-2 text-(--text-main) bg-(--bg-highlight) px-4 py-2 rounded-full font-bold uppercase text-xs cursor-pointer border border-(--border-dim)"
               >
                 <ArrowBack className="w-4 h-4" />
                 Back
@@ -478,10 +480,10 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
                 <Pill variant="surface">{selectedCourseObj.courseCode}</Pill>
                 <Pill variant="surface">{selectedCourseObj.classType}</Pill>
               </div>
-              <h2 className="text-xl md:text-2xl font-bold font-mono leading-snug mb-3 text-(--text-main)">
+              <h2 className="text-xl md:text-2xl font-bold leading-snug mb-3 text-(--text-main)">
                 {selectedCourseObj.courseTitle}
               </h2>
-              <div className="flex flex-wrap items-center gap-4 text-xs text-(--text-muted) font-mono">
+              <div className="flex flex-wrap items-center gap-4 text-xs text-(--text-muted)">
                 <div className="flex items-center gap-2">
                   <School className="w-4 h-4 text-(--text-muted)" />
                   <span>{selectedCourseObj.faculty}</span>
@@ -502,7 +504,7 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
             {/* History Log with Dark Material You Color Shades */}
             <div className="mb-24 flex flex-col gap-3">
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-(--text-muted)">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-(--text-muted)">
                   Attendance History
                 </h4>
               </div>
@@ -589,9 +591,9 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
                 </div>
               ) : (
                 <EmptyState
-                  msg="No Records Found"
+                  msg="No records found"
                   subMsg="No history records found for this class."
-                  icon={Warning}
+                  icon={CalendarMonth}
                   className="h-auto min-h-36"
                 />
               )}

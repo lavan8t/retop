@@ -194,7 +194,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({
   }
 
   return (
-    <div className="h-full flex flex-col bg-transparent font-mono text-(--text-main) overflow-hidden">
+    <div className="h-full flex flex-col bg-transparent text-(--text-main) overflow-hidden">
       <div className="flex-1 overflow-y-auto custom-scrollbar p-2 md:p-4 pt-16 md:pt-20 lg:pt-24 pb-32 md:pb-12">
         <div className="max-w-345 mx-auto space-y-6">
           {loading || fetchingMarks ? (
@@ -207,7 +207,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({
               ))}
             </div>
           ) : filteredMarks.length === 0 ? (
-            <EmptyState msg="No Marks Found" icon={Error} />
+            <EmptyState msg="No marks found" icon={ProgressActivity} />
           ) : (
             <div className="columns-1 xl:columns-2 gap-6">
               {filteredMarks.map((course, idx) => (
@@ -227,7 +227,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({
                             className={`text-[10px] font-bold px-3 py-1 rounded-full 
                             ${
                               course.type.includes('Lab')
-                                ? 'bg-purple-500 text-(--bg-main)'
+                                ? 'bg-(--md-sys-color-tertiary) text-(--md-sys-color-on-tertiary)'
                                 : 'bg-(--text-main) text-(--bg-main)'
                             }`}
                           >
@@ -317,7 +317,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({
                                       colSpan={2}
                                       className="p-3 text-center border-l border-(--border-dim)"
                                     >
-                                      <span className="bg-att-danger text-(--bg-main) font-black uppercase text-[10px] px-3 py-1 rounded-full">
+                                      <span className="bg-(--md-sys-color-error) text-(--md-sys-color-on-error) font-black uppercase text-[10px] px-3 py-1 rounded-full">
                                         Absent
                                       </span>
                                     </td>

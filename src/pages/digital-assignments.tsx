@@ -193,6 +193,7 @@ export default function DigitalAssignments({
           'You have an active OTP verification session in progress. Leaving will cancel the upload and invalidate this verification code. Are you sure?',
         confirmText: 'Discard & Exit',
         cancelText: 'Stay',
+        variant: 'error',
       });
       if (!confirmed) return;
     } else if (selectedFile) {
@@ -202,6 +203,7 @@ export default function DigitalAssignments({
           'You have attached a file for upload. Are you sure you want to discard it?',
         confirmText: 'Discard',
         cancelText: 'Keep',
+        variant: 'error',
       });
       if (!confirmed) return;
     }
@@ -510,12 +512,12 @@ export default function DigitalAssignments({
           {/* Header & Course Count */}
           <div className="flex items-center justify-between px-1">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-mono font-black uppercase tracking-wider text-(--text-muted)">
+              <span className="text-xs font-black uppercase tracking-wider text-(--text-muted)">
                 Courses ({daCourses.length})
               </span>
             </div>
             {daLoading && (
-              <span className="text-[10px] font-mono font-bold text-(--accent-base) animate-pulse">
+              <span className="text-[10px] font-bold text-(--accent-base)">
                 SYNCING...
               </span>
             )}
@@ -604,16 +606,16 @@ export default function DigitalAssignments({
               {/* Active Course Hero Card */}
               <div className="p-5 md:p-6 rounded-3xl bg-(--bg-surface)/50 border border-(--border-dim)/40 flex flex-col gap-3">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="px-3 py-1 rounded-full bg-(--accent-base) text-(--text-inverse) text-xs font-mono font-bold">
+                  <span className="px-3 py-1 rounded-full bg-(--accent-base) text-(--text-inverse) text-xs font-bold">
                     {activeCourse.code}
                   </span>
                   <span
-                    className="px-2.5 py-0.5 rounded-full text-xs font-mono font-black uppercase"
+                    className="px-2.5 py-0.5 rounded-full text-xs font-black uppercase"
                     style={getMaterialChipStyle('blue', isDark)}
                   >
                     {activeCourse.type}
                   </span>
-                  <span className="px-2.5 py-0.5 rounded-full bg-(--bg-highlight) text-(--text-muted) text-xs font-mono">
+                  <span className="px-2.5 py-0.5 rounded-full bg-(--bg-highlight) text-(--text-muted) text-xs">
                     Class ID: {activeCourse.classId}
                   </span>
                 </div>
@@ -875,7 +877,7 @@ export default function DigitalAssignments({
                             {/* Upload / Re-upload Button */}
                             <button
                               onClick={() => handleOpenUploadForAssgn(assgn)}
-                              className="px-4 py-1.5 rounded-full flex items-center gap-1.5 bg-(--accent-base) text-(--text-inverse) hover:opacity-90 transition-opacity text-xs font-mono font-bold uppercase cursor-pointer border-0 shadow-xs"
+                              className="min-h-12 px-4 py-1.5 rounded-full flex items-center gap-1.5 bg-(--accent-base) text-(--text-inverse) outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) hover:opacity-90 transition-opacity text-xs font-bold uppercase cursor-pointer border-0 shadow-xs"
                             >
                               <Upload className="w-3.5 h-3.5" />
                               {isSubmitted ? 'Re-upload' : 'Upload'}
@@ -897,7 +899,8 @@ export default function DigitalAssignments({
             </>
           ) : (
             <EmptyState
-              msg="No Course Selected"
+              icon={Description}
+              msg="No course selected"
               subMsg="Select a course from the left menu to view and submit digital assignments."
             />
           )}

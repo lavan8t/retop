@@ -303,7 +303,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
         <div className="w-full lg:w-[27%] xl:w-[24%] flex flex-col shrink-0 h-auto lg:h-full overflow-y-auto custom-scrollbar relative z-40 pb-4 md:pb-6 lg:pb-8 pl-4 lg:pl-6 pr-2 lg:pr-3 gap-1">
           {!loading && (
             <div className="w-full p-4 bg-(--bg-surface)/60 border border-(--border-dim)/40 rounded-3xl flex flex-col items-center justify-center text-center">
-              <span className="text-[10px] font-mono font-bold text-(--text-muted) uppercase tracking-wider leading-none">
+              <span className="text-[10px] font-bold text-(--text-muted) uppercase tracking-wider leading-none">
                 Total Credits
               </span>
               <div className="text-4xl font-black font-expanded text-(--text-main) mt-1 leading-none flex items-baseline justify-center gap-1">
@@ -397,7 +397,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
                 <div
                   className={`flex items-center justify-between p-4 rounded-3xl transition-colors ${
                     basketStatus.isFinished
-                      ? 'bg-green-500/10 border border-green-500/20'
+                      ? 'bg-(--md-sys-color-success-container) border border-(--md-sys-color-success)/30 text-(--md-sys-color-on-success-container)'
                       : 'bg-(--bg-surface) border border-(--border-dim)/40'
                   }`}
                 >
@@ -405,7 +405,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
                     <span
                       className={`text-[10px] md:text-xs font-black uppercase tracking-widest ${
                         basketStatus.isFinished
-                          ? 'text-green-500/80'
+                          ? 'text-(--md-sys-color-on-success-container)'
                           : 'text-(--text-muted)'
                       }`}
                     >
@@ -414,7 +414,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
                     <span
                       className={`text-sm md:text-base font-bold ${
                         basketStatus.isFinished
-                          ? 'text-att-safe'
+                          ? 'text-(--md-sys-color-success)'
                           : 'text-(--text-main)'
                       }`}
                     >
@@ -423,7 +423,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
                     </span>
                   </div>
                   {basketStatus.isFinished && (
-                    <div className="flex items-center gap-1.5 text-att-safe text-[10px] md:text-xs font-black uppercase tracking-widest">
+                    <div className="flex items-center gap-1.5 text-(--md-sys-color-success) text-[10px] md:text-xs font-black uppercase tracking-widest">
                       <CheckCircle className="w-4 h-4" /> Finished
                     </div>
                   )}

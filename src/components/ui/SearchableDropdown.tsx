@@ -4,6 +4,7 @@ import React, {
   useEffect,
   useCallback,
   useMemo,
+  useId,
 } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -58,6 +59,10 @@ export const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0, width: 240 });
+  const uid = useId();
+  const labelId = `${uid}-label`;
+  const errorId = `${uid}-error`;
+  const helperId = `${uid}-helper`;
 
   // Selected Option
   const selectedOpt = useMemo(
@@ -207,17 +212,22 @@ export const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   return (
     <div className={`flex flex-col gap-1.5 ${className}`}>
       {label && (
-        <label className="text-xs font-semibold text-(--text-muted) flex items-center justify-between">
+        <span
+          id={labelId}
+          className="text-xs font-semibold text-(--text-muted) flex items-center justify-between"
+        >
           <span className="flex items-center gap-1">
             {label}
-            {required && <span className="text-red-400 font-bold">*</span>}
+            {required && (
+              <span className="text-(--md-sys-color-error) font-bold">*</span>
+            )}
           </span>
           {loading && (
-            <span className="text-(--accent-base) animate-pulse font-normal text-[11px]">
+            <span className="text-(--accent-base) font-normal text-xs">
               loading…
             </span>
           )}
-        </label>
+        </span>
       )}
 
       {/* Trigger Button */}
@@ -227,14 +237,18 @@ export const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
         disabled={disabled || loading || options.length === 0}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
+        aria-label={label ? undefined : placeholder}
+        aria-labelledby={label ? labelId : undefined}
+        aria-invalid={!!error}
+        aria-describedby={error ? errorId : helperText ? helperId : undefined}
         onClick={() => setIsOpen((prev) => !prev)}
         onKeyDown={handleKeyDown}
-        className={`w-full h-11 px-4 py-2.5 rounded-2xl bg-(--bg-surface) hover:bg-(--bg-highlight)/60 border text-left text-sm font-medium transition-all flex items-center justify-between gap-2 cursor-pointer select-none focus:outline-none focus:ring-2 focus:ring-(--accent-base)/30 ${
+        className={`w-full h-12 px-4 py-2.5 rounded-2xl bg-(--bg-surface) hover:bg-(--bg-highlight)/60 border text-left text-sm font-medium transition-all flex items-center justify-between gap-2 cursor-pointer select-none outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) ${
           error
-            ? 'border-red-500/70 focus:border-red-500'
+            ? 'border-(--md-sys-color-error)'
             : isOpen
               ? 'border-(--accent-base) ring-2 ring-(--accent-base)/30'
-              : 'border-(--border-dim)/50 hover:border-(--border-dim) focus:border-(--accent-base)'
+              : 'border-(--border-dim)/50 hover:border-(--border-dim) focus-visible:border-(--accent-base)'
         } ${
           disabled || loading || options.length === 0
             ? 'opacity-50 cursor-not-allowed bg-(--bg-surface)/40'
@@ -260,10 +274,18 @@ export const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
 
       {/* Inline Feedback / Error */}
       {error && (
-        <span className="text-[10px] font-bold text-red-400">{error}</span>
+        <span
+          id={errorId}
+          role="alert"
+          className="text-xs font-medium text-(--md-sys-color-error)"
+        >
+          {error}
+        </span>
       )}
       {!error && helperText && (
-        <span className="text-[10px] text-(--text-muted)">{helperText}</span>
+        <span id={helperId} className="text-xs text-(--text-muted)">
+          {helperText}
+        </span>
       )}
 
       {/* Dropdown Menu Portal */}
@@ -296,10 +318,11 @@ export const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
               {searchQuery && (
                 <button
                   type="button"
+                  aria-label="Clear search"
                   onClick={() => setSearchQuery('')}
-                  className="text-(--text-muted) hover:text-(--text-main) p-0.5 rounded-full cursor-pointer"
+                  className="min-w-12 min-h-12 flex items-center justify-center text-(--text-muted) hover:text-(--text-main) rounded-full outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) cursor-pointer"
                 >
-                  <Close className="w-3.5 h-3.5" />
+                  <Close className="w-4 h-4" />
                 </button>
               )}
             </div>
@@ -331,7 +354,7 @@ export const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                       aria-selected={isSelected}
                       onClick={() => handleSelect(opt.value)}
                       onMouseEnter={() => setHighlightedIndex(idx)}
-                      className={`w-full text-left px-3 py-2 rounded-xl text-xs font-medium transition-all flex items-center justify-between gap-2 cursor-pointer outline-none select-none ${
+                      className={`w-full min-h-12 text-left px-3 py-2 rounded-xl text-xs font-medium transition-all flex items-center justify-between gap-2 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) select-none ${
                         isSelected
                           ? 'bg-(--accent-base) text-(--text-inverse) font-bold'
                           : isHighlighted

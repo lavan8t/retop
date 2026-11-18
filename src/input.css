@@ -59,8 +59,15 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-home-item {
-    animation: none;
+  #retop-root,
+  #retop-root *,
+  #retop-root *::before,
+  #retop-root *::after {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0s !important;
+    scroll-behavior: auto !important;
   }
 }
 
@@ -228,31 +235,6 @@ a:active,
       0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
   }
 
-  /* Zero Borders on all Retop cards, filter chips, attendance cards, CGPA cards */
-  :host,
-  :host *,
-  #retop-root,
-  #retop-root * {
-    border-color: transparent !important;
-  }
-
-  .border,
-  .border-1,
-  .border-2,
-  .border-4,
-  .border-t,
-  .border-b,
-  .border-l,
-  .border-r,
-  .border-t-2,
-  .border-b-2,
-  .border-l-4,
-  .border-l-2,
-  .border-r-2 {
-    border-width: 0px !important;
-    border-style: none !important;
-  }
-
   :host,
   #retop-root {
     /* Base Accent (Injected dynamically by JS, default shown here) */
@@ -304,31 +286,43 @@ a:active,
     --brutal-shadow-xl: none;
     --brutal-shadow-active: none;
 
-    /* Attendance Colors */
-    --attendance-green: #16a34a;
-    --attendance-green-bg: color-mix(in srgb, #16a34a 25%, var(--bg-surface));
-    --attendance-green-text: #15803d;
-    --attendance-blue: #2563eb;
-    --attendance-blue-bg: color-mix(in srgb, #2563eb 25%, var(--bg-surface));
-    --attendance-blue-text: #1d4ed8;
-    --attendance-red: #dc2626;
-    --attendance-red-bg: color-mix(in srgb, #dc2626 25%, var(--bg-surface));
-    --attendance-red-text: #b91c1c;
+    /* Status aliases of the injected Material 3 roles — no standalone palette */
+    --attendance-green: var(--color-success);
+    --attendance-green-bg: color-mix(
+      in srgb,
+      var(--color-success) 25%,
+      var(--bg-surface)
+    );
+    --attendance-green-text: var(--color-success);
+    --attendance-blue: var(--color-info);
+    --attendance-blue-bg: color-mix(
+      in srgb,
+      var(--color-info) 25%,
+      var(--bg-surface)
+    );
+    --attendance-blue-text: var(--color-info);
+    --attendance-red: var(--color-error);
+    --attendance-red-bg: color-mix(
+      in srgb,
+      var(--color-error) 25%,
+      var(--bg-surface)
+    );
+    --attendance-red-text: var(--color-error);
 
-    /* Card Colors - Shared pure vibrant tones for both Dark and AMOLED */
-    --card-cyan: color-mix(in srgb, #06b6d4 35%, #000000);
-    --card-lime: color-mix(in srgb, #10b981 35%, #000000);
-    --card-yellow: color-mix(in srgb, #f59e0b 35%, #000000);
-    --card-blue: color-mix(in srgb, #3b82f6 35%, #000000);
-    --card-red: color-mix(in srgb, #ef4444 35%, #000000);
+    /* Card Colors — shared semantic roles for Dark and AMOLED */
+    --card-cyan: var(--color-cyan);
+    --card-lime: var(--color-success);
+    --card-yellow: var(--color-warning);
+    --card-blue: var(--md-sys-color-primary);
+    --card-red: var(--color-error);
 
     /* Professional Attendance Status Colors */
-    --att-safe: var(--md-sys-color-primary);
-    --att-warn: var(--md-sys-color-secondary);
+    --att-safe: var(--md-sys-color-success, var(--md-sys-color-primary));
+    --att-warn: var(--md-sys-color-warning, var(--md-sys-color-secondary));
     --att-danger: var(--md-sys-color-error);
 
-    --att-text-safe: var(--md-sys-color-on-primary);
-    --att-text-warn: var(--md-sys-color-on-secondary);
+    --att-text-safe: var(--md-sys-color-on-success);
+    --att-text-warn: var(--md-sys-color-on-warning);
     --att-text-danger: var(--md-sys-color-on-error);
 
     /* Base Layout Specs */
@@ -416,13 +410,6 @@ a:active,
     var(--md-sys-color-surface-variant) 75%,
     var(--md-sys-color-primary) 25%
   );
-
-  /* Lighter professional blocks for Light mode Brutalism */
-  --card-cyan: #0891b2;
-  --card-lime: #059669;
-  --card-yellow: #d97706;
-  --card-blue: #2563eb;
-  --card-red: #dc2626;
 }
 
 /* VIT Emblem Dynamic Accent Theme Color */
@@ -778,8 +765,10 @@ a:active,
 }
 
 /* --- 3. FONTS --- */
+/* Base weight is regular; weight utilities and element-specific
+   font-variation-settings carry emphasis without a global wght axis override. */
 #retop-root {
-  font-variation-settings: 'wght' var(--app-font-wght, 700);
+  font-weight: var(--app-font-wght, 400);
 }
 
 #retop-root

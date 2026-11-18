@@ -87,7 +87,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   timetableMode: 'weekly',
   dateFormat: 'DD Mon YYYY',
   fontScale: 100,
-  fontWeight: 'bold',
+  fontWeight: 'regular',
 
   pinnedLinks: [
     { title: 'Time Table', url: 'studenttimetable', category: 'Core' },
@@ -390,7 +390,7 @@ export const applyTheme = (settings: AppSettings) => {
     medium: '550',
     bold: '700',
   };
-  const wght = wghtMap[settings.fontWeight ?? 'bold'] ?? '700';
+  const wght = wghtMap[settings.fontWeight ?? 'regular'] ?? '400';
   if (root) root.style.setProperty('--app-font-wght', wght);
   if (offlineRoot && offlineRoot !== root)
     offlineRoot.style.setProperty('--app-font-wght', wght);

@@ -1,0 +1,24 @@
+/* M3E web components read --md-sys-* custom properties, which inherit into
+   their shadow roots from #retop-root.
+
+   Colors need no redefinition here: applyTheme() (utils/settings-store.ts)
+   writes --md-sys-color-* onto #retop-root for light/dark/AMOLED + the user
+   accent, and tokens.css derives the semantic roles (--accent-base,
+   --text-inverse, --bg-*, --text-*, --border-*) from those same tokens.
+   Aliasing --md-sys-color-* back to the semantic roles would be dead (the
+   injected inline values win) and would create a var() cycle with
+   --accent-base, so the tokens stay single-sourced.
+
+   Shape corners are left at M3E's M3 defaults — the app has no radius token
+   to map them onto. This file only aligns the type scale to the app's sizes. */
+
+:host,
+#retop-root {
+  --md-sys-typescale-body-large-font-size: var(--font-size-body);
+  --md-sys-typescale-body-medium-font-size: var(--font-size-body);
+  --md-sys-typescale-body-small-font-size: var(--font-size-caption);
+  --md-sys-typescale-label-large-font-size: var(--font-size-body);
+  --md-sys-typescale-label-medium-font-size: var(--font-size-caption);
+  --md-sys-typescale-label-small-font-size: var(--font-size-badge);
+  --md-sys-typescale-title-medium-font-size: var(--font-size-title);
+}

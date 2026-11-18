@@ -9,6 +9,7 @@ import {
   isAmbientSessionContext,
   VtopResponse,
 } from './vtopBridge';
+import { extractCsrfFromHtml, extractRegNoFromHtml } from './sessionFacts';
 
 export type VtopCampus = 'vellore' | 'chennai';
 
@@ -43,13 +44,7 @@ export function extractServerId(
 }
 
 export function extractCSRFToken(html: string): string | null {
-  const inputMatch = html.match(/<input[^>]*name="_csrf"[^>]*value="([^"]+)"/i);
-  if (inputMatch) return inputMatch[1];
-  const metaMatch = html.match(/<meta[^>]*name="_csrf"[^>]*content="([^"]+)"/i);
-  if (metaMatch) return metaMatch[1];
-  const varMatch = html.match(/csrfValue\s*=\s*['"]([^'"]+)['"]/);
-  if (varMatch) return varMatch[1];
-  return null;
+  return extractCsrfFromHtml(html);
 }
 
 /** VTOP serves the CAPTCHA inline as a data URI rather than as a separate image. */
@@ -793,19 +788,9 @@ export class VtopClient {
           ? response.url
           : undefined;
 
-      let regNo = '';
-      const regMatch1 = responseText.match(
-        /id="authorizedIDX"[^>]*value="([^"]+)"/i,
-      );
-      if (regMatch1) regNo = regMatch1[1].trim();
-
-      if (!regNo) {
-        const regMatch2 = responseText.match(
-          /id="authorizedID"[^>]*value="([^"]+)"/i,
-        );
-        if (regMatch2) regNo = regMatch2[1].trim();
-      }
-
+      // Registration number only: authorizedID/authorizedIDX inputs first, then
+      // the student-badge pattern. The sign-in username is never a substitute.
+      let regNo = extractRegNoFromHtml(responseText) || '';
       if (!regNo) {
         const regMatch3 = responseText.match(
           /(\d{2}[A-Z]{2,5}\d{4,5})\s*\(STUDENT\)/i,

@@ -28,6 +28,7 @@ import { VitLogo } from './components/VitLogo';
 import { VitEmblemLoader } from './components/common/VitEmblemLoader';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { fixBase64Image } from './parsers/profile';
+import { createSessionFacts } from './utils/sessionFacts';
 import { set as idbSet, get as idbGet } from 'idb-keyval';
 import {
   AlertDialogManager,
@@ -762,7 +763,11 @@ const OfflineApp = () => {
       document.body.appendChild(img);
     }
 
-    (window as any).csrfValue = 'offline_csrf';
+    // Install the offline session through the same seam live VTOP uses.
+    createSessionFacts({ mode: 'jar' }).update({
+      csrf: 'offline_csrf',
+      regNo: user.regNo,
+    });
     (window as any).__RETOP_OFFLINE__ = true;
 
     renderDashboard();

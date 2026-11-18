@@ -1,3 +1,5 @@
+import { formatSemesterLabel } from './semesterIdentity';
+
 const ACRONYM_MAP: Record<string, string> = {
   'MICROPROCESSORS AND MICROCONTROLLERS': 'MPMC',
   'COMPUTER ARCHITECTURE AND ORGANIZATION': 'CAO',
@@ -37,11 +39,7 @@ export const getCourseAcronym = (title: string): string => {
 };
 
 export function normalizeSemesterLabel(rawLabel: string): string {
-  return (rawLabel || '')
-    .replace(/&amp;/g, '&')
-    .replace(/\s*(?:-\s*|\(\s*)?(?:VLR|CHN)\s*\)?\s*$/i, '')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return formatSemesterLabel(rawLabel);
 }
 
 export function formatSemesterShorthand(label: string): string {

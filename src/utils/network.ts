@@ -47,6 +47,13 @@ import {
   isNativeAndroidBridgeAvailable,
 } from './vtopBridge';
 import { getVtopBaseUrl, VtopCampus } from './vtopClient';
+import {
+  createSessionFacts,
+  extractCsrfFromHtml,
+  extractRegNoFromHtml,
+  readSessionFactsFromDocument,
+  type SessionFactsSource,
+} from './sessionFacts';
 
 export const getParserForKey = (
   key: string,
@@ -101,41 +108,6 @@ export const getParserForKey = (
 
   return null;
 };
-
-export function extractCsrfTokenFromHTML(html: string): string | null {
-  if (!html || typeof html !== 'string') return null;
-
-  // 1. Hidden input name="_csrf" value="..."
-  const inputMatch =
-    html.match(/<input[^>]*name=["']_csrf["'][^>]*value=["']([^"']+)["']/i) ||
-    html.match(/<input[^>]*value=["']([^"']+)["'][^>]*name=["']_csrf["']/i);
-  if (inputMatch && inputMatch[1] && inputMatch[1].length > 5)
-    return inputMatch[1];
-
-  // 2. JS variable csrfValue = "..." or _csrf = "..." or _csrf: "..."
-  const jsMatch = html.match(/(?:csrfValue|_csrf)\s*[:=]\s*["']([^"']+)["']/i);
-  if (jsMatch && jsMatch[1] && jsMatch[1].length > 5) return jsMatch[1];
-
-  return null;
-}
-
-export function extractAuthIdFromHTML(html: string): string | null {
-  if (!html || typeof html !== 'string') return null;
-
-  const match =
-    html.match(
-      /<input[^>]*id=["']authorizedIDX["'][^>]*value=["']([^"']+)["']/i,
-    ) ||
-    html.match(
-      /<input[^>]*name=["']authorizedID["'][^>]*value=["']([^"']+)["']/i,
-    ) ||
-    html.match(
-      /<input[^>]*value=["']([^"']+)["'][^>]*id=["']authorizedIDX["']/i,
-    );
-  if (match && match[1] && match[1].length > 3) return match[1];
-
-  return null;
-}
 
 export async function diagnoseNetworkError(): Promise<string> {
   // 1. Check internet connectivity first
@@ -196,8 +168,16 @@ export async function diagnoseNetworkError(): Promise<string> {
 }
 
 export class VTOPNetwork {
-  public csrf: string;
-  public authorizedID: string;
+  /** The one session seam; csrf/authorizedID below are read-only adapters. */
+  public readonly session: SessionFactsSource;
+
+  public get csrf(): string {
+    return this.session.csrf;
+  }
+
+  public get authorizedID(): string {
+    return this.session.regNo;
+  }
 
   public static has404Error = false;
   private static hasDiagnosticRun = false;
@@ -242,36 +222,7 @@ export class VTOPNetwork {
   public syncTokensFromDOM() {
     VTOPNetwork.setupDOMTokenObserver();
     if (typeof document === 'undefined') return;
-
-    // VTOP renders several _csrf / authorizedID inputs on a page (header form,
-    // legacy nav, and the DA form at the bottom). The first one is often stale
-    // after a fresh login, so prefer the LAST one, which is the one the active
-    // form (e.g. the DA form) actually submits.
-    const csrfInputs = Array.from(
-      document.querySelectorAll('input[name="_csrf"]'),
-    ) as HTMLInputElement[];
-    const domCsrf =
-      (csrfInputs.length ? csrfInputs[csrfInputs.length - 1].value : null) ||
-      (window as any).csrfValue;
-    if (domCsrf && domCsrf !== this.csrf && domCsrf.length > 5) {
-      this.csrf = domCsrf;
-      (window as any).csrfValue = domCsrf;
-    }
-
-    const authInputs = Array.from(
-      document.querySelectorAll('input[name="authorizedID"]'),
-    ) as HTMLInputElement[];
-    const authInput =
-      (document.getElementById('authorizedIDX') as HTMLInputElement) ||
-      (authInputs.length ? authInputs[authInputs.length - 1] : null);
-    const domAuth = authInput?.value || (window as any).authorizedID;
-    if (domAuth && domAuth !== this.authorizedID && domAuth.length > 3) {
-      this.authorizedID = domAuth;
-      (window as any).authorizedID = domAuth;
-      try {
-        localStorage.setItem('retop_lastAuthId', domAuth);
-      } catch {}
-    }
+    this.session.refresh();
   }
 
   private static requestTimestamps: number[] = [];
@@ -501,44 +452,31 @@ export class VTOPNetwork {
     const text = await response.text();
 
     // 3. Self-healing token update from response payload
-    const newCsrf = extractCsrfTokenFromHTML(text);
+    const newCsrf = extractCsrfFromHtml(text);
     if (newCsrf && newCsrf !== this.csrf) {
       console.log(
         '[VTOPNetwork] Dynamic CSRF token self-healed from API response',
       );
-      this.updateTokens(newCsrf, null);
     }
-    const newAuthId = extractAuthIdFromHTML(text);
-    if (newAuthId && newAuthId !== this.authorizedID) {
-      this.updateTokens(null, newAuthId);
-    }
+    this.session.update({
+      csrf: newCsrf || undefined,
+      regNo: extractRegNoFromHtml(text) || undefined,
+    });
 
     return text;
   }
 
   constructor(csrf: string, authorizedID: string) {
-    this.csrf = csrf;
-    this.authorizedID = authorizedID;
+    this.session = createSessionFacts({ csrf, regNo: authorizedID });
     VTOPNetwork.activeInstances.clear();
     VTOPNetwork.activeInstances.add(this);
   }
 
   public updateTokens(csrf?: string | null, authorizedID?: string | null) {
-    if (csrf && csrf !== this.csrf && csrf.length > 5) {
-      this.csrf = csrf;
-      (window as any).csrfValue = csrf;
-    }
-    if (
-      authorizedID &&
-      authorizedID !== this.authorizedID &&
-      authorizedID.length > 3
-    ) {
-      this.authorizedID = authorizedID;
-      (window as any).authorizedID = authorizedID;
-      try {
-        localStorage.setItem('retop_lastAuthId', authorizedID);
-      } catch {}
-    }
+    this.session.update({
+      csrf: csrf || undefined,
+      regNo: authorizedID || undefined,
+    });
   }
 
   /**
@@ -996,8 +934,8 @@ export class VTOPNetwork {
     });
     if (!response.ok) throw new Error(`Status ${response.status}`);
     const html = await response.text();
-    const newCsrf = extractCsrfTokenFromHTML(html);
-    if (newCsrf) this.csrf = newCsrf;
+    const newCsrf = extractCsrfFromHtml(html);
+    if (newCsrf) this.updateTokens(newCsrf);
     return html;
   }
 
@@ -1014,8 +952,8 @@ export class VTOPNetwork {
     });
     if (!response.ok) throw new Error(`Status ${response.status}`);
     const html = await response.text();
-    const newCsrf = extractCsrfTokenFromHTML(html);
-    if (newCsrf) this.csrf = newCsrf;
+    const newCsrf = extractCsrfFromHtml(html);
+    if (newCsrf) this.updateTokens(newCsrf);
     return html;
   }
 
@@ -1390,27 +1328,10 @@ export class VTOPNetwork {
     const url = `${origin}/vtop/${endpoint}`;
     const body = new URLSearchParams();
 
-    // Prefer the LAST _csrf / authorizedID inputs on the page (the ones in the
-    // active DA form at the bottom), which hold the freshest tokens.
-    const csrfInputs = Array.from(
-      document.querySelectorAll('input[name="_csrf"]'),
-    ) as HTMLInputElement[];
-    const domCsrf =
-      csrfInputs.length > 0
-        ? csrfInputs[csrfInputs.length - 1]
-        : (document.querySelector('input[name="_csrf"]') as HTMLInputElement);
-    const authInputs = Array.from(
-      document.querySelectorAll('input[name="authorizedID"]'),
-    ) as HTMLInputElement[];
-    const domAuth =
-      authInputs.length > 0
-        ? authInputs[authInputs.length - 1]
-        : (document.querySelector(
-            'input[name="authorizedID"]',
-          ) as HTMLInputElement);
-
-    body.append('_csrf', domCsrf?.value || this.csrf);
-    body.append('authorizedID', domAuth?.value || this.authorizedID);
+    // The session module owns the "last active form wins" extraction rule.
+    const live = readSessionFactsFromDocument();
+    body.append('_csrf', live.csrf || this.csrf);
+    body.append('authorizedID', live.regNo || this.authorizedID);
 
     Object.entries(params).forEach(([key, value]) => body.append(key, value));
 

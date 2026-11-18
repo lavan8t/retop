@@ -17,40 +17,16 @@ import { useDataStore } from '../store/dataStore';
 import {
   planBulkDownloads,
   planSingleDownload,
+  isDownloadableMaterial,
 } from '../utils/courseDownloads';
+import { readSessionFactsFromDocument } from '../utils/sessionFacts';
+import { isSameSemester } from '../utils/semesterIdentity';
+import { buildCourseMaterialGroups } from '../utils/courseMaterials';
 
 interface UpcomingClassDetail {
   date: Date;
   slots: { start: string; end: string }[];
 }
-
-const getCsrf = () => {
-  const match = document.documentElement.outerHTML.match(
-    /csrfValue\s*=\s*"([^"]+)"/,
-  );
-  if (match) return match[1];
-  return (
-    (document.querySelector('input[name="_csrf"]') as HTMLInputElement)
-      ?.value || ''
-  );
-};
-
-const getAuthId = () => {
-  const authInput = document.getElementById(
-    'authorizedIDX',
-  ) as HTMLInputElement;
-  if (authInput) return authInput.value;
-  return (
-    (document.querySelector('input[name="authorizedID"]') as HTMLInputElement)
-      ?.value || ''
-  );
-};
-
-const isSameSem = (sem1: string, sem2: string) => {
-  if (!sem1 || !sem2) return false;
-  const normalize = (s: string) => s.replace(/0+([1-9])$/, '$1').toLowerCase();
-  return normalize(sem1) === normalize(sem2);
-};
 
 export const useCoursePageData = (
   network: VTOPNetwork,
@@ -70,8 +46,14 @@ export const useCoursePageData = (
     UpcomingClassDetail[] | null
   >(null);
 
-  const { ttCourses, attendance, assignments, ttSelectedSem, calGridData } =
-    useDataStore();
+  const {
+    ttCourses,
+    attendance,
+    assignments,
+    ttSelectedSem,
+    calGridData,
+    detailedAttendance,
+  } = useDataStore();
 
   useEffect(() => {
     if (!selectedOptionId) {
@@ -81,10 +63,8 @@ export const useCoursePageData = (
 
   useEffect(() => {
     if (!selectedSem || cpOptions.length === 0) return;
-    const normalize = (s: string) =>
-      s.replace(/0+([1-9])$/, '$1').toLowerCase();
-    const coursesInSem = cpOptions.filter(
-      (o) => normalize(o.semester) === normalize(selectedSem),
+    const coursesInSem = cpOptions.filter((o) =>
+      isSameSemester(o.semester, selectedSem),
     );
     const isCurrentValid = coursesInSem.some(
       (c) => c.classId === selectedOptionId,
@@ -156,7 +136,8 @@ export const useCoursePageData = (
     if (!selectedOptionId || !selectedSem || cpOptions.length === 0) return;
     const opt = cpOptions.find(
       (o) =>
-        o.classId === selectedOptionId && isSameSem(o.semester, selectedSem),
+        o.classId === selectedOptionId &&
+        isSameSemester(o.semester, selectedSem),
     );
     if (!opt) return;
 
@@ -249,7 +230,7 @@ export const useCoursePageData = (
     if (
       !currentOption ||
       !ttSelectedSem ||
-      !isSameSem(selectedSem, ttSelectedSem) ||
+      !isSameSemester(selectedSem, ttSelectedSem) ||
       !calGridData ||
       calGridData.length === 0
     ) {
@@ -332,11 +313,12 @@ export const useCoursePageData = (
     courseName: string,
     moduleWise: boolean,
   ) => {
+    const live = readSessionFactsFromDocument();
     const plans = planSingleDownload(
       {
         url: `${window.location.origin}/vtop/downloadCourseMaterialFacultyPdf`,
-        csrf: getCsrf(),
-        authorizedId: getAuthId(),
+        csrf: live.csrf,
+        authorizedId: live.regNo,
         semester: selectedSem,
         course: courseName,
         moduleWise,
@@ -360,11 +342,12 @@ export const useCoursePageData = (
     const course = [currentOption?.code, currentOption?.title]
       .filter(Boolean)
       .join(' - ');
+    const live = readSessionFactsFromDocument();
     const plans = planBulkDownloads(
       {
         url: `${window.location.origin}/vtop/downloadCourseMaterialFacultyPdf`,
-        csrf: getCsrf(),
-        authorizedId: getAuthId(),
+        csrf: live.csrf,
+        authorizedId: live.regNo,
         semester: selectedSem,
         course,
         moduleWise,
@@ -401,34 +384,6 @@ export const useCoursePageData = (
       );
     }) || [];
 
-  const groupedMaterials = useMemo(() => {
-    if (!filteredMaterials) return {};
-    const grouped = filteredMaterials.reduce(
-      (acc, mat) => {
-        const fac = mat.faculty || 'Unknown Faculty';
-        if (!acc[fac]) acc[fac] = [];
-        acc[fac].push(mat);
-        return acc;
-      },
-      {} as Record<string, CourseMaterial[]>,
-    );
-
-    Object.keys(grouped).forEach((fac) => {
-      grouped[fac].sort((a, b) => {
-        if (materialSort === 'module') {
-          const modA = a.module ? parseInt(a.module) : 999;
-          const modB = b.module ? parseInt(b.module) : 999;
-          if (modA !== modB) return modA - modB;
-        }
-        const dateA = new Date(a.uploadDate).getTime() || 0;
-        const dateB = new Date(b.uploadDate).getTime() || 0;
-        return dateB - dateA;
-      });
-    });
-    return grouped;
-  }, [filteredMaterials, materialSort]);
-
-  const isCurrentSem = isSameSem(selectedSem, ttSelectedSem);
   const courseTimetable =
     ttCourses.find(
       (c) =>
@@ -436,6 +391,40 @@ export const useCoursePageData = (
         (currentOption &&
           c.code.toLowerCase() === currentOption.code.toLowerCase()),
     ) || null;
+
+  const assignedFacultyRaw = (
+    courseTimetable?.faculty ||
+    detailedAttendance?.find(
+      (a) => currentOption && a.courseCode === currentOption.code,
+    )?.faculty ||
+    attendance?.find(
+      (a) => currentOption && a.code.includes(currentOption.code.trim()),
+    )?.faculty ||
+    ''
+  )
+    .toLowerCase()
+    .trim();
+
+  // One deep module returns grouped, sorted, faculty-annotated entries.
+  const materialGroups = useMemo(
+    () =>
+      buildCourseMaterialGroups(
+        filteredMaterials,
+        assignedFacultyRaw,
+        materialSort,
+      ),
+    [filteredMaterials, assignedFacultyRaw, materialSort],
+  );
+  const downloadableSelections = useMemo(
+    () =>
+      materialGroups.flatMap((group) =>
+        group.materials
+          .filter(({ material }) => isDownloadableMaterial(material.category))
+          .map(({ material }) => ({ material, faculty: group.key })),
+      ),
+    [materialGroups],
+  );
+
   const courseAttendance = attendance.find(
     (a) => currentOption && a.code.includes(currentOption.code.trim()),
   );
@@ -453,8 +442,9 @@ export const useCoursePageData = (
     courseGrade,
     upcomingClasses,
     currentOption,
-    groupedMaterials,
+    materialGroups,
     filteredMaterials,
+    downloadableSelections,
     courseTimetable,
     courseAttendance,
     courseAssignments,

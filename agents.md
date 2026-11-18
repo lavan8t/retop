@@ -182,6 +182,7 @@ src/
 4b. **Never hand-roll a second sign-in form.** Live VTOP login, the offline PWA, and standalone mode all render `VtopLoginCard` with `VtopClient`. Validation, CAPTCHA solving, and submission belong to that one module. Native VTOP login markup is only ever restyled for parent/alumni roles, which retop does not own.
 5. **Preserve variable font transitions.** Never set `!important` on `font-variation-settings` or apply universal font rules on `*`.
 6. **Protect element transitions.** Never declare global `transition-property` on `*, ::before, ::after` in `@layer base`.
+6b. **Use semantic roles only.** No global border reset (borders use `--border-dim` / M3 outline tokens), no forced global font weight (body is 400, weight utilities carry emphasis), and `prefers-reduced-motion` must collapse every animation and transition under `#retop-root`.
 
 ### Strong preferences
 

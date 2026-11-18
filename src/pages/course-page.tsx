@@ -24,6 +24,7 @@ import {
 } from '../types/vtop';
 import { useDataStore } from '../store/dataStore';
 import { useCoursePageData } from '../hooks/useCoursePage';
+import { isDownloadableMaterial } from '../utils/courseDownloads';
 import { parseStudentMarks } from '../parsers/marks';
 import { parseGrades } from '../parsers/grades';
 import {
@@ -63,6 +64,9 @@ export const CoursePage = ({
   const [isCourseSelectorOpen, setIsCourseSelectorOpen] = useState(false);
   const [materialSort, setMaterialSort] = useState<'date' | 'module'>('date');
   const [localSearchTerm, setLocalSearchTerm] = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [moduleWise, setModuleWise] = useState(false);
+  const [downloadStatus, setDownloadStatus] = useState('');
 
   const activeSearchTerm = localSearchTerm || searchTerm;
 
@@ -100,6 +104,7 @@ export const CoursePage = ({
     courseAttendance,
     courseAssignments,
     handleDownload,
+    downloadMaterials,
   } = useCoursePageData(
     network,
     cpOptions,
@@ -178,6 +183,22 @@ export const CoursePage = ({
       return 0;
     });
   }, [groupedMaterials, assignedFacRaw, isAssignedFaculty]);
+
+  const allSelections = sortedGroupedEntries.flatMap(([faculty, mats]) =>
+    mats
+      .filter((m) => isDownloadableMaterial(m.category))
+      .map((material) => ({ material, faculty })),
+  );
+
+  const runDownloads = async (
+    selections: { material: CourseMaterial; faculty: string }[],
+  ) => {
+    setDownloadStatus('Downloading...');
+    const result = await downloadMaterials(selections, moduleWise);
+    setDownloadStatus(
+      `${result.downloaded} downloaded${result.skipped ? `, ${result.skipped} skipped` : ''}`,
+    );
+  };
 
   return (
     <div className="absolute inset-0 w-full h-full font-mono transition-colors bg-transparent text-(--text-main)">
@@ -574,6 +595,49 @@ export const CoursePage = ({
                 </button>
               </div>
 
+              <div className="flex items-center gap-2 flex-wrap text-xs font-mono font-bold uppercase">
+                <button
+                  onClick={() =>
+                    setSelectedIds(
+                      new Set(allSelections.map((s) => s.material.id)),
+                    )
+                  }
+                  className="px-3 py-2 rounded-full bg-(--bg-surface) hover:bg-(--bg-highlight) border border-(--border-dim)/40 cursor-pointer"
+                >
+                  Select all
+                </button>
+                <button
+                  onClick={() => runDownloads(allSelections)}
+                  className="px-3 py-2 rounded-full bg-(--accent-base) text-(--text-inverse) cursor-pointer border-0"
+                >
+                  Download all
+                </button>
+                <button
+                  disabled={selectedIds.size === 0}
+                  onClick={() =>
+                    runDownloads(
+                      allSelections.filter((s) =>
+                        selectedIds.has(s.material.id),
+                      ),
+                    )
+                  }
+                  className="px-3 py-2 rounded-full bg-(--bg-surface) hover:bg-(--bg-highlight) border border-(--border-dim)/40 cursor-pointer disabled:opacity-40"
+                >
+                  Download selected ({selectedIds.size})
+                </button>
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={moduleWise}
+                    onChange={(e) => setModuleWise(e.target.checked)}
+                  />
+                  Module-wise
+                </label>
+                {downloadStatus && (
+                  <span className="text-(--text-dim)">{downloadStatus}</span>
+                )}
+              </div>
+
               {loading ? (
                 <div className="flex-1 flex flex-col items-center justify-center py-24 group">
                   <Layers className="w-16 h-16 text-(--accent-base) animate-bounce mb-4" />
@@ -632,11 +696,27 @@ export const CoursePage = ({
                                 key={mat.id}
                                 onClick={() => {
                                   const courseName =
-                                    currentOption?.title || 'Course';
+                                    [currentOption?.code, currentOption?.title]
+                                      .filter(Boolean)
+                                      .join(' - ') || 'Course';
                                   handleDownload(mat.id, fac.name, courseName);
                                 }}
                                 className="group flex items-center gap-4 py-3 px-3.5 rounded-2xl cursor-pointer bg-transparent hover:bg-(--bg-surface)/70 transition-colors border border-transparent hover:border-(--border-dim)/30"
                               >
+                                <input
+                                  type="checkbox"
+                                  checked={selectedIds.has(mat.id)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  onChange={() =>
+                                    setSelectedIds((prev) => {
+                                      const next = new Set(prev);
+                                      if (next.has(mat.id)) next.delete(mat.id);
+                                      else next.add(mat.id);
+                                      return next;
+                                    })
+                                  }
+                                  aria-label={`Select ${mat.title}`}
+                                />
                                 <div className="w-10 h-10 rounded-full bg-(--bg-surface) flex items-center justify-center text-(--accent-base) group-hover:text-(--text-inverse) group-hover:bg-(--accent-base) transition-colors shrink-0 border border-(--border-dim)/30">
                                   <Icon className="w-5 h-5" />
                                 </div>

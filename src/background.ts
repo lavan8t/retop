@@ -1,6 +1,11 @@
 import { getExtUrl } from './utils/url';
 import { get as idbGet, set as idbSet } from 'idb-keyval';
 import {
+  buildDownloadBody,
+  isPdfContentType,
+  isVtopDownloadUrl,
+} from './utils/courseDownloads';
+import {
   GOOGLE_CALENDAR_SCOPE,
   syncICalToGoogleCalendar,
 } from './utils/google-calendar';
@@ -28,39 +33,22 @@ chrome.action.onClicked.addListener(() => {
   chrome.tabs.create({ url: 'https://vtop.vit.ac.in/vtop/' });
 });
 
+// Per-download folder names for bulk course materials, keyed by the blob URL
+// created for each file. Avoids the global lastDownloadInfo race when many
+// downloads land at once.
+const plannedFilenames = new Map<string, string>();
+
 if (typeof chrome !== 'undefined' && chrome.downloads?.onDeterminingFilename) {
   chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
-    // Strictly identify downloads from retop extension or VTOP pages
-    const extId =
-      typeof chrome.runtime !== 'undefined' ? chrome.runtime.id : '';
-    const isByRetopExtension = Boolean(
-      item.byExtensionId && extId && item.byExtensionId === extId,
-    );
+    const planned = plannedFilenames.get(item.url);
+    if (planned !== undefined) {
+      plannedFilenames.delete(item.url);
+      suggest({ filename: planned });
+      return;
+    }
 
-    const isVitUrl = Boolean(
-      (item.url && item.url.includes('vit.ac.in')) ||
-      (item.finalUrl && item.finalUrl.includes('vit.ac.in')),
-    );
-
-    const isVitOrRetopReferrer = Boolean(
-      item.referrer &&
-      (item.referrer.includes('vit.ac.in') ||
-        item.referrer.includes('getretop.web.app') ||
-        (extId && item.referrer.includes(extId))),
-    );
-
-    // For blob: URLs, NEVER intercept unless referrer is VIT / retop or byExtensionId matches
-    const isBlobFromVtopOrRetop =
-      item.url.startsWith('blob:') &&
-      (isVitOrRetopReferrer || isByRetopExtension);
-
-    const isRetopOrVtopDownload =
-      isByRetopExtension ||
-      isVitUrl ||
-      isVitOrRetopReferrer ||
-      isBlobFromVtopOrRetop;
-
-    if (!isRetopOrVtopDownload) {
+    // Only VTOP downloads get retop folders; other pages are left alone.
+    if (!isVtopDownloadUrl(item.url) && !isVtopDownloadUrl(item.finalUrl)) {
       suggest();
       return;
     }
@@ -72,8 +60,8 @@ if (typeof chrome !== 'undefined' && chrome.downloads?.onDeterminingFilename) {
               timestamp: number;
               type: string;
               semester?: string;
-              courseName?: string;
-              facultyName?: string;
+              course?: string;
+              faculty?: string;
             }
           | undefined;
 
@@ -88,30 +76,21 @@ if (typeof chrome !== 'undefined' && chrome.downloads?.onDeterminingFilename) {
           : 'download.pdf';
         const itemFileName = sanitize(rawFileName) || 'download.pdf';
 
-        if (info && Date.now() - info.timestamp < 30000) {
+        if (
+          info &&
+          info.type === 'course_page' &&
+          Date.now() - info.timestamp < 30000
+        ) {
           const sem = sanitize(info.semester) || 'General';
-          const course = sanitize(info.courseName) || 'General';
-          const faculty = sanitize(info.facultyName) || 'Faculty';
-
-          if (info.type === 'course_page') {
-            suggest({
-              filename: `retop/${sem}/${course}/${faculty}/${itemFileName}`,
-            });
-            return;
-          } else if (info.type === 'curriculum') {
-            suggest({
-              filename: `retop/${sem}/${course}/curriculum/${itemFileName}`,
-            });
-            return;
-          } else if (info.type === 'daqp' || info.type === 'assignments') {
-            suggest({
-              filename: `retop/${sem}/${course}/assignments/${itemFileName}`,
-            });
-            return;
-          }
+          const course = sanitize(info.course) || 'General';
+          const faculty = sanitize(info.faculty) || 'Faculty';
+          suggest({
+            filename: `retop/coursepage/${sem}/${course}/${faculty}/${itemFileName}`,
+          });
+          return;
         }
 
-        suggest({ filename: `retop/downloads/${itemFileName}` });
+        suggest();
       })
       .catch(() => {
         suggest();
@@ -177,6 +156,70 @@ const getGoogleAccessToken = async (): Promise<string> => {
 };
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // ── Bulk course-material downloads ──────────────────────────────────────
+  if (message.action === 'DOWNLOAD_COURSE_MATERIALS') {
+    const data = message.data || {};
+    const url = String(data.url || '');
+    const items = Array.isArray(data.items) ? data.items : [];
+    if (!isVtopDownloadUrl(url) || items.length === 0) {
+      sendResponse({ success: false, downloaded: 0, skipped: 0 });
+      return true;
+    }
+
+    (async () => {
+      let downloaded = 0;
+      let skipped = 0;
+      for (const item of items) {
+        try {
+          const body = buildDownloadBody(
+            String(item.fileId || ''),
+            String(data.csrf || ''),
+            String(data.authorizedId || ''),
+          );
+          const response = await fetch(url, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type':
+                'application/x-www-form-urlencoded; charset=UTF-8',
+            },
+            body,
+          });
+          if (
+            !response.ok ||
+            !isPdfContentType(response.headers.get('Content-Type'))
+          ) {
+            skipped += 1;
+            continue;
+          }
+          const blobUrl = URL.createObjectURL(await response.blob());
+          plannedFilenames.set(
+            blobUrl,
+            String(item.filename || 'download.pdf'),
+          );
+          chrome.downloads.download(
+            {
+              url: blobUrl,
+              filename: String(item.filename || 'download.pdf'),
+              conflictAction: 'uniquify',
+            },
+            () => {
+              if (chrome.runtime.lastError) {
+                plannedFilenames.delete(blobUrl);
+                URL.revokeObjectURL(blobUrl);
+              }
+            },
+          );
+          downloaded += 1;
+        } catch {
+          skipped += 1;
+        }
+      }
+      sendResponse({ success: true, downloaded, skipped });
+    })();
+    return true;
+  }
+
   // ── Turn retop off / on ───────────────────────────────────────────────────
   if (message.action === 'SET_DISABLED') {
     chrome.storage.local.set({ retop_disabled: true }, () =>

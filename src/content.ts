@@ -108,7 +108,7 @@ function loadEntry(name: string): Promise<unknown> {
   // Persist the rejection: the catch inside main() attaches a second handler, and
   // without this the runtime also logs an unhandled rejection for the same error.
   return import(extUrl(name)).catch((err) => {
-    console.error(`[retop] Failed to load ${name}:`, err);
+    console.error(`[retop] Failed to load ${name}:`, err?.stack || err);
     throw err;
   });
 }
@@ -658,7 +658,10 @@ function main(): void {
         // VTOP back itself if it cannot render.
       })
       .catch((err) => {
-        console.error('[retop] Dashboard entry failed to load:', err);
+        console.error(
+          '[retop] Dashboard entry failed to load:',
+          err?.stack || err,
+        );
         clearTimeout(loadTimeout);
         giveUp();
       });
@@ -666,7 +669,7 @@ function main(): void {
   }
 
   loadEntry('dashboard.js').catch((err) => {
-    console.error('[retop] Dashboard entry failed to load:', err);
+    console.error('[retop] Dashboard entry failed to load:', err?.stack || err);
     revealNative(false);
   });
 }
@@ -674,6 +677,6 @@ function main(): void {
 try {
   main();
 } catch (err) {
-  console.error('[retop] Bootstrapper error:', err);
+  console.error('[retop] Bootstrapper error:', (err as any)?.stack || err);
   revealNative(false);
 }

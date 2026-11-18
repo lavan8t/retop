@@ -105,24 +105,17 @@ export const DefaultsSection: React.FC<DefaultsSectionProps> = ({
               </span>
             </div>
             <div className="flex items-center gap-1 p-1 rounded-xl bg-(--bg-main) border border-(--border-dim)">
-              {(['12h', '12h-ampm', '24h'] as const).map((fmt) => {
-                const label =
-                  fmt === '12h' ? '12h' : fmt === '12h-ampm' ? 'AM/PM' : '24h';
-                const isActive = (settings.timeFormat ?? '12h') === fmt;
-                return (
-                  <button
-                    key={fmt}
-                    onClick={() => updateSetting('timeFormat', fmt)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                      isActive
-                        ? 'bg-(--accent-base) text-(--text-inverse)'
-                        : 'text-(--text-muted) hover:text-(--text-main)'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
+              <SegmentedControl
+                ariaLabel="Time format"
+                options={[
+                  { value: '12h', label: '12h' },
+                  { value: '12h-ampm', label: 'AM/PM' },
+                  { value: '24h', label: '24h' },
+                ]}
+                value={(settings.timeFormat ?? '12h') as string}
+                onChange={(val) => updateSetting('timeFormat', val as any)}
+                buttonClassName="px-3 py-3"
+              />
             </div>
           </div>
 

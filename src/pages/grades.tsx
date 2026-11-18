@@ -1,7 +1,6 @@
 import React from 'react';
 import { VTOPNetwork } from '../utils/network';
 import {
-  Error,
   KeyboardArrowDown,
   KeyboardArrowUp,
 } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
@@ -117,7 +116,7 @@ export const GradesPage: React.FC<GradesPageProps> = ({
             </div>
           </div>
         ) : !gradesData || gradesData.courses.length === 0 ? (
-          <EmptyState msg="No Semester Data Found" icon={Error} />
+          <EmptyState msg="No semester data found" />
         ) : gradesData ? (
           <div className="flex flex-col gap-4 w-full max-w-5xl text-left">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 text-left">

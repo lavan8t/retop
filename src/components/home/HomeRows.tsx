@@ -11,6 +11,7 @@ import {
   parseVtopDate,
   TimeFormatMode,
 } from '../../utils/formatting';
+import { SelectableRow } from '../ui/SelectableRow';
 
 import {
   useSettingsStore,
@@ -46,7 +47,7 @@ export const AttendanceRow = React.memo(
     }
 
     return (
-      <div className="relative flex items-center justify-between px-3.5 py-2.5 rounded-xl first:rounded-t-2xl last:rounded-b-2xl bg-(--bg-surface) hover:bg-(--bg-highlight) transition-colors cursor-pointer group/row select-none overflow-hidden border border-(--border-dim)/40 shrink-0">
+      <div className="relative flex items-center justify-between px-3.5 py-2.5 min-h-12 rounded-xl first:rounded-t-2xl last:rounded-b-2xl bg-(--bg-surface) group/row select-none overflow-hidden border border-(--border-dim)/40 shrink-0">
         <div
           className={`absolute top-0 left-0 h-full ${barColor} transition-all duration-fast`}
           style={{ width: `${displayVal}%` }}
@@ -82,7 +83,7 @@ export const ScheduleRow = React.memo(
     progress = 0,
   }: {
     item: UpcomingClass;
-    onClick?: (e: React.MouseEvent, item: UpcomingClass) => void;
+    onClick?: (item: UpcomingClass) => void;
     use24HourTime?: TimeFormatMode;
 
     className?: string;
@@ -117,11 +118,12 @@ export const ScheduleRow = React.memo(
     const slot = item.course?.slot || (item as any).slot || '';
 
     return (
-      <div
-        onClick={(e) => onClick?.(e, item)}
+      <SelectableRow
+        label={`${item.course.title}, ${formattedTime}`}
+        onActivate={() => onClick?.(item)}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className={`@container flex items-center justify-between p-2.5 sm:p-3.5 min-h-[40px] sm:min-h-[44px] shadow-none cursor-pointer select-none overflow-hidden relative border-0 shrink-0 ${isNow ? 'bg-(--accent-base) text-(--text-inverse)' : ''} ${className || 'rounded-xl'}`}
+        className={`@container flex items-center justify-between p-2.5 sm:p-3.5 shadow-none select-none overflow-hidden relative border-0 shrink-0 ${isNow ? 'bg-(--accent-base) text-(--text-inverse)' : ''} ${className || 'rounded-xl'}`}
         style={{
           backgroundColor: isNow ? undefined : cardBg,
           color: isNow ? undefined : cardFg,
@@ -199,7 +201,7 @@ export const ScheduleRow = React.memo(
             )}
           </div>
         </div>
-      </div>
+      </SelectableRow>
     );
   },
 );
@@ -212,7 +214,7 @@ export const AssignmentRow = React.memo(
     progress = 0,
   }: {
     assignment: Assignment;
-    onClick?: (e: React.MouseEvent, assignment: Assignment) => void;
+    onClick?: (assignment: Assignment) => void;
     className?: string;
     progress?: number;
   }) => {
@@ -258,11 +260,12 @@ export const AssignmentRow = React.memo(
     }
 
     return (
-      <div
-        onClick={(e) => onClick?.(e, assignment)}
+      <SelectableRow
+        label={`${assignment.title}, ${isHovered ? exact : days}`}
+        onActivate={() => onClick?.(assignment)}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className={`p-2.5 sm:p-3.5 bg-(--bg-surface) hover:bg-(--bg-highlight) cursor-pointer select-none overflow-hidden group transition-colors relative border border-(--border-dim)/40 shrink-0 ${className || 'rounded-xl'}`}
+        className={`p-2.5 sm:p-3.5 bg-(--bg-surface) hover:bg-(--bg-highlight) select-none overflow-hidden group transition-colors relative border border-(--border-dim)/40 shrink-0 ${className || 'rounded-xl'}`}
       >
         {progress > 0 && progress < 1 && (
           <div
@@ -287,7 +290,7 @@ export const AssignmentRow = React.memo(
             </span>
           </div>
         </div>
-      </div>
+      </SelectableRow>
     );
   },
 );
@@ -310,7 +313,7 @@ export const EventRow = React.memo(
 
     return (
       <div
-        className={`p-2.5 sm:p-3.5 shadow-none cursor-pointer select-none relative border-0 overflow-hidden shrink-0 ${className || 'rounded-xl'}`}
+        className={`p-2.5 sm:p-3.5 shadow-none select-none relative border-0 overflow-hidden shrink-0 ${className || 'rounded-xl'}`}
         style={{
           backgroundColor: cardBg,
           color: cardFg,
@@ -396,11 +399,12 @@ export const ExamRow = React.memo(
       : displayTime;
 
     return (
-      <div
-        onClick={onClick}
+      <SelectableRow
+        label={`${exam.courseTitle}, ${isHovered ? hoverTime : displayTime}`}
+        onActivate={() => onClick?.()}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className={`@container flex items-center justify-between p-2.5 sm:p-3.5 min-h-[40px] sm:min-h-[44px] shadow-none cursor-pointer select-none overflow-hidden relative border-0 shrink-0 ${className || 'rounded-xl'}`}
+        className={`@container flex items-center justify-between p-2.5 sm:p-3.5 shadow-none select-none overflow-hidden relative border-0 shrink-0 ${className || 'rounded-xl'}`}
         style={{
           backgroundColor: cardBg,
           color: cardFg,
@@ -473,7 +477,7 @@ export const ExamRow = React.memo(
             )}
           </div>
         </div>
-      </div>
+      </SelectableRow>
     );
   },
 );

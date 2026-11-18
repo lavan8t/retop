@@ -17,34 +17,36 @@ export const Snackbar: React.FC<{
     return () => clearTimeout(timer);
   }, [onDismiss]);
 
+  const isError = snackbar.type === 'error';
   const IconComponent =
     snackbar.icon ||
-    (snackbar.type === 'error'
-      ? Warning
-      : snackbar.type === 'success'
-        ? CheckCircle
-        : Info);
+    (isError ? Warning : snackbar.type === 'success' ? CheckCircle : Info);
 
-  const iconColor =
-    snackbar.type === 'error'
-      ? 'text-(--att-danger)'
-      : snackbar.type === 'success'
-        ? 'text-(--att-safe)'
-        : 'text-(--accent-base)';
+  const iconColor = isError
+    ? 'text-(--md-sys-color-error)'
+    : snackbar.type === 'success'
+      ? 'text-(--md-sys-color-success)'
+      : 'text-(--md-sys-color-inverse-primary)';
 
   return (
-    <div className="flex items-center gap-3 px-5 py-3.5 bg-[#313033] dark:bg-[#e6e1e5] border-none rounded-full shadow-[0_3px_5px_-1px_rgba(0,0,0,0.25),0_6px_10px_0_rgba(0,0,0,0.18),0_1px_18px_0_rgba(0,0,0,0.15)] text-xs md:text-sm font-semibold text-[#f4eff4] dark:text-[#1c1b1f] pointer-events-auto min-w-[18rem] sm:min-w-104 max-w-lg w-full animate-in fade-in slide-in-from-bottom-4 zoom-in-95 duration-200">
+    <div
+      role={isError ? 'alert' : 'status'}
+      aria-live={isError ? 'assertive' : 'polite'}
+      className="flex items-center gap-3 px-5 py-3.5 bg-(--md-sys-color-inverse-surface) text-(--md-sys-color-inverse-on-surface) border-none rounded-full shadow-2xl text-xs md:text-sm font-semibold pointer-events-auto min-w-[18rem] sm:min-w-104 max-w-lg w-full animate-in fade-in slide-in-from-bottom-4 zoom-in-95 duration-200"
+    >
       <IconComponent className={`w-5 h-5 shrink-0 ${iconColor}`} />
 
       <span className="flex-1 text-left leading-snug">{snackbar.message}</span>
 
       {snackbar.action && (
         <button
+          type="button"
+          aria-label={snackbar.action.label}
           onClick={() => {
             snackbar.action?.onClick();
             onDismiss();
           }}
-          className="uppercase text-xs font-black text-(--accent-base) hover:text-(--accent-hover) active:scale-95 transition-all ml-2 shrink-0"
+          className="min-h-12 px-2 rounded-full text-xs font-bold text-(--md-sys-color-inverse-primary) outline-none focus-visible:ring-2 focus-visible:ring-(--md-sys-color-inverse-primary) transition-all ml-1 shrink-0 cursor-pointer border-0 bg-transparent"
         >
           {snackbar.action.label}
         </button>
@@ -77,15 +79,13 @@ export const SnackbarManager: React.FC = () => {
 
   return (
     <div className="fixed bottom-6 left-6 md:bottom-8 md:left-8 z-10000 flex flex-col-reverse gap-2.5 pointer-events-none items-start max-w-[calc(100vw-3rem)]">
-      <>
-        {snackbars.slice(0, 3).map((sb) => (
-          <Snackbar
-            key={sb.id}
-            snackbar={sb}
-            onDismiss={() => removeSnackbar(sb.id)}
-          />
-        ))}
-      </>
+      {snackbars.slice(0, 3).map((sb) => (
+        <Snackbar
+          key={sb.id}
+          snackbar={sb}
+          onDismiss={() => removeSnackbar(sb.id)}
+        />
+      ))}
     </div>
   );
 };

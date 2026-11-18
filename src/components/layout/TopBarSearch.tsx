@@ -22,6 +22,7 @@ import { useAppStore } from '../../store/appStore';
 import { getCategoryIcon } from '../../utils/icons';
 import { toTitleCase } from '../../utils/formatting';
 import { getDestinationView, hasRetopPage } from '../../utils/routes';
+import { selectableRowProps } from '../ui/SelectableRow';
 
 interface TopBarSearchProps {
   currentView: string;
@@ -784,6 +785,17 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                     {pinnedLinks.map((link, idx) => (
                       <div
                         key={idx}
+                        {...selectableRowProps({
+                          onActivate: () => {
+                            onNavigate(link, !isModernUI);
+                            setIsOmniboxOpen(false);
+                            setQuery('');
+                          },
+                          label: `Open ${toTitleCase(link.title)}`,
+                          className:
+                            'flex items-center justify-between px-4 py-3 rounded-full bg-(--bg-surface) border border-(--border-dim)/40 active:scale-[0.98] transition-all text-left',
+                        })}
+                        role="button"
                         onClick={(e) => {
                           const forceLegacy = e.shiftKey
                             ? isModernUI
@@ -792,18 +804,19 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                           setIsOmniboxOpen(false);
                           setQuery('');
                         }}
-                        className="flex items-center justify-between px-4 py-3 rounded-full bg-(--bg-surface) border border-(--border-dim)/40 active:scale-[0.98] transition-all cursor-pointer text-left"
                       >
                         <span className="text-xs font-bold text-(--text-main) truncate pr-1">
                           {toTitleCase(link.title)}
                         </span>
                         <button
+                          type="button"
+                          aria-label={`Unpin ${toTitleCase(link.title)}`}
+                          aria-pressed={true}
                           onClick={(e) => {
                             e.stopPropagation();
                             onTogglePin(link);
                           }}
-                          className="p-1.5 text-(--accent-base) hover:text-(--text-muted) shrink-0 cursor-pointer"
-                          title="Unpin"
+                          className="min-w-12 min-h-12 flex items-center justify-center text-(--accent-base) hover:text-(--text-muted) shrink-0 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) rounded-full"
                         >
                           <Star className="w-4 h-4 fill-current" />
                         </button>
@@ -870,10 +883,14 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                                     e.stopPropagation();
                                     onTogglePin(link);
                                   }}
-                                  className="p-1.5 text-(--text-muted) hover:text-(--accent-base) shrink-0 cursor-pointer"
+                                  className="min-w-12 min-h-12 flex items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) text-(--text-muted) hover:text-(--accent-base) shrink-0 cursor-pointer"
                                   title={
                                     isPinned ? 'Unpin from Dock' : 'Pin to Dock'
                                   }
+                                  aria-label={
+                                    isPinned ? 'Unpin from Dock' : 'Pin to Dock'
+                                  }
+                                  aria-pressed={isPinned}
                                 >
                                   <Star
                                     className={`w-4 h-4 transition-all ${
@@ -914,6 +931,17 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                     return (
                       <div
                         key={i}
+                        {...selectableRowProps({
+                          onActivate: () => {
+                            onNavigate(link, !isModernUI);
+                            setIsOmniboxOpen(false);
+                            setQuery('');
+                          },
+                          label: `Open ${toTitleCase(link.title)}`,
+                          className:
+                            'flex items-center justify-between px-4 py-3.5 rounded-full bg-(--bg-surface) border border-(--border-dim)/40 active:scale-[0.99] transition-all',
+                        })}
+                        role="button"
                         onClick={(e) => {
                           const forceLegacy = e.shiftKey
                             ? isModernUI
@@ -922,7 +950,6 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                           setIsOmniboxOpen(false);
                           setQuery('');
                         }}
-                        className="flex items-center justify-between px-4 py-3.5 rounded-full bg-(--bg-surface) border border-(--border-dim)/40 active:scale-[0.99] transition-all cursor-pointer"
                       >
                         <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
                           <span className="text-xs font-bold text-(--text-main) truncate">
@@ -946,8 +973,12 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                             e.stopPropagation();
                             onTogglePin(link);
                           }}
-                          className="p-1.5 text-(--text-muted) hover:text-(--accent-base) shrink-0 cursor-pointer"
+                          className="min-w-12 min-h-12 flex items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) text-(--text-muted) hover:text-(--accent-base) shrink-0 cursor-pointer"
                           title={isPinned ? 'Unpin from Dock' : 'Pin to Dock'}
+                          aria-label={
+                            isPinned ? 'Unpin from Dock' : 'Pin to Dock'
+                          }
+                          aria-pressed={isPinned}
                         >
                           <Star
                             className={`w-4 h-4 transition-all ${
@@ -999,6 +1030,23 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                       <div
                         key={catIdx}
                         id={`topbar-cat-item-${catIdx}`}
+                        {...selectableRowProps({
+                          onActivate: () => {
+                            if (!isExpanded || query.trim() !== '') return;
+                            const rect =
+                              document
+                                .getElementById(`topbar-cat-item-${catIdx}`)
+                                ?.getBoundingClientRect() || new DOMRect();
+                            setCategoryIndex(catIdx);
+                            setSelectedIndex(0);
+                            setActiveMenu({ cat, rect });
+                          },
+                          label: `${toTitleCase(cat.title)} section`,
+                          className: `flex items-center justify-start p-2 md:p-2.5 rounded-xl transition-all duration-fast ease-out group ${isActive ? 'bg-(--accent-base) text-(--text-inverse)' : 'bg-transparent text-(--text-main) hover:bg-(--bg-highlight)'}`,
+                        })}
+                        role="button"
+                        aria-haspopup="menu"
+                        aria-expanded={activeMenu?.cat.title === cat.title}
                         onMouseEnter={(e) => {
                           handleMenuEnter();
                           if (!isExpanded || query.trim() !== '') return;
@@ -1020,7 +1068,6 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                             rect: e.currentTarget.getBoundingClientRect(),
                           });
                         }}
-                        className={`flex w-full items-center justify-start p-2 md:p-2.5 rounded-xl transition-all duration-fast ease-out group cursor-pointer ${isActive ? 'bg-(--accent-base) text-(--text-inverse)' : 'bg-transparent text-(--text-main) hover:bg-(--bg-highlight)'}`}
                       >
                         <div className="flex items-center gap-2.5">
                           <CatIcon
@@ -1097,7 +1144,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                               setQuery('');
                             }}
                             onMouseEnter={() => setSelectedIndex(i)}
-                            className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 border-2 ${
+                            className={`w-full min-h-12 text-left px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 border-2 outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) ${
                               isSelected
                                 ? 'bg-(--accent-base) text-(--text-inverse) border-(--border-main) shadow-none -translate-y-px'
                                 : 'bg-transparent border-transparent text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main)'
@@ -1128,10 +1175,14 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                                 e.stopPropagation();
                                 onTogglePin(link);
                               }}
-                              className="pointer-events-auto p-1.5 rounded-xl transition-all border-2 border-transparent hover:bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) cursor-pointer"
+                              className="pointer-events-auto min-w-12 min-h-12 flex items-center justify-center rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) transition-all border-2 border-transparent hover:bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) cursor-pointer"
                               title={
                                 isPinned ? 'Unpin from Dock' : 'Pin to Dock'
                               }
+                              aria-label={
+                                isPinned ? 'Unpin from Dock' : 'Pin to Dock'
+                              }
+                              aria-pressed={isPinned}
                             >
                               <Star
                                 className={`w-4.5 h-4.5 transition-transform ${
@@ -1333,12 +1384,16 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                           e.stopPropagation();
                           onTogglePin(link);
                         }}
-                        className={`absolute right-1.5 p-1 rounded-lg transition-all cursor-pointer shrink-0 z-20 ${
+                        className={`absolute right-1.5 min-w-12 min-h-12 flex items-center justify-center rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) transition-all cursor-pointer shrink-0 z-20 ${
                           isPinned
                             ? 'text-(--accent-base) opacity-100'
                             : 'text-(--text-muted) opacity-0 group-hover/item:opacity-100 hover:text-(--text-main)'
                         }`}
                         title={isPinned ? 'Unpin from Dock' : 'Pin to Dock'}
+                        aria-label={
+                          isPinned ? 'Unpin from Dock' : 'Pin to Dock'
+                        }
+                        aria-pressed={isPinned}
                       >
                         <Star
                           className={`w-4 h-4 transition-transform ${

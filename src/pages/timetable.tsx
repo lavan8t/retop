@@ -54,7 +54,8 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
           {courses.length === 0 && !loading ? (
             <div className="h-full p-4">
               <EmptyState
-                msg="No Timetable Found"
+                icon={Layers}
+                msg="No timetable found"
                 subMsg={
                   <>
                     If you have registered courses, please ensure{' '}
@@ -62,7 +63,6 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
                     responding and try selecting a different semester.
                   </>
                 }
-                icon={Layers}
               />
             </div>
           ) : (

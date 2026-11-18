@@ -31,6 +31,7 @@ import {
   getCorrectDayName,
   CAMPUS_SLOT_TIMINGS,
 } from '../utils/timetable-slots';
+import { SelectableRow } from '../components/ui/SelectableRow';
 
 interface UpcomingClassDetail {
   date: Date;
@@ -106,7 +107,7 @@ export const CoursePage = ({
   };
 
   return (
-    <div className="absolute inset-0 w-full h-full font-mono transition-colors bg-transparent text-(--text-main)">
+    <div className="absolute inset-0 w-full h-full transition-colors bg-transparent text-(--text-main)">
       <div className="h-full flex flex-col min-h-0">
         {!selectedOptionId ? (
           <div className="h-full flex flex-col items-center justify-center pt-24">
@@ -131,9 +132,14 @@ export const CoursePage = ({
                         }
                       }}
                     >
-                      <div
-                        className="flex items-start md:items-center gap-2 cursor-pointer transition-colors w-fit group/titlebtn"
+                      <button
+                        type="button"
+                        aria-label={`Choose course, currently ${currentOption.title}`}
+                        aria-haspopup="listbox"
+                        aria-expanded={isCourseSelectorOpen}
+                        aria-controls="course-selector-listbox"
                         onClick={() => setIsCourseSelectorOpen((p) => !p)}
+                        className="flex items-start md:items-center gap-2 min-h-12 cursor-pointer transition-colors w-fit text-left group/titlebtn outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) rounded-xl"
                       >
                         <h2 className="text-3xl md:text-4xl font-black font-expanded leading-none group-hover/titlebtn:text-(--accent-base) transition-colors">
                           {currentOption.title}
@@ -143,23 +149,31 @@ export const CoursePage = ({
                             isCourseSelectorOpen ? 'rotate-180' : ''
                           }`}
                         />
-                      </div>
+                      </button>
 
                       {isCourseSelectorOpen && (
                         <div className="absolute top-full left-0 mt-2 w-[85vw] md:w-[24rem] bg-(--bg-surface) border-2 border-(--border-main) rounded-2xl shadow-none overflow-hidden origin-top-left z-50">
-                          <div className="max-h-[50vh] overflow-y-auto overscroll-contain custom-scrollbar p-1.5 space-y-1">
+                          <div
+                            id="course-selector-listbox"
+                            role="listbox"
+                            aria-label="Courses"
+                            className="max-h-[50vh] overflow-y-auto overscroll-contain custom-scrollbar p-1.5 space-y-1"
+                          >
                             {cpOptions
                               .filter((o) =>
                                 isSameSemester(o.semester, selectedSem),
                               )
                               .map((opt) => (
-                                <button
+                                <SelectableRow
                                   key={opt.classId}
-                                  onClick={() => {
+                                  role="option"
+                                  selected={opt.classId === selectedOptionId}
+                                  label={`${opt.code}, ${opt.title}`}
+                                  onActivate={() => {
                                     setSelectedOptionId(opt.classId);
                                     setIsCourseSelectorOpen(false);
                                   }}
-                                  className={`w-full flex flex-col text-left px-3 py-2 text-xs transition-all rounded-xl border-2 ${
+                                  className={`flex flex-col text-left px-3 py-2 text-xs transition-all rounded-xl border-2 ${
                                     opt.classId === selectedOptionId
                                       ? 'bg-(--accent-base) text-(--text-inverse) border-(--border-main)'
                                       : 'bg-transparent border-transparent text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main) hover:border-(--border-dim)'
@@ -176,7 +190,7 @@ export const CoursePage = ({
                                   <div className="font-bold font-expanded mt-0.5 w-full text-sm leading-tight wrap-break-word">
                                     {opt.title}
                                   </div>
-                                </button>
+                                </SelectableRow>
                               ))}
                           </div>
                         </div>
@@ -239,7 +253,7 @@ export const CoursePage = ({
                           <span
                             className={`text-sm md:text-base font-black ${
                               parseFloat(courseAttendance.attendance) < 75
-                                ? 'text-att-danger'
+                                ? 'text-(--md-sys-color-error)'
                                 : 'text-(--text-main)'
                             }`}
                           >

@@ -38,6 +38,7 @@ import { useAppStore } from '../../store/appStore';
 import { fixBase64Image } from '../../parsers/profile';
 import { UserProfileData } from '../../store/slices/profileSlice';
 import { isTypingEvent } from '../../utils/keyboard';
+import { selectableRowProps } from '../ui/SelectableRow';
 
 interface TopBarProps {
   currentView: string;
@@ -163,6 +164,14 @@ export const TopBar: React.FC<TopBarProps> = ({
     calLoadingMonths ||
     attRecordsLoading;
 
+  const reorderPin = (from: number, to: number) => {
+    if (to < 0 || to >= pinnedLinks.length) return;
+    const updated = [...pinnedLinks];
+    const [moved] = updated.splice(from, 1);
+    updated.splice(to, 0, moved);
+    onReorderPins?.(updated);
+  };
+
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ignore if user is typing in any input field or form control (shadow-DOM-aware)
@@ -204,7 +213,10 @@ export const TopBar: React.FC<TopBarProps> = ({
         }}
       />
 
-      <header className="h-16 sm:h-18 md:h-20 bg-transparent fixed w-full top-0 z-50 px-2.5 sm:px-4 md:px-8 py-2 flex items-center justify-between shrink-0 transition-all pointer-events-none">
+      <header
+        aria-busy={isLoading}
+        className="h-16 sm:h-18 md:h-20 bg-transparent fixed w-full top-0 z-50 px-2.5 sm:px-4 md:px-8 py-2 flex items-center justify-between shrink-0 transition-all pointer-events-none"
+      >
         <div className="flex items-center h-full pointer-events-auto min-w-0 flex-1">
           <NavMenuButton onClick={onOpenNav} />
           <div className="flex flex-col justify-center h-full gap-0.5 min-w-0 w-full">
@@ -402,6 +414,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                     Hide Done
                   </span>
                   <MaterialSwitch
+                    label="Hide completed courses"
                     selected={curriculumHideCompleted}
                     onChange={(checked) => setCurriculumHideCompleted(checked)}
                   />
@@ -441,6 +454,9 @@ export const TopBar: React.FC<TopBarProps> = ({
                   }}
                 />
                 <button
+                  type="button"
+                  aria-label="Refresh digital assignments"
+                  aria-busy={daLoading}
                   onClick={() => {
                     if (daSelectedSem) {
                       if (network) {
@@ -453,7 +469,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                     }
                   }}
                   disabled={daLoading}
-                  className="p-1.5 md:p-2 bg-(--md-sys-color-surface-variant) border-2 border-(--md-sys-color-outline) hover:border-(--md-sys-color-on-surface) rounded-xl shadow-none hover:-translate-y-0.5 hover:shadow-(--brutal-shadow-hover) active:translate-y-0 active:shadow-(--brutal-shadow-active) transition-all disabled:opacity-50 text-(--md-sys-color-on-surface-variant)"
+                  className="min-w-12 min-h-12 flex items-center justify-center bg-(--md-sys-color-surface-variant) border-2 border-(--md-sys-color-outline) hover:border-(--md-sys-color-on-surface) rounded-xl shadow-none outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) transition-all disabled:opacity-50 text-(--md-sys-color-on-surface-variant)"
                 >
                   <Refresh
                     className={`w-4 h-4 md:w-5 md:h-5 ${daLoading && !daCourses?.length ? 'animate-spin' : ''}`}
@@ -508,9 +524,13 @@ export const TopBar: React.FC<TopBarProps> = ({
           ].includes(currentView) && (
             <div className="sm:hidden relative flex items-center">
               <button
+                type="button"
+                aria-label="Page options"
+                aria-haspopup="dialog"
+                aria-expanded={isMobileControlsOpen}
+                aria-controls="topbar-mobile-options"
                 onClick={() => setIsMobileControlsOpen(!isMobileControlsOpen)}
-                className="p-1 rounded-full bg-transparent text-(--text-muted) hover:text-(--text-main) active:scale-95 transition-all flex items-center justify-center cursor-pointer"
-                aria-label="Options"
+                className="min-w-12 min-h-12 flex items-center justify-center rounded-full bg-transparent text-(--text-muted) hover:text-(--text-main) outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) transition-all cursor-pointer"
               >
                 <MoreVert className="w-5 h-5" />
               </button>
@@ -518,10 +538,20 @@ export const TopBar: React.FC<TopBarProps> = ({
               {isMobileControlsOpen && (
                 <>
                   <div
+                    aria-hidden="true"
                     className="fixed inset-0 z-99998 bg-black/60 backdrop-blur-xs transition-opacity"
                     onClick={() => setIsMobileControlsOpen(false)}
                   />
-                  <div className="fixed inset-x-0 bottom-0 z-99999 p-3 pb-6 sm:p-4 max-h-[85vh] flex flex-col justify-end pointer-events-none">
+                  <div
+                    id="topbar-mobile-options"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Page options"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') setIsMobileControlsOpen(false);
+                    }}
+                    className="fixed inset-x-0 bottom-0 z-99999 p-3 pb-6 sm:p-4 max-h-[85vh] flex flex-col justify-end pointer-events-none"
+                  >
                     <div className="w-full max-w-lg mx-auto bg-(--bg-surface) border-2 border-(--border-main) rounded-[32px] p-5 sm:p-6 shadow-2xl flex flex-col gap-3.5 animate-sheet-up max-h-[80vh] overflow-y-auto pointer-events-auto">
                       {/* Bottom Sheet Drag Handle */}
                       <div className="w-12 h-1.5 bg-(--border-main) rounded-full mx-auto -mt-1 mb-1 opacity-60" />
@@ -648,6 +678,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                               Modern View
                             </span>
                             <MaterialSwitch
+                              label="Modern view"
                               selected={isMarksModernView}
                               onChange={(checked) =>
                                 setIsMarksModernView(checked)
@@ -674,6 +705,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                             Hide Completed
                           </span>
                           <MaterialSwitch
+                            label="Hide completed courses"
                             selected={curriculumHideCompleted}
                             onChange={(checked) =>
                               setCurriculumHideCompleted(checked)
@@ -694,6 +726,9 @@ export const TopBar: React.FC<TopBarProps> = ({
                             }}
                           />
                           <button
+                            type="button"
+                            aria-label="Refresh digital assignments"
+                            aria-busy={daLoading}
                             onClick={() => {
                               if (daSelectedSem && network)
                                 fetchDACourses(network, daSelectedSem, true);
@@ -701,7 +736,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                               setIsMobileControlsOpen(false);
                             }}
                             disabled={daLoading}
-                            className="flex items-center justify-center gap-2 py-2.5 px-4 bg-(--bg-highlight) rounded-xl text-xs font-bold text-(--text-main) border border-(--border-dim) cursor-pointer"
+                            className="min-h-12 flex items-center justify-center gap-2 py-2.5 px-4 bg-(--bg-highlight) rounded-xl text-xs font-bold text-(--text-main) border border-(--border-dim) outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) cursor-pointer"
                           >
                             <Refresh
                               className={`w-4 h-4 ${daLoading ? 'animate-spin' : ''}`}
@@ -831,6 +866,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                 )}
                 {/* Star button: open on click only */}
                 <button
+                  type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     setIsStarOpen(!isStarOpen);
@@ -842,8 +878,17 @@ export const TopBar: React.FC<TopBarProps> = ({
                         : 'Pin this page'
                       : 'Favourites'
                   }
-                  aria-label="Favourites"
-                  className={`flex items-center justify-center w-10 h-10 rounded-[14px] bg-transparent border-0 cursor-pointer transition-all shadow-none z-[999] ${
+                  aria-label={
+                    canPinCurrent
+                      ? isCurrentPinned
+                        ? `Unpin ${currentLink.title}`
+                        : `Pin ${currentLink.title}`
+                      : 'Favourites'
+                  }
+                  aria-pressed={canPinCurrent ? isCurrentPinned : undefined}
+                  aria-expanded={isStarOpen}
+                  aria-haspopup="menu"
+                  className={`flex items-center justify-center min-w-12 min-h-12 rounded-[14px] bg-transparent border-0 outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) cursor-pointer transition-all shadow-none z-[999] ${
                     isCurrentPinned || isStarOpen
                       ? 'text-(--accent-base)'
                       : 'text-(--text-muted) hover:text-(--text-main)'
@@ -864,11 +909,15 @@ export const TopBar: React.FC<TopBarProps> = ({
                     {/* 0: Home / Dashboard */}
                     <div className="flex items-center gap-1 mb-1">
                       <button
+                        type="button"
+                        aria-current={
+                          currentView === 'dashboard' ? 'page' : undefined
+                        }
                         onClick={() => {
                           setCurrentView('dashboard');
                           setIsStarOpen(false);
                         }}
-                        className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl transition-colors text-left border-2 border-transparent hover:border-(--border-dim) hover:bg-(--bg-highlight) cursor-pointer ${
+                        className={`w-full min-h-12 flex items-center gap-3 px-3.5 py-2.5 rounded-2xl transition-colors text-left border-2 border-transparent outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) hover:border-(--border-dim) hover:bg-(--bg-highlight) cursor-pointer ${
                           currentView === 'dashboard'
                             ? 'bg-(--accent-base)/10 text-(--accent-base)'
                             : 'text-(--text-main)'
@@ -892,10 +941,39 @@ export const TopBar: React.FC<TopBarProps> = ({
                           currentLink && link.url === currentLink.url;
                         const isDragging = draggedIndex === idx;
                         const isDragOver = dragOverIndex === idx;
+                        const rowProps = selectableRowProps({
+                          onActivate: () => {
+                            handleLinkClick(link);
+                            setIsStarOpen(false);
+                          },
+                          label: `Open ${link.title}, favourite ${idx + 1}. Alt+Up or Alt+Down to reorder`,
+                          className: `flex items-center gap-1.5 group/row rounded-2xl transition-all border-2 ${
+                            isDragOver
+                              ? 'border-(--accent-base) bg-(--accent-base)/10 scale-[1.01]'
+                              : isDragging
+                                ? 'opacity-30 border-dashed border-(--border-dim)'
+                                : 'border-transparent hover:border-(--border-dim) bg-transparent hover:bg-(--bg-highlight)'
+                          }`,
+                        });
 
                         return (
                           <div
                             key={`${link.url}-${idx}`}
+                            {...rowProps}
+                            role="button"
+                            onKeyDown={(e) => {
+                              rowProps.onKeyDown(e);
+                              if (
+                                e.altKey &&
+                                (e.key === 'ArrowUp' || e.key === 'ArrowDown')
+                              ) {
+                                e.preventDefault();
+                                reorderPin(
+                                  idx,
+                                  idx + (e.key === 'ArrowUp' ? -1 : 1),
+                                );
+                              }
+                            }}
                             draggable
                             onDragStart={(e) => {
                               e.dataTransfer.setData('text/plain', `${idx}`);
@@ -927,23 +1005,21 @@ export const TopBar: React.FC<TopBarProps> = ({
                               setDraggedIndex(null);
                               setDragOverIndex(null);
                             }}
-                            className={`flex items-center gap-1.5 group/row rounded-2xl transition-all border-2 ${
-                              isDragOver
-                                ? 'border-(--accent-base) bg-(--accent-base)/10 scale-[1.01]'
-                                : isDragging
-                                  ? 'opacity-30 border-dashed border-(--border-dim)'
-                                  : 'border-transparent hover:border-(--border-dim) bg-transparent hover:bg-(--bg-highlight)'
-                            }`}
                           >
                             <div
+                              aria-hidden="true"
                               className="pl-2.5 py-2 text-(--text-muted) cursor-grab active:cursor-grabbing hover:text-(--text-main) shrink-0 flex items-center select-none"
-                              title="Drag to reorder"
                             >
                               <span className="text-xs font-mono tracking-tighter opacity-40 group-hover/row:opacity-100">
                                 ⋮⋮
                               </span>
                             </div>
                             <button
+                              type="button"
+                              aria-current={
+                                isThisCurrentPage ? 'page' : undefined
+                              }
+                              tabIndex={-1}
                               onClick={() => {
                                 handleLinkClick(link);
                                 setIsStarOpen(false);
@@ -969,14 +1045,15 @@ export const TopBar: React.FC<TopBarProps> = ({
                             </button>
                             {/* Unpin / Delete button */}
                             <button
+                              type="button"
+                              aria-label={`Unpin ${link.title} from favourites`}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onTogglePin(link);
                               }}
-                              className="p-2 mr-1 rounded-xl text-(--text-muted) hover:text-red-500 opacity-40 hover:opacity-100 transition-all cursor-pointer shrink-0"
-                              title="Delete from favourites"
+                              className="min-w-12 min-h-12 flex items-center justify-center mr-1 rounded-xl text-(--text-muted) outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) hover:text-(--md-sys-color-error) opacity-60 hover:opacity-100 transition-all cursor-pointer shrink-0"
                             >
-                              <Delete className="w-4 h-4 text-(--text-muted) hover:text-red-500 transition-colors" />
+                              <Delete className="w-4 h-4 transition-colors" />
                             </button>
                           </div>
                         );
@@ -989,10 +1066,12 @@ export const TopBar: React.FC<TopBarProps> = ({
                       pinnedLinks.length < 9 && (
                         <div className="pt-2 mt-1 border-t border-(--border-dim)/60">
                           <button
+                            type="button"
+                            aria-label={`Pin ${currentLink.title} to favourites`}
                             onClick={() => {
                               onTogglePin(currentLink!);
                             }}
-                            className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-2xl bg-(--bg-highlight) hover:bg-(--accent-base) text-(--text-main) hover:text-(--text-inverse) transition-colors text-sm font-bold cursor-pointer"
+                            className="w-full min-h-12 flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-2xl bg-(--bg-highlight) outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) hover:bg-(--accent-base) text-(--text-main) hover:text-(--text-inverse) transition-colors text-sm font-bold cursor-pointer"
                           >
                             <Star className="w-4.5 h-4.5" />
                             <span>
@@ -1048,8 +1127,9 @@ export const TopBar: React.FC<TopBarProps> = ({
                     : 'Sync now'
               }
               aria-label={isSyncing || isLoading ? 'Syncing' : 'Sync now'}
+              aria-busy={isSyncing || isLoading}
               disabled={isSyncing || isLoading}
-              className="flex flex-col items-center justify-center px-1.5 py-0.5 rounded-lg hover:bg-(--bg-hover) transition-colors cursor-pointer text-center disabled:opacity-50 shrink-0 min-w-[24px]"
+              className="min-w-12 min-h-12 flex flex-col items-center justify-center rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) hover:bg-(--bg-hover) transition-colors cursor-pointer text-center disabled:opacity-50 shrink-0"
             >
               <div
                 className={`shrink-0 flex items-center justify-center ${isSyncing || isLoading ? 'animate-spin' : ''}`}

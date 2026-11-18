@@ -1,9 +1,10 @@
 import React, { ElementType } from 'react';
-import { Error } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
+import { Inbox } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 
 interface EmptyStateProps {
   msg: React.ReactNode;
   subMsg?: React.ReactNode;
+  /** Pick an icon that matches the empty context (e.g. Event, SearchOff). */
   icon?: ElementType;
   className?: string;
   size?: 'sm' | 'md' | 'lg';
@@ -12,7 +13,7 @@ interface EmptyStateProps {
 export const EmptyState: React.FC<EmptyStateProps> = ({
   msg,
   subMsg,
-  icon: Icon = Error,
+  icon: Icon = Inbox,
   className = '',
   size = 'lg',
 }) => {
@@ -36,16 +37,17 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 
   return (
     <div
-      className={`flex flex-col items-center justify-center h-full w-full text-(--text-muted) rounded-4xl bg-(--bg-surface) group ${containerSizeClass} ${className}`}
+      className={`flex flex-col items-center justify-center h-full w-full text-(--text-muted) rounded-4xl bg-(--bg-surface) ${containerSizeClass} ${className}`}
     >
-      <Icon className={`${iconSizeClass} text-(--accent-base) shrink-0`} />
-      <span
-        className={`${textSizeClass} text-center font-bold font-expanded uppercase transition-all duration-fast group-hover:font-squish`}
-      >
+      <Icon
+        aria-hidden="true"
+        className={`${iconSizeClass} text-(--accent-base) shrink-0`}
+      />
+      <span className={`${textSizeClass} text-center font-bold font-expanded`}>
         {msg}
       </span>
       {subMsg && (
-        <p className="mt-4 text-sm font-bold opacity-70 text-center max-w-md">
+        <p className="mt-4 text-sm font-medium opacity-80 text-center max-w-md">
           {subMsg}
         </p>
       )}

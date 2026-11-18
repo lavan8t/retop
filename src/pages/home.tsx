@@ -298,6 +298,15 @@ export const HomeView: React.FC<HomeViewProps> = ({
     return days;
   }, []);
 
+  const hasCalendarEvents =
+    ttCourses.length > 0 ||
+    assignments.length > 0 ||
+    events.length > 0 ||
+    examGroups.length > 0 ||
+    calGridData.some((month: any) =>
+      (month?.days || []).some((day: any) => day?.info || day?.isHoliday),
+    );
+
   const monthDisplay = useMemo(() => {
     if (calendarDays.length === 0) return { text: '', semName: '' };
     const startM = calendarDays[0].toLocaleDateString('en-US', {
@@ -421,7 +430,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
         <div
           onScroll={handleCalendarScroll}
-          className="h-auto lg:h-full lg:flex-1 lg:min-h-0 overflow-visible lg:overflow-y-auto lg:overflow-x-hidden custom-scrollbar flex flex-col gap-4 pr-3 pb-32 pt-16 lg:pt-15 mt-0 lg:-mt-24 -mb-12 relative z-0 pointer-events-auto empty-events-container w-full max-w-full lg:[mask-image:linear-gradient(to_bottom,transparent,black_5%,black_15%)]"
+          className="h-auto lg:h-full lg:flex-1 lg:min-h-0 overflow-visible lg:overflow-y-auto lg:overflow-x-hidden custom-scrollbar flex flex-col gap-4 pr-3 pb-32 pt-16 lg:pt-15 mt-0 lg:-mt-24 -mb-12 relative z-0 pointer-events-auto w-full max-w-full lg:[mask-image:linear-gradient(to_bottom,transparent,black_5%,black_15%)]"
         >
           {/* MOBILE FEED HEADER (< lg screens): 1. Carousel Row (Attendance & Upcoming Assignments) -> 2. Merged CGPA/Credits Card -> 3. Month & Sem Title */}
           <div className="flex lg:hidden flex-col gap-3 w-full max-w-full pt-1 pb-2 px-0 overflow-x-hidden">
@@ -549,6 +558,16 @@ export const HomeView: React.FC<HomeViewProps> = ({
               onNavigate={handleCalendarNavigate}
             />
           ))}
+
+          {!hasCalendarEvents && (
+            <EmptyState
+              icon={Event}
+              msg="No events to show"
+              subMsg="Classes, assignments and exams appear here once your data is synced."
+              size="md"
+              className="bg-transparent"
+            />
+          )}
         </div>
       </div>
 

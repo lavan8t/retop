@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { getAppRoot } from '../../utils/bridge';
 
@@ -7,15 +7,17 @@ export interface AlertDialogOptions {
   message: string;
   confirmText?: string;
   cancelText?: string;
+  /** Destructive actions use the M3 error tonal role. */
+  variant?: 'default' | 'error';
 }
 
-type DialogState =
-  | (AlertDialogOptions & {
-      resolve: (value: boolean) => void;
-    })
-  | null;
+type DialogState = AlertDialogOptions & {
+  resolve: (value: boolean) => void;
+};
 
-let globalSetDialog: ((state: DialogState) => void) | null = null;
+type InternalDialogState = DialogState | null;
+
+let globalSetDialog: ((state: InternalDialogState) => void) | null = null;
 let globalPendingResolve: ((value: boolean) => void) | null = null;
 
 /**
@@ -34,6 +36,7 @@ export function showAlertDialog(
         message: opts.message,
         confirmText: opts.confirmText || 'OK',
         cancelText: opts.cancelText,
+        variant: opts.variant || 'default',
         resolve,
       });
     } else {
@@ -51,8 +54,12 @@ export function showAlertDialog(
  * Global Alert Dialog Manager Component.
  */
 export const AlertDialogManager: React.FC = () => {
-  const [dialog, setDialog] = useState<DialogState>(null);
+  const [dialog, setDialog] = useState<InternalDialogState>(null);
   const [isClosing, setIsClosing] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+  const titleId = useId();
+  const messageId = useId();
 
   useEffect(() => {
     globalSetDialog = (st) => {
@@ -68,6 +75,7 @@ export const AlertDialogManager: React.FC = () => {
           message: e.detail.message,
           confirmText: e.detail.confirmText || 'OK',
           cancelText: e.detail.cancelText,
+          variant: e.detail.variant || 'default',
           resolve: e.detail.resolve || globalPendingResolve || (() => {}),
         });
       }
@@ -87,6 +95,7 @@ export const AlertDialogManager: React.FC = () => {
       setIsClosing(true);
       setTimeout(() => {
         dialog.resolve(confirmed);
+        returnFocusRef.current?.focus();
         setDialog(null);
         setIsClosing(false);
       }, 150);
@@ -96,6 +105,22 @@ export const AlertDialogManager: React.FC = () => {
 
   useEffect(() => {
     if (!dialog) return;
+    returnFocusRef.current = document.activeElement as HTMLElement;
+
+    const focusable = () =>
+      Array.from(
+        cardRef.current?.querySelectorAll<HTMLElement>(
+          'button:not([disabled])',
+        ) || [],
+      );
+
+    // Move focus into the dialog once it is mounted.
+    const raf = requestAnimationFrame(() => {
+      const items = focusable();
+      (
+        items.find((el) => el.dataset.confirm !== undefined) || items[0]
+      )?.focus();
+    });
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -104,11 +129,26 @@ export const AlertDialogManager: React.FC = () => {
       } else if (e.key === 'Enter') {
         e.preventDefault();
         handleClose(true);
+      } else if (e.key === 'Tab') {
+        const items = focusable();
+        if (items.length === 0) return;
+        const first = items[0];
+        const last = items[items.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [dialog, handleClose]);
 
   if (!dialog || typeof document === 'undefined') return null;
@@ -118,15 +158,19 @@ export const AlertDialogManager: React.FC = () => {
   // unstyled on native VTOP pages (agents.md rule 13).
   const portalRoot = getAppRoot();
   if (!portalRoot) return null;
+  const isDestructive = dialog.variant === 'error';
 
   return createPortal(
     <div
       role="dialog"
       aria-modal="true"
+      aria-labelledby={titleId}
+      aria-describedby={messageId}
       className="fixed inset-0 z-100000 flex items-center justify-center p-4 select-none"
     >
       {/* Dark overlay without blur */}
       <div
+        aria-hidden="true"
         className="fixed inset-0 bg-black/60"
         style={{
           animation: isClosing
@@ -138,6 +182,7 @@ export const AlertDialogManager: React.FC = () => {
 
       {/* Material 3 Dialog Card */}
       <div
+        ref={cardRef}
         className="relative bg-(--bg-surface) border-2 border-(--border-dim) rounded-[28px] p-6 shadow-2xl w-full max-w-95 z-10 flex flex-col text-left"
         style={{
           animation: isClosing
@@ -146,32 +191,41 @@ export const AlertDialogManager: React.FC = () => {
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Title (Left-aligned) */}
-        <h3 className="text-left text-lg font-black font-expanded text-(--text-main) tracking-tight mb-2 leading-snug">
+        <h3
+          id={titleId}
+          className="text-left text-lg font-black font-expanded text-(--text-main) tracking-tight mb-2 leading-snug"
+        >
           {dialog.title || 'Alert'}
         </h3>
 
-        {/* Message / Subject (Left-aligned) */}
-        <p className="text-left text-sm font-medium text-(--text-muted) leading-relaxed mb-6 whitespace-pre-wrap">
+        <p
+          id={messageId}
+          className="text-left text-sm font-medium text-(--text-muted) leading-relaxed mb-6 whitespace-pre-wrap"
+        >
           {dialog.message}
         </p>
 
-        {/* Pill Buttons Row */}
         <div className="flex items-center justify-end gap-2 mt-auto">
           {dialog.cancelText && (
             <button
               type="button"
+              aria-label={dialog.cancelText}
               onClick={() => handleClose(false)}
-              className="rounded-full px-5 py-2.5 text-xs font-bold text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-highlight) transition-colors bg-transparent border-0 cursor-pointer"
+              className="min-h-12 rounded-full px-5 py-2.5 text-xs font-bold text-(--text-muted) outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) hover:text-(--text-main) hover:bg-(--bg-highlight) transition-colors bg-transparent border-0 cursor-pointer"
             >
               {dialog.cancelText}
             </button>
           )}
           <button
             type="button"
-            autoFocus
+            data-confirm
+            aria-label={dialog.confirmText || 'OK'}
             onClick={() => handleClose(true)}
-            className="rounded-full px-6 py-2.5 text-xs font-bold bg-(--accent-base) text-(--text-inverse) hover:opacity-90 active:scale-95 transition-all shadow-none border-0 cursor-pointer"
+            className={`min-h-12 rounded-full px-6 py-2.5 text-xs font-bold outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-(--bg-surface) transition-all shadow-none border-0 cursor-pointer ${
+              isDestructive
+                ? 'bg-(--md-sys-color-error) text-(--md-sys-color-on-error) focus-visible:ring-(--md-sys-color-error) hover:opacity-90'
+                : 'bg-(--accent-base) text-(--text-inverse) focus-visible:ring-(--accent-base) hover:opacity-90'
+            }`}
           >
             {dialog.confirmText || 'OK'}
           </button>

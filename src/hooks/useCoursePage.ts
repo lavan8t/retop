@@ -15,6 +15,10 @@ import {
 } from '../types/vtop';
 import { useDataStore } from '../store/dataStore';
 import { set as idbSet } from 'idb-keyval';
+import {
+  buildDownloadFilename,
+  isDownloadableMaterial,
+} from '../utils/courseDownloads';
 
 interface UpcomingClassDetail {
   date: Date;
@@ -330,6 +334,8 @@ export const useCoursePageData = (
   ) => {
     try {
       idbSet('lastDownloadInfo', {
+        type: 'course_page',
+        semester: selectedSem,
         faculty: facultyName,
         course: courseName,
         timestamp: Date.now(),
@@ -358,6 +364,47 @@ export const useCoursePageData = (
     document.body.appendChild(form);
     form.submit();
     document.body.removeChild(form);
+  };
+
+  const downloadMaterials = (
+    selections: { material: CourseMaterial; faculty: string }[],
+    moduleWise: boolean,
+  ): Promise<{ downloaded: number; skipped: number }> => {
+    const course = [currentOption?.code, currentOption?.title]
+      .filter(Boolean)
+      .join(' - ');
+    const items = selections
+      .filter(({ material }) => isDownloadableMaterial(material.category))
+      .map(({ material, faculty }) => ({
+        fileId: material.downloadId || material.id,
+        filename: buildDownloadFilename(
+          {
+            fileId: material.downloadId || material.id,
+            title: material.title,
+            faculty,
+            module: material.module,
+          },
+          { semester: selectedSem, course, moduleWise },
+        ),
+      }));
+
+    if (items.length === 0) {
+      return Promise.resolve({ downloaded: 0, skipped: selections.length });
+    }
+
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage(
+        {
+          action: 'DOWNLOAD_COURSE_MATERIALS',
+          url: `${window.location.origin}/vtop/downloadCourseMaterialFacultyPdf`,
+          csrf: getCsrf(),
+          authorizedId: getAuthId(),
+          items,
+        },
+        (res: { downloaded: number; skipped: number } | undefined) =>
+          resolve(res || { downloaded: 0, skipped: 0 }),
+      );
+    });
   };
 
   const filteredMaterials =
@@ -428,5 +475,6 @@ export const useCoursePageData = (
     courseAttendance,
     courseAssignments,
     handleDownload,
+    downloadMaterials,
   };
 };

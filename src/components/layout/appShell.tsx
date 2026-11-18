@@ -1,6 +1,6 @@
 /**
- * Shared presentation rules: the page-title seam and the content measure.
- * The bar and the app are adapters over these rules.
+ * Shared presentation rule: the page-title seam.
+ * The bar and the app are adapters over this rule.
  */
 export const getPageTitle = (view: string, dynamicTitle?: string): string => {
   switch (view) {
@@ -36,8 +36,3 @@ export const getPageTitle = (view: string, dynamicTitle?: string): string => {
       return '';
   }
 };
-
-/** Readable content measure; opted out by views that need the full width. */
-export const CONTENT_WIDTH_CLASS = 'max-w-[1040px] w-full mx-auto';
-
-export const isFullWidthView = (view: string): boolean => view === 'coursePage';

@@ -34,10 +34,12 @@ export const courseKey = (course: DetailedAttendanceCourse): string =>
 export const CourseList = ({
   courses,
   selectedKey,
+  isNinePointer,
   onSelect,
 }: {
   courses: DetailedAttendanceCourse[];
   selectedKey: string | null;
+  isNinePointer: boolean;
   onSelect: (key: string) => void;
 }) => {
   // M3E moves focus on Arrow/Home/End; selection follows that focus.
@@ -72,7 +74,7 @@ export const CourseList = ({
       >
         {courses.map((course) => {
           const key = courseKey(course);
-          const tone = attendanceTone(course.percentage);
+          const tone = attendanceTone(course.percentage, isNinePointer);
           const selected = key === selectedKey;
           return (
             <M3eListOption

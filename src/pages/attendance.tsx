@@ -38,7 +38,10 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
     attendanceRecords,
     attRecordsLoading,
     status,
+    stats,
   } = useDataStore();
+
+  const isNinePointer = parseFloat(stats?.cgpa || '0') >= 9;
 
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -166,6 +169,7 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
       forecast={selectedCourseObj ? forecast : null}
       total={selectedCourseObj?.total ?? 0}
       attended={selectedCourseObj?.attended ?? 0}
+      isNinePointer={isNinePointer}
       refreshing={refreshing}
       onRefresh={() => {
         void load(true).then(() => {
@@ -182,6 +186,7 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
       <CourseList
         courses={detailedAttendance}
         selectedKey={selectedCourse}
+        isNinePointer={isNinePointer}
         onSelect={selectCourse}
       />
     </div>
@@ -195,6 +200,7 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
         recordsLoading={attRecordsLoading}
         sortOrder={sortOrder}
         onSortChange={setSortOrder}
+        isNinePointer={isNinePointer}
         compact={!isWide}
         onBack={() => setSelectedCourse(null)}
       />

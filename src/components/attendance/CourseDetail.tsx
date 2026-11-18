@@ -17,6 +17,7 @@ export const CourseDetail = ({
   recordsLoading,
   sortOrder,
   onSortChange,
+  isNinePointer,
   compact,
   onBack,
 }: {
@@ -25,6 +26,7 @@ export const CourseDetail = ({
   recordsLoading: boolean;
   sortOrder: 'asc' | 'desc';
   onSortChange: (order: 'asc' | 'desc') => void;
+  isNinePointer: boolean;
   compact: boolean;
   onBack: () => void;
 }) => (
@@ -61,7 +63,7 @@ export const CourseDetail = ({
       </div>
     </header>
 
-    <WhatIfCalculator course={course} />
+    <WhatIfCalculator course={course} isNinePointer={isNinePointer} />
 
     <ClassHistory
       records={records}

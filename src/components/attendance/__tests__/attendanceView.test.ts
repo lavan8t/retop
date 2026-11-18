@@ -33,17 +33,23 @@ const course = (percentage: number): DetailedAttendanceCourse => ({
 describe('attendance tone', () => {
   test('thresholds follow the Android look', () => {
     expect(attendanceTone(74)).toBe('critical');
+    expect(attendanceTone(69)).toBe('critical');
     expect(attendanceTone(75)).toBe('warning');
-    expect(attendanceTone(89)).toBe('neutral');
+    expect(attendanceTone(79)).toBe('warning');
+    expect(attendanceTone(89)).toBe('warning');
+    expect(attendanceTone(89.4)).toBe('warning');
     expect(attendanceTone(90)).toBe('safe');
     expect(attendanceTone(NaN)).toBe('na');
   });
 
-  test('9-pointers suppress warning and critical below 90, never safe', () => {
-    expect(attendanceTone(69)).toBe('neutral');
-    expect(attendanceTone(79)).toBe('neutral');
-    expect(attendanceTone(89.4)).toBe('neutral');
-    expect(attendanceTone(99)).toBe('safe');
+  test('nine-pointers (CGPA >= 9) stay neutral below 90 and safe at 90+', () => {
+    expect(attendanceTone(69, true)).toBe('neutral');
+    expect(attendanceTone(79, true)).toBe('neutral');
+    expect(attendanceTone(89, true)).toBe('neutral');
+    expect(attendanceTone(89.4, true)).toBe('neutral');
+    expect(attendanceTone(90, true)).toBe('safe');
+    expect(attendanceTone(99, true)).toBe('safe');
+    expect(attendanceTone(NaN, true)).toBe('na');
   });
 
   test('nothing conducted reads N/A', () => {
@@ -64,6 +70,10 @@ describe('overview and forecast copy', () => {
       '2 courses below 75%',
     );
     expect(overallVerdict([course(60)]).critical).toBe(true);
+    expect(overallVerdict([course(60)], true)).toEqual({
+      text: 'All courses on track',
+      critical: false,
+    });
   });
 
   test('leave impact carries a title, dates and miss count', () => {

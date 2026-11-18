@@ -16,13 +16,17 @@ export const TONE_LABEL: Record<AttendanceTone, string> = {
 };
 
 /**
- * Android attendance thresholds. The "9-pointer" quirk suppresses warning and
- * critical tones for values ending in 9 (e.g. 69, 79, 89); 90+ stays safe.
+ * Android statusColorFor(pct, isNinePointer). A nine-pointer (CGPA >= 9) is
+ * only flagged when at or above 90%; below that it stays neutral. Everyone
+ * else uses <75 critical, <90 warning, >=90 safe.
  */
-export function attendanceTone(percentage: number): AttendanceTone {
+export function attendanceTone(
+  percentage: number,
+  isNinePointer = false,
+): AttendanceTone {
   if (!Number.isFinite(percentage)) return 'na';
   const rounded = Math.round(percentage);
-  if (rounded % 10 === 9 && rounded < 90) return 'neutral';
+  if (isNinePointer) return rounded >= 90 ? 'safe' : 'neutral';
   if (rounded < 75) return 'critical';
   if (rounded < 90) return 'warning';
   return 'safe';
@@ -33,11 +37,14 @@ export function displayPercentage(percentage: number, total: number): string {
   return `${Math.round(percentage)}%`;
 }
 
-export function overallVerdict(courses: DetailedAttendanceCourse[]): {
+export function overallVerdict(
+  courses: DetailedAttendanceCourse[],
+  isNinePointer = false,
+): {
   text: string;
   critical: boolean;
 } {
-  const tones = courses.map((c) => attendanceTone(c.percentage));
+  const tones = courses.map((c) => attendanceTone(c.percentage, isNinePointer));
   const critical = tones.filter((t) => t === 'critical').length;
   const warning = tones.filter((t) => t === 'warning').length;
   if (critical > 0) {

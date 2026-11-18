@@ -9,6 +9,17 @@ import {
   ParserModuleId,
   PARSER_SCHEMA_VERSIONS,
 } from '../parsers/version';
+import { readSessionFactsFromDocument } from './sessionFacts';
+
+/** Registration number for key scoping; explicit account wins over DOM. */
+const scopedRegNo = (accountRegNo?: string): string =>
+  (
+    accountRegNo ||
+    (typeof document !== 'undefined'
+      ? readSessionFactsFromDocument().regNo
+      : '') ||
+    ''
+  ).toLowerCase();
 
 const CACHE_PREFIX = 'retop_cache_';
 const CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days default TTL
@@ -93,12 +104,7 @@ export const getAllCachedKeys = async (
   accountRegNo?: string,
 ): Promise<{ key: string; timestamp: number }[]> => {
   const result: { key: string; timestamp: number }[] = [];
-  const targetReg = (
-    accountRegNo ||
-    (typeof document !== 'undefined' &&
-      (document.getElementById('authorizedIDX') as HTMLInputElement)?.value) ||
-    ''
-  ).toLowerCase();
+  const targetReg = scopedRegNo(accountRegNo);
 
   try {
     const allData = await getAllStorageData();
@@ -138,12 +144,7 @@ export const removeCacheKey = async (key: string): Promise<void> => {
 export const clearAccountCache = async (
   accountRegNo?: string,
 ): Promise<void> => {
-  const regNo = (
-    accountRegNo ||
-    (typeof document !== 'undefined' &&
-      (document.getElementById('authorizedIDX') as HTMLInputElement)?.value) ||
-    ''
-  ).toLowerCase();
+  const regNo = scopedRegNo(accountRegNo);
 
   const allData = await getAllStorageData();
   const keysToRemove: string[] = [];

@@ -1,4 +1,5 @@
 import { setCachedData } from './cache';
+import { readSessionFactsFromDocument } from './sessionFacts';
 import {
   parseAcademicStats,
   parseCourseDetails,
@@ -51,10 +52,9 @@ export function interceptDashboardResponse(url: string, htmlText: string) {
   if (!htmlText || typeof htmlText !== 'string' || htmlText.length < 20) return;
 
   const authId =
-    (window as any).authorizedID ||
-    (document.getElementById('authorizedIDX') as HTMLInputElement)?.value ||
-    (document.querySelector('input[name="authorizedID"]') as HTMLInputElement)
-      ?.value ||
+    (typeof document !== 'undefined'
+      ? readSessionFactsFromDocument().regNo
+      : '') ||
     localStorage.getItem('retop_lastAuthId') ||
     localStorage.getItem('retop_active_user') ||
     '';

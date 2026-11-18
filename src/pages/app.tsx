@@ -10,6 +10,7 @@ import {
   removeSplashScreen,
 } from '../utils/bridge';
 import { VTOPNetwork } from '../utils/network';
+import { readSessionFactsFromDocument } from '../utils/sessionFacts';
 import { getCachedData, setCachedData } from '../utils/cache';
 import {
   getStorageData,
@@ -557,21 +558,9 @@ export const DashboardApp = () => {
     if (settings.fontScale && settings.fontScale !== 100) {
       document.documentElement.style.fontSize = `${settings.fontScale}%`;
     }
-    const authIdInput = document.getElementById(
-      'authorizedIDX',
-    ) as HTMLInputElement;
-    let authId = authIdInput?.value;
-    const htmlContent = document.documentElement.outerHTML;
-    const domCsrfInput = document.querySelector(
-      'input[name="_csrf"]',
-    ) as HTMLInputElement;
-    const csrfMatch =
-      htmlContent.match(/csrfValue\s*=\s*"([^"]+)"/) ||
-      htmlContent.match(/name=["']_csrf["'][^>]*value=["']([^"']+)["']/);
-    let csrf =
-      domCsrfInput?.value ||
-      (csrfMatch ? csrfMatch[1] : (window as any).csrfValue) ||
-      '';
+    const liveFacts = readSessionFactsFromDocument();
+    let authId = liveFacts.regNo;
+    let csrf = liveFacts.csrf;
 
     const isOffline = !!(window as any).__RETOP_OFFLINE__;
     if ((!authId || !csrf) && (isOffline || isStandalone)) {

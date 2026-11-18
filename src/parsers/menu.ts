@@ -1,6 +1,7 @@
 import { MenuCategory, QuickLink } from '../types/vtop';
 import { fixBase64Image, imageElementToBase64 } from './profile';
 import { validateParsed, Versioned } from '../utils/parser-utils';
+import { readSessionFactsFromDocument } from '../utils/sessionFacts';
 
 export const MENU_SCHEMA_VERSION = 1;
 
@@ -398,10 +399,7 @@ export function scrapeMenu(doc: Document): Versioned<MenuCategory[]> {
 }
 
 export function scrapeUserProfile(doc: Document) {
-  const authInput =
-    (doc.getElementById('authorizedIDX') as HTMLInputElement)?.value ||
-    (doc.getElementById('authorizedID') as HTMLInputElement)?.value ||
-    '';
+  const authInput = readSessionFactsFromDocument(doc).regNo;
 
   const navText =
     doc

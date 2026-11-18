@@ -30,6 +30,7 @@ import { applyTheme } from '../utils/settings-store';
 import { DARK_STYLESHEET_ID } from '../utils/retopIds';
 import { getExtUrl } from '../utils/url';
 import { isStudentRegNo } from '../utils/studentId';
+import { readSessionFactsFromDocument } from '../utils/sessionFacts';
 
 // The bootstrapper cannot import the teardown (it must stay import free), so
 // publish it on window for the document_start side to reuse.
@@ -409,40 +410,11 @@ function waitForTokens(): Promise<boolean> {
       // Preserve JSESSIONID for /vtop/content after login redirect
       const cookieMatch = document.cookie.match(/JSESSIONID=([^;]+)/);
       if (cookieMatch) (window as any).__vtopSessionCookie = cookieMatch[1];
-      const csrfInput = document.querySelector(
-        'input[name="_csrf"]',
-      ) as HTMLInputElement;
-      const authInput = (document.getElementById('authorizedIDX') ||
-        document.getElementById('authorizedID') ||
-        document.querySelector(
-          'input[name="authorizedID"]',
-        )) as HTMLInputElement | null;
 
-      if (csrfInput && csrfInput.value) vtopContext.csrf = csrfInput.value;
-      if (authInput && authInput.value) vtopContext.authId = authInput.value;
-      else if ((window as any).authorizedID) {
-        vtopContext.authId = String((window as any).authorizedID);
-      }
-
-      if (!vtopContext.authId || !vtopContext.csrf) {
-        for (let i = 0; i < document.scripts.length; i++) {
-          const text = document.scripts[i].textContent;
-          if (!text) continue;
-          if (!vtopContext.csrf) {
-            const csrfMatch = text.match(
-              /var\s+csrfValue\s*=\s*["']([^"']+)["']/i,
-            );
-            if (csrfMatch) vtopContext.csrf = csrfMatch[1];
-          }
-          if (!vtopContext.authId) {
-            const idMatch =
-              text.match(/var\s+id\s*=\s*["']([^"']+)["']/i) ||
-              text.match(/authorizedID["']?\s*,\s*value:\s*["']([^"']+)["']/i);
-            if (idMatch) vtopContext.authId = idMatch[1];
-          }
-          if (vtopContext.authId && vtopContext.csrf) break;
-        }
-      }
+      // The session module owns the DOM/script/global fallback chain.
+      const live = readSessionFactsFromDocument();
+      if (live.csrf) vtopContext.csrf = live.csrf;
+      if (live.regNo) vtopContext.authId = live.regNo;
 
       // Stop on the registration number, not the CSRF token: the token is optional for
       // mounting, and waiting on it would burn the full 5 s budget every time VTOP

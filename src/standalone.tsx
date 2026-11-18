@@ -8,6 +8,7 @@ import { applyTheme, DEFAULT_SETTINGS } from './utils/settings-store';
 import { getStorageData, setStorageData } from './utils/storageAdapter';
 import { CachedUser } from './utils/syncOrchestrator';
 import { VtopClient, VtopCampus } from './utils/vtopClient';
+import { createSessionFacts } from './utils/sessionFacts';
 import { get as idbGet } from 'idb-keyval';
 
 // Mark global standalone flag
@@ -79,9 +80,11 @@ const StandaloneRoot: React.FC = () => {
   }, []);
 
   const setupDomForUser = (regNo: string, csrf?: string) => {
-    (window as any).authorizedID = regNo;
-    (window as any).csrfValue =
-      csrf || (window as any).csrfValue || 'retop_csrf';
+    // Install the shell session through the same seam live VTOP uses.
+    createSessionFacts({ mode: 'jar' }).update({
+      csrf: csrf || (window as any).csrfValue || 'retop_csrf',
+      regNo,
+    });
 
     let authInput = document.getElementById(
       'authorizedIDX',

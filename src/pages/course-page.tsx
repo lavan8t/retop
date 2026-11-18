@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Search,
   Language,
@@ -22,9 +22,8 @@ import {
   MenuCategory,
   CourseMaterial,
 } from '../types/vtop';
-import { useDataStore } from '../store/dataStore';
 import { useCoursePageData } from '../hooks/useCoursePage';
-import { isDownloadableMaterial } from '../utils/courseDownloads';
+import { isSameSemester } from '../utils/semesterIdentity';
 import { parseStudentMarks } from '../parsers/marks';
 import { parseGrades } from '../parsers/grades';
 import {
@@ -70,27 +69,6 @@ export const CoursePage = ({
 
   const activeSearchTerm = localSearchTerm || searchTerm;
 
-  const formatFaculty = (raw: string) => {
-    const parts = raw
-      .split('-')
-      .map((p) => p.trim())
-      .filter(Boolean);
-
-    if (parts.length === 0) return { name: raw, subs: [] };
-
-    // If first part is digits (Emp ID like "10234"), second part is Faculty Name
-    if (/^\d+$/.test(parts[0]) && parts.length > 1) {
-      const name = parts[1];
-      const subs = [parts[0], ...parts.slice(2)];
-      return { name, subs };
-    }
-
-    return {
-      name: parts[0],
-      subs: parts.slice(1),
-    };
-  };
-
   const {
     loading,
     data,
@@ -98,8 +76,9 @@ export const CoursePage = ({
     courseGrade,
     upcomingClasses,
     currentOption,
-    groupedMaterials,
+    materialGroups,
     filteredMaterials,
+    downloadableSelections,
     courseTimetable,
     courseAttendance,
     courseAssignments,
@@ -114,80 +93,6 @@ export const CoursePage = ({
     setSelectedOptionId,
     activeSearchTerm,
     materialSort,
-  );
-
-  const { detailedAttendance, attendance } = useDataStore();
-
-  const assignedFacRaw = (
-    courseTimetable?.faculty ||
-    detailedAttendance?.find(
-      (a) => currentOption && a.courseCode === currentOption.code,
-    )?.faculty ||
-    attendance?.find(
-      (a) => currentOption && a.code.includes(currentOption.code.trim()),
-    )?.faculty ||
-    ''
-  )
-    .toLowerCase()
-    .trim();
-
-  const isAssignedFaculty = useMemo(() => {
-    return (facKey: string) => {
-      if (!assignedFacRaw) return false;
-
-      // 1. Match by Employee ID (e.g. 4-7 digit numbers like 10234)
-      const targetEmpId = (assignedFacRaw.match(/\b\d{4,7}\b/) || [])[0];
-      const groupEmpId = (facKey.match(/\b\d{4,7}\b/) || [])[0];
-
-      if (targetEmpId && groupEmpId && targetEmpId === groupEmpId) {
-        return true;
-      }
-      if (targetEmpId && facKey.includes(targetEmpId)) {
-        return true;
-      }
-
-      // 2. Match by Faculty Name Tokens
-      const cleanTokens = (str: string) =>
-        str
-          .replace(/\b\d{4,7}\b/g, '')
-          .replace(
-            /\b(dr|prof|mr|mrs|ms|assoc|assistant|professor|ela|eth)\b/gi,
-            '',
-          )
-          .replace(/[^a-zA-Z\s]/g, '')
-          .toLowerCase()
-          .split(/\s+/)
-          .filter((t) => t.length > 2);
-
-      const targetTokens = cleanTokens(assignedFacRaw);
-      const groupTokens = cleanTokens(facKey);
-
-      if (targetTokens.length === 0 || groupTokens.length === 0) return false;
-
-      const matchingTokens = targetTokens.filter((t) =>
-        groupTokens.includes(t),
-      );
-      return matchingTokens.length > 0;
-    };
-  }, [assignedFacRaw]);
-
-  const sortedGroupedEntries = useMemo(() => {
-    const entries = Object.entries(groupedMaterials);
-    if (!assignedFacRaw) return entries;
-
-    return [...entries].sort(([facA], [facB]) => {
-      const isA = isAssignedFaculty(facA);
-      const isB = isAssignedFaculty(facB);
-      if (isA && !isB) return -1;
-      if (!isA && isB) return 1;
-      return 0;
-    });
-  }, [groupedMaterials, assignedFacRaw, isAssignedFaculty]);
-
-  const allSelections = sortedGroupedEntries.flatMap(([faculty, mats]) =>
-    mats
-      .filter((m) => isDownloadableMaterial(m.category))
-      .map((material) => ({ material, faculty })),
   );
 
   const runDownloads = async (
@@ -244,14 +149,8 @@ export const CoursePage = ({
                         <div className="absolute top-full left-0 mt-2 w-[85vw] md:w-[24rem] bg-(--bg-surface) border-2 border-(--border-main) rounded-2xl shadow-none overflow-hidden origin-top-left z-50">
                           <div className="max-h-[50vh] overflow-y-auto overscroll-contain custom-scrollbar p-1.5 space-y-1">
                             {cpOptions
-                              .filter(
-                                (o) =>
-                                  o.semester
-                                    .replace(/0+([1-9])$/, '$1')
-                                    .toLowerCase() ===
-                                  selectedSem
-                                    .replace(/0+([1-9])$/, '$1')
-                                    .toLowerCase(),
+                              .filter((o) =>
+                                isSameSemester(o.semester, selectedSem),
                               )
                               .map((opt) => (
                                 <button
@@ -599,7 +498,7 @@ export const CoursePage = ({
                 <button
                   onClick={() =>
                     setSelectedIds(
-                      new Set(allSelections.map((s) => s.material.id)),
+                      new Set(downloadableSelections.map((s) => s.material.id)),
                     )
                   }
                   className="px-3 py-2 rounded-full bg-(--bg-surface) hover:bg-(--bg-highlight) border border-(--border-dim)/40 cursor-pointer"
@@ -607,7 +506,7 @@ export const CoursePage = ({
                   Select all
                 </button>
                 <button
-                  onClick={() => runDownloads(allSelections)}
+                  onClick={() => runDownloads(downloadableSelections)}
                   className="px-3 py-2 rounded-full bg-(--accent-base) text-(--text-inverse) cursor-pointer border-0"
                 >
                   Download all
@@ -616,7 +515,7 @@ export const CoursePage = ({
                   disabled={selectedIds.size === 0}
                   onClick={() =>
                     runDownloads(
-                      allSelections.filter((s) =>
+                      downloadableSelections.filter((s) =>
                         selectedIds.has(s.material.id),
                       ),
                     )
@@ -651,103 +550,95 @@ export const CoursePage = ({
                   key={localSearchTerm + materialSort + currentOption?.classId}
                   className="flex flex-col gap-10"
                 >
-                  {sortedGroupedEntries.map(([facultyStr, mats]) => {
-                    const fac = formatFaculty(facultyStr);
-                    const isAssigned = isAssignedFaculty(facultyStr);
-
-                    return (
-                      <div key={facultyStr} className="flex flex-col">
-                        <div className="flex flex-col gap-2 mb-4 border-b border-(--border-dim)/30 pb-4">
-                          <div className="flex justify-between items-start gap-4 flex-wrap">
-                            <div className="flex items-center gap-3">
-                              <h3 className="text-xl md:text-2xl font-black font-expanded text-(--text-main) uppercase">
-                                {fac.name}
-                              </h3>
-                              {isAssigned && (
-                                <span className="px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-(--accent-base) text-(--text-inverse)">
-                                  Assigned Faculty
-                                </span>
-                              )}
-                            </div>
+                  {materialGroups.map((group) => (
+                    <div key={group.key} className="flex flex-col">
+                      <div className="flex flex-col gap-2 mb-4 border-b border-(--border-dim)/30 pb-4">
+                        <div className="flex justify-between items-start gap-4 flex-wrap">
+                          <div className="flex items-center gap-3">
+                            <h3 className="text-xl md:text-2xl font-black font-expanded text-(--text-main) uppercase">
+                              {group.faculty.name}
+                            </h3>
+                            {group.isAssigned && (
+                              <span className="px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-(--accent-base) text-(--text-inverse)">
+                                Assigned Faculty
+                              </span>
+                            )}
                           </div>
-                          {fac.subs.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-1">
-                              {fac.subs.map((s, idx) => (
-                                <span
-                                  key={idx}
-                                  className="text-[10px] md:text-xs font-mono font-bold text-(--text-muted) bg-(--bg-surface) px-2.5 py-1 rounded-full uppercase tracking-wider border border-(--border-dim)/30"
-                                >
-                                  {s}
-                                </span>
-                              ))}
-                            </div>
-                          )}
                         </div>
-
-                        <div className="flex flex-col gap-2">
-                          {mats.map((mat) => {
-                            const isWebLink = (mat.category || '')
-                              .toLowerCase()
-                              .includes('web link');
-                            const Icon = isWebLink ? Language : Description;
-
-                            return (
-                              <div
-                                key={mat.id}
-                                onClick={() => {
-                                  const courseName =
-                                    [currentOption?.code, currentOption?.title]
-                                      .filter(Boolean)
-                                      .join(' - ') || 'Course';
-                                  handleDownload(
-                                    mat,
-                                    fac.name,
-                                    courseName,
-                                    moduleWise,
-                                  );
-                                }}
-                                className="group flex items-center gap-4 py-3 px-3.5 rounded-2xl cursor-pointer bg-transparent hover:bg-(--bg-surface)/70 transition-colors border border-transparent hover:border-(--border-dim)/30"
+                        {group.faculty.subs.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {group.faculty.subs.map((s, idx) => (
+                              <span
+                                key={idx}
+                                className="text-[10px] md:text-xs font-mono font-bold text-(--text-muted) bg-(--bg-surface) px-2.5 py-1 rounded-full uppercase tracking-wider border border-(--border-dim)/30"
                               >
-                                <input
-                                  type="checkbox"
-                                  checked={selectedIds.has(mat.id)}
-                                  onClick={(e) => e.stopPropagation()}
-                                  onChange={() =>
-                                    setSelectedIds((prev) => {
-                                      const next = new Set(prev);
-                                      if (next.has(mat.id)) next.delete(mat.id);
-                                      else next.add(mat.id);
-                                      return next;
-                                    })
-                                  }
-                                  aria-label={`Select ${mat.title}`}
-                                />
-                                <div className="w-10 h-10 rounded-full bg-(--bg-surface) flex items-center justify-center text-(--accent-base) group-hover:text-(--text-inverse) group-hover:bg-(--accent-base) transition-colors shrink-0 border border-(--border-dim)/30">
-                                  <Icon className="w-5 h-5" />
-                                </div>
-                                <div className="min-w-0 flex-1 flex flex-col">
-                                  <div className="flex items-center gap-2">
-                                    {mat.module !== undefined &&
-                                      mat.module !== '' && (
-                                        <span className="shrink-0 text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-(--bg-surface) text-(--text-muted) uppercase border border-(--border-dim)/30">
-                                          MOD {mat.module}
-                                        </span>
-                                      )}
-                                    <h4 className="font-bold text-(--text-main) text-sm md:text-base truncate group-hover:text-(--accent-base) transition-colors">
-                                      {mat.title}
-                                    </h4>
-                                  </div>
-                                  <span className="text-[10px] font-mono font-bold text-(--text-muted) uppercase mt-0.5">
-                                    {mat.uploadDate} • {mat.category}
-                                  </span>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
+                                {s}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    );
-                  })}
+
+                      <div className="flex flex-col gap-2">
+                        {group.materials.map(({ material: mat, isWebLink }) => {
+                          const Icon = isWebLink ? Language : Description;
+
+                          return (
+                            <div
+                              key={mat.id}
+                              onClick={() => {
+                                const courseName =
+                                  [currentOption?.code, currentOption?.title]
+                                    .filter(Boolean)
+                                    .join(' - ') || 'Course';
+                                handleDownload(
+                                  mat,
+                                  group.faculty.name,
+                                  courseName,
+                                  moduleWise,
+                                );
+                              }}
+                              className="group flex items-center gap-4 py-3 px-3.5 rounded-2xl cursor-pointer bg-transparent hover:bg-(--bg-surface)/70 transition-colors border border-transparent hover:border-(--border-dim)/30"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selectedIds.has(mat.id)}
+                                onClick={(e) => e.stopPropagation()}
+                                onChange={() =>
+                                  setSelectedIds((prev) => {
+                                    const next = new Set(prev);
+                                    if (next.has(mat.id)) next.delete(mat.id);
+                                    else next.add(mat.id);
+                                    return next;
+                                  })
+                                }
+                                aria-label={`Select ${mat.title}`}
+                              />
+                              <div className="w-10 h-10 rounded-full bg-(--bg-surface) flex items-center justify-center text-(--accent-base) group-hover:text-(--text-inverse) group-hover:bg-(--accent-base) transition-colors shrink-0 border border-(--border-dim)/30">
+                                <Icon className="w-5 h-5" />
+                              </div>
+                              <div className="min-w-0 flex-1 flex flex-col">
+                                <div className="flex items-center gap-2">
+                                  {mat.module !== undefined &&
+                                    mat.module !== '' && (
+                                      <span className="shrink-0 text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-(--bg-surface) text-(--text-muted) uppercase border border-(--border-dim)/30">
+                                        MOD {mat.module}
+                                      </span>
+                                    )}
+                                  <h4 className="font-bold text-(--text-main) text-sm md:text-base truncate group-hover:text-(--accent-base) transition-colors">
+                                    {mat.title}
+                                  </h4>
+                                </div>
+                                <span className="text-[10px] font-mono font-bold text-(--text-muted) uppercase mt-0.5">
+                                  {mat.uploadDate} • {mat.category}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                   {filteredMaterials.length === 0 && data && (
                     <div className="py-12 flex justify-center text-(--text-dim)">
                       <span className="font-bold uppercase text-xs">

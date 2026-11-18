@@ -29,7 +29,7 @@ import {
 import { MaterialSwitch } from '../MaterialSwitch';
 import { SemesterDropdown, ClassGroupDropdown } from '../ui/Dropdown';
 import { TopBarSearch } from './TopBarSearch';
-import { NavMenuButton } from './appShell';
+import { getPageTitle } from './appShell';
 import { OfficialResourcesMenu } from '../resources/OfficialResourcesMenu';
 import { SegmentedControl } from '../ui/SegmentedControl';
 import { getCategoryIcon } from '../../utils/icons';
@@ -42,6 +42,7 @@ import { selectableRowProps } from '../ui/SelectableRow';
 
 interface TopBarProps {
   currentView: string;
+  contentTitle: string;
   showProfileMenu: boolean;
   setShowProfileMenu: (show: boolean) => void;
   handleLinkClick: (link: QuickLink) => void;
@@ -61,11 +62,11 @@ interface TopBarProps {
   onSync?: () => void;
   network?: any; // Add network prop
   onBack?: () => void;
-  onOpenNav: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
   currentView,
+  contentTitle,
   showProfileMenu,
   setShowProfileMenu,
   handleLinkClick,
@@ -84,7 +85,6 @@ export const TopBar: React.FC<TopBarProps> = ({
   onSync,
   network,
   onBack,
-  onOpenNav,
 }) => {
   const [isStarOpen, setIsStarOpen] = React.useState(false);
   const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
@@ -218,7 +218,6 @@ export const TopBar: React.FC<TopBarProps> = ({
         className="h-16 sm:h-18 md:h-20 bg-transparent fixed w-full top-0 z-50 px-2.5 sm:px-4 md:px-8 py-2 flex items-center justify-between shrink-0 transition-all pointer-events-none"
       >
         <div className="flex items-center h-full pointer-events-auto min-w-0 flex-1">
-          <NavMenuButton onClick={onOpenNav} />
           <div className="flex flex-col justify-center h-full gap-0.5 min-w-0 w-full">
             <div className="flex items-center gap-2 md:gap-3 min-w-0 w-full">
               <div key="topbar-search" className="min-w-0 w-full sm:w-auto">
@@ -231,6 +230,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                   onNavigate={onNavigate}
                   onTogglePin={onTogglePin}
                   initialQuery={initialQuery}
+                  pageTitle={getPageTitle(currentView, contentTitle)}
                   onBack={onBack || (() => setCurrentView('dashboard'))}
                   status={isLoading ? 'loading' : 'idle'}
                   onSync={onSync}

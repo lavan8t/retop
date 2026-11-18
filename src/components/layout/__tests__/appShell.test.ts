@@ -1,16 +1,13 @@
 import { describe, expect, test } from 'bun:test';
-import { NAV_DESTINATIONS, getPageTitle, isFullWidthView } from '../appShell';
+import { getPageTitle, isFullWidthView } from '../appShell';
 
 describe('app shell rules', () => {
-  test('exposes ten distinct primary destinations', () => {
-    expect(NAV_DESTINATIONS).toHaveLength(10);
-    expect(new Set(NAV_DESTINATIONS.map((d) => d.view)).size).toBe(10);
-  });
-
-  test('titles come from the active route, never from search', () => {
+  test('page titles come from the active route, not from search', () => {
     expect(getPageTitle('dashboard')).toBe('Home');
     expect(getPageTitle('timetable')).toBe('Timetable');
+    expect(getPageTitle('grades')).toBe('Grades & History');
     expect(getPageTitle('content', 'Bank Info')).toBe('Bank Info');
+    expect(getPageTitle('content')).toBe('Legacy View');
     expect(getPageTitle('unknown')).toBe('');
   });
 

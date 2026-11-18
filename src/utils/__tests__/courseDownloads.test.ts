@@ -5,8 +5,28 @@ import {
   isDownloadableMaterial,
   isPdfContentType,
   isVtopDownloadUrl,
+  planBulkDownloads,
+  planSingleDownload,
   sanitizePathPart,
+  type DownloadPlanRequest,
 } from '../courseDownloads';
+
+const request: DownloadPlanRequest = {
+  url: 'https://vtop.vit.ac.in/vtop/downloadCourseMaterialFacultyPdf',
+  csrf: 'csrf-token',
+  authorizedId: '21BCE1234',
+  semester: 'VL20252601',
+  course: 'CSE1001 - Intro to CS',
+  moduleWise: true,
+};
+
+const item = {
+  fileId: 'f1',
+  title: 'Lecture 1: Intro/Notes.pdf',
+  faculty: '10234 - Dr. Ada',
+  module: '2',
+  category: 'Lecture Notes',
+};
 
 describe('course material bulk download planning', () => {
   it('sanitizes illegal filename characters and collapses whitespace', () => {
@@ -28,43 +48,26 @@ describe('course material bulk download planning', () => {
   });
 
   it('builds a module-wise folder path without changing the file extension', () => {
-    const item = {
-      fileId: 'f1',
-      title: 'Lecture 1: Intro/Notes.pdf',
-      faculty: '10234 - Dr. Ada',
-      module: '2',
-    };
-    const ctx = {
-      semester: 'VL20252601',
-      course: 'CSE1001 - Intro to CS',
-      moduleWise: true,
-    };
-
-    expect(buildDownloadFilename(item, ctx)).toBe(
+    expect(buildDownloadFilename(item, request)).toBe(
       'retop/coursepage/VL20252601/CSE1001 - Intro to CS/10234 - Dr. Ada/Module 2/Lecture 1_ Intro_Notes.pdf',
     );
   });
 
   it('omits the module folder when module-wise is off or the module is missing', () => {
-    const ctx = {
-      semester: 'VL20252601',
-      course: 'CSE1001 - Intro to CS',
-      moduleWise: true,
-    };
-    const item = {
+    const noModule = {
       fileId: 'f1',
       title: 'Notes',
       faculty: 'Dr. Ada',
       module: undefined,
     };
 
-    expect(buildDownloadFilename(item, ctx)).toBe(
+    expect(buildDownloadFilename(noModule, request)).toBe(
       'retop/coursepage/VL20252601/CSE1001 - Intro to CS/Dr. Ada/Notes.pdf',
     );
     expect(
       buildDownloadFilename(
-        { ...item, module: '3' },
-        { ...ctx, moduleWise: false },
+        { ...noModule, module: '3' },
+        { ...request, moduleWise: false },
       ),
     ).toBe(
       'retop/coursepage/VL20252601/CSE1001 - Intro to CS/Dr. Ada/Notes.pdf',
@@ -98,5 +101,40 @@ describe('course material bulk download planning', () => {
     expect(isPdfContentType('application/pdf; charset=binary')).toBe(true);
     expect(isPdfContentType('text/html; charset=utf-8')).toBe(false);
     expect(isPdfContentType(null)).toBe(false);
+  });
+});
+
+describe('download planning entry points', () => {
+  it('single and bulk produce identical folder paths and POST bodies', () => {
+    const [single] = planSingleDownload(request, item);
+    const bulk = planBulkDownloads(request, [item, { ...item, fileId: 'f2' }]);
+
+    expect(single).toBeDefined();
+    expect(bulk).toHaveLength(2);
+    expect(bulk[0]).toEqual(single);
+    expect(bulk[0].filename).toBe(buildDownloadFilename(item, request));
+    expect(bulk[0].url).toBe(request.url);
+    expect(bulk[0].body).toEqual({
+      _csrf: 'csrf-token',
+      authorizedID: '21BCE1234',
+      fileId: 'f1',
+      x: expect.any(String),
+    });
+  });
+
+  it('rejects non-VTOP URLs for both entry points', () => {
+    const elsewhere = { ...request, url: 'https://getretop.web.app/download' };
+
+    expect(planSingleDownload(elsewhere, item)).toEqual([]);
+    expect(planBulkDownloads(elsewhere, [item])).toEqual([]);
+  });
+
+  it('drops web links from the planned bulk work', () => {
+    const plans = planBulkDownloads(request, [
+      item,
+      { ...item, fileId: 'f3', category: 'Web Link' },
+    ]);
+    expect(plans).toHaveLength(1);
+    expect(plans[0].filename).toBe(buildDownloadFilename(item, request));
   });
 });

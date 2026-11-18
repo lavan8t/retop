@@ -74,8 +74,10 @@ const Stepper = ({
 
 export const WhatIfCalculator = ({
   course,
+  isNinePointer,
 }: {
   course: DetailedAttendanceCourse;
+  isNinePointer: boolean;
 }) => {
   const forecast = useCourseAttendanceForecast(course.courseCode);
   const [attendCount, setAttendCount] = useState(0);
@@ -95,7 +97,7 @@ export const WhatIfCalculator = ({
     bunk: bunkCount,
     weight,
   });
-  const tone = attendanceTone(projection.percentage);
+  const tone = attendanceTone(projection.percentage, isNinePointer);
   const hasChanged = attendCount > 0 || bunkCount > 0;
 
   const reset = () => {

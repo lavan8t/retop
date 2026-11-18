@@ -13,6 +13,7 @@ export const Overview = ({
   forecast,
   total,
   attended,
+  isNinePointer,
   refreshing,
   onRefresh,
 }: {
@@ -20,10 +21,11 @@ export const Overview = ({
   forecast: AttendanceForecast | null | undefined;
   total: number;
   attended: number;
+  isNinePointer: boolean;
   refreshing: boolean;
   onRefresh: () => void;
 }) => {
-  const verdict = overallVerdict(courses);
+  const verdict = overallVerdict(courses, isNinePointer);
   const impact = leaveImpact(forecast, total, attended);
 
   return (

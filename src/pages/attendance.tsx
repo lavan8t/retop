@@ -1,5 +1,5 @@
 import { M3eSnackbar, M3eSplitPane } from '../components/attendance/m3eTags';
-import '../utils/m3e';
+import { ensureM3eComponents } from '../utils/m3e';
 import { useCallback, useEffect, useState } from 'react';
 import { useDataStore } from '../store/dataStore';
 import { VTOPNetwork } from '../utils/network';
@@ -50,6 +50,10 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const isWide = useIsWide();
+
+  useEffect(() => {
+    void ensureM3eComponents();
+  }, []);
 
   const selectedCourseObj = detailedAttendance.find(
     (course) => courseKey(course) === selectedCourse,

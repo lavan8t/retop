@@ -19,7 +19,7 @@ import {
 import { useGradesData } from '../hooks/useGradesData';
 import { formatSemesterShorthand } from '../utils/formatting';
 import type { GradeCourse } from '../types/vtop';
-import '../utils/m3e';
+import { ensureM3eComponents } from '../utils/m3e';
 
 interface GradesPageProps {
   network: VTOPNetwork;
@@ -129,6 +129,10 @@ export const GradesPage: React.FC<GradesPageProps> = ({
     setSelectedPoint(null);
     setSelectedSem(id);
   };
+
+  useEffect(() => {
+    void ensureM3eComponents();
+  }, []);
 
   useEffect(() => {
     if (selectedSem) {

@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { VTOPNetwork } from '../../utils/network';
 import { parseGrades } from '../../parsers/grades';
 import { formatSemesterShorthand } from '../../utils/formatting';
 import { useDataStore } from '../../store/dataStore';
 
-interface GradeTrendPoint {
+export interface GradeTrendPoint {
   semId: string;
   semLabel: string;
   semShort: string;
@@ -29,8 +29,8 @@ interface GradeTrendChartProps {
   predictedCgpa?: string | null;
   currentSemGpa?: string | null;
   isPredictedGpa?: boolean;
-  hasPredictions?: boolean;
-  onResetPredictions?: () => void;
+  /** Lifts the selected point so the hero can show its label/value. */
+  onSelectPoint?: (point: GradeTrendPoint) => void;
 }
 
 const GRADE_POINTS: Record<string, number> = {
@@ -74,14 +74,14 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
   predictedCgpa,
   currentSemGpa,
   isPredictedGpa,
-  hasPredictions,
-  onResetPredictions,
+  onSelectPoint,
 }) => {
   const [loading, setLoading] = useState(true);
   const [rawHistoryPoints, setRawHistoryPoints] = useState<GradeTrendPoint[]>(
     [],
   );
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  const pointRefs = useRef<(SVGGElement | null)[]>([]);
 
   const regNo =
     useDataStore((s) => s.user?.regNo) ||
@@ -270,15 +270,14 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
 
     const padLeft = 32;
     const padRight = 36;
-    const padTop = 64; // Generous headroom for elevated floating tooltip text
+    const padTop = 40;
     const padBottom = 28;
     const width = 600;
-    const height = 185;
+    const height = 170;
 
     const plotWidth = width - padLeft - padRight;
     const plotHeight = height - padTop - padBottom;
 
-    // Collect all valid values to find tight bounds for dramatic scaling
     const vals: number[] = [];
     trendPoints.forEach((p) => {
       if (p.gpa !== null && p.gpa > 0) vals.push(p.gpa);
@@ -291,7 +290,6 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
     const maxVal = Math.max(...vals);
     const diff = maxVal - minVal;
 
-    // Dynamic dramatic range calculation
     const padMargin = Math.max(0.08, diff * 0.18);
     let yMin = Math.max(0, Math.floor((minVal - padMargin) * 10) / 10);
     let yMax = Math.min(10, Math.ceil((maxVal + padMargin) * 10) / 10);
@@ -334,7 +332,6 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
       }
     });
 
-    // Generate straight SVG paths (no curves)
     const makeStraightPath = (pts: { x: number; y: number }[]) => {
       if (pts.length === 0) return '';
       return pts.reduce(
@@ -346,17 +343,15 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
     const cgpaPath = makeStraightPath(cgpaPoints);
     const gpaPath = makeStraightPath(gpaPoints);
 
-    // Closed area for CGPA area gradient with straight lines
     const firstX = cgpaPoints[0].x;
     const lastX = cgpaPoints[cgpaPoints.length - 1].x;
     const bottomY = padTop + plotHeight;
     const cgpaAreaPath = `${cgpaPath} L ${lastX} ${bottomY} L ${firstX} ${bottomY} Z`;
 
-    const step = yRange / 3;
-    const gridVals = [yMax, yMax - step, yMin + step, yMin].map((v) =>
-      Number(v.toFixed(1)),
+    // Three subtle gridlines: top, middle, bottom.
+    const gridVals = [yMax, (yMax + yMin) / 2, yMin].map((v) =>
+      Number(v.toFixed(2)),
     );
-    const uniqueGridVals = Array.from(new Set(gridVals));
 
     return {
       width,
@@ -367,7 +362,7 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
       padBottom,
       yMin,
       yMax,
-      uniqueGridVals,
+      gridVals,
       cgpaPoints,
       gpaPoints,
       gpaMap,
@@ -379,9 +374,14 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
 
   if (loading) {
     return (
-      <div className="w-full bg-transparent p-0 text-left">
-        <div className="h-12 bg-(--bg-highlight) rounded-2xl w-48 mb-3" />
-        <div className="h-28 bg-(--bg-highlight) rounded-2xl w-full" />
+      <div
+        className="w-full bg-transparent p-0 text-left"
+        role="status"
+        aria-busy="true"
+        aria-label="Loading grade trend"
+      >
+        <div className="h-8 bg-(--bg-highlight) rounded-2xl w-32 mb-3 animate-pulse" />
+        <div className="h-28 bg-(--bg-highlight) rounded-2xl w-full animate-pulse" />
       </div>
     );
   }
@@ -390,87 +390,75 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
     return null;
   }
 
-  const rawCompleted = rawHistoryPoints.filter((p) => !p.isPredicted);
-  const latestCompleted = rawCompleted[rawCompleted.length - 1];
-  const displayCgpa =
-    officialCgpa ||
-    (latestCompleted ? latestCompleted.cgpa?.toFixed(2) : '0.00');
+  const selectPoint = (idx: number) => {
+    const point = trendPoints[idx];
+    if (!point) return;
+    onSelectSem(point.semId);
+    onSelectPoint?.(point);
+  };
 
-  const totalCredits =
-    officialCredits !== undefined &&
-    officialCredits !== null &&
-    !isNaN(parseFloat(String(officialCredits)))
-      ? parseFloat(String(officialCredits))
-      : latestCompleted
-        ? latestCompleted.totalCreditsEarned
-        : 0;
+  const handlePointKeyDown = (
+    e: React.KeyboardEvent<SVGGElement>,
+    idx: number,
+  ) => {
+    let next = idx;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      next = Math.min(trendPoints.length - 1, idx + 1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      next = Math.max(0, idx - 1);
+    } else if (e.key === 'Home') {
+      next = 0;
+    } else if (e.key === 'End') {
+      next = trendPoints.length - 1;
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      selectPoint(idx);
+      return;
+    } else {
+      return;
+    }
+    e.preventDefault();
+    pointRefs.current[next]?.focus();
+    selectPoint(next);
+  };
+
+  const gridLineY = (gridVal: number) =>
+    chartData.padTop +
+    chartData.height -
+    chartData.padTop -
+    chartData.padBottom -
+    ((gridVal - chartData.yMin) / (chartData.yMax - chartData.yMin)) *
+      (chartData.height - chartData.padTop - chartData.padBottom);
 
   return (
-    <div className="w-full bg-transparent p-0 text-left flex flex-col gap-3 shadow-none select-none">
-      {/* Header: Merged CGPA, Semester GPA, and Credits in unified area */}
-      <div className="flex flex-wrap items-baseline justify-between gap-6 sm:gap-8 w-full text-left">
-        {/* Left: CGPA & Semester GPA */}
-        <div className="flex flex-wrap items-baseline gap-6 sm:gap-8 text-left">
-          <div className="flex flex-col text-left">
-            <span className="text-[11px] font-black font-expanded uppercase tracking-wider text-(--text-muted) text-left">
-              CGPA
-            </span>
-            <div className="flex items-baseline gap-3 text-left">
-              <span className="text-5xl sm:text-6xl font-black font-expanded text-(--text-main) tracking-tight leading-none text-left">
-                {displayCgpa}
-              </span>
-              {predictedCgpa && (
-                <span className="text-2xl sm:text-3xl font-black font-expanded text-(--accent-base) flex items-center gap-1">
-                  <span className="text-sm text-(--text-muted)">→</span>
-                  {predictedCgpa}
-                  <sup className="text-sm font-black text-(--accent-base)">
-                    *
-                  </sup>
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Semester GPA */}
-          {currentSemGpa && (
-            <div className="flex flex-col text-left">
-              <span className="text-[11px] font-black font-expanded uppercase tracking-wider text-(--text-muted) text-left flex items-center gap-1">
-                Semester GPA
-                {isPredictedGpa && (
-                  <span className="text-emerald-500 font-black">*</span>
-                )}
-              </span>
-              <span className="text-3xl sm:text-4xl font-black font-expanded text-emerald-500 tracking-tight leading-none text-left">
-                {currentSemGpa}
-                {isPredictedGpa && (
-                  <sup className="text-sm font-black text-emerald-500 ml-0.5">
-                    *
-                  </sup>
-                )}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Right: Credits Earned pushed to right side */}
-        {totalCredits > 0 && (
-          <div className="flex flex-col items-end text-right ml-auto">
-            <span className="text-[11px] font-black font-expanded uppercase tracking-wider text-(--text-muted) text-right">
-              Credits Earned
-            </span>
-            <span className="text-3xl sm:text-4xl font-black font-expanded text-(--text-main) tracking-tight leading-none text-right">
-              {totalCredits}
-            </span>
-          </div>
-        )}
+    <div className="w-full bg-transparent p-0 text-left flex flex-col gap-2 select-none">
+      <div className="flex items-center justify-between gap-3 text-[10px] font-bold text-(--text-muted)">
+        <span className="uppercase tracking-wide">Grade Trend</span>
+        <span className="inline-flex items-center gap-3">
+          <span className="inline-flex items-center gap-1">
+            <span
+              aria-hidden="true"
+              className="w-4 h-0.5 bg-(--accent-base) inline-block"
+            />
+            CGPA
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span
+              aria-hidden="true"
+              className="w-4 border-t-2 border-dashed border-(--color-success) inline-block"
+            />
+            GPA
+          </span>
+        </span>
       </div>
 
-      {/* Responsive SVG Chart with Original Clean Aspect Ratio & Full Interactivity */}
-      <div className="relative w-full overflow-visible my-1 text-left">
+      <div className="relative w-full overflow-visible text-left">
         <svg
           viewBox={`0 0 ${chartData.width} ${chartData.height}`}
           className="w-full h-auto overflow-visible select-none"
-          style={{ minHeight: '140px', maxHeight: '175px' }}
+          style={{ minHeight: '120px', maxHeight: '160px' }}
+          role="group"
+          aria-label="CGPA and GPA by semester. Use arrow keys to select a semester."
         >
           <defs>
             <linearGradient id="cgpaGradient" x1="0" y1="0" x2="0" y2="1">
@@ -482,20 +470,13 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
               <stop
                 offset="100%"
                 stopColor="var(--accent-base)"
-                stopOpacity="0.0"
+                stopOpacity="0"
               />
             </linearGradient>
           </defs>
 
-          {/* Dynamic Dramatic Grid lines */}
-          {chartData.uniqueGridVals.map((gridVal) => {
-            const y =
-              chartData.padTop +
-              chartData.height -
-              chartData.padTop -
-              chartData.padBottom -
-              ((gridVal - chartData.yMin) / (chartData.yMax - chartData.yMin)) *
-                (chartData.height - chartData.padTop - chartData.padBottom);
+          {chartData.gridVals.map((gridVal) => {
+            const y = gridLineY(gridVal);
             return (
               <g key={gridVal}>
                 <line
@@ -503,16 +484,14 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
                   y1={y}
                   x2={chartData.width - chartData.padRight}
                   y2={y}
-                  stroke="currentColor"
-                  className="text-(--border-dim)/30"
-                  strokeDasharray="3 3"
+                  stroke="var(--border-dim)"
                   strokeWidth="1"
                 />
                 <text
                   x={chartData.padLeft - 6}
                   y={y + 3}
                   textAnchor="end"
-                  className="fill-(--text-muted) text-[9px] font-bold opacity-50"
+                  className="fill-(--text-muted) text-[9px] font-bold opacity-60"
                 >
                   {gridVal}
                 </text>
@@ -520,47 +499,39 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
             );
           })}
 
-          {/* CGPA Area Gradient */}
           <path d={chartData.cgpaAreaPath} fill="url(#cgpaGradient)" />
 
-          {/* GPA Line (Straight, Dashed Emerald) */}
+          {/* GPA — dashed, success semantic role */}
           <path
             d={chartData.gpaPath}
             fill="none"
-            stroke="#10b981"
+            stroke="var(--color-success)"
             strokeWidth="2"
             strokeDasharray="4 4"
             strokeLinecap="square"
-            strokeLinejoin="miter"
           />
 
-          {/* CGPA Line (Straight, Solid Accent) */}
+          {/* CGPA — solid, primary semantic role */}
           <path
             d={chartData.cgpaPath}
             fill="none"
             stroke="var(--accent-base)"
             strokeWidth="2.5"
             strokeLinecap="square"
-            strokeLinejoin="miter"
           />
 
-          {/* GPA Data Points */}
-          {chartData.gpaPoints.map((pt, i) => {
-            const isHovered = hoveredIdx === i;
-            return (
-              <circle
-                key={`gpa-${i}`}
-                cx={pt.x}
-                cy={pt.y}
-                r={isHovered ? 4.5 : 3}
-                fill="#10b981"
-                stroke="var(--bg-main)"
-                strokeWidth="1.5"
-              />
-            );
-          })}
+          {chartData.gpaPoints.map((pt, i) => (
+            <circle
+              key={`gpa-${i}`}
+              cx={pt.x}
+              cy={pt.y}
+              r={hoveredIdx === i ? 4.5 : 3}
+              fill="var(--color-success)"
+              stroke="var(--bg-main)"
+              strokeWidth="1.5"
+            />
+          ))}
 
-          {/* CGPA Data Points, SVG-Locked Tooltip Text & Interactive Hit Targets */}
           {chartData.cgpaPoints.map((pt, i) => {
             const isSelected = pt.point.semId === selectedSem;
             const isHovered = hoveredIdx === i;
@@ -576,12 +547,20 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
             return (
               <g
                 key={`cgpa-${i}`}
-                className="cursor-pointer"
+                ref={(el) => {
+                  pointRefs.current[i] = el;
+                }}
+                tabIndex={0}
+                role="button"
+                aria-label={`${pt.point.semLabel}: CGPA ${pt.point.cgpa?.toFixed(2) ?? 'not available'}${pt.point.gpa !== null ? `, GPA ${pt.point.gpa.toFixed(2)}` : ''}${isSelected ? ', selected' : ''}`}
+                className="cursor-pointer outline-none focus-visible:opacity-80"
+                onFocus={() => setHoveredIdx(i)}
+                onBlur={() => setHoveredIdx(null)}
                 onMouseEnter={() => setHoveredIdx(i)}
                 onMouseLeave={() => setHoveredIdx(null)}
-                onClick={() => onSelectSem(pt.point.semId)}
+                onClick={() => selectPoint(i)}
+                onKeyDown={(e) => handlePointKeyDown(e, i)}
               >
-                {/* Generous Column Hitbox (Full vertical height strip) */}
                 <rect
                   x={pt.x - colWidth / 2}
                   y={0}
@@ -590,7 +569,6 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
                   fill="transparent"
                 />
 
-                {/* Subtle vertical hover guide */}
                 {isHovered && (
                   <line
                     x1={pt.x}
@@ -606,7 +584,6 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
                 )}
 
                 {isNeedsCalc ? (
-                  // Distinct dashed prediction node
                   <circle
                     cx={pt.x}
                     cy={pt.y}
@@ -627,62 +604,46 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
                   />
                 )}
 
-                {/* SVG-Locked Exact Tooltip Float with Animation and Increased Vertical Gap */}
                 {isHovered && (
-                  <g className="animate-retop-tooltip pointer-events-none select-none">
+                  <g className="pointer-events-none select-none">
                     {isNeedsCalc ? (
                       <g>
                         <text
                           x={pt.x}
-                          y={topY - 32}
+                          y={topY - 24}
                           textAnchor="middle"
-                          className="fill-(--accent-base) text-[11px] font-expanded font-black drop-shadow-sm"
+                          className="fill-(--accent-base) text-[11px] font-bold"
                         >
                           Calculate CGPA
                         </text>
                         <text
                           x={pt.x}
-                          y={topY - 18}
+                          y={topY - 12}
                           textAnchor="middle"
                           className="fill-(--text-muted) text-[8.5px] font-bold"
                         >
-                          Tap to pick grades
+                          Pick grades below
                         </text>
                       </g>
                     ) : (
                       <g>
-                        {/* 1. Big CGPA */}
                         <text
                           x={pt.x}
-                          y={pt.point.gpa !== null ? topY - 46 : topY - 30}
+                          y={pt.point.gpa !== null ? topY - 34 : topY - 22}
                           textAnchor="middle"
-                          className="fill-(--accent-base) text-[15px] font-expanded font-black tracking-tight"
+                          className="fill-(--accent-base) text-[14px] font-bold"
                         >
                           {pt.point.cgpa?.toFixed(2)}
                           {pt.point.isPredicted ? '*' : ''}
                         </text>
-
-                        {/* 2. SGPA */}
                         {pt.point.gpa !== null && (
                           <text
                             x={pt.x}
-                            y={topY - 31}
+                            y={topY - 22}
                             textAnchor="middle"
-                            className="fill-emerald-500 text-[10px] font-bold"
+                            className="fill-(--color-success) text-[10px] font-bold"
                           >
-                            {pt.point.gpa.toFixed(2)} SGPA
-                          </text>
-                        )}
-
-                        {/* 3. Credits */}
-                        {pt.point.credits > 0 && (
-                          <text
-                            x={pt.x}
-                            y={topY - 17}
-                            textAnchor="middle"
-                            className="fill-(--text-muted) text-[8.5px] font-bold opacity-80"
-                          >
-                            {pt.point.credits} Cr
+                            {pt.point.gpa.toFixed(2)} GPA
                           </text>
                         )}
                       </g>
@@ -690,17 +651,16 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
                   </g>
                 )}
 
-                {/* X-axis label */}
                 <text
                   x={pt.x}
                   y={chartData.height - 8}
                   textAnchor="middle"
                   className={`text-[9.5px] font-bold ${
                     isSelected
-                      ? 'fill-(--accent-base) font-black'
+                      ? 'fill-(--accent-base)'
                       : isHovered
                         ? 'fill-(--text-main)'
-                        : 'fill-(--text-muted) opacity-80'
+                        : 'fill-(--text-muted) opacity-70'
                   }`}
                 >
                   {pt.point.semShort}
@@ -711,18 +671,11 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
         </svg>
       </div>
 
-      {/* Reset Predictions Button (Bottom Right Corner After Graph) */}
-      {hasPredictions && onResetPredictions && (
-        <div className="flex justify-end w-full -mt-1">
-          <button
-            type="button"
-            onClick={onResetPredictions}
-            className="px-3.5 py-2 rounded-full bg-(--bg-highlight) text-(--text-main) font-bold text-xs uppercase shadow-sm hover:bg-(--accent-base) hover:text-(--text-inverse) active:scale-95 transition-all duration-75 cursor-pointer inline-flex items-center justify-center border-none outline-none select-none leading-none"
-            title="Reset all predicted grades"
-          >
-            <span className="leading-none pt-px">Reset Predictions</span>
-          </button>
-        </div>
+      {currentSemGpa && (
+        <p className="text-[11px] text-(--text-muted) text-left">
+          Current semester GPA {currentSemGpa}
+          {isPredictedGpa ? ' (predicted)' : ''}
+        </p>
       )}
     </div>
   );

@@ -14,10 +14,9 @@ import {
   CourseMaterial,
 } from '../types/vtop';
 import { useDataStore } from '../store/dataStore';
-import { set as idbSet } from 'idb-keyval';
 import {
-  buildDownloadFilename,
-  isDownloadableMaterial,
+  planBulkDownloads,
+  planSingleDownload,
 } from '../utils/courseDownloads';
 
 interface UpcomingClassDetail {
@@ -328,42 +327,30 @@ export const useCoursePageData = (
   }, [currentOption, selectedSem, ttSelectedSem, ttCourses, calGridData]);
 
   const handleDownload = (
-    fileId: string,
+    material: CourseMaterial,
     facultyName: string,
     courseName: string,
+    moduleWise: boolean,
   ) => {
-    try {
-      idbSet('lastDownloadInfo', {
-        type: 'course_page',
+    const plans = planSingleDownload(
+      {
+        url: `${window.location.origin}/vtop/downloadCourseMaterialFacultyPdf`,
+        csrf: getCsrf(),
+        authorizedId: getAuthId(),
         semester: selectedSem,
-        faculty: facultyName,
         course: courseName,
-        timestamp: Date.now(),
-      }).catch(() => {});
-    } catch (e) {
-      console.error('Failed to set download info', e);
-    }
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = '/vtop/downloadCourseMaterialFacultyPdf';
-    const csrfInput = document.createElement('input');
-    csrfInput.type = 'hidden';
-    csrfInput.name = '_csrf';
-    csrfInput.value = getCsrf();
-    const authInput = document.createElement('input');
-    authInput.type = 'hidden';
-    authInput.name = 'authorizedID';
-    authInput.value = getAuthId();
-    const fileInput = document.createElement('input');
-    fileInput.type = 'hidden';
-    fileInput.name = 'fileId';
-    fileInput.value = fileId;
-    form.appendChild(csrfInput);
-    form.appendChild(authInput);
-    form.appendChild(fileInput);
-    document.body.appendChild(form);
-    form.submit();
-    document.body.removeChild(form);
+        moduleWise,
+      },
+      {
+        fileId: material.downloadId || material.id,
+        title: material.title,
+        faculty: facultyName,
+        module: material.module,
+        category: material.category,
+      },
+    );
+    if (plans.length === 0) return;
+    chrome.runtime.sendMessage({ action: 'DOWNLOAD_COURSE_MATERIALS', plans });
   };
 
   const downloadMaterials = (
@@ -373,34 +360,31 @@ export const useCoursePageData = (
     const course = [currentOption?.code, currentOption?.title]
       .filter(Boolean)
       .join(' - ');
-    const items = selections
-      .filter(({ material }) => isDownloadableMaterial(material.category))
-      .map(({ material, faculty }) => ({
+    const plans = planBulkDownloads(
+      {
+        url: `${window.location.origin}/vtop/downloadCourseMaterialFacultyPdf`,
+        csrf: getCsrf(),
+        authorizedId: getAuthId(),
+        semester: selectedSem,
+        course,
+        moduleWise,
+      },
+      selections.map(({ material, faculty }) => ({
         fileId: material.downloadId || material.id,
-        filename: buildDownloadFilename(
-          {
-            fileId: material.downloadId || material.id,
-            title: material.title,
-            faculty,
-            module: material.module,
-          },
-          { semester: selectedSem, course, moduleWise },
-        ),
-      }));
+        title: material.title,
+        faculty,
+        module: material.module,
+        category: material.category,
+      })),
+    );
 
-    if (items.length === 0) {
+    if (plans.length === 0) {
       return Promise.resolve({ downloaded: 0, skipped: selections.length });
     }
 
     return new Promise((resolve) => {
       chrome.runtime.sendMessage(
-        {
-          action: 'DOWNLOAD_COURSE_MATERIALS',
-          url: `${window.location.origin}/vtop/downloadCourseMaterialFacultyPdf`,
-          csrf: getCsrf(),
-          authorizedId: getAuthId(),
-          items,
-        },
+        { action: 'DOWNLOAD_COURSE_MATERIALS', plans },
         (res: { downloaded: number; skipped: number } | undefined) =>
           resolve(res || { downloaded: 0, skipped: 0 }),
       );

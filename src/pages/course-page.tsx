@@ -699,7 +699,12 @@ export const CoursePage = ({
                                     [currentOption?.code, currentOption?.title]
                                       .filter(Boolean)
                                       .join(' - ') || 'Course';
-                                  handleDownload(mat.id, fac.name, courseName);
+                                  handleDownload(
+                                    mat,
+                                    fac.name,
+                                    courseName,
+                                    moduleWise,
+                                  );
                                 }}
                                 className="group flex items-center gap-4 py-3 px-3.5 rounded-2xl cursor-pointer bg-transparent hover:bg-(--bg-surface)/70 transition-colors border border-transparent hover:border-(--border-dim)/30"
                               >

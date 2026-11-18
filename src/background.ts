@@ -1,9 +1,8 @@
 import { getExtUrl } from './utils/url';
-import { get as idbGet, set as idbSet } from 'idb-keyval';
+import { set as idbSet } from 'idb-keyval';
 import {
-  buildDownloadBody,
   isPdfContentType,
-  isVtopDownloadUrl,
+  type PlannedDownload,
 } from './utils/courseDownloads';
 import {
   GOOGLE_CALENDAR_SCOPE,
@@ -33,72 +32,46 @@ chrome.action.onClicked.addListener(() => {
   chrome.tabs.create({ url: 'https://vtop.vit.ac.in/vtop/' });
 });
 
-// Per-download folder names for bulk course materials, keyed by the blob URL
-// created for each file. Avoids the global lastDownloadInfo race when many
-// downloads land at once.
-const plannedFilenames = new Map<string, string>();
-
-if (typeof chrome !== 'undefined' && chrome.downloads?.onDeterminingFilename) {
-  chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
-    const planned = plannedFilenames.get(item.url);
-    if (planned !== undefined) {
-      plannedFilenames.delete(item.url);
-      suggest({ filename: planned });
-      return;
-    }
-
-    // Only VTOP downloads get retop folders; other pages are left alone.
-    if (!isVtopDownloadUrl(item.url) && !isVtopDownloadUrl(item.finalUrl)) {
-      suggest();
-      return;
-    }
-
-    idbGet('lastDownloadInfo')
-      .then((res: any) => {
-        const info = res as
-          | {
-              timestamp: number;
-              type: string;
-              semester?: string;
-              course?: string;
-              faculty?: string;
-            }
-          | undefined;
-
-        const sanitize = (str?: string) =>
-          (str || '')
-            .replace(/[\/\\?%*:|"<>]/g, '_')
-            .replace(/\s+/g, ' ')
-            .trim();
-
-        const rawFileName = item.filename
-          ? item.filename.replace(/^.*[\\\/]/, '')
-          : 'download.pdf';
-        const itemFileName = sanitize(rawFileName) || 'download.pdf';
-
-        if (
-          info &&
-          info.type === 'course_page' &&
-          Date.now() - info.timestamp < 30000
-        ) {
-          const sem = sanitize(info.semester) || 'General';
-          const course = sanitize(info.course) || 'General';
-          const faculty = sanitize(info.faculty) || 'Faculty';
-          suggest({
-            filename: `retop/coursepage/${sem}/${course}/${faculty}/${itemFileName}`,
-          });
-          return;
-        }
-
-        suggest();
-      })
-      .catch(() => {
-        suggest();
+// ── Downloads: thin adapter over the deep course-download module ───────────
+// It receives fully planned work and only calls fetch + chrome.downloads.
+const runPlannedDownloads = async (plans: PlannedDownload[]) => {
+  let downloaded = 0;
+  let skipped = 0;
+  for (const plan of plans) {
+    try {
+      const response = await fetch(plan.url, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        },
+        body: new URLSearchParams(plan.body),
       });
-
-    return true; // indicates async response
-  });
-}
+      if (
+        !response.ok ||
+        !isPdfContentType(response.headers.get('Content-Type'))
+      ) {
+        skipped += 1;
+        continue;
+      }
+      const blobUrl = URL.createObjectURL(await response.blob());
+      chrome.downloads.download(
+        {
+          url: blobUrl,
+          filename: plan.filename,
+          conflictAction: 'uniquify',
+        },
+        () => {
+          if (chrome.runtime.lastError) URL.revokeObjectURL(blobUrl);
+        },
+      );
+      downloaded += 1;
+    } catch {
+      skipped += 1;
+    }
+  }
+  return { downloaded, skipped };
+};
 
 // Handle Google Drive sync and Portal-to-PWA data relay
 const isBridgeSender = (sender: chrome.runtime.MessageSender): boolean => {
@@ -155,244 +128,251 @@ const getGoogleAccessToken = async (): Promise<string> => {
   return granted.token;
 };
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  // ── Bulk course-material downloads ──────────────────────────────────────
-  if (message.action === 'DOWNLOAD_COURSE_MATERIALS') {
-    const data = message.data || {};
-    const url = String(data.url || '');
-    const items = Array.isArray(data.items) ? data.items : [];
-    if (!isVtopDownloadUrl(url) || items.length === 0) {
-      sendResponse({ success: false, downloaded: 0, skipped: 0 });
-      return true;
-    }
+type MessageHandler = (
+  message: any,
+  sender: chrome.runtime.MessageSender,
+  sendResponse: (response?: any) => void,
+) => boolean | void;
 
-    (async () => {
-      let downloaded = 0;
-      let skipped = 0;
-      for (const item of items) {
-        try {
-          const body = buildDownloadBody(
-            String(item.fileId || ''),
-            String(data.csrf || ''),
-            String(data.authorizedId || ''),
-          );
-          const response = await fetch(url, {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-              'Content-Type':
-                'application/x-www-form-urlencoded; charset=UTF-8',
-            },
-            body,
-          });
-          if (
-            !response.ok ||
-            !isPdfContentType(response.headers.get('Content-Type'))
-          ) {
-            skipped += 1;
-            continue;
+// ── Focused message handlers ───────────────────────────────────────────────
+const downloadHandler: MessageHandler = (message, _sender, sendResponse) => {
+  const plans: PlannedDownload[] = Array.isArray(message.plans)
+    ? message.plans
+    : [];
+  if (plans.length === 0) {
+    sendResponse({ success: false, downloaded: 0, skipped: 0 });
+    return true;
+  }
+  runPlannedDownloads(plans).then(
+    (result) => sendResponse({ success: true, ...result }),
+    () => sendResponse({ success: false, downloaded: 0, skipped: 0 }),
+  );
+  return true;
+};
+
+const setDisabledHandler: MessageHandler = (
+  _message,
+  _sender,
+  sendResponse,
+) => {
+  chrome.storage.local.set({ retop_disabled: true }, () =>
+    sendResponse({ success: true }),
+  );
+  return true;
+};
+
+const isDisabledHandler: MessageHandler = (_message, _sender, sendResponse) => {
+  chrome.storage.local.get(['retop_disabled'], (items) => {
+    sendResponse({ success: true, disabled: !!items?.retop_disabled });
+  });
+  return true;
+};
+
+const clearDisabledHandler: MessageHandler = (
+  _message,
+  _sender,
+  sendResponse,
+) => {
+  chrome.storage.local.remove(['retop_disabled'], () => {
+    // Tell open VTOP tabs to drop their page marker and come back to retop.
+    chrome.tabs.query(
+      { url: ['https://vtop.vit.ac.in/*', 'https://vtopcc.vit.ac.in/*'] },
+      (tabs) => {
+        (tabs || []).forEach((tab) => {
+          if (tab.id !== undefined) {
+            chrome.tabs
+              .sendMessage(tab.id, { type: 'RETOP_REENABLED' })
+              .catch(() => {});
           }
-          const blobUrl = URL.createObjectURL(await response.blob());
-          plannedFilenames.set(
-            blobUrl,
-            String(item.filename || 'download.pdf'),
-          );
-          chrome.downloads.download(
-            {
-              url: blobUrl,
-              filename: String(item.filename || 'download.pdf'),
-              conflictAction: 'uniquify',
-            },
-            () => {
-              if (chrome.runtime.lastError) {
-                plannedFilenames.delete(blobUrl);
-                URL.revokeObjectURL(blobUrl);
-              }
-            },
-          );
-          downloaded += 1;
-        } catch {
-          skipped += 1;
+        });
+      },
+    );
+    sendResponse({ success: true });
+  });
+  return true;
+};
+
+const openDisableHandler: MessageHandler = (
+  _message,
+  _sender,
+  sendResponse,
+) => {
+  chrome.tabs.create({ url: 'https://getretop.web.app/disable' });
+  sendResponse({ success: true });
+  return true;
+};
+
+const openOfflineHandler: MessageHandler = (
+  _message,
+  _sender,
+  sendResponse,
+) => {
+  const url = chrome.runtime.getURL('offline.html');
+  const win = chrome.windows?.create
+    ? chrome.windows.create({
+        url,
+        type: 'popup',
+        width: 1100,
+        height: 820,
+        focused: true,
+      })
+    : null;
+  if (!win) chrome.tabs.create({ url });
+  sendResponse({ success: true });
+  return true;
+};
+
+const fetchBarcodeHandler: MessageHandler = (
+  message,
+  _sender,
+  sendResponse,
+) => {
+  // The digital ID card renders its barcode from the TEC-IT service. The page
+  // origin cannot reach it, so the request goes through the worker, which
+  // holds the host permission.
+  const url = String(message.url || '');
+  if (!url.startsWith('https://barcode.tec-it.com/')) {
+    sendResponse({ error: 'not allowed' });
+    return true;
+  }
+  fetch(url)
+    .then(async (res) => {
+      if (!res.ok) throw new Error(`barcode ${res.status}`);
+      const buffer = await res.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      sendResponse({ base64: btoa(binary) });
+    })
+    .catch((err) => sendResponse({ error: String(err) }));
+  return true;
+};
+
+const googleCalendarSyncHandler: MessageHandler = (
+  message,
+  _sender,
+  sendResponse,
+) => {
+  (async () => {
+    try {
+      const token = await getGoogleAccessToken();
+      const result = await syncICalToGoogleCalendar({
+        token,
+        ics: String(message.ics || ''),
+        regNo: String(message.regNo || ''),
+      });
+      sendResponse({ success: true, ...result });
+    } catch (err: any) {
+      sendResponse({ success: false, error: err?.message || String(err) });
+    }
+  })();
+  return true;
+};
+
+const portalScrapedDataHandler: MessageHandler = (
+  message,
+  _sender,
+  sendResponse,
+) => {
+  const payload = message.payload || message.data;
+  if (payload) {
+    // 1. Persist to IndexedDB
+    idbSet('retop_last_sync_payload', payload).catch(() => {});
+    idbSet('retop_last_sync_time', Date.now()).catch(() => {});
+
+    // 2. Relay incoming payload updates to any active tab running the PWA
+    const pwaUrlPatterns = ['https://getretop.web.app/*'];
+    chrome.tabs.query({ url: pwaUrlPatterns }, (tabs) => {
+      if (tabs && tabs.length > 0) {
+        for (const tab of tabs) {
+          if (tab.id !== undefined) {
+            chrome.tabs
+              .sendMessage(tab.id, {
+                type: 'RETOP_PWA_SYNC_PAYLOAD',
+                payload,
+              })
+              .catch(() => {});
+          }
         }
       }
-      sendResponse({ success: true, downloaded, skipped });
-    })();
-    return true;
-  }
-
-  // ── Turn retop off / on ───────────────────────────────────────────────────
-  if (message.action === 'SET_DISABLED') {
-    chrome.storage.local.set({ retop_disabled: true }, () =>
-      sendResponse({ success: true }),
-    );
-    return true;
-  }
-
-  if (message.action === 'IS_DISABLED') {
-    chrome.storage.local.get(['retop_disabled'], (items) => {
-      sendResponse({ success: true, disabled: !!items?.retop_disabled });
     });
+  }
+  sendResponse({ success: true });
+  return true;
+};
+
+const getAllSyncDataHandler: MessageHandler = (
+  _message,
+  sender,
+  sendResponse,
+) => {
+  if (!isBridgeSender(sender)) {
+    sendResponse({ success: false, data: {} });
     return true;
   }
+  if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+    chrome.storage.local.get(null, (items) => {
+      // Only retop-owned keys cross into the page; never dump everything.
+      const data: Record<string, any> = {};
+      for (const [key, value] of Object.entries(items || {})) {
+        if (key.startsWith('retop_')) data[key] = value;
+      }
+      sendResponse({ success: true, data });
+    });
+  } else {
+    sendResponse({ success: false, data: {} });
+  }
+  return true;
+};
 
-  if (message.action === 'CLEAR_DISABLED') {
-    chrome.storage.local.remove(['retop_disabled'], () => {
-      // Tell open VTOP tabs to drop their page marker and come back to retop.
-      chrome.tabs.query(
-        { url: ['https://vtop.vit.ac.in/*', 'https://vtopcc.vit.ac.in/*'] },
-        (tabs) => {
-          (tabs || []).forEach((tab) => {
-            if (tab.id !== undefined) {
-              chrome.tabs
-                .sendMessage(tab.id, { type: 'RETOP_REENABLED' })
-                .catch(() => {});
-            }
-          });
-        },
-      );
+const getStorageHandler: MessageHandler = (message, _sender, sendResponse) => {
+  const keys = message.keys;
+  if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+    chrome.storage.local.get(keys || null, (items) => {
+      sendResponse({ success: true, data: items || {} });
+    });
+  } else {
+    sendResponse({ success: false, data: {} });
+  }
+  return true;
+};
+
+const setStorageHandler: MessageHandler = (message, _sender, sendResponse) => {
+  const data = message.data;
+  if (data && typeof chrome !== 'undefined' && chrome.storage?.local) {
+    chrome.storage.local.set(data, () => {
       sendResponse({ success: true });
     });
-    return true;
+  } else {
+    sendResponse({ success: false });
   }
+  return true;
+};
 
-  if (message.action === 'OPEN_DISABLE') {
-    chrome.tabs.create({ url: 'https://getretop.web.app/disable' });
-    sendResponse({ success: true });
-    return true;
-  }
+// Thin dispatch adapter: each action group registers its handler once.
+// Downloads are the first focused module; the remaining one-off actions keep
+// their original payloads and behaviour.
+const handlers = new Map<string, MessageHandler>();
+const register = (actions: string[], handler: MessageHandler) => {
+  for (const action of actions) handlers.set(action, handler);
+};
 
-  if (message.action === 'OPEN_OFFLINE' || message.type === 'OPEN_OFFLINE') {
-    const url = chrome.runtime.getURL('offline.html');
-    const win = chrome.windows?.create
-      ? chrome.windows.create({
-          url,
-          type: 'popup',
-          width: 1100,
-          height: 820,
-          focused: true,
-        })
-      : null;
-    if (!win) chrome.tabs.create({ url });
-    sendResponse({ success: true });
-    return true;
-  }
+register(['DOWNLOAD_COURSE_MATERIALS'], downloadHandler);
+register(['SET_DISABLED'], setDisabledHandler);
+register(['IS_DISABLED'], isDisabledHandler);
+register(['CLEAR_DISABLED'], clearDisabledHandler);
+register(['OPEN_DISABLE'], openDisableHandler);
+register(['OPEN_OFFLINE'], openOfflineHandler);
+register(['FETCH_BARCODE'], fetchBarcodeHandler);
+register(['GOOGLE_CALENDAR_SYNC'], googleCalendarSyncHandler);
+register(['PORTAL_SCRAPED_DATA'], portalScrapedDataHandler);
+register(['GET_ALL_SYNC_DATA'], getAllSyncDataHandler);
+register(['GET_STORAGE'], getStorageHandler);
+register(['SET_STORAGE'], setStorageHandler);
 
-  if (message.action === 'FETCH_BARCODE') {
-    // The digital ID card renders its barcode from the TEC-IT service. The page
-    // origin cannot reach it, so the request goes through the worker, which
-    // holds the host permission.
-    const url = String(message.url || '');
-    if (!url.startsWith('https://barcode.tec-it.com/')) {
-      sendResponse({ error: 'not allowed' });
-      return true;
-    }
-    fetch(url)
-      .then(async (res) => {
-        if (!res.ok) throw new Error(`barcode ${res.status}`);
-        const buffer = await res.arrayBuffer();
-        const bytes = new Uint8Array(buffer);
-        let binary = '';
-        for (let i = 0; i < bytes.length; i++) {
-          binary += String.fromCharCode(bytes[i]);
-        }
-        sendResponse({ base64: btoa(binary) });
-      })
-      .catch((err) => sendResponse({ error: String(err) }));
-    return true;
-  }
-
-  if (message.action === 'GOOGLE_CALENDAR_SYNC') {
-    (async () => {
-      try {
-        const token = await getGoogleAccessToken();
-        const result = await syncICalToGoogleCalendar({
-          token,
-          ics: String(message.ics || ''),
-          regNo: String(message.regNo || ''),
-        });
-        sendResponse({ success: true, ...result });
-      } catch (err: any) {
-        sendResponse({ success: false, error: err?.message || String(err) });
-      }
-    })();
-    return true;
-  }
-
-  if (
-    message.action === 'PORTAL_SCRAPED_DATA' ||
-    message.type === 'PORTAL_SCRAPED_DATA'
-  ) {
-    const payload = message.payload || message.data;
-    if (payload) {
-      // 1. Persist to IndexedDB
-      idbSet('retop_last_sync_payload', payload).catch(() => {});
-      idbSet('retop_last_sync_time', Date.now()).catch(() => {});
-
-      // 2. Relay incoming payload updates to any active tab running the PWA
-      const pwaUrlPatterns = ['https://getretop.web.app/*'];
-      chrome.tabs.query({ url: pwaUrlPatterns }, (tabs) => {
-        if (tabs && tabs.length > 0) {
-          for (const tab of tabs) {
-            if (tab.id !== undefined) {
-              chrome.tabs
-                .sendMessage(tab.id, {
-                  type: 'RETOP_PWA_SYNC_PAYLOAD',
-                  payload,
-                })
-                .catch(() => {});
-            }
-          }
-        }
-      });
-    }
-    sendResponse({ success: true });
-    return true;
-  }
-
-  if (
-    message.action === 'GET_ALL_SYNC_DATA' ||
-    message.type === 'GET_ALL_SYNC_DATA'
-  ) {
-    if (!isBridgeSender(sender)) {
-      sendResponse({ success: false, data: {} });
-      return true;
-    }
-    if (typeof chrome !== 'undefined' && chrome.storage?.local) {
-      chrome.storage.local.get(null, (items) => {
-        // Only retop-owned keys cross into the page; never dump everything.
-        const data: Record<string, any> = {};
-        for (const [key, value] of Object.entries(items || {})) {
-          if (key.startsWith('retop_')) data[key] = value;
-        }
-        sendResponse({ success: true, data });
-      });
-    } else {
-      sendResponse({ success: false, data: {} });
-    }
-    return true;
-  }
-
-  if (message.action === 'GET_STORAGE' || message.type === 'GET_STORAGE') {
-    const keys = message.keys;
-    if (typeof chrome !== 'undefined' && chrome.storage?.local) {
-      chrome.storage.local.get(keys || null, (items) => {
-        sendResponse({ success: true, data: items || {} });
-      });
-    } else {
-      sendResponse({ success: false, data: {} });
-    }
-    return true;
-  }
-
-  if (message.action === 'SET_STORAGE' || message.type === 'SET_STORAGE') {
-    const data = message.data;
-    if (data && typeof chrome !== 'undefined' && chrome.storage?.local) {
-      chrome.storage.local.set(data, () => {
-        sendResponse({ success: true });
-      });
-    } else {
-      sendResponse({ success: false });
-    }
-    return true;
-  }
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  const handler = handlers.get(message.action) || handlers.get(message.type);
+  return handler ? handler(message, sender, sendResponse) : undefined;
 });

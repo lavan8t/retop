@@ -1,7 +1,10 @@
 /**
- * Shared planning helpers for bulk course-material downloads.
- * Pure by design: the background worker and the React hook both use these
- * so folder naming and the VTOP POST body cannot drift apart.
+ * Course-material download planning.
+ *
+ * One deep module owns every rule for a course download: which URLs are ours,
+ * the VTOP POST body, the retop folder path, and which responses count as a
+ * PDF. Both entry points return fully planned work; the worker adapter only
+ * executes it, so no naming rule can drift into the worker.
  */
 
 export interface CourseDownloadItem {
@@ -9,12 +12,26 @@ export interface CourseDownloadItem {
   title: string;
   faculty: string;
   module?: string;
+  category?: string;
 }
 
 export interface CourseDownloadContext {
   semester: string;
   course: string;
   moduleWise: boolean;
+}
+
+export interface DownloadPlanRequest extends CourseDownloadContext {
+  url: string;
+  csrf: string;
+  authorizedId: string;
+}
+
+/** Fully planned work: url, POST fields and the exact retop folder path. */
+export interface PlannedDownload {
+  url: string;
+  body: Record<string, string>;
+  filename: string;
 }
 
 export const sanitizePathPart = (value: string): string => {
@@ -62,3 +79,34 @@ export const isDownloadableMaterial = (category?: string): boolean =>
 
 export const isPdfContentType = (contentType: string | null): boolean =>
   /application\/pdf/i.test(contentType || '');
+
+const planDownload = (
+  request: DownloadPlanRequest,
+  item: CourseDownloadItem,
+): PlannedDownload => ({
+  url: request.url,
+  body: Object.fromEntries(
+    buildDownloadBody(item.fileId, request.csrf, request.authorizedId),
+  ),
+  filename: buildDownloadFilename(item, request),
+});
+
+/** Entry point for a single material row. Empty when the URL/item is invalid. */
+export const planSingleDownload = (
+  request: DownloadPlanRequest,
+  item: CourseDownloadItem,
+): PlannedDownload[] =>
+  isVtopDownloadUrl(request.url) && isDownloadableMaterial(item.category)
+    ? [planDownload(request, item)]
+    : [];
+
+/** Entry point for select-all / selected / module-wise bulk downloads. */
+export const planBulkDownloads = (
+  request: DownloadPlanRequest,
+  items: CourseDownloadItem[],
+): PlannedDownload[] =>
+  isVtopDownloadUrl(request.url)
+    ? items
+        .filter((item) => isDownloadableMaterial(item.category))
+        .map((item) => planDownload(request, item))
+    : [];

@@ -62,8 +62,6 @@ try { mkdirSync(resolve(DIST, "assets"), { recursive: true }); } catch {}
 const commonDefine = {
   __BUILD_NUMBER__: JSON.stringify(buildNumber),
   "process.env.NODE_ENV": JSON.stringify("production"),
-  "import.meta.url": '""',
-  "import.meta": "{}",
 };
 
 const ignoreCssPlugin = {
@@ -152,18 +150,12 @@ if (!popupBuild.success) {
 }
 console.log("  - offline.js, standalone.js");
 
-// Post-process bundled JS files (import.meta removal)
-const sanitizeBundle = (filePath: string) => {
-  if (existsSync(filePath)) {
-    let content = readFileSync(filePath, "utf-8");
-    content = content.replace(/import\.meta\.url/g, '""');
-    content = content.replace(/import\.meta/g, '({})');
-    writeFileSync(filePath, content);
-  }
-};
-["content.js", "injected.js", "background.js", "webBridge.js", "login.js", "dashboard.js", "offline.js", "standalone.js"].forEach((file) => {
-  sanitizeBundle(resolve(DIST, file));
-});
+// ESM entries keep their native `import.meta.url`. Bun's code-splitting runtime
+// emits `__chunks(import.meta.url, ...)` and resolves every deferred chunk with
+// `new URL(path, base)`; rewriting the base to "" makes those dynamic imports
+// throw `Invalid base URL` in Chrome. Entering a real ES module via
+// `import(chrome.runtime.getURL(...))` gives `import.meta.url` a valid absolute
+// base, and the IIFE entries emit no `import.meta`, so no rewriting is needed.
 
 // ── Step 2b: Neutralize pdf.js's eager eval probe ───────────────────────
 // pdf.js detects eval support by calling `new Function("")` at module load.

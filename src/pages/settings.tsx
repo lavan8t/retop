@@ -8,6 +8,7 @@ import {
   Storage,
   Info,
   ArrowBack,
+  Check,
 } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 
 import { downloadICalFile, generateICalFile } from '../utils/ical-export';
@@ -309,7 +310,10 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
       {/* DESKTOP 2-COLUMN VIEW (md:flex) */}
       <div className="hidden md:flex w-full flex-1 flex-row gap-6 md:gap-8 min-h-0 overflow-hidden h-full">
         {/* Left Category Sidebar */}
-        <div className="w-72 lg:w-80 shrink-0 flex flex-col gap-1 h-fit overflow-y-auto scrollbar-none pt-18 md:pt-22 pb-6 pr-1">
+        <nav
+          aria-label="Settings sections"
+          className="w-72 lg:w-80 shrink-0 flex flex-col gap-1 h-fit overflow-y-auto scrollbar-none pt-18 md:pt-22 pb-6 pr-1"
+        >
           {CATEGORIES.map((cat, i) => {
             const isSelected = activeCategory === cat.id;
             const CatIcon = cat.icon;
@@ -324,13 +328,18 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
             return (
               <button
                 key={cat.id}
+                aria-current={isSelected ? 'page' : undefined}
                 onClick={() => setActiveCategory(cat.id)}
-                className={`flex items-center gap-4 px-5 py-3.5 ${roundingClass} transition-all cursor-pointer text-left border-2 ${
+                className={`flex items-center gap-4 px-5 py-3.5 ${roundingClass} outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) transition-all cursor-pointer text-left border-2 ${
                   isSelected
                     ? 'bg-(--accent-base) text-(--text-inverse) border-(--accent-base) shadow-none'
                     : 'bg-(--bg-surface) text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main) border-(--border-dim)'
                 }`}
               >
+                <Check
+                  aria-hidden="true"
+                  className={`w-4 h-4 shrink-0 ${isSelected ? '' : 'opacity-0'}`}
+                />
                 <CatIcon
                   className={`w-6 h-6 shrink-0 transition-transform ${isSelected ? 'scale-105' : ''}`}
                 />
@@ -351,7 +360,7 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
               </button>
             );
           })}
-        </div>
+        </nav>
 
         {/* Right Topic Content Area */}
         <div className="flex-1 min-w-0 h-full overflow-y-auto custom-scrollbar pt-18 md:pt-22 pb-24 md:pb-12 pr-2">

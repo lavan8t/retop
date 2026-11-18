@@ -7,6 +7,7 @@ import {
 import { SettingTopicCard } from './SettingTopicCard';
 import { SettingsDropdown } from '../ui/Dropdown';
 import { MaterialSwitch } from '../MaterialSwitch';
+import { SegmentedControl } from '../ui/SegmentedControl';
 import { useIsDark } from '../../hooks/useTheme';
 import {
   WbSunny,
@@ -56,35 +57,55 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
               Color Scheme
             </span>
             <div className="flex items-center justify-around w-full py-2 gap-3">
-              {[
-                { id: 'light', label: 'Light', icon: WbSunny },
-                { id: 'dark', label: 'Dark', icon: DarkMode },
-                { id: 'auto', label: 'System', icon: Computer },
-              ].map((item) => {
-                const isSelected =
-                  settings.themeMode === item.id ||
-                  (item.id === 'dark' && settings.themeMode === 'amoled');
-
-                return (
-                  <button
-                    key={item.id}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleThemeChange(e, item.id as any);
-                    }}
-                    className={`flex flex-col items-center justify-center gap-1.5 p-3 w-20 h-20 rounded-2xl transition-all cursor-pointer border-2 shadow-none ${
-                      isSelected
-                        ? 'bg-(--accent-base) text-(--text-inverse) border-(--accent-base)'
-                        : 'bg-transparent text-(--text-muted) hover:text-(--text-main) border-transparent hover:bg-black/5 dark:hover:bg-white/5'
-                    }`}
-                  >
-                    <item.icon className="w-7 h-7 shrink-0" />
-                    <span className="text-xs font-bold font-expanded">
-                      {item.label}
-                    </span>
-                  </button>
-                );
-              })}
+              <SegmentedControl
+                ariaLabel="Color scheme"
+                options={[
+                  {
+                    value: 'light',
+                    label: (
+                      <span className="flex flex-col items-center gap-1.5">
+                        <WbSunny className="w-7 h-7 shrink-0" />
+                        <span className="text-xs font-bold font-expanded">
+                          Light
+                        </span>
+                      </span>
+                    ),
+                  },
+                  {
+                    value: 'dark',
+                    label: (
+                      <span className="flex flex-col items-center gap-1.5">
+                        <DarkMode className="w-7 h-7 shrink-0" />
+                        <span className="text-xs font-bold font-expanded">
+                          Dark
+                        </span>
+                      </span>
+                    ),
+                  },
+                  {
+                    value: 'auto',
+                    label: (
+                      <span className="flex flex-col items-center gap-1.5">
+                        <Computer className="w-7 h-7 shrink-0" />
+                        <span className="text-xs font-bold font-expanded">
+                          System
+                        </span>
+                      </span>
+                    ),
+                  },
+                ]}
+                value={
+                  (settings.themeMode === 'amoled'
+                    ? 'dark'
+                    : settings.themeMode) as any
+                }
+                onChange={(val, e) => {
+                  e.stopPropagation();
+                  handleThemeChange(e, val as any);
+                }}
+                className="w-full justify-around"
+                buttonClassName="w-20 h-20 p-3"
+              />
             </div>
           </div>
 
@@ -296,23 +317,16 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
               Body text weight across the app
             </span>
             <div className="flex items-center gap-1 p-1 rounded-2xl bg-(--bg-main) border-2 border-(--border-dim)">
-              {(['regular', 'medium', 'bold'] as const).map((fw) => {
-                const label = fw.charAt(0).toUpperCase() + fw.slice(1);
-                const isActive = (settings.fontWeight ?? 'bold') === fw;
-                return (
-                  <button
-                    key={fw}
-                    onClick={() => updateSetting('fontWeight', fw)}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs transition-all cursor-pointer ${
-                      isActive
-                        ? 'bg-(--accent-base) text-(--text-inverse) font-black'
-                        : 'text-(--text-muted) hover:text-(--text-main) font-bold'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
+              <SegmentedControl
+                ariaLabel="Font weight"
+                options={(['regular', 'medium', 'bold'] as const).map((fw) => ({
+                  value: fw,
+                  label: fw.charAt(0).toUpperCase() + fw.slice(1),
+                }))}
+                value={(settings.fontWeight ?? 'bold') as string}
+                onChange={(val) => updateSetting('fontWeight', val as any)}
+                buttonClassName="px-3.5 py-3"
+              />
             </div>
           </div>
         </div>

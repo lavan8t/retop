@@ -1105,16 +1105,3 @@ a:active,
     transform: translateX(-100%);
   }
 }
-
-.empty-events-container:empty::after {
-  content: 'No events to show';
-  display: block;
-  text-align: center;
-  font-weight: 800;
-  font-family: var(--font-expanded);
-  text-transform: uppercase;
-  color: var(--text-muted);
-  font-size: 1rem;
-  padding-top: 10rem;
-  opacity: 0.5;
-}

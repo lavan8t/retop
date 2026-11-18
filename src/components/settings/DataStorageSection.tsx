@@ -34,7 +34,7 @@ export const DataStorageSection: React.FC<DataStorageSectionProps> = ({
           </div>
           <button
             onClick={handleClearAllCache}
-            className="px-5 py-2.5 rounded-full text-xs font-black uppercase bg-(--accent-base) text-(--text-inverse) transition-all border-0 cursor-pointer disabled:opacity-50 hover:opacity-90 ml-2"
+            className="min-h-12 px-5 py-2.5 rounded-full text-xs font-black uppercase bg-(--md-sys-color-error) text-(--md-sys-color-on-error) outline-none focus-visible:ring-2 focus-visible:ring-(--md-sys-color-error) transition-all border-0 cursor-pointer disabled:opacity-50 hover:opacity-90 ml-2"
           >
             Clear Cache
           </button>

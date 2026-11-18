@@ -34,11 +34,7 @@ import { getDestinationView, getSavedView } from '../utils/routes';
 
 import { TopBar } from '../components/layout/TopBar';
 import { ContentRouter } from '../components/layout/ContentRouter';
-import {
-  getPageTitle,
-  CONTENT_WIDTH_CLASS,
-  isFullWidthView,
-} from '../components/layout/appShell';
+import { getPageTitle } from '../components/layout/appShell';
 import { GlobalDADropZone } from '../components/ui/GlobalDADropZone';
 import { AlertDialogManager } from '../components/ui/AlertDialog';
 
@@ -1125,31 +1121,25 @@ export const DashboardApp = () => {
           />
           <main className="flex-1 overflow-hidden relative">
             <div
-              className={`relative h-full ${
-                isFullWidthView(currentView) ? '' : CONTENT_WIDTH_CLASS
-              }`}
+              key={currentView}
+              className="absolute inset-0 flex h-full w-full flex-col overflow-hidden animate-page-crossfade"
             >
-              <div
-                key={currentView}
-                className="absolute inset-0 flex h-full w-full flex-col overflow-hidden animate-page-crossfade"
-              >
-                <ContentRouter
-                  currentView={currentView}
-                  networkRef={networkRef}
-                  settings={settings}
-                  updateSetting={updateSetting}
-                  menu={menu}
-                  handleLinkClick={handleLinkClick}
-                  events={events}
-                  spotlightCategories={spotlightCategories}
-                  upcoming={upcoming}
-                  pinnedLinks={pinnedLinks}
-                  handleTogglePin={handleTogglePin}
-                  onSync={() => {
-                    handleSyncCurrentView().catch(console.warn);
-                  }}
-                />
-              </div>
+              <ContentRouter
+                currentView={currentView}
+                networkRef={networkRef}
+                settings={settings}
+                updateSetting={updateSetting}
+                menu={menu}
+                handleLinkClick={handleLinkClick}
+                events={events}
+                spotlightCategories={spotlightCategories}
+                upcoming={upcoming}
+                pinnedLinks={pinnedLinks}
+                handleTogglePin={handleTogglePin}
+                onSync={() => {
+                  handleSyncCurrentView().catch(console.warn);
+                }}
+              />
             </div>
           </main>
 

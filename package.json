@@ -22,7 +22,6 @@
     "css:watch": "bun ./node_modules/@tailwindcss/cli/dist/index.mjs -i src/input.css -o dist/style.css --watch"
   },
   "dependencies": {
-    "@m3e/web": "^2.13.2",
     "@material/material-color-utilities": "^0.4.0",
     "@nine-thirty-five/material-symbols-react": "^2.1.2",
     "@quicktoolsone/pdf-compress": "^2.0.0",

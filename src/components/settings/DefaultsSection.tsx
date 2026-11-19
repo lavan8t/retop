@@ -23,20 +23,19 @@ export const DefaultsSection: React.FC<DefaultsSectionProps> = ({
         title="Timetable View Mode"
         description="Select preferred default timetable layout format"
       >
-        <div className="flex flex-col gap-4 w-full">
-          <div className="flex bg-transparent rounded-2xl border-2 border-(--border-main) p-1 w-full max-w-xl">
-            <SegmentedControl
-              options={[
-                { label: 'Weekly View', value: 'weekly' },
-                { label: 'Slot Grid', value: 'slot' },
-                { label: 'Consolidated', value: 'consolidated' },
-                { label: 'Full Month', value: 'fullMonth' },
-              ]}
-              value={settings.timetableMode || 'weekly'}
-              onChange={(val) => updateSetting('timetableMode', val as any)}
-              className="w-full flex-1 *:flex-1"
-            />
-          </div>
+        <div className="rounded-2xl bg-(--bg-main) p-1 w-full max-w-xl">
+          <SegmentedControl
+            ariaLabel="Timetable view mode"
+            options={[
+              { label: 'Weekly View', value: 'weekly' },
+              { label: 'Slot Grid', value: 'slot' },
+              { label: 'Consolidated', value: 'consolidated' },
+              { label: 'Full Month', value: 'fullMonth' },
+            ]}
+            value={settings.timetableMode || 'weekly'}
+            onChange={(val) => updateSetting('timetableMode', val as any)}
+            className="w-full flex-1 *:flex-1"
+          />
         </div>
       </SettingTopicCard>
 
@@ -44,20 +43,18 @@ export const DefaultsSection: React.FC<DefaultsSectionProps> = ({
         title="Date Format Pattern"
         description="Choose default date display pattern across retop"
       >
-        <div className="flex flex-col gap-2 w-fit">
-          <SemesterDropdown
-            semesters={[
-              { id: 'DD Mon YYYY', label: 'DD Mon YYYY' },
-              { id: 'DD/MM/YYYY', label: 'DD/MM/YYYY' },
-              { id: 'MM/DD/YYYY', label: 'MM/DD/YYYY' },
-              { id: 'YYYY-MM-DD', label: 'YYYY-MM-DD' },
-              { id: 'DD.MM.YYYY', label: 'DD.MM.YYYY' },
-              { id: 'DD-MM-YYYY', label: 'DD-MM-YYYY' },
-            ]}
-            selectedId={settings.dateFormat || 'DD Mon YYYY'}
-            onChange={(id: string) => updateSetting('dateFormat', id as any)}
-          />
-        </div>
+        <SemesterDropdown
+          semesters={[
+            { id: 'DD Mon YYYY', label: 'DD Mon YYYY' },
+            { id: 'DD/MM/YYYY', label: 'DD/MM/YYYY' },
+            { id: 'MM/DD/YYYY', label: 'MM/DD/YYYY' },
+            { id: 'YYYY-MM-DD', label: 'YYYY-MM-DD' },
+            { id: 'DD.MM.YYYY', label: 'DD.MM.YYYY' },
+            { id: 'DD-MM-YYYY', label: 'DD-MM-YYYY' },
+          ]}
+          selectedId={settings.dateFormat || 'DD Mon YYYY'}
+          onChange={(id: string) => updateSetting('dateFormat', id as any)}
+        />
       </SettingTopicCard>
 
       <SettingTopicCard
@@ -66,12 +63,12 @@ export const DefaultsSection: React.FC<DefaultsSectionProps> = ({
       >
         <div className="flex items-center justify-between gap-4 w-full">
           <div className="flex flex-col gap-1">
-            <span className="text-sm font-bold text-(--text-main)">
+            <span className="text-sm font-semibold text-(--text-main)">
               Load retop on Login
             </span>
             <span className="text-xs text-(--text-muted)">
               Automatically show retop dashboard instead of legacy{' '}
-              <span className="font-vtop font-bold">VTOP</span> UI
+              <span className="font-vtop">VTOP</span> UI
             </span>
           </div>
           <MaterialSwitch
@@ -94,17 +91,17 @@ export const DefaultsSection: React.FC<DefaultsSectionProps> = ({
         title="Display & Privacy Preferences"
         description="Time format display and private data masking"
       >
-        <div className="flex flex-col gap-6 w-full">
-          <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col divide-y divide-(--border-dim)">
+          <div className="flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0">
             <div className="flex flex-col gap-1">
-              <span className="text-sm font-bold text-(--text-main)">
+              <span className="text-sm font-semibold text-(--text-main)">
                 Time Format
               </span>
               <span className="text-xs text-(--text-muted)">
                 How times are displayed across schedules and calendar
               </span>
             </div>
-            <div className="flex items-center gap-1 p-1 rounded-xl bg-(--bg-main) border border-(--border-dim)">
+            <div className="rounded-2xl bg-(--bg-main) p-1">
               <SegmentedControl
                 ariaLabel="Time format"
                 options={[
@@ -114,15 +111,15 @@ export const DefaultsSection: React.FC<DefaultsSectionProps> = ({
                 ]}
                 value={(settings.timeFormat ?? '12h') as string}
                 onChange={(val) => updateSetting('timeFormat', val as any)}
-                buttonClassName="px-3 py-3"
+                buttonClassName="px-3 py-2.5"
               />
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0">
             <div className="flex flex-col gap-1">
-              <span className="text-sm font-bold text-(--text-main)">
-                Blur CGPA & Credits
+              <span className="text-sm font-semibold text-(--text-main)">
+                Blur CGPA &amp; Credits
               </span>
               <span className="text-xs text-(--text-muted)">
                 Hide CGPA and credit totals on home dashboard for privacy

@@ -51,68 +51,62 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
         title="Theme & Color Scheme"
         description="Choose light, dark, or automatic system theme"
       >
-        <div className="flex flex-col gap-6 w-full">
-          <div className="flex flex-col gap-2 w-full min-w-0">
-            <span className="text-xs font-bold text-(--text-muted) uppercase font-expanded">
-              Color Scheme
-            </span>
-            <div className="flex items-center justify-around w-full py-2 gap-3">
-              <SegmentedControl
-                ariaLabel="Color scheme"
-                options={[
-                  {
-                    value: 'light',
-                    label: (
-                      <span className="flex flex-col items-center gap-1.5">
-                        <WbSunny className="w-7 h-7 shrink-0" />
-                        <span className="text-xs font-bold font-expanded">
-                          Light
-                        </span>
-                      </span>
-                    ),
-                  },
-                  {
-                    value: 'dark',
-                    label: (
-                      <span className="flex flex-col items-center gap-1.5">
-                        <DarkMode className="w-7 h-7 shrink-0" />
-                        <span className="text-xs font-bold font-expanded">
-                          Dark
-                        </span>
-                      </span>
-                    ),
-                  },
-                  {
-                    value: 'auto',
-                    label: (
-                      <span className="flex flex-col items-center gap-1.5">
-                        <Computer className="w-7 h-7 shrink-0" />
-                        <span className="text-xs font-bold font-expanded">
-                          System
-                        </span>
-                      </span>
-                    ),
-                  },
-                ]}
-                value={
-                  (settings.themeMode === 'amoled'
-                    ? 'dark'
-                    : settings.themeMode) as any
-                }
-                onChange={(val, e) => {
-                  e.stopPropagation();
-                  handleThemeChange(e, val as any);
-                }}
-                className="w-full justify-around"
-                buttonClassName="w-20 h-20 p-3"
-              />
-            </div>
-          </div>
+        <div className="rounded-2xl bg-(--bg-main) p-1 w-full max-w-md">
+          <SegmentedControl
+            ariaLabel="Color scheme"
+            options={[
+              {
+                value: 'light',
+                label: (
+                  <span className="inline-flex items-center gap-2">
+                    <WbSunny className="w-5 h-5 shrink-0" />
+                    <span>Light</span>
+                  </span>
+                ),
+              },
+              {
+                value: 'dark',
+                label: (
+                  <span className="inline-flex items-center gap-2">
+                    <DarkMode className="w-5 h-5 shrink-0" />
+                    <span>Dark</span>
+                  </span>
+                ),
+              },
+              {
+                value: 'auto',
+                label: (
+                  <span className="inline-flex items-center gap-2">
+                    <Computer className="w-5 h-5 shrink-0" />
+                    <span>System</span>
+                  </span>
+                ),
+              },
+            ]}
+            value={
+              (settings.themeMode === 'amoled'
+                ? 'dark'
+                : settings.themeMode) as any
+            }
+            onChange={(val, e) => {
+              e.stopPropagation();
+              handleThemeChange(e, val as any);
+            }}
+            className="w-full"
+            buttonClassName="flex-1 gap-2"
+          />
+        </div>
 
-          <div className="flex items-center justify-center gap-3 w-fit mx-auto px-4 py-1.5 rounded-full border-2 border-(--border-dim) mt-2">
-            <span className="text-sm font-bold text-(--text-muted)">
-              Use Pure Black
-            </span>
+        <div className="flex flex-col divide-y divide-(--border-dim)">
+          <div className="flex items-center justify-between gap-4 py-4">
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-semibold text-(--text-main)">
+                Use Pure Black
+              </span>
+              <span className="text-xs text-(--text-muted)">
+                Deeper black background for the dark theme
+              </span>
+            </div>
             <MaterialSwitch
               selected={settings.themeMode === 'amoled' || settings.pureBlack}
               disabled={settings.themeMode === 'light'}
@@ -128,11 +122,15 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
             />
           </div>
 
-          <div className="flex items-center justify-center gap-3 w-fit mx-auto px-4 py-1.5 rounded-full border-2 border-(--border-dim)">
-            <span className="text-sm font-bold text-(--text-muted)">
-              Apply theme to classic{' '}
-              <span className="font-vtop font-bold">VTOP</span>
-            </span>
+          <div className="flex items-center justify-between gap-4 py-4">
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-semibold text-(--text-main)">
+                Apply theme to classic <span className="font-vtop">VTOP</span>
+              </span>
+              <span className="text-xs text-(--text-muted)">
+                Match the legacy portal to your theme
+              </span>
+            </div>
             <MaterialSwitch
               selected={settings.vtopThemeMode !== 'none'}
               onChange={(checked) =>
@@ -141,9 +139,9 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
             />
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 w-full items-start sm:items-center justify-between">
+          <div className="flex items-center justify-between gap-4 py-4">
             <div className="flex flex-col gap-1">
-              <span className="text-sm font-bold text-(--text-main)">
+              <span className="text-sm font-semibold text-(--text-main)">
                 Accent Color
               </span>
               <span className="text-xs text-(--text-muted)">
@@ -159,32 +157,6 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
               }
             />
           </div>
-
-          <div className="flex flex-col sm:flex-row gap-4 w-full items-start sm:items-center justify-between">
-            <div className="flex flex-col gap-1">
-              <span className="text-sm font-bold text-(--text-main)">
-                Palette Style
-              </span>
-              <span className="text-xs text-(--text-muted)">
-                Select Material Design 3 tone algorithm
-              </span>
-            </div>
-            <SettingsDropdown
-              options={[
-                { label: 'Vibrant', value: 'vibrant' },
-                { label: 'Tonal Spot', value: 'tonal' },
-                { label: 'Expressive', value: 'expressive' },
-                { label: 'Content', value: 'content' },
-                { label: 'Fidelity', value: 'fidelity' },
-                { label: 'Fruit Salad', value: 'fruitSalad' },
-                { label: 'Rainbow', value: 'rainbow' },
-                { label: 'Neutral', value: 'neutral' },
-                { label: 'Monochrome', value: 'monochrome' },
-              ]}
-              value={settings.colorSchemeStyle || 'vibrant'}
-              onChange={(val) => updateSetting('colorSchemeStyle', val as any)}
-            />
-          </div>
         </div>
       </SettingTopicCard>
 
@@ -192,53 +164,52 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
         title="Calendar Card Theme Colors"
         description="Tone-derived theme colors for class and event cards"
       >
-        <div className="flex flex-col gap-6 w-full">
-          {/* Live Class & Event Dummy Preview */}
-          <div className="flex flex-col gap-1.5 rounded-2xl overflow-hidden w-full max-w-md border-2 border-(--border-dim) p-2 bg-(--bg-main)">
-            <div
-              className="flex flex-col p-3 rounded-xl shadow-none border-0 transition-colors"
-              style={{
-                backgroundColor: dummyClassBg,
-                color: dummyClassFg,
-              }}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <span className="font-mono text-xs font-bold shrink-0">
-                    08:00
-                  </span>
-                  <span className="text-sm font-black truncate">
-                    Operating Systems
-                  </span>
-                </div>
-                <span className="text-[10px] font-bold font-mono shrink-0 flex items-center gap-1 opacity-90">
-                  <LocationOn className="w-3 h-3" />
-                  SJT 412
+        <div className="flex flex-col gap-2 rounded-xl overflow-hidden w-full max-w-md bg-(--bg-main) p-3">
+          <div
+            className="flex flex-col p-3 rounded-xl transition-colors"
+            style={{
+              backgroundColor: dummyClassBg,
+              color: dummyClassFg,
+            }}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <span className="font-mono text-xs font-semibold shrink-0">
+                  08:00
+                </span>
+                <span className="text-sm font-semibold truncate">
+                  Operating Systems
                 </span>
               </div>
-            </div>
-
-            <div
-              className="flex flex-col p-3 rounded-xl shadow-none border-0 transition-colors"
-              style={{
-                backgroundColor: dummyEventBg,
-                color: dummyEventFg,
-              }}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <span className="text-sm font-black leading-tight flex-1">
-                  Do Good Hackathon
-                </span>
-                <span className="shrink-0 text-[10px] font-bold opacity-80 text-right">
-                  The Club
-                </span>
-              </div>
+              <span className="text-xs font-semibold font-mono shrink-0 flex items-center gap-1 opacity-90">
+                <LocationOn className="w-3 h-3" />
+                SJT 412
+              </span>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 w-full items-start sm:items-center justify-between">
+          <div
+            className="flex flex-col p-3 rounded-xl transition-colors"
+            style={{
+              backgroundColor: dummyEventBg,
+              color: dummyEventFg,
+            }}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <span className="text-sm font-semibold leading-tight flex-1">
+                Do Good Hackathon
+              </span>
+              <span className="shrink-0 text-xs font-semibold opacity-80 text-right">
+                The Club
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col divide-y divide-(--border-dim)">
+          <div className="flex items-center justify-between gap-4 py-4">
             <div className="flex flex-col gap-1">
-              <span className="text-sm font-bold text-(--text-main)">
+              <span className="text-sm font-semibold text-(--text-main)">
                 Classes Color
               </span>
               <span className="text-xs text-(--text-muted)">
@@ -257,13 +228,13 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
             />
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 w-full items-start sm:items-center justify-between">
+          <div className="flex items-center justify-between gap-4 py-4">
             <div className="flex flex-col gap-1">
-              <span className="text-sm font-bold text-(--text-main)">
+              <span className="text-sm font-semibold text-(--text-main)">
                 Events Color
               </span>
               <span className="text-xs text-(--text-muted)">
-                Theme tone for event & custom cards
+                Theme tone for event &amp; custom cards
               </span>
             </div>
             <SettingsDropdown
@@ -284,14 +255,16 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
         title="Font Scaling & Weight"
         description="Adjust text size and thickness across the entire interface"
       >
-        <div className="flex flex-col sm:flex-row gap-6 w-full items-start sm:items-center justify-between">
-          <div className="flex flex-col gap-2">
-            <span className="text-sm font-bold text-(--text-main)">
-              Font Size
-            </span>
-            <span className="text-xs text-(--text-muted)">
-              Scale text size across retop
-            </span>
+        <div className="flex flex-col divide-y divide-(--border-dim)">
+          <div className="flex items-center justify-between gap-4 py-4">
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-semibold text-(--text-main)">
+                Font Size
+              </span>
+              <span className="text-xs text-(--text-muted)">
+                Scale text size across retop
+              </span>
+            </div>
             <SettingsDropdown
               options={[
                 { label: '80% (Compact)', value: 80 },
@@ -309,14 +282,16 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
             />
           </div>
 
-          <div className="flex flex-col gap-2">
-            <span className="text-sm font-bold text-(--text-main)">
-              Font Weight
-            </span>
-            <span className="text-xs text-(--text-muted)">
-              Body text weight across the app
-            </span>
-            <div className="flex items-center gap-1 p-1 rounded-2xl bg-(--bg-main) border-2 border-(--border-dim)">
+          <div className="flex items-center justify-between gap-4 py-4">
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-semibold text-(--text-main)">
+                Font Weight
+              </span>
+              <span className="text-xs text-(--text-muted)">
+                Body text weight across the app
+              </span>
+            </div>
+            <div className="rounded-2xl bg-(--bg-main) p-1">
               <SegmentedControl
                 ariaLabel="Font weight"
                 options={(['regular', 'medium', 'bold'] as const).map((fw) => ({

@@ -16,15 +16,15 @@ export const DataStorageSection: React.FC<DataStorageSectionProps> = ({
       title="Cache & Storage Management"
       description={
         <>
-          Clear cached <span className="font-vtop font-bold">VTOP</span> portal
-          data or manage specific cached endpoints
+          Clear cached <span className="font-vtop">VTOP</span> portal data or
+          manage specific cached endpoints
         </>
       }
     >
       <div className="flex flex-col gap-4 w-full">
         <div className="flex items-center justify-between gap-4">
           <div className="flex flex-col gap-1">
-            <span className="text-sm font-bold text-(--text-main)">
+            <span className="text-sm font-semibold text-(--text-main)">
               Clear All Portal Cache
             </span>
             <span className="text-xs text-(--text-muted)">
@@ -34,20 +34,20 @@ export const DataStorageSection: React.FC<DataStorageSectionProps> = ({
           </div>
           <button
             onClick={handleClearAllCache}
-            className="min-h-12 px-5 py-2.5 rounded-full text-xs font-black uppercase bg-(--md-sys-color-error) text-(--md-sys-color-on-error) outline-none focus-visible:ring-2 focus-visible:ring-(--md-sys-color-error) transition-all border-0 cursor-pointer disabled:opacity-50 hover:opacity-90 ml-2"
+            className="min-h-12 px-5 rounded-full text-sm font-semibold bg-(--md-sys-color-error) text-(--md-sys-color-on-error) outline-none focus-visible:ring-2 focus-visible:ring-(--md-sys-color-error) transition-colors border-0 cursor-pointer disabled:opacity-50 hover:opacity-90 ml-2"
           >
             Clear Cache
           </button>
         </div>
 
         {clearStatus && (
-          <span className="text-xs font-bold text-(--text-muted)">
+          <span className="text-xs font-semibold text-(--text-muted)">
             {clearStatus}
           </span>
         )}
 
-        <div className="border-t-2 border-(--border-dim) pt-4 mt-2">
-          <span className="text-xs font-bold uppercase font-expanded text-(--text-muted) mb-2 block">
+        <div className="border-t border-(--border-dim) pt-4">
+          <span className="text-xs font-semibold uppercase font-expanded text-(--text-muted) mb-2 block">
             Cached Endpoint Explorer
           </span>
           <SyncManager />

@@ -5,7 +5,6 @@ import {
   Palette,
   Sync,
   Tune,
-  Storage,
   Info,
   ArrowBack,
   Check,
@@ -34,31 +33,25 @@ const CATEGORIES = [
   {
     id: 'appearance',
     label: 'Appearance',
-    description: 'Colors, themes, and calendar card accents',
+    description: 'Theme, accent color, and typography',
     icon: Palette,
   },
   {
-    id: 'defaults',
-    label: 'Defaults',
-    description: 'Timetable mode, launch view, and display preferences',
+    id: 'preferences',
+    label: 'Preferences',
+    description: 'Timetable, dates, launch view, and privacy',
     icon: Tune,
   },
   {
-    id: 'sync',
-    label: 'Sync',
-    description: 'Calendar export (.ics) and Google Calendar sync',
+    id: 'syncData',
+    label: 'Sync & Data',
+    description: 'Calendar export, Google sync, and storage',
     icon: Sync,
-  },
-  {
-    id: 'data',
-    label: 'Data & Storage',
-    description: 'Cache management and endpoint storage explorer',
-    icon: Storage,
   },
   {
     id: 'about',
     label: 'About',
-    description: 'retop version, links, and project info',
+    description: 'Version, links, and project info',
     icon: Info,
   },
 ] as const;
@@ -204,28 +197,27 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
             COLORS={COLORS}
           />
         );
-      case 'defaults':
+      case 'preferences':
         return (
           <DefaultsSection settings={settings} updateSetting={updateSetting} />
         );
-      case 'sync':
+      case 'syncData':
         return (
-          <SyncSection
-            icalOptions={icalOptions}
-            setIcalOptions={setIcalOptions}
-            handleExportICal={handleExportICal}
-            googleCalendarName={googleCalendarName(currentRegNo)}
-            googleStatus={googleStatus}
-            googleBusy={googleBusy}
-            handleGoogleSync={handleGoogleSync}
-          />
-        );
-      case 'data':
-        return (
-          <DataStorageSection
-            handleClearAllCache={handleClearAllCache}
-            clearStatus={clearStatus}
-          />
+          <>
+            <SyncSection
+              icalOptions={icalOptions}
+              setIcalOptions={setIcalOptions}
+              handleExportICal={handleExportICal}
+              googleCalendarName={googleCalendarName(currentRegNo)}
+              googleStatus={googleStatus}
+              googleBusy={googleBusy}
+              handleGoogleSync={handleGoogleSync}
+            />
+            <DataStorageSection
+              handleClearAllCache={handleClearAllCache}
+              clearStatus={clearStatus}
+            />
+          </>
         );
       case 'about':
         return <AboutSection />;
@@ -239,22 +231,16 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
   );
 
   return (
-    <div className="h-full w-full flex flex-col md:flex-row gap-6 py-0 px-4 md:px-6 lg:px-8 overflow-y-auto md:overflow-hidden bg-(--bg-main) text-(--text-main) max-w-425 mx-auto relative custom-scrollbar">
-      {/* MOBILE DRILL-DOWN VIEW (< md screens) */}
+    <div className="h-full w-full flex flex-col md:flex-row gap-6 lg:gap-8 py-0 px-4 md:px-6 lg:px-8 overflow-y-auto md:overflow-hidden bg-(--bg-main) text-(--text-main) relative custom-scrollbar">
+      {/* MOBILE DRILL-DOWN (< md) */}
       <div className="flex md:hidden flex-col w-full min-h-0 pt-16 pb-24">
         {!mobileSelectedCategory ? (
-          /* Level 1: Category Sections List */
-          <div className="flex flex-col gap-1 w-full">
-            {CATEGORIES.map((cat, i) => {
+          <nav
+            aria-label="Settings sections"
+            className="flex flex-col gap-1 w-full"
+          >
+            {CATEGORIES.map((cat) => {
               const CatIcon = cat.icon;
-              const isFirst = i === 0;
-              const isLast = i === CATEGORIES.length - 1;
-              const roundingClass = isFirst
-                ? 'rounded-t-3xl rounded-b-xl'
-                : isLast
-                  ? 'rounded-b-3xl rounded-t-xl'
-                  : 'rounded-xl';
-
               return (
                 <button
                   key={cat.id}
@@ -262,39 +248,36 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
                     setActiveCategory(cat.id);
                     setMobileSelectedCategory(cat.id);
                   }}
-                  className={`flex items-center gap-3.5 px-4 py-3 ${roundingClass} bg-(--bg-surface) hover:bg-(--bg-highlight) text-(--text-main) border-2 border-(--border-dim) active:scale-[0.99] transition-all cursor-pointer text-left shadow-(--brutal-shadow-sm)`}
+                  className="w-full flex items-center gap-3 min-h-14 px-4 py-3 rounded-2xl text-left text-(--text-main) hover:bg-(--bg-highlight) outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) transition-colors cursor-pointer"
                 >
-                  <div className="w-10 h-10 rounded-full bg-(--bg-highlight) flex items-center justify-center shrink-0 border border-(--border-dim)">
-                    <CatIcon className="w-5 h-5 text-(--accent-base)" />
-                  </div>
-                  <div className="flex flex-col gap-0.5 min-w-0 flex-1 justify-center">
-                    <span className="font-expanded font-black text-sm text-(--text-main) leading-tight">
+                  <CatIcon className="w-5 h-5 shrink-0" aria-hidden="true" />
+                  <span className="flex flex-col gap-0.5 flex-1 min-w-0">
+                    <span className="font-expanded font-semibold text-sm leading-tight">
                       {cat.label}
                     </span>
-                    <span className="text-xs font-medium text-(--text-muted) leading-normal truncate">
+                    <span className="text-xs text-(--text-muted) leading-snug truncate">
                       {cat.description}
                     </span>
-                  </div>
+                  </span>
                 </button>
               );
             })}
-          </div>
+          </nav>
         ) : (
-          /* Level 2: Category Detail Page */
-          <div className="flex flex-col gap-4 w-full animate-in fade-in duration-150">
-            <div className="flex items-center gap-2 pb-3 border-b-2 border-(--border-main)">
+          <div className="flex flex-col gap-4 w-full">
+            <div className="flex items-center gap-2 pb-3 border-b border-(--border-dim)">
               <button
                 onClick={() => setMobileSelectedCategory(null)}
-                className="p-2 -ml-2 rounded-full hover:bg-(--bg-highlight) text-(--text-main) active:scale-95 transition-all flex items-center justify-center cursor-pointer shrink-0"
+                className="min-h-12 min-w-12 p-2 -ml-2 rounded-full hover:bg-(--bg-highlight) text-(--text-main) outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) transition-colors flex items-center justify-center cursor-pointer shrink-0"
                 aria-label="Back to settings"
               >
-                <ArrowBack className="w-5 h-5 text-(--text-main)" />
+                <ArrowBack className="w-5 h-5" aria-hidden="true" />
               </button>
-              <div className="flex flex-col min-w-0 flex-1 justify-center">
-                <h2 className="text-lg font-expanded font-black text-(--text-main) leading-tight truncate">
+              <div className="flex flex-col min-w-0 flex-1">
+                <h2 className="text-base font-expanded font-semibold text-(--text-main) leading-tight truncate">
                   {currentMobileCatObj?.label}
                 </h2>
-                <span className="text-xs font-medium text-(--text-muted) leading-normal truncate">
+                <span className="text-xs text-(--text-muted) leading-snug truncate">
                   {currentMobileCatObj?.description}
                 </span>
               </div>
@@ -307,64 +290,49 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
         )}
       </div>
 
-      {/* DESKTOP 2-COLUMN VIEW (md:flex) */}
-      <div className="hidden md:flex w-full flex-1 flex-row gap-6 md:gap-8 min-h-0 overflow-hidden h-full">
-        {/* Left Category Sidebar */}
+      {/* DESKTOP LIST-DETAIL (>= md) */}
+      <div className="hidden md:flex w-full flex-1 flex-row gap-6 lg:gap-8 min-h-0 overflow-hidden h-full">
         <nav
           aria-label="Settings sections"
-          className="w-72 lg:w-80 shrink-0 flex flex-col gap-1 h-fit overflow-y-auto scrollbar-none pt-18 md:pt-22 pb-6 pr-1"
+          className="w-64 lg:w-72 shrink-0 flex flex-col gap-1 h-fit overflow-y-auto scrollbar-none pt-18 md:pt-22 pb-6 pr-1"
         >
-          {CATEGORIES.map((cat, i) => {
+          {CATEGORIES.map((cat) => {
             const isSelected = activeCategory === cat.id;
             const CatIcon = cat.icon;
-            const isFirst = i === 0;
-            const isLast = i === CATEGORIES.length - 1;
-            const roundingClass = isFirst
-              ? 'rounded-t-4xl rounded-b-xl'
-              : isLast
-                ? 'rounded-b-4xl rounded-t-xl'
-                : 'rounded-xl';
-
             return (
               <button
                 key={cat.id}
                 aria-current={isSelected ? 'page' : undefined}
                 onClick={() => setActiveCategory(cat.id)}
-                className={`flex items-center gap-4 px-5 py-3.5 ${roundingClass} outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) transition-all cursor-pointer text-left border-2 ${
+                className={`w-full flex items-center gap-3 min-h-14 px-4 py-3 rounded-2xl text-left outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) transition-colors cursor-pointer ${
                   isSelected
-                    ? 'bg-(--accent-base) text-(--text-inverse) border-(--accent-base) shadow-none'
-                    : 'bg-(--bg-surface) text-(--text-muted) hover:bg-(--bg-highlight) hover:text-(--text-main) border-(--border-dim)'
+                    ? 'bg-(--bg-primary-container) text-(--text-on-primary-container)'
+                    : 'text-(--text-main) hover:bg-(--bg-highlight)'
                 }`}
               >
-                <Check
-                  aria-hidden="true"
-                  className={`w-4 h-4 shrink-0 ${isSelected ? '' : 'opacity-0'}`}
-                />
-                <CatIcon
-                  className={`w-6 h-6 shrink-0 transition-transform ${isSelected ? 'scale-105' : ''}`}
-                />
-                <div className="flex flex-col gap-0.5 flex-1 min-w-0 justify-center">
-                  <span className="font-expanded font-black text-sm md:text-base leading-tight">
+                <CatIcon className="w-5 h-5 shrink-0" aria-hidden="true" />
+                <span className="flex flex-col gap-0.5 flex-1 min-w-0">
+                  <span className="font-expanded font-semibold text-sm leading-tight">
                     {cat.label}
                   </span>
                   <span
-                    className={`text-xs font-medium leading-normal ${
-                      isSelected
-                        ? 'opacity-90 text-(--text-inverse)'
-                        : 'text-(--text-muted)'
+                    className={`text-xs leading-snug truncate ${
+                      isSelected ? 'opacity-80' : 'text-(--text-muted)'
                     }`}
                   >
                     {cat.description}
                   </span>
-                </div>
+                </span>
+                {isSelected && (
+                  <Check aria-hidden="true" className="w-5 h-5 shrink-0" />
+                )}
               </button>
             );
           })}
         </nav>
 
-        {/* Right Topic Content Area */}
         <div className="flex-1 min-w-0 h-full overflow-y-auto custom-scrollbar pt-18 md:pt-22 pb-24 md:pb-12 pr-2">
-          <div className="flex flex-col gap-6 max-w-2xl">
+          <div className="flex flex-col gap-6 max-w-3xl">
             {renderSectionContent(activeCategory)}
           </div>
         </div>

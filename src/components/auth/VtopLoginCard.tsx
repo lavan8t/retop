@@ -28,6 +28,10 @@ import {
   validateLogin,
   type LoginField,
 } from '../../utils/loginValidation';
+import {
+  loadRegularCaptcha,
+  regularCaptchaRetryMessage,
+} from '../../utils/regularCaptchaRetry';
 
 const REMEMBERED_USER_KEY = 'retop_remembered_username';
 
@@ -145,16 +149,28 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
     setLoadingCaptcha(true);
 
     try {
-      const data = await VtopClient.getCaptcha(targetCampus);
-      if (seq !== activeSeqRef.current) return;
+      const data = await loadRegularCaptcha(
+        () => VtopClient.getCaptcha(targetCampus),
+        {
+          onRetry: (retry) =>
+            showError(regularCaptchaRetryMessage(retry), ['captcha']),
+          onExhausted: () => {
+            if (onRecaptchaRequired) {
+              onRecaptchaRequired();
+              return;
+            }
+            showError(
+              'VTOP is asking for its own reCAPTCHA. Sign in at vtop.vit.ac.in.',
+              ['general'],
+            );
+          },
+        },
+      );
+      if (!data || seq !== activeSeqRef.current) return;
       setCaptchaData(data);
       setCaptchaInput('');
     } catch (err: any) {
       if (seq !== activeSeqRef.current) return;
-      if (err instanceof RecaptchaRequiredError && onRecaptchaRequired) {
-        onRecaptchaRequired();
-        return;
-      }
       console.error('[VtopLoginCard] Failed to fetch captcha:', err);
       showError(
         err?.message || 'Failed to load CAPTCHA from VTOP. Please retry.',
@@ -285,41 +301,61 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
 
     const trimmedUser = normalizeUsername(username);
     const trimmedPass = password;
-    const trimmedCaptcha =
-      normalizeCaptcha(captchaInputRef.current) ||
-      normalizeCaptcha(captchaInput);
 
     const MAX_CAPTCHA_RETRIES = 2;
     let captchaRetries = 0;
     // validateLogin rejects a blank captcha, which covers a missing session.
     let activeCaptcha: CaptchaData = captchaData!;
+    let recaptchaRound = 0;
 
     const attemptLogin = async (): Promise<void> => {
       try {
-        const result = await VtopClient.login({
-          campus,
-          username: trimmedUser,
-          password: trimmedPass,
-          captcha: trimmedCaptcha,
-          csrf: activeCaptcha.csrf,
-          jsessionid: activeCaptcha.jsessionid,
-          serverId: activeCaptcha.serverId,
-        });
-
-        // Google reCAPTCHA cannot be auto-filled; hand off before the CAPTCHA
-        // retry loop mistakes this for an image-CAPTCHA miss.
-        if (result.message === RECAPTCHA_REQUIRED) {
-          if (onRecaptchaRequired) {
-            onRecaptchaRequired();
-            return;
-          }
-          showError(
-            'VTOP is asking for its own reCAPTCHA. Sign in at vtop.vit.ac.in.',
-            ['general'],
-          );
-          setIsSubmitting(false);
-          return;
-        }
+        const result = await loadRegularCaptcha(
+          async () => {
+            if (recaptchaRound > 0) {
+              // Each retry is a fresh full handshake: a new session can come
+              // back with a regular captcha instead of reCAPTCHA.
+              activeCaptcha = await VtopClient.getCaptcha(campus);
+              // Wait for auto-solve to populate the new image (up to 3s).
+              for (let i = 0; i < 30; i++) {
+                if (captchaInputRef.current.trim().length >= 6) break;
+                await new Promise((r) => setTimeout(r, 100));
+              }
+            }
+            recaptchaRound += 1;
+            const attempt = await VtopClient.login({
+              campus,
+              username: trimmedUser,
+              password: trimmedPass,
+              captcha:
+                normalizeCaptcha(captchaInputRef.current) ||
+                normalizeCaptcha(captchaInput),
+              csrf: activeCaptcha.csrf,
+              jsessionid: activeCaptcha.jsessionid,
+              serverId: activeCaptcha.serverId,
+            });
+            if (attempt.message === RECAPTCHA_REQUIRED) {
+              throw new RecaptchaRequiredError();
+            }
+            return attempt;
+          },
+          {
+            onRetry: (retry) =>
+              showError(regularCaptchaRetryMessage(retry), ['captcha']),
+            onExhausted: () => {
+              if (onRecaptchaRequired) {
+                onRecaptchaRequired();
+                return;
+              }
+              showError(
+                'VTOP is asking for its own reCAPTCHA. Sign in at vtop.vit.ac.in.',
+                ['general'],
+              );
+              setIsSubmitting(false);
+            },
+          },
+        );
+        if (!result) return;
 
         const isCaptchaError = /captcha/i.test(result.message || '');
 

@@ -4,7 +4,7 @@
   "description": "uni portal done better.",
   "version": "0.6.0",
 
-  "permissions": ["unlimitedStorage", "downloads", "storage", "identity"],
+  "permissions": ["unlimitedStorage", "downloads", "storage", "identity", "scripting"],
 
   "oauth2": {
     "client_id": "REPLACE-ME.apps.googleusercontent.com",
@@ -59,6 +59,7 @@
     {
       "resources": [
         "injected.js",
+        "m3e-inject.js",
         "webBridge.js",
         "login.js",
         "dashboard.js",

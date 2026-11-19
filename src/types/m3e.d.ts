@@ -20,6 +20,11 @@ type M3eAttrs = {
 };
 
 declare global {
+  interface Window {
+    /** Set by the MAIN-world M3E injection script once registration runs. */
+    __retopM3eRegistered?: boolean;
+  }
+
   namespace React.JSX {
     interface IntrinsicElements {
       'm3e-theme': M3eAttrs;

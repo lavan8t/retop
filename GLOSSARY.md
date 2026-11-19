@@ -15,6 +15,9 @@ The canonical key (`canonicalSemesterId`) used to compare semester IDs such as `
 ### Session facts
 The current session's `csrf`, `regNo` and `mode`. `regNo` is the registration number VTOP renders as `authorizedID` / `authorizedIDX`, never the sign-in `username`; `mode` is `ambient` (same-origin, browser-owned cookie jar) or `jar`. One mutable seam owns extraction, fallback chains, refresh and mirroring to legacy globals.
 
+### Regular captcha retry
+A bounded fresh-handshake retry after a reCAPTCHA-class sign-in signal, before any handoff to VTOP's native login.
+
 ### Course download
 Fully planned work for one course material: a VTOP-scoped URL, the `_csrf` / `authorizedID` / `fileId` POST body, and the exact `retop/coursepage/<semester>/<course>/<faculty>/...` filename. The worker adapter only executes the plan; naming rules never drift into it.
 

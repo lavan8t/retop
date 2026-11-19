@@ -7,6 +7,7 @@ import {
   executeVtopRequest,
   clearNativeCookies,
   isAmbientSessionContext,
+  VtopRequestOptions,
   VtopResponse,
 } from './vtopBridge';
 import { extractCsrfFromHtml, extractRegNoFromHtml } from './sessionFacts';
@@ -92,6 +93,22 @@ export class RecaptchaRequiredError extends Error {
 function usesGoogleRecaptcha(html: string): boolean {
   return /captchaType\s*=\s*2\b/.test(html);
 }
+
+/**
+ * Transport for the CAPTCHA handshake. Injectable so the two session models can
+ * be tested without touching the network; production uses the real bridge.
+ */
+export interface VtopCaptchaTransport {
+  execute: (options: VtopRequestOptions) => Promise<VtopResponse>;
+  isAmbient: () => boolean;
+  clearCookies: () => void;
+}
+
+const defaultCaptchaTransport: VtopCaptchaTransport = {
+  execute: executeVtopRequest,
+  isAmbient: isAmbientSessionContext,
+  clearCookies: clearNativeCookies,
+};
 
 export interface LoginParams {
   campus?: VtopCampus;
@@ -282,16 +299,17 @@ export class VtopClient {
    */
   public static async getCaptcha(
     campus: VtopCampus = 'vellore',
+    transport: VtopCaptchaTransport = defaultCaptchaTransport,
   ): Promise<CaptchaData> {
     // On a live VTOP origin the browser already holds JSESSIONID/SERVERID and
     // attaches them to every same-origin request. The same is true behind the
     // extension relay, whose service worker owns the cookie jar. Reading
     // Set-Cookie is impossible from fetch (forbidden response header), so the
     // jar-based handshake cannot work in either context — and is not needed.
-    if (isAmbientSessionContext()) {
-      return this.getCaptchaLive(campus);
+    if (transport.isAmbient()) {
+      return this.getCaptchaLive(campus, transport);
     }
-    return this.getCaptchaJar(campus);
+    return this.getCaptchaJar(campus, transport);
   }
 
   /**
@@ -301,10 +319,11 @@ export class VtopClient {
    */
   private static async getCaptchaLive(
     campus: VtopCampus = 'vellore',
+    transport: VtopCaptchaTransport = defaultCaptchaTransport,
   ): Promise<CaptchaData> {
     const baseUrl = getVtopBaseUrl(campus);
 
-    const openPageResp = await executeVtopRequest({
+    const openPageResp = await transport.execute({
       url: `${baseUrl}/vtop/open/page`,
       method: 'GET',
       headers: {
@@ -318,7 +337,7 @@ export class VtopClient {
       throw new Error('VTOP did not issue a CSRF token on /vtop/open/page');
     }
 
-    const setupResp = await executeVtopRequest({
+    const setupResp = await transport.execute({
       url: `${baseUrl}/vtop/prelogin/setup`,
       method: 'POST',
       headers: {
@@ -331,11 +350,10 @@ export class VtopClient {
       }).toString(),
     });
 
-    // The image CAPTCHA path cannot satisfy a reCAPTCHA challenge, so fail
-    // before showing a form that could never submit.
-    if (usesGoogleRecaptcha(setupResp.body)) {
-      throw new RecaptchaRequiredError();
-    }
+    // A reCAPTCHA-class page is not a dead end: /vtop/get/new/captcha can still
+    // serve a regular JPEG (agents.md trap 11, Variant A). Try it before giving
+    // up, and only signal reCAPTCHA if it produces no solvable image.
+    const recaptcha = usesGoogleRecaptcha(setupResp.body);
 
     let loginCsrf = extractCSRFToken(setupResp.body) || initialCsrf;
 
@@ -346,7 +364,7 @@ export class VtopClient {
       // endpoint, which answers with a small HTML fragment wrapping the data URI.
       // Headers match a real VTOP session (see trap 11): the Referer is the
       // prelogin page, not the login page.
-      const captchaResp = await executeVtopRequest({
+      const captchaResp = await transport.execute({
         url: `${baseUrl}/vtop/get/new/captcha`,
         method: 'GET',
         headers: {
@@ -370,6 +388,7 @@ export class VtopClient {
     }
 
     if (!captchaImage) {
+      if (recaptcha) throw new RecaptchaRequiredError();
       throw new Error('Unable to parse CAPTCHA image from VTOP response');
     }
 
@@ -379,12 +398,13 @@ export class VtopClient {
   /** Cookie-jar handshake, for extension pages and the Android bridge. */
   private static async getCaptchaJar(
     campus: VtopCampus = 'vellore',
+    transport: VtopCaptchaTransport = defaultCaptchaTransport,
   ): Promise<CaptchaData> {
-    clearNativeCookies();
+    transport.clearCookies();
     const baseUrl = getVtopBaseUrl(campus);
 
     // Step 1: Open initial page
-    const openPageResp = await executeVtopRequest({
+    const openPageResp = await transport.execute({
       url: `${baseUrl}/vtop/open/page`,
       method: 'GET',
       headers: {
@@ -409,7 +429,7 @@ export class VtopClient {
       : `JSESSIONID=${jsessionid}`;
 
     // Step 2: Prelogin setup
-    const setupResp = await executeVtopRequest({
+    const setupResp = await transport.execute({
       url: `${baseUrl}/vtop/prelogin/setup`,
       method: 'POST',
       headers: {
@@ -444,7 +464,7 @@ export class VtopClient {
         ? currentUrl
         : `${baseUrl}${currentUrl}`;
 
-      const hopResp = await executeVtopRequest({
+      const hopResp = await transport.execute({
         url: fullUrl,
         method: 'GET',
         headers: {
@@ -473,10 +493,10 @@ export class VtopClient {
       }
     }
 
-    // Step 4: Extract CSRF and CAPTCHA from login page
-    if (usesGoogleRecaptcha(loginHtml)) {
-      throw new RecaptchaRequiredError();
-    }
+    // Step 4: Extract CSRF and CAPTCHA from login page. A reCAPTCHA-class page
+    // can still serve a regular image from /vtop/get/new/captcha, so defer the
+    // handoff until that endpoint has been tried (see getCaptchaLive).
+    const recaptcha = usesGoogleRecaptcha(loginHtml);
 
     const loginCsrf = extractCSRFToken(loginHtml);
     let effectiveCsrf = loginCsrf || initialCsrf;
@@ -489,7 +509,7 @@ export class VtopClient {
 
     // Fallback: If loginHtml did not embed the captcha image, fetch it via /vtop/get/new/captcha
     if (!captchaImage) {
-      const captchaResp = await executeVtopRequest({
+      const captchaResp = await transport.execute({
         url: `${baseUrl}/vtop/get/new/captcha`,
         method: 'GET',
         headers: {
@@ -515,6 +535,7 @@ export class VtopClient {
     }
 
     if (!captchaImage) {
+      if (recaptcha) throw new RecaptchaRequiredError();
       throw new Error('Unable to parse CAPTCHA image from VTOP response');
     }
 

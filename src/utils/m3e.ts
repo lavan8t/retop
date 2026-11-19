@@ -36,7 +36,11 @@ export function ensureM3eComponents(): Promise<void> {
       .then(() => undefined)
       .catch((err) => {
         // M3E is optional UI: plain HTML controls still work without it.
-        console.warn('[retop] M3E components could not be registered.', err);
+        // Log the stack so the failing deferred chunk/line is identifiable.
+        console.warn(
+          '[retop] M3E components could not be registered.',
+          err?.stack || err,
+        );
       });
   }
   return registration;

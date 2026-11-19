@@ -13,6 +13,11 @@ describe('M3E registration stays off the dashboard import path', () => {
     expect(source).toContain('ensureM3eComponents');
   });
 
+  it('logs the error stack so a failing deferred chunk is identifiable', () => {
+    const source = read('../m3e.ts');
+    expect(source).toContain('err?.stack || err');
+  });
+
   it('defers registration in both M3E screens instead of importing it for side effects', () => {
     for (const page of [
       '../../pages/attendance.tsx',

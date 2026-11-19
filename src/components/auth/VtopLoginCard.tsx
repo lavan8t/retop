@@ -21,6 +21,13 @@ import {
   setStorageData,
   removeStorageKeys,
 } from '../../utils/storageAdapter';
+import {
+  normalizeCaptcha,
+  normalizeUsername,
+  routeServerError,
+  validateLogin,
+  type LoginField,
+} from '../../utils/loginValidation';
 
 const REMEMBERED_USER_KEY = 'retop_remembered_username';
 
@@ -67,6 +74,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [syncProgress, setSyncProgress] = useState<SyncProgress | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [errorFields, setErrorFields] = useState<LoginField[]>([]);
 
   const [usernameWiggle, setUsernameWiggle] = useState(false);
   const [passwordWiggle, setPasswordWiggle] = useState(false);
@@ -81,11 +89,60 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
   const activeSeqRef = useRef<number>(0);
   const hasMountedRef = useRef<boolean>(false);
 
+  type DisplayField = 'username' | 'password' | 'captcha';
+
+  const displayFields = (fields: LoginField[]): DisplayField[] =>
+    fields.map((field) => (field === 'general' ? 'password' : field));
+
+  const wiggleField = (field: DisplayField) => {
+    const setter =
+      field === 'username'
+        ? setUsernameWiggle
+        : field === 'password'
+          ? setPasswordWiggle
+          : setCaptchaWiggle;
+    setter(true);
+    setTimeout(() => setter(false), 400);
+  };
+
+  const clearErrors = () => {
+    setErrorMessage('');
+    setErrorFields([]);
+  };
+
+  const showError = (message: string, fields: LoginField[]) => {
+    setErrorMessage(message);
+    setErrorFields(fields);
+    displayFields(fields).forEach(wiggleField);
+  };
+
+  const clearFieldError = (field: DisplayField) => {
+    setErrorMessage('');
+    setErrorFields((prev) => prev.filter((f) => f !== field));
+  };
+
+  const isFieldError = (field: DisplayField) => errorFields.includes(field);
+  const firstErrorField = displayFields(errorFields)[0] ?? null;
+
+  const fieldErrorText = (field: DisplayField) =>
+    errorMessage && firstErrorField === field ? (
+      <p
+        role="alert"
+        className="text-xs text-left"
+        style={{
+          color: 'var(--color-error, #ef4444)',
+          marginTop: '-0.5rem',
+          marginBottom: '0.75rem',
+        }}
+      >
+        {errorMessage}
+      </p>
+    ) : null;
+
   // Fetch initial session & captcha
   const fetchInitialCaptcha = async (targetCampus: VtopCampus) => {
     const seq = ++activeSeqRef.current;
     setLoadingCaptcha(true);
-    setErrorMessage('');
 
     try {
       const data = await VtopClient.getCaptcha(targetCampus);
@@ -99,8 +156,9 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
         return;
       }
       console.error('[VtopLoginCard] Failed to fetch captcha:', err);
-      setErrorMessage(
+      showError(
         err?.message || 'Failed to load CAPTCHA from VTOP. Please retry.',
+        ['general'],
       );
     } finally {
       if (seq === activeSeqRef.current) {
@@ -116,7 +174,6 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
     if (captchaData?.jsessionid) {
       const seq = ++activeSeqRef.current;
       setLoadingCaptcha(true);
-      setErrorMessage('');
 
       try {
         const refreshed = await VtopClient.refreshCaptcha(
@@ -210,43 +267,32 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSubmitting || loadingCaptcha) return;
+    if (isSubmitting) return;
 
-    const trimmedUser = username.trim().toUpperCase();
-    const trimmedPass = password;
-    const trimmedCaptcha = captchaInput.trim().toUpperCase();
-
-    if (!trimmedUser) {
-      setUsernameWiggle(true);
-      setTimeout(() => setUsernameWiggle(false), 400);
-      setErrorMessage('Enter your username');
-      return;
-    }
-    if (!trimmedPass) {
-      setPasswordWiggle(true);
-      setTimeout(() => setPasswordWiggle(false), 400);
-      setErrorMessage('Enter your password');
-      return;
-    }
-    if (trimmedCaptcha.length !== 6) {
-      setCaptchaWiggle(true);
-      setTimeout(() => setCaptchaWiggle(false), 400);
-      setErrorMessage('Captcha must be 6 characters');
-      return;
-    }
-    if (!captchaData) {
-      setErrorMessage('Captcha session not ready. Refreshing...');
-      fetchInitialCaptcha(campus);
+    const validationError = validateLogin({
+      username,
+      password,
+      captcha: captchaData ? captchaInput : null,
+    });
+    if (validationError) {
+      showError(validationError.message, [validationError.field]);
       return;
     }
 
     setIsSubmitting(true);
-    setErrorMessage('');
+    clearErrors();
     setSyncProgress(null);
 
-    const MAX_CAPTCHA_RETRIES = 3;
+    const trimmedUser = normalizeUsername(username);
+    const trimmedPass = password;
+    const trimmedCaptcha =
+      normalizeCaptcha(captchaInputRef.current) ||
+      normalizeCaptcha(captchaInput);
+
+    const MAX_CAPTCHA_RETRIES = 2;
     let captchaRetries = 0;
-    let activeCaptcha: CaptchaData = captchaData;
+    // validateLogin rejects a blank captcha, which covers a missing session.
+    let activeCaptcha: CaptchaData = captchaData!;
 
     const attemptLogin = async (): Promise<void> => {
       try {
@@ -254,8 +300,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
           campus,
           username: trimmedUser,
           password: trimmedPass,
-          captcha:
-            captchaInputRef.current.trim().toUpperCase() || trimmedCaptcha,
+          captcha: trimmedCaptcha,
           csrf: activeCaptcha.csrf,
           jsessionid: activeCaptcha.jsessionid,
           serverId: activeCaptcha.serverId,
@@ -268,8 +313,9 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
             onRecaptchaRequired();
             return;
           }
-          setErrorMessage(
+          showError(
             'VTOP is asking for its own reCAPTCHA. Sign in at vtop.vit.ac.in.',
+            ['general'],
           );
           setIsSubmitting(false);
           return;
@@ -278,13 +324,12 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
         const isCaptchaError = /captcha/i.test(result.message || '');
 
         if (!result.success || !result.client) {
-          // Auto-retry up to 3 times on an invalid captcha.
+          // Auto-retry up to 2 times on an invalid captcha.
           if (isCaptchaError && captchaRetries < MAX_CAPTCHA_RETRIES) {
             captchaRetries += 1;
-            setCaptchaWiggle(true);
-            setTimeout(() => setCaptchaWiggle(false), 400);
-            setErrorMessage(
+            showError(
               `Invalid CAPTCHA. Retrying (${captchaRetries}/${MAX_CAPTCHA_RETRIES})...`,
+              ['captcha'],
             );
             const refreshed = await handleRefreshCaptcha();
             if (refreshed) {
@@ -298,15 +343,16 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
             }
           }
 
-          setCaptchaWiggle(true);
-          setTimeout(() => setCaptchaWiggle(false), 400);
-          setErrorMessage(
+          showError(
             result.message || 'Invalid credentials or CAPTCHA mismatch',
+            routeServerError(result.message),
           );
           setIsSubmitting(false);
           handleRefreshCaptcha();
           return;
         }
+
+        clearErrors();
 
         try {
           if (rememberUsername) {
@@ -345,8 +391,9 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
         onLoginSuccess(syncResult.user, result.client);
       } catch (err: any) {
         console.error('[VtopLoginCard] Login error:', err);
-        setErrorMessage(
+        showError(
           err?.message || 'Login failed. Check your network connection.',
+          ['general'],
         );
         setIsSubmitting(false);
         handleRefreshCaptcha();
@@ -387,19 +434,22 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
             id="username"
             className="form-control"
             placeholder=" "
-            required
             disabled={isSubmitting}
             autoCapitalize="characters"
             autoComplete="username"
             spellCheck={false}
             autoCorrect="off"
             value={username}
-            onChange={(e) => setUsername(e.target.value.toUpperCase())}
+            onChange={(e) => {
+              setUsername(normalizeUsername(e.target.value));
+              clearFieldError('username');
+            }}
           />
           <label htmlFor="username" className="retop-floating-label">
             Username
           </label>
         </div>
+        {fieldErrorText('username')}
 
         {/* Password Input Group with Native Floating Label & Visibility Toggle */}
         <div className={`input-group ${passwordWiggle ? 'retop-wiggle' : ''}`}>
@@ -408,13 +458,15 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
             id="password"
             className="form-control"
             placeholder=" "
-            required
             disabled={isSubmitting}
             autoComplete="current-password"
             spellCheck={false}
             autoCorrect="off"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              clearFieldError('password');
+            }}
           />
           <label htmlFor="password" className="retop-floating-label">
             Password
@@ -433,6 +485,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
             )}
           </button>
         </div>
+        {fieldErrorText('password')}
 
         {/* Remember username */}
         <label className="flex items-center gap-2 cursor-pointer select-none w-fit">
@@ -460,7 +513,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
         {/* CAPTCHA Container Matching login-theme.css #retop-captcha-container */}
         <div
           id="retop-captcha-container"
-          className={`${captchaWiggle ? 'retop-wiggle' : ''} transition-all duration-300 ease-in-out overflow-hidden ${captchaInput.length >= 6 ? 'max-h-0 opacity-0' : 'max-h-40 opacity-100'}`}
+          className={`${captchaWiggle ? 'retop-wiggle' : ''} transition-all duration-300 ease-in-out overflow-hidden ${captchaInput.length >= 6 && !isFieldError('captcha') ? 'max-h-0 opacity-0' : 'max-h-40 opacity-100'}`}
         >
           {/* Captcha Image and Refresh Button */}
           <div id="captchaBlock">
@@ -500,19 +553,22 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
               id="captchaStr"
               className="form-control"
               placeholder=" "
-              required
               disabled={isSubmitting}
               maxLength={6}
               autoComplete="off"
               spellCheck={false}
               autoCorrect="off"
               value={captchaInput}
-              onChange={(e) => setCaptchaInput(e.target.value.toUpperCase())}
+              onChange={(e) => {
+                setCaptchaInput(normalizeCaptcha(e.target.value));
+                clearFieldError('captcha');
+              }}
             />
             <label htmlFor="captchaStr" className="retop-floating-label">
               Captcha
             </label>
           </div>
+          {fieldErrorText('captcha')}
         </div>
 
         {/* Sync Progress Indicator */}
@@ -543,7 +599,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
         <div className="pt-2">
           <button
             type="submit"
-            disabled={isSubmitting || loadingCaptcha || !captchaData}
+            disabled={isSubmitting}
             className="btn btn-primary cursor-pointer active:scale-98 transition-all disabled:opacity-50"
           >
             {isSubmitting ? (
@@ -572,13 +628,6 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
           </div>
         )}
       </form>
-
-      {/* Floating Error Toast */}
-      {errorMessage && (
-        <div className="retop-error-toast" onClick={() => setErrorMessage('')}>
-          <span>{errorMessage}</span>
-        </div>
-      )}
     </div>
   );
 };

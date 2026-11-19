@@ -7,7 +7,6 @@ import {
   Tune,
   Info,
   ArrowBack,
-  Check,
 } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 
 import { downloadICalFile, generateICalFile } from '../utils/ical-export';
@@ -312,7 +311,11 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
               >
                 <CatIcon className="w-5 h-5 shrink-0" aria-hidden="true" />
                 <span className="flex flex-col gap-0.5 flex-1 min-w-0">
-                  <span className="font-expanded font-semibold text-sm leading-tight">
+                  <span
+                    className={`font-expanded text-sm leading-tight ${
+                      isSelected ? 'font-bold' : 'font-semibold'
+                    }`}
+                  >
                     {cat.label}
                   </span>
                   <span
@@ -323,9 +326,6 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
                     {cat.description}
                   </span>
                 </span>
-                {isSelected && (
-                  <Check aria-hidden="true" className="w-5 h-5 shrink-0" />
-                )}
               </button>
             );
           })}

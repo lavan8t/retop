@@ -1,5 +1,4 @@
 import React from 'react';
-import { Check } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 
 export interface SegmentedControlOption<T extends string> {
   label: React.ReactNode;
@@ -66,15 +65,12 @@ export const SegmentedControl = <T extends string>({
               e.stopPropagation();
               onChange(option.value, e);
             }}
-            className={`${buttonClassName} min-h-12 min-w-12 flex items-center justify-center gap-1 text-xs font-bold outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) transition-all duration-fast shadow-none ${roundedClass} ${
+            className={`${buttonClassName} min-h-12 min-w-12 flex items-center justify-center text-xs outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) transition-all duration-fast shadow-none ${roundedClass} ${
               isSelected
-                ? 'bg-(--text-main) text-(--bg-main)'
-                : 'bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main)'
+                ? 'bg-(--text-main) text-(--bg-main) font-black'
+                : 'bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) font-bold'
             }`}
           >
-            <span aria-hidden="true" className="inline-flex shrink-0">
-              {isSelected && <Check className="w-3.5 h-3.5" />}
-            </span>
             {option.label}
           </button>
         );

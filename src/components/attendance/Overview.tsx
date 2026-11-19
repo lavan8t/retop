@@ -6,7 +6,7 @@ import {
 import type { DetailedAttendanceCourse } from '../../types/vtop';
 import type { AttendanceForecast } from '../../utils/attendanceForecaster';
 import { leaveImpact, overallVerdict } from './attendanceView';
-import { IconAction } from './IconAction';
+import { M3eIconAction } from './M3eIconAction';
 
 export const Overview = ({
   courses,
@@ -63,7 +63,7 @@ export const Overview = ({
       )}
 
       <div className="flex justify-end">
-        <IconAction
+        <M3eIconAction
           icon={<Refresh aria-hidden="true" />}
           label={refreshing ? 'Refreshing attendance' : 'Refresh attendance'}
           onClick={onRefresh}

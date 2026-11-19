@@ -1,3 +1,8 @@
+import {
+  M3eButtonSegment,
+  M3eLinearProgressIndicator,
+  M3eSegmentedButton,
+} from './m3eTags';
 import { useState } from 'react';
 import type React from 'react';
 import {
@@ -17,8 +22,7 @@ import {
   type HistoryEntry,
   type RecordStatus,
 } from './attendanceView';
-import { IconAction } from './IconAction';
-import { SegmentedControl } from '../ui/SegmentedControl';
+import { M3eIconAction } from './M3eIconAction';
 
 const STATUS_LABEL: Record<RecordStatus, string> = {
   present: 'Present',
@@ -26,10 +30,19 @@ const STATUS_LABEL: Record<RecordStatus, string> = {
   other: 'Other',
 };
 
-const STATUS_FILL: Record<RecordStatus, React.CSSProperties> = {
-  present: { backgroundColor: 'var(--att-safe)' },
-  absent: { backgroundColor: 'var(--att-danger)' },
-  other: { backgroundColor: 'var(--att-warn)' },
+const STATUS_STYLE: Record<RecordStatus, React.CSSProperties> = {
+  present: {
+    '--m3e-progress-indicator-color': 'var(--att-safe)',
+    '--m3e-linear-progress-indicator-thickness': '0.5rem',
+  } as React.CSSProperties,
+  absent: {
+    '--m3e-progress-indicator-color': 'var(--att-danger)',
+    '--m3e-linear-progress-indicator-thickness': '0.5rem',
+  } as React.CSSProperties,
+  other: {
+    '--m3e-progress-indicator-color': 'var(--att-warn)',
+    '--m3e-linear-progress-indicator-thickness': '0.5rem',
+  } as React.CSSProperties,
 };
 
 const STATUS_TEXT: Record<RecordStatus, string> = {
@@ -108,7 +121,7 @@ export const ClassHistory = ({
           Class history
         </h3>
         <div className="flex items-center gap-1">
-          <IconAction
+          <M3eIconAction
             icon={
               sortOrder === 'desc' ? (
                 <ArrowDownward aria-hidden="true" />
@@ -123,29 +136,24 @@ export const ClassHistory = ({
             }
             onClick={() => onSortChange(sortOrder === 'desc' ? 'asc' : 'desc')}
           />
-          <SegmentedControl
-            ariaLabel="Class history layout"
+          <M3eSegmentedButton
+            aria-label="Class history layout"
             value={view}
-            onChange={setView}
-            options={[
-              {
-                value: 'list',
-                label: (
-                  <>
-                    <List aria-hidden="true" /> List
-                  </>
-                ),
-              },
-              {
-                value: 'tiles',
-                label: (
-                  <>
-                    <GridView aria-hidden="true" /> Tiles
-                  </>
-                ),
-              },
-            ]}
-          />
+            onChange={(event: { target: EventTarget | null }) => {
+              const value = (event.target as HTMLElement & { value?: string })
+                ?.value;
+              if (value === 'list' || value === 'tiles') setView(value);
+            }}
+          >
+            <M3eButtonSegment value="list">
+              <List slot="icon" aria-hidden="true" />
+              List
+            </M3eButtonSegment>
+            <M3eButtonSegment value="tiles">
+              <GridView slot="icon" aria-hidden="true" />
+              Tiles
+            </M3eButtonSegment>
+          </M3eSegmentedButton>
         </div>
       </div>
 
@@ -196,20 +204,14 @@ export const ClassHistory = ({
                               {slotInfo(entry.record)}
                             </p>
                             <div
-                              role="progressbar"
-                              aria-valuenow={STATUS_VALUE[status]}
-                              aria-valuemin={0}
-                              aria-valuemax={100}
-                              aria-label={`${STATUS_LABEL[status]} on ${formatRecordDate(entry.date, entry.record.date)}`}
-                              className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-(--bg-highlight)"
+                              style={STATUS_STYLE[status]}
+                              className="mt-1.5"
                             >
-                              <div
-                                className="h-full rounded-full"
-                                style={{
-                                  width: `${STATUS_VALUE[status]}%`,
-                                  ...STATUS_FILL[status],
-                                }}
-                              />
+                              <M3eLinearProgressIndicator
+                                value={STATUS_VALUE[status]}
+                                variant="flat"
+                                aria-label={`${STATUS_LABEL[status]} on ${formatRecordDate(entry.date, entry.record.date)}`}
+                              ></M3eLinearProgressIndicator>
                             </div>
                           </div>
                           <span

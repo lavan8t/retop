@@ -1,4 +1,6 @@
+import { M3eButton, M3eCircularProgressIndicator } from './m3eTags';
 import { useEffect, useState } from 'react';
+import type React from 'react';
 import {
   Add,
   Remove,
@@ -13,7 +15,7 @@ import {
   TONE_LABEL,
   type AttendanceTone,
 } from './attendanceView';
-import { IconAction } from './IconAction';
+import { M3eIconAction } from './M3eIconAction';
 
 const TONE_TEXT: Record<AttendanceTone, string> = {
   na: 'text-(--text-muted)',
@@ -23,8 +25,10 @@ const TONE_TEXT: Record<AttendanceTone, string> = {
   neutral: 'text-(--text-muted)',
 };
 
-const RING_RADIUS = 66;
-const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+const ringStyle = {
+  '--m3e-circular-flat-progress-indicator-diameter': '9rem',
+  '--m3e-circular-progress-indicator-thickness': '0.75rem',
+} as React.CSSProperties;
 
 const Stepper = ({
   label,
@@ -42,7 +46,7 @@ const Stepper = ({
       {label}
     </span>
     <div className="flex items-center justify-center gap-1">
-      <IconAction
+      <M3eIconAction
         icon={<Remove aria-hidden="true" />}
         label={`Remove one predicted ${label.toLowerCase()} class`}
         onClick={() => onChange(Math.max(0, value - 1))}
@@ -55,7 +59,7 @@ const Stepper = ({
       >
         {value}
       </span>
-      <IconAction
+      <M3eIconAction
         icon={<Add aria-hidden="true" />}
         label={`Add one predicted ${label.toLowerCase()} class`}
         onClick={() => onChange(Math.min(max, value + 1))}
@@ -95,7 +99,6 @@ export const WhatIfCalculator = ({
   });
   const tone = attendanceTone(projection.percentage, isNinePointer);
   const hasChanged = attendCount > 0 || bunkCount > 0;
-  const ringPercent = Math.min(100, Math.max(0, projection.percentage));
 
   const reset = () => {
     setAttendCount(0);
@@ -110,45 +113,19 @@ export const WhatIfCalculator = ({
       <div className="flex flex-col items-center gap-2">
         {hasChanged && (
           <div className="self-end -mb-2">
-            <button
-              type="button"
-              onClick={reset}
-              className="min-h-12 rounded-full px-3 text-sm font-bold text-(--accent-base) outline-none cursor-pointer transition-colors hover:bg-(--bg-highlight) focus-visible:ring-2 focus-visible:ring-(--accent-base)"
-            >
+            <M3eButton variant="text" onClick={reset}>
               Reset
-            </button>
+            </M3eButton>
           </div>
         )}
         <div className="relative flex items-center justify-center">
-          <svg
-            viewBox="0 0 144 144"
-            role="progressbar"
-            aria-valuenow={projection.percentage}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label={`Projected attendance ${projection.percentage} percent, ${TONE_LABEL[tone]}`}
-            className="h-36 w-36 -rotate-90"
-          >
-            <circle
-              cx="72"
-              cy="72"
-              r={RING_RADIUS}
-              fill="none"
-              stroke="var(--bg-highlight)"
-              strokeWidth="12"
-            />
-            <circle
-              cx="72"
-              cy="72"
-              r={RING_RADIUS}
-              fill="none"
-              stroke="var(--accent-base)"
-              strokeWidth="12"
-              strokeLinecap="round"
-              strokeDasharray={RING_CIRCUMFERENCE}
-              strokeDashoffset={RING_CIRCUMFERENCE * (1 - ringPercent / 100)}
-            />
-          </svg>
+          <div style={ringStyle} className="flex items-center justify-center">
+            <M3eCircularProgressIndicator
+              value={projection.percentage}
+              variant="flat"
+              aria-label={`Projected attendance ${projection.percentage} percent, ${TONE_LABEL[tone]}`}
+            ></M3eCircularProgressIndicator>
+          </div>
           <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
             <span
               className={`font-expanded font-black text-4xl leading-none tabular-nums ${TONE_TEXT[tone]}`}

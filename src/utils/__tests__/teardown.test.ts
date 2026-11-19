@@ -1,6 +1,15 @@
-import { describe, expect, it, beforeEach, afterEach } from 'bun:test';
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+} from 'bun:test';
 import {
   dismantleRetopMods,
+  installErrorNet,
+  isLoginTakeover,
   registerAppUnmount,
   teardownRetop,
 } from '../teardown';
@@ -173,5 +182,111 @@ describe('teardownRetop', () => {
     teardownRetop();
 
     expect(document.getElementById('retop-host')).toBeNull();
+  });
+});
+
+/**
+ * The global error net is the broadest automatic fallback: any uncaught error
+ * with an extension filename used to tear retop down, which on a login takeover
+ * arms the bypass and reloads into legacy VTOP. Login failures must stay on the
+ * retop card instead; the net is only for fatal dashboard errors.
+ */
+describe('installErrorNet fallback policy', () => {
+  let originalLocation: any;
+  let reloads = 0;
+
+  beforeAll(() => {
+    delete (window as any).__retopErrorNet;
+    installErrorNet();
+  });
+
+  beforeEach(() => {
+    document.documentElement.removeAttribute('data-retop-takeover');
+    document.body.innerHTML = '';
+    sessionStorage.clear();
+    (window as any).__retopAborted = false;
+    reloads = 0;
+    originalLocation = window.location;
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { ...originalLocation, reload: () => void (reloads += 1) },
+    });
+  });
+
+  afterEach(() => {
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: originalLocation,
+    });
+    document.documentElement.removeAttribute('data-retop-takeover');
+  });
+
+  const extensionError = () => {
+    const ev = new ErrorEvent('error', {
+      filename: 'chrome-extension://abc123/main.js',
+      error: new Error('boom'),
+    });
+    return ev;
+  };
+
+  const retopRejection = () => {
+    const ev = new Event('unhandledrejection') as any;
+    ev.reason = {
+      message: 'boom',
+      stack: 'chrome-extension://abc123/main.js:1:1\n  at thing',
+    };
+    return ev;
+  };
+
+  it('reports the login takeover from the document marker', () => {
+    expect(isLoginTakeover()).toBe(false);
+    document.documentElement.setAttribute('data-retop-takeover', 'login');
+    expect(isLoginTakeover()).toBe(true);
+    document.documentElement.setAttribute('data-retop-takeover', 'dashboard');
+    expect(isLoginTakeover()).toBe(false);
+  });
+
+  it('keeps the login surface mounted on an uncaught extension error', () => {
+    document.documentElement.setAttribute('data-retop-takeover', 'login');
+
+    window.dispatchEvent(extensionError());
+
+    expect(reloads).toBe(0);
+    expect(sessionStorage.getItem('retop-login-bypass')).toBeNull();
+    expect((window as any).__retopAborted).toBe(false);
+  });
+
+  it('keeps the login surface mounted on an unhandled retop rejection', () => {
+    document.documentElement.setAttribute('data-retop-takeover', 'login');
+
+    window.dispatchEvent(retopRejection());
+
+    expect(reloads).toBe(0);
+    expect(sessionStorage.getItem('retop-login-bypass')).toBeNull();
+  });
+
+  it('still tears the dashboard back to VTOP for a fatal extension error', () => {
+    window.dispatchEvent(extensionError());
+
+    expect((window as any).__retopAborted).toBe(true);
+    expect(reloads).toBe(0);
+  });
+
+  it('ignores VTOP page errors and network failures', () => {
+    window.dispatchEvent(
+      new ErrorEvent('error', {
+        filename: 'https://vtop.vit.ac.in/page.js',
+        error: new Error('boom'),
+      }),
+    );
+    expect((window as any).__retopAborted).toBe(false);
+
+    const net = new Event('unhandledrejection') as any;
+    net.reason = {
+      message: 'Failed to fetch',
+      stack: 'chrome-extension://abc123/main.js:1:1',
+    };
+    window.dispatchEvent(net);
+    expect((window as any).__retopAborted).toBe(false);
   });
 });

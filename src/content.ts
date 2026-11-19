@@ -406,9 +406,6 @@ function canArmBypass(): boolean {
   }
 }
 
-/** How long the login entry gets to paint before native VTOP is restored. */
-const TAKEOVER_WATCHDOG_MS = 6000;
-
 function takeOverLogin(): void {
   // window.stop() must come AFTER the body exists. Stopping first halts the parser
   // before <body> is created, so the wait below would never resolve and the tab
@@ -431,33 +428,28 @@ function takeOverLogin(): void {
       mountSkeleton(body);
       document.documentElement?.setAttribute('data-retop-takeover', 'login');
 
-      // If the entry fails to import, or mounts and then throws, the user would be
-      // left staring at an empty shell. Nothing here can recover in place, so the
-      // only escape is one clean reload back to native VTOP. The render deadline
-      // only starts once the entry has arrived: a slow download is not a failure.
+      // A login.js import that never arrives (or fails outright) is a genuine
+      // bootstrap impossibility: the native document was already destroyed, so
+      // the only escape is one clean reload back to VTOP with the bypass armed.
+      // Deliberately no short "no UI yet" watchdog: a slow-but-successful mount
+      // must not dump the student into legacy VTOP. Once the entry has loaded it
+      // owns its own failures (error boundary + card errors) and stays on retop.
       let gaveUp = false;
       const giveUp = () => {
         if (gaveUp) return;
         gaveUp = true;
-        console.warn('[retop] Login takeover produced no UI; restoring VTOP.');
+        console.warn(
+          '[retop] Login takeover could not bootstrap; restoring VTOP.',
+        );
         revealNative(true);
       };
 
+      // A hard 45s download deadline still catches a hung entry fetch.
       const loadTimeout = setTimeout(giveUp, 45000);
 
       loadEntry('login.js')
         .then(() => {
           clearTimeout(loadTimeout);
-          const renderTimeout = setTimeout(giveUp, TAKEOVER_WATCHDOG_MS);
-          const poll = setInterval(() => {
-            const root = document
-              .getElementById('retop-host')
-              ?.shadowRoot?.querySelector('#retop-root');
-            if (root && root.childElementCount > 0) {
-              clearTimeout(renderTimeout);
-              clearInterval(poll);
-            }
-          }, 250);
         })
         .catch((err) => {
           console.error('[retop] Login takeover failed to load:', err);

@@ -162,13 +162,23 @@ export function dismantleRetopMods(): void {
   restorePatchedApis();
 }
 
-function isLoginTakeover(): boolean {
+/** True while retop owns the login document (set by the document_start bootstrap). */
+export function isLoginTakeover(): boolean {
   try {
     return document.documentElement.getAttribute(TAKEOVER_ATTR) === 'login';
   } catch {
     return false;
   }
 }
+
+/**
+ * The error net is a last-resort safety net for the dashboard, where a crash
+ * outside React's boundaries could leave retop covering VTOP with no way out.
+ * On the login takeover the retop UI is the whole page and the card renders its
+ * own in-field errors, so an uncaught handler/timer error must never hand the
+ * student back to legacy VTOP — that is the exact regression this guards.
+ */
+const shouldHandBackOnError = (): boolean => !isLoginTakeover();
 
 /**
  * Hands the page back to VTOP.
@@ -226,6 +236,7 @@ export function installErrorNet(): void {
     try {
       // VTOP's own page errors are not retop's problem.
       if (!event.filename || !isExtensionSource(event.filename)) return;
+      if (!shouldHandBackOnError()) return;
       console.error(
         '[retop] Uncaught error in the extension; stepping aside from VTOP.',
         event.error || event.message,
@@ -244,6 +255,7 @@ export function installErrorNet(): void {
         stack.includes('chrome-extension://') ||
         stack.includes('moz-extension://');
       if (!fromRetop) return;
+      if (!shouldHandBackOnError()) return;
       console.error(
         '[retop] Unhandled rejection in the extension; stepping aside from VTOP.',
         reason,

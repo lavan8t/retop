@@ -1,3 +1,4 @@
+import { M3eButton, M3eCard } from './m3eTags';
 import {
   Error,
   School,
@@ -37,7 +38,7 @@ export const AttendanceLoading = () => (
 
 export const AttendanceEmpty = () => (
   <div className="h-full w-full flex items-center justify-center p-6 bg-(--bg-surface)">
-    <div className="max-w-sm w-full rounded-2xl bg-(--bg-highlight)">
+    <M3eCard variant="filled" className="max-w-sm w-full">
       <div className="flex flex-col items-center gap-3 px-6 py-8 text-center">
         <School
           aria-hidden="true"
@@ -50,7 +51,7 @@ export const AttendanceEmpty = () => (
           Attendance is not available for the selected semester.
         </p>
       </div>
-    </div>
+    </M3eCard>
   </div>
 );
 
@@ -63,13 +64,9 @@ export const AttendanceError = ({ onRetry }: { onRetry: () => void }) => (
       <Error aria-hidden="true" />
       <p className="font-bold">Couldn’t load attendance</p>
       <p className="text-sm">Check your connection and try again.</p>
-      <button
-        type="button"
-        onClick={onRetry}
-        className="min-h-12 rounded-full px-6 bg-(--bg-primary-container) text-(--text-on-primary-container) text-sm font-bold outline-none cursor-pointer border-0 transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-(--accent-base)"
-      >
+      <M3eButton variant="tonal" onClick={onRetry}>
         Retry
-      </button>
+      </M3eButton>
     </div>
   </div>
 );

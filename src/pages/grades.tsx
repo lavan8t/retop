@@ -1,13 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { VTOPNetwork } from '../utils/network';
-import {
-  Error as ErrorIcon,
-  Refresh,
-} from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
+import { Error as ErrorIcon } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 import { Dropdown } from '../components/ui/Dropdown';
-import { SegmentedControl } from '../components/ui/SegmentedControl';
 import { OfflineNotSynced } from '../components/ui/OfflineNotSynced';
-import { CourseDetailDialog } from '../components/grades/CourseDetailDialog';
 import { GradeBreakdown } from '../components/grades/GradeBreakdown';
 import { CourseDetailBody } from '../components/grades/CourseDetailBody';
 import { GradeCourseRow } from '../components/grades/GradeCourseRow';
@@ -24,6 +19,7 @@ import {
 import { useGradesData } from '../hooks/useGradesData';
 import { formatSemesterShorthand } from '../utils/formatting';
 import type { GradeCourse } from '../types/vtop';
+import { ensureM3eComponents } from '../utils/m3e';
 
 interface GradesPageProps {
   network: VTOPNetwork;
@@ -33,13 +29,21 @@ interface GradesPageProps {
   setSelectedSem: (sem: string) => void;
 }
 
+// The shared m3e.d.ts is deliberately loose and omits a few real element
+// props (name/checked/dismissible/style). Local aliases keep those tags typed
+// as the untyped custom elements they are without editing the shared file.
+const M3eIcon: any = 'm3e-icon';
+const M3eSegmentedButton: any = 'm3e-segmented-button';
+const M3eButtonSegment: any = 'm3e-button-segment';
+const M3eDialog: any = 'm3e-dialog';
+
 const GRADE_OPTIONS = ['S', 'A', 'B', 'C', 'D', 'E', 'F', 'N'].map((g) => ({
   id: g,
   label: g,
 }));
 const NGCR_OPTIONS = ['P', 'F'].map((g) => ({ id: g, label: g }));
 
-/** Wide windows show detail inline; compact windows use a dialog. */
+/** Wide windows show detail inline; compact windows use the M3E dialog. */
 function useIsWide() {
   const [wide, setWide] = useState(
     () =>
@@ -125,6 +129,10 @@ export const GradesPage: React.FC<GradesPageProps> = ({
     setSelectedPoint(null);
     setSelectedSem(id);
   };
+
+  useEffect(() => {
+    void ensureM3eComponents();
+  }, []);
 
   useEffect(() => {
     if (selectedSem) {
@@ -319,15 +327,16 @@ export const GradesPage: React.FC<GradesPageProps> = ({
               onChange={handleSelectSem}
               placeholder="Select Semester"
             />
-            <button
-              type="button"
-              aria-label="Refresh grades"
-              title="Refresh grades"
-              onClick={refreshGrades}
-              className="inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-full text-(--accent-base) outline-none cursor-pointer transition-colors hover:bg-(--bg-highlight) focus-visible:ring-2 focus-visible:ring-(--accent-base)"
-            >
-              <Refresh aria-hidden="true" />
-            </button>
+            <div className="flex items-center gap-1">
+              <m3e-icon-button
+                id={`grades-refresh`}
+                aria-label="Refresh grades"
+                onClick={refreshGrades}
+              >
+                <M3eIcon name="refresh" variant="rounded" />
+              </m3e-icon-button>
+              <m3e-tooltip for={`grades-refresh`}>Refresh grades</m3e-tooltip>
+            </div>
           </div>
 
           {isLoading ? (
@@ -362,13 +371,9 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                   ? 'Something went wrong while fetching your grades. Try again.'
                   : 'Grades for the selected semester are not available yet.'}
               </p>
-              <button
-                type="button"
-                onClick={refreshGrades}
-                className="min-h-12 rounded-full px-6 bg-(--accent-base) text-(--text-inverse) text-sm font-bold outline-none cursor-pointer border-0 transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-(--accent-base)"
-              >
+              <m3e-button variant="filled" onClick={refreshGrades}>
                 Retry
-              </button>
+              </m3e-button>
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-6 items-start">
@@ -401,15 +406,34 @@ export const GradesPage: React.FC<GradesPageProps> = ({
 
               {/* Main pane */}
               <main className="min-w-0 flex flex-col gap-4">
-                <SegmentedControl
-                  ariaLabel="Grade view"
-                  value={view}
-                  onChange={setView}
-                  options={[
-                    { value: 'history', label: 'History' },
-                    { value: 'curriculum', label: 'Curriculum' },
-                  ]}
-                />
+                <M3eSegmentedButton
+                  aria-label="Grade view"
+                  onChange={(e: any) =>
+                    setView((e.target as any).value as 'history' | 'curriculum')
+                  }
+                  style={
+                    {
+                      '--m3e-segmented-button-height': '48px',
+                      '--m3e-segmented-button-selected-container-color':
+                        'var(--bg-primary-container)',
+                      '--m3e-segmented-button-selected-label-text-color':
+                        'var(--text-on-primary-container)',
+                    } as React.CSSProperties
+                  }
+                >
+                  <M3eButtonSegment
+                    value="history"
+                    checked={view === 'history'}
+                  >
+                    History
+                  </M3eButtonSegment>
+                  <M3eButtonSegment
+                    value="curriculum"
+                    checked={view === 'curriculum'}
+                  >
+                    Curriculum
+                  </M3eButtonSegment>
+                </M3eSegmentedButton>
 
                 {view === 'history' ? (
                   <div className="flex flex-col gap-5">
@@ -617,29 +641,36 @@ export const GradesPage: React.FC<GradesPageProps> = ({
         </div>
       </div>
 
-      {/* Compact detail dialog — scrim, close button and Escape owned by the sheet */}
+      {/* Compact detail dialog — close button, scrim and Escape handled by M3E */}
       {expandedCourse && dialogOpen && (
-        <CourseDetailDialog
-          header={
-            <>
-              <span className="text-base font-bold text-(--text-main)">
-                {expandedCourse.title}
-              </span>
-              <span className="flex flex-wrap items-center gap-1.5 text-[10px] font-bold uppercase text-(--text-muted)">
-                <span>{expandedCourse.code}</span>
-                <span>{expandedCourse.type}</span>
-                {expandedCourse.notIncludedInGpa && <span>NGCR</span>}
-                <span>
-                  {parseFloat(
-                    expandedCourse.c || expandedCourse.credits || '0',
-                  ).toString()}{' '}
-                  CR
-                </span>
-              </span>
-            </>
+        <M3eDialog
+          open
+          dismissible
+          closeLabel="Close course details"
+          onClosed={() => handleToggleDetails(expandedCourse)}
+          style={
+            {
+              '--m3e-dialog-container-color': 'var(--bg-surface)',
+              '--m3e-dialog-shape': '28px',
+            } as React.CSSProperties
           }
-          onClose={() => handleToggleDetails(expandedCourse)}
         >
+          <span slot="header" className="flex flex-col gap-1">
+            <span className="text-base font-bold text-(--text-main)">
+              {expandedCourse.title}
+            </span>
+            <span className="flex flex-wrap items-center gap-1.5 text-[10px] font-bold uppercase text-(--text-muted)">
+              <span>{expandedCourse.code}</span>
+              <span>{expandedCourse.type}</span>
+              {expandedCourse.notIncludedInGpa && <span>NGCR</span>}
+              <span>
+                {parseFloat(
+                  expandedCourse.c || expandedCourse.credits || '0',
+                ).toString()}{' '}
+                CR
+              </span>
+            </span>
+          </span>
           <div className="pt-2">
             {fetchingDetails && !expandedCourse.assessments ? (
               <div
@@ -671,7 +702,7 @@ export const GradesPage: React.FC<GradesPageProps> = ({
             )}
             <div className="mt-4">{renderGradeSelect(expandedCourse)}</div>
           </div>
-        </CourseDetailDialog>
+        </M3eDialog>
       )}
     </div>
   );

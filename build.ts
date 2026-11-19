@@ -7,7 +7,8 @@
  *
  * Steps:
  *   1. Clean dist/
- *   2. Bun.build() content scripts (content.ts, injected.ts, background.ts)
+ *   2. Bun.build() content scripts (content.ts, injected.ts, background.ts,
+ *      webBridge.ts, m3e-inject.ts) as IIFE bundles
  *   3. Bun.build() deferred ESM entries + offline & standalone React apps
  *   4. Tailwind CLI for CSS (input.css → style.css, login-theme.css → login.css)
  *   5. Copy HTML files into dist/ with rewritten script paths
@@ -81,6 +82,7 @@ const contentBuild = await Bun.build({
     resolve(import.meta.dir, "src/injected.ts"),
     resolve(import.meta.dir, "src/background.ts"),
     resolve(import.meta.dir, "src/webBridge.ts"),
+    resolve(import.meta.dir, "src/m3e-inject.ts"),
   ],
   outdir: DIST,
   target: "browser",
@@ -97,7 +99,7 @@ if (!contentBuild.success) {
   for (const log of contentBuild.logs) console.error(log);
   process.exit(1);
 }
-console.log("  - content.js, injected.js, background.js, webBridge.js");
+console.log("  - content.js, injected.js, background.js, webBridge.js, m3e-inject.js");
 
 // ── Step 1b: Deferred ESM entries for the document_start bootstrapper ────
 // content.js stays import-free so it can decide in the first task. These two

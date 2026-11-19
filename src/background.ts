@@ -327,6 +327,57 @@ const getAllSyncDataHandler: MessageHandler = (
   return true;
 };
 
+// M3E custom elements must be defined in the MAIN world (the isolated content
+// script's `customElements` is null). Inject a standalone IIFE once per tab.
+let m3eInjectWarned = false;
+const warnM3eInject = (err: unknown) => {
+  if (!m3eInjectWarned) {
+    m3eInjectWarned = true;
+    console.warn(
+      '[retop] Could not register M3E components in the main world.',
+      (err as any)?.message || err,
+    );
+  }
+};
+
+const injectM3eHandler: MessageHandler = (_message, sender, sendResponse) => {
+  const tabId = sender.tab?.id;
+  const scripting = (chrome as any).scripting;
+  const hasPermission = (
+    chrome.runtime.getManifest().permissions || []
+  ).includes('scripting');
+  if (tabId === undefined || !scripting?.executeScript || !hasPermission) {
+    sendResponse({ success: false, error: 'M3E injection unavailable' });
+    return true;
+  }
+
+  (async () => {
+    try {
+      // Idempotency: skip the download/eval entirely if the flag is already set.
+      const [probe] = await scripting.executeScript({
+        target: { tabId },
+        world: 'MAIN',
+        func: () => !!window.__retopM3eRegistered,
+      });
+      if (probe?.result) {
+        sendResponse({ success: true, alreadyRegistered: true });
+        return;
+      }
+      await scripting.executeScript({
+        target: { tabId },
+        world: 'MAIN',
+        files: ['m3e-inject.js'],
+      });
+      sendResponse({ success: true });
+    } catch (err: any) {
+      // Firefox may reject `world: 'MAIN'`; degrade to plain HTML controls.
+      warnM3eInject(err);
+      sendResponse({ success: false, error: err?.message || String(err) });
+    }
+  })();
+  return true;
+};
+
 const getStorageHandler: MessageHandler = (message, _sender, sendResponse) => {
   const keys = message.keys;
   if (typeof chrome !== 'undefined' && chrome.storage?.local) {
@@ -371,6 +422,7 @@ register(['PORTAL_SCRAPED_DATA'], portalScrapedDataHandler);
 register(['GET_ALL_SYNC_DATA'], getAllSyncDataHandler);
 register(['GET_STORAGE'], getStorageHandler);
 register(['SET_STORAGE'], setStorageHandler);
+register(['INJECT_M3E'], injectM3eHandler);
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const handler = handlers.get(message.action) || handlers.get(message.type);

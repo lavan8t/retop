@@ -5,7 +5,7 @@ import {
 } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 import { get as idbGet, set as idbSet } from 'idb-keyval';
 import { clearAllStorage } from '../../utils/storageAdapter';
-import { teardownRetop } from '../../utils/teardown';
+import { isLoginTakeover, teardownRetop } from '../../utils/teardown';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -56,8 +56,13 @@ export class ErrorBoundary extends Component<
         window.location.hostname === '127.0.0.1' ||
         !window.location.hostname.includes('vit.ac.in'));
 
-    if (this.props.variant === 'fullscreen' && !isStandalone) {
-      // A crashed app must not leave the user on a dead page: hand VTOP back.
+    if (
+      this.props.variant === 'fullscreen' &&
+      !isStandalone &&
+      !isLoginTakeover()
+    ) {
+      // A crashed dashboard must not leave the user on a dead page: hand VTOP
+      // back. On the login takeover, stay on retop and show the retry card.
       teardownRetop();
     }
   }
@@ -118,7 +123,7 @@ export class ErrorBoundary extends Component<
         window.location.hostname === '127.0.0.1' ||
         !window.location.hostname.includes('vit.ac.in'));
 
-    if (variant === 'fullscreen' && !isStandalone) {
+    if (variant === 'fullscreen' && !isStandalone && !isLoginTakeover()) {
       return null;
     }
 

@@ -9,6 +9,7 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { VtopLoginCard } from '../components/auth/VtopLoginCard';
+import { LoginErrorBoundary } from '../components/auth/LoginErrorBoundary';
 import { AsciiPanel } from '../components/asciiArt';
 import {
   initializeContainer,
@@ -392,30 +393,10 @@ const LoginTakeover: React.FC = () => {
   );
 };
 
-class LoginErrorBoundary extends React.Component<
-  { children: React.ReactNode },
-  { hasError: boolean }
-> {
-  state = { hasError: false };
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-  componentDidCatch(err: any) {
-    console.error('[retop] Login error caught by boundary:', err);
-    try {
-      sessionStorage.setItem('retop-login-bypass', '1');
-    } catch {}
-    window.location.reload();
-  }
-  render() {
-    if (this.state.hasError) return null;
-    return this.props.children;
-  }
-}
-
 export async function mountLoginTakeover(): Promise<void> {
-  // Catch every uncaught error and unhandled rejection coming from the
-  // extension, and hand VTOP back instead of leaving a half-built app on screen.
+  // Catch fatal errors outside React's boundaries. On the login takeover the
+  // net keeps retop mounted (the card renders its own errors); it only tears
+  // down for dashboard crashes.
   installErrorNet();
 
   // Reuse the host and shadow root the bootstrapper already created, but skip

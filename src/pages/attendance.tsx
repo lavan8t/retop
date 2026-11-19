@@ -1,5 +1,4 @@
-import { M3eSnackbar, M3eSplitPane } from '../components/attendance/m3eTags';
-import { ensureM3eComponents } from '../utils/m3e';
+import { SplitPane } from '../components/attendance/SplitPane';
 import { useCallback, useEffect, useState } from 'react';
 import { useDataStore } from '../store/dataStore';
 import { VTOPNetwork } from '../utils/network';
@@ -47,13 +46,7 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [loadFailed, setLoadFailed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
   const isWide = useIsWide();
-
-  useEffect(() => {
-    void ensureM3eComponents();
-  }, []);
 
   const selectedCourseObj = detailedAttendance.find(
     (course) => courseKey(course) === selectedCourse,
@@ -177,8 +170,11 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
       refreshing={refreshing}
       onRefresh={() => {
         void load(true).then(() => {
-          setSnackbarMessage('Attendance refreshed');
-          setSnackbarOpen(true);
+          window.dispatchEvent(
+            new CustomEvent('retop-toast', {
+              detail: { message: 'Attendance refreshed', type: 'success' },
+            }),
+          );
         });
       }}
     />
@@ -218,34 +214,23 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
   return (
     <div className="h-full w-full bg-(--bg-surface) text-(--text-main) relative z-0 overflow-hidden">
       {isWide ? (
-        <M3eSplitPane
-          className="h-full w-full"
-          value={36}
+        <SplitPane
+          label="Resize course list and detail"
+          initial={36}
           min={26}
           max={55}
-          label="Resize course list and detail"
-        >
-          <div slot="start" className="h-full min-h-0 overflow-hidden">
-            {listPane}
-          </div>
-          <div slot="end" className="h-full min-h-0 overflow-hidden">
-            {detailPane}
-          </div>
-        </M3eSplitPane>
+          start={
+            <div className="h-full min-h-0 overflow-hidden">{listPane}</div>
+          }
+          end={
+            <div className="h-full min-h-0 overflow-hidden">{detailPane}</div>
+          }
+        />
       ) : (
         <div className="h-full w-full">
           {selectedCourseObj ? detailPane : listPane}
         </div>
       )}
-
-      <M3eSnackbar
-        open={snackbarOpen}
-        onToggle={(event: { newState?: string }) => {
-          if (event.newState === 'closed') setSnackbarOpen(false);
-        }}
-      >
-        {snackbarMessage}
-      </M3eSnackbar>
     </div>
   );
 };

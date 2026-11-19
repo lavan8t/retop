@@ -110,7 +110,7 @@ interface CourseDetailBodyProps {
   showCalculator?: boolean;
 }
 
-/** Shared detail content used by the inline pane and the M3E dialog. */
+/** Shared detail content used by the inline pane and the compact dialog. */
 export const CourseDetailBody: React.FC<CourseDetailBodyProps> = ({
   course,
   currentGrade,

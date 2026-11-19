@@ -1,5 +1,3 @@
-import { M3eListOption, M3eSelectionList } from './m3eTags';
-import type React from 'react';
 import type { KeyboardEvent } from 'react';
 import type { DetailedAttendanceCourse } from '../../types/vtop';
 import {
@@ -8,6 +6,7 @@ import {
   TONE_LABEL,
   type AttendanceTone,
 } from './attendanceView';
+import { selectableRowProps } from '../ui/SelectableRow';
 
 const TONE_TEXT: Record<AttendanceTone, string> = {
   na: 'text-(--text-muted)',
@@ -16,17 +15,6 @@ const TONE_TEXT: Record<AttendanceTone, string> = {
   safe: 'text-(--att-safe)',
   neutral: 'text-(--text-muted)',
 };
-
-/** Semantic surface roles for the connected, segmented course column. */
-const listSurfaceStyle = {
-  '--m3e-segmented-list-item-container-color':
-    'var(--md-sys-color-surface-variant, var(--bg-surface))',
-  '--m3e-list-item-selected-container-color':
-    'var(--md-sys-color-surface-container-highest, var(--bg-highlight))',
-  '--m3e-list-item-selected-label-text-color': 'var(--text-main)',
-  '--m3e-list-item-selected-supporting-text-color': 'var(--text-muted)',
-  '--m3e-list-item-selected-trailing-color': 'var(--text-main)',
-} as React.CSSProperties;
 
 export const courseKey = (course: DetailedAttendanceCourse): string =>
   `${course.courseId}-${course.classType}`;
@@ -42,79 +30,83 @@ export const CourseList = ({
   isNinePointer: boolean;
   onSelect: (key: string) => void;
 }) => {
-  // M3E moves focus on Arrow/Home/End; selection follows that focus.
-  const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+  // Arrow/Home/End move focus and selection together, as in the Android list.
+  const handleKeyDown = (event: KeyboardEvent<HTMLUListElement>) => {
     if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
-    const option = (document.activeElement as HTMLElement | null)?.closest?.(
-      'm3e-list-option',
-    ) as (HTMLElement & { dataset: DOMStringMap }) | null;
-    const key = option?.dataset.courseKey;
+    const options = Array.from(
+      event.currentTarget.querySelectorAll<HTMLElement>('[role="option"]'),
+    );
+    const current = options.indexOf(document.activeElement as HTMLElement);
+    if (current < 0) return;
+    event.preventDefault();
+    let next = current;
+    if (event.key === 'ArrowDown')
+      next = Math.min(options.length - 1, current + 1);
+    else if (event.key === 'ArrowUp') next = Math.max(0, current - 1);
+    else if (event.key === 'Home') next = 0;
+    else next = options.length - 1;
+    options[next].focus();
+    const key = options[next].dataset.courseKey;
     if (key && key !== selectedKey) onSelect(key);
   };
 
-  const handleChange = (event: { target: EventTarget | null }) => {
-    const value = (event.target as HTMLElement & { value?: string })?.value;
-    if (typeof value === 'string' && value && value !== selectedKey) {
-      onSelect(value);
-    }
-  };
-
   return (
-    <div
-      style={listSurfaceStyle}
-      className="rounded-2xl bg-(--bg-surface) p-0.5 min-h-0"
-    >
-      <M3eSelectionList
-        hide-selection-indicator
+    <div className="rounded-2xl bg-(--bg-surface) p-0.5 min-h-0">
+      <ul
+        role="listbox"
         aria-label="Courses"
-        variant="segmented"
-        onChange={handleChange}
         onKeyDown={handleKeyDown}
-        className="rounded-2xl h-full custom-scrollbar"
+        className="custom-scrollbar flex h-full flex-col gap-1 rounded-2xl"
       >
         {courses.map((course) => {
           const key = courseKey(course);
           const tone = attendanceTone(course.percentage, isNinePointer);
           const selected = key === selectedKey;
+          const row = selectableRowProps({
+            onActivate: () => onSelect(key),
+            role: 'option',
+            selected,
+            label: `${course.courseTitle}, ${course.courseCode}, ${displayPercentage(course.percentage, course.total)} attendance, ${TONE_LABEL[tone]}`,
+            className: `rounded-xl px-3 py-2 ${selected ? 'bg-(--bg-highlight)' : 'bg-transparent'}`,
+          });
           return (
-            <M3eListOption
+            <li
               key={key}
-              value={key}
-              selected={selected}
+              {...row}
               data-course-key={key}
-              aria-label={`${course.courseTitle}, ${course.courseCode}, ${displayPercentage(course.percentage, course.total)} attendance, ${TONE_LABEL[tone]}`}
               aria-current={selected ? 'true' : undefined}
             >
-              <span
-                slot="supporting-text"
-                className="flex items-center gap-1.5 text-xs"
-              >
-                <span className="font-bold">{course.courseCode}</span>
-                <span aria-hidden="true">·</span>
-                <span>{course.classType}</span>
-                {course.debarStatus !== '-' && (
-                  <span className="text-(--att-danger) font-bold">
-                    Debarred
+              <div className="flex items-center gap-2">
+                <div className="min-w-0 flex-1">
+                  <span className="flex items-center gap-1.5 text-xs">
+                    <span className="font-bold">{course.courseCode}</span>
+                    <span aria-hidden="true">·</span>
+                    <span>{course.classType}</span>
+                    {course.debarStatus !== '-' && (
+                      <span className="text-(--att-danger) font-bold">
+                        Debarred
+                      </span>
+                    )}
                   </span>
-                )}
-              </span>
-              <span className="font-expanded font-black text-base leading-tight wrap-break-word">
-                {course.courseTitle}
-              </span>
-              <div slot="trailing" className="shrink-0 text-right pl-2">
-                <span
-                  className={`block font-expanded font-black text-xl leading-none tabular-nums ${TONE_TEXT[tone]}`}
-                >
-                  {displayPercentage(course.percentage, course.total)}
-                </span>
-                <span className="block text-[10px] font-bold uppercase text-(--text-muted) mt-0.5">
-                  {TONE_LABEL[tone]}
-                </span>
+                  <span className="block font-expanded font-black text-base leading-tight wrap-break-word">
+                    {course.courseTitle}
+                  </span>
+                </div>
+                <div className="shrink-0 text-right pl-2">
+                  <span
+                    className={`block font-expanded font-black text-xl leading-none tabular-nums ${TONE_TEXT[tone]}`}
+                  >
+                    {displayPercentage(course.percentage, course.total)}
+                  </span>
+                  <span className="block text-[10px] font-bold uppercase text-(--text-muted) mt-0.5">
+                    {TONE_LABEL[tone]}
+                  </span>
+                </div>
               </div>
-            </M3eListOption>
+            </li>
           );
         })}
-      </M3eSelectionList>
+      </ul>
     </div>
   );
 };

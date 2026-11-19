@@ -1,4 +1,3 @@
-import { M3eButton, M3eChip } from './m3eTags';
 import {
   ArrowBack,
   Event,
@@ -10,6 +9,9 @@ import type {
 } from '../../types/vtop';
 import { ClassHistory } from './ClassHistory';
 import { WhatIfCalculator } from './WhatIfCalculator';
+
+const chipClass =
+  'inline-flex items-center rounded-full border border-(--border-dim) px-2.5 py-1 text-xs font-bold text-(--text-main)';
 
 export const CourseDetail = ({
   course,
@@ -32,20 +34,24 @@ export const CourseDetail = ({
 }) => (
   <div className="flex flex-col gap-5">
     {compact && (
-      <M3eButton variant="text" onClick={onBack} className="self-start">
-        <ArrowBack slot="icon" aria-hidden="true" />
+      <button
+        type="button"
+        onClick={onBack}
+        className="inline-flex min-h-12 items-center gap-1 self-start rounded-full px-3 text-sm font-bold text-(--accent-base) outline-none cursor-pointer transition-colors hover:bg-(--bg-highlight) focus-visible:ring-2 focus-visible:ring-(--accent-base)"
+      >
+        <ArrowBack aria-hidden="true" />
         Back to courses
-      </M3eButton>
+      </button>
     )}
 
     <header className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
-        <M3eChip variant="outlined">{course.courseCode}</M3eChip>
-        <M3eChip variant="outlined">{course.classType}</M3eChip>
+        <span className={chipClass}>{course.courseCode}</span>
+        <span className={chipClass}>{course.classType}</span>
         {course.debarStatus !== '-' && (
-          <M3eChip variant="outlined" aria-label="Debarred">
+          <span className={chipClass} aria-label="Debarred">
             Debarred
-          </M3eChip>
+          </span>
         )}
       </div>
       <h2 className="text-2xl font-black font-expanded leading-tight text-(--text-main) wrap-break-word">

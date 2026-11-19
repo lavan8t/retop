@@ -11,23 +11,23 @@ export const SettingTopicCard = ({
   children?: React.ReactNode;
   className?: string;
 }) => (
-  <div
-    className={`p-6 rounded-3xl bg-transparent border-2 border-(--border-dim) flex flex-col gap-4 ${className}`}
+  <section
+    className={`p-5 rounded-2xl bg-(--bg-surface) flex flex-col gap-4 ${className}`}
   >
     {(title || description) && (
-      <div className="flex flex-col gap-1 border-b-2 border-(--border-dim) pb-4">
+      <div className="flex flex-col gap-1 border-b border-(--border-dim) pb-3">
         {title && (
-          <h3 className="font-expanded font-black text-lg md:text-xl text-(--text-main)">
+          <h3 className="font-expanded font-semibold text-base text-(--text-main)">
             {title}
           </h3>
         )}
         {description && (
-          <p className="text-xs md:text-sm font-medium text-(--text-muted)">
+          <p className="text-xs leading-relaxed text-(--text-muted)">
             {description}
           </p>
         )}
       </div>
     )}
     {children}
-  </div>
+  </section>
 );

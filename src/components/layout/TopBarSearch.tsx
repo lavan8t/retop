@@ -65,6 +65,156 @@ const renderCategoryTitle = (catTitle: string) => {
   return titleStr;
 };
 
+export const RETOP_NATIVE_LINKS: QuickLink[] = [
+  {
+    title: 'Time Table',
+    url: 'academics/common/StudentTimeTable',
+    category: 'Made for retop',
+  },
+  {
+    title: 'Class Attendance',
+    url: 'academics/common/StudentAttendance',
+    category: 'Made for retop',
+  },
+  {
+    title: 'Assignments',
+    url: 'examinations/StudentDA',
+    category: 'Made for retop',
+  },
+  {
+    title: 'Course Page Consolidated',
+    url: 'academics/common/StudentCoursePage',
+    category: 'Made for retop',
+  },
+  {
+    title: 'Marks View',
+    url: 'examinations/StudentMarkView',
+    category: 'Made for retop',
+  },
+  {
+    title: 'Grades View',
+    url: 'examinations/StudentGradeView',
+    category: 'Made for retop',
+  },
+  {
+    title: 'Academic Calendar',
+    url: 'academics/common/CalendarPreview',
+    category: 'Made for retop',
+  },
+  {
+    title: 'Student Profile',
+    url: 'studentsRecord/StudentProfileAllView',
+    category: 'Made for retop',
+  },
+  {
+    title: 'Curriculum',
+    url: 'academics/common/CurriculumSyllabus',
+    category: 'Made for retop',
+  },
+  {
+    title: 'Exam Schedule',
+    url: 'examinations/StudExamSchedule',
+    category: 'Made for retop',
+  },
+  {
+    title: 'Late Hour Request',
+    url: 'hostels/late/hour/student/request/1',
+    category: 'Made for retop',
+  },
+  {
+    title: 'Settings',
+    url: '#settings',
+    category: 'Made for retop',
+  },
+];
+
+export const ITEM_ALIASES: Record<string, string[]> = {
+  'time table': [
+    'timetable',
+    'time table',
+    'schedule',
+    'class schedule',
+    'slots',
+    'weekly timetable',
+  ],
+  'class attendance': [
+    'attendance',
+    'class attendance',
+    'attendance view',
+    'my attendance',
+  ],
+  assignments: [
+    'digital assignments',
+    'digital assignment',
+    'da',
+    'da upload',
+    'assignment',
+    'assignments',
+    'digital assignment upload',
+  ],
+  'marks view': [
+    'marks',
+    'marks view',
+    'cat marks',
+    'assessment marks',
+    'test marks',
+    'exam marks',
+  ],
+  'grades view': [
+    'grades',
+    'grades view',
+    'grade history',
+    'cgpa',
+    'gpa',
+    'history',
+    'gpa calculator',
+    'grade calculator',
+  ],
+  'academic calendar': [
+    'academic calendar',
+    'calendar',
+    'events',
+    'academics calendar',
+    'calendar preview',
+  ],
+  'student profile': [
+    'profile',
+    'student profile',
+    'digital id',
+    'id card',
+    'my profile',
+  ],
+  curriculum: [
+    'curriculum',
+    'syllabus',
+    'curriculum syllabus',
+    'course syllabus',
+  ],
+  'exam schedule': [
+    'exam schedule',
+    'exams',
+    'fat',
+    'cat',
+    'exam',
+    'fat schedule',
+    'cat schedule',
+    'exam timetable',
+  ],
+  'course page consolidated': [
+    'course page',
+    'course page consolidated',
+    'consolidated course page',
+    'course',
+    'courses',
+    'course material',
+    'materials',
+    'class material',
+    'subject material',
+    'course page (consolidated)',
+  ],
+  settings: ['settings', 'preferences', 'theme', 'appearance'],
+};
+
 export const TopBarSearch: React.FC<TopBarSearchProps> = ({
   currentView,
   isOmniboxOpen,
@@ -197,68 +347,10 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
   }, []);
 
   const allCategories = useMemo(() => {
-    const retopNativeLinks: QuickLink[] = [
-      {
-        title: 'Time Table',
-        url: 'academics/common/StudentTimeTable',
-        category: 'Made for retop',
-      },
-      {
-        title: 'Class Attendance',
-        url: 'academics/common/StudentAttendance',
-        category: 'Made for retop',
-      },
-      {
-        title: 'Assignments',
-        url: 'examinations/StudentDA',
-        category: 'Made for retop',
-      },
-      {
-        title: 'Course Page Consolidated',
-        url: 'academics/common/StudentCoursePage',
-        category: 'Made for retop',
-      },
-      {
-        title: 'Marks View',
-        url: 'examinations/StudentMarkView',
-        category: 'Made for retop',
-      },
-      {
-        title: 'Grades View',
-        url: 'examinations/StudentGradeView',
-        category: 'Made for retop',
-      },
-      {
-        title: 'Academic Calendar',
-        url: 'academics/common/CalendarPreview',
-        category: 'Made for retop',
-      },
-      {
-        title: 'Student Profile',
-        url: 'studentsRecord/StudentProfileAllView',
-        category: 'Made for retop',
-      },
-      {
-        title: 'Curriculum',
-        url: 'academics/common/CurriculumSyllabus',
-        category: 'Made for retop',
-      },
-      {
-        title: 'Exam Schedule',
-        url: 'examinations/StudExamSchedule',
-        category: 'Made for retop',
-      },
-      {
-        title: 'Late Hour Request',
-        url: 'hostels/late/hour/student/request/1',
-        category: 'Made for retop',
-      },
-    ];
-
     const madeForRetopCat: MenuCategory = {
       id: 'made-for-retop',
       title: 'Made for retop',
-      links: retopNativeLinks,
+      links: RETOP_NATIVE_LINKS,
     };
 
     if (isOffline) {
@@ -292,92 +384,6 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
       return [...retopLinks, ...otherLinks];
     }
 
-    const itemAliases: Record<string, string[]> = {
-      'time table': [
-        'timetable',
-        'time table',
-        'schedule',
-        'class schedule',
-        'slots',
-        'weekly timetable',
-      ],
-      'class attendance': [
-        'attendance',
-        'class attendance',
-        'attendance view',
-        'my attendance',
-      ],
-      assignments: [
-        'digital assignments',
-        'digital assignment',
-        'da',
-        'da upload',
-        'assignment',
-        'assignments',
-        'digital assignment upload',
-      ],
-      'marks view': [
-        'marks',
-        'marks view',
-        'cat marks',
-        'assessment marks',
-        'test marks',
-        'exam marks',
-      ],
-      'grades view': [
-        'grades',
-        'grades view',
-        'grade history',
-        'cgpa',
-        'gpa',
-        'history',
-        'gpa calculator',
-        'grade calculator',
-      ],
-      'academic calendar': [
-        'academic calendar',
-        'calendar',
-        'events',
-        'academics calendar',
-        'calendar preview',
-      ],
-      'student profile': [
-        'profile',
-        'student profile',
-        'digital id',
-        'id card',
-        'my profile',
-      ],
-      curriculum: [
-        'curriculum',
-        'syllabus',
-        'curriculum syllabus',
-        'course syllabus',
-      ],
-      'exam schedule': [
-        'exam schedule',
-        'exams',
-        'fat',
-        'cat',
-        'exam',
-        'fat schedule',
-        'cat schedule',
-        'exam timetable',
-      ],
-      'course page consolidated': [
-        'course page',
-        'course page consolidated',
-        'consolidated course page',
-        'course',
-        'courses',
-        'course material',
-        'materials',
-        'class material',
-        'subject material',
-        'course page (consolidated)',
-      ],
-    };
-
     const scored: { link: QuickLink; score: number }[] = [];
     const seen = new Set<string>();
 
@@ -388,7 +394,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
 
       const titleLower = link.title.toLowerCase().trim();
       const urlLower = link.url.toLowerCase().trim();
-      const aliases = itemAliases[titleLower] || [];
+      const aliases = ITEM_ALIASES[titleLower] || [];
 
       let score = 0;
       if (titleLower === lowerQ || aliases.includes(lowerQ)) score = 100;

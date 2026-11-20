@@ -144,6 +144,15 @@ export const getDestinationView = (
     return 'lateHour';
   }
 
+  // 13. Settings
+  if (
+    lowerTitle === 'settings' ||
+    lowerUrl === '#settings' ||
+    lowerUrl === 'settings'
+  ) {
+    return 'settings';
+  }
+
   return 'content';
 };
 

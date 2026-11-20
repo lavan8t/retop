@@ -74,7 +74,11 @@ export const CourseList = ({
       >
         {courses.map((course) => {
           const key = courseKey(course);
-          const tone = attendanceTone(course.percentage, isNinePointer);
+          const tone = attendanceTone(
+            course.percentage,
+            isNinePointer,
+            course.total,
+          );
           const selected = key === selectedKey;
           return (
             <M3eListOption

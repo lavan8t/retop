@@ -1,4 +1,10 @@
-import { TimetableCourse, CalendarEvent } from '../types/vtop';
+import {
+  TimetableCourse,
+  CalendarEvent,
+  CourseSummary,
+  DetailedAttendanceCourse,
+} from '../types/vtop';
+import { normalizeCourseCode } from './courseCodeMatching';
 import { CAMPUS_SLOTS, DAYS } from './timetable-slots';
 
 export interface AttendanceForecast {
@@ -9,6 +15,55 @@ export interface AttendanceForecast {
   status: 'SAFE' | 'WARNING' | 'CRITICAL';
   examStartDate: Date | null;
   examName: string | null;
+}
+
+export interface ForecastBaseline {
+  attended: number;
+  total: number;
+  source: 'detailed' | 'dashboard' | 'none';
+}
+
+/**
+ * Detailed attendance is authoritative. Dashboard summary rows carry only a
+ * percentage (total 0), so they are used solely when no real totals exist —
+ * modelled as a 100-class baseline so 0/0 never reads as a critical deficit.
+ */
+export function resolveForecastBaseline(
+  courseCode: string,
+  detailed: DetailedAttendanceCourse[],
+  dashboard: CourseSummary[],
+): ForecastBaseline {
+  const key = normalizeCourseCode(courseCode);
+  if (!key) return { attended: 0, total: 0, source: 'none' };
+  const matchesCode = (value: string): boolean =>
+    normalizeCourseCode(value) === key;
+  const matchesTitle = (value: string | undefined): boolean =>
+    !!value && value.toLowerCase().includes(key);
+
+  const detailedCourse = (detailed || []).find(
+    (c) => matchesCode(c.courseCode) || matchesTitle(c.courseTitle),
+  );
+  if (detailedCourse && detailedCourse.total > 0) {
+    return {
+      attended: detailedCourse.attended || 0,
+      total: detailedCourse.total,
+      source: 'detailed',
+    };
+  }
+
+  const summary = (dashboard || []).find(
+    (c) => matchesCode(c.code) || matchesTitle(c.name),
+  );
+  const percentage = summary ? parseFloat(summary.attendance) : NaN;
+  if (Number.isFinite(percentage) && percentage > 0) {
+    return {
+      attended: Math.round(percentage),
+      total: 100,
+      source: 'dashboard',
+    };
+  }
+
+  return { attended: 0, total: 0, source: 'none' };
 }
 
 export const calculateAttendanceForecast = (
@@ -140,7 +195,10 @@ export const calculateAttendanceForecast = (
   const classesNeededBeforeExam = Math.max(0, Math.ceil(neededFloat));
 
   let status: 'SAFE' | 'WARNING' | 'CRITICAL' = 'SAFE';
-  if (safeSkips > 2) status = 'SAFE';
+  if (total <= 0) {
+    // No conducted classes means there is no deficit to flag.
+    status = 'SAFE';
+  } else if (safeSkips > 2) status = 'SAFE';
   else if (safeSkips > 0) status = 'WARNING';
   else status = 'CRITICAL';
 

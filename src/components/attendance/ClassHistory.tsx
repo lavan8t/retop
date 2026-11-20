@@ -94,11 +94,13 @@ export const ClassHistory = ({
   records,
   sortOrder,
   loading,
+  noClasses = false,
   onSortChange,
 }: {
   records: AttendanceRecord[] | null;
   sortOrder: 'asc' | 'desc';
   loading: boolean;
+  noClasses?: boolean;
   onSortChange: (order: 'asc' | 'desc') => void;
 }) => {
   const [view, setView] = useState<'list' | 'tiles'>('list');
@@ -168,7 +170,9 @@ export const ClassHistory = ({
         </div>
       ) : months.length === 0 ? (
         <p className="text-sm text-(--text-muted) rounded-2xl bg-(--bg-surface) px-4 py-6 text-center">
-          No history records found for this class.
+          {noClasses
+            ? 'No classes conducted yet'
+            : 'No history records found for this class.'}
         </p>
       ) : (
         months.map((month) => {

@@ -97,7 +97,14 @@ export const WhatIfCalculator = ({
     bunk: bunkCount,
     weight,
   });
-  const tone = attendanceTone(projection.percentage, isNinePointer);
+  const noClasses = course.total <= 0;
+  const tone = noClasses
+    ? 'na'
+    : attendanceTone(
+        projection.percentage,
+        isNinePointer,
+        projection.conducted,
+      );
   const hasChanged = attendCount > 0 || bunkCount > 0;
 
   const reset = () => {
@@ -118,31 +125,45 @@ export const WhatIfCalculator = ({
             </M3eButton>
           </div>
         )}
-        <div className="relative flex items-center justify-center">
-          <div style={ringStyle} className="flex items-center justify-center">
-            <M3eCircularProgressIndicator
-              value={projection.percentage}
-              variant="flat"
-              aria-label={`Projected attendance ${projection.percentage} percent, ${TONE_LABEL[tone]}`}
-            ></M3eCircularProgressIndicator>
-          </div>
-          <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
-            <span
-              className={`font-expanded font-black text-4xl leading-none tabular-nums ${TONE_TEXT[tone]}`}
-            >
-              {projection.invalid ? '>100%' : `${projection.percentage}%`}
-            </span>
-            <span className="text-[10px] font-bold uppercase text-(--text-muted) mt-1">
-              {TONE_LABEL[tone]}
-            </span>
-          </div>
-        </div>
-        <p className="text-sm text-(--text-muted)" aria-live="polite">
-          {projection.attended} / {projection.conducted} classes
-        </p>
+        {noClasses ? (
+          <p
+            role="status"
+            className="text-sm font-bold text-(--text-muted) text-center"
+          >
+            No classes conducted yet
+          </p>
+        ) : (
+          <>
+            <div className="relative flex items-center justify-center">
+              <div
+                style={ringStyle}
+                className="flex items-center justify-center"
+              >
+                <M3eCircularProgressIndicator
+                  value={projection.percentage}
+                  variant="flat"
+                  aria-label={`Projected attendance ${projection.percentage} percent, ${TONE_LABEL[tone]}`}
+                ></M3eCircularProgressIndicator>
+              </div>
+              <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
+                <span
+                  className={`font-expanded font-black text-4xl leading-none tabular-nums ${TONE_TEXT[tone]}`}
+                >
+                  {projection.invalid ? '>100%' : `${projection.percentage}%`}
+                </span>
+                <span className="text-[10px] font-bold uppercase text-(--text-muted) mt-1">
+                  {TONE_LABEL[tone]}
+                </span>
+              </div>
+            </div>
+            <p className="text-sm text-(--text-muted)" aria-live="polite">
+              {projection.attended} / {projection.conducted} classes
+            </p>
+          </>
+        )}
       </div>
 
-      {forecast && (
+      {forecast && !noClasses && (
         <p className="text-sm text-(--text-muted) text-center">
           {forecastAdvice(forecast)}
         </p>

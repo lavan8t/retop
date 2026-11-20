@@ -6,6 +6,7 @@ import { VTOPNetwork } from '../utils/network';
 import {
   parseCurriculumDashboard,
   parseCurriculumCategoryTable,
+  deriveCategoryStatuses,
 } from '../parsers/curriculum';
 import { parseGradeHistory } from '../parsers/grades';
 import { CurriculumCategory, CurriculumCourse } from '../types/vtop';
@@ -13,6 +14,7 @@ import {
   CheckCircle,
   Search,
   Download,
+  Error as ErrorIcon,
 } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 import { EmptyState } from '../components/EmptyState';
 import { Pill } from '../components/ui/Pill';
@@ -41,6 +43,50 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
   );
   const [gradeHistoryEarnedCredits, setGradeHistoryEarnedCredits] =
     useState<string>('');
+  const [failedCategories, setFailedCategories] = useState<Set<string>>(
+    new Set(),
+  );
+  const [loadingCategories, setLoadingCategories] = useState<Set<string>>(
+    new Set(),
+  );
+
+  const loadCategory = async (cat: CurriculumCategory) => {
+    setLoadingCategories((prev) => new Set(prev).add(cat.id));
+    setFailedCategories((prev) => {
+      if (!prev.has(cat.id)) return prev;
+      const next = new Set(prev);
+      next.delete(cat.id);
+      return next;
+    });
+    try {
+      const catHtml = await network.getCurriculumCategory(cat.id);
+      const parsed =
+        typeof catHtml === 'string'
+          ? parseCurriculumCategoryTable(catHtml)
+          : catHtml;
+      const courses = parsed?.courses || [];
+      const basketMaxCredits = parsed?.basketMaxCredits || {};
+      setAllCourses((prev) => ({ ...prev, [cat.id]: courses }));
+      setBasketMaxCreditsMap((prev) => ({
+        ...prev,
+        [cat.id]: basketMaxCredits,
+      }));
+    } catch (e) {
+      console.error(`Failed to load curriculum category ${cat.id}`, e);
+      setFailedCategories((prev) => new Set(prev).add(cat.id));
+    } finally {
+      setLoadingCategories((prev) => {
+        const next = new Set(prev);
+        next.delete(cat.id);
+        return next;
+      });
+    }
+  };
+
+  const retryCategory = (catId: string) => {
+    const cat = categories.find((c) => c.id === catId);
+    if (cat) loadCategory(cat);
+  };
 
   useEffect(() => {
     loadDashboard();
@@ -54,6 +100,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
 
   const loadDashboard = async () => {
     setLoading(true);
+    setFailedCategories(new Set());
     try {
       const [html, historyHtml] = await Promise.all([
         network.getCurriculumDashboard(),
@@ -95,42 +142,16 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
       if (data?.categories?.length > 0) setSelectedId(data.categories[0].id);
       setLoading(false);
 
+      const cats = data?.categories || [];
       setLoadingCourses(true);
-      const categoryPromises = (data?.categories || []).map(
-        (cat: CurriculumCategory) =>
-          network
-            .getCurriculumCategory(cat.id)
-            .then((catHtml) => {
-              const parsed =
-                typeof catHtml === 'string'
-                  ? parseCurriculumCategoryTable(catHtml)
-                  : catHtml;
-              return {
-                id: cat.id,
-                courses: parsed?.courses || [],
-                basketMaxCredits: parsed?.basketMaxCredits || {},
-              };
-            })
-            .catch(() => ({
-              id: cat.id,
-              courses: [] as CurriculumCourse[],
-              basketMaxCredits: {} as Record<string, string>,
-            })),
-      );
-      const catResults = await Promise.all(categoryPromises);
-      const coursesMap: Record<string, CurriculumCourse[]> = {};
-      const maxCreditsMap: Record<string, Record<string, string>> = {};
-      catResults.forEach((res) => {
-        coursesMap[res.id] = res.courses;
-        maxCreditsMap[res.id] = res.basketMaxCredits;
-      });
-      setAllCourses(coursesMap);
-      setBasketMaxCreditsMap(maxCreditsMap);
+      setLoadingCategories(new Set(cats.map((cat) => cat.id)));
+      await Promise.all(cats.map((cat) => loadCategory(cat)));
       setLoadingCourses(false);
     } catch (e) {
       console.error(e);
       setLoading(false);
       setLoadingCourses(false);
+      setLoadingCategories(new Set());
     }
   };
 
@@ -237,34 +258,84 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
     return categories.reduce((sum, c) => sum + (parseFloat(c.credits) || 0), 0);
   }, [categories]);
 
-  const categoryCourseCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    const lowerQ = searchQuery.toLowerCase();
+  const categoryStatuses = useMemo(
+    () =>
+      deriveCategoryStatuses({
+        categories,
+        coursesByCategory: allCourses,
+        failedCategoryIds: failedCategories,
+        loadingCategoryIds: loadingCategories,
+        hideCompleted,
+        completedCodes: completedCourseCodes,
+        searchQuery,
+      }),
+    [
+      categories,
+      allCourses,
+      failedCategories,
+      loadingCategories,
+      hideCompleted,
+      completedCourseCodes,
+      searchQuery,
+    ],
+  );
 
-    categories.forEach((cat) => {
-      let catCourses = allCourses[cat.id] || [];
-      if (hideCompleted) {
-        catCourses = catCourses.filter(
-          (c) => !c.isCompleted && !completedCourseCodes.has(c.code),
+  const selectedCategoryStatus = selectedId
+    ? categoryStatuses[selectedId]?.status
+    : undefined;
+
+  const renderCategoryCount = (catId: string) => {
+    const state = categoryStatuses[catId] || {
+      count: 0,
+      status: 'loading' as const,
+    };
+    switch (state.status) {
+      case 'loading':
+        return (
+          <span className="text-[10px] opacity-70 font-bold mt-0.5">
+            Loading…
+          </span>
         );
-      }
-      if (searchQuery) {
-        catCourses = catCourses.filter(
-          (c) =>
-            c.title.toLowerCase().includes(lowerQ) ||
-            c.code.toLowerCase().includes(lowerQ),
+      case 'failed':
+        return (
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={(e) => {
+              e.stopPropagation();
+              retryCategory(catId);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.stopPropagation();
+                retryCategory(catId);
+              }
+            }}
+            className="text-[10px] font-bold mt-0.5 text-(--md-sys-color-error) underline cursor-pointer"
+          >
+            Couldn't load courses · Retry
+          </span>
         );
-      }
-      counts[cat.id] = catCourses.length;
-    });
-    return counts;
-  }, [
-    categories,
-    allCourses,
-    searchQuery,
-    hideCompleted,
-    completedCourseCodes,
-  ]);
+      case 'hidden-completed':
+        return (
+          <span className="text-[10px] opacity-70 font-bold mt-0.5">
+            Completed courses hidden
+          </span>
+        );
+      case 'empty':
+        return (
+          <span className="text-[10px] opacity-70 font-bold mt-0.5">
+            No courses available
+          </span>
+        );
+      default:
+        return (
+          <span className="text-[10px] opacity-70 font-bold mt-0.5">
+            {state.count} {state.count === 1 ? 'course' : 'courses'}
+          </span>
+        );
+    }
+  };
 
   useEffect(() => {
     if (
@@ -352,10 +423,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
                   ) : (
                     <span>{cat.credits}</span>
                   )}
-                  <span className="text-[10px] opacity-70 font-bold mt-0.5">
-                    {categoryCourseCounts[cat.id] ?? 0}{' '}
-                    {categoryCourseCounts[cat.id] === 1 ? 'course' : 'courses'}
-                  </span>
+                  {renderCategoryCount(cat.id)}
                 </div>
               </button>
             ))
@@ -441,13 +509,33 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
                     />
                   ))}
                 </div>
+              ) : !searchQuery && selectedCategoryStatus === 'failed' ? (
+                <div className="mt-10">
+                  <EmptyState
+                    msg="Couldn't load courses for this category"
+                    icon={ErrorIcon}
+                    subMsg={
+                      <button
+                        type="button"
+                        onClick={() => selectedId && retryCategory(selectedId)}
+                        className="px-4 py-2 rounded-2xl bg-(--accent-base) text-(--text-inverse) font-bold cursor-pointer"
+                      >
+                        Retry
+                      </button>
+                    }
+                  />
+                </div>
               ) : filteredCourses.length === 0 ? (
                 <div className="mt-10">
                   <EmptyState
                     msg={
-                      hideCompleted
-                        ? 'No uncompleted courses found in this basket'
-                        : 'No matching courses'
+                      !searchQuery && selectedCategoryStatus === 'empty'
+                        ? 'No courses available'
+                        : selectedCategoryStatus === 'hidden-completed'
+                          ? 'Completed courses hidden'
+                          : hideCompleted
+                            ? 'No uncompleted courses found in this basket'
+                            : 'No matching courses'
                     }
                     icon={Search}
                   />

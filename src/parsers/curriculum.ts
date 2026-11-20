@@ -8,6 +8,100 @@ import {
 
 export const CURRICULUM_SCHEMA_VERSION = 1;
 
+const CATEGORY_ID_RE = /^[A-Z0-9_]{2,12}$/;
+
+/**
+ * Pull a category id out of a VTOP onclick attribute. Ids are normally short
+ * uppercase tokens (PCB, PE) but VTOP also emits longer ids with digits and
+ * underscores (21BCE, CSE_1).
+ */
+export function extractCurriculumCategoryId(onclick: string): string | null {
+  if (!onclick) return null;
+  const matches = onclick.matchAll(/['"]([A-Z0-9_]{2,12})['"]/gi);
+  for (const match of matches) {
+    const candidate = match[1].toUpperCase();
+    if (CATEGORY_ID_RE.test(candidate) && /[A-Z]/.test(candidate)) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
+/** Course codes vary by programme: CSE1001, CS101, 21BCE1234, BIO1001P. */
+export function isLikelyCourseCode(value: string): boolean {
+  const code = value.trim().toUpperCase();
+  if (!/^[A-Z0-9]{3,12}$/.test(code)) return false;
+  const letters = (code.match(/[A-Z]/g) || []).length;
+  const digits = (code.match(/\d/g) || []).length;
+  return letters >= 2 && digits >= 2;
+}
+
+/** Lifecycle of a category's course list, used for honest count labels. */
+export type CategoryLoadStatus =
+  'loading' | 'failed' | 'hidden-completed' | 'empty' | 'ready';
+
+export interface CategoryStatusInput {
+  categories: CurriculumCategory[];
+  coursesByCategory: Record<string, CurriculumCourse[]>;
+  failedCategoryIds: ReadonlySet<string>;
+  loadingCategoryIds: ReadonlySet<string>;
+  hideCompleted: boolean;
+  completedCodes: ReadonlySet<string>;
+  searchQuery: string;
+}
+
+export interface CategoryStatus {
+  count: number;
+  status: CategoryLoadStatus;
+}
+
+/**
+ * Derive the count and status for each category from its own course source.
+ * Credits always come from the dashboard and are deliberately not reconciled
+ * with these course counts.
+ */
+export function deriveCategoryStatuses(
+  input: CategoryStatusInput,
+): Record<string, CategoryStatus> {
+  const query = input.searchQuery.trim().toLowerCase();
+  const result: Record<string, CategoryStatus> = {};
+
+  input.categories.forEach((cat) => {
+    const courses = input.coursesByCategory[cat.id] || [];
+    const matchesQuery = (c: CurriculumCourse) =>
+      !query ||
+      c.title.toLowerCase().includes(query) ||
+      c.code.toLowerCase().includes(query);
+    const searched = courses.filter(matchesQuery);
+    const visible = input.hideCompleted
+      ? searched.filter(
+          (c) => !c.isCompleted && !input.completedCodes.has(c.code),
+        )
+      : searched;
+
+    let status: CategoryLoadStatus;
+    if (input.loadingCategoryIds.has(cat.id)) {
+      status = 'loading';
+    } else if (input.failedCategoryIds.has(cat.id)) {
+      status = 'failed';
+    } else if (
+      input.hideCompleted &&
+      searched.length > 0 &&
+      visible.length === 0
+    ) {
+      status = 'hidden-completed';
+    } else if (visible.length === 0) {
+      status = 'empty';
+    } else {
+      status = 'ready';
+    }
+
+    result[cat.id] = { count: visible.length, status };
+  });
+
+  return result;
+}
+
 export function parseCurriculumDashboard(html: string): Versioned<{
   totalCredits: string;
   categories: CurriculumCategory[];
@@ -32,10 +126,9 @@ export function parseCurriculumDashboard(html: string): Versioned<{
 
   clickables.forEach((el) => {
     const onclick = el.getAttribute('onclick') || '';
-    const idMatch = onclick.match(/['"]([A-Z]{2,4})['"]/);
+    const id = extractCurriculumCategoryId(onclick);
 
-    if (idMatch) {
-      const id = idMatch[1];
+    if (id) {
       if (categories.find((c) => c.id === id)) return;
 
       let title = id;
@@ -127,15 +220,12 @@ export function parseCurriculumCourses(html: string): Versioned<{
   const rows = doc.querySelectorAll('table tr');
   rows.forEach((row) => {
     const cells = row.querySelectorAll('td');
-    if (cells.length < 5) return;
+    if (cells.length < 3) return;
 
     let codeIndex = -1;
     for (let i = 0; i < cells.length; i++) {
       const txt = cells[i].textContent?.trim() || '';
-      if (
-        /^[A-Z]{3,4}\d{3,4}[A-Z]?$/.test(txt) ||
-        /^[A-Z]{2,4}\d{2,4}$/.test(txt)
-      ) {
+      if (isLikelyCourseCode(txt)) {
         codeIndex = i;
         break;
       }

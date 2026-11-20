@@ -69,6 +69,7 @@ export const CourseDetail = ({
       records={records}
       sortOrder={sortOrder}
       loading={recordsLoading}
+      noClasses={course.total <= 0}
       onSortChange={onSortChange}
     />
   </div>

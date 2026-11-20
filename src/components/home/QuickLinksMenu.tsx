@@ -13,6 +13,8 @@ import { EmptyState } from '../EmptyState';
 import { useDataStore } from '../../store/dataStore';
 import { SpotlightSection } from './SpotlightSection';
 import { isTypingEvent } from '../../utils/keyboard';
+import { matchRegisteredAttendance } from '../../utils/courseCodeMatching';
+import { overallAttendancePercentage } from '../attendance/attendanceView';
 
 interface QuickLinksMenuProps {
   className?: string;
@@ -191,23 +193,24 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
   }, [query, menuCategories]);
 
   const sortedAttendance = useMemo(() => {
-    const activeCourses = attendance.filter((a) => {
-      if (!ttCourses || ttCourses.length === 0) return true;
-      return ttCourses.some((tc) => tc.code === a.code);
-    });
-    return activeCourses.sort((a, b) => {
+    const activeCourses = matchRegisteredAttendance(attendance, ttCourses);
+    return [...activeCourses].sort((a, b) => {
       const valA = parseFloat(a.attendance) || 0;
       const valB = parseFloat(b.attendance) || 0;
       return valA - valB;
     });
   }, [attendance, ttCourses]);
 
-  const overallAttendance = useMemo(() => {
-    const valid = attendance.filter((a) => !isNaN(parseFloat(a.attendance)));
-    if (valid.length === 0) return '--';
-    const sum = valid.reduce((acc, a) => acc + parseFloat(a.attendance), 0);
-    return Math.round(sum / valid.length) + '%';
-  }, [attendance]);
+  const overallAttendance = useMemo(
+    () =>
+      overallAttendancePercentage(
+        sortedAttendance.map((a) => ({
+          percentage: parseFloat(a.attendance),
+          total: a.total ?? 0,
+        })),
+      ),
+    [sortedAttendance],
+  );
 
   // Handle auto-scroll for keyboard nav
   useEffect(() => {

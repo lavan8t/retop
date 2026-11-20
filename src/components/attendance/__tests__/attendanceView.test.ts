@@ -7,6 +7,7 @@ import {
   groupRecordsByMonth,
   isLabCourse,
   leaveImpact,
+  overallAttendancePercentage,
   overallVerdict,
   parseRecordDate,
   projectAttendance,
@@ -56,6 +57,44 @@ describe('attendance tone', () => {
     expect(displayPercentage(NaN, 0)).toBe('N/A');
     expect(displayPercentage(0, 0)).toBe('N/A');
     expect(displayPercentage(82.6, 16)).toBe('83%');
+  });
+
+  test('zero total suppresses critical/warning tones, even for nine-pointers', () => {
+    expect(attendanceTone(0, false, 0)).toBe('na');
+    expect(attendanceTone(60, false, 0)).toBe('na');
+    expect(attendanceTone(60, true, 0)).toBe('na');
+    expect(attendanceTone(0, false, 16)).toBe('critical');
+  });
+});
+
+describe('overall attendance', () => {
+  test('averages only courses with conducted classes, else --', () => {
+    expect(
+      overallAttendancePercentage([
+        { percentage: 80, total: 10 },
+        { percentage: 90, total: 10 },
+      ]),
+    ).toBe('85%');
+    expect(
+      overallAttendancePercentage([
+        { percentage: 82, total: 0 },
+        { percentage: 90, total: 10 },
+      ]),
+    ).toBe('90%');
+    expect(overallAttendancePercentage([{ percentage: 82, total: 0 }])).toBe(
+      '--',
+    );
+    expect(overallAttendancePercentage([])).toBe('--');
+  });
+
+  test('verdict names the zero-conducted state and excludes 0-total rows', () => {
+    expect(overallVerdict([{ ...course(0), total: 0 }])).toEqual({
+      text: 'No classes conducted yet',
+      critical: false,
+    });
+    expect(overallVerdict([{ ...course(0), total: 0 }, course(60)]).text).toBe(
+      '1 course below 75%',
+    );
   });
 });
 

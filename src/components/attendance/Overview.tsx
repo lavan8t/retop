@@ -5,7 +5,11 @@ import {
 } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 import type { DetailedAttendanceCourse } from '../../types/vtop';
 import type { AttendanceForecast } from '../../utils/attendanceForecaster';
-import { leaveImpact, overallVerdict } from './attendanceView';
+import {
+  leaveImpact,
+  overallAttendancePercentage,
+  overallVerdict,
+} from './attendanceView';
 import { M3eIconAction } from './M3eIconAction';
 
 export const Overview = ({
@@ -26,7 +30,8 @@ export const Overview = ({
   onRefresh: () => void;
 }) => {
   const verdict = overallVerdict(courses, isNinePointer);
-  const impact = leaveImpact(forecast, total, attended);
+  const impact = total > 0 ? leaveImpact(forecast, total, attended) : null;
+  const overall = overallAttendancePercentage(courses);
 
   return (
     <header className="shrink-0 flex flex-col gap-3 px-4 pt-4 pb-3">
@@ -37,6 +42,9 @@ export const Overview = ({
         }`}
       >
         {verdict.text}
+      </p>
+      <p className="text-center text-xs font-bold text-(--text-muted)">
+        Overall {overall}
       </p>
 
       {impact && (

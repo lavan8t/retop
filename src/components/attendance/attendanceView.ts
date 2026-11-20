@@ -23,7 +23,9 @@ export const TONE_LABEL: Record<AttendanceTone, string> = {
 export function attendanceTone(
   percentage: number,
   isNinePointer = false,
+  total?: number,
 ): AttendanceTone {
+  if (total !== undefined && total <= 0) return 'na';
   if (!Number.isFinite(percentage)) return 'na';
   const rounded = Math.round(percentage);
   if (isNinePointer) return rounded >= 90 ? 'safe' : 'neutral';
@@ -37,6 +39,18 @@ export function displayPercentage(percentage: number, total: number): string {
   return `${Math.round(percentage)}%`;
 }
 
+/** Average of courses with conducted classes; "--" when none have any. */
+export function overallAttendancePercentage(
+  courses: ReadonlyArray<{ percentage: number; total: number }>,
+): string {
+  const valid = courses.filter(
+    (c) => c.total > 0 && Number.isFinite(c.percentage),
+  );
+  if (valid.length === 0) return '--';
+  const sum = valid.reduce((acc, c) => acc + c.percentage, 0);
+  return `${Math.round(sum / valid.length)}%`;
+}
+
 export function overallVerdict(
   courses: DetailedAttendanceCourse[],
   isNinePointer = false,
@@ -44,7 +58,13 @@ export function overallVerdict(
   text: string;
   critical: boolean;
 } {
-  const tones = courses.map((c) => attendanceTone(c.percentage, isNinePointer));
+  const conducted = courses.filter((c) => c.total > 0);
+  if (courses.length > 0 && conducted.length === 0) {
+    return { text: 'No classes conducted yet', critical: false };
+  }
+  const tones = conducted.map((c) =>
+    attendanceTone(c.percentage, isNinePointer, c.total),
+  );
   const critical = tones.filter((t) => t === 'critical').length;
   const warning = tones.filter((t) => t === 'warning').length;
   if (critical > 0) {

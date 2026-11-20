@@ -34,6 +34,7 @@ import {
   parseVtopDate,
   TimeFormatMode,
 } from '../utils/formatting';
+import { overallAttendancePercentage } from '../components/attendance/attendanceView';
 
 export type EventFilterType = 'all' | 'classes' | 'assignments' | 'events';
 
@@ -197,12 +198,16 @@ export const HomeView: React.FC<HomeViewProps> = ({
     });
   }, [attendance]);
 
-  const overallAttPct = useMemo(() => {
-    const valid = attendance.filter((a) => !isNaN(parseFloat(a.attendance)));
-    if (valid.length === 0) return '';
-    const sum = valid.reduce((acc, a) => acc + parseFloat(a.attendance), 0);
-    return Math.round(sum / valid.length) + '%';
-  }, [attendance]);
+  const overallAttPct = useMemo(
+    () =>
+      overallAttendancePercentage(
+        sortedAttendance.map((a) => ({
+          percentage: parseFloat(a.attendance),
+          total: a.total ?? 0,
+        })),
+      ),
+    [sortedAttendance],
+  );
 
   useEffect(() => {
     if (!network) return;

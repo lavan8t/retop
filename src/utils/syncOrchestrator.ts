@@ -132,14 +132,34 @@ export async function syncStudentData(
               attData,
             );
             await setCachedData(`attendance_detailed_${activeSemId}`, attData);
-            // Also cache under dashboard keys for instant hydration in DashboardApp
-            try {
-              const dashAtt = parseCourseDetails(attHtml);
-              await setCachedData(`${regNo}_dashboard_attendance`, dashAtt);
-              await setCachedData(`dashboard_attendance`, dashAtt);
-            } catch {}
           } catch (err) {
             console.warn('[syncOrchestrator] Attendance sync error:', err);
+          }
+        })(),
+
+        // Registered-course summary comes from the dedicated dashboard endpoint.
+        // The attendance page has no span.fw-bold codes, so parsing it here
+        // yielded an empty list and blanked the Home course list.
+        (async () => {
+          try {
+            const dashHtml = await client.authenticatedPost(
+              '/vtop/get/dashboard/current/semester/course/details',
+              {
+                _csrf: client.csrf,
+                authorizedID: client.registrationNumber,
+              },
+            );
+            const dashAtt = parseCourseDetails(dashHtml);
+            // Keep a good cached list if the endpoint returns nothing usable.
+            if (dashAtt.length > 0) {
+              await setCachedData(`${regNo}_dashboard_attendance`, dashAtt);
+              await setCachedData('dashboard_attendance', dashAtt);
+            }
+          } catch (err) {
+            console.warn(
+              '[syncOrchestrator] Dashboard attendance sync error:',
+              err,
+            );
           }
         })(),
 

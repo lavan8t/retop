@@ -295,13 +295,14 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
           }}
           title="Settings"
           aria-label="Settings"
-          className={`w-full flex items-center justify-center p-2.5 rounded-[18px] transition-colors active:scale-95 group outline-none ${
+          className={`w-full flex items-center justify-center gap-1 p-2.5 rounded-[18px] transition-colors active:scale-95 group outline-none ${
             focusedIndex === mainItems.length
               ? 'bg-(--accent-base) text-(--text-inverse)'
               : 'bg-(--bg-highlight) text-(--text-main) hover:text-(--accent-base)'
           }`}
         >
-          <Settings className="w-6 h-6 group-hover:rotate-90 transition-transform duration-700 ease-out" />
+          <Settings className="w-5 h-5 shrink-0 group-hover:rotate-90 transition-transform duration-700 ease-out" />
+          <span className="text-[11px] font-bold">Settings</span>
         </button>
 
         {!(

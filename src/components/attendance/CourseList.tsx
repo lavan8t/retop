@@ -83,6 +83,7 @@ export const CourseList = ({
             value={key}
             selected={selected}
             data-course-key={key}
+            onClick={() => onSelect(key)}
             aria-label={`${course.courseTitle}, ${course.courseCode}, ${displayPercentage(course.percentage, course.total)} attendance, ${TONE_LABEL[tone]}`}
             aria-current={selected ? 'true' : undefined}
           >

@@ -12,6 +12,7 @@ describe('vtopClient unit helpers', () => {
   it('resolves base URLs for campuses correctly', () => {
     expect(getVtopBaseUrl('vellore')).toBe('https://vtop.vit.ac.in');
     expect(getVtopBaseUrl('chennai')).toBe('https://vtopcc.vit.ac.in');
+    expect(getVtopBaseUrl('vitap')).toBe('https://vtop.vitap.ac.in');
     expect(getVtopBaseUrl()).toBe('https://vtop.vit.ac.in');
   });
 

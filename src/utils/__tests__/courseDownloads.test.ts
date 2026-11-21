@@ -40,8 +40,12 @@ describe('course material bulk download planning', () => {
   it('only matches VTOP download URLs, not other sites or lookalikes', () => {
     expect(isVtopDownloadUrl('https://vtop.vit.ac.in/vtop/x')).toBe(true);
     expect(isVtopDownloadUrl('https://vtopcc.vit.ac.in/vtop/x')).toBe(true);
+    expect(isVtopDownloadUrl('https://vtop.vitap.ac.in/vtop/x')).toBe(true);
     expect(isVtopDownloadUrl('https://getretop.web.app/x')).toBe(false);
     expect(isVtopDownloadUrl('https://evil.test/?u=vtop.vit.ac.in')).toBe(
+      false,
+    );
+    expect(isVtopDownloadUrl('https://vtop.vitap.ac.in.evil.com/vtop/x')).toBe(
       false,
     );
     expect(isVtopDownloadUrl(undefined)).toBe(false);

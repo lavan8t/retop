@@ -13,7 +13,7 @@
  *   4. Hand off to a deferred ESM entry for everything expensive.
  */
 
-const VTOP_HOST = /(^|\.)vtop(cc)?\.vit\.ac\.in$/;
+export const VTOP_HOST = /(^|\.)(vtop(cc)?\.vit\.ac\.in|vtop\.vitap\.ac\.in)$/;
 
 /** Routes where retop renders its own sign-in UI instead of VTOP's. */
 const LOGIN_ROUTES = [

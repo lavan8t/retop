@@ -48,7 +48,9 @@ export function isNativeAndroidBridgeAvailable(): boolean {
  */
 export function isLiveVtopContext(): boolean {
   try {
-    return /(^|\.)vtop(cc)?\.vit\.ac\.in$/.test(window.location.hostname);
+    return /(^|\.)(vtop(cc)?\.vit\.ac\.in|vtop\.vitap\.ac\.in)$/.test(
+      window.location.hostname,
+    );
   } catch {
     return false;
   }

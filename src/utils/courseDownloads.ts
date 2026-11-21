@@ -72,7 +72,7 @@ export const buildDownloadBody = (
 };
 
 export const isVtopDownloadUrl = (url?: string): boolean =>
-  /^https:\/\/vtop(cc)?\.vit\.ac\.in\//.test(url || '');
+  /^https:\/\/(vtop(cc)?\.vit\.ac\.in|vtop\.vitap\.ac\.in)\//.test(url || '');
 
 export const isDownloadableMaterial = (category?: string): boolean =>
   !/web\s*(link|material)/i.test(category || '');

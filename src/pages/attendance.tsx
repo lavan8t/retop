@@ -216,7 +216,7 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
   );
 
   return (
-    <div className="h-full w-full bg-(--bg-surface) text-(--text-main) relative z-0 overflow-hidden">
+    <div className="h-full w-full bg-(--bg-main) text-(--text-main) relative z-0 overflow-hidden">
       {isWide ? (
         <M3eSplitPane
           className="h-full w-full"

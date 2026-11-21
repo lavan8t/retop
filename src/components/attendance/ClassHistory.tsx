@@ -1,10 +1,5 @@
-import {
-  M3eButtonSegment,
-  M3eLinearProgressIndicator,
-  M3eSegmentedButton,
-} from './m3eTags';
+import { M3eButton, M3eButtonGroup } from './m3eTags';
 import { useState } from 'react';
-import type React from 'react';
 import {
   ArrowDownward,
   ArrowUpward,
@@ -17,44 +12,19 @@ import type { AttendanceRecord } from '../../types/vtop';
 import {
   formatRecordDate,
   groupRecordsByMonth,
+  historyStatusLabel,
   parseRecordDate,
   recordStatus,
   type HistoryEntry,
   type RecordStatus,
 } from './attendanceView';
 import { M3eIconAction } from './M3eIconAction';
-
-const STATUS_LABEL: Record<RecordStatus, string> = {
-  present: 'Present',
-  absent: 'Absent',
-  other: 'Other',
-};
-
-const STATUS_STYLE: Record<RecordStatus, React.CSSProperties> = {
-  present: {
-    '--m3e-progress-indicator-color': 'var(--att-safe)',
-    '--m3e-linear-progress-indicator-thickness': '0.5rem',
-  } as React.CSSProperties,
-  absent: {
-    '--m3e-progress-indicator-color': 'var(--att-danger)',
-    '--m3e-linear-progress-indicator-thickness': '0.5rem',
-  } as React.CSSProperties,
-  other: {
-    '--m3e-progress-indicator-color': 'var(--att-warn)',
-    '--m3e-linear-progress-indicator-thickness': '0.5rem',
-  } as React.CSSProperties,
-};
+import { HOME_ITEM, PAGE_CROSSFADE } from '../../utils/motion';
 
 const STATUS_TEXT: Record<RecordStatus, string> = {
   present: 'text-(--att-safe)',
   absent: 'text-(--att-danger)',
   other: 'text-(--att-warn)',
-};
-
-const STATUS_VALUE: Record<RecordStatus, number> = {
-  present: 100,
-  absent: 0,
-  other: 50,
 };
 
 const slotInfo = (record: AttendanceRecord): string =>
@@ -76,7 +46,7 @@ const DateTile = ({
     ? entry.date.toLocaleDateString('en-GB', { month: 'short' })
     : '—';
   return (
-    <div className="w-11 h-11 shrink-0 rounded-xl bg-(--bg-highlight) flex flex-col items-center justify-center">
+    <div className="w-11 h-11 shrink-0 rounded-xl flex flex-col items-center justify-center">
       <span className="text-sm font-black leading-none tabular-nums">
         {day}
       </span>
@@ -84,7 +54,7 @@ const DateTile = ({
         {month}
       </span>
       <span className={`text-[10px] font-bold ${STATUS_TEXT[status]}`}>
-        {STATUS_LABEL[status]}
+        {historyStatusLabel(entry.record.status)}
       </span>
     </div>
   );
@@ -138,24 +108,26 @@ export const ClassHistory = ({
             }
             onClick={() => onSortChange(sortOrder === 'desc' ? 'asc' : 'desc')}
           />
-          <M3eSegmentedButton
-            aria-label="Class history layout"
-            value={view}
-            onChange={(event: { target: EventTarget | null }) => {
-              const value = (event.target as HTMLElement & { value?: string })
-                ?.value;
-              if (value === 'list' || value === 'tiles') setView(value);
-            }}
-          >
-            <M3eButtonSegment value="list">
+          <M3eButtonGroup aria-label="Class history layout">
+            <M3eButton
+              toggle
+              value="list"
+              selected={view === 'list'}
+              aria-label="List view"
+              onClick={() => setView('list')}
+            >
               <List slot="icon" aria-hidden="true" />
-              List
-            </M3eButtonSegment>
-            <M3eButtonSegment value="tiles">
+            </M3eButton>
+            <M3eButton
+              toggle
+              value="tiles"
+              selected={view === 'tiles'}
+              aria-label="Tiles view"
+              onClick={() => setView('tiles')}
+            >
               <GridView slot="icon" aria-hidden="true" />
-              Tiles
-            </M3eButtonSegment>
-          </M3eSegmentedButton>
+            </M3eButton>
+          </M3eButtonGroup>
         </div>
       </div>
 
@@ -175,10 +147,14 @@ export const ClassHistory = ({
             : 'No history records found for this class.'}
         </p>
       ) : (
-        months.map((month) => {
+        months.map((month, monthIndex) => {
           const isCollapsed = collapsed.has(month.key);
           return (
-            <div key={month.key} className="flex flex-col gap-2">
+            <div
+              key={month.key}
+              className={`flex flex-col gap-2 ${HOME_ITEM}`}
+              style={{ animationDelay: `${monthIndex * 40}ms` }}
+            >
               <button
                 type="button"
                 aria-expanded={!isCollapsed}
@@ -194,48 +170,45 @@ export const ClassHistory = ({
               </button>
               {!isCollapsed &&
                 (view === 'list' ? (
-                  <ul className="flex flex-col gap-1.5">
+                  <ul
+                    key={sortOrder}
+                    className={`flex flex-col gap-1.5 ${PAGE_CROSSFADE}`}
+                  >
                     {month.entries.map((entry, index) => {
                       const status = recordStatus(entry.record.status);
                       return (
                         <li
                           key={`${entry.record.date}-${index}`}
-                          className="flex items-center gap-3 rounded-xl bg-(--bg-surface) px-3 py-2"
+                          className="flex items-center gap-3 px-3 py-2"
                         >
                           <DateTile entry={entry} status={status} />
                           <div className="min-w-0 flex-1">
                             <p className="text-xs font-medium text-(--text-muted) truncate">
                               {slotInfo(entry.record)}
                             </p>
-                            <div
-                              style={STATUS_STYLE[status]}
-                              className="mt-1.5"
-                            >
-                              <M3eLinearProgressIndicator
-                                value={STATUS_VALUE[status]}
-                                variant="flat"
-                                aria-label={`${STATUS_LABEL[status]} on ${formatRecordDate(entry.date, entry.record.date)}`}
-                              ></M3eLinearProgressIndicator>
-                            </div>
                           </div>
                           <span
                             className={`text-xs font-bold shrink-0 ${STATUS_TEXT[status]}`}
                           >
-                            {STATUS_LABEL[status]}
+                            {historyStatusLabel(entry.record.status)}
                           </span>
                         </li>
                       );
                     })}
                   </ul>
                 ) : (
-                  <ul className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                  <ul
+                    key={sortOrder}
+                    className={`grid grid-cols-4 sm:grid-cols-6 gap-2 ${PAGE_CROSSFADE}`}
+                  >
                     {month.entries.map((entry, index) => {
                       const status = recordStatus(entry.record.status);
+                      const label = historyStatusLabel(entry.record.status);
                       return (
                         <li
                           key={`${entry.record.date}-${index}`}
-                          className={`flex flex-col items-center gap-1 rounded-2xl bg-(--bg-surface) px-2 py-2 border ${STATUS_TEXT[status]}`}
-                          aria-label={`${formatRecordDate(parseRecordDate(entry.record.date), entry.record.date)}: ${STATUS_LABEL[status]}`}
+                          className={`flex flex-col items-center gap-1 px-2 py-2 ${STATUS_TEXT[status]}`}
+                          aria-label={`${formatRecordDate(parseRecordDate(entry.record.date), entry.record.date)}: ${label}`}
                         >
                           <DateTile entry={entry} status={status} />
                         </li>

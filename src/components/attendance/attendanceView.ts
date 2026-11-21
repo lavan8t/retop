@@ -145,6 +145,15 @@ export function recordStatus(status: string): RecordStatus {
   return 'other';
 }
 
+/** Android shows the raw status for "other" cases (Upcoming, On Duty, ...). */
+export function historyStatusLabel(status: string): string {
+  const trimmed = (status || '').trim();
+  const tone = recordStatus(trimmed);
+  if (tone === 'present') return 'Present';
+  if (tone === 'absent') return 'Absent';
+  return trimmed || 'Other';
+}
+
 export interface HistoryEntry {
   record: AttendanceRecord;
   date: Date | null;

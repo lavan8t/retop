@@ -118,7 +118,6 @@ export const AppNavRail: React.FC<AppNavRailProps> = ({
             retop
           </span>
         </button>
-        <M3eTooltip for={retopId}>retop</M3eTooltip>
 
         <button
           id={vtopId}
@@ -130,7 +129,6 @@ export const AppNavRail: React.FC<AppNavRailProps> = ({
           <M3eIcon name="language" />
           <span className="font-vtop font-bold text-sm">VTOP</span>
         </button>
-        <M3eTooltip for={vtopId}>VTOP</M3eTooltip>
 
         <M3eFab
           size="small"

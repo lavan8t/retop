@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { useDataStore } from '../store/dataStore';
 import { VTOPNetwork } from '../utils/network';
 import { OfflineNotSynced } from '../components/ui/OfflineNotSynced';
-import { SemesterDropdown } from '../components/ui/Dropdown';
 import {
   AttendanceEmpty,
   AttendanceError,
@@ -167,28 +166,11 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
   const records = selectedCourse ? attendanceRecords[selectedCourse] : null;
 
   const overview = (
-    <Overview
-      courses={detailedAttendance}
-      isNinePointer={isNinePointer}
-      refreshing={refreshing}
-      onRefresh={() => {
-        void load(true).then(() => {
-          setSnackbarMessage('Attendance refreshed');
-          setSnackbarOpen(true);
-        });
-      }}
-    />
+    <Overview courses={detailedAttendance} isNinePointer={isNinePointer} />
   );
 
   const listPane = (
     <div className="flex flex-col h-full min-h-0 pt-21 md:pt-25 pb-32 lg:pb-12 px-4 md:px-6">
-      <div className="flex justify-center pb-1">
-        <SemesterDropdown
-          semesters={ttSemesters}
-          selectedId={attSelectedSem}
-          onChange={setAttSelectedSem}
-        />
-      </div>
       {overview}
       <CourseList
         courses={detailedAttendance}

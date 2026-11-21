@@ -171,10 +171,15 @@ describe('history grouping', () => {
       { date: '2026-03-05', status: 'Present' },
     ] as any;
     const desc = groupRecordsByMonth(records, 'desc');
-    expect(desc[0].label).toBe('March 2026');
+    const currentYear = new Date().getFullYear();
+    expect(desc[0].label).toBe(currentYear === 2026 ? 'March' : 'March 2026');
     expect(desc[0].entries[0].record.date).toBe('2026-03-05');
-    expect(desc[1].label).toBe('February 2026');
-    expect(groupRecordsByMonth(records, 'asc')[0].label).toBe('February 2026');
+    expect(desc[1].label).toBe(
+      currentYear === 2026 ? 'February' : 'February 2026',
+    );
+    expect(groupRecordsByMonth(records, 'asc')[0].label).toBe(
+      currentYear === 2026 ? 'February' : 'February 2026',
+    );
   });
 
   test('status is described in words', () => {

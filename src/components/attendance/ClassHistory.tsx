@@ -10,10 +10,8 @@ import {
 } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 import type { AttendanceRecord } from '../../types/vtop';
 import {
-  formatRecordDate,
   groupRecordsByMonth,
   historyStatusLabel,
-  parseRecordDate,
   recordStatus,
   type HistoryEntry,
   type RecordStatus,
@@ -101,7 +99,7 @@ const TileCell = ({ entry }: { entry: HistoryEntry }) => {
     : '--';
   return (
     <div
-      className="aspect-square w-full rounded-xl flex items-center justify-center font-bold text-lg tabular-nums"
+      className="aspect-square w-11 rounded-xl flex items-center justify-center font-bold text-base tabular-nums"
       style={tileStyleFor(entry.record.status)}
     >
       {day}
@@ -248,14 +246,14 @@ export const ClassHistory = ({
                 ) : (
                   <ul
                     key={sortOrder}
-                    className={`grid grid-cols-4 sm:grid-cols-6 gap-2 ${PAGE_CROSSFADE}`}
+                    className={`grid grid-cols-7 gap-1 w-fit max-w-full ${PAGE_CROSSFADE}`}
                   >
                     {month.entries.map((entry, index) => {
                       const label = historyStatusLabel(entry.record.status);
                       return (
                         <li
                           key={`${entry.record.date}-${index}`}
-                          aria-label={`${formatRecordDate(parseRecordDate(entry.record.date), entry.record.date)}: ${label}`}
+                          title={undefined}
                         >
                           <TileCell entry={entry} />
                         </li>

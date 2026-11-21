@@ -178,7 +178,12 @@ export function groupRecordsByMonth(
       group = {
         key,
         label: date
-          ? date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+          ? date.getFullYear() === new Date().getFullYear()
+            ? date.toLocaleDateString('en-GB', { month: 'long' })
+            : date.toLocaleDateString('en-GB', {
+                month: 'long',
+                year: 'numeric',
+              })
           : 'Undated',
         entries: [],
       };

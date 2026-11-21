@@ -67,7 +67,7 @@ export const CourseList = ({
       style={listSurfaceStyle}
       onChange={handleChange}
       onKeyDown={handleKeyDown}
-      className="h-full min-h-0 bg-(--bg-surface) custom-scrollbar"
+      className="bg-(--bg-surface)"
     >
       {courses.map((course) => {
         const key = courseKey(course);

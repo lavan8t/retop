@@ -326,7 +326,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
   return (
     <div className="h-full w-full flex flex-col bg-(--bg-main) text-(--text-main) overflow-hidden px-1 sm:px-3 md:px-6 max-w-425 mx-auto">
       {calLoadingMonths ? (
-        <div className="flex-1 flex flex-col pt-32 pb-8 px-2 animate-pulse min-h-0 h-full overflow-hidden">
+        <div className="flex-1 flex flex-col pb-8 px-2 animate-pulse min-h-0 h-full overflow-hidden">
           <div className="flex-1 grid grid-cols-7 gap-1 sm:gap-1.5 md:gap-2 auto-rows-[minmax(38px,auto)] sm:auto-rows-[minmax(50px,auto)] md:auto-rows-[minmax(64px,auto)]">
             {[...Array(28)].map((_, i) => (
               <div
@@ -337,7 +337,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
           </div>
         </div>
       ) : calAvailableMonths.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center pt-15">
+        <div className="flex-1 flex flex-col items-center justify-center">
           {typeof window !== 'undefined' &&
           (window as any).__RETOP_OFFLINE__ ? (
             <OfflineNotSynced pageName="Academic Calendar" />
@@ -353,7 +353,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
         <div className="flex-1 flex flex-col min-h-0 w-full relative z-0">
           {/* Fixed Top Weekdays (Only in Grid View) */}
           {calViewMode === 'grid' && (
-            <div className="w-full bg-(--bg-main) pt-16 md:pt-20 relative z-20 pb-1">
+            <div className="w-full bg-(--bg-main) relative z-20 pb-1">
               <div className="grid grid-cols-7 gap-1 sm:gap-1.5 md:gap-2 px-0.5 w-full">
                 {WEEKDAYS.map((day, i) => (
                   <div
@@ -376,7 +376,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ network }) => {
           {/* Grid or List Container */}
           <div className="flex-1 flex flex-col overflow-hidden relative z-10">
             <div
-              className={`flex-1 overflow-y-auto custom-scrollbar bg-transparent relative pb-24 ${calViewMode === 'list' ? 'pt-16 md:pt-20 px-1 sm:px-2' : 'pt-2 md:pt-4'}`}
+              className={`flex-1 overflow-y-auto custom-scrollbar bg-transparent relative pb-24 ${calViewMode === 'list' ? 'px-1 sm:px-2' : 'pt-2 md:pt-4'}`}
             >
               {calLoadingGrid ? (
                 <div key="loading" className="absolute inset-0 z-30 pt-4">

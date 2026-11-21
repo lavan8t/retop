@@ -355,7 +355,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
   return (
     <div className="h-full w-full flex flex-col gap-0 py-0 px-4 md:px-6 lg:px-8 overflow-y-auto lg:overflow-hidden bg-(--bg-main) text-(--text-main) max-w-425 mx-auto relative">
       {/* Top Search Bar centered with increased height */}
-      <div className="w-full pt-20 md:pt-23 lg:pt-25 pb-3 px-2 md:px-4 shrink-0 flex justify-center">
+      <div className="w-full pb-3 px-2 md:px-4 shrink-0 flex justify-center">
         <div className="relative group w-full max-w-4xl mx-auto">
           <input
             type="text"

@@ -110,7 +110,7 @@ export const CoursePage = ({
     <div className="absolute inset-0 w-full h-full transition-colors bg-transparent text-(--text-main)">
       <div className="h-full flex flex-col min-h-0">
         {!selectedOptionId ? (
-          <div className="h-full flex flex-col items-center justify-center pt-24">
+          <div className="h-full flex flex-col items-center justify-center">
             <span className="font-bold uppercase text-xs text-(--text-dim)">
               No courses found for this semester
             </span>
@@ -118,7 +118,7 @@ export const CoursePage = ({
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-10 gap-8 flex-1 min-h-0 overflow-hidden pl-4 md:pl-8 lg:pl-12 pr-4 md:pr-8 lg:pr-12">
             {/* === STATIC LEFT PANEL === */}
-            <div className="lg:col-span-4 xl:col-span-4 h-full flex flex-col overflow-y-auto custom-scrollbar pt-24 md:pt-28 pb-24 pr-4">
+            <div className="lg:col-span-4 xl:col-span-4 h-full flex flex-col overflow-y-auto custom-scrollbar pb-24 pr-4">
               {/* Aggregated Info */}
               {currentOption && (
                 <div className="flex flex-col gap-6 mb-16">
@@ -476,7 +476,7 @@ export const CoursePage = ({
             </div>
 
             {/* === SCROLLABLE RIGHT PANEL === */}
-            <div className="lg:col-span-6 xl:col-span-6 h-full flex flex-col overflow-y-auto custom-scrollbar pt-18 md:pt-10 pb-24 pr-2 space-y-6">
+            <div className="lg:col-span-6 xl:col-span-6 h-full flex flex-col overflow-y-auto custom-scrollbar pb-24 pr-2 space-y-6">
               {/* Material 3 Search Bar & Sort Button at top of Right Panel */}
               <div className="sticky -top-1 z-20 pt-4 pb-3 bg-(--bg-main) flex items-center gap-3">
                 <div className="relative flex items-center flex-1 group">

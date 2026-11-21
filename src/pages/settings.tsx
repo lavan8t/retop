@@ -232,7 +232,7 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
   return (
     <div className="h-full w-full flex flex-col md:flex-row gap-6 lg:gap-8 py-0 px-4 md:px-6 lg:px-8 overflow-y-auto md:overflow-hidden bg-(--bg-main) text-(--text-main) relative custom-scrollbar">
       {/* MOBILE DRILL-DOWN (< md) */}
-      <div className="flex md:hidden flex-col w-full min-h-0 pt-16 pb-24">
+      <div className="flex md:hidden flex-col w-full min-h-0 pb-24">
         {!mobileSelectedCategory ? (
           <nav
             aria-label="Settings sections"
@@ -293,7 +293,7 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
       <div className="hidden md:flex w-full flex-1 flex-row gap-6 lg:gap-8 min-h-0 overflow-hidden h-full">
         <nav
           aria-label="Settings sections"
-          className="w-64 lg:w-72 shrink-0 flex flex-col gap-1 h-fit overflow-y-auto scrollbar-none pt-18 md:pt-22 pb-6 pr-1"
+          className="w-64 lg:w-72 shrink-0 flex flex-col gap-1 h-fit overflow-y-auto scrollbar-none pb-6 pr-1"
         >
           {CATEGORIES.map((cat) => {
             const isSelected = activeCategory === cat.id;
@@ -331,7 +331,7 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
           })}
         </nav>
 
-        <div className="flex-1 min-w-0 h-full overflow-y-auto custom-scrollbar pt-18 md:pt-22 pb-24 md:pb-12 pr-2">
+        <div className="flex-1 min-w-0 h-full overflow-y-auto custom-scrollbar pb-24 md:pb-12 pr-2">
           <div className="flex flex-col gap-6 max-w-3xl">
             {renderSectionContent(activeCategory)}
           </div>

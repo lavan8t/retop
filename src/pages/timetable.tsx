@@ -39,7 +39,7 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
 
   if (status === 'Offline - Not Synced') {
     return (
-      <div className="h-full pt-16 md:pt-20 lg:pt-24 pb-32 md:pb-12">
+      <div className="h-full pb-32 md:pb-12">
         <OfflineNotSynced pageName="Timetable" />
       </div>
     );

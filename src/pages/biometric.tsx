@@ -255,7 +255,7 @@ export const BiometricPage: React.FC<BiometricPageProps> = ({ network }) => {
 
   return (
     <div className="h-full flex flex-col bg-(--bg-main) text-(--text-main) overflow-hidden text-left">
-      <div className="flex-1 overflow-y-auto custom-scrollbar px-4 md:px-8 lg:px-10 xl:px-12 pt-20 md:pt-24 pb-32">
+      <div className="flex-1 overflow-y-auto custom-scrollbar px-4 md:px-8 lg:px-10 xl:px-12 pb-32">
         <div className="mx-auto w-full max-w-3xl flex flex-col gap-4">
           {!isAp ? (
             <EmptyState

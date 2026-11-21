@@ -504,7 +504,7 @@ export const ExamSchedulePage: React.FC<ExamSchedulePageProps> = ({
   return (
     <div className="h-full w-full flex flex-col lg:flex-row gap-0 py-0 px-4 md:px-6 lg:px-8 overflow-y-auto lg:overflow-hidden bg-(--bg-main) text-(--text-main) max-w-425 mx-auto relative">
       {/* LEFT COLUMN: Sidebar controls */}
-      <div className="w-full lg:w-[27%] xl:w-[24%] flex flex-col shrink-0 h-auto lg:h-full overflow-y-auto custom-scrollbar relative z-40 pt-20 md:pt-23 lg:pt-25 pb-4 md:pb-6 lg:pb-8 pl-4 lg:pl-6 pr-2 lg:pr-3 gap-4">
+      <div className="w-full lg:w-[27%] xl:w-[24%] flex flex-col shrink-0 h-auto lg:h-full overflow-y-auto custom-scrollbar relative z-40 pb-4 md:pb-6 lg:pb-8 pl-4 lg:pl-6 pr-2 lg:pr-3 gap-4">
         {/* Category Buttons List (CAT 1, CAT 2, FAT, All) */}
         {examGroups.length > 0 && (
           <div className="hidden lg:flex flex-col gap-2">
@@ -563,7 +563,7 @@ export const ExamSchedulePage: React.FC<ExamSchedulePageProps> = ({
 
       {/* RIGHT COLUMN: Course Cards */}
       <div className="flex-1 flex flex-col min-w-0 h-auto lg:h-full px-2 md:px-4 lg:px-6">
-        <div className="w-full max-w-2xl h-full overflow-y-auto custom-scrollbar pt-20 md:pt-23 lg:pt-25 pb-20 pr-4 border-r border-(--border-dim)/30">
+        <div className="w-full max-w-2xl h-full overflow-y-auto custom-scrollbar pb-20 pr-4 border-r border-(--border-dim)/30">
           {/* Mobile Top Category Tabs (lg:hidden) */}
           {examGroups.length > 0 && (
             <div className="lg:hidden flex items-center gap-2 overflow-x-auto custom-scrollbar pb-2 mb-4 shrink-0">

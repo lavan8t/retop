@@ -959,7 +959,7 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
       {/* DESKTOP 2-COLUMN VIEW (md:flex) */}
       <div className="hidden md:flex w-full flex-1 flex-row gap-6 md:gap-8 min-h-0 overflow-hidden h-full">
         {/* Left Column: Fixed Tabs Sidebar */}
-        <div className="w-52 lg:w-56 shrink-0 flex flex-col gap-1 h-fit pt-20 md:pt-23 lg:pt-25 pb-6">
+        <div className="w-52 lg:w-56 shrink-0 flex flex-col gap-1 h-fit pb-6">
           <div className="flex flex-col p-1.5 bg-(--bg-surface) rounded-3xl border border-(--border-dim)/50 shadow-sm w-full gap-1">
             {tabs.map((t) => {
               const Icon = t.icon;
@@ -984,13 +984,13 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
         </div>
 
         {/* Right Column: Scrolling Main View (constrained width) */}
-        <div className="flex-1 max-w-2xl xl:max-w-3xl min-w-0 h-full overflow-y-auto custom-scrollbar pt-20 md:pt-23 lg:pt-25 pb-24 pr-1">
+        <div className="flex-1 max-w-2xl xl:max-w-3xl min-w-0 h-full overflow-y-auto custom-scrollbar pb-24 pr-1">
           {renderContent()}
         </div>
       </div>
 
       {/* MOBILE VIEW (md:hidden) */}
-      <div className="flex md:hidden flex-col w-full h-full overflow-y-auto custom-scrollbar pt-20 pb-24">
+      <div className="flex md:hidden flex-col w-full h-full overflow-y-auto custom-scrollbar pb-24">
         {/* Sticky Mobile Tabs Bar */}
         <div className="sticky top-0 z-30 bg-(--bg-main)/85 backdrop-blur-md py-2.5 mb-4 flex items-center justify-start shrink-0 -mx-4 px-4">
           <div className="inline-flex items-center p-1 bg-(--bg-surface) rounded-full border border-(--border-dim)/50 shadow-sm">

@@ -437,7 +437,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
 
   if (loading) {
     return (
-      <div className="h-full w-full overflow-y-auto bg-(--bg-main) p-4 pt-18 custom-scrollbar sm:pt-20 md:pt-24 lg:pt-28">
+      <div className="h-full w-full overflow-y-auto bg-(--bg-main) p-4 custom-scrollbar">
         <div className="mx-auto grid w-full max-w-6xl grid-cols-1 animate-pulse items-start gap-x-6 pb-24 lg:grid-cols-2">
           <div className="flex flex-col">
             <div className="flex justify-center">
@@ -734,7 +734,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
   }
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-(--bg-main) p-4 pt-18 custom-scrollbar sm:pt-20 md:pt-24 lg:pt-28">
+    <div className="h-full w-full overflow-y-auto bg-(--bg-main) p-4 custom-scrollbar">
       {/* Two columns on wide screens. The source order is left column then
           right column, so the stacked order on mobile is unchanged. */}
       <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-x-6 pb-24 lg:grid-cols-2">

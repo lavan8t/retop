@@ -143,7 +143,7 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
 
   if (status === 'Offline - Not Synced') {
     return (
-      <div className="h-full pt-16 md:pt-20 lg:pt-24 pb-32 md:pb-12">
+      <div className="h-full pb-32 md:pb-12">
         <OfflineNotSynced pageName="Attendance" />
       </div>
     );
@@ -170,7 +170,7 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
   );
 
   const listPane = (
-    <div className="flex flex-col h-full min-h-0 pt-21 md:pt-25 pb-32 lg:pb-12 px-4 md:px-6">
+    <div className="flex flex-col h-full min-h-0 pb-32 lg:pb-12 px-4 md:px-6">
       {overview}
       <CourseList
         courses={detailedAttendance}
@@ -182,7 +182,7 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
   );
 
   const detailPane = selectedCourseObj ? (
-    <div className="flex flex-col h-full min-h-0 overflow-y-auto custom-scrollbar pt-21 md:pt-25 pb-32 lg:pb-12 px-4 md:px-6 lg:px-8">
+    <div className="flex flex-col h-full min-h-0 overflow-y-auto custom-scrollbar pb-32 lg:pb-12 px-4 md:px-6 lg:px-8">
       <CourseDetail
         course={selectedCourseObj}
         records={records}

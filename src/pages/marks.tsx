@@ -187,7 +187,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({
 
   if (offlineMiss) {
     return (
-      <div className="h-full pt-16 md:pt-20 lg:pt-24 pb-32 md:pb-12">
+      <div className="h-full pb-32 md:pb-12">
         <OfflineNotSynced pageName="Marks" />
       </div>
     );
@@ -195,7 +195,7 @@ export const MarksPage: React.FC<MarksPageProps> = ({
 
   return (
     <div className="h-full flex flex-col bg-transparent text-(--text-main) overflow-hidden">
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-2 md:p-4 pt-16 md:pt-20 lg:pt-24 pb-32 md:pb-12">
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-2 md:p-4 pb-32 md:pb-12">
         <div className="max-w-345 mx-auto space-y-6">
           {loading || fetchingMarks ? (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 animate-pulse">

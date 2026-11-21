@@ -297,7 +297,7 @@ export const GradesPage: React.FC<GradesPageProps> = ({
 
   if (offlineMiss) {
     return (
-      <div className="h-full pt-16 md:pt-15 lg:pt-24 pb-32 md:pb-12 text-left">
+      <div className="h-full pb-32 md:pb-12 text-left">
         <OfflineNotSynced pageName="Grades" />
       </div>
     );
@@ -314,7 +314,7 @@ export const GradesPage: React.FC<GradesPageProps> = ({
 
   return (
     <div className="h-full flex flex-col bg-transparent text-(--text-main) overflow-hidden text-left">
-      <div className="flex-1 overflow-y-auto custom-scrollbar px-4 md:px-8 lg:px-10 xl:px-12 pt-20 md:pt-24 pb-32 text-left">
+      <div className="flex-1 overflow-y-auto custom-scrollbar px-4 md:px-8 lg:px-10 xl:px-12 pb-32 text-left">
         <div className="mx-auto w-full max-w-6xl">
           {/* Semester selector + refresh */}
           <div className="mb-4 flex items-center justify-between gap-3">

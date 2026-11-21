@@ -60,60 +60,56 @@ export const CourseList = ({
   };
 
   return (
-    <div
+    <M3eSelectionList
+      hide-selection-indicator
+      aria-label="Courses"
+      variant="segmented"
       style={listSurfaceStyle}
-      className="rounded-2xl bg-(--bg-surface) p-0.5 min-h-0"
+      onChange={handleChange}
+      onKeyDown={handleKeyDown}
+      className="h-full min-h-0 bg-(--bg-surface) custom-scrollbar"
     >
-      <M3eSelectionList
-        hide-selection-indicator
-        aria-label="Courses"
-        variant="segmented"
-        onChange={handleChange}
-        onKeyDown={handleKeyDown}
-        className="rounded-2xl h-full custom-scrollbar"
-      >
-        {courses.map((course) => {
-          const key = courseKey(course);
-          const tone = attendanceTone(
-            course.percentage,
-            isNinePointer,
-            course.total,
-          );
-          const selected = key === selectedKey;
-          return (
-            <M3eListOption
-              key={key}
-              value={key}
-              selected={selected}
-              data-course-key={key}
-              aria-label={`${course.courseTitle}, ${course.courseCode}, ${displayPercentage(course.percentage, course.total)} attendance, ${TONE_LABEL[tone]}`}
-              aria-current={selected ? 'true' : undefined}
+      {courses.map((course) => {
+        const key = courseKey(course);
+        const tone = attendanceTone(
+          course.percentage,
+          isNinePointer,
+          course.total,
+        );
+        const selected = key === selectedKey;
+        return (
+          <M3eListOption
+            key={key}
+            value={key}
+            selected={selected}
+            data-course-key={key}
+            aria-label={`${course.courseTitle}, ${course.courseCode}, ${displayPercentage(course.percentage, course.total)} attendance, ${TONE_LABEL[tone]}`}
+            aria-current={selected ? 'true' : undefined}
+          >
+            <span
+              slot="supporting-text"
+              className="flex items-center gap-1.5 text-xs"
             >
-              <span
-                slot="supporting-text"
-                className="flex items-center gap-1.5 text-xs"
-              >
-                <span className="font-medium">{course.courseCode}</span>
-                {course.debarStatus !== '-' && (
-                  <span className="text-(--att-danger) font-medium">
-                    Debarred
-                  </span>
-                )}
-              </span>
-              <span className="font-semibold text-sm leading-snug">
-                {course.courseTitle}
-              </span>
-              <div slot="trailing" className="shrink-0 text-right pl-2">
-                <span
-                  className={`block font-bold text-lg leading-none tabular-nums ${TONE_TEXT[tone]}`}
-                >
-                  {displayPercentage(course.percentage, course.total)}
+              <span className="font-medium">{course.courseCode}</span>
+              {course.debarStatus !== '-' && (
+                <span className="text-(--att-danger) font-medium">
+                  Debarred
                 </span>
-              </div>
-            </M3eListOption>
-          );
-        })}
-      </M3eSelectionList>
-    </div>
+              )}
+            </span>
+            <span className="font-semibold text-sm leading-snug">
+              {course.courseTitle}
+            </span>
+            <div slot="trailing" className="shrink-0 text-right pl-2">
+              <span
+                className={`block font-bold text-lg leading-none tabular-nums ${TONE_TEXT[tone]}`}
+              >
+                {displayPercentage(course.percentage, course.total)}
+              </span>
+            </div>
+          </M3eListOption>
+        );
+      })}
+    </M3eSelectionList>
   );
 };

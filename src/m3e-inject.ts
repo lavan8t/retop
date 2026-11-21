@@ -12,6 +12,7 @@
  */
 import '@m3e/web/theme';
 import '@m3e/web/button';
+import '@m3e/web/button-group';
 import '@m3e/web/icon-button';
 import '@m3e/web/icon';
 import '@m3e/web/list';

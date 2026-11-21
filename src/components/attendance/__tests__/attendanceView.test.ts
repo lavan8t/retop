@@ -5,6 +5,7 @@ import {
   forecastAdvice,
   formatRecordDate,
   groupRecordsByMonth,
+  historyStatusLabel,
   isLabCourse,
   leaveImpact,
   overallAttendancePercentage,
@@ -180,6 +181,17 @@ describe('history grouping', () => {
     expect(recordStatus('Present')).toBe('present');
     expect(recordStatus('Absent')).toBe('absent');
     expect(recordStatus('Medical Leave')).toBe('other');
+  });
+
+  test('history label uses the real status text, never a generic Other', () => {
+    expect(historyStatusLabel('Present')).toBe('Present');
+    expect(historyStatusLabel('Absent')).toBe('Absent');
+    expect(historyStatusLabel('Upcoming')).toBe('Upcoming');
+    expect(historyStatusLabel('On Duty')).toBe('On Duty');
+    expect(historyStatusLabel('On Leave')).toBe('On Leave');
+    expect(historyStatusLabel('Excused')).toBe('Excused');
+    expect(historyStatusLabel('  Late  ')).toBe('Late');
+    expect(historyStatusLabel('')).toBe('Other');
   });
 });
 

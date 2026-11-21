@@ -62,6 +62,7 @@ describe('M3E registers in the main world', () => {
     for (const mod of [
       'theme',
       'button',
+      'button-group',
       'icon-button',
       'icon',
       'list',

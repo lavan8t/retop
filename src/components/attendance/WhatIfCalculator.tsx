@@ -32,11 +32,13 @@ const ringStyle = {
 
 const Stepper = ({
   label,
+  actionLabel,
   value,
   max,
   onChange,
 }: {
   label: string;
+  actionLabel: string;
   value: number;
   max: number;
   onChange: (next: number) => void;
@@ -48,7 +50,7 @@ const Stepper = ({
     <div className="flex items-center justify-center gap-1">
       <M3eIconAction
         icon={<Remove aria-hidden="true" />}
-        label={`Remove one predicted ${label.toLowerCase()} class`}
+        label={`Decrease ${actionLabel}`}
         onClick={() => onChange(Math.max(0, value - 1))}
         disabled={value === 0}
       />
@@ -61,7 +63,7 @@ const Stepper = ({
       </span>
       <M3eIconAction
         icon={<Add aria-hidden="true" />}
-        label={`Add one predicted ${label.toLowerCase()} class`}
+        label={`Increase ${actionLabel}`}
         onClick={() => onChange(Math.min(max, value + 1))}
         disabled={value >= max}
       />
@@ -172,12 +174,14 @@ export const WhatIfCalculator = ({
       <div className="grid grid-cols-2 gap-3">
         <Stepper
           label="Attend"
+          actionLabel="Attend"
           value={attendCount}
           max={remainingClasses}
           onChange={setAttendCount}
         />
         <Stepper
           label="Bunk"
+          actionLabel="Miss"
           value={bunkCount}
           max={remainingClasses}
           onChange={setBunkCount}

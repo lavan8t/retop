@@ -94,8 +94,6 @@ export const CourseList = ({
                 className="flex items-center gap-1.5 text-xs"
               >
                 <span className="font-medium">{course.courseCode}</span>
-                <span aria-hidden="true">·</span>
-                <span>{course.classType}</span>
                 {course.debarStatus !== '-' && (
                   <span className="text-(--att-danger) font-medium">
                     Debarred
@@ -110,9 +108,6 @@ export const CourseList = ({
                   className={`block font-bold text-lg leading-none tabular-nums ${TONE_TEXT[tone]}`}
                 >
                   {displayPercentage(course.percentage, course.total)}
-                </span>
-                <span className="block text-[10px] font-semibold uppercase text-(--text-muted) mt-0.5">
-                  {TONE_LABEL[tone]}
                 </span>
               </div>
             </M3eListOption>

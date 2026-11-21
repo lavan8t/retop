@@ -5,6 +5,9 @@
  * the literal custom-element tag and forwards `key` correctly.
  */
 export const M3eButton: any = 'm3e-button';
+export const M3eButtonGroup: any = 'm3e-button-group';
+// No m3e-toggle-button is registered: a toggle M3eButton plays that role.
+export const M3eToggleButton: any = 'm3e-toggle-button';
 export const M3eIconButton: any = 'm3e-icon-button';
 export const M3eTooltip: any = 'm3e-tooltip';
 export const M3eSelectionList: any = 'm3e-selection-list';

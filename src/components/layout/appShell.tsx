@@ -30,6 +30,8 @@ export const getPageTitle = (view: string, dynamicTitle?: string): string => {
       return 'Calendar';
     case 'lateHour':
       return 'Late Hour';
+    case 'biometric':
+      return 'Biometric Log';
     case 'content':
       return dynamicTitle || 'Legacy View';
     default:

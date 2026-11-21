@@ -12,6 +12,7 @@ export type ViewType =
   | 'digitalAssignments'
   | 'examSchedule'
   | 'lateHour'
+  | 'biometric'
   | 'content';
 
 export interface QuickLink {
@@ -482,4 +483,12 @@ export interface LateHourStatusEntry {
   toDate: string;
   time: string;
   status: string;
+}
+
+/** One biometric punch row from the VIT-AP `getStudBioHistory` fragment. */
+export interface BiometricPunch {
+  slNo: string;
+  punchDate: string;
+  punchTime: string;
+  venue: string;
 }

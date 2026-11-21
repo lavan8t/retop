@@ -20,7 +20,8 @@ export type ParserModuleId =
   | 'lateHour'
   | 'events'
   | 'spotlight'
-  | 'resources';
+  | 'resources'
+  | 'biometric';
 
 export const PARSER_SCHEMA_VERSIONS: Record<ParserModuleId, number> = {
   attendance: 1,
@@ -39,6 +40,7 @@ export const PARSER_SCHEMA_VERSIONS: Record<ParserModuleId, number> = {
   events: 1,
   spotlight: 1,
   resources: 1,
+  biometric: 1,
 };
 
 export interface SchemaMetadata {

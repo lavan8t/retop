@@ -1,0 +1,27 @@
+/* Material Web 2.5.0 reads the --md-sys-* token family, not --mat-*.
+   Verified in node_modules: --md-sys-color-*, --md-sys-typescale-*,
+   --md-sys-shape-*, --md-sys-elevation-* and --md-sys-motion-* are the
+   prefixes used by its shadow-root styles.
+
+   Colors need no redefinition here: applyTheme() writes the full
+   --md-sys-color-* set onto #retop-root and documentElement, and tokens.css
+   derives every repo role (--accent-base, --bg-*, --text-*, --border-*) from
+   those same colors. Aliasing --md-sys-color-* back to those roles would be
+   dead (the inline values win) and would create a var() cycle, so color stays
+   single-sourced. Shape is left at Material Web's M3 defaults because the app
+   has no radius token. This file aligns the type scale to the app's sizes.
+
+   There is no datepicker in v2.5.0: wrap a native <input type="date"> in an
+   md-filled-text-field/md-outlined-text-field so it inherits these tokens. */
+
+:host,
+#retop-root {
+  --md-sys-typescale-body-large-font-size: var(--font-size-body);
+  --md-sys-typescale-body-medium-font-size: var(--font-size-body);
+  --md-sys-typescale-body-small-font-size: var(--font-size-caption);
+  --md-sys-typescale-label-large-font-size: var(--font-size-body);
+  --md-sys-typescale-label-medium-font-size: var(--font-size-caption);
+  --md-sys-typescale-label-small-font-size: var(--font-size-badge);
+  --md-sys-typescale-title-medium-font-size: var(--font-size-title);
+  --md-sys-typescale-title-small-font-size: var(--font-size-card-title);
+}

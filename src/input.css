@@ -2,6 +2,7 @@
 @import './styles/fonts.css';
 @import './styles/tokens.css';
 @import './styles/m3e-tokens.css';
+@import './styles/material-web-tokens.css';
 
 @theme {
   --font-sans: 'Google Sans Flex', system-ui, sans-serif;

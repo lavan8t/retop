@@ -6,6 +6,8 @@ import {
 } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 import { SpotlightCategoryGroup, SpotlightLinkItem } from '../../types/vtop';
 import { Card } from '../ui/Card';
+import { currentCampus } from '../../utils/campus';
+import { getVtopBaseUrl } from '../../utils/vtopClient';
 
 interface SpotlightSectionProps {
   spotlightCategories: SpotlightCategoryGroup[];
@@ -31,16 +33,22 @@ export const SpotlightSection: React.FC<SpotlightSectionProps> = ({
     return null;
   }
 
+  // AP links only resolve on the AP origin; other campuses keep the Vellore base.
+  const base =
+    currentCampus() === 'vitap'
+      ? getVtopBaseUrl('vitap')
+      : 'https://vtop.vit.ac.in';
+
   const handleLinkClick = (item: SpotlightLinkItem) => {
     if (item.downloadId) {
       const downloadUrl = item.downloadId.startsWith('http')
         ? item.downloadId
-        : `https://vtop.vit.ac.in/vtop/${item.downloadId}`;
+        : `${base}/vtop/${item.downloadId}`;
       window.open(downloadUrl, '_blank');
     } else if (item.url) {
       const targetUrl = item.url.startsWith('http')
         ? item.url
-        : `https://vtop.vit.ac.in/vtop/${item.url}`;
+        : `${base}/vtop/${item.url}`;
       window.open(targetUrl, '_blank');
     }
   };

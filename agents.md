@@ -9,7 +9,7 @@
 retop is a browser extension for Chrome and Firefox that replaces VIT University's legacy VTOP portal with a fast Material 3 interface. It intercepts network requests, parses raw HTML responses into typed data, and renders the UI inside an isolated Shadow DOM.
 
 ### What retop is
-- A Manifest V3 browser extension running on `vtop.vit.ac.in` and `vtopcc.vit.ac.in`.
+- A Manifest V3 browser extension running on three VTOP hosts: `vtop.vit.ac.in` (Vellore), `vtopcc.vit.ac.in` (Chennai) and `vtop.vitap.ac.in` (VIT-AP).
 - A React application mounted inside an isolated Shadow DOM (`#retop-host`).
 - A cache-first client where views hydrate immediately from IndexedDB or chrome storage.
 - A companion PWA (`getretop.web.app`) for offline access.
@@ -102,6 +102,7 @@ VTOP server -> fetch/XHR interceptor -> raw HTML string
 | Role mirrored to localStorage | The bootstrapper must pick a surface inside the first task. IndexedDB cannot answer in time; localStorage can. `roleStore.ts` keeps both in sync. |
 | Redirect-following on live VTOP | Same-origin fetches carry JSESSIONID themselves, and `redirect: "manual"` resolves to an opaque redirect (status 0, no Location). `vtopBridge.ts` forces `follow` + `credentials: "include"` on `*.vit.ac.in` only. |
 | One login implementation | `VtopLoginCard` + `VtopClient` + `captchaSolver` serve live login, the offline PWA, and standalone. No DOM-surgery duplicate. |
+| Host-derived campus | `utils/campus.ts` maps the three VTOP hosts to `vellore`/`chennai`/`vitap`; the value drives base URL, labels and ASCII art, with no campus selector on live pages. |
 | Shadow DOM isolation | Prevents host VTOP CSS from colliding with retop styles. |
 | Network interception | Operates without a backend proxy and respects native CSRF tokens. |
 | Zustand for state | Minimal boilerplate compared to Redux, fits extension lifecycle. |

@@ -440,7 +440,15 @@ export function scrapeUserProfile(doc: Document) {
       window.location.hostname.includes('vtopcc')) ||
     doc.title.toLowerCase().includes('chennai') ||
     doc.documentElement.innerHTML.includes('vtopcc');
-  const campus: 'Chennai' | 'Vellore' = isChennai ? 'Chennai' : 'Vellore';
+  const isAP =
+    (typeof window !== 'undefined' &&
+      window.location.hostname.includes('vtop.vitap.ac.in')) ||
+    doc.documentElement.innerHTML.includes('vtop.vitap.ac.in');
+  const campus: 'Chennai' | 'Vellore' | 'VIT-AP' = isAP
+    ? 'VIT-AP'
+    : isChennai
+      ? 'Chennai'
+      : 'Vellore';
 
   let rawImg: string | undefined = undefined;
 

@@ -3,6 +3,8 @@ import { StudentProfile } from '../../types/vtop';
 import { VitLogo } from '../VitLogo';
 import { Person } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 import { Barcode } from '../common/Barcode';
+import { campusLabel, currentCampus } from '../../utils/campus';
+import type { VtopCampus } from '../../utils/vtopClient';
 
 const toTitleCase = (str: string) => {
   if (!str) return '';
@@ -29,13 +31,13 @@ export const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
   const line1 = words[0] || '';
   const line2 = words.slice(1).join(' ') || '';
 
-  const isChennai =
-    (data as any).campus === 'chennai' ||
-    (typeof window !== 'undefined' &&
-      window.location.hostname.includes('vtopcc')) ||
-    (typeof window !== 'undefined' &&
-      (window as any)._retopCampus === 'chennai');
-  const campusName = isChennai ? 'CHENNAI' : 'VELLORE';
+  const rawCampus =
+    (data as any).campus ||
+    (typeof window !== 'undefined' && (window as any)._retopCampus) ||
+    currentCampus();
+  const campus: VtopCampus =
+    rawCampus === 'chennai' || rawCampus === 'vitap' ? rawCampus : 'vellore';
+  const campusName = campusLabel(campus);
 
   return (
     <div
@@ -153,7 +155,15 @@ export const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
           <div
             className={`font-bold ml-2 text-[11px] leading-snug ${fontArial}`}
           >
-            {isChennai ? (
+            {campus === 'vitap' ? (
+              <>
+                VIT-AP University,
+                <br />
+                Inavolu, Beside AP Secretariat,
+                <br />
+                Amaravati - 522 237, Andhra Pradesh, India.
+              </>
+            ) : campus === 'chennai' ? (
               <>
                 Vellore Institute of Technology,
                 <br />

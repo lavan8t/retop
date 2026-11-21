@@ -15,6 +15,7 @@ export const VALID_VIEWS: readonly ViewType[] = [
   'digitalAssignments',
   'examSchedule',
   'lateHour',
+  'biometric',
 ] as const;
 
 export const getDestinationView = (
@@ -144,7 +145,12 @@ export const getDestinationView = (
     return 'lateHour';
   }
 
-  // 13. Settings
+  // 13. Biometric Log (VIT-AP only)
+  if (lowerTitle.includes('biometric') || lowerUrl.includes('biometric')) {
+    return 'biometric';
+  }
+
+  // 14. Settings
   if (
     lowerTitle === 'settings' ||
     lowerUrl === '#settings' ||

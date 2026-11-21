@@ -122,6 +122,11 @@ export const RETOP_NATIVE_LINKS: QuickLink[] = [
     category: 'Made for retop',
   },
   {
+    title: 'Biometric Log',
+    url: 'academics/biometriclogdisplay',
+    category: 'Made for retop',
+  },
+  {
     title: 'Settings',
     url: '#settings',
     category: 'Made for retop',

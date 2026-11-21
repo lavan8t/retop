@@ -13,6 +13,7 @@ import { AttendancePage } from '../../pages/attendance';
 import DigitalAssignments from '../../pages/digital-assignments';
 import { ExamSchedulePage } from '../../pages/exam-schedule';
 import { LateHourPage } from '../../pages/late-hour';
+import { BiometricPage } from '../../pages/biometric';
 
 import { useAppStore } from '../../store/appStore';
 import { useDataStore } from '../../store/dataStore';
@@ -144,6 +145,9 @@ export const ContentRouter = ({
 
       case 'lateHour':
         return <LateHourPage network={networkRef.current} />;
+
+      case 'biometric':
+        return <BiometricPage network={networkRef.current} />;
 
       case 'content':
         return (

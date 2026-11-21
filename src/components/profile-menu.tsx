@@ -10,11 +10,13 @@ import {
   Warning,
   Download,
   Upload,
+  Fingerprint,
 } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 import { QuickLink } from '../types/vtop';
 import { fixBase64Image } from '../parsers/profile';
 import { showAlertDialog } from './ui/AlertDialog';
 import { isTypingEvent } from '../utils/keyboard';
+import { currentCampus } from '../utils/campus';
 
 import { entries as idbEntries, set as idbSet } from 'idb-keyval';
 
@@ -94,6 +96,17 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
       url: 'user/backupCodes',
       cat: 'Settings',
     },
+    ...(currentCampus() === 'vitap'
+      ? [
+          {
+            title: 'Biometric Log',
+            targetTitle: 'Biometric Log',
+            icon: Fingerprint,
+            url: 'academics/biometriclogdisplay',
+            cat: 'Academics',
+          },
+        ]
+      : []),
   ];
 
   const [focusedIndex, setFocusedIndex] = useState(0);

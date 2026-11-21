@@ -1596,4 +1596,12 @@ export class VTOPNetwork {
       forceRefresh,
     );
   }
+
+  // ── Biometric Log (VIT-AP only) ──────────────────────────────────────
+
+  /** Flat endpoint; fetchVtopApi supplies _csrf / authorizedID / x. */
+  async getBiometricHistory(date: string): Promise<string> {
+    if (currentCampus() !== 'vitap') return '';
+    return this.fetchVtopApi('getStudBioHistory', { fromDate: date });
+  }
 }

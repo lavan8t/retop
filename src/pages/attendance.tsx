@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useDataStore } from '../store/dataStore';
 import { VTOPNetwork } from '../utils/network';
 import { OfflineNotSynced } from '../components/ui/OfflineNotSynced';
-import { useCourseAttendanceForecast } from '../hooks/useCourseAttendanceForecast';
+import { SemesterDropdown } from '../components/ui/Dropdown';
 import {
   AttendanceEmpty,
   AttendanceError,
@@ -33,6 +33,8 @@ const useIsWide = (): boolean => {
 export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
   const {
     attSelectedSem,
+    setAttSelectedSem,
+    ttSemesters,
     detailedAttendance,
     attLoading,
     attendanceRecords,
@@ -57,9 +59,6 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
 
   const selectedCourseObj = detailedAttendance.find(
     (course) => courseKey(course) === selectedCourse,
-  );
-  const forecast = useCourseAttendanceForecast(
-    selectedCourseObj?.courseCode ?? '',
   );
 
   const load = useCallback(
@@ -170,9 +169,6 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
   const overview = (
     <Overview
       courses={detailedAttendance}
-      forecast={selectedCourseObj ? forecast : null}
-      total={selectedCourseObj?.total ?? 0}
-      attended={selectedCourseObj?.attended ?? 0}
       isNinePointer={isNinePointer}
       refreshing={refreshing}
       onRefresh={() => {
@@ -186,6 +182,13 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
 
   const listPane = (
     <div className="flex flex-col h-full min-h-0 pt-21 md:pt-25 pb-32 lg:pb-12 px-4 md:px-6">
+      <div className="flex justify-center pb-1">
+        <SemesterDropdown
+          semesters={ttSemesters}
+          selectedId={attSelectedSem}
+          onChange={setAttSelectedSem}
+        />
+      </div>
       {overview}
       <CourseList
         courses={detailedAttendance}

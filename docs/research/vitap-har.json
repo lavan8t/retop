@@ -1,0 +1,34 @@
+{
+  "captured": "2026-11-21T12:50-13:01Z",
+  "url": "https://vtop.vitap.ac.in/vtop/content?",
+  "note": "Network entries from the logged-in VIT-AP preview tab. Entries marked probe were issued by the agent while discovering endpoints; entries at 12:52 and user-driven navigations are real portal traffic. No request bodies, cookies, or tokens are stored.",
+  "entries": [
+    {"url":"/vtop/assets/js/menu.js","method":"GET","status":200,"t":"12:52:32"},
+    {"url":"/vtop/assets/js/Bootstrap3Compatible.js","method":"GET","status":200,"t":"12:52:32"},
+    {"url":"/vtop/academics/common/StudentTimeTable","method":"POST","status":200,"t":"12:52:40","kind":"portal"},
+    {"url":"/vtop/show/login/history","method":"GET","status":200,"t":"12:50","kind":"portal"},
+    {"url":"/vtop/home","method":"GET","status":200,"t":"12:50","kind":"portal"},
+    {"url":"/vtop/get/dashboard/current/semester/course/details","method":"POST","status":404,"t":"12:57:41","kind":"probe"},
+    {"url":"/vtop/academics/common/processViewTimeTable","method":"POST","status":404,"t":"12:57:44","kind":"probe"},
+    {"url":"/vtop/academics/common/processViewStudentAttendance","method":"POST","status":404,"t":"12:57:45","kind":"probe"},
+    {"url":"/vtop/academics/common/processViewStudentCourseDetail","method":"POST","status":404,"t":"12:57:47","kind":"probe"},
+    {"url":"/vtop/examinations/doStudentMarkView","method":"POST","status":200,"t":"12:57:49","kind":"probe"},
+    {"url":"/vtop/academics/common/CalendarPreview","method":"POST","status":200,"t":"12:57:50","kind":"probe"},
+    {"url":"/vtop/academics/common/Curriculum","method":"POST","status":200,"t":"12:57:51","kind":"probe"},
+    {"url":"/vtop/processViewTimeTable","method":"POST","status":200,"t":"13:00:52","kind":"probe"},
+    {"url":"/vtop/processViewStudentAttendance","method":"POST","status":200,"t":"13:01:06","kind":"probe"},
+    {"url":"/vtop/processViewStudentCourseDetail","method":"POST","status":404,"t":"13:01:06","kind":"probe"},
+    {"url":"/vtop/doStudentMarkView","method":"POST","status":404,"t":"13:01:07","kind":"probe"},
+    {"url":"/vtop/StudentCoursePage","method":"POST","status":404,"t":"13:01:20","kind":"probe"},
+    {"url":"/vtop/StudentMarkView","method":"POST","status":404,"t":"13:01:21","kind":"probe"},
+    {"url":"/vtop/academics/common/StudentCoursePage","method":"POST","status":200,"t":"13:01:37","kind":"probe"},
+    {"url":"/vtop/examinations/StudentMarkView","method":"POST","status":200,"t":"13:01:37","kind":"probe"},
+    {"url":"/vtop/examinations/doStudentMarkView","method":"POST","status":200,"t":"13:01:37","kind":"probe"},
+    {"url":"/vtop/academics/common/CalendarPreview","method":"POST","status":200,"t":"13:01:38","kind":"probe"},
+    {"url":"/vtop/get/dashboard/current/semester/course/details","method":"POST","status":404,"t":"13:01:38","kind":"probe"}
+  ],
+  "console": [
+    {"level":"warning","text":"moz-chunked-arraybuffer not valid XMLHttpRequestResponseType (VTOP pdf.js)"},
+    {"level":"error","text":"404 responses from the probe URLs above"}
+  ]
+}

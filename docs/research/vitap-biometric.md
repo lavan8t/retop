@@ -47,3 +47,27 @@ VIT-AP only. On other campuses the page shows an "Only available on VIT-AP"
 empty state and the network method short-circuits. Unverified: live behaviour
 after a VTOP DOM change to the punch table (schema version is registered so a
 stale cache can be invalidated later).
+
+## Past-history caching and timeline UX (2026-11-21)
+
+The endpoint accepts **one** `fromDate` per request (range params 404), so bulk
+history is sequential single-day fetches. `network`'s existing rate limiter
+(0.5s cooldown, 60 req/min) already paces them; no extra per-day delay was
+added. "Load past 30 days" walks yesterday backwards, updates a
+`Fetched N of M days` progress bar, and is cancellable.
+
+Cache rules (`src/utils/biometricCache.ts`):
+
+- Keys are `retop_biometric_<authId>_<yyyy-mm-dd>` via `storageAdapter`.
+- Only dates **strictly before today** are written or read. Today is never
+  cached because its punches grow during the day.
+- Single-day search of a past date is cache-first: a "Cached" label marks those
+  days and a per-day refresh control forces a fresh fetch.
+- Cached payload is only `BiometricPunch[]` (slNo, date, time, venue) — no
+  credentials, cookies or CSRF tokens.
+
+Presentation: punches are sorted by date/time, grouped by punch date (most
+recent day first, chronological within a day), each day gets an
+`In / Out / count` summary, and rows render as a compact vertical time rail
+rather than a table-like list. Tests cover the cache rules and the pure
+grouping/summary helpers.

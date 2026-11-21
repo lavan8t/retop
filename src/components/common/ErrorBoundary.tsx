@@ -54,7 +54,8 @@ export class ErrorBoundary extends Component<
         window.location.hostname.includes('web.app') ||
         window.location.hostname.includes('localhost') ||
         window.location.hostname === '127.0.0.1' ||
-        !window.location.hostname.includes('vit.ac.in'));
+        (!window.location.hostname.includes('vit.ac.in') &&
+          !window.location.hostname.includes('vitap.ac.in')));
 
     if (
       this.props.variant === 'fullscreen' &&
@@ -121,7 +122,8 @@ export class ErrorBoundary extends Component<
         window.location.hostname.includes('web.app') ||
         window.location.hostname.includes('localhost') ||
         window.location.hostname === '127.0.0.1' ||
-        !window.location.hostname.includes('vit.ac.in'));
+        (!window.location.hostname.includes('vit.ac.in') &&
+          !window.location.hostname.includes('vitap.ac.in')));
 
     if (variant === 'fullscreen' && !isStandalone && !isLoginTakeover()) {
       return null;

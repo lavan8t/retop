@@ -46,3 +46,5 @@ This document outlines the core architectural boundaries, extension lifecycles, 
    Storage flows through `chrome.storage.local` → `IndexedDB` → `localStorage`. Scoped keys use registration numbers to ensure complete data isolation between different user accounts.
 6. **Zero External Backend:**
    retop runs entirely client-side in the browser. It never transmits passwords, credentials, or student academic data to any third-party server.
+7. **Three Campuses, One Host-Derived Value:**
+   `vtop.vit.ac.in` = Vellore, `vtopcc.vit.ac.in` = Chennai, `vtop.vitap.ac.in` = VIT-AP. `utils/campus.ts` derives the campus from the hostname (no campus selector on live pages); `getVtopBaseUrl` resolves the matching origin, `campusLabel` the UI label, and the ASCII panel picks `TT/SMV/MGR`, `CC` or `AP` respectively. Offline and standalone surfaces fall back to the stored campus.

@@ -9,6 +9,7 @@ import { getStorageData, setStorageData } from './utils/storageAdapter';
 import { CachedUser } from './utils/syncOrchestrator';
 import { VtopClient, VtopCampus } from './utils/vtopClient';
 import { createSessionFacts } from './utils/sessionFacts';
+import { currentCampus } from './utils/campus';
 import { get as idbGet } from 'idb-keyval';
 
 // Mark global standalone flag
@@ -26,7 +27,7 @@ const GSF: React.CSSProperties = {
 const StandaloneRoot: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [campus, setCampus] = useState<VtopCampus>('vellore');
+  const [campus, setCampus] = useState<VtopCampus>(currentCampus());
 
   useEffect(() => {
     // 1. Load theme from settings

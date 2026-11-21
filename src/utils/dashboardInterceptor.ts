@@ -25,6 +25,7 @@ export function waitForIntercepted(
     (typeof navigator !== 'undefined' && !navigator.onLine) ||
     (typeof location !== 'undefined' &&
       !location.hostname.includes('vit.ac.in') &&
+      !location.hostname.includes('vitap.ac.in') &&
       !location.protocol.includes('chrome-extension') &&
       !location.protocol.includes('moz-extension'));
 

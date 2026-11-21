@@ -18,6 +18,8 @@ import {
   cleanHostelField,
   parseHostelDetailsString,
 } from '../utils/hostelFormat';
+import { campusFromHost } from '../utils/campus';
+import { getVtopBaseUrl } from '../utils/vtopClient';
 
 export const PROFILE_SCHEMA_VERSION = 1;
 
@@ -235,12 +237,14 @@ export function normalizeVtopImageUrl(url: string): string {
   const cleanPath = url.replace(/^\/?(vtop\/)?/, '');
   const origin =
     typeof window !== 'undefined' &&
-    window.location.origin.includes('vit.ac.in')
+    (window.location.origin.includes('vit.ac.in') ||
+      window.location.origin.includes('vitap.ac.in'))
       ? window.location.origin
-      : typeof window !== 'undefined' &&
-          window.location.hostname.includes('vtopcc')
-        ? 'https://vtopcc.vit.ac.in'
-        : 'https://vtop.vit.ac.in';
+      : getVtopBaseUrl(
+          typeof window !== 'undefined'
+            ? campusFromHost(window.location.hostname)
+            : 'vellore',
+        );
   return `${origin}/vtop/${cleanPath}`;
 }
 

@@ -23,6 +23,7 @@ import { getExtUrl } from '../utils/url';
 import { installErrorNet } from '../utils/teardown';
 import { setStorageData } from '../utils/storageAdapter';
 import { getVtopBaseUrl } from '../utils/vtopClient';
+import { campusLabel, currentCampus } from '../utils/campus';
 import type { CachedUser } from '../utils/syncOrchestrator';
 import type { VtopClient } from '../utils/vtopClient';
 
@@ -30,13 +31,13 @@ const GSF: React.CSSProperties = {
   fontFamily: "'Google Sans Flex', system-ui, sans-serif",
 };
 
-const isChennaiHost = () => window.location.hostname.includes('vtopcc');
 /** Page-level marker that turns retop off. Read by the document_start bootstrap. */
 const DISABLED_KEY = 'retop_disabled';
 /** sessionStorage markers read by src/content.ts on the next load. */
 const BYPASS_KEY = 'retop-login-bypass';
 const FORGOT_KEY = 'retop-forgot-intent';
-// Campus locked by host: vtopcc = Chennai, vtop.vit.ac.in = Vellore. No switching.
+// Campus locked by host: vtopcc = Chennai, vtop.vitap.ac.in = VIT-AP,
+// vtop.vit.ac.in = Vellore. No switching.
 
 /**
  * VTOP's reCAPTCHA cannot be solved for the user, so hand the whole login page
@@ -175,7 +176,7 @@ const SpotLightStrip: React.FC = () => {
   const [items, setItems] = useState<{ text: string; href: string }[]>([]);
   useEffect(() => {
     let cancelled = false;
-    const base = getVtopBaseUrl(isChennaiHost() ? 'chennai' : 'vellore');
+    const base = getVtopBaseUrl(currentCampus());
 
     // /vtop/get/spotlight 302s to the login page without a session, but
     // /vtop/open/page always renders the same announcements. Load that page
@@ -320,10 +321,7 @@ const LoginTakeover: React.FC = () => {
           full-width bottom-right on desktop. */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden flex items-end justify-center lg:justify-end">
         <div className="w-[80vw] lg:w-full flex justify-center">
-          <AsciiPanel
-            campus={isChennaiHost() ? 'chennai' : 'vellore'}
-            scale={1.3}
-          />
+          <AsciiPanel campus={currentCampus()} scale={1.3} />
         </div>
       </div>
 
@@ -331,7 +329,7 @@ const LoginTakeover: React.FC = () => {
       <div className="relative z-10 w-full lg:w-1/2 flex flex-col justify-center items-start px-4 pt-24 pb-16 sm:px-8 lg:px-16 min-h-screen">
         <div className="w-full max-w-md">
           <VtopLoginCard
-            initialCampus={isChennaiHost() ? 'chennai' : 'vellore'}
+            initialCampus={currentCampus()}
             title={
               <span className="flex flex-col items-center gap-3">
                 <img
@@ -352,7 +350,7 @@ const LoginTakeover: React.FC = () => {
                     textAlign: 'center',
                   }}
                 >
-                  {isChennaiHost() ? 'CHENNAI CAMPUS' : 'VELLORE CAMPUS'}
+                  {campusLabel(currentCampus())} CAMPUS
                 </span>
               </span>
             }

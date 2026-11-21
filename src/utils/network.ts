@@ -47,6 +47,7 @@ import {
   isNativeAndroidBridgeAvailable,
 } from './vtopBridge';
 import { getVtopBaseUrl, VtopCampus } from './vtopClient';
+import { currentCampus } from './campus';
 import {
   createSessionFacts,
   extractCsrfFromHtml,
@@ -291,6 +292,7 @@ export class VTOPNetwork {
       ((typeof window !== 'undefined' && (window as any).__RETOP_OFFLINE__) ||
         (typeof location !== 'undefined' &&
           !location.hostname.includes('vit.ac.in') &&
+          !location.hostname.includes('vitap.ac.in') &&
           !location.protocol.includes('chrome-extension') &&
           !location.protocol.includes('moz-extension')));
 
@@ -409,6 +411,7 @@ export class VTOPNetwork {
       ((typeof window !== 'undefined' && (window as any).__RETOP_OFFLINE__) ||
         (typeof location !== 'undefined' &&
           !location.hostname.includes('vit.ac.in') &&
+          !location.hostname.includes('vitap.ac.in') &&
           !location.protocol.includes('chrome-extension') &&
           !location.protocol.includes('moz-extension')));
 
@@ -594,6 +597,7 @@ export class VTOPNetwork {
           (typeof navigator !== 'undefined' && !navigator.onLine) ||
           (typeof location !== 'undefined' &&
             !location.hostname.includes('vit.ac.in') &&
+            !location.hostname.includes('vitap.ac.in') &&
             !location.protocol.includes('chrome-extension') &&
             !location.protocol.includes('moz-extension')));
 
@@ -638,6 +642,7 @@ export class VTOPNetwork {
         (typeof navigator !== 'undefined' && !navigator.onLine) ||
         (typeof location !== 'undefined' &&
           !location.hostname.includes('vit.ac.in') &&
+          !location.hostname.includes('vitap.ac.in') &&
           !location.protocol.includes('chrome-extension') &&
           !location.protocol.includes('moz-extension')));
 
@@ -1283,9 +1288,10 @@ export class VTOPNetwork {
   async uploadDA(action: string, formData: FormData): Promise<boolean> {
     const origin =
       typeof window !== 'undefined' &&
-      window.location.origin.includes('vit.ac.in')
+      (window.location.origin.includes('vit.ac.in') ||
+        window.location.origin.includes('vitap.ac.in'))
         ? window.location.origin
-        : 'https://vtop.vit.ac.in';
+        : getVtopBaseUrl(currentCampus());
     const path = action.startsWith('http')
       ? action
       : action.startsWith('/')
@@ -1333,9 +1339,10 @@ export class VTOPNetwork {
   ) {
     const origin =
       typeof window !== 'undefined' &&
-      window.location.origin.includes('vit.ac.in')
+      (window.location.origin.includes('vit.ac.in') ||
+        window.location.origin.includes('vitap.ac.in'))
         ? window.location.origin
-        : 'https://vtop.vit.ac.in';
+        : getVtopBaseUrl(currentCampus());
     const url = `${origin}/vtop/${endpoint}`;
     const body = new URLSearchParams();
 

@@ -39,6 +39,8 @@ import { fixBase64Image } from '../../parsers/profile';
 import { UserProfileData } from '../../store/slices/profileSlice';
 import { isTypingEvent } from '../../utils/keyboard';
 import { selectableRowProps } from '../ui/SelectableRow';
+import { currentCampus } from '../../utils/campus';
+import { getVtopBaseUrl } from '../../utils/vtopClient';
 
 interface TopBarProps {
   currentView: string;
@@ -1097,11 +1099,8 @@ export const TopBar: React.FC<TopBarProps> = ({
                   typeof window !== 'undefined' &&
                   (window as any).__RETOP_OFFLINE__
                 ) {
-                  const isChennai = window.location.hostname.includes('vtopcc');
                   window.open(
-                    isChennai
-                      ? 'https://vtopcc.vit.ac.in/vtop/open/page'
-                      : 'https://vtop.vit.ac.in/vtop/open/page',
+                    `${getVtopBaseUrl(currentCampus())}/vtop/open/page`,
                     '_blank',
                   );
                 }
@@ -1165,6 +1164,20 @@ export const TopBar: React.FC<TopBarProps> = ({
                 'chennai')) && (
             <div className="flex items-center pointer-events-auto mr-1 md:mr-2">
               <OfficialResourcesMenu />
+            </div>
+          )}
+
+          {currentCampus() === 'vitap' && (
+            <div className="flex items-center pointer-events-auto mr-1 md:mr-2">
+              <a
+                href={`${getVtopBaseUrl('vitap')}/vtop/open/page`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Open VIT-AP VTOP"
+                className="text-xs font-bold text-(--accent-base) hover:underline underline-offset-4 transition-colors"
+              >
+                VTOP
+              </a>
             </div>
           )}
 

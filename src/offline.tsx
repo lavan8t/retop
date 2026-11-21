@@ -29,6 +29,8 @@ import { VitEmblemLoader } from './components/common/VitEmblemLoader';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { fixBase64Image } from './parsers/profile';
 import { createSessionFacts } from './utils/sessionFacts';
+import { campusLabel, currentCampus } from './utils/campus';
+import { getVtopBaseUrl, VtopCampus } from './utils/vtopClient';
 import { set as idbSet, get as idbGet } from 'idb-keyval';
 import {
   AlertDialogManager,
@@ -58,7 +60,7 @@ export interface CachedUser {
   name: string;
   profileImgBase64?: string;
   lastActive: number;
-  campus?: 'vellore' | 'chennai';
+  campus?: VtopCampus;
 }
 
 /* ── Account Switcher Dropdown (retop custom dropdown style) ─────────────── */
@@ -409,6 +411,9 @@ const OfflineApp = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const campus: VtopCampus = (activeUser as any)?.campus || currentCampus();
+  const vtopLoginUrl = `${getVtopBaseUrl(campus)}/vtop/open/page`;
+
   const handleResetCacheAndRedirect = async () => {
     try {
       // chrome.storage.local feeds the web bridge, so clearing only IDB/localStorage
@@ -417,7 +422,7 @@ const OfflineApp = () => {
       localStorage.clear();
       sessionStorage.clear();
     } catch {}
-    window.location.href = 'https://vtop.vit.ac.in/vtop/open/page';
+    window.location.href = vtopLoginUrl;
   };
 
   useEffect(() => {
@@ -435,11 +440,7 @@ const OfflineApp = () => {
     let pageName = 'Offline Cache';
     if (step === 'PIN_LOCK') pageName = 'Login';
     else if (step === 'UNLOCKED') pageName = 'Home';
-    const isChennai =
-      (typeof window !== 'undefined' &&
-        window.location.hostname.includes('vtopcc')) ||
-      (activeUser as any)?.campus === 'chennai';
-    const brand = isChennai ? 'retop Chennai' : 'retop';
+    const brand = campus === 'chennai' ? 'retop Chennai' : 'retop';
     document.title = `${pageName} - ${brand}`;
   }, [step, activeUser]);
 
@@ -866,7 +867,7 @@ const OfflineApp = () => {
                   profile here.
                 </p>
                 <a
-                  href="https://vtop.vit.ac.in/vtop/open/page"
+                  href={vtopLoginUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn btn-primary w-full inline-flex items-center justify-center cursor-pointer active:scale-98 transition-all no-underline"
@@ -899,11 +900,7 @@ const OfflineApp = () => {
                 onSelect={selectUser}
                 onImport={() => fileInputRef.current?.click()}
                 onAddAccount={() =>
-                  window.open(
-                    'https://vtop.vit.ac.in/vtop/open/page',
-                    '_blank',
-                    'noopener',
-                  )
+                  window.open(vtopLoginUrl, '_blank', 'noopener')
                 }
               />
 
@@ -936,11 +933,7 @@ const OfflineApp = () => {
                     <div className="flex items-center justify-center gap-3 text-xs pt-1">
                       <button
                         onClick={() =>
-                          window.open(
-                            'https://vtop.vit.ac.in/vtop/open/page',
-                            '_blank',
-                            'noopener',
-                          )
+                          window.open(vtopLoginUrl, '_blank', 'noopener')
                         }
                         className="px-4 py-2 rounded-full bg-transparent hover:bg-(--bg-surface) border border-transparent hover:border-(--border-dim)/50 text-(--accent-base) font-semibold text-xs transition-all cursor-pointer"
                         style={GSF}
@@ -1029,9 +1022,7 @@ const OfflineApp = () => {
             className="text-(--text-muted) text-sm sm:text-base tracking-[0.15em] mt-2 uppercase font-bold"
             style={{ fontFamily: "'Times New Roman', Times, serif" }}
           >
-            {activeUser?.campus === 'chennai'
-              ? 'CHENNAI CAMPUS'
-              : 'VELLORE CAMPUS'}
+            {campusLabel(campus)} CAMPUS
           </div>
         </div>
       </div>
@@ -1053,7 +1044,7 @@ const OfflineApp = () => {
           zIndex: 1,
         }}
       >
-        <AsciiPanel campus={activeUser?.campus} />
+        <AsciiPanel campus={campus} />
       </div>
 
       {/* Forgot PIN Confirmation Modal */}

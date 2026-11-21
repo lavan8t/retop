@@ -31,6 +31,7 @@ import {
   SpotlightCategoryGroup,
 } from '../types/vtop';
 import { getDestinationView, getSavedView } from '../utils/routes';
+import { currentCampus } from '../utils/campus';
 
 import { TopBar } from '../components/layout/TopBar';
 import { ContentRouter } from '../components/layout/ContentRouter';
@@ -250,7 +251,8 @@ export const DashboardApp = () => {
       window.location.hostname.includes('web.app') ||
       window.location.hostname.includes('localhost') ||
       window.location.hostname === '127.0.0.1' ||
-      !window.location.hostname.includes('vit.ac.in'));
+      (!window.location.hostname.includes('vit.ac.in') &&
+        !window.location.hostname.includes('vitap.ac.in')));
 
   useEffect(() => {
     if (isStandalone) {
@@ -585,10 +587,7 @@ export const DashboardApp = () => {
     authIdRef.current = authId;
     networkRef.current = new VTOPNetwork(csrf, authId);
 
-    const isChennai =
-      window.location.hostname.includes('vtopcc') ||
-      localStorage.getItem('retop_campus') === 'chennai';
-    const campus: 'chennai' | 'vellore' = isChennai ? 'chennai' : 'vellore';
+    const campus = currentCampus();
 
     if (isOffline || isStandalone) {
       getUserProfileImage(authId)
@@ -961,11 +960,8 @@ export const DashboardApp = () => {
   useEffect(() => {
     const pageName = getPageTitle(currentView, contentTitle) || 'Home';
 
-    const isChennai =
-      (typeof window !== 'undefined' &&
-        window.location.hostname.includes('vtopcc')) ||
-      (user as any)?.campus === 'chennai';
-    const brand = isChennai ? 'retop Chennai' : 'retop';
+    const campus = (user as any)?.campus || currentCampus();
+    const brand = campus === 'chennai' ? 'retop Chennai' : 'retop';
     document.title = `${pageName} - ${brand}`;
   }, [currentView, contentTitle, user]);
 

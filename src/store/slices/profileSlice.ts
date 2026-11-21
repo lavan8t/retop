@@ -1,4 +1,6 @@
 import { StateCreator } from 'zustand';
+import { currentCampus } from '../../utils/campus';
+import type { VtopCampus } from '../../utils/vtopClient';
 import { VTOPNetwork } from '../../utils/network';
 import { getCachedData, setCachedData } from '../../utils/cache';
 import { parseStudentProfile, urlToBase64 } from '../../parsers/profile';
@@ -13,7 +15,7 @@ export interface UserProfileData {
   name: string;
   regNo: string;
   profileImgBase64?: string;
-  campus?: 'chennai' | 'vellore';
+  campus?: VtopCampus;
 }
 
 export interface ProfileSlice {
@@ -64,10 +66,7 @@ export const createProfileSlice: StateCreator<
         typeof html === 'string' ? parseStudentProfile(html) : html;
       if (profile?.basic?.name) {
         const regNo = profile.basic.regNo || currentAuthId || get().user.regNo;
-        const isChennai =
-          typeof window !== 'undefined' &&
-          window.location.hostname.includes('vtopcc');
-        const campus: 'chennai' | 'vellore' = isChennai ? 'chennai' : 'vellore';
+        const campus = currentCampus();
 
         // 1. Prioritize freshly scraped photo from profile page, then active user state if regNo matches
         let profileImgBase64: string | undefined = profile.basic.photoUrl;

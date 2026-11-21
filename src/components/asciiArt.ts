@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { getExtUrl } from '../utils/url';
+import { campusFromHost, isVtopHost } from '../utils/campus';
 import type { VtopCampus } from '../utils/vtopClient';
 
-export type AsciiArtType = 'TT' | 'SMV' | 'MGR' | 'CC';
+export type AsciiArtType = 'TT' | 'SMV' | 'MGR' | 'CC' | 'AP';
 
 export interface AsciiLayoutConfig {
   charW: number;
@@ -15,6 +16,7 @@ export interface AsciiLayoutConfig {
 export const getAsciiConfig = (type: AsciiArtType): AsciiLayoutConfig => {
   switch (type) {
     case 'CC':
+    case 'AP':
       return {
         charW: 2.5,
         charH: 4,
@@ -50,15 +52,29 @@ export const getAsciiConfig = (type: AsciiArtType): AsciiLayoutConfig => {
   }
 };
 
-export const pickAsciiType = (campus?: VtopCampus): AsciiArtType => {
-  const isChennai =
-    campus === 'chennai' ||
-    (typeof window !== 'undefined' &&
-      window.location.hostname.includes('vtopcc')) ||
-    (typeof localStorage !== 'undefined' &&
-      localStorage.getItem('retop_last_campus') === 'chennai');
+export const asciiTypesForCampus = (campus?: VtopCampus): AsciiArtType[] => {
+  if (campus === 'chennai') return ['CC'];
+  if (campus === 'vitap') return ['AP'];
+  return ['TT', 'SMV', 'MGR'];
+};
 
-  const artTypes: AsciiArtType[] = isChennai ? ['CC'] : ['TT', 'SMV', 'MGR'];
+export const pickAsciiType = (campus?: VtopCampus): AsciiArtType => {
+  const hostname =
+    typeof window !== 'undefined' ? window.location.hostname : '';
+  const derived = isVtopHost(hostname) ? campusFromHost(hostname) : undefined;
+  const stored =
+    typeof localStorage !== 'undefined'
+      ? localStorage.getItem('retop_last_campus') ||
+        localStorage.getItem('retop_campus')
+      : undefined;
+  const effective: VtopCampus | undefined =
+    campus ||
+    derived ||
+    (stored === 'chennai' || stored === 'vitap'
+      ? (stored as VtopCampus)
+      : undefined);
+
+  const artTypes = asciiTypesForCampus(effective);
   const lastArt =
     typeof localStorage !== 'undefined'
       ? localStorage.getItem('retop_last_ascii_art') || ''

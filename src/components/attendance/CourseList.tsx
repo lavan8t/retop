@@ -93,25 +93,25 @@ export const CourseList = ({
                 slot="supporting-text"
                 className="flex items-center gap-1.5 text-xs"
               >
-                <span className="font-bold">{course.courseCode}</span>
+                <span className="font-medium">{course.courseCode}</span>
                 <span aria-hidden="true">·</span>
                 <span>{course.classType}</span>
                 {course.debarStatus !== '-' && (
-                  <span className="text-(--att-danger) font-bold">
+                  <span className="text-(--att-danger) font-medium">
                     Debarred
                   </span>
                 )}
               </span>
-              <span className="font-expanded font-black text-base leading-tight wrap-break-word">
+              <span className="font-semibold text-sm leading-snug">
                 {course.courseTitle}
               </span>
               <div slot="trailing" className="shrink-0 text-right pl-2">
                 <span
-                  className={`block font-expanded font-black text-xl leading-none tabular-nums ${TONE_TEXT[tone]}`}
+                  className={`block font-bold text-lg leading-none tabular-nums ${TONE_TEXT[tone]}`}
                 >
                   {displayPercentage(course.percentage, course.total)}
                 </span>
-                <span className="block text-[10px] font-bold uppercase text-(--text-muted) mt-0.5">
+                <span className="block text-[10px] font-semibold uppercase text-(--text-muted) mt-0.5">
                   {TONE_LABEL[tone]}
                 </span>
               </div>

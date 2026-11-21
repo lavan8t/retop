@@ -220,7 +220,7 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
       {isWide ? (
         <M3eSplitPane
           className="h-full w-full"
-          value={36}
+          value={28}
           min={26}
           max={55}
           label="Resize course list and detail"

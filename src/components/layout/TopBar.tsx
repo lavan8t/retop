@@ -5,6 +5,7 @@ import {
   CalendarMonth,
   Refresh,
   MoreVert,
+  Person,
 } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 import { QuickLink } from '../../types/vtop';
 import { MaterialSwitch } from '../MaterialSwitch';
@@ -23,6 +24,12 @@ interface TopBarProps {
   pinnedLinks: QuickLink[];
   onTimetableSemChange?: (semId: string) => void;
   network?: any;
+  onProfileClick?: () => void;
+  showProfileMenu?: boolean;
+  onSync?: () => void;
+  semesters?: import('../../types/vtop').Semester[];
+  selectedSem?: string;
+  onSemesterChange?: (id: string) => void;
 }
 
 /**
@@ -37,6 +44,12 @@ export const TopBar: React.FC<TopBarProps> = ({
   pinnedLinks,
   onTimetableSemChange,
   network,
+  onProfileClick,
+  showProfileMenu,
+  onSync,
+  semesters = [],
+  selectedSem,
+  onSemesterChange,
 }) => {
   const [isMobileControlsOpen, setIsMobileControlsOpen] = React.useState(false);
 
@@ -143,6 +156,36 @@ export const TopBar: React.FC<TopBarProps> = ({
       </h1>
 
       <div className="flex items-center gap-2 md:gap-4 shrink-0">
+        {/* Global controls pinned top-right */}
+        <div className="flex items-center gap-1.5">
+          {semesters.length > 0 && (
+            <SemesterDropdown
+              semesters={semesters}
+              selectedId={selectedSem}
+              onChange={(id: string) => onSemesterChange?.(id)}
+            />
+          )}
+          <button
+            type="button"
+            aria-label={isSyncing ? 'Syncing' : 'Sync now'}
+            aria-busy={isSyncing}
+            disabled={isSyncing}
+            onClick={onSync}
+            className="min-h-11 min-w-11 flex items-center justify-center rounded-xl text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-highlight) focus-visible:ring-2 focus-visible:ring-(--accent-base) outline-none cursor-pointer disabled:opacity-60"
+          >
+            <Refresh className="w-5 h-5" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            aria-label="Toggle profile menu"
+            aria-expanded={showProfileMenu}
+            onClick={onProfileClick}
+            className="min-h-11 min-w-11 flex items-center justify-center rounded-xl text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-highlight) focus-visible:ring-2 focus-visible:ring-(--accent-base) outline-none cursor-pointer"
+          >
+            <Person className="w-5 h-5" aria-hidden="true" />
+          </button>
+        </div>
+
         {/* Desktop inline page controls (hidden on mobile) */}
         <div className="hidden sm:flex items-center gap-2 md:gap-4 h-full pointer-events-auto">
           {currentView === 'timetable' && (

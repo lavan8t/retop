@@ -1106,20 +1106,11 @@ export const DashboardApp = () => {
             setOmniboxInitial('');
             setIsOmniboxOpen(true);
           }}
-          onSync={() => {
-            handleSyncCurrentView().catch(console.warn);
-          }}
-          isSyncing={isSyncing}
-          showProfileMenu={showProfileMenu}
-          onProfileClick={() => setShowProfileMenu((v) => !v)}
           onVtop={() => {
             if (!isStandalone && !(window as any).__RETOP_OFFLINE__) {
               setIsModernUI(false);
             }
           }}
-          semesters={ttSemesters}
-          selectedSem={ttSelectedSem}
-          onSemesterChange={handleTimetableSemChange}
         />
 
         <div className="flex flex-col flex-1 min-h-0 mb-20 md:mb-0 md:ml-[220px] pointer-events-auto overflow-hidden">
@@ -1131,6 +1122,14 @@ export const DashboardApp = () => {
             pinnedLinks={pinnedLinks}
             onTimetableSemChange={handleTimetableSemChange}
             network={networkRef.current}
+            onProfileClick={() => setShowProfileMenu((v) => !v)}
+            showProfileMenu={showProfileMenu}
+            onSync={() => {
+              handleSyncCurrentView().catch(console.warn);
+            }}
+            semesters={ttSemesters}
+            selectedSem={ttSelectedSem}
+            onSemesterChange={handleTimetableSemChange}
           />
           <main className="flex-1 overflow-hidden relative">
             <div

@@ -56,14 +56,14 @@ describe('M3E nav source contract', () => {
     expect(source).toContain('aria-label="Primary navigation"');
     expect(source).toContain('slot="icon"');
     expect(source).toContain('mode="expanded"');
-    expect(source).toContain('M3eNavRailToggle');
+    expect(source).not.toContain('M3eNavRailToggle');
   });
 
-  test('brand items sit above the search FAB and use M3 selected roles', () => {
+  test('one merged brand control sits above the search FAB', () => {
     const source = read('src/components/layout/AppNavRail.tsx');
-    expect(source).toMatch(/>\s*retop\s*</);
-    expect(source).toMatch(/>\s*VTOP\s*</);
-    expect(source.indexOf('rail-retop-')).toBeLessThan(
+    expect(source).toMatch(/brandHover\s*\?\s*'VTOP'\s*:\s*'retop'/);
+    expect(source).toContain('onMouseEnter');
+    expect(source.indexOf('Open native VTOP')).toBeLessThan(
       source.indexOf('size="small"'),
     );
     expect(source).toContain('var(--md-sys-color-secondary-container)');

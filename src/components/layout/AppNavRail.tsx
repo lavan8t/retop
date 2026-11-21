@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   M3eNavRail,
-  M3eNavRailToggle,
   M3eNavItem,
   M3eNavBar,
   M3eFab,
@@ -9,9 +8,8 @@ import {
   M3eIconButton,
   M3eTooltip,
 } from '../attendance/m3eTags';
-import { Semester, ViewType } from '../../types/vtop';
+import { ViewType } from '../../types/vtop';
 import { NAV_DESTINATIONS, getNavBarDestinations } from '../../utils/routes';
-import { SemesterDropdown } from '../ui/Dropdown';
 
 /**
  * Shared primary navigation. Wide: an expanded M3E nav rail with inline labels.
@@ -22,14 +20,7 @@ export interface AppNavRailProps {
   currentView: string;
   onNavigate: (view: ViewType) => void;
   onSearch: () => void;
-  onSync: () => void;
-  isSyncing: boolean;
-  showProfileMenu: boolean;
-  onProfileClick: () => void;
   onVtop: () => void;
-  semesters: Semester[];
-  selectedSem?: string;
-  onSemesterChange?: (id: string) => void;
 }
 
 /** M3E tokens bound to Material 3 color roles (see the nav-rail color roles). */
@@ -70,18 +61,9 @@ export const AppNavRail: React.FC<AppNavRailProps> = ({
   currentView,
   onNavigate,
   onSearch,
-  onSync,
-  isSyncing,
-  showProfileMenu,
-  onProfileClick,
   onVtop,
-  semesters,
-  selectedSem,
-  onSemesterChange,
 }) => {
-  const uid = React.useId().replace(/[^a-zA-Z0-9]/g, '');
-  const retopId = `rail-retop-${uid}`;
-  const vtopId = `rail-vtop-${uid}`;
+  const [brandHover, setBrandHover] = React.useState(false);
 
   return (
     <>
@@ -93,41 +75,28 @@ export const AppNavRail: React.FC<AppNavRailProps> = ({
         aria-label="Primary navigation"
         style={navColorTokens}
       >
-        {/* Toggle at top, matching the documented nav-rail anatomy. */}
-        <M3eIconButton
-          toggle
-          aria-label="Toggle navigation"
-          title="Toggle navigation"
-        >
-          <M3eIcon name="menu" />
-          <M3eIcon slot="selected" name="menu_open" />
-          <M3eNavRailToggle for="app-nav-rail" />
-        </M3eIconButton>
-
-        {/* Brand/context items above the search FAB. Labels are inline in the
-            expanded rail; tooltips keep them readable on hover. */}
+        {/* One brand control: shows retop, becomes VTOP on hover; tap opens VTOP. */}
         <button
-          id={retopId}
           type="button"
-          aria-label="retop home"
-          onClick={() => onNavigate('dashboard')}
-          className="min-h-12 w-full flex items-center gap-3 px-3 rounded-full text-(--md-sys-color-on-surface-variant) hover:bg-(--md-sys-color-surface-container-high) outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) cursor-pointer transition-colors"
-        >
-          <M3eIcon name="star" />
-          <span className="font-expanded font-black text-sm italic lowercase">
-            retop
-          </span>
-        </button>
-
-        <button
-          id={vtopId}
-          type="button"
-          aria-label="Open native VTOP"
+          aria-label={brandHover ? 'Open native VTOP' : 'retop'}
+          title={brandHover ? 'Open native VTOP' : 'retop'}
+          onMouseEnter={() => setBrandHover(true)}
+          onMouseLeave={() => setBrandHover(false)}
+          onFocus={() => setBrandHover(true)}
+          onBlur={() => setBrandHover(false)}
           onClick={onVtop}
           className="min-h-12 w-full flex items-center gap-3 px-3 rounded-full text-(--md-sys-color-on-surface-variant) hover:bg-(--md-sys-color-surface-container-high) outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) cursor-pointer transition-colors"
         >
-          <M3eIcon name="language" />
-          <span className="font-vtop font-bold text-sm">VTOP</span>
+          <M3eIcon name={brandHover ? 'language' : 'star'} />
+          <span
+            className={
+              brandHover
+                ? 'font-vtop font-bold text-sm'
+                : 'font-expanded font-black text-sm italic lowercase'
+            }
+          >
+            {brandHover ? 'VTOP' : 'retop'}
+          </span>
         </button>
 
         <M3eFab
@@ -149,44 +118,6 @@ export const AppNavRail: React.FC<AppNavRailProps> = ({
             onNavigate={onNavigate}
           />
         ))}
-
-        {/* Remaining actions stay at the bottom of the rail. */}
-        <div
-          className="flex flex-col items-center gap-1 w-full pt-3 mt-auto border-t border-(--border-dim)"
-          style={{ alignSelf: 'stretch' }}
-        >
-          <M3eIconButton
-            aria-label={isSyncing ? 'Syncing' : 'Sync now'}
-            title={isSyncing ? 'Syncing' : 'Sync now'}
-            aria-busy={isSyncing}
-            disabled={isSyncing}
-            onClick={onSync}
-          >
-            <M3eIcon name="sync" />
-          </M3eIconButton>
-
-          <M3eIconButton
-            id="rail-profile-btn"
-            data-profile-trigger="true"
-            aria-label="Toggle profile menu"
-            title="Profile"
-            aria-expanded={showProfileMenu}
-            onClick={onProfileClick}
-          >
-            <M3eIcon name="person" />
-          </M3eIconButton>
-
-          {semesters.length > 0 && (
-            <div className="w-full px-1 pt-1">
-              <SemesterDropdown
-                semesters={semesters}
-                selectedId={selectedSem}
-                onChange={onSemesterChange}
-                align="right"
-              />
-            </div>
-          )}
-        </div>
       </M3eNavRail>
 
       {/* Narrow: bottom navigation bar (below md). */}

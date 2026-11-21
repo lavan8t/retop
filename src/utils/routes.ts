@@ -162,6 +162,41 @@ export const getDestinationView = (
   return 'content';
 };
 
+/**
+ * Primary destinations shared by the M3E nav rail (wide) and nav bar (compact).
+ * `icon` is a Material Symbols name consumed by `<m3e-icon name=...>`.
+ */
+export interface NavDestination {
+  view: ViewType;
+  label: string;
+  icon: string;
+}
+
+export const NAV_DESTINATIONS: readonly NavDestination[] = [
+  { view: 'dashboard', label: 'Home', icon: 'home' },
+  { view: 'timetable', label: 'Timetable', icon: 'calendar_month' },
+  { view: 'attendance', label: 'Attendance', icon: 'check_circle' },
+  { view: 'digitalAssignments', label: 'Assignments', icon: 'assignment' },
+  { view: 'coursePage', label: 'Course Page', icon: 'description' },
+  { view: 'marks', label: 'Marks', icon: 'analytics' },
+  { view: 'grades', label: 'Grades', icon: 'workspace_premium' },
+  { view: 'calendar', label: 'Calendar', icon: 'event' },
+  { view: 'curriculum', label: 'Curriculum', icon: 'account_tree' },
+  { view: 'profile', label: 'Profile', icon: 'person' },
+] as const;
+
+/** The five destinations that fit a compact bottom navigation bar. */
+export const NAV_BAR_VIEWS: readonly ViewType[] = [
+  'dashboard',
+  'timetable',
+  'attendance',
+  'digitalAssignments',
+  'profile',
+] as const;
+
+export const getNavBarDestinations = (): NavDestination[] =>
+  NAV_DESTINATIONS.filter((d) => NAV_BAR_VIEWS.includes(d.view));
+
 export const hasRetopPage = (link: QuickLink | string): boolean => {
   if (typeof link === 'string') {
     return getDestinationView({ url: link }) !== 'content';

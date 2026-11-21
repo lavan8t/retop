@@ -34,6 +34,8 @@ import { getDestinationView, getSavedView } from '../utils/routes';
 import { currentCampus } from '../utils/campus';
 
 import { TopBar } from '../components/layout/TopBar';
+import { TopBarSearch } from '../components/layout/TopBarSearch';
+import { AppNavRail } from '../components/layout/AppNavRail';
 import { ContentRouter } from '../components/layout/ContentRouter';
 import { getPageTitle } from '../components/layout/appShell';
 import { GlobalDADropZone } from '../components/ui/GlobalDADropZone';
@@ -288,6 +290,7 @@ export const DashboardApp = () => {
     fetchDashboardData,
     loadTimetable,
     syncDashboard,
+    isSyncing,
   } = useDataStore();
 
   const networkRef = useRef<VTOPNetwork | null>(null);
@@ -421,6 +424,18 @@ export const DashboardApp = () => {
       useDataStore.setState({ status: 'Sync Failed' });
     } finally {
       useDataStore.setState({ isSyncing: false });
+    }
+  };
+
+  const handleTimetableSemChange = (semId: string) => {
+    if (networkRef.current && csrfRef.current && authIdRef.current) {
+      loadTimetable(
+        networkRef.current,
+        csrfRef.current,
+        authIdRef.current,
+        semId,
+        true,
+      ).catch(console.warn);
     }
   };
 
@@ -1080,39 +1095,37 @@ export const DashboardApp = () => {
             : 'pointer-events-auto'
         }`}
       >
-        <div className="flex flex-col h-full pointer-events-auto overflow-hidden">
+        <AppNavRail
+          currentView={currentView}
+          onNavigate={navigateToView}
+          onSearch={() => {
+            setOmniboxInitial('');
+            setIsOmniboxOpen(true);
+          }}
+          onSync={() => {
+            handleSyncCurrentView().catch(console.warn);
+          }}
+          isSyncing={isSyncing}
+          showProfileMenu={showProfileMenu}
+          onProfileClick={() => setShowProfileMenu((v) => !v)}
+          onVtop={() => {
+            if (!isStandalone && !(window as any).__RETOP_OFFLINE__) {
+              setIsModernUI(false);
+            }
+          }}
+          semesters={ttSemesters}
+          selectedSem={ttSelectedSem}
+          onSemesterChange={handleTimetableSemChange}
+        />
+
+        <div className="flex flex-col flex-1 min-h-0 mb-20 md:mb-0 md:ml-24 min-[960px]:ml-[220px] pointer-events-auto overflow-hidden">
           <TopBar
             currentView={currentView}
             contentTitle={contentTitle}
-            showProfileMenu={showProfileMenu}
-            setShowProfileMenu={setShowProfileMenu}
             handleLinkClick={handleLinkClick}
-            handleLogout={handleLogout}
-            isOmniboxOpen={isOmniboxOpen}
-            setIsOmniboxOpen={setIsOmniboxOpen}
             setCurrentView={navigateToView}
-            user={user}
-            onBack={handleBack}
             pinnedLinks={pinnedLinks}
-            menuCategories={menu}
-            onTogglePin={handleTogglePin}
-            onReorderPins={(newPins) => updateSetting('pinnedLinks', newPins)}
-            onNavigate={handleLinkClick}
-            initialQuery={omniboxInitial}
-            onTimetableSemChange={(semId) => {
-              if (networkRef.current && csrfRef.current && authIdRef.current) {
-                loadTimetable(
-                  networkRef.current,
-                  csrfRef.current,
-                  authIdRef.current,
-                  semId,
-                  true,
-                ).catch(console.warn);
-              }
-            }}
-            onSync={() => {
-              handleSyncCurrentView().catch(console.warn);
-            }}
+            onTimetableSemChange={handleTimetableSemChange}
             network={networkRef.current}
           />
           <main className="flex-1 overflow-hidden relative">
@@ -1145,26 +1158,67 @@ export const DashboardApp = () => {
               setViewMode={setTtViewMode}
             />
           )}
-
-          {showProfileMenu && (
-            <ProfileMenu
-              userName={user.name}
-              userRegNo={user.regNo}
-              userProfileImg={user.profileImgBase64}
-              onNavigate={handleLinkClick}
-              onLogout={handleLogout}
-              onLegacyToggle={() => {
-                setIsPeeking(false);
-                setIsModernUI(false);
-              }}
-              onClose={() => setShowProfileMenu(false)}
-            />
-          )}
-
-          <SnackbarManager />
-          <AlertDialogManager />
-          <GlobalDADropZone network={networkRef.current!} />
         </div>
+
+        {/* Search FAB opens the existing omnibox as a centered dialog. */}
+        {isOmniboxOpen && (
+          <div
+            className="fixed inset-0 z-[999990] flex items-start justify-center overflow-hidden bg-(--bg-main)/80 p-3 pt-[8vh] backdrop-blur-sm"
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget) setIsOmniboxOpen(false);
+            }}
+          >
+            <div
+              className="relative w-full max-w-xl bg-(--bg-surface) border-2 border-(--border-main) rounded-3xl p-3 shadow-2xl"
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                aria-label="Close search"
+                onClick={() => setIsOmniboxOpen(false)}
+                className="absolute -top-3 -right-3 min-w-12 min-h-12 flex items-center justify-center rounded-full bg-(--bg-surface) border-2 border-(--border-main) text-(--text-muted) hover:text-(--text-main) outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) cursor-pointer z-[999999]"
+              >
+                <span
+                  aria-hidden="true"
+                  className="text-lg font-bold leading-none"
+                >
+                  ×
+                </span>
+              </button>
+              <TopBarSearch
+                currentView={currentView}
+                isOmniboxOpen={isOmniboxOpen}
+                setIsOmniboxOpen={setIsOmniboxOpen}
+                menuCategories={menu}
+                pinnedLinks={pinnedLinks}
+                onNavigate={handleLinkClick}
+                onTogglePin={handleTogglePin}
+                initialQuery={omniboxInitial}
+                pageTitle={getPageTitle(currentView, contentTitle)}
+                onBack={handleBack}
+              />
+            </div>
+          </div>
+        )}
+
+        {showProfileMenu && (
+          <ProfileMenu
+            userName={user.name}
+            userRegNo={user.regNo}
+            userProfileImg={user.profileImgBase64}
+            onNavigate={handleLinkClick}
+            onLogout={handleLogout}
+            onLegacyToggle={() => {
+              setIsPeeking(false);
+              setIsModernUI(false);
+            }}
+            onClose={() => setShowProfileMenu(false)}
+          />
+        )}
+
+        <SnackbarManager />
+        <AlertDialogManager />
+        <GlobalDADropZone network={networkRef.current!} />
       </div>
 
       {!isModernUI && (

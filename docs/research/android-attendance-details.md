@@ -165,3 +165,25 @@ Category → colors (both files): `ATTENDED` → `attendanceColors.attendedConta
   (`retop_att_sem_${authId}`). On mount the stored value wins; only when nothing is stored does
   the app fall back to the latest/default semester. Changing semester never gets reset to the
   first entry on remount or reload.
+
+## Tile view + course list decisions (implementation follow-up)
+
+- The tiles view is strictly `AttendanceTileCell` parity: square `aspect-square` cells with a
+  `rounded-xl` status container and **only** the day number (`titleLarge` → `text-lg` bold
+  tabular). No visible status label, no month label, no expand/unknown state. The `aria-label`
+  keeps the date + status for assistive tech; the list view is untouched.
+- Container/content colours are hardcoded in `src/styles/attendance-tiles.css` because they are
+  app roles, not Material Web foundation tokens: present `#C8F8D0` on `#002109` (light) /
+  `#005321` on `#C8F8D0` (dark + AMOLED); absent `#FFDAD6` on `#410002` (light) / `#93000A`
+  on `#FFDAD6` (dark + AMOLED). No other raw hexes live in TSX — `tileStyleFor()` returns
+  `var(--att-*-tile)` references only.
+- OTHER (on duty / on leave / excused / anything not present/absent/upcoming) uses the dynamic
+  accent `--md-sys-color-tertiary-container` + `--md-sys-color-on-tertiary-container` — no
+  invented orange. UPCOMING uses `--bg-highlight` + `--text-muted`. Category detection mirrors
+  Android's `toColorCategory`: upcoming first, then absent, then present, else other.
+- The course list uses `m3e-selection-list variant="segmented"` with `m3e-list-option` children.
+  M3E already applies the 2dp segment gap (`--m3e-segmented-list-segment-gap`, default space25)
+  and terminal-corner rounding (`--m3e-segmented-list-container-shape`), so the former manual
+  `p-0.5` wrapper + `rounded-2xl` was removed. Selection semantics (`selected`, `onChange`,
+  `onKeyDown`), `hide-selection-indicator`, ARIA labels and the title/code/percentage content
+  are unchanged.

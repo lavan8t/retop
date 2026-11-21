@@ -1,5 +1,5 @@
 import { M3eButton, M3eButtonGroup } from './m3eTags';
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import {
   ArrowDownward,
   ArrowUpward,
@@ -26,6 +26,40 @@ const STATUS_TEXT: Record<RecordStatus, string> = {
   absent: 'text-(--att-danger)',
   other: 'text-(--att-warn)',
 };
+
+export type TileCategory = 'present' | 'absent' | 'other' | 'upcoming';
+
+/** Android toColorCategory(): upcoming, absent, duty/leave/excused, else attended. */
+export const tileCategoryFor = (status: string): TileCategory => {
+  const lower = (status || '').toLowerCase();
+  if (lower.includes('upcoming')) return 'upcoming';
+  if (lower.includes('absent')) return 'absent';
+  if (lower.includes('present')) return 'present';
+  return 'other';
+};
+
+/* Token-only styles: the exact light/dark hexes live in attendance-tiles.css. */
+const TILE_STYLES: Record<TileCategory, CSSProperties> = {
+  present: {
+    backgroundColor: 'var(--att-present-tile)',
+    color: 'var(--att-on-present-tile)',
+  },
+  absent: {
+    backgroundColor: 'var(--att-absent-tile)',
+    color: 'var(--att-on-absent-tile)',
+  },
+  other: {
+    backgroundColor: 'var(--att-other-tile)',
+    color: 'var(--att-on-other-tile)',
+  },
+  upcoming: {
+    backgroundColor: 'var(--att-upcoming-tile)',
+    color: 'var(--att-on-upcoming-tile)',
+  },
+};
+
+export const tileStyleFor = (status: string): CSSProperties =>
+  TILE_STYLES[tileCategoryFor(status)];
 
 const slotInfo = (record: AttendanceRecord): string =>
   record.dayTime
@@ -56,6 +90,21 @@ const DateTile = ({
       <span className={`text-[10px] font-bold ${STATUS_TEXT[status]}`}>
         {historyStatusLabel(entry.record.status)}
       </span>
+    </div>
+  );
+};
+
+/** Android AttendanceTileCell: square, status-tinted, day number only. */
+const TileCell = ({ entry }: { entry: HistoryEntry }) => {
+  const day = entry.date
+    ? entry.date.toLocaleDateString('en-GB', { day: '2-digit' })
+    : '--';
+  return (
+    <div
+      className="aspect-square w-full rounded-xl flex items-center justify-center font-bold text-lg tabular-nums"
+      style={tileStyleFor(entry.record.status)}
+    >
+      {day}
     </div>
   );
 };
@@ -202,15 +251,13 @@ export const ClassHistory = ({
                     className={`grid grid-cols-4 sm:grid-cols-6 gap-2 ${PAGE_CROSSFADE}`}
                   >
                     {month.entries.map((entry, index) => {
-                      const status = recordStatus(entry.record.status);
                       const label = historyStatusLabel(entry.record.status);
                       return (
                         <li
                           key={`${entry.record.date}-${index}`}
-                          className={`flex flex-col items-center gap-1 px-2 py-2 ${STATUS_TEXT[status]}`}
                           aria-label={`${formatRecordDate(parseRecordDate(entry.record.date), entry.record.date)}: ${label}`}
                         >
-                          <DateTile entry={entry} status={status} />
+                          <TileCell entry={entry} />
                         </li>
                       );
                     })}

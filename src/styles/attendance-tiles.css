@@ -1,0 +1,30 @@
+/* Exact Android AttendanceTileCell container/content roles
+   (ClassHistoryTilesView.kt:291-328). App-owned colours, so they live here
+   instead of the Material Web foundation tokens (m3e-tokens.css). */
+
+:root,
+[data-theme='dark'],
+[data-theme='amoled'] {
+  --att-present-tile: #005321;
+  --att-on-present-tile: #c8f8d0;
+  --att-absent-tile: #93000a;
+  --att-on-absent-tile: #ffdad6;
+}
+
+[data-theme='light'] {
+  --att-present-tile: #c8f8d0;
+  --att-on-present-tile: #002109;
+  --att-absent-tile: #ffdad6;
+  --att-on-absent-tile: #410002;
+}
+
+/* Declared on #retop-root so the M3 dynamic accent roles are already resolved. */
+#retop-root {
+  --att-other-tile: var(--md-sys-color-tertiary-container, var(--bg-highlight));
+  --att-on-other-tile: var(
+    --md-sys-color-on-tertiary-container,
+    var(--text-main)
+  );
+  --att-upcoming-tile: var(--bg-highlight);
+  --att-on-upcoming-tile: var(--text-muted);
+}

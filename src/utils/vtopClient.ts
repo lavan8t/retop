@@ -12,12 +12,12 @@ import {
 } from './vtopBridge';
 import { extractCsrfFromHtml, extractRegNoFromHtml } from './sessionFacts';
 
-export type VtopCampus = 'vellore' | 'chennai';
+export type VtopCampus = 'vellore' | 'chennai' | 'vitap';
 
 export function getVtopBaseUrl(campus: VtopCampus = 'vellore'): string {
-  return campus === 'chennai'
-    ? 'https://vtopcc.vit.ac.in'
-    : 'https://vtop.vit.ac.in';
+  if (campus === 'chennai') return 'https://vtopcc.vit.ac.in';
+  if (campus === 'vitap') return 'https://vtop.vitap.ac.in';
+  return 'https://vtop.vit.ac.in';
 }
 
 export function extractJSessionId(

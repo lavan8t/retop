@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { getExtUrl } from '../utils/url';
+import type { VtopCampus } from '../utils/vtopClient';
 
 export type AsciiArtType = 'TT' | 'SMV' | 'MGR' | 'CC';
 
@@ -49,7 +50,7 @@ export const getAsciiConfig = (type: AsciiArtType): AsciiLayoutConfig => {
   }
 };
 
-export const pickAsciiType = (campus?: 'chennai' | 'vellore'): AsciiArtType => {
+export const pickAsciiType = (campus?: VtopCampus): AsciiArtType => {
   const isChennai =
     campus === 'chennai' ||
     (typeof window !== 'undefined' &&
@@ -198,7 +199,7 @@ export const runAsciiSparkAnimation = (
 };
 
 export const AsciiPanel: React.FC<{
-  campus?: 'chennai' | 'vellore';
+  campus?: VtopCampus;
   scale?: number;
 }> = ({ campus, scale = 1 }) => {
   const preRef = useRef<HTMLPreElement>(null);

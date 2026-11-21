@@ -23,6 +23,7 @@
   "host_permissions": [
     "https://vtop.vit.ac.in/*",
     "https://vtopcc.vit.ac.in/*",
+    "https://vtop.vitap.ac.in/*",
     "https://getretop.web.app/*",
     "https://barcode.tec-it.com/*",
     "https://www.googleapis.com/*"
@@ -31,7 +32,8 @@
     {
       "matches": [
         "https://vtop.vit.ac.in/*",
-        "https://vtopcc.vit.ac.in/*"
+        "https://vtopcc.vit.ac.in/*",
+        "https://vtop.vitap.ac.in/*"
       ],
       "js": [
         "content.js"
@@ -41,7 +43,8 @@
     {
       "matches": [
         "https://vtop.vit.ac.in/*",
-        "https://vtopcc.vit.ac.in/*"
+        "https://vtopcc.vit.ac.in/*",
+        "https://vtop.vitap.ac.in/*"
       ],
       "js": [
         "injected.js"
@@ -88,6 +91,7 @@
       "matches": [
         "https://vtop.vit.ac.in/*",
         "https://vtopcc.vit.ac.in/*",
+        "https://vtop.vitap.ac.in/*",
         "https://getretop.web.app/*"
       ]
     }

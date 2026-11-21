@@ -176,7 +176,13 @@ const clearDisabledHandler: MessageHandler = (
   chrome.storage.local.remove(['retop_disabled'], () => {
     // Tell open VTOP tabs to drop their page marker and come back to retop.
     chrome.tabs.query(
-      { url: ['https://vtop.vit.ac.in/*', 'https://vtopcc.vit.ac.in/*'] },
+      {
+        url: [
+          'https://vtop.vit.ac.in/*',
+          'https://vtopcc.vit.ac.in/*',
+          'https://vtop.vitap.ac.in/*',
+        ],
+      },
       (tabs) => {
         (tabs || []).forEach((tab) => {
           if (tab.id !== undefined) {

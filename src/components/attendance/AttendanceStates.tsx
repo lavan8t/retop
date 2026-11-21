@@ -6,7 +6,7 @@ import {
 
 export const AttendanceLoading = () => (
   <div
-    className="h-full w-full bg-(--bg-surface) flex overflow-hidden"
+    className="h-full w-full bg-(--bg-main) flex overflow-hidden"
     aria-busy="true"
   >
     <div className="hidden lg:flex flex-1 h-full">
@@ -37,7 +37,7 @@ export const AttendanceLoading = () => (
 );
 
 export const AttendanceEmpty = () => (
-  <div className="h-full w-full flex items-center justify-center p-6 bg-(--bg-surface)">
+  <div className="h-full w-full flex items-center justify-center p-6 bg-(--bg-main)">
     <M3eCard variant="filled" className="max-w-sm w-full">
       <div className="flex flex-col items-center gap-3 px-6 py-8 text-center">
         <School
@@ -58,7 +58,7 @@ export const AttendanceEmpty = () => (
 export const AttendanceError = ({ onRetry }: { onRetry: () => void }) => (
   <div
     role="alert"
-    className="h-full w-full flex items-center justify-center p-6 bg-(--bg-surface)"
+    className="h-full w-full flex items-center justify-center p-6 bg-(--bg-main)"
   >
     <div className="flex flex-col items-center gap-3 rounded-2xl bg-(--att-danger-container) text-(--att-danger) px-6 py-6 text-center max-w-sm">
       <Error aria-hidden="true" />

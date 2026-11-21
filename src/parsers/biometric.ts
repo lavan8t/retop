@@ -57,3 +57,58 @@ export function parseBiometricHistory(html: string): BiometricPunch[] {
 
   return punches;
 }
+
+export interface BiometricDayGroup {
+  date: string;
+  punches: BiometricPunch[];
+}
+
+export interface BiometricDaySummary {
+  firstIn: string | null;
+  lastOut: string | null;
+  count: number;
+}
+
+/** dd/mm/yyyy -> yyyy-mm-dd so string comparison is chronological. */
+const sortableDate = (ddmmyyyy: string): string => {
+  const match = ddmmyyyy.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  return match ? `${match[3]}-${match[2]}-${match[1]}` : ddmmyyyy;
+};
+
+const toMinutes = (time: string): number => {
+  const match = time.match(/^(\d{1,2}):(\d{2})$/);
+  return match ? parseInt(match[1], 10) * 60 + parseInt(match[2], 10) : 0;
+};
+
+const sortPunches = (punches: BiometricPunch[]): BiometricPunch[] =>
+  [...punches].sort(
+    (a, b) =>
+      sortableDate(a.punchDate).localeCompare(sortableDate(b.punchDate)) ||
+      toMinutes(a.punchTime) - toMinutes(b.punchTime),
+  );
+
+/** Days newest-first, punches chronological within a day; input is untouched. */
+export const groupPunchesByDate = (
+  punches: BiometricPunch[],
+): BiometricDayGroup[] => {
+  const byDate = new Map<string, BiometricPunch[]>();
+  for (const punch of sortPunches(punches)) {
+    const rows = byDate.get(punch.punchDate) ?? [];
+    rows.push(punch);
+    byDate.set(punch.punchDate, rows);
+  }
+  return Array.from(byDate, ([date, rows]) => ({ date, punches: rows })).sort(
+    (a, b) => sortableDate(b.date).localeCompare(sortableDate(a.date)),
+  );
+};
+
+export const summarizePunches = (
+  punches: BiometricPunch[],
+): BiometricDaySummary => {
+  const sorted = sortPunches(punches);
+  return {
+    firstIn: sorted.length ? sorted[0].punchTime : null,
+    lastOut: sorted.length ? sorted[sorted.length - 1].punchTime : null,
+    count: sorted.length,
+  };
+};

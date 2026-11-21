@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'bun:test';
-import { parseBiometricHistory, SCHEMA_VERSION } from '../biometric';
+import {
+  groupPunchesByDate,
+  parseBiometricHistory,
+  SCHEMA_VERSION,
+  summarizePunches,
+} from '../biometric';
 import { PARSER_SCHEMA_VERSIONS } from '../version';
+import { BiometricPunch } from '../../types/vtop';
 
 /** Live VIT-AP `/vtop/getStudBioHistory` fragment (reg 26BEE7068, 2026-11-21). */
 const HISTORY_HTML = `
@@ -71,5 +77,61 @@ describe('parseBiometricHistory', () => {
   it('exposes a schema version registered in the central map', () => {
     expect(SCHEMA_VERSION).toBe(1);
     expect(PARSER_SCHEMA_VERSIONS.biometric).toBe(SCHEMA_VERSION);
+  });
+});
+
+const p = (date: string, time: string): BiometricPunch => ({
+  slNo: '1',
+  punchDate: date,
+  punchTime: time,
+  venue: 'AB2-301-FACE',
+});
+
+describe('groupPunchesByDate', () => {
+  it('sorts punches chronologically within a day and days newest-first', () => {
+    const input = [
+      p('20/11/2026', '15:28'),
+      p('21/11/2026', '08:47'),
+      p('20/11/2026', '08:12'),
+      p('21/11/2026', '17:05'),
+      p('02/01/2026', '9:05'),
+    ];
+    expect(groupPunchesByDate(input)).toEqual([
+      {
+        date: '21/11/2026',
+        punches: [p('21/11/2026', '08:47'), p('21/11/2026', '17:05')],
+      },
+      {
+        date: '20/11/2026',
+        punches: [p('20/11/2026', '08:12'), p('20/11/2026', '15:28')],
+      },
+      { date: '02/01/2026', punches: [p('02/01/2026', '9:05')] },
+    ]);
+  });
+
+  it('does not mutate its input', () => {
+    const input = [p('20/11/2026', '15:28'), p('20/11/2026', '08:12')];
+    groupPunchesByDate(input);
+    expect(input[0].punchTime).toBe('15:28');
+  });
+});
+
+describe('summarizePunches', () => {
+  it('reports the earliest in, latest out and count for a day', () => {
+    expect(
+      summarizePunches([
+        p('20/11/2026', '15:28'),
+        p('20/11/2026', '08:12'),
+        p('20/11/2026', '11:40'),
+      ]),
+    ).toEqual({ firstIn: '08:12', lastOut: '15:28', count: 3 });
+  });
+
+  it('reports nulls for an empty day', () => {
+    expect(summarizePunches([])).toEqual({
+      firstIn: null,
+      lastOut: null,
+      count: 0,
+    });
   });
 });

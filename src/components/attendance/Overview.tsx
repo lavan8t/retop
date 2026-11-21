@@ -1,37 +1,20 @@
-import {
-  Event,
-  Refresh,
-  Warning,
-} from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
+import { Refresh } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 import type { DetailedAttendanceCourse } from '../../types/vtop';
-import type { AttendanceForecast } from '../../utils/attendanceForecaster';
-import {
-  leaveImpact,
-  overallAttendancePercentage,
-  overallVerdict,
-} from './attendanceView';
+import { overallVerdict } from './attendanceView';
 import { M3eIconAction } from './M3eIconAction';
 
 export const Overview = ({
   courses,
-  forecast,
-  total,
-  attended,
   isNinePointer,
   refreshing,
   onRefresh,
 }: {
   courses: DetailedAttendanceCourse[];
-  forecast: AttendanceForecast | null | undefined;
-  total: number;
-  attended: number;
   isNinePointer: boolean;
   refreshing: boolean;
   onRefresh: () => void;
 }) => {
   const verdict = overallVerdict(courses, isNinePointer);
-  const impact = total > 0 ? leaveImpact(forecast, total, attended) : null;
-  const overall = overallAttendancePercentage(courses);
 
   return (
     <header className="shrink-0 flex flex-col gap-3 px-4 pt-4 pb-3">
@@ -43,33 +26,6 @@ export const Overview = ({
       >
         {verdict.text}
       </p>
-      <p className="text-center text-xs font-bold text-(--text-muted)">
-        Overall {overall}
-      </p>
-
-      {impact && (
-        <div
-          className={`flex items-center gap-3 rounded-2xl px-3 py-2 ${
-            impact.critical
-              ? 'bg-(--att-danger-container) text-(--att-danger)'
-              : 'bg-(--bg-primary-container) text-(--text-on-primary-container)'
-          }`}
-        >
-          {impact.critical ? (
-            <Warning aria-hidden="true" className="text-xl shrink-0" />
-          ) : (
-            <Event aria-hidden="true" className="text-xl shrink-0" />
-          )}
-          <div className="min-w-0 flex-1">
-            <p className="font-bold leading-tight wrap-break-word">
-              {impact.title}
-            </p>
-            <p className="text-xs opacity-80">{impact.dates}</p>
-          </div>
-          <span className="text-xs font-bold shrink-0">{impact.missed}</span>
-        </div>
-      )}
-
       <div className="flex justify-end">
         <M3eIconAction
           icon={<Refresh aria-hidden="true" />}

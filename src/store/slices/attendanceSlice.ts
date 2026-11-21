@@ -5,6 +5,10 @@ import {
   parseAttendanceDetail,
 } from '../../parsers/attendance';
 import { DetailedAttendanceCourse, AttendanceRecord } from '../../types/vtop';
+import {
+  currentAuthId,
+  writeLastAttendanceSemester,
+} from '../../utils/attendanceSemester';
 import { DataState } from '../dataStore';
 
 export interface AttendanceSlice {
@@ -35,8 +39,10 @@ export const createAttendanceSlice: StateCreator<
   AttendanceSlice
 > = (set, get) => ({
   attSelectedSem: '',
-  setAttSelectedSem: (semId) =>
-    set({ attSelectedSem: semId, detailedAttendance: [] }),
+  setAttSelectedSem: (semId) => {
+    writeLastAttendanceSemester(currentAuthId(), semId);
+    set({ attSelectedSem: semId, detailedAttendance: [] });
+  },
   detailedAttendance: [],
   attLoading: false,
   fetchDetailedAttendance: async (network, semId, forceRefresh = false) => {

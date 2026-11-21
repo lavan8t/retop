@@ -13,6 +13,7 @@ import { parseGradesSemesters } from '../../parsers/grades';
 import { parseDASemesters } from '../../parsers/digital-assignments';
 import { parseStudentProfile } from '../../parsers/profile';
 import { getCachedData, setCachedData } from '../../utils/cache';
+import { readLastAttendanceSemester } from '../../utils/attendanceSemester';
 import { waitForIntercepted } from '../../utils/dashboardInterceptor';
 import { isNativeAndroidBridgeAvailable } from '../../utils/vtopBridge';
 import { CourseSummary, Assignment, Event } from '../../types/vtop';
@@ -209,13 +210,19 @@ export const createDashboardSlice: StateCreator<
                 ? savedTtSem
                 : ttPool.find((s) => s.isLatest)?.id || ttPool[0]?.id || '';
 
+            const savedAttSem = readLastAttendanceSemester(authId);
+            const attDefault =
+              savedAttSem && sems.some((s: any) => s.id === savedAttSem)
+                ? savedAttSem
+                : ttDefault;
+
             set({
               ttSemesters: sems,
               ttSelectedSem: ttDefault,
               cpSelectedSem: ttDefault,
               calSemesters: calSems,
               calSelectedSem: calDefault,
-              attSelectedSem: ttDefault,
+              attSelectedSem: attDefault,
             });
 
             if (ttDefault) {
@@ -365,13 +372,19 @@ export const createDashboardSlice: StateCreator<
                 ? savedTtSem
                 : ttPool.find((s) => s.isLatest)?.id || ttPool[0]?.id || '';
 
+            const savedAttSem = readLastAttendanceSemester(authId);
+            const attDefault =
+              savedAttSem && sems.some((s: any) => s.id === savedAttSem)
+                ? savedAttSem
+                : ttDefault;
+
             set({
               ttSemesters: sems,
               ttSelectedSem: ttDefault,
               cpSelectedSem: ttDefault,
               calSemesters: calSems,
               calSelectedSem: calDefault,
-              attSelectedSem: ttDefault,
+              attSelectedSem: attDefault,
             });
 
             const subPromises = [];

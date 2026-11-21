@@ -36,6 +36,7 @@ import { currentCampus } from '../utils/campus';
 import { TopBar } from '../components/layout/TopBar';
 import { TopBarSearch } from '../components/layout/TopBarSearch';
 import { AppNavRail } from '../components/layout/AppNavRail';
+import { ensureM3eComponents } from '../utils/m3e';
 import { ContentRouter } from '../components/layout/ContentRouter';
 import { getPageTitle } from '../components/layout/appShell';
 import { GlobalDADropZone } from '../components/ui/GlobalDADropZone';
@@ -219,6 +220,9 @@ export function renderDashboard() {
 export const DashboardApp = () => {
   useEffect(() => {
     removeSplashScreen();
+    // The nav rail renders m3e-* elements on every view, so registration must
+    // happen at the shell, not only inside attendance/grades/biometric pages.
+    void ensureM3eComponents();
   }, []);
 
   const [menu, setMenu] = useState<MenuCategory[]>([]);

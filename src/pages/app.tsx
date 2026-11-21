@@ -1118,7 +1118,7 @@ export const DashboardApp = () => {
           onSemesterChange={handleTimetableSemChange}
         />
 
-        <div className="flex flex-col flex-1 min-h-0 mb-20 md:mb-0 md:ml-24 min-[960px]:ml-[220px] pointer-events-auto overflow-hidden">
+        <div className="flex flex-col flex-1 min-h-0 mb-20 md:mb-0 md:ml-[220px] pointer-events-auto overflow-hidden">
           <TopBar
             currentView={currentView}
             contentTitle={contentTitle}

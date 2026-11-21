@@ -5,6 +5,8 @@ import { Person } from '@nine-thirty-five/material-symbols-react/rounded/700/fil
 import { Barcode } from '../common/Barcode';
 import { campusLabel, currentCampus } from '../../utils/campus';
 import type { VtopCampus } from '../../utils/vtopClient';
+import { getExtUrl } from '../../utils/url';
+import { apContactNumber, apOfficialAddress } from './apIdCard';
 
 const toTitleCase = (str: string) => {
   if (!str) return '';
@@ -38,6 +40,9 @@ export const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
   const campus: VtopCampus =
     rawCampus === 'chennai' || rawCampus === 'vitap' ? rawCampus : 'vellore';
   const campusName = campusLabel(campus);
+  // Annotated as boolean so TS does not narrow `campus` in the non-AP branch
+  // (the legacy back face still contains a vitap-only address case).
+  const isAp: boolean = campus === 'vitap';
 
   return (
     <div
@@ -65,67 +70,136 @@ export const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
           className={`absolute inset-0 backface-hidden rounded-2xl border-2 border-border-dim flex flex-col overflow-hidden ${fontArial}`}
           style={{ backgroundColor: 'white', color: 'black' }}
         >
-          <div className="flex flex-col items-center pt-3 px-3 shrink-0">
-            <div className="w-47.5 mx-auto flex justify-center [&>svg]:w-full [&>svg]:h-[auto!important] [&>svg]:max-h-16.25">
-              <VitLogo />
-            </div>
-
-            <h3
-              className={`text-[17px] font-extrabold scale-x-120 text-black ${fontTimes}`}
-            >
-              {campusName} CAMPUS
-            </h3>
-          </div>
-
-          <div className="flex-1 flex flex-col justify-center top-1 items-center px-4 w-full">
-            <div
-              className={`overflow-hidden flex items-center justify-center z-10 transition-all w-[108px] h-[165px]`}
-            >
-              {data.basic.photoUrl ? (
+          {isAp ? (
+            <>
+              <div className="flex items-center justify-center gap-2 pt-3 px-3 shrink-0">
                 <img
-                  src={data.basic.photoUrl}
-                  className="w-full h-full object-contain brightness-110"
-                  alt="Student"
+                  src={getExtUrl('dist/assets/vitap-seal.png')}
+                  className="h-14 w-14 object-contain"
+                  alt="VIT-AP University seal"
                 />
-              ) : (
-                <Person className="w-20 h-20 text-content" />
-              )}
-            </div>
-          </div>
-
-          <div
-            className={`flex flex-col items-center justify-center text-center shrink-0 pb-1 w-full ${isShortName ? '' : '-mt-2'}`}
-          >
-            {isShortName ? (
-              <div
-                className={`font-bold text-[25px] ${fontArial} text-[#181d79] leading-none text-center px-2 mt-6`}
-              >
-                {fullName}
+                <img
+                  src={getExtUrl('dist/assets/vitap-logo.png')}
+                  className="h-12 max-w-[70%] object-contain"
+                  alt="VIT-AP University"
+                />
               </div>
-            ) : (
-              <div
-                className={`font-bold text-[25px] ${fontArial} text-[#181d79] leading-[1.1] flex flex-col items-center justify-center text-center w-full mt-1 px-2`}
-              >
-                <span className={`${fontArial}`}>{line1}</span>
-                <span className={`${fontArial}`}>{line2}</span>
+
+              <div className="flex-1 flex flex-col justify-center items-center px-4 w-full">
+                <div className="overflow-hidden flex items-center justify-center z-10 transition-all w-[108px] h-[165px]">
+                  {data.basic.photoUrl ? (
+                    <img
+                      src={data.basic.photoUrl}
+                      className="w-full h-full object-contain brightness-110"
+                      alt="Student"
+                    />
+                  ) : (
+                    <Person className="w-20 h-20 text-content" />
+                  )}
+                </div>
               </div>
-            )}
 
-            <div
-              className={`font-bold text-[18px] ${fontArial} text-black mt-1 text-center`}
-            >
-              {data.basic.regNo}
-            </div>
-          </div>
+              <div className="flex flex-col items-center justify-center text-center shrink-0 pb-1 w-full">
+                <div
+                  className={`font-bold text-[18px] ${fontArial} text-[#800000]`}
+                >
+                  {data.basic.regNo}
+                </div>
+                {isShortName ? (
+                  <div
+                    className={`font-bold text-[24px] ${fontArial} text-[#800000] leading-none text-center px-2 mt-1`}
+                  >
+                    {fullName}
+                  </div>
+                ) : (
+                  <div
+                    className={`font-bold text-[21px] ${fontArial} text-[#800000] leading-[1.1] flex flex-col items-center justify-center text-center w-full mt-1 px-2`}
+                  >
+                    <span>{line1}</span>
+                    <span>{line2}</span>
+                  </div>
+                )}
+                <div
+                  className={`font-bold text-[18px] ${fontArial} text-[#800000] mt-1`}
+                >
+                  {data.basic.regNo}
+                </div>
+              </div>
 
-          <div
-            className={`text-[#ffffff] text-center py-1 font-bold text-[22px] shrink-0 ${fontArial}`}
-            style={{
-              backgroundColor: isHosteller ? '#181d79' : '#C41E3A',
-            }}
-          >
-            {isHosteller ? 'HOSTELLER' : 'DAY SCHOLAR'}
-          </div>
+              <div
+                className="text-[#ffffff] text-center py-1 font-bold text-[22px] shrink-0"
+                style={{
+                  backgroundColor: isHosteller ? '#0F5223' : '#800000',
+                }}
+              >
+                {isHosteller ? 'HOSTELLER' : 'DAY SCHOLAR'}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex flex-col items-center pt-3 px-3 shrink-0">
+                <div className="w-47.5 mx-auto flex justify-center [&>svg]:w-full [&>svg]:h-[auto!important] [&>svg]:max-h-16.25">
+                  <VitLogo />
+                </div>
+
+                <h3
+                  className={`text-[17px] font-extrabold scale-x-120 text-black ${fontTimes}`}
+                >
+                  {campusName} CAMPUS
+                </h3>
+              </div>
+
+              <div className="flex-1 flex flex-col justify-center top-1 items-center px-4 w-full">
+                <div
+                  className={`overflow-hidden flex items-center justify-center z-10 transition-all w-[108px] h-[165px]`}
+                >
+                  {data.basic.photoUrl ? (
+                    <img
+                      src={data.basic.photoUrl}
+                      className="w-full h-full object-contain brightness-110"
+                      alt="Student"
+                    />
+                  ) : (
+                    <Person className="w-20 h-20 text-content" />
+                  )}
+                </div>
+              </div>
+
+              <div
+                className={`flex flex-col items-center justify-center text-center shrink-0 pb-1 w-full ${isShortName ? '' : '-mt-2'}`}
+              >
+                {isShortName ? (
+                  <div
+                    className={`font-bold text-[25px] ${fontArial} text-[#181d79] leading-none text-center px-2 mt-6`}
+                  >
+                    {fullName}
+                  </div>
+                ) : (
+                  <div
+                    className={`font-bold text-[25px] ${fontArial} text-[#181d79] leading-[1.1] flex flex-col items-center justify-center text-center w-full mt-1 px-2`}
+                  >
+                    <span className={`${fontArial}`}>{line1}</span>
+                    <span className={`${fontArial}`}>{line2}</span>
+                  </div>
+                )}
+
+                <div
+                  className={`font-bold text-[18px] ${fontArial} text-black mt-1 text-center`}
+                >
+                  {data.basic.regNo}
+                </div>
+              </div>
+
+              <div
+                className={`text-[#ffffff] text-center py-1 font-bold text-[22px] shrink-0 ${fontArial}`}
+                style={{
+                  backgroundColor: isHosteller ? '#181d79' : '#C41E3A',
+                }}
+              >
+                {isHosteller ? 'HOSTELLER' : 'DAY SCHOLAR'}
+              </div>
+            </>
+          )}
         </div>
 
         {/* BACK SIDE */}
@@ -133,121 +207,228 @@ export const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
           className={`absolute inset-0 backface-hidden transform-[rotateY(180deg)] rounded-2xl border-2 border-border-dim flex flex-col p-3 text-[12px] leading-tight overflow-hidden`}
           style={{ backgroundColor: 'white', color: 'black' }}
         >
-          <div className="flex gap-1">
-            <span className={`italic font-bold ${fontTimes}`}>App. No:</span>{' '}
-            <span className={`font-bold ml-1 ${fontArial}`}>
-              {data.personal.appNo}
-            </span>
-          </div>
+          {isAp ? (
+            <>
+              <div
+                className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none"
+                aria-hidden="true"
+              >
+                <img
+                  src={getExtUrl('dist/assets/vitap-seal.png')}
+                  className="w-40 h-40 object-contain opacity-10"
+                  alt=""
+                />
+              </div>
 
-          <div className="flex gap-1 mt-1">
-            <span className={`italic font-bold ${fontTimes}`}>
-              Blood Group :
-            </span>{' '}
-            <span className={`font-bold ml-1 ${fontArial}`}>
-              {data.personal.bloodGroup}
-            </span>
-          </div>
+              <div className="relative z-10 flex flex-col h-full">
+                <div className={`italic font-bold ${fontTimes}`}>
+                  Official Address:
+                </div>
+                <div
+                  className={`font-bold whitespace-pre-line text-[11px] leading-snug ${fontArial}`}
+                >
+                  {apOfficialAddress()}
+                </div>
 
-          <div className={`mt-1.5 italic font-bold ${fontTimes}`}>
-            Official Address :
-          </div>
-          <div
-            className={`font-bold ml-2 text-[11px] leading-snug ${fontArial}`}
-          >
-            {campus === 'vitap' ? (
-              <>
-                VIT-AP University,
-                <br />
-                Inavolu, Beside AP Secretariat,
-                <br />
-                Amaravati - 522 237, Andhra Pradesh, India.
-              </>
-            ) : campus === 'chennai' ? (
-              <>
-                Vellore Institute of Technology,
-                <br />
-                Vandalur - Kelambakkam Road,
-                <br />
-                Chennai - 600 127, Tamilnadu, India.
-                <br />
-                Ph : 044 3993 1555
-              </>
-            ) : (
-              <>
-                Vellore Institute of Technology,
-                <br />
-                Vellore - 632 014, Tamilnadu, India.
-                <br />
-                Ph : 0416 224 3091
-                <br />
-                Fax : 0416 224 3092
-              </>
-            )}
-          </div>
+                <div className={`mt-1.5 italic font-bold ${fontTimes}`}>
+                  Residential Address:
+                </div>
+                <div
+                  className={`font-bold ml-2 text-[11px] leading-snug uppercase ${fontArial}`}
+                >
+                  {address.street},<br />
+                  {address.area}, {address.city},<br />
+                  {address.pincode}, {address.state},<br />
+                  {address.country}
+                </div>
 
-          <div className={`mt-1.5 italic font-bold ${fontTimes}`}>
-            Address :
-          </div>
-          <div
-            className={`font-bold ml-2 text-[11px] leading-snug uppercase ${fontArial}`}
-          >
-            {address.street},<br />
-            {address.area}, {address.city},<br />
-            {address.pincode}, {address.state},<br />
-            {address.country}
-          </div>
+                <div className="mt-1.5 flex gap-1">
+                  <span className={`italic font-bold ${fontTimes}`}>
+                    Blood Group :
+                  </span>{' '}
+                  <span className={`font-bold ml-1 ${fontArial}`}>
+                    {data.personal.bloodGroup}
+                  </span>
+                </div>
 
-          <div className={`mt-1.5 italic font-bold ${fontTimes}`}>
-            Contact No. :
-          </div>
-          <div className={`font-bold ml-2 text-[13px] ${fontArial}`}>
-            {contactNo}
-          </div>
+                <div className="mt-1.5 flex gap-1">
+                  <span className={`italic font-bold ${fontTimes}`}>
+                    Emergency Contact No. :
+                  </span>{' '}
+                  <span className={`font-bold ml-1 ${fontArial}`}>
+                    {apContactNumber(data)}
+                  </span>
+                </div>
 
-          <div className="mt-1.5 flex gap-1">
-            <span className={`italic font-bold ${fontTimes}`}>
-              Valid Upto :
-            </span>{' '}
-            <span className={`font-bold text-[13px] ml-1 ${fontArial}`}>
-              JUL-2028
-            </span>
-          </div>
+                <div className="mt-1.5 flex gap-1">
+                  <span className={`italic font-bold ${fontTimes}`}>
+                    Valid Upto :
+                  </span>{' '}
+                  <span className={`font-bold ml-1 ${fontArial}`}>
+                    JUL-2028
+                  </span>
+                </div>
 
-          <div className="mt-2 flex justify-between text-[11px] items-end px-2">
-            <div className="text-center flex flex-col items-center">
-              <span
-                className={`text-xl -mb-2 text-content-dim ${fontArial}`}
-              ></span>
-              <span className={fontArial}> </span>
-            </div>
-            <div className="text-center flex flex-col items-center">
-              <span
-                className={`text-xl -mb-2 text-content-dim ${fontArial}`}
-              ></span>
-              <span className={fontArial}> </span>
-            </div>
-          </div>
+                <div className="mt-2 flex justify-between text-[11px] items-end px-2">
+                  <div className="text-center flex flex-col items-center">
+                    <span
+                      className={`text-xl -mb-2 text-content-dim ${fontArial}`}
+                    ></span>
+                    <span className={fontArial}>Issuing Authority</span>
+                  </div>
+                  <div className="text-center flex flex-col items-center">
+                    <span
+                      className={`text-xl -mb-2 text-content-dim ${fontArial}`}
+                    ></span>
+                    <span className={fontArial}>Holder&apos;s Signature</span>
+                  </div>
+                </div>
 
-          <div className="mt-auto flex flex-col items-center pb-1">
-            <div className="w-[85%] flex justify-center bg-white px-2 py-2 rounded-sm mix-blend-multiply opacity-90">
-              <Barcode
-                value={data.basic.regNo}
-                displayValue={true}
-                height={75}
-                width={2}
-                fontSize={16}
-                margin={0}
-                format="CODE128"
-                background="transparent"
-                lineColor="#000000"
-                font="Arial"
-              />
-            </div>
-            <div className={`font-bold text-[13px] ${fontArial} mt-1`}>
-              Website : www.vit.ac.in
-            </div>
-          </div>
+                <div className="mt-auto flex flex-col items-center pb-1">
+                  <div className="w-[85%] flex justify-center bg-white px-2 py-2 rounded-sm mix-blend-multiply opacity-90">
+                    <Barcode
+                      value={data.basic.regNo}
+                      displayValue={true}
+                      height={75}
+                      width={2}
+                      fontSize={16}
+                      margin={0}
+                      format="CODE128"
+                      background="transparent"
+                      lineColor="#000000"
+                      font="Arial"
+                    />
+                  </div>
+                  <div className={`font-bold text-[13px] ${fontArial} mt-1`}>
+                    {data.basic.regNo}
+                  </div>
+                  <div className={`font-bold text-[11px] ${fontArial}`}>
+                    Website : www.vitap.ac.in
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex gap-1">
+                <span className={`italic font-bold ${fontTimes}`}>
+                  App. No:
+                </span>{' '}
+                <span className={`font-bold ml-1 ${fontArial}`}>
+                  {data.personal.appNo}
+                </span>
+              </div>
+
+              <div className="flex gap-1 mt-1">
+                <span className={`italic font-bold ${fontTimes}`}>
+                  Blood Group :
+                </span>{' '}
+                <span className={`font-bold ml-1 ${fontArial}`}>
+                  {data.personal.bloodGroup}
+                </span>
+              </div>
+
+              <div className={`mt-1.5 italic font-bold ${fontTimes}`}>
+                Official Address :
+              </div>
+              <div
+                className={`font-bold ml-2 text-[11px] leading-snug ${fontArial}`}
+              >
+                {campus === 'vitap' ? (
+                  <>
+                    VIT-AP University,
+                    <br />
+                    Inavolu, Beside AP Secretariat,
+                    <br />
+                    Amaravati - 522 237, Andhra Pradesh, India.
+                  </>
+                ) : campus === 'chennai' ? (
+                  <>
+                    Vellore Institute of Technology,
+                    <br />
+                    Vandalur - Kelambakkam Road,
+                    <br />
+                    Chennai - 600 127, Tamilnadu, India.
+                    <br />
+                    Ph : 044 3993 1555
+                  </>
+                ) : (
+                  <>
+                    Vellore Institute of Technology,
+                    <br />
+                    Vellore - 632 014, Tamilnadu, India.
+                    <br />
+                    Ph : 0416 224 3091
+                    <br />
+                    Fax : 0416 224 3092
+                  </>
+                )}
+              </div>
+
+              <div className={`mt-1.5 italic font-bold ${fontTimes}`}>
+                Address :
+              </div>
+              <div
+                className={`font-bold ml-2 text-[11px] leading-snug uppercase ${fontArial}`}
+              >
+                {address.street},<br />
+                {address.area}, {address.city},<br />
+                {address.pincode}, {address.state},<br />
+                {address.country}
+              </div>
+
+              <div className={`mt-1.5 italic font-bold ${fontTimes}`}>
+                Contact No. :
+              </div>
+              <div className={`font-bold ml-2 text-[13px] ${fontArial}`}>
+                {contactNo}
+              </div>
+
+              <div className="mt-1.5 flex gap-1">
+                <span className={`italic font-bold ${fontTimes}`}>
+                  Valid Upto :
+                </span>{' '}
+                <span className={`font-bold text-[13px] ml-1 ${fontArial}`}>
+                  JUL-2028
+                </span>
+              </div>
+
+              <div className="mt-2 flex justify-between text-[11px] items-end px-2">
+                <div className="text-center flex flex-col items-center">
+                  <span
+                    className={`text-xl -mb-2 text-content-dim ${fontArial}`}
+                  ></span>
+                  <span className={fontArial}> </span>
+                </div>
+                <div className="text-center flex flex-col items-center">
+                  <span
+                    className={`text-xl -mb-2 text-content-dim ${fontArial}`}
+                  ></span>
+                  <span className={fontArial}> </span>
+                </div>
+              </div>
+
+              <div className="mt-auto flex flex-col items-center pb-1">
+                <div className="w-[85%] flex justify-center bg-white px-2 py-2 rounded-sm mix-blend-multiply opacity-90">
+                  <Barcode
+                    value={data.basic.regNo}
+                    displayValue={true}
+                    height={75}
+                    width={2}
+                    fontSize={16}
+                    margin={0}
+                    format="CODE128"
+                    background="transparent"
+                    lineColor="#000000"
+                    font="Arial"
+                  />
+                </div>
+                <div className={`font-bold text-[13px] ${fontArial} mt-1`}>
+                  Website : www.vit.ac.in
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

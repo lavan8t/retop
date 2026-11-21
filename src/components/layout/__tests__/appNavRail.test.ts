@@ -55,7 +55,19 @@ describe('M3E nav source contract', () => {
     expect(source).toContain('M3eFab');
     expect(source).toContain('aria-label="Primary navigation"');
     expect(source).toContain('slot="icon"');
-    expect(source).toContain('mode="auto"');
+    expect(source).toContain('mode="expanded"');
+    expect(source).toContain('M3eNavRailToggle');
+  });
+
+  test('brand items sit above the search FAB and use M3 selected roles', () => {
+    const source = read('src/components/layout/AppNavRail.tsx');
+    expect(source).toMatch(/>\s*retop\s*</);
+    expect(source).toMatch(/>\s*VTOP\s*</);
+    expect(source.indexOf('rail-retop-')).toBeLessThan(
+      source.indexOf('size="small"'),
+    );
+    expect(source).toContain('var(--md-sys-color-secondary-container)');
+    expect(source).toContain('var(--md-sys-color-on-secondary-container)');
   });
 
   test('nav tags are registered in the main world and aliased', () => {

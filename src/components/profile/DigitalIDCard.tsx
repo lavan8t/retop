@@ -270,21 +270,6 @@ export const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
                   </span>
                 </div>
 
-                <div className="mt-2 flex justify-between text-[11px] items-end px-2">
-                  <div className="text-center flex flex-col items-center">
-                    <span
-                      className={`text-xl -mb-2 text-content-dim ${fontArial}`}
-                    ></span>
-                    <span className={fontArial}>Issuing Authority</span>
-                  </div>
-                  <div className="text-center flex flex-col items-center">
-                    <span
-                      className={`text-xl -mb-2 text-content-dim ${fontArial}`}
-                    ></span>
-                    <span className={fontArial}>Holder&apos;s Signature</span>
-                  </div>
-                </div>
-
                 <div className="mt-auto flex flex-col items-center pb-1">
                   <div className="w-[85%] flex justify-center bg-white px-2 py-2 rounded-sm mix-blend-multiply opacity-90">
                     <Barcode

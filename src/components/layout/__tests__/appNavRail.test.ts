@@ -59,17 +59,29 @@ describe('M3E nav source contract', () => {
     expect(source).not.toContain('M3eNavRailToggle');
   });
 
-  test('one merged brand control sits above the search FAB', () => {
+  test('brand control dissolves re. into Times New Roman VTOP in place', () => {
     const source = read('src/components/layout/AppNavRail.tsx');
-    expect(source).toContain('VTOP');
     expect(source).toContain('re.');
-    expect(source).toContain('font-vtop');
+    expect(source).toContain('VTOP');
+    expect(source).toContain("font-['IDCardTimes',Times,serif]!");
+    expect(source).not.toContain('font-vtop');
+    expect(source).not.toContain('<svg');
     expect(source).toContain('onMouseEnter');
     expect(source.indexOf('Open native VTOP')).toBeLessThan(
       source.indexOf('size="small"'),
     );
     expect(source).toContain('var(--md-sys-color-secondary-container)');
     expect(source).toContain('var(--md-sys-color-on-secondary-container)');
+  });
+
+  test('a monochrome campus emblem sits above the brand control', () => {
+    const source = read('src/components/layout/AppNavRail.tsx');
+    expect(source).toContain('VitEmblemLoader');
+    expect(source).toContain('currentCampus()');
+    expect(source).toContain('aria-hidden="true"');
+    expect(source.indexOf('<VitEmblemLoader')).toBeLessThan(
+      source.indexOf('Open native VTOP'),
+    );
   });
 
   test('nav tags are registered in the main world and aliased', () => {

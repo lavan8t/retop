@@ -116,7 +116,7 @@ export const HomeWidgets: React.FC<HomeWidgetsProps> = ({
   // Original Desktop Right Column View
   return (
     <div
-      className={`hidden lg:flex w-full lg:w-[27%] xl:w-[24%] flex-col shrink-0 h-auto lg:h-full overflow-y-auto custom-scrollbar relative z-30 pb-4 md:pb-6 lg:pb-8 pl-2 lg:pl-3 pr-4 lg:pr-6 gap-4 ${className || ''}`}
+      className={`hidden lg:flex w-full lg:w-[23%] xl:w-[20%] flex-col shrink-0 h-auto lg:h-full overflow-y-auto custom-scrollbar relative z-30 pb-4 md:pb-6 lg:pb-8 pl-2 lg:pl-3 pr-4 lg:pr-6 gap-4 ${className || ''}`}
     >
       <Card
         onClick={() =>

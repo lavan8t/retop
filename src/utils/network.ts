@@ -110,6 +110,9 @@ export const getParserForKey = (
   return null;
 };
 
+export const SESSION_EXPIRED_MESSAGE =
+  'VTOP session expired. You may need to log in again.';
+
 export async function diagnoseNetworkError(): Promise<string> {
   // 1. Check internet connectivity first
   let hasInternet = typeof navigator !== 'undefined' ? navigator.onLine : true;
@@ -147,7 +150,7 @@ export async function diagnoseNetworkError(): Promise<string> {
 
     if (!res.ok) {
       if (res.status === 401 || res.status === 403) {
-        return 'VTOP session expired. You may need to log in again.';
+        return SESSION_EXPIRED_MESSAGE;
       }
       return 'VTOP server is slow or unreachable. You may need to log in again.';
     }
@@ -159,7 +162,7 @@ export async function diagnoseNetworkError(): Promise<string> {
       html.includes('vtopLogin') ||
       html.includes('Session Expired')
     ) {
-      return 'VTOP session expired. You may need to log in again.';
+      return SESSION_EXPIRED_MESSAGE;
     }
   } catch {
     return 'VTOP is slow or unreachable. You may need to log in again.';
@@ -195,12 +198,26 @@ export class VTOPNetwork {
       if (!VTOPNetwork.hasDiagnosticRun) {
         VTOPNetwork.hasDiagnosticRun = true;
 
-        diagnoseNetworkError().then((msg) => {
+        return diagnoseNetworkError().then((msg) => {
           window.dispatchEvent(
             new CustomEvent('retop-toast', {
               detail: { message: msg, type: 'error' },
             }),
           );
+          if (msg === SESSION_EXPIRED_MESSAGE) {
+            const { hostname, pathname } = window.location;
+            const onVtop =
+              hostname.includes('vit.ac.in') ||
+              hostname.includes('vitap.ac.in');
+            const onAuthRoute =
+              /\/vtop\/(login|vtopLogin|open\/page|prelogin)/.test(pathname);
+            if (onVtop && !onAuthRoute) {
+              window.location.assign('/vtop/login');
+              return;
+            }
+          }
+          // Transient failure (or already on a login route): allow requests again.
+          VTOPNetwork.resetNetworkErrorState();
         });
       }
     }
@@ -380,12 +397,9 @@ export class VTOPNetwork {
         clearTimeout(timeoutId);
       }
       if (!response.ok) {
-        const isFatalEndpoint =
-          urlStr.includes('open/page') || urlStr.includes('vtopLogin');
         const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
 
         if (
-          isFatalEndpoint &&
           !isOffline &&
           (response.status === 401 || response.status === 403)
         ) {

@@ -57,3 +57,25 @@ Add a campus-aware endpoint map in `src/utils/network.ts`:
 - All campuses: keep `examinations/*`, `academics/common/StudentCoursePage`,
   `academics/common/CalendarPreview`, `academics/common/Curriculum`.
 - Dashboard: skip widget fetch on AP; populate Home from per-page data or `--`.
+
+## Decision (2026-11-22): derive Home attendance from the attendance page on AP
+
+Implemented. `get/dashboard/current/semester/course/details` stays as the widget
+endpoint for Vellore/Chennai (unchanged); on AP it 404s, so Home attendance rows
+are now derived from the already-working `processViewStudentAttendance` data.
+
+- Pure mapper `detailedToCourseSummary` in `src/utils/attendanceHome.ts` converts
+  `DetailedAttendanceCourse` → `CourseSummary`, preserving `attended`/`total` and
+  setting `attendance: String(percentage)` so Home's
+  `overallAttendancePercentage` averages real numbers instead of showing `--`.
+- `dashboardSlice.ts` gates on `currentCampus() === 'vitap'` in both the initial
+  load and `syncDashboard`. If `detailedAttendance` is empty and an
+  `attSelectedSem` exists it calls `fetchDetailedAttendance`, maps the rows,
+  sets `attendance`, and caches under the auth-scoped `dashboard_attendance` key
+  used by hydration/offline. Non-AP behavior is untouched.
+- `syncOrchestrator.ts` bridges the native login path: when syncing AP it maps
+  the `attData` already fetched for the attendance page into
+  `dashboard_attendance` (auth-scoped + generic) instead of relying on the 404
+  dashboard widget.
+
+No endpoint strings, parsers, UI, or network URLs were changed.

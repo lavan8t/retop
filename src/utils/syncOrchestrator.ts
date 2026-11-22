@@ -12,6 +12,7 @@ import {
 import { parseSemesters, parseTimetable } from '../parsers/timetable';
 import { parseStudentAttendance } from '../parsers/attendance';
 import { parseCourseDetails } from '../parsers/dashboard';
+import { detailedToCourseSummary } from './attendanceHome';
 import { parseStudentMarks } from '../parsers/marks';
 import { parseGrades, parseGradeHistory } from '../parsers/grades';
 import { setCachedData } from './cache';
@@ -132,6 +133,15 @@ export async function syncStudentData(
               attData,
             );
             await setCachedData(`attendance_detailed_${activeSemId}`, attData);
+            // AP has no dashboard widget; reuse the attendance page for Home.
+            if (client.campus === 'vitap' && attData.length > 0) {
+              const homeAttendance = attData.map(detailedToCourseSummary);
+              await setCachedData(
+                `${regNo}_dashboard_attendance`,
+                homeAttendance,
+              );
+              await setCachedData('dashboard_attendance', homeAttendance);
+            }
           } catch (err) {
             console.warn('[syncOrchestrator] Attendance sync error:', err);
           }

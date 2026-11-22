@@ -13,6 +13,8 @@ import { parseGradesSemesters } from '../../parsers/grades';
 import { parseDASemesters } from '../../parsers/digital-assignments';
 import { parseStudentProfile } from '../../parsers/profile';
 import { getCachedData, setCachedData } from '../../utils/cache';
+import { currentCampus } from '../../utils/campus';
+import { detailedToCourseSummary } from '../../utils/attendanceHome';
 import { readLastAttendanceSemester } from '../../utils/attendanceSemester';
 import { waitForIntercepted } from '../../utils/dashboardInterceptor';
 import { isNativeAndroidBridgeAvailable } from '../../utils/vtopBridge';
@@ -48,6 +50,31 @@ export interface DashboardSlice {
     authId: string,
   ) => Promise<void>;
   enableDemoMode: () => void;
+}
+
+/** AP has no dashboard widget; derive Home rows from the working attendance page. */
+async function hydrateVitapHomeAttendance(
+  get: () => DataState,
+  set: (partial: Partial<DataState>) => void,
+  network: VTOPNetwork,
+  authId: string,
+) {
+  if (currentCampus() !== 'vitap') return;
+
+  let detailed = get().detailedAttendance;
+  const semId = get().attSelectedSem;
+  if ((!detailed || detailed.length === 0) && semId) {
+    await get().fetchDetailedAttendance(network, semId);
+    detailed = get().detailedAttendance;
+  }
+  if (!detailed || detailed.length === 0) return;
+
+  const attendance = detailed.map(detailedToCourseSummary);
+  set({ attendance });
+  await setCachedData(
+    authId ? `${authId}_dashboard_attendance` : 'dashboard_attendance',
+    attendance,
+  );
 }
 
 export const createDashboardSlice: StateCreator<
@@ -233,7 +260,11 @@ export const createDashboardSlice: StateCreator<
           }
         } catch {}
 
-        set({ status: 'Offline', isSyncing: false, lastSyncTime: Date.now() });
+        set({
+          status: 'Offline',
+          isSyncing: false,
+          lastSyncTime: Date.now(),
+        });
         return;
       }
 
@@ -423,6 +454,8 @@ export const createDashboardSlice: StateCreator<
 
       await Promise.allSettled([statsP, attP, daP, eventsP, timetableAndCalP]);
 
+      await hydrateVitapHomeAttendance(get, set, network, authId);
+
       set({ status: 'Online', lastSyncTime: Date.now() });
 
       // Background refresh: silently update with fresh data (timetable/calendar/exam
@@ -510,6 +543,8 @@ export const createDashboardSlice: StateCreator<
         lastSyncTime: Date.now(),
         status: 'Online',
       });
+
+      await hydrateVitapHomeAttendance(get, set, network, authId);
 
       // Refresh timetable for current active semester
       const currentTtSem = get().ttSelectedSem;

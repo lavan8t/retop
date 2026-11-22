@@ -70,3 +70,19 @@
   font-family: 'OpenSans';
   src: local('Google Sans Flex'), local('system-ui');
 }
+
+/* VIT-AP ID card serif (from retop-app Android assets) */
+@font-face {
+  font-family: 'IDCardTimes';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/times_new_roman_regular.otf') format('opentype');
+}
+@font-face {
+  font-family: 'IDCardTimes';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./fonts/times_new_roman_bold.ttf') format('truetype');
+}

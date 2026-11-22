@@ -247,7 +247,7 @@ const fontsDir = resolve(DIST, "fonts");
 mkdirSync(fontsDir, { recursive: true });
 const publicFontsDir = resolve(ROOT, "public/fonts");
 if (existsSync(publicFontsDir)) {
-  for (const file of new Bun.Glob("*.woff2").scanSync(publicFontsDir)) {
+  for (const file of new Bun.Glob("*.{woff2,otf,ttf}").scanSync(publicFontsDir)) {
     copyFileSync(resolve(publicFontsDir, file), resolve(fontsDir, file));
   }
   console.log("  - fonts/");

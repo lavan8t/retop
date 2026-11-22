@@ -24,7 +24,7 @@ export const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
     data.permanentAddress.phone || data.personal.mobile || 'Not Provided';
 
   const fontArial = "font-['Arial',Helvetica,sans-serif]!";
-  const fontTimes = "font-['Times_New_Roman',Times,serif]!";
+  const fontTimes = "font-['IDCardTimes',Times,serif]!";
 
   const fullName = toTitleCase(data?.basic?.name ?? '');
   const isShortName = fullName.length < 17;
@@ -72,15 +72,10 @@ export const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
         >
           {isAp ? (
             <>
-              <div className="flex items-center justify-center gap-2 pt-3 px-3 shrink-0">
-                <img
-                  src={getExtUrl('dist/assets/vitap-seal.png')}
-                  className="h-14 w-14 object-contain"
-                  alt="VIT-AP University seal"
-                />
+              <div className="flex items-center justify-center pt-3 px-3 shrink-0">
                 <img
                   src={getExtUrl('dist/assets/vitap-logo.png')}
-                  className="h-12 max-w-[70%] object-contain"
+                  className="h-12 max-w-[85%] object-contain"
                   alt="VIT-AP University"
                 />
               </div>
@@ -99,11 +94,17 @@ export const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
                 </div>
               </div>
 
-              <div className="flex flex-col items-center justify-center text-center shrink-0 pb-1 w-full">
+              <div className="relative flex flex-col items-center justify-center text-center shrink-0 pb-1 w-full">
+                <img
+                  src={getExtUrl('dist/assets/vitap-seal.png')}
+                  className="pointer-events-none absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 object-contain opacity-15"
+                  aria-hidden="true"
+                  alt=""
+                />
                 <div
                   className={`font-bold text-[18px] ${fontArial} text-[#800000]`}
                 >
-                  {data.basic.regNo}
+                  {data.personal.appNo}
                 </div>
                 {isShortName ? (
                   <div
@@ -127,7 +128,7 @@ export const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
               </div>
 
               <div
-                className="text-[#ffffff] text-center py-1 font-bold text-[22px] shrink-0"
+                className={`text-[#ffffff] text-center py-1 font-bold text-[22px] shrink-0 ${fontArial}`}
                 style={{
                   backgroundColor: isHosteller ? '#0F5223' : '#800000',
                 }}
@@ -299,10 +300,7 @@ export const DigitalIDCard = ({ data }: { data: StudentProfile }) => {
                       font="Arial"
                     />
                   </div>
-                  <div className={`font-bold text-[13px] ${fontArial} mt-1`}>
-                    {data.basic.regNo}
-                  </div>
-                  <div className={`font-bold text-[11px] ${fontArial}`}>
+                  <div className={`font-bold text-[11px] ${fontArial} mt-1`}>
                     Website : www.vitap.ac.in
                   </div>
                 </div>

@@ -1639,4 +1639,65 @@ export class VTOPNetwork {
     if (currentCampus() !== 'vitap') return '';
     return this.fetchVtopApi('getStudBioHistory', { fromDate: date });
   }
+
+  // ── Course Page cascade (VIT-AP only) ────────────────────────────────
+
+  /** Flat cascade endpoints; fetchVtopApi supplies _csrf / authorizedID / x. */
+  async getApCoursePageShell(): Promise<string> {
+    if (currentCampus() !== 'vitap') return '';
+    return this.fetchVtopApi('academics/common/StudentCoursePage', {
+      verifyMenu: 'true',
+      nocache: String(Date.now()),
+    });
+  }
+
+  async getApCourseOptions(semSubId: string): Promise<string> {
+    if (currentCampus() !== 'vitap') return '';
+    return this.fetchVtopApi('getCourseForCoursePage', {
+      paramReturnId: 'getCourseForCoursePage',
+      semSubId,
+    });
+  }
+
+  async getApSlots(classId: string, semSubId: string): Promise<string> {
+    if (currentCampus() !== 'vitap') return '';
+    return this.fetchVtopApi('getSlotIdForCoursePage', {
+      classId,
+      praType: 'source',
+      paramReturnId: 'getSlotIdForCoursePage',
+      semSubId,
+    });
+  }
+
+  async getApFaculty(
+    classId: string,
+    slotId: string,
+    semSubId: string,
+  ): Promise<string> {
+    if (currentCampus() !== 'vitap') return '';
+    return this.fetchVtopApi('getFacultyForCoursePage', {
+      classId,
+      slotId,
+      praType: 'source',
+      paramReturnId: 'getFacultyForCoursePage',
+      semSubId,
+    });
+  }
+
+  async getApCourseDetail(
+    classId: string,
+    slotId: string,
+    faculty: string,
+    semSubId: string,
+  ): Promise<string> {
+    if (currentCampus() !== 'vitap') return '';
+    return this.fetchVtopApi('processViewStudentCourseDetail', {
+      classId,
+      slotId,
+      faculty,
+      praType: 'source',
+      paramReturnId: 'getCourseDetailsForCoursePage',
+      semSubId,
+    });
+  }
 }

@@ -22,6 +22,13 @@ import {
 import { readSessionFactsFromDocument } from '../utils/sessionFacts';
 import { isSameSemester } from '../utils/semesterIdentity';
 import { buildCourseMaterialGroups } from '../utils/courseMaterials';
+import { currentCampus } from '../utils/campus';
+import {
+  parseApCourseDetail,
+  parseApCourseOptions,
+  parseApFacultyOptions,
+  parseApSlotOptions,
+} from '../parsers/course-page-ap';
 
 interface UpcomingClassDetail {
   date: Date;
@@ -38,6 +45,7 @@ export const useCoursePageData = (
   searchTerm: string,
   materialSort: 'date' | 'module',
 ) => {
+  const isAp = currentCampus() === 'vitap';
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<CoursePageData | null>(null);
   const [courseMarks, setCourseMarks] = useState<any>(null);
@@ -96,6 +104,20 @@ export const useCoursePageData = (
     };
 
     const fetchOptions = async () => {
+      if (isAp) {
+        try {
+          await network.getApCoursePageShell();
+          const html = await network.getApCourseOptions(selectedSem);
+          if (!isMounted) return;
+          const options = parseApCourseOptions(html, selectedSem);
+          if (options.length > 0) setCpOptions(options);
+          else fallbackFromTimetable();
+        } catch (err) {
+          console.warn('Failed to load VIT-AP course options:', err);
+          fallbackFromTimetable();
+        }
+        return;
+      }
       try {
         let html = await network.getCoursePage();
         let parsed = parseCoursePage(html);
@@ -145,6 +167,31 @@ export const useCoursePageData = (
     const fetchDetails = async () => {
       setLoading(true);
       try {
+        if (isAp) {
+          const slots = parseApSlotOptions(
+            await network.getApSlots(opt.classId, selectedSem),
+          );
+          if (slots.length === 0) return;
+          const slotId = slots[0].id;
+          const facultyOpts = parseApFacultyOptions(
+            await network.getApFaculty(opt.classId, slotId, selectedSem),
+          );
+          if (facultyOpts.length === 0) return;
+          const html = await network.getApCourseDetail(
+            opt.classId,
+            slotId,
+            facultyOpts[0].id,
+            selectedSem,
+          );
+          if (!isMounted) return;
+          const parsedDetails = parseApCourseDetail(html);
+          setData({
+            ...parsedDetails,
+            options: cpOptions,
+            selectedCourseId: selectedOptionId,
+          });
+          return;
+        }
         const html = await network.fetchFragment(
           'academics/CoursePageConsolidated/getCourseDetail',
           {

@@ -74,12 +74,14 @@ describe('M3E nav source contract', () => {
     expect(source).toContain('var(--md-sys-color-on-secondary-container)');
   });
 
-  test('a monochrome campus emblem sits above the brand control', () => {
+  test('the long VIT wordmark sits above the brand control in text color', () => {
     const source = read('src/components/layout/AppNavRail.tsx');
-    expect(source).toContain('VitEmblemLoader');
-    expect(source).toContain('currentCampus()');
+    expect(source).toContain("getExtUrl('dist/assets/vitLogo.svg')");
+    expect(source).toContain('WebkitMaskImage');
+    expect(source).toContain("backgroundColor: 'currentColor'");
+    expect(source).toContain('text-(--text-main)');
     expect(source).toContain('aria-hidden="true"');
-    expect(source.indexOf('<VitEmblemLoader')).toBeLessThan(
+    expect(source.indexOf('logoMask')).toBeLessThan(
       source.indexOf('Open native VTOP'),
     );
   });

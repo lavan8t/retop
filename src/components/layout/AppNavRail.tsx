@@ -10,8 +10,7 @@ import {
 } from '../attendance/m3eTags';
 import { ViewType } from '../../types/vtop';
 import { NAV_DESTINATIONS, getNavBarDestinations } from '../../utils/routes';
-import { VitEmblemLoader } from '../common/VitEmblemLoader';
-import { currentCampus } from '../../utils/campus';
+import { getExtUrl } from '../../utils/url';
 
 /**
  * Shared primary navigation. Wide: an expanded M3E nav rail with inline labels.
@@ -66,7 +65,7 @@ export const AppNavRail: React.FC<AppNavRailProps> = ({
   onVtop,
 }) => {
   const [brandHover, setBrandHover] = React.useState(false);
-  const isVitap = currentCampus() === 'vitap';
+  const logoMask = getExtUrl('dist/assets/vitLogo.svg');
 
   return (
     <>
@@ -78,15 +77,24 @@ export const AppNavRail: React.FC<AppNavRailProps> = ({
         aria-label="Primary navigation"
         style={navColorTokens}
       >
-        {/* Monochrome campus emblem, above the brand control. */}
+        {/* Long VIT wordmark, tinted with the current text color, above the brand. */}
         <div
-          className="flex h-12 items-center justify-center"
+          className="flex h-12 items-center pl-4 pr-3 text-(--text-main)"
           aria-hidden="true"
         >
-          <VitEmblemLoader
-            size={32}
-            finishing
-            className={isVitap ? '[color:#a32450]!' : 'text-(--text-muted)!'}
+          <div
+            className="h-7 w-28 shrink-0"
+            style={{
+              backgroundColor: 'currentColor',
+              WebkitMaskImage: `url("${logoMask}")`,
+              maskImage: `url("${logoMask}")`,
+              WebkitMaskSize: 'contain',
+              maskSize: 'contain',
+              WebkitMaskRepeat: 'no-repeat',
+              maskRepeat: 'no-repeat',
+              WebkitMaskPosition: 'left center',
+              maskPosition: 'left center',
+            }}
           />
         </div>
 
@@ -100,12 +108,12 @@ export const AppNavRail: React.FC<AppNavRailProps> = ({
           onFocus={() => setBrandHover(true)}
           onBlur={() => setBrandHover(false)}
           onClick={brandHover ? onVtop : () => onNavigate('dashboard')}
-          className="relative min-h-14 w-full px-3 flex items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) cursor-pointer select-none"
+          className="relative min-h-14 w-full pl-4 pr-3 flex items-center justify-start outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) cursor-pointer select-none"
         >
           <span className="relative block h-8 w-full">
             {/* re. signature */}
             <span
-              className={`absolute inset-0 flex items-end justify-center leading-none transition-all duration-300 ease-out ${
+              className={`absolute inset-0 flex items-end justify-start leading-none transition-all duration-300 ease-out ${
                 brandHover ? 'scale-90 opacity-0' : 'scale-100 opacity-100'
               }`}
             >
@@ -117,7 +125,7 @@ export const AppNavRail: React.FC<AppNavRailProps> = ({
 
             {/* VTOP in Times New Roman, same spot as re. */}
             <span
-              className={`font-['IDCardTimes',Times,serif]! absolute inset-0 flex items-center justify-center font-bold tracking-wide text-xl text-(--text-main) transition-all duration-300 ease-out ${
+              className={`font-['IDCardTimes',Times,serif]! absolute inset-0 flex items-center justify-start font-bold tracking-wide text-xl text-(--text-main) transition-all duration-300 ease-out ${
                 brandHover ? 'scale-100 opacity-100' : 'scale-90 opacity-0'
               }`}
             >

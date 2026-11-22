@@ -148,7 +148,7 @@ export const ScheduleRow = React.memo(
 
           {/* Center: Main Name (No course code) */}
           <div className="flex-1 min-w-0 px-1">
-            <span className="text-xs sm:text-sm md:text-base font-black leading-tight wrap-break-words line-clamp-2">
+            <span className="text-xs sm:text-sm md:text-base font-bold leading-tight wrap-break-words line-clamp-2">
               {item.course.title}
             </span>
           </div>
@@ -165,13 +165,13 @@ export const ScheduleRow = React.memo(
             )}
 
             {slot && (
-              <span className="px-2.5 py-1 rounded-full bg-black/15 text-xs sm:text-sm font-mono font-black uppercase tracking-wider shrink-0 leading-none">
+              <span className="px-2.5 py-1 rounded-full bg-black/15 text-xs sm:text-sm font-mono font-bold uppercase tracking-wider shrink-0 leading-none">
                 {slot}
               </span>
             )}
 
             {venue && (
-              <span className="text-xs sm:text-sm font-black whitespace-nowrap shrink-0 leading-none">
+              <span className="text-xs sm:text-sm font-bold whitespace-nowrap shrink-0 leading-none">
                 {venue}
               </span>
             )}
@@ -181,7 +181,7 @@ export const ScheduleRow = React.memo(
         {/* Mobile Layout: 2 Rows (Row 1: Title, Row 2: Start Time & Venue Alone, Slot Hidden) */}
         <div className="sm:hidden flex flex-col gap-1 w-full relative z-10">
           <div className="flex items-center justify-between gap-2 min-w-0">
-            <span className="text-xs font-black leading-snug wrap-break-words line-clamp-2 min-w-0 flex-1">
+            <span className="text-xs font-bold leading-snug wrap-break-words line-clamp-2 min-w-0 flex-1">
               {item.course.title}
             </span>
             {isCriticalAtt && (
@@ -197,7 +197,7 @@ export const ScheduleRow = React.memo(
           <div className="flex items-center justify-between gap-2 text-[10px] font-mono font-bold opacity-85 leading-none">
             <span className="whitespace-nowrap">{startTime}</span>
             {venue && (
-              <span className="whitespace-nowrap font-black">{venue}</span>
+              <span className="whitespace-nowrap font-bold">{venue}</span>
             )}
           </div>
         </div>

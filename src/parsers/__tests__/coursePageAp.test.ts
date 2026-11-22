@@ -3,6 +3,7 @@ import {
   parseApCourseDetail,
   parseApCourseOptions,
   parseApFacultyOptions,
+  parseApSemesters,
   parseApSlotOptions,
   SCHEMA_VERSION,
 } from '../course-page-ap';
@@ -49,6 +50,48 @@ const DETAIL_HTML = `
 <div id="collapseTextBook"><table><tbody>
   <tr><td>Textbooks</td><td>1. Python 101 2. Learning Python</td></tr>
 </tbody></table></div>`;
+
+const SHELL_HTML = `
+<select id="semesterSubId" name="semesterSubId">
+  <option value="">--Select Semester--</option>
+  <option value="AP2026273" selected>Fall Semester 2026-27 Freshers</option>
+  <option value="AP2026272">Spring Semester 2025-26 Regular</option>
+</select>
+<select id="courseCode">
+  <option value="AP2026273000308">CSE1012 - Problem Solving using Python - ETH</option>
+</select>`;
+
+describe('parseApSemesters', () => {
+  it('reads only select#semesterSubId options and marks the selected one latest', () => {
+    expect(parseApSemesters(SHELL_HTML)).toEqual([
+      {
+        id: 'AP2026273',
+        label: 'Fall Semester 2026-27 Freshers',
+        isLatest: true,
+      },
+      {
+        id: 'AP2026272',
+        label: 'Spring Semester 2025-26 Regular',
+        isLatest: false,
+      },
+    ]);
+  });
+
+  it('supports the name-only selector and defaults the first option to latest', () => {
+    const html = `<select name="semesterSubId">
+      <option value="AP1">One</option><option value="AP2">Two</option>
+    </select>`;
+    expect(parseApSemesters(html)).toEqual([
+      { id: 'AP1', label: 'One', isLatest: true },
+      { id: 'AP2', label: 'Two', isLatest: false },
+    ]);
+  });
+
+  it('returns an empty list when no semester select exists', () => {
+    expect(parseApSemesters(COURSES_HTML)).toEqual([]);
+    expect(parseApSemesters('')).toEqual([]);
+  });
+});
 
 describe('parseApCourseOptions', () => {
   it('maps select#courseCode options using value as classId and semSubId as semester', () => {

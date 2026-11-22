@@ -277,7 +277,6 @@ export const DashboardApp = () => {
     assignments,
     events,
     upcoming,
-    ttSemesters,
     ttSelectedSem,
     ttCourses,
     ttLoading,
@@ -1127,9 +1126,6 @@ export const DashboardApp = () => {
             onSync={() => {
               handleSyncCurrentView().catch(console.warn);
             }}
-            semesters={ttSemesters}
-            selectedSem={ttSelectedSem}
-            onSemesterChange={handleTimetableSemChange}
           />
           <main className="flex-1 overflow-hidden relative">
             <div

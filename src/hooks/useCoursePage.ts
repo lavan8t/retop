@@ -27,6 +27,7 @@ import {
   parseApCourseDetail,
   parseApCourseOptions,
   parseApFacultyOptions,
+  parseApSemesters,
   parseApSlotOptions,
 } from '../parsers/course-page-ap';
 
@@ -58,10 +59,18 @@ export const useCoursePageData = (
     ttCourses,
     attendance,
     assignments,
+    ttSemesters,
     ttSelectedSem,
     calGridData,
     detailedAttendance,
+    setCpSelectedSem,
+    setCpSemesters,
   } = useDataStore();
+
+  // Non-AP keeps the previous semester list (timetable); AP replaces it below.
+  useEffect(() => {
+    if (!isAp && ttSemesters.length > 0) setCpSemesters(ttSemesters);
+  }, [isAp, ttSemesters, setCpSemesters]);
 
   useEffect(() => {
     if (!selectedOptionId) {
@@ -86,13 +95,13 @@ export const useCoursePageData = (
     if (cpOptions.length > 0) return;
     let isMounted = true;
 
-    const fallbackFromTimetable = () => {
+    const fallbackFromTimetable = (sem = selectedSem) => {
       if (ttCourses && ttCourses.length > 0 && isMounted) {
         const fallbackOpts: CoursePageOption[] = ttCourses.map((tc) => ({
           code: tc.code,
           title: tc.title,
           classId: tc.classId || tc.code,
-          semester: selectedSem || ttSelectedSem || 'VL20262701',
+          semester: sem || ttSelectedSem || 'VL20262701',
           type: tc.type,
           credits: tc.credits || '0',
           rawText: `${tc.code} - ${tc.title} - ${tc.type}`,
@@ -106,12 +115,22 @@ export const useCoursePageData = (
     const fetchOptions = async () => {
       if (isAp) {
         try {
-          await network.getApCoursePageShell();
-          const html = await network.getApCourseOptions(selectedSem);
+          const shellHtml = await network.getApCoursePageShell();
+          const semesters = parseApSemesters(shellHtml);
+          let effectiveSem = selectedSem;
+          if (semesters.length > 0) {
+            setCpSemesters(semesters);
+            if (!semesters.some((s) => s.id === selectedSem)) {
+              effectiveSem = (semesters.find((s) => s.isLatest) ?? semesters[0])
+                .id;
+              setCpSelectedSem(effectiveSem);
+            }
+          }
+          const html = await network.getApCourseOptions(effectiveSem);
           if (!isMounted) return;
-          const options = parseApCourseOptions(html, selectedSem);
+          const options = parseApCourseOptions(html, effectiveSem);
           if (options.length > 0) setCpOptions(options);
-          else fallbackFromTimetable();
+          else fallbackFromTimetable(effectiveSem);
         } catch (err) {
           console.warn('Failed to load VIT-AP course options:', err);
           fallbackFromTimetable();
@@ -152,6 +171,8 @@ export const useCoursePageData = (
     ttCourses,
     selectedSem,
     ttSelectedSem,
+    setCpSelectedSem,
+    setCpSemesters,
   ]);
 
   useEffect(() => {

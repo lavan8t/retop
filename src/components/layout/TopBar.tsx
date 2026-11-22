@@ -7,7 +7,7 @@ import {
   MoreVert,
   Person,
 } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
-import { QuickLink } from '../../types/vtop';
+import { QuickLink, type Semester } from '../../types/vtop';
 import { MaterialSwitch } from '../MaterialSwitch';
 import { SemesterDropdown, ClassGroupDropdown } from '../ui/Dropdown';
 import { getPageTitle } from './appShell';
@@ -27,14 +27,33 @@ interface TopBarProps {
   onProfileClick?: () => void;
   showProfileMenu?: boolean;
   onSync?: () => void;
-  semesters?: import('../../types/vtop').Semester[];
-  selectedSem?: string;
-  onSemesterChange?: (id: string) => void;
 }
+
+/** Course-page semester picker built on M3E; options come from the AP shell list. */
+const CoursePageSemesterSelect: React.FC<{
+  semesters: Semester[];
+  selectedSem: string;
+  onChange: (id: string) => void;
+}> = ({ semesters, selectedSem, onChange }) => (
+  <m3e-select
+    aria-label="Semester"
+    value={selectedSem}
+    onChange={(e: any) => {
+      const id = e.target?.value;
+      if (id) onChange(id);
+    }}
+  >
+    {semesters.map((s) => (
+      <m3e-option key={s.id} value={s.id}>
+        {s.label}
+      </m3e-option>
+    ))}
+  </m3e-select>
+);
 
 /**
  * Slim context bar: a page title plus the per-view controls the pages need.
- * Global search, favourites, sync, profile and semester now live in AppNavRail.
+ * Global search, favourites, sync and profile now live in AppNavRail.
  */
 export const TopBar: React.FC<TopBarProps> = ({
   currentView,
@@ -47,9 +66,6 @@ export const TopBar: React.FC<TopBarProps> = ({
   onProfileClick,
   showProfileMenu,
   onSync,
-  semesters = [],
-  selectedSem,
-  onSemesterChange,
 }) => {
   const [isMobileControlsOpen, setIsMobileControlsOpen] = React.useState(false);
 
@@ -64,6 +80,7 @@ export const TopBar: React.FC<TopBarProps> = ({
     cpSelectedCourseId,
     setCpSelectedCourseId,
     cpOptions,
+    setCpOptions,
     cpSearchTerm,
     setCpSearchTerm,
     marksSemesters,
@@ -93,6 +110,7 @@ export const TopBar: React.FC<TopBarProps> = ({
     ttSelectedSem,
     cpSelectedSem,
     setCpSelectedSem,
+    cpSemesters,
     calSemesters,
     calSelectedSem,
     setCalSelectedSem,
@@ -112,6 +130,13 @@ export const TopBar: React.FC<TopBarProps> = ({
     setExamSelectedSem,
     fetchExamSchedule,
   } = useDataStore();
+
+  const handleCoursePageSemChange = (sem: string) => {
+    setCpSelectedSem(sem);
+    setCpSelectedCourseId('');
+    // Force useCoursePage to refetch options for the new semester.
+    setCpOptions([]);
+  };
 
   const isLoading =
     status === 'Syncing...' ||
@@ -158,13 +183,6 @@ export const TopBar: React.FC<TopBarProps> = ({
       <div className="flex items-center gap-2 md:gap-4 shrink-0">
         {/* Global controls pinned top-right */}
         <div className="flex items-center gap-1.5">
-          {semesters.length > 0 && (
-            <SemesterDropdown
-              semesters={semesters}
-              selectedId={selectedSem}
-              onChange={(id: string) => onSemesterChange?.(id)}
-            />
-          )}
           <button
             type="button"
             aria-label={isSyncing ? 'Syncing' : 'Sync now'}
@@ -370,13 +388,10 @@ export const TopBar: React.FC<TopBarProps> = ({
               key="coursePage-controls"
               className="flex items-center gap-2 mr-1 md:mr-2"
             >
-              <SemesterDropdown
-                semesters={ttSemesters}
-                selectedId={cpSelectedSem}
-                onChange={(sem: string) => {
-                  setCpSelectedSem(sem);
-                  setCpSelectedCourseId('');
-                }}
+              <CoursePageSemesterSelect
+                semesters={cpSemesters}
+                selectedSem={cpSelectedSem}
+                onChange={handleCoursePageSemChange}
               />
             </div>
           )}
@@ -702,12 +717,11 @@ export const TopBar: React.FC<TopBarProps> = ({
                     )}
 
                     {currentView === 'coursePage' && (
-                      <SemesterDropdown
-                        semesters={ttSemesters}
-                        selectedId={cpSelectedSem}
+                      <CoursePageSemesterSelect
+                        semesters={cpSemesters}
+                        selectedSem={cpSelectedSem}
                         onChange={(sem: string) => {
-                          setCpSelectedSem(sem);
-                          setCpSelectedCourseId('');
+                          handleCoursePageSemChange(sem);
                           setIsMobileControlsOpen(false);
                         }}
                       />

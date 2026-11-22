@@ -21,6 +21,8 @@ export interface TimetableSlice {
 
   cpSelectedSem: string;
   setCpSelectedSem: (semId: string) => void;
+  cpSemesters: Semester[];
+  setCpSemesters: (sems: Semester[]) => void;
 
   highlightedCourseCode: string | null;
   setHighlightedCourseCode: (code: string | null) => void;
@@ -113,4 +115,6 @@ export const createTimetableSlice: StateCreator<
 
   cpSelectedSem: '',
   setCpSelectedSem: (semId) => set({ cpSelectedSem: semId }),
+  cpSemesters: [],
+  setCpSemesters: (sems) => set({ cpSemesters: sems }),
 });

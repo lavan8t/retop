@@ -1,4 +1,4 @@
-import { CoursePageData, CoursePageOption } from '../types/vtop';
+import { CoursePageData, CoursePageOption, Semester } from '../types/vtop';
 import { parseHTMLFast } from '../utils/parser-utils';
 import { COURSE_PAGE_SCHEMA_VERSION, parseCoursePage } from './course-page';
 
@@ -17,6 +17,34 @@ const isPlaceholder = (value: string, text: string): boolean => {
     v.includes('choose') ||
     v.includes('select')
   );
+};
+
+/**
+ * The AP shell carries the semester list in `select#semesterSubId`. Selectors
+ * are narrow on purpose: `findSemesterOptions` would fall through to
+ * `#courseCode` on pages where the semester select is absent.
+ */
+export const parseApSemesters = (html: string): Semester[] => {
+  const doc = parseHTMLFast(html);
+  const select = doc.querySelector(
+    "select#semesterSubId, select[name='semesterSubId'], #semSubId",
+  );
+  if (!select) return [];
+
+  const semesters: Semester[] = [];
+  select.querySelectorAll('option').forEach((opt) => {
+    const id = opt.getAttribute('value') || '';
+    const label = opt.textContent?.trim() || '';
+    if (isPlaceholder(id, label)) return;
+    const isLatest =
+      opt.hasAttribute('selected') || (opt as HTMLOptionElement).selected;
+    semesters.push({ id, label, isLatest });
+  });
+
+  if (semesters.length > 0 && !semesters.some((s) => s.isLatest)) {
+    semesters[0].isLatest = true;
+  }
+  return semesters;
 };
 
 /** AP uses `select#courseCode` with text "CODE - Title - TYPE" and a numeric AP code as value. */

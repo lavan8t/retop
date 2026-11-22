@@ -121,8 +121,8 @@ export const ContentRouter = ({
             menu={menu}
             cpOptions={appState.cpOptions}
             setCpOptions={appState.setCpOptions}
-            cpSemesters={dataState.ttSemesters}
-            setCpSemesters={() => {}}
+            cpSemesters={dataState.cpSemesters}
+            setCpSemesters={dataState.setCpSemesters}
             selectedSem={dataState.cpSelectedSem}
             setSelectedSem={dataState.setCpSelectedSem}
             selectedOptionId={appState.cpSelectedCourseId}

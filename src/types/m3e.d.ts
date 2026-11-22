@@ -2,6 +2,7 @@ import type React from 'react';
 
 /** Loose attribute shape for raw M3E custom tags in React 19 JSX. */
 type M3eAttrs = {
+  key?: React.Key;
   class?: string;
   className?: string;
   slot?: string;
@@ -62,6 +63,8 @@ declare global {
       'm3e-segmented-button': M3eAttrs;
       'm3e-button-segment': M3eAttrs;
       'm3e-form-field': M3eAttrs;
+      'm3e-select': M3eAttrs;
+      'm3e-option': M3eAttrs;
       'm3e-tooltip': M3eAttrs;
       'm3e-rich-tooltip': M3eAttrs;
       'm3e-rich-tooltip-action': M3eAttrs;

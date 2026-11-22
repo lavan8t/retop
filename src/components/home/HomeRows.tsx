@@ -53,18 +53,18 @@ export const AttendanceRow = React.memo(
           style={{ width: `${displayVal}%` }}
         />
         <div className="relative z-10 flex items-center gap-2 min-w-0 flex-1 pr-3">
-          <span className="text-xs font-black text-(--text-main) leading-snug truncate min-w-0">
+          <span className="text-[11px] font-medium text-(--text-main) leading-snug truncate min-w-0">
             {course.name}
           </span>
           {course.type && (
-            <span className="text-[0.5625rem] font-black uppercase px-1.5 py-0.5 rounded-md bg-(--bg-main) text-(--text-muted) leading-none shrink-0 border border-(--border-dim)">
+            <span className="text-[0.5rem] font-semibold uppercase px-1 py-0.5 rounded-md bg-(--bg-main) text-(--text-muted) leading-none shrink-0 border border-(--border-dim)">
               {course.type}
             </span>
           )}
         </div>
 
         <div
-          className={`relative z-10 shrink-0 font-black font-expanded text-xs leading-none px-2.5 py-1 rounded-lg ${badgeBg}`}
+          className={`relative z-10 shrink-0 font-bold font-expanded text-[11px] leading-none px-2 py-1 rounded-lg ${badgeBg}`}
         >
           {isNaN(val) ? '--' : `${displayVal}%`}
         </div>
@@ -148,7 +148,7 @@ export const ScheduleRow = React.memo(
 
           {/* Center: Main Name (No course code) */}
           <div className="flex-1 min-w-0 px-1">
-            <span className="text-xs sm:text-sm md:text-base font-bold leading-tight wrap-break-words line-clamp-2">
+            <span className="text-xs sm:text-sm font-medium leading-tight wrap-break-words line-clamp-2">
               {item.course.title}
             </span>
           </div>
@@ -181,7 +181,7 @@ export const ScheduleRow = React.memo(
         {/* Mobile Layout: 2 Rows (Row 1: Title, Row 2: Start Time & Venue Alone, Slot Hidden) */}
         <div className="sm:hidden flex flex-col gap-1 w-full relative z-10">
           <div className="flex items-center justify-between gap-2 min-w-0">
-            <span className="text-xs font-bold leading-snug wrap-break-words line-clamp-2 min-w-0 flex-1">
+            <span className="text-[11px] font-medium leading-snug wrap-break-words line-clamp-2 min-w-0 flex-1">
               {item.course.title}
             </span>
             {isCriticalAtt && (

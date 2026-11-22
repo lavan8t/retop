@@ -61,7 +61,9 @@ describe('M3E nav source contract', () => {
 
   test('one merged brand control sits above the search FAB', () => {
     const source = read('src/components/layout/AppNavRail.tsx');
-    expect(source).toMatch(/brandHover\s*\?\s*'VTOP'\s*:\s*'retop'/);
+    expect(source).toContain('VTOP');
+    expect(source).toContain('re.');
+    expect(source).toContain('font-vtop');
     expect(source).toContain('onMouseEnter');
     expect(source.indexOf('Open native VTOP')).toBeLessThan(
       source.indexOf('size="small"'),

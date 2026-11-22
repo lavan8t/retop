@@ -75,27 +75,61 @@ export const AppNavRail: React.FC<AppNavRailProps> = ({
         aria-label="Primary navigation"
         style={navColorTokens}
       >
-        {/* One brand control: shows retop, becomes VTOP on hover; tap opens VTOP. */}
+        {/* Custom brand swap: re. signature and VTOP trade places on hover. */}
         <button
           type="button"
-          aria-label={brandHover ? 'Open native VTOP' : 'retop'}
+          aria-label={brandHover ? 'Open native VTOP' : 'retop home'}
           title={brandHover ? 'Open native VTOP' : 'retop'}
           onMouseEnter={() => setBrandHover(true)}
           onMouseLeave={() => setBrandHover(false)}
           onFocus={() => setBrandHover(true)}
           onBlur={() => setBrandHover(false)}
-          onClick={onVtop}
-          className="min-h-12 w-full flex items-center gap-3 px-3 rounded-full text-(--md-sys-color-on-surface-variant) hover:bg-(--md-sys-color-surface-container-high) outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) cursor-pointer transition-colors"
+          onClick={brandHover ? onVtop : () => onNavigate('dashboard')}
+          className="relative min-h-14 w-full px-3 flex items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) cursor-pointer select-none"
         >
-          <M3eIcon name={brandHover ? 'language' : 'star'} />
-          <span
-            className={
-              brandHover
-                ? 'font-vtop font-bold text-sm'
-                : 'font-expanded font-black text-sm italic lowercase'
-            }
+          {/* Curved double-ended swap arrow, visible only on hover/focus */}
+          <svg
+            viewBox="0 0 24 40"
+            aria-hidden="true"
+            className={`absolute left-1 h-8 w-4 transition-all duration-200 ${
+              brandHover ? 'opacity-100' : 'opacity-0'
+            }`}
           >
-            {brandHover ? 'VTOP' : 'retop'}
+            <path
+              d="M6 6 C 18 12, 18 28, 6 34 M6 6 l -3 4 M6 6 l 4 3 M6 34 l -3 -4 M6 34 l 4 -3"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              className="text-(--text-muted)"
+            />
+          </svg>
+
+          <span className="relative block h-8 w-full">
+            {/* re. signature: top when idle, drops down on hover */}
+            <span
+              className={`absolute left-3 top-0 flex items-end leading-none transition-all duration-300 ease-out ${
+                brandHover
+                  ? 'translate-y-5 scale-90 opacity-70'
+                  : 'translate-y-0 scale-100 opacity-100'
+              }`}
+            >
+              <span className="font-expanded font-black text-xl italic lowercase text-(--text-main)">
+                re
+              </span>
+              <span className="mb-0.5 -ml-0.5 h-2 w-2 rounded-full bg-(--accent-base)" />
+            </span>
+
+            {/* VTOP text: below-right and small when idle, grows at top on hover */}
+            <span
+              className={`font-vtop font-bold tracking-wide transition-all duration-300 ease-out ${
+                brandHover
+                  ? 'absolute left-3 top-0 text-xl text-(--text-main) opacity-100'
+                  : 'absolute left-7 top-5 text-[11px] text-(--text-muted) opacity-80'
+              }`}
+            >
+              VTOP
+            </span>
           </span>
         </button>
 
@@ -109,6 +143,8 @@ export const AppNavRail: React.FC<AppNavRailProps> = ({
           <M3eIcon name="search" />
           <span slot="label">Search</span>
         </M3eFab>
+
+        <div className="h-3 shrink-0" aria-hidden="true" />
 
         {NAV_DESTINATIONS.map((destination) => (
           <DestinationItem
@@ -135,6 +171,7 @@ export const AppNavRail: React.FC<AppNavRailProps> = ({
         >
           <M3eIcon name="search" />
         </M3eFab>
+        <div className="w-2 shrink-0" aria-hidden="true" />
         {getNavBarDestinations().map((destination) => (
           <DestinationItem
             key={destination.view}

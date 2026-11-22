@@ -256,7 +256,7 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
   return (
     <>
       <div
-        className={`w-full lg:w-[27%] xl:w-[24%] flex-col shrink-0 h-auto lg:h-full overflow-y-auto custom-scrollbar scrollbar-gutter-stable relative z-40 pb-4 md:pb-6 lg:pb-8 pl-4 lg:pl-6 pr-2 lg:pr-3 gap-4 ${className || 'hidden lg:flex'}`}
+        className={`w-full lg:w-[23%] xl:w-[20%] flex-col shrink-0 h-auto lg:h-full overflow-y-auto custom-scrollbar scrollbar-gutter-stable relative z-40 pb-4 md:pb-6 lg:pb-8 pl-4 lg:pl-6 pr-2 lg:pr-3 gap-4 ${className || 'hidden lg:flex'}`}
       >
         {/* Attendance Compact Box */}
         <div className="shrink-0 flex flex-col w-full">

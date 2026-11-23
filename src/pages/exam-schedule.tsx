@@ -1,3 +1,4 @@
+import { EventNote } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 import React, { useEffect, useState, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { getAppRoot } from '../utils/bridge';
@@ -170,7 +171,7 @@ const SeatMapPopoverCard = ({
         FRONT / BOARD
       </div>
 
-      <div className="flex flex-col gap-1 w-full my-0.5">
+      <div className="flex flex-col gap-0.5 w-full my-0.5">
         {rows.map((r) => (
           <div
             key={r}
@@ -678,7 +679,7 @@ export const ExamSchedulePage: React.FC<ExamSchedulePageProps> = ({
             </div>
           ) : (
             <EmptyState
-              icon={Event}
+              icon={EventNote}
               msg="No exams scheduled"
               subMsg="Could not find any exam schedule entries for the selected category or semester."
             />

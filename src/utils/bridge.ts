@@ -397,11 +397,6 @@ export function cleanupLegacyHMenuBar() {
 export function revealLegacyUI() {
   setUIVisibility(false);
   removeSplashScreen();
-  import('../components/legacy/injectLegacyMenuSearch')
-    .then(({ injectLegacyMenuSearch }) => {
-      injectLegacyMenuSearch();
-    })
-    .catch(() => {});
 }
 
 export function createHiddenForm(

@@ -9,7 +9,6 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { renderDashboard } from '../pages/app';
 import { scrapeMenu } from '../parsers/menu';
-import { injectLegacyMenuSearch } from '../components/legacy/injectLegacyMenuSearch';
 import {
   injectGlobalFonts,
   initializeContainer,
@@ -627,7 +626,6 @@ const run = async () => {
 
   renderDashboard();
   watchForEmptyRoot();
-  injectLegacyMenuSearch();
 };
 
 if (document.readyState === 'loading') {

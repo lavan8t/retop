@@ -115,9 +115,12 @@ export async function syncStudentData(
           try {
             const ttHtml = await client.getTimetable(activeSemId);
             const courses = parseTimetable(ttHtml);
-            await setCachedData(`${regNo}_tt_${activeSemId}`, courses);
-            await setCachedData(`tt_${activeSemId}`, courses);
-            await setCachedData(`${regNo}_timetable_courses`, courses);
+            // An empty parse must not wipe a previously good cached timetable.
+            if (courses.length > 0) {
+              await setCachedData(`${regNo}_tt_${activeSemId}`, courses);
+              await setCachedData(`tt_${activeSemId}`, courses);
+              await setCachedData(`${regNo}_timetable_courses`, courses);
+            }
           } catch (err) {
             console.warn('[syncOrchestrator] Timetable sync error:', err);
           }
@@ -128,19 +131,24 @@ export async function syncStudentData(
           try {
             const attHtml = await client.getAttendance(activeSemId);
             const attData = parseStudentAttendance(attHtml);
-            await setCachedData(
-              `${regNo}_attendance_detailed_${activeSemId}`,
-              attData,
-            );
-            await setCachedData(`attendance_detailed_${activeSemId}`, attData);
-            // AP has no dashboard widget; reuse the attendance page for Home.
-            if (client.campus === 'vitap' && attData.length > 0) {
-              const homeAttendance = attData.map(detailedToCourseSummary);
+            if (attData.length > 0) {
               await setCachedData(
-                `${regNo}_dashboard_attendance`,
-                homeAttendance,
+                `${regNo}_attendance_detailed_${activeSemId}`,
+                attData,
               );
-              await setCachedData('dashboard_attendance', homeAttendance);
+              await setCachedData(
+                `attendance_detailed_${activeSemId}`,
+                attData,
+              );
+              // AP has no dashboard widget; reuse the attendance page for Home.
+              if (client.campus === 'vitap') {
+                const homeAttendance = attData.map(detailedToCourseSummary);
+                await setCachedData(
+                  `${regNo}_dashboard_attendance`,
+                  homeAttendance,
+                );
+                await setCachedData('dashboard_attendance', homeAttendance);
+              }
             }
           } catch (err) {
             console.warn('[syncOrchestrator] Attendance sync error:', err);
@@ -178,11 +186,13 @@ export async function syncStudentData(
           try {
             const marksHtml = await client.getMarks(activeSemId);
             const marksData = parseStudentMarks(marksHtml);
-            await setCachedData(
-              `${regNo}_marks_data_${activeSemId}`,
-              marksData,
-            );
-            await setCachedData(`marks_data_${activeSemId}`, marksData);
+            if (marksData.length > 0) {
+              await setCachedData(
+                `${regNo}_marks_data_${activeSemId}`,
+                marksData,
+              );
+              await setCachedData(`marks_data_${activeSemId}`, marksData);
+            }
           } catch (err) {
             console.warn('[syncOrchestrator] Marks sync error:', err);
           }
@@ -193,11 +203,13 @@ export async function syncStudentData(
           try {
             const gradesHtml = await client.getGrades(activeSemId);
             const gradesData = parseGrades(gradesHtml);
-            await setCachedData(
-              `${regNo}_grades_data_${activeSemId}`,
-              gradesData,
-            );
-            await setCachedData(`grades_data_${activeSemId}`, gradesData);
+            if (gradesData.courses.length > 0) {
+              await setCachedData(
+                `${regNo}_grades_data_${activeSemId}`,
+                gradesData,
+              );
+              await setCachedData(`grades_data_${activeSemId}`, gradesData);
+            }
           } catch (err) {
             console.warn('[syncOrchestrator] Grades sync error:', err);
           }

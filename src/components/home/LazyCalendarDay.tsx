@@ -151,7 +151,7 @@ export const LazyCalendarDay = React.memo(
         .filter((e: any) => e.date === dStr)
         .forEach((e: any) => dayEvents.push({ type: 'event', data: e }));
     }
-    if (dayEvents.length === 0) {
+    if (dayEvents.length === 0 && !isToday) {
       return null;
     }
 
@@ -233,7 +233,7 @@ export const LazyCalendarDay = React.memo(
         {/* Left Date Column */}
         <div className="flex flex-col items-center shrink-0 w-8 sm:w-12 pt-0.5 sm:pt-1 sticky top-4 h-fit z-10 select-none">
           <div
-            className={`flex items-center justify-center font-bold transition-all w-7 h-7 sm:w-10 sm:h-10 rounded-full text-xs sm:text-[clamp(0.85rem,3cqw,1.125rem)] ${
+            className={`flex items-center justify-center font-medium transition-all w-7 h-7 sm:w-10 sm:h-10 rounded-full text-xs sm:text-[clamp(0.85rem,3cqw,1.125rem)] ${
               isToday
                 ? 'bg-(--accent-base) text-(--text-inverse)'
                 : 'bg-transparent text-(--text-main)'
@@ -242,7 +242,7 @@ export const LazyCalendarDay = React.memo(
             {d.getDate()}
           </div>
           <div
-            className={`text-[8px] sm:text-[9px] font-expanded font-bold uppercase mt-0.5 ${
+            className={`text-[8px] sm:text-[9px] font-expanded font-medium uppercase mt-0.5 ${
               isToday ? 'text-(--accent-base)' : 'text-(--text-muted)'
             }`}
           >
@@ -271,7 +271,7 @@ export const LazyCalendarDay = React.memo(
         <div className="flex flex-col gap-px flex-1 min-w-0 pb-2 sm:pb-4 border-l-2 border-(--border-dim) pl-2">
           {/* Holiday text */}
           {calEvent?.isHoliday && (
-            <div className="w-full text-left py-0.5 sm:py-1 text-xs md:text-sm font-bold text-(--text-main) tracking-wide select-none">
+            <div className="w-full text-left py-0.5 sm:py-1 text-xs md:text-sm font-medium text-(--text-main) tracking-wide select-none">
               {calEvent.info
                 ? calEvent.info.replace(/^holiday\s*[:•\-]?\s*/i, '').trim()
                 : 'No Classes'}
@@ -280,7 +280,7 @@ export const LazyCalendarDay = React.memo(
 
           {/* Exam Day line */}
           {dayExams.length > 0 ? (
-            <div className="w-full text-left py-0.5 sm:py-1 text-xs md:text-sm font-bold text-(--accent-base) tracking-wide select-none">
+            <div className="w-full text-left py-0.5 sm:py-1 text-xs md:text-sm font-medium text-(--accent-base) tracking-wide select-none">
               {dayExams[0]?.groupType
                 ? `${dayExams[0].groupType} Examination`
                 : 'Examination Day'}
@@ -288,10 +288,16 @@ export const LazyCalendarDay = React.memo(
           ) : (
             calEvent?.info &&
             /exam|cat\s*\d|fat|mid\s*term/i.test(calEvent.info) && (
-              <div className="w-full text-left py-0.5 sm:py-1 text-xs md:text-sm font-bold text-(--accent-base) tracking-wide select-none">
+              <div className="w-full text-left py-0.5 sm:py-1 text-xs md:text-sm font-medium text-(--accent-base) tracking-wide select-none">
                 {calEvent.info.trim()}
               </div>
             )
+          )}
+
+          {isToday && dayEvents.length === 0 && (
+            <div className="w-full text-left py-2 text-xs font-medium text-(--text-muted) select-none">
+              No events
+            </div>
           )}
 
           {(() => {
@@ -384,17 +390,17 @@ export const LazyCalendarDay = React.memo(
                             <React.Fragment />
                           ) : (
                             <div
-                              className={`w-full text-left p-3 flex flex-col ${radiusClass}`}
+                              className={`w-full text-left p-3 flex flex-col gap-[2px] ${radiusClass}`}
                               style={{
                                 backgroundColor: calEventBg,
                                 color: calEventFg,
                               }}
                             >
-                              <span className="font-bold font-expanded uppercase text-base md:text-lg">
+                              <span className="text-sm md:text-base font-medium leading-tight truncate">
                                 {evt.data.info}
                               </span>
                               {evt.data.subInfo && (
-                                <span className="text-xs font-bold mt-1 opacity-80">
+                                <span className="text-[11px] md:text-xs font-medium leading-tight text-(--text-muted) truncate">
                                   {evt.data.subInfo}
                                 </span>
                               )}

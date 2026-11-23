@@ -7,14 +7,12 @@ import {
   TimetableCourse,
   SpotlightCategoryGroup,
 } from '../../types/vtop';
-import { Card } from '../ui/Card';
 import { AttendanceRow } from './HomeRows';
 import { EmptyState } from '../EmptyState';
 import { useDataStore } from '../../store/dataStore';
 import { SpotlightSection } from './SpotlightSection';
 import { isTypingEvent } from '../../utils/keyboard';
 import { matchRegisteredAttendance } from '../../utils/courseCodeMatching';
-import { overallAttendancePercentage } from '../attendance/attendanceView';
 
 interface QuickLinksMenuProps {
   className?: string;
@@ -201,17 +199,6 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
     });
   }, [attendance, ttCourses]);
 
-  const overallAttendance = useMemo(
-    () =>
-      overallAttendancePercentage(
-        sortedAttendance.map((a) => ({
-          percentage: parseFloat(a.attendance),
-          total: a.total ?? 0,
-        })),
-      ),
-    [sortedAttendance],
-  );
-
   // Handle auto-scroll for keyboard nav
   useEffect(() => {
     if (query) {
@@ -256,41 +243,34 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
   return (
     <>
       <div
-        className={`w-full lg:w-[20%] xl:w-[18%] flex-col shrink-0 h-auto lg:h-full overflow-y-auto custom-scrollbar scrollbar-gutter-stable relative z-40 pb-4 md:pb-6 lg:pb-8 pl-4 lg:pl-6 pr-2 lg:pr-3 gap-4 ${className || 'hidden lg:flex'}`}
+        className={`w-full lg:w-[30%] xl:w-[27%] flex-col shrink-0 h-auto lg:h-full overflow-y-auto custom-scrollbar scrollbar-gutter-stable relative z-40 pb-4 md:pb-6 lg:pb-8 pl-4 lg:pl-6 pr-2 lg:pr-3 gap-4 ${className || 'hidden lg:flex'}`}
       >
-        {/* Attendance Compact Box */}
-        <div className="shrink-0 flex flex-col w-full">
-          <Card
-            onClick={() =>
-              onNavigate({
-                title: 'Class Attendance',
-                url: 'studentattendance',
-                category: 'Academics',
-              })
-            }
-            className="group shrink-0 bg-(--bg-highlight) rounded-4xl flex flex-col relative z-30 cursor-pointer overflow-hidden border-2 border-transparent hover:border-(--border-main) transition-all h-fit"
-          >
-            <div className="px-5 pt-5 border-b-2 border-(--border-main) flex justify-between items-center shrink-0">
-              <div className="flex flex-col">
-                <span className="text-[0.625rem] font-expanded font-bold uppercase text-(--text-muted) mb-1 leading-none">
-                  Attendance
-                </span>
-                <span className="text-3xl font-black font-expanded leading-none text-(--text-main)">
-                  {overallAttendance}
-                </span>
-              </div>
-            </div>
-
-            <div className="p-3 flex flex-col gap-0.5">
-              {sortedAttendance.length === 0 ? (
-                <EmptyState msg="No Registered Courses" size="sm" />
-              ) : (
-                sortedAttendance.map((c, i) => (
-                  <AttendanceRow key={i} course={c} />
-                ))
-              )}
-            </div>
-          </Card>
+        {/* Attendance — grouped list matching the Spotlight section */}
+        <div className="w-full flex flex-col gap-3 relative mb-4 shrink-0">
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() =>
+                onNavigate({
+                  title: 'Class Attendance',
+                  url: 'studentattendance',
+                  category: 'Academics',
+                })
+              }
+              className="text-sm font-medium capitalize text-(--text-main) cursor-pointer"
+            >
+              Attendance
+            </button>
+          </div>
+          <div className="flex flex-col gap-0.5 rounded-2xl overflow-hidden pt-1 pr-1">
+            {sortedAttendance.length === 0 ? (
+              <EmptyState msg="No Registered Courses" size="sm" />
+            ) : (
+              sortedAttendance.map((c, i) => (
+                <AttendanceRow key={i} course={c} />
+              ))
+            )}
+          </div>
         </div>
 
         {spotlightCategories && spotlightCategories.length > 0 && (

@@ -10,6 +10,7 @@ import {
   CaptchaData,
   RecaptchaRequiredError,
   RECAPTCHA_REQUIRED,
+  type LoginResult,
 } from '../../utils/vtopClient';
 import {
   syncStudentData,
@@ -32,6 +33,7 @@ import {
   loadRegularCaptcha,
   regularCaptchaRetryMessage,
 } from '../../utils/regularCaptchaRetry';
+import { M3eCheckbox } from '../attendance/m3eTags';
 
 const REMEMBERED_USER_KEY = 'retop_remembered_username';
 
@@ -86,6 +88,10 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
   const [isTitleHovered, setIsTitleHovered] = useState(false);
   const [isSolvingCaptcha, setIsSolvingCaptcha] = useState(false);
   const [rememberUsername, setRememberUsername] = useState(false);
+  const [otpContext, setOtpContext] = useState<
+    LoginResult['otpContext'] | null
+  >(null);
+  const [otpCode, setOtpCode] = useState('');
 
   const captchaImgRef = useRef<HTMLImageElement | null>(null);
 
@@ -123,6 +129,42 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
   const clearFieldError = (field: DisplayField) => {
     setErrorMessage('');
     setErrorFields((prev) => prev.filter((f) => f !== field));
+  };
+
+  const completeLogin = async (result: LoginResult, loginUser: string) => {
+    clearErrors();
+    try {
+      if (rememberUsername) {
+        await setStorageData({ [REMEMBERED_USER_KEY]: loginUser });
+      } else {
+        await removeStorageKeys([REMEMBERED_USER_KEY]);
+      }
+    } catch {}
+
+    if (!syncAfterLogin) {
+      const regNo =
+        result.user?.registrationNumber || result.client!.registrationNumber;
+      onLoginSuccess(
+        {
+          regNo,
+          username: regNo,
+          name: result.user?.name || result.client!.studentName || regNo,
+          lastActive: Date.now(),
+          campus: result.client!.campus,
+        },
+        result.client!,
+      );
+      return;
+    }
+
+    setSyncProgress({
+      step: 'Authenticating session...',
+      progressPercent: 10,
+    });
+    const syncResult = await syncStudentData(result.client!, (progress) => {
+      setSyncProgress(progress);
+    });
+    onLoginSuccess(syncResult.user, result.client!);
   };
 
   const isFieldError = (field: DisplayField) => errorFields.includes(field);
@@ -357,6 +399,14 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
         );
         if (!result) return;
 
+        if (result.requiresOtp && result.otpContext) {
+          setOtpContext(result.otpContext);
+          setOtpCode('');
+          clearErrors();
+          setIsSubmitting(false);
+          return;
+        }
+
         const isCaptchaError = /captcha/i.test(result.message || '');
 
         if (!result.success || !result.client) {
@@ -388,43 +438,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
           return;
         }
 
-        clearErrors();
-
-        try {
-          if (rememberUsername) {
-            await setStorageData({ [REMEMBERED_USER_KEY]: trimmedUser });
-          } else {
-            await removeStorageKeys([REMEMBERED_USER_KEY]);
-          }
-        } catch {}
-
-        if (!syncAfterLogin) {
-          const regNo =
-            result.user?.registrationNumber || result.client.registrationNumber;
-          onLoginSuccess(
-            {
-              regNo,
-              username: regNo,
-              name: result.user?.name || result.client.studentName || regNo,
-              lastActive: Date.now(),
-              campus: result.client.campus,
-            },
-            result.client,
-          );
-          return;
-        }
-
-        // Synchronize student data
-        setSyncProgress({
-          step: 'Authenticating session...',
-          progressPercent: 10,
-        });
-
-        const syncResult = await syncStudentData(result.client, (progress) => {
-          setSyncProgress(progress);
-        });
-
-        onLoginSuccess(syncResult.user, result.client);
+        await completeLogin(result, trimmedUser);
       } catch (err: any) {
         console.error('[VtopLoginCard] Login error:', err);
         showError(
@@ -437,6 +451,33 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
     };
 
     await attemptLogin();
+  };
+
+  const handleOtpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otpContext) return;
+    if (!/^\d{6}$/.test(otpCode.trim())) {
+      showError('Enter the 6-digit code sent to your email.', ['general']);
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const result = await VtopClient.submitLoginOtp({
+        ...otpContext,
+        otp: otpCode,
+      });
+      if (!result.success || !result.client) {
+        showError(result.message || 'Verification failed.', ['general']);
+        setIsSubmitting(false);
+        return;
+      }
+      setOtpContext(null);
+      setOtpCode('');
+      await completeLogin(result, otpContext.username);
+    } catch (err: any) {
+      showError(err?.message || 'Verification failed.', ['general']);
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -461,209 +502,263 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
         {subtitle ? <p id="retop-welcome-text">{subtitle}</p> : null}
       </div>
 
-      {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Username Input Group with Native Floating Label */}
-        <div className={`input-group ${usernameWiggle ? 'retop-wiggle' : ''}`}>
-          <input
-            type="text"
-            id="username"
-            className="form-control"
-            placeholder=" "
-            disabled={isSubmitting}
-            autoCapitalize="characters"
-            autoComplete="username"
-            spellCheck={false}
-            autoCorrect="off"
-            value={username}
-            onChange={(e) => {
-              setUsername(normalizeUsername(e.target.value));
-              clearFieldError('username');
-            }}
-          />
-          <label htmlFor="username" className="retop-floating-label">
-            Username
-          </label>
-        </div>
-        {fieldErrorText('username')}
-
-        {/* Password Input Group with Native Floating Label & Visibility Toggle */}
-        <div className={`input-group ${passwordWiggle ? 'retop-wiggle' : ''}`}>
-          <input
-            type={showPassword ? 'text' : 'password'}
-            id="password"
-            className="form-control"
-            placeholder=" "
-            disabled={isSubmitting}
-            autoComplete="current-password"
-            spellCheck={false}
-            autoCorrect="off"
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
-              clearFieldError('password');
-            }}
-          />
-          <label htmlFor="password" className="retop-floating-label">
-            Password
-          </label>
-          <button
-            type="button"
-            id="passwordIcon"
-            className="btn btn-light"
-            onClick={() => setShowPassword((s) => !s)}
-            tabIndex={-1}
-          >
-            {showPassword ? (
-              <VisibilityOff className="w-5 h-5" />
-            ) : (
-              <Visibility className="w-5 h-5" />
-            )}
-          </button>
-        </div>
-        {fieldErrorText('password')}
-
-        {/* Remember username */}
-        <label className="flex items-center gap-2 cursor-pointer select-none w-fit">
-          <input
-            type="checkbox"
-            checked={rememberUsername}
-            disabled={isSubmitting}
-            onChange={(e) => {
-              const checked = e.target.checked;
-              setRememberUsername(checked);
-              if (!checked)
-                removeStorageKeys([REMEMBERED_USER_KEY]).catch(() => {});
-            }}
-            className="h-4 w-4 cursor-pointer disabled:opacity-50"
-            style={{ accentColor: 'var(--accent-base)' }}
-          />
-          <span
-            className="text-xs text-(--text-muted)"
-            style={{ fontVariationSettings: '"wght" 400, "wdth" 100' }}
-          >
-            Remember username
-          </span>
-        </label>
-
-        {/* CAPTCHA Container Matching login-theme.css #retop-captcha-container */}
-        <div
-          id="retop-captcha-container"
-          className={`${captchaWiggle ? 'retop-wiggle' : ''} transition-all duration-300 ease-in-out overflow-hidden ${captchaInput.length >= 6 && !isFieldError('captcha') ? 'max-h-0 opacity-0' : 'max-h-40 opacity-100'}`}
-        >
-          {/* Captcha Image and Refresh Button */}
-          <div id="captchaBlock">
-            {captchaData?.captchaImage ? (
-              <img
-                id="captchaImage"
-                ref={captchaImgRef}
-                src={captchaData.captchaImage}
-                alt="Captcha"
-              />
-            ) : (
-              <div
-                className="h-12 w-28 bg-(--bg-card) border border-(--border-main) rounded flex items-center justify-center text-xs text-(--text-muted) font-semibold"
-                style={{ height: '48px' }}
-              >
-                {loadingCaptcha ? 'Loading...' : 'No Captcha'}
-              </div>
-            )}
-            <button
-              type="button"
-              id="captchaRefresh"
-              className="retop-reload-btn"
-              disabled={loadingCaptcha || isSubmitting || isSolvingCaptcha}
-              onClick={handleRefreshCaptcha}
-              title="Refresh Captcha"
-            >
-              <Refresh
-                className={`w-5 h-5 ${loadingCaptcha ? 'animate-spin' : ''}`}
-              />
-            </button>
-          </div>
-
-          {/* Captcha Input with Floating Label */}
-          <div className="relative flex-1">
+      {otpContext ? (
+        <form onSubmit={handleOtpSubmit} className="space-y-4">
+          <div className="input-group">
             <input
               type="text"
-              id="captchaStr"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              className="form-control"
+              placeholder=" "
+              autoFocus
+              disabled={isSubmitting}
+              value={otpCode}
+              onChange={(e) => {
+                setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6));
+                clearErrors();
+              }}
+            />
+            <label>Verification code</label>
+          </div>
+          {errorMessage && (
+            <p className="text-xs text-(--md-sys-color-error)">
+              {errorMessage}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={isSubmitting || otpCode.length !== 6}
+            className="btn btn-primary w-full"
+          >
+            {isSubmitting ? 'Verifying...' : 'Verify code'}
+          </button>
+          <button
+            type="button"
+            disabled={isSubmitting}
+            onClick={() => {
+              setOtpContext(null);
+              setOtpCode('');
+              clearErrors();
+              handleRefreshCaptcha();
+            }}
+            className="w-full text-xs text-(--text-muted) hover:text-(--text-main) font-medium cursor-pointer transition-colors"
+          >
+            Back to sign in
+          </button>
+        </form>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Username Input Group with Native Floating Label */}
+          <div
+            className={`input-group ${usernameWiggle ? 'retop-wiggle' : ''}`}
+          >
+            <input
+              type="text"
+              id="username"
               className="form-control"
               placeholder=" "
               disabled={isSubmitting}
-              maxLength={6}
-              autoComplete="off"
+              autoCapitalize="characters"
+              autoComplete="username"
               spellCheck={false}
               autoCorrect="off"
-              value={captchaInput}
+              value={username}
               onChange={(e) => {
-                setCaptchaInput(normalizeCaptcha(e.target.value));
-                clearFieldError('captcha');
+                setUsername(normalizeUsername(e.target.value));
+                clearFieldError('username');
               }}
             />
-            <label htmlFor="captchaStr" className="retop-floating-label">
-              Captcha
+            <label htmlFor="username" className="retop-floating-label">
+              Username
             </label>
           </div>
-          {fieldErrorText('captcha')}
-        </div>
+          {fieldErrorText('username')}
 
-        {/* Sync Progress Indicator */}
-        {syncProgress && (
-          <div className="p-3 bg-(--bg-card) border border-(--border-main) rounded-2xl space-y-2 text-left animate-in fade-in duration-200">
-            <div className="flex items-center justify-between text-xs font-bold">
-              <span className="text-(--text-main) flex items-center gap-1.5">
-                <span className="inline-block w-3.5 h-3.5 rounded-full border-2 border-current border-t-transparent animate-spin text-(--accent-base)" />
-                {syncProgress.step}
-              </span>
-              <span className="text-(--accent-base)">
-                {syncProgress.progressPercent}%
-              </span>
-            </div>
-            <div className="w-full h-1.5 bg-(--bg-main) rounded-full overflow-hidden">
-              <div
-                className="h-full transition-all duration-300 rounded-full"
-                style={{
-                  width: `${syncProgress.progressPercent}%`,
-                  backgroundColor: 'var(--accent-base)',
-                }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Submit Button matching .btn-primary in login-theme.css */}
-        <div className="pt-2">
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="btn btn-primary cursor-pointer active:scale-98 transition-all disabled:opacity-50"
+          {/* Password Input Group with Native Floating Label & Visibility Toggle */}
+          <div
+            className={`input-group ${passwordWiggle ? 'retop-wiggle' : ''}`}
           >
-            {isSubmitting ? (
-              <span className="flex items-center justify-center gap-2">
-                <span className="inline-block w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
-                <span>
-                  {syncProgress ? 'SYNCHRONIZING...' : 'LOGGING IN...'}
-                </span>
-              </span>
-            ) : (
-              <span>Log In</span>
-            )}
-          </button>
-        </div>
-
-        {onCancel && (
-          <div className="text-center pt-1">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              id="password"
+              className="form-control"
+              placeholder=" "
+              disabled={isSubmitting}
+              autoComplete="current-password"
+              spellCheck={false}
+              autoCorrect="off"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                clearFieldError('password');
+              }}
+            />
+            <label htmlFor="password" className="retop-floating-label">
+              Password
+            </label>
             <button
               type="button"
-              disabled={isSubmitting}
-              onClick={onCancel}
-              className="text-xs text-(--text-muted) hover:text-(--text-main) font-medium cursor-pointer transition-colors"
+              id="passwordIcon"
+              className="btn btn-light"
+              onClick={() => setShowPassword((s) => !s)}
+              tabIndex={-1}
             >
-              Cancel
+              {showPassword ? (
+                <VisibilityOff className="w-5 h-5" />
+              ) : (
+                <Visibility className="w-5 h-5" />
+              )}
             </button>
           </div>
-        )}
-      </form>
+          {fieldErrorText('password')}
+
+          {/* Remember username */}
+          <label className="flex items-center gap-2 cursor-pointer select-none w-fit">
+            <M3eCheckbox
+              checked={rememberUsername}
+              disabled={isSubmitting}
+              onChange={(e: any) => {
+                const checked = e.target.checked;
+                setRememberUsername(checked);
+                if (!checked)
+                  removeStorageKeys([REMEMBERED_USER_KEY]).catch(() => {});
+              }}
+              style={
+                {
+                  '--m3e-checkbox-container-size': '32px',
+                  '--m3e-checkbox-icon-size': '16px',
+                } as React.CSSProperties
+              }
+            />
+            <span
+              className="text-xs text-(--text-muted)"
+              style={{ fontVariationSettings: '"wght" 400, "wdth" 100' }}
+            >
+              Remember username
+            </span>
+          </label>
+
+          {/* CAPTCHA Container Matching login-theme.css #retop-captcha-container */}
+          <div
+            id="retop-captcha-container"
+            className={`${captchaWiggle ? 'retop-wiggle' : ''} transition-all duration-300 ease-in-out overflow-hidden ${captchaInput.length >= 6 && !isFieldError('captcha') ? 'max-h-0 opacity-0' : 'max-h-40 opacity-100'}`}
+          >
+            {/* Captcha Image and Refresh Button */}
+            <div id="captchaBlock">
+              {captchaData?.captchaImage ? (
+                <img
+                  id="captchaImage"
+                  ref={captchaImgRef}
+                  src={captchaData.captchaImage}
+                  alt="Captcha"
+                />
+              ) : (
+                <div
+                  className="h-12 w-28 bg-(--bg-card) border border-(--border-main) rounded flex items-center justify-center text-xs text-(--text-muted) font-semibold"
+                  style={{ height: '48px' }}
+                >
+                  {loadingCaptcha ? 'Loading...' : 'No Captcha'}
+                </div>
+              )}
+              <button
+                type="button"
+                id="captchaRefresh"
+                className="retop-reload-btn"
+                disabled={loadingCaptcha || isSubmitting || isSolvingCaptcha}
+                onClick={handleRefreshCaptcha}
+                title="Refresh Captcha"
+              >
+                <Refresh
+                  className={`w-5 h-5 ${loadingCaptcha ? 'animate-spin' : ''}`}
+                />
+              </button>
+            </div>
+
+            {/* Captcha Input with Floating Label */}
+            <div className="relative flex-1">
+              <input
+                type="text"
+                id="captchaStr"
+                className="form-control"
+                placeholder=" "
+                disabled={isSubmitting}
+                maxLength={6}
+                autoComplete="off"
+                spellCheck={false}
+                autoCorrect="off"
+                value={captchaInput}
+                onChange={(e) => {
+                  setCaptchaInput(normalizeCaptcha(e.target.value));
+                  clearFieldError('captcha');
+                }}
+              />
+              <label htmlFor="captchaStr" className="retop-floating-label">
+                Captcha
+              </label>
+            </div>
+            {fieldErrorText('captcha')}
+          </div>
+
+          {/* Sync Progress Indicator */}
+          {syncProgress && (
+            <div className="p-3 bg-(--bg-card) border border-(--border-main) rounded-2xl space-y-2 text-left animate-in fade-in duration-200">
+              <div className="flex items-center justify-between text-xs font-bold">
+                <span className="text-(--text-main) flex items-center gap-1.5">
+                  <span className="inline-block w-3.5 h-3.5 rounded-full border-2 border-current border-t-transparent animate-spin text-(--accent-base)" />
+                  {syncProgress.step}
+                </span>
+                <span className="text-(--accent-base)">
+                  {syncProgress.progressPercent}%
+                </span>
+              </div>
+              <div className="w-full h-1.5 bg-(--bg-main) rounded-full overflow-hidden">
+                <div
+                  className="h-full transition-all duration-300 rounded-full"
+                  style={{
+                    width: `${syncProgress.progressPercent}%`,
+                    backgroundColor: 'var(--accent-base)',
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Submit Button matching .btn-primary in login-theme.css */}
+          <div className="pt-2">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="btn btn-primary cursor-pointer active:scale-98 transition-all disabled:opacity-50"
+            >
+              {isSubmitting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="inline-block w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                  <span>
+                    {syncProgress ? 'SYNCHRONIZING...' : 'LOGGING IN...'}
+                  </span>
+                </span>
+              ) : (
+                <span>Log In</span>
+              )}
+            </button>
+          </div>
+
+          {onCancel && (
+            <div className="text-center pt-1">
+              <button
+                type="button"
+                disabled={isSubmitting}
+                onClick={onCancel}
+                className="text-xs text-(--text-muted) hover:text-(--text-main) font-medium cursor-pointer transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+        </form>
+      )}
     </div>
   );
 };

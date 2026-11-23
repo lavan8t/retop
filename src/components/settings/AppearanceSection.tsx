@@ -281,29 +281,6 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
               }}
             />
           </div>
-
-          <div className="flex items-center justify-between gap-4 py-4">
-            <div className="flex flex-col gap-1">
-              <span className="text-sm font-semibold text-(--text-main)">
-                Font Weight
-              </span>
-              <span className="text-xs text-(--text-muted)">
-                Body text weight across the app
-              </span>
-            </div>
-            <div className="rounded-2xl bg-(--bg-main) p-1">
-              <SegmentedControl
-                ariaLabel="Font weight"
-                options={(['regular', 'medium', 'bold'] as const).map((fw) => ({
-                  value: fw,
-                  label: fw.charAt(0).toUpperCase() + fw.slice(1),
-                }))}
-                value={(settings.fontWeight ?? 'bold') as string}
-                onChange={(val) => updateSetting('fontWeight', val as any)}
-                buttonClassName="px-3.5 py-3"
-              />
-            </div>
-          </div>
         </div>
       </SettingTopicCard>
     </>

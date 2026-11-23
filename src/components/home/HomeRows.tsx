@@ -12,7 +12,6 @@ import {
   TimeFormatMode,
 } from '../../utils/formatting';
 import { SelectableRow } from '../ui/SelectableRow';
-
 import {
   useSettingsStore,
   MATERIAL_ACCENTS,
@@ -27,46 +26,29 @@ export const AttendanceRow = React.memo(
   ({ course }: { course: CourseSummary }) => {
     const val = parseFloat(course.attendance);
     const displayVal = isNaN(val) ? 0 : Math.round(val);
-
-    let badgeBg =
-      'bg-(--attendance-green) text-(--bg-main) border-2 border-(--border-main)';
-    let barColor = 'bg-(--attendance-green-bg)';
-
-    if (isNaN(val)) {
-      badgeBg =
-        'bg-(--bg-highlight) text-(--text-muted) border-2 border-(--border-dim)';
-      barColor = 'bg-(--bg-highlight)';
-    } else if (val <= 75) {
-      badgeBg =
-        'bg-(--attendance-red) text-(--bg-main) border-2 border-(--border-main)';
-      barColor = 'bg-(--attendance-red-bg)';
-    } else if (val < 90) {
-      badgeBg =
-        'bg-(--attendance-blue) text-(--bg-main) border-2 border-(--border-main)';
-      barColor = 'bg-(--attendance-blue-bg)';
-    }
+    const tone =
+      isNaN(val) || val >= 90
+        ? 'text-(--attendance-green)'
+        : val <= 75
+          ? 'text-(--attendance-red)'
+          : 'text-(--attendance-blue)';
 
     return (
-      <div className="relative flex items-center justify-between px-3.5 py-2.5 min-h-12 rounded-xl first:rounded-t-2xl last:rounded-b-2xl bg-(--bg-surface) group/row select-none overflow-hidden border border-(--border-dim)/40 shrink-0">
-        <div
-          className={`absolute top-0 left-0 h-full ${barColor} transition-all duration-fast`}
-          style={{ width: `${displayVal}%` }}
-        />
-        <div className="relative z-10 flex items-center gap-2 min-w-0 flex-1 pr-3">
-          <span className="text-[11px] font-medium text-(--text-main) leading-snug truncate min-w-0">
+      <div className="group flex items-center justify-between p-3 bg-(--bg-highlight) hover:bg-(--border-dim) border-0 transition-all cursor-pointer rounded-sm first:rounded-t-2xl last:rounded-b-2xl">
+        <div className="flex flex-col flex-1 min-w-0 pr-2">
+          <span className="text-xs font-medium text-(--text-main) truncate leading-snug">
             {course.name}
           </span>
+        </div>
+        <div className="shrink-0 flex items-center gap-3 text-(--text-muted)">
           {course.type && (
-            <span className="text-[0.5rem] font-semibold uppercase px-1 py-0.5 rounded-md bg-(--bg-main) text-(--text-muted) leading-none shrink-0 border border-(--border-dim)">
+            <span className="w-5 text-center text-[10px] font-medium">
               {course.type}
             </span>
           )}
-        </div>
-
-        <div
-          className={`relative z-10 shrink-0 font-bold font-expanded text-[11px] leading-none px-2 py-1 rounded-lg ${badgeBg}`}
-        >
-          {isNaN(val) ? '--' : `${displayVal}%`}
+          <span className={`text-xs font-medium tabular-nums ${tone}`}>
+            {isNaN(val) ? '--' : `${displayVal}%`}
+          </span>
         </div>
       </div>
     );
@@ -91,8 +73,6 @@ export const ScheduleRow = React.memo(
   }) => {
     const isNow = item.status === 'Now';
     const formattedTime = formatTimeStr(item.time, use24HourTime);
-    const timeParts = formattedTime.split(' - ');
-    const startTime = timeParts[0];
 
     const { settings } = useSettingsStore();
     const { attendance, stats } = useDataStore();
@@ -107,23 +87,17 @@ export const ScheduleRow = React.memo(
     const attVal = attObj ? parseFloat(attObj.attendance) : NaN;
     const isCriticalAtt = !isNinePointer && !isNaN(attVal) && attVal <= 75;
 
-    const [isHovered, setIsHovered] = React.useState(false);
-
     const isDark = useIsDark();
     const cardBg = getMaterialThemeColor(settings.calendarClassColor, isDark);
     const cardFg = getMaterialOnThemeColor(settings.calendarClassColor, isDark);
 
     const venue =
       item.course?.venue || (item as any).venue || (item as any).location || '';
-    const slot = item.course?.slot || (item as any).slot || '';
-
     return (
       <SelectableRow
         label={`${item.course.title}, ${formattedTime}`}
         onActivate={() => onClick?.(item)}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        className={`@container flex items-center justify-between p-2.5 sm:p-3.5 shadow-none select-none overflow-hidden relative border-0 shrink-0 ${isNow ? 'bg-(--accent-base) text-(--text-inverse)' : ''} ${className || 'rounded-xl'}`}
+        className={`@container flex items-center justify-between p-3 shadow-none select-none overflow-hidden relative border-0 shrink-0 ${isNow ? 'bg-(--accent-base) text-(--text-inverse)' : ''} ${className || 'rounded-xl'}`}
         style={{
           backgroundColor: isNow ? undefined : cardBg,
           color: isNow ? undefined : cardFg,
@@ -137,68 +111,34 @@ export const ScheduleRow = React.memo(
           />
         )}
 
-        {/* Desktop Layout: Single Row with Left Time, Center Title, Right Slot & Venue */}
-        <div className="hidden sm:flex relative z-10 items-center justify-between gap-3 w-full">
-          {/* Left Side: Natural width time container (pushes name on hover) */}
-          <div className="flex items-center shrink-0">
-            <span className="font-mono font-bold text-xs sm:text-sm whitespace-nowrap transition-all leading-tight">
-              {isHovered ? formattedTime : startTime}
-            </span>
-          </div>
-
-          {/* Center: Main Name (No course code) */}
-          <div className="flex-1 min-w-0 px-1">
-            <span className="text-xs sm:text-sm font-medium leading-tight wrap-break-words line-clamp-2">
-              {item.course.title}
-            </span>
-          </div>
-
-          {/* Right Side: Critical badge, Slot (left of venue), Venue on right end */}
-          <div className="flex items-center gap-2 shrink-0 font-mono font-bold">
-            {isCriticalAtt && (
-              <span
-                className="text-[0.5625rem] font-mono font-bold uppercase px-1.5 py-0.5 rounded-full shrink-0 leading-none border"
-                style={getMaterialChipStyle('red', isDark)}
-              >
-                ⚠️ {Math.round(attVal)}%
-              </span>
-            )}
-
-            {slot && (
-              <span className="px-2.5 py-1 rounded-full bg-black/15 text-xs sm:text-sm font-mono font-bold uppercase tracking-wider shrink-0 leading-none">
-                {slot}
-              </span>
-            )}
-
-            {venue && (
-              <span className="text-xs sm:text-sm font-bold whitespace-nowrap shrink-0 leading-none">
-                {venue}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Mobile Layout: 2 Rows (Row 1: Title, Row 2: Start Time & Venue Alone, Slot Hidden) */}
-        <div className="sm:hidden flex flex-col gap-1 w-full relative z-10">
+        <div className="relative z-10 flex flex-col gap-[2px] w-full min-w-0">
+          {/* Line 1: title (left) + venue (right) */}
           <div className="flex items-center justify-between gap-2 min-w-0">
-            <span className="text-[11px] font-medium leading-snug wrap-break-words line-clamp-2 min-w-0 flex-1">
+            <span className="text-sm md:text-base font-medium leading-tight truncate min-w-0">
               {item.course.title}
             </span>
-            {isCriticalAtt && (
-              <span
-                className="text-[0.5625rem] font-mono font-bold uppercase px-1.5 py-0.5 rounded-full shrink-0 leading-none border"
-                style={getMaterialChipStyle('red', isDark)}
-              >
-                ⚠️ {Math.round(attVal)}%
-              </span>
-            )}
+            <div className="flex items-center gap-1.5 shrink-0">
+              {isCriticalAtt && (
+                <span
+                  className="text-[0.5625rem] font-mono font-medium uppercase px-1.5 py-0.5 rounded-full shrink-0 leading-none border"
+                  style={getMaterialChipStyle('red', isDark)}
+                >
+                  ⚠️ {Math.round(attVal)}%
+                </span>
+              )}
+              {venue && (
+                <span className="text-xs md:text-sm font-medium leading-tight whitespace-nowrap">
+                  {venue}
+                </span>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center justify-between gap-2 text-[10px] font-mono font-bold opacity-85 leading-none">
-            <span className="whitespace-nowrap">{startTime}</span>
-            {venue && (
-              <span className="whitespace-nowrap font-bold">{venue}</span>
-            )}
+          {/* Line 2: time range, duller hierarchy */}
+          <div
+            className={`text-[11px] md:text-xs font-medium leading-tight ${isNow ? 'opacity-80' : 'text-(--text-muted)'}`}
+          >
+            {formattedTime}
           </div>
         </div>
       </SelectableRow>
@@ -265,7 +205,7 @@ export const AssignmentRow = React.memo(
         onActivate={() => onClick?.(assignment)}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className={`p-2.5 sm:p-3.5 bg-(--bg-surface) hover:bg-(--bg-highlight) select-none overflow-hidden group transition-colors relative border border-(--border-dim)/40 shrink-0 ${className || 'rounded-xl'}`}
+        className={`p-3 bg-(--bg-surface) hover:bg-(--bg-highlight) select-none overflow-hidden group transition-colors relative border border-(--border-dim)/40 shrink-0 ${className || 'rounded-xl'}`}
       >
         {progress > 0 && progress < 1 && (
           <div
@@ -273,18 +213,23 @@ export const AssignmentRow = React.memo(
             style={{ width: `${Math.round(progress * 100)}%` }}
           />
         )}
-        <div className="flex flex-col relative z-10 gap-1 sm:gap-1.5">
-          <div className="flex justify-between items-start gap-2 min-w-0">
-            <span className="text-xs sm:text-sm font-black text-(--text-main) leading-snug flex-1 wrap-break-words">
+        <div className="flex flex-col relative z-10 gap-[2px] w-full min-w-0">
+          {/* Line 1: title (left) + course (right) */}
+          <div className="flex items-center justify-between gap-2 min-w-0">
+            <span className="text-sm md:text-base font-medium text-(--text-main) leading-tight truncate min-w-0">
               {assignment.title}
             </span>
+            {assignment.course && (
+              <span className="text-xs md:text-sm font-medium text-(--text-main) leading-tight truncate shrink-0 max-w-[40%]">
+                {assignment.course}
+              </span>
+            )}
           </div>
-          <div className="flex items-center justify-between gap-2 text-[10px] sm:text-xs">
-            <span className="font-bold font-mono text-(--text-muted) truncate shrink-0 max-w-[60%]">
-              {assignment.course}
-            </span>
+
+          {/* Line 2: due timing, duller hierarchy */}
+          <div className="text-[11px] md:text-xs font-medium text-(--text-muted) leading-tight">
             <span
-              className={`font-black font-mono px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full border leading-none shrink-0 transition-all ${badgeStyle}`}
+              className={`font-medium font-mono px-2 py-0.5 rounded-full border leading-none transition-all ${badgeStyle}`}
             >
               {isHovered ? exact : days}
             </span>
@@ -313,7 +258,7 @@ export const EventRow = React.memo(
 
     return (
       <div
-        className={`p-2.5 sm:p-3.5 shadow-none select-none relative border-0 overflow-hidden shrink-0 ${className || 'rounded-xl'}`}
+        className={`p-3 shadow-none select-none relative border-0 overflow-hidden shrink-0 ${className || 'rounded-xl'}`}
         style={{
           backgroundColor: cardBg,
           color: cardFg,
@@ -325,18 +270,23 @@ export const EventRow = React.memo(
             style={{ width: `${Math.round(progress * 100)}%` }}
           />
         )}
-        <div className="flex flex-col gap-1 sm:gap-1.5 relative z-10 w-full">
-          <div className="flex items-start justify-between gap-2 w-full">
-            <span className="text-xs sm:text-sm font-black leading-tight wrap-break-words flex-1">
+        <div className="flex flex-col gap-[2px] relative z-10 w-full min-w-0">
+          {/* Line 1: title */}
+          <div className="flex items-center justify-between gap-2 min-w-0">
+            <span className="text-sm md:text-base font-medium leading-tight truncate min-w-0">
               {event.title}
             </span>
           </div>
-          <div className="flex items-center justify-between gap-2 text-[10px] sm:text-xs font-mono font-bold opacity-90 leading-none">
-            <span className="uppercase tracking-wider px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-black/15">
-              {event.category}
-            </span>
+
+          {/* Line 2: organizer + category, duller hierarchy */}
+          <div className="flex items-center justify-between gap-2 text-[11px] md:text-xs font-medium text-(--text-muted) leading-tight">
             {event.organizer && (
-              <span className="truncate max-w-[60%]">{event.organizer}</span>
+              <span className="truncate min-w-0">{event.organizer}</span>
+            )}
+            {event.category && (
+              <span className="uppercase tracking-wider shrink-0">
+                {event.category}
+              </span>
             )}
           </div>
         </div>
@@ -369,13 +319,12 @@ export const ExamRow = React.memo(
     const [isHovered, setIsHovered] = React.useState(false);
 
     const isDark = useIsDark();
-    const cardBg = getMaterialThemeColor('purple', isDark);
-    const cardFg = getMaterialOnThemeColor('purple', isDark);
+    const cardBg = getMaterialThemeColor(settings.calendarEventColor, isDark);
+    const cardFg = getMaterialOnThemeColor(settings.calendarEventColor, isDark);
 
-    const formatExamStartTime = (rawTime?: string, rawSession?: string) => {
+    const formatExamTime = (rawTime?: string, rawSession?: string) => {
       if (rawTime) {
-        const startPart = rawTime.split('-')[0].trim();
-        return formatTimeStr(startPart, use24HourTime);
+        return formatTimeStr(rawTime, use24HourTime);
       }
       if (rawSession) {
         const sessionMap: Record<string, string> = {
@@ -393,7 +342,8 @@ export const ExamRow = React.memo(
       return 'EXAM';
     };
 
-    const displayTime = formatExamStartTime(exam.examTime, exam.examSession);
+    const displayTime = formatExamTime(exam.examTime, exam.examSession);
+    const shortSlot = (exam.slot || '').split('+')[0].trim();
     const hoverTime = exam.examTime
       ? `${exam.examTime}${exam.examSession ? ` (${exam.examSession})` : ''}`
       : displayTime;
@@ -404,7 +354,7 @@ export const ExamRow = React.memo(
         onActivate={() => onClick?.()}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className={`@container flex items-center justify-between p-2.5 sm:p-3.5 shadow-none select-none overflow-hidden relative border-0 shrink-0 ${className || 'rounded-xl'}`}
+        className={`@container flex items-center justify-between p-3 shadow-none select-none overflow-hidden relative border-0 shrink-0 ${className || 'rounded-xl'}`}
         style={{
           backgroundColor: cardBg,
           color: cardFg,
@@ -417,62 +367,32 @@ export const ExamRow = React.memo(
           />
         )}
 
-        {/* Desktop Layout: Single Row */}
-        <div className="hidden sm:flex relative z-10 items-center justify-between gap-3 w-full">
-          {/* Left Side: Natural width start time */}
-          <div className="flex items-center shrink-0">
-            <span className="font-mono font-bold text-xs sm:text-sm whitespace-nowrap transition-all leading-tight">
-              {isHovered ? hoverTime : displayTime}
-            </span>
-          </div>
-
-          {/* Center: Exam Course Title */}
-          <div className="flex-1 min-w-0 px-1">
-            <span className="text-xs sm:text-sm md:text-base font-black leading-tight wrap-break-words line-clamp-2">
-              {exam.courseTitle}
-            </span>
-          </div>
-
-          {/* Right Side: Group Pill / Slot (left of venue), Venue on right end */}
-          <div className="flex items-center gap-2 shrink-0 font-mono font-bold">
-            {showGroupPill && (
-              <span className="px-2.5 py-1 rounded-full bg-black/15 text-xs sm:text-sm font-black font-mono uppercase tracking-wider shrink-0 leading-none">
-                {groupType || 'EXAM'}
-              </span>
-            )}
-
-            {exam.slot && (
-              <span className="text-xs sm:text-sm font-mono font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-black/15 shrink-0 leading-none">
-                {exam.slot}
-              </span>
-            )}
-
-            {exam.venue && (
-              <span className="text-xs sm:text-sm font-black whitespace-nowrap shrink-0 leading-none">
-                {exam.venue} {exam.seatNo ? `(${exam.seatNo})` : ''}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Mobile Layout: 2 Rows (Row 1: Title & Group Pill, Row 2: Time & Venue Alone, Slot Hidden) */}
-        <div className="sm:hidden flex flex-col gap-1 w-full relative z-10">
+        <div className="relative z-10 flex flex-col gap-[2px] w-full min-w-0">
+          {/* Line 1: title (left) + group pill and venue (right) */}
           <div className="flex items-center justify-between gap-2 min-w-0">
-            <span className="text-xs font-black leading-snug wrap-break-words line-clamp-2 min-w-0 flex-1">
+            <span className="text-sm md:text-base font-medium leading-tight truncate min-w-0">
               {exam.courseTitle}
             </span>
-            {showGroupPill && (
-              <span className="px-1.5 py-0.5 rounded-md bg-black/15 text-[9px] font-black font-mono uppercase tracking-wider shrink-0 leading-none">
-                {groupType || 'EXAM'}
-              </span>
-            )}
+            <div className="flex items-center gap-1.5 shrink-0">
+              {showGroupPill && (
+                <span className="px-1.5 py-0.5 rounded-full bg-black/15 text-[10px] md:text-xs font-medium font-mono uppercase tracking-wider shrink-0 leading-none">
+                  {groupType || 'EXAM'}
+                </span>
+              )}
+              {exam.venue && (
+                <span className="text-xs md:text-sm font-medium leading-tight whitespace-nowrap">
+                  {exam.venue} {exam.seatNo ? `(${exam.seatNo})` : ''}
+                </span>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center justify-between gap-2 text-[10px] font-mono font-bold opacity-85 leading-none">
-            <span className="whitespace-nowrap">{displayTime}</span>
-            {exam.venue && (
-              <span className="whitespace-nowrap font-black">
-                {exam.venue} {exam.seatNo ? `(${exam.seatNo})` : ''}
+          {/* Line 2: time + slot, duller hierarchy */}
+          <div className="flex items-center gap-2 text-[11px] md:text-xs font-medium leading-tight text-(--text-muted)">
+            <span className="truncate min-w-0">{displayTime}</span>
+            {shortSlot && (
+              <span className="font-mono uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-black/15 shrink-0 leading-none">
+                {shortSlot}
               </span>
             )}
           </div>

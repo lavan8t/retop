@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { TimetableCourse, CourseSummary } from '../types/vtop';
 import { TimeFormatMode } from '../utils/formatting';
 import {
-  Layers,
+  CalendarMonth,
   ProgressActivity,
 } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 import { EmptyState } from '../components/EmptyState';
@@ -54,7 +54,7 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
           {courses.length === 0 && !loading ? (
             <div className="h-full p-4">
               <EmptyState
-                icon={Layers}
+                icon={CalendarMonth}
                 msg="No timetable found"
                 subMsg={
                   <>
@@ -99,7 +99,7 @@ export const TimetableContentView: React.FC<TimetableContentViewProps> = ({
             </div>
           )}
 
-          {loading && (
+          {loading && courses.length === 0 && (
             <div className="absolute inset-0 bg-(--bg-main) z-50 p-4">
               <div className="w-full h-full border-4 border-(--border-dim) rounded-4xl bg-(--bg-surface) p-4 flex flex-col gap-4 animate-pulse">
                 <div className="h-12 w-full bg-(--bg-highlight) rounded-2xl" />

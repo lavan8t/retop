@@ -73,12 +73,6 @@ export const useCoursePageData = (
   }, [isAp, ttSemesters, setCpSemesters]);
 
   useEffect(() => {
-    if (!selectedOptionId) {
-      setData(null);
-    }
-  }, [selectedOptionId]);
-
-  useEffect(() => {
     if (!selectedSem || cpOptions.length === 0) return;
     const coursesInSem = cpOptions.filter((o) =>
       isSameSemester(o.semester, selectedSem),
@@ -92,10 +86,11 @@ export const useCoursePageData = (
   }, [selectedSem, cpOptions, selectedOptionId, setSelectedOptionId]);
 
   useEffect(() => {
-    if (cpOptions.length > 0) return;
     let isMounted = true;
 
     const fallbackFromTimetable = (sem = selectedSem) => {
+      // A fallback is not fresh data: never replace options already on screen.
+      if (cpOptions.length > 0) return;
       if (ttCourses && ttCourses.length > 0 && isMounted) {
         const fallbackOpts: CoursePageOption[] = ttCourses.map((tc) => ({
           code: tc.code,
@@ -166,7 +161,6 @@ export const useCoursePageData = (
     };
   }, [
     network,
-    cpOptions.length,
     setCpOptions,
     ttCourses,
     selectedSem,
@@ -251,11 +245,7 @@ export const useCoursePageData = (
   const currentOption = cpOptions.find((o) => o.classId === selectedOptionId);
 
   useEffect(() => {
-    if (!currentOption) {
-      setCourseMarks(null);
-      setCourseGrade(null);
-      return;
-    }
+    if (!currentOption) return;
     let isMounted = true;
     const fetchMarksAndGrades = async () => {
       try {

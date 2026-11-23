@@ -131,7 +131,6 @@ export function useGradesData(
     if (!selectedSem) return;
     const fetchGrades = async () => {
       setFetchingGrades(true);
-      setGradesData(null);
       setExpandedCourseId(null);
 
       try {

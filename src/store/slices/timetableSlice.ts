@@ -109,7 +109,8 @@ export const createTimetableSlice: StateCreator<
       } else {
         console.warn('Timetable load failed:', e);
       }
-      set({ ttCourses: [], upcoming: [], ttLoading: false });
+      // Keep the last good timetable visible while a retry runs.
+      set({ ttLoading: false });
     }
   },
 

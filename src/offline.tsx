@@ -119,7 +119,7 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({
             <img
               src={fixBase64Image(activeUser.profileImgBase64)}
               alt={activeLabel}
-              className="w-6 h-6 rounded-full object-cover shrink-0"
+              className="w-6 h-6 rounded-full bg-white px-px object-contain shrink-0"
             />
           ) : (
             <div className="w-6 h-6 rounded-full bg-(--bg-highlight) flex items-center justify-center text-(--text-muted) shrink-0">
@@ -143,7 +143,7 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({
           style={{ willChange: 'transform, opacity' }}
         >
           <div className="w-full bg-(--bg-surface) rounded-3xl overflow-hidden shadow-2xl p-2 space-y-1.5 border border-(--border-dim)/50 text-(--text-main)">
-            <div className="max-h-56 overflow-y-auto space-y-1 custom-scrollbar p-1">
+            <div className="max-h-56 overflow-y-auto space-y-1.5 custom-scrollbar p-1">
               {users.map((u) => {
                 const isSelected =
                   u.regNo.toLowerCase() === activeUser.regNo.toLowerCase();
@@ -173,7 +173,7 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({
                         <img
                           src={fixBase64Image(u.profileImgBase64)}
                           alt={itemLabel}
-                          className="w-6 h-6 rounded-full object-cover shrink-0"
+                          className="w-6 h-6 rounded-full bg-white px-px object-contain shrink-0"
                         />
                       ) : (
                         <div className="w-6 h-6 rounded-full bg-(--bg-highlight) flex items-center justify-center text-(--text-muted) shrink-0">

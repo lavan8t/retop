@@ -10,6 +10,7 @@ import {
   writeLastAttendanceSemester,
 } from '../../utils/attendanceSemester';
 import { DataState } from '../dataStore';
+import { readRememberedSem, rememberSem } from '../../utils/semesterMemory';
 
 export interface AttendanceSlice {
   attSelectedSem: string;
@@ -38,10 +39,11 @@ export const createAttendanceSlice: StateCreator<
   [],
   AttendanceSlice
 > = (set, get) => ({
-  attSelectedSem: '',
+  attSelectedSem: readRememberedSem('attendance'),
   setAttSelectedSem: (semId) => {
+    rememberSem('attendance', semId);
     writeLastAttendanceSemester(currentAuthId(), semId);
-    set({ attSelectedSem: semId, detailedAttendance: [] });
+    set({ attSelectedSem: semId });
   },
   detailedAttendance: [],
   attLoading: false,

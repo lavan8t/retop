@@ -1,3 +1,4 @@
+import { Assignment } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useDataStore } from '../store/dataStore';
 import { useAppStore } from '../store/appStore';
@@ -1006,7 +1007,8 @@ export default function DigitalAssignments({
             </>
           ) : (
             <EmptyState
-              msg="No Course Selected"
+              icon={Assignment}
+              msg="No course selected"
               subMsg="Select a course from the left menu to view and submit digital assignments."
             />
           )}

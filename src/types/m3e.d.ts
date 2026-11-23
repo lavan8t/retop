@@ -5,10 +5,14 @@ type M3eAttrs = {
   key?: React.Key;
   class?: string;
   className?: string;
+  style?: React.CSSProperties;
+  ref?: React.Ref<any>;
   slot?: string;
   id?: string;
   for?: string;
   value?: string | number | boolean | null;
+  label?: string;
+  placeholder?: string;
   selected?: boolean;
   variant?: string;
   size?: string | number;
@@ -51,6 +55,7 @@ declare global {
       'm3e-input-chip-set': M3eAttrs;
       'm3e-suggestion-chip': M3eAttrs;
       'm3e-switch': M3eAttrs;
+      'm3e-checkbox': M3eAttrs;
       'm3e-dialog': M3eAttrs;
       'm3e-dialog-action': M3eAttrs;
       'm3e-dialog-trigger': M3eAttrs;

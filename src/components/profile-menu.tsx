@@ -247,7 +247,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
             {userRegNo !== '...' && fixBase64Image(userProfileImg) ? (
               <img
                 src={fixBase64Image(userProfileImg)}
-                className="w-full h-full object-cover"
+                className="w-full h-full bg-white px-0.5 object-contain"
                 alt="Profile"
                 onError={(e) => {
                   (e.target as HTMLElement).style.display = 'none';
@@ -261,9 +261,15 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
           </div>
         </div>
 
-        <div className="flex flex-col bg-(--bg-surface) rounded-3xl overflow-hidden border-2 border-(--border-dim) popup-shadow">
+        <div className="flex flex-col gap-0.5 bg-(--bg-main) rounded-3xl border-2 border-(--border-dim) p-1.5 popup-shadow">
           {mainItems.map((item, i) => {
             const isHighlighted = focusedIndex === i;
+            const shape =
+              i === 0
+                ? 'rounded-t-[18px] rounded-b-[6px]'
+                : i === mainItems.length - 1
+                  ? 'rounded-t-[6px] rounded-b-[18px]'
+                  : 'rounded-[6px]';
             return (
               <button
                 key={i}
@@ -278,7 +284,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
                 }}
                 className={`flex w-full items-center justify-start px-4 py-3 transition-colors group text-(--text-main) cursor-pointer outline-none
                   ${isHighlighted ? 'bg-(--bg-highlight)' : 'bg-(--bg-surface) hover:bg-(--bg-highlight)'}
-                  ${i !== mainItems.length - 1 ? 'border-b-2 border-(--border-dim)' : ''}
+                  ${shape}
                 `}
               >
                 <div className="flex items-center gap-3">

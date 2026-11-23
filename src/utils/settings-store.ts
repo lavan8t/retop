@@ -68,7 +68,6 @@ export interface AppSettings {
   timetableMode: 'weekly' | 'slot' | 'consolidated' | 'fullMonth';
   dateFormat: DateFormatPattern;
   fontScale: number;
-  fontWeight: 'regular' | 'medium' | 'bold';
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -87,7 +86,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   timetableMode: 'weekly',
   dateFormat: 'DD Mon YYYY',
   fontScale: 100,
-  fontWeight: 'regular',
 
   pinnedLinks: [
     { title: 'Time Table', url: 'studenttimetable', category: 'Core' },
@@ -267,6 +265,13 @@ export const applyTheme = (settings: AppSettings) => {
     offlineRoot.style.setProperty('--accent-base', primaryHex);
   docStyle.setProperty('--accent-base', primaryHex);
 
+  // The open loader lives in the light DOM, outside retop's themed root.
+  const splash = document.getElementById('retop-open-loader');
+  if (splash) {
+    splash.style.setProperty('--accent-base', primaryHex);
+    splash.style.background = appliedTheme === 'light' ? '#ffffff' : '#09090b';
+  }
+
   // Dark text tone for accent-filled surfaces (login button). Tone 20 of the
   // accent hue stays legible on the light accent tones used in dark themes.
   const accentOnDark = hexFromArgb(Hct.from(hct.hue, hct.chroma, 20).toInt());
@@ -384,17 +389,6 @@ export const applyTheme = (settings: AppSettings) => {
   if (typeof settings.fontScale === 'number' && settings.fontScale > 0) {
     docStyle.fontSize = `${settings.fontScale}%`;
   }
-
-  const wghtMap: Record<string, string> = {
-    regular: '400',
-    medium: '550',
-    bold: '700',
-  };
-  const wght = wghtMap[settings.fontWeight ?? 'regular'] ?? '400';
-  if (root) root.style.setProperty('--app-font-wght', wght);
-  if (offlineRoot && offlineRoot !== root)
-    offlineRoot.style.setProperty('--app-font-wght', wght);
-  docStyle.setProperty('--app-font-wght', wght);
 
   const animScaleMap: Record<string, string> = {
     '1x': '1',

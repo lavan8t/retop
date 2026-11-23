@@ -303,7 +303,7 @@ export const GradesPage: React.FC<GradesPageProps> = ({
     );
   }
 
-  const isLoading = loading || fetchingGrades;
+  const isLoading = (loading || fetchingGrades) && !gradesData && !historyData;
   const isError =
     !isLoading && !gradesData && !historyData && semesters.length > 0;
   const isEmpty =

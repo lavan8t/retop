@@ -120,9 +120,24 @@ export interface LoginParams {
   serverId?: string | null;
 }
 
+/** VTOP signals the emailed-code step through its login error alert. */
+export const isOtpRequiredMessage = (message?: string): boolean =>
+  /additional verification required|otp (?:has been )?sent|verification code/i.test(
+    message || '',
+  );
+
 export interface LoginResult {
   success: boolean;
   message?: string;
+  /** VTOP asked for the emailed one-time code instead of completing sign-in. */
+  requiresOtp?: boolean;
+  otpContext?: {
+    campus: string;
+    username: string;
+    csrf: string;
+    jsessionid: string;
+    serverId: string | null;
+  };
   user?: {
     registrationNumber: string;
     name: string;
@@ -703,6 +718,20 @@ export class VtopClient {
           : '';
 
         if (alertText) {
+          if (isOtpRequiredMessage(alertText)) {
+            return {
+              success: false,
+              message: alertText,
+              requiresOtp: true,
+              otpContext: {
+                campus,
+                username,
+                csrf: currentCsrf,
+                jsessionid,
+                serverId,
+              },
+            };
+          }
           return { success: false, message: alertText };
         }
 
@@ -768,6 +797,20 @@ export class VtopClient {
           .trim()
       : '';
     if (alertText) {
+      if (isOtpRequiredMessage(alertText)) {
+        return {
+          success: false,
+          message: alertText,
+          requiresOtp: true,
+          otpContext: {
+            campus,
+            username,
+            csrf: currentCsrf,
+            jsessionid,
+            serverId,
+          },
+        };
+      }
       return { success: false, message: alertText };
     }
 
@@ -865,6 +908,103 @@ export class VtopClient {
     return {
       success: false,
       message: 'Login failed. Please verify credentials and try again.',
+    };
+  }
+
+  /**
+   * Completes the emailed-code step. VTOP returns JSON with a redirectUrl;
+   * following it lands on the authenticated dashboard used to build the client.
+   */
+  public static async submitLoginOtp(params: {
+    campus: string;
+    username: string;
+    otp: string;
+    csrf: string;
+    jsessionid: string;
+    serverId: string | null;
+  }): Promise<LoginResult> {
+    const campus = (params.campus || 'vellore') as any;
+    const baseUrl = getVtopBaseUrl(campus);
+    const boundary = `----retop-otp-${Date.now()}`;
+    const body = [
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="otpCode"',
+      '',
+      params.otp.trim(),
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="_csrf"',
+      '',
+      params.csrf,
+      `--${boundary}--`,
+      '',
+    ].join('\r\n');
+
+    const cookie = params.serverId
+      ? `JSESSIONID=${params.jsessionid}; SERVERID=${params.serverId}`
+      : `JSESSIONID=${params.jsessionid}`;
+    const response = await executeVtopRequest({
+      url: `${baseUrl}/vtop/validateSecurityOtp`,
+      method: 'POST',
+      headers: {
+        'Content-Type': `multipart/form-data; boundary=${boundary}`,
+        Origin: baseUrl,
+        Referer: `${baseUrl}/vtop/login/error`,
+        Cookie: cookie,
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      body,
+    });
+
+    let payload: any = null;
+    try {
+      payload = JSON.parse(response.body);
+    } catch {
+      return {
+        success: false,
+        message: 'Could not verify the code. Please try again.',
+      };
+    }
+    if (!payload || payload.status !== 'SUCCESS' || !payload.redirectUrl) {
+      return {
+        success: false,
+        message: payload?.message || 'Invalid or expired verification code.',
+      };
+    }
+
+    const landingUrl = payload.redirectUrl.startsWith('http')
+      ? payload.redirectUrl
+      : `${baseUrl}${payload.redirectUrl}`;
+    const dash = await executeVtopRequest({
+      url: landingUrl,
+      method: 'GET',
+      headers: { Cookie: cookie },
+    });
+    const html = dash.body;
+    const regNo =
+      extractRegNoFromHtml(html) ||
+      html.match(/(\d{2}[A-Z]{2,5}\d{4,5})\s*\(STUDENT\)/i)?.[1] ||
+      '';
+    if (!regNo) {
+      return {
+        success: false,
+        message: 'Verified, but VTOP returned no registration number.',
+      };
+    }
+    const client = new VtopClient({
+      campus,
+      jsessionid: params.jsessionid,
+      serverId: params.serverId,
+      csrf: extractCSRFToken(html) || params.csrf,
+      registrationNumber: regNo,
+      loginUsername: params.username,
+      studentName: regNo,
+      landingUrl,
+    });
+    return {
+      success: true,
+      user: { registrationNumber: regNo, name: regNo },
+      client,
+      landingUrl,
     };
   }
 

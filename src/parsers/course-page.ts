@@ -12,7 +12,108 @@ import {
   Versioned,
 } from '../utils/parser-utils';
 
-export const COURSE_PAGE_SCHEMA_VERSION = 1;
+export const COURSE_PAGE_SCHEMA_VERSION = 2;
+
+const cellText = (cell: Element | null | undefined): string => {
+  if (!cell) return '';
+  const clone = cell.cloneNode(true) as Element;
+  clone
+    .querySelectorAll('br')
+    .forEach((br) => br.replaceWith(clone.ownerDocument.createTextNode('\n')));
+  return (clone.textContent || '')
+    .replace(/\u00a0/g, ' ')
+    .replace(/[ \t]*\n[ \t]*/g, '\n')
+    .replace(/[^\S\n]+/g, ' ')
+    .trim();
+};
+
+const splitBooks = (text: string): string[] =>
+  text
+    .split(/\d+\.\s*/)
+    .map((b) => b.trim())
+    .filter((b) => b.length > 3);
+
+/**
+ * The consolidated course page renders modules as a 4-column table
+ * (number / title / topics / bloom level); the older detail shell uses
+ * 3 columns with "1 - Title" in the first cell. Both must populate the
+ * same syllabus model, along with two-column topic continuations.
+ */
+export const parseSyllabusModules = (
+  doc: Document,
+): { syllabus: SyllabusModule[]; books: string[] } => {
+  const syllabus: SyllabusModule[] = [];
+  const books: string[] = [];
+
+  let tables = Array.from(doc.querySelectorAll('#collapseModules table'));
+  if (tables.length === 0) {
+    tables = Array.from(doc.querySelectorAll('table')).filter((table) => {
+      const head = cellText(table.querySelector('thead, tr'));
+      return /module/i.test(head) && /topic|title|bloom/i.test(head);
+    });
+  }
+
+  tables.forEach((table) => {
+    let bloomIndex = -1;
+    Array.from(table.querySelectorAll('tr')).forEach((tr) => {
+      const cells = Array.from(tr.querySelectorAll('td, th')).map(cellText);
+      if (cells.length === 0) return;
+
+      const joined = cells.join(' ').toLowerCase();
+      if (
+        /module/.test(joined) &&
+        /topic|title|bloom/.test(joined) &&
+        cells.every((c) => !/^\d+$/.test(c))
+      ) {
+        bloomIndex = cells.findIndex((c) => /bloom/i.test(c));
+        return;
+      }
+
+      const bookCell = cells.find((c) =>
+        /text\s*book|reference\s*book|recommended|reading/i.test(c),
+      );
+      if (bookCell !== undefined && cells.length >= 2) {
+        books.push(...splitBooks(cells[cells.length - 1]));
+        return;
+      }
+
+      if (cells.length >= 3) {
+        const parts = cells[0].split(/\s*[-–]\s*/);
+        const hasInlineTitle = parts.length > 1;
+        syllabus.push({
+          number: hasInlineTitle ? parts[0] : cells[0].replace(/[^\d]/g, ''),
+          title: hasInlineTitle ? parts.slice(1).join(' - ') : cells[1],
+          topics:
+            cells[hasInlineTitle ? 1 : 2] ||
+            cells.slice(hasInlineTitle ? 1 : 2, -1).join('\n'),
+          blooms:
+            (bloomIndex >= 0 ? cells[bloomIndex] : '') ||
+            (cells.length > (hasInlineTitle ? 2 : 3)
+              ? cells[cells.length - 1]
+              : ''),
+        });
+        return;
+      }
+
+      const previous = syllabus[syllabus.length - 1];
+      if (!previous) return;
+      const [topic, level] = cells;
+      if (!topic || /^\d+$/.test(topic)) return;
+      previous.topics = [previous.topics, topic].filter(Boolean).join('\n');
+      if (
+        level &&
+        !previous.blooms &&
+        /^(L\d+|remember|understand|apply|analy[sz]e|evaluate|create)$/i.test(
+          level,
+        )
+      ) {
+        previous.blooms = level;
+      }
+    });
+  });
+
+  return { syllabus, books };
+};
 
 export const parseCoursePage = (html: string): Versioned<CoursePageData> => {
   const doc = parseHTMLFast(html);
@@ -67,68 +168,7 @@ export const parseCoursePage = (html: string): Versioned<CoursePageData> => {
     }
   });
 
-  const syllabus: SyllabusModule[] = [];
-  const syllabusRows = doc.querySelectorAll('#collapseModules table tbody tr');
-  let currentModNumber = '';
-  let currentModTitle = '';
-  let currentModTopics: string[] = [];
-  let currentModBlooms = '';
-
-  const books: string[] = [];
-
-  syllabusRows.forEach((tr) => {
-    const cells = tr.querySelectorAll('td, th');
-    if (cells.length === 3) {
-      if (currentModTitle) {
-        syllabus.push({
-          number: currentModNumber,
-          title: currentModTitle,
-          topics: currentModTopics.join('\n'),
-          blooms: currentModBlooms,
-        });
-      }
-      const headerText = cells[0].textContent?.trim() || '';
-      const headerParts = headerText.split(' - ');
-      currentModNumber = headerParts[0] || '';
-      currentModTitle = headerParts[1] || headerText;
-      currentModTopics = [cells[1].textContent?.trim() || ''];
-      currentModBlooms = cells[2].textContent?.trim() || '';
-    } else if (cells.length === 2) {
-      const col1 = cells[0].textContent?.trim().toLowerCase() || '';
-      const col1Clean = col1.replace(/[^a-z0-9]/g, '');
-      if (
-        col1Clean.includes('textbook') ||
-        col1Clean.includes('referencebook') ||
-        col1Clean.includes('recommended') ||
-        col1Clean.includes('reading')
-      ) {
-        const bookData = cells[1].textContent?.trim();
-        if (bookData) {
-          // split by numbers "1. ", "2. " or just add
-          const splitBooks = bookData
-            .split(/\d+\.\s*/)
-            .map((b) => b.trim())
-            .filter((b) => b.length > 3);
-          if (splitBooks.length > 0) {
-            books.push(...splitBooks);
-          } else {
-            books.push(bookData);
-          }
-        }
-      } else {
-        currentModTopics.push(cells[0].textContent?.trim() || '');
-      }
-    }
-  });
-
-  if (currentModTitle) {
-    syllabus.push({
-      number: currentModNumber,
-      title: currentModTitle,
-      topics: currentModTopics.join('\n'),
-      blooms: currentModBlooms,
-    });
-  }
+  const { syllabus, books } = parseSyllabusModules(doc);
 
   const materials: CourseMaterial[] = [];
   const matTable = doc.querySelector('#materialTable');

@@ -328,7 +328,7 @@ export const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
             </div>
 
             {/* Options List */}
-            <div className="overflow-y-auto max-h-56 p-1.5 custom-scrollbar flex flex-col gap-1">
+            <div className="overflow-y-auto max-h-56 p-1.5 custom-scrollbar flex flex-col gap-0.5">
               {filteredOptions.length === 0 ? (
                 <div className="px-3 py-4 text-xs text-(--text-muted) text-center flex flex-col items-center gap-1">
                   <span>No matching options</span>

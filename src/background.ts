@@ -1,9 +1,6 @@
 import { getExtUrl } from './utils/url';
 import { set as idbSet } from 'idb-keyval';
-import {
-  isPdfContentType,
-  type PlannedDownload,
-} from './utils/courseDownloads';
+import { type PlannedDownload } from './utils/courseDownloads';
 import {
   GOOGLE_CALENDAR_SCOPE,
   syncICalToGoogleCalendar,
@@ -33,38 +30,37 @@ chrome.action.onClicked.addListener(() => {
 });
 
 // ── Downloads: thin adapter over the deep course-download module ───────────
-// It receives fully planned work and only calls fetch + chrome.downloads.
+// It receives fully planned work and only hands each POST to chrome.downloads.
+// Service workers cannot create blob URLs, so the download API posts directly.
 const runPlannedDownloads = async (plans: PlannedDownload[]) => {
   let downloaded = 0;
   let skipped = 0;
   for (const plan of plans) {
     try {
-      const response = await fetch(plan.url, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        },
-        body: new URLSearchParams(plan.body),
+      await new Promise<void>((resolve, reject) => {
+        chrome.downloads.download(
+          {
+            url: plan.url,
+            method: 'POST',
+            headers: [
+              {
+                name: 'Content-Type',
+                value: 'application/x-www-form-urlencoded',
+              },
+            ],
+            body: plan.body,
+            filename: plan.filename,
+            conflictAction: 'uniquify',
+          },
+          () => {
+            if (chrome.runtime.lastError) {
+              reject(new Error(chrome.runtime.lastError.message));
+            } else {
+              resolve();
+            }
+          },
+        );
       });
-      if (
-        !response.ok ||
-        !isPdfContentType(response.headers.get('Content-Type'))
-      ) {
-        skipped += 1;
-        continue;
-      }
-      const blobUrl = URL.createObjectURL(await response.blob());
-      chrome.downloads.download(
-        {
-          url: blobUrl,
-          filename: plan.filename,
-          conflictAction: 'uniquify',
-        },
-        () => {
-          if (chrome.runtime.lastError) URL.revokeObjectURL(blobUrl);
-        },
-      );
       downloaded += 1;
     } catch {
       skipped += 1;

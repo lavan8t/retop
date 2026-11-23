@@ -1,3 +1,4 @@
+import { EventNote } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { AppSettings } from '../utils/settings-store';
 import {
@@ -36,7 +37,6 @@ import {
   parseVtopDate,
   TimeFormatMode,
 } from '../utils/formatting';
-import { overallAttendancePercentage } from '../components/attendance/attendanceView';
 
 export type EventFilterType = 'all' | 'classes' | 'assignments' | 'events';
 
@@ -210,17 +210,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
     });
   }, [attendance]);
 
-  const overallAttPct = useMemo(
-    () =>
-      overallAttendancePercentage(
-        sortedAttendance.map((a) => ({
-          percentage: parseFloat(a.attendance),
-          total: a.total ?? 0,
-        })),
-      ),
-    [sortedAttendance],
-  );
-
   useEffect(() => {
     if (!network) return;
     if (examGroups.length === 0) {
@@ -351,11 +340,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
       />
 
       {/* CENTER PANE: Surface Level Unified Event CalendarMonth & Mobile Feed */}
-      <div className="flex-none lg:flex-1 w-full max-w-full flex flex-col gap-6 md:gap-8 overflow-visible lg:overflow-hidden lg:h-full pl-1 md:pl-0 min-h-0 relative">
-        <div className="hidden lg:flex flex-col items-center mb-2 lg:mb-4 px-2 w-full relative z-95 pointer-events-auto">
+      <div className="flex-none lg:flex-1 w-full max-w-full flex flex-col gap-0 overflow-visible lg:overflow-hidden lg:h-full pl-1 md:pl-0 min-h-0 relative">
+        <div className="hidden lg:flex flex-col items-center px-2 w-full relative z-95 pointer-events-auto">
           <div className="flex flex-col items-center w-full">
             {/* Desktop Header: Unchanged */}
-            <div className="flex justify-between w-full items-center mb-2 px-1">
+            <div className="flex justify-between w-full items-center px-1">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -391,7 +380,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               )}
 
               {monthDisplay.semName ? (
-                <div className="flex justify-end items-start h-8 relative z-20 pt-1">
+                <div className="flex justify-end items-center h-8 relative z-20">
                   <style>{`
                     .sem-text { font-variation-settings: "wdth" 151, "wght" 800; transition: font-variation-settings var(--duration-slow) ease-out; }
                     .sem-group:hover .sem-text { font-variation-settings: "wdth" 75, "wght" 1; }
@@ -433,6 +422,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
         </div>
 
+        {/* Fade the timeline into the month / semester header. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute top-10 left-0 right-0 h-10 z-90 bg-linear-to-b from-(--bg-main) to-transparent"
+        />
+
         <div
           onScroll={handleCalendarScroll}
           className="h-auto lg:h-full lg:flex-1 lg:min-h-0 overflow-visible lg:overflow-y-auto lg:overflow-x-hidden custom-scrollbar flex flex-col gap-4 pr-3 pb-8 mt-0 relative z-0 pointer-events-auto w-full max-w-full"
@@ -454,17 +449,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     }
                     className="shrink-0 snap-start min-w-[270px] sm:min-w-[300px] w-[80vw] max-w-[360px] bg-(--bg-highlight) rounded-3xl flex flex-col relative z-30 cursor-pointer overflow-hidden border-2 border-(--border-main) shadow-(--brutal-shadow-sm) hover:shadow-(--brutal-shadow-hover) transition-all h-fit"
                   >
-                    <div className="px-4 pt-3 pb-2 border-b-2 border-(--border-main) flex justify-between items-center shrink-0">
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-[0.5625rem] font-expanded font-bold uppercase text-(--text-muted) leading-none">
-                          Attendance
-                        </span>
-                        <span className="text-xl font-black font-expanded leading-none text-(--text-main)">
-                          {overallAttPct}
-                        </span>
-                      </div>
+                    <div className="px-4 pt-3 pb-2 border-b-2 border-(--border-main) flex justify-start shrink-0">
+                      <span className="text-sm font-medium capitalize text-(--text-main) leading-none">
+                        Attendance
+                      </span>
                     </div>
-                    <div className="p-2.5 flex flex-col gap-0.5 rounded-2xl max-h-56 overflow-y-auto custom-scrollbar">
+                    <div className="p-2 flex flex-col gap-0.5 rounded-2xl max-h-56 overflow-y-auto custom-scrollbar">
                       {sortedAttendance.map((c, i) => (
                         <AttendanceRow key={i} course={c} />
                       ))}
@@ -566,7 +556,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
           {!hasCalendarEvents && (
             <EmptyState
-              icon={Event}
+              icon={EventNote}
               msg="No events to show"
               subMsg="Classes, assignments and exams appear here once your data is synced."
               size="md"

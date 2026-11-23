@@ -3,7 +3,6 @@ import {
   buildDownloadBody,
   buildDownloadFilename,
   isDownloadableMaterial,
-  isPdfContentType,
   isVtopDownloadUrl,
   planBulkDownloads,
   planSingleDownload,
@@ -78,19 +77,13 @@ describe('course material bulk download planning', () => {
     );
   });
 
-  it('builds the VTOP download POST body with all required fields', () => {
-    const body = buildDownloadBody(
-      'file-42',
-      'csrf-token',
-      '21BCE1234',
-      'Wed, 18 Nov 2026 00:00:00 GMT',
-    );
+  it('builds the exact VTOP download POST body (no cache-buster)', () => {
+    const body = buildDownloadBody('file-42', 'csrf-token', '21BCE1234');
 
-    expect([...body.keys()]).toEqual(['_csrf', 'authorizedID', 'fileId', 'x']);
+    expect([...body.keys()]).toEqual(['_csrf', 'authorizedID', 'fileId']);
     expect(body.get('_csrf')).toBe('csrf-token');
     expect(body.get('authorizedID')).toBe('21BCE1234');
     expect(body.get('fileId')).toBe('file-42');
-    expect(body.get('x')).toBe('Wed, 18 Nov 2026 00:00:00 GMT');
   });
 
   it('skips web links but keeps downloadable materials', () => {
@@ -98,13 +91,6 @@ describe('course material bulk download planning', () => {
     expect(isDownloadableMaterial('Web Material')).toBe(false);
     expect(isDownloadableMaterial('Lecture Notes')).toBe(true);
     expect(isDownloadableMaterial('')).toBe(true);
-  });
-
-  it('accepts only PDF responses for download', () => {
-    expect(isPdfContentType('application/pdf')).toBe(true);
-    expect(isPdfContentType('application/pdf; charset=binary')).toBe(true);
-    expect(isPdfContentType('text/html; charset=utf-8')).toBe(false);
-    expect(isPdfContentType(null)).toBe(false);
   });
 });
 
@@ -118,12 +104,9 @@ describe('download planning entry points', () => {
     expect(bulk[0]).toEqual(single);
     expect(bulk[0].filename).toBe(buildDownloadFilename(item, request));
     expect(bulk[0].url).toBe(request.url);
-    expect(bulk[0].body).toEqual({
-      _csrf: 'csrf-token',
-      authorizedID: '21BCE1234',
-      fileId: 'f1',
-      x: expect.any(String),
-    });
+    expect(bulk[0].body).toBe(
+      '_csrf=csrf-token&authorizedID=21BCE1234&fileId=f1',
+    );
   });
 
   it('rejects non-VTOP URLs for both entry points', () => {

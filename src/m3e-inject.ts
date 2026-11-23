@@ -19,6 +19,7 @@ import '@m3e/web/list';
 import '@m3e/web/card';
 import '@m3e/web/chips';
 import '@m3e/web/switch';
+import '@m3e/web/checkbox';
 import '@m3e/web/dialog';
 import '@m3e/web/snackbar';
 import '@m3e/web/progress-indicator';

@@ -1,3 +1,4 @@
+import { Face } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 import React, {
   useCallback,
   useEffect,
@@ -259,16 +260,12 @@ export const BiometricPage: React.FC<BiometricPageProps> = ({ network }) => {
         <div className="mx-auto w-full max-w-3xl flex flex-col gap-4">
           {!isAp ? (
             <EmptyState
-              icon={Block}
+              icon={Face}
               msg="Only available on VIT-AP"
               subMsg="The Biometric Log is an AP-campus feature and cannot be used on this campus."
             />
           ) : (
             <>
-              <h1 className="text-2xl font-black font-expanded text-(--text-main)">
-                Biometric Log
-              </h1>
-
               <form
                 onSubmit={handleSubmit}
                 className="flex flex-col sm:flex-row sm:items-end gap-3"

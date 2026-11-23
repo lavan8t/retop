@@ -8,6 +8,7 @@ import {
   parseDACourses,
   parseDAAssignments,
 } from '../../parsers/digital-assignments';
+import { readRememberedSem, rememberSem } from '../../utils/semesterMemory';
 
 export interface DASlice {
   daSemesters: { id: string; label: string }[];
@@ -35,13 +36,16 @@ export const createDASlice: StateCreator<DataState, [], [], DASlice> = (
   get,
 ) => ({
   daSemesters: [],
-  daSelectedSem: '',
+  daSelectedSem: readRememberedSem('da'),
   daCourses: [],
   daAssignments: {},
   daLoading: false,
   daError: null,
 
-  setDaSelectedSem: (semId: string) => set({ daSelectedSem: semId }),
+  setDaSelectedSem: (semId: string) => {
+    rememberSem('da', semId);
+    set({ daSelectedSem: semId });
+  },
 
   fetchDASemesters: async (network: VTOPNetwork, force = false) => {
     const { status } = get();
@@ -95,7 +99,7 @@ export const createDASlice: StateCreator<DataState, [], [], DASlice> = (
       return;
     }
 
-    set({ daLoading: true, daError: null, daCourses: [] });
+    set({ daLoading: true, daError: null });
     try {
       const isPastSemester =
         get().daSemesters.length > 0 && semesterId !== get().daSemesters[0].id;

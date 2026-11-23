@@ -27,10 +27,10 @@ export interface DownloadPlanRequest extends CourseDownloadContext {
   authorizedId: string;
 }
 
-/** Fully planned work: url, POST fields and the exact retop folder path. */
+/** Fully planned work: url, POST body and the exact retop folder path. */
 export interface PlannedDownload {
   url: string;
-  body: Record<string, string>;
+  body: string;
   filename: string;
 }
 
@@ -57,17 +57,19 @@ export const buildDownloadFilename = (
   return `${base}${moduleFolder}/${sanitizePathPart(item.title)}${extension}`;
 };
 
+/**
+ * VTOP's own course-material form posts exactly these three fields; an extra
+ * cache-buster is not part of the request and is left out.
+ */
 export const buildDownloadBody = (
   fileId: string,
   csrf: string,
   authorizedId: string,
-  x: string = new Date().toUTCString(),
 ): URLSearchParams => {
   const body = new URLSearchParams();
   body.append('_csrf', csrf);
   body.append('authorizedID', authorizedId);
   body.append('fileId', fileId);
-  body.append('x', x);
   return body;
 };
 
@@ -77,17 +79,16 @@ export const isVtopDownloadUrl = (url?: string): boolean =>
 export const isDownloadableMaterial = (category?: string): boolean =>
   !/web\s*(link|material)/i.test(category || '');
 
-export const isPdfContentType = (contentType: string | null): boolean =>
-  /application\/pdf/i.test(contentType || '');
-
 const planDownload = (
   request: DownloadPlanRequest,
   item: CourseDownloadItem,
 ): PlannedDownload => ({
   url: request.url,
-  body: Object.fromEntries(
-    buildDownloadBody(item.fileId, request.csrf, request.authorizedId),
-  ),
+  body: buildDownloadBody(
+    item.fileId,
+    request.csrf,
+    request.authorizedId,
+  ).toString(),
   filename: buildDownloadFilename(item, request),
 });
 

@@ -1,5 +1,5 @@
 import React, { ElementType } from 'react';
-import { Inbox } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
+import { SearchOff } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 
 interface EmptyStateProps {
   msg: React.ReactNode;
@@ -13,7 +13,7 @@ interface EmptyStateProps {
 export const EmptyState: React.FC<EmptyStateProps> = ({
   msg,
   subMsg,
-  icon: Icon = Inbox,
+  icon: Icon = SearchOff,
   className = '',
   size = 'lg',
 }) => {
@@ -37,13 +37,15 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 
   return (
     <div
-      className={`flex flex-col items-center justify-center h-full w-full text-(--text-muted) rounded-4xl bg-(--bg-surface) ${containerSizeClass} ${className}`}
+      className={`flex flex-col items-center justify-center h-full w-full text-(--text-muted) ${containerSizeClass} ${className}`}
     >
       <Icon
         aria-hidden="true"
         className={`${iconSizeClass} text-(--accent-base) shrink-0`}
       />
-      <span className={`${textSizeClass} text-center font-bold font-expanded`}>
+      <span
+        className={`${textSizeClass} text-center font-medium font-expanded`}
+      >
         {msg}
       </span>
       {subMsg && (

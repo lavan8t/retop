@@ -219,7 +219,7 @@ export const ClassHistory = ({
                 (view === 'list' ? (
                   <ul
                     key={sortOrder}
-                    className={`flex flex-col gap-1.5 ${PAGE_CROSSFADE}`}
+                    className={`flex flex-col gap-0.5 ${PAGE_CROSSFADE}`}
                   >
                     {month.entries.map((entry, index) => {
                       const status = recordStatus(entry.record.status);

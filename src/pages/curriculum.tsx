@@ -347,6 +347,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
   }, [categories, selectedId]);
 
   const { stats } = useDataStore();
+  const isInitialLoading = loading && categories.length === 0;
   const doneCreditsDisplay =
     gradeHistoryEarnedCredits ||
     (stats.credits && stats.credits !== '...' ? stats.credits : '') ||
@@ -372,7 +373,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
       <div className="flex-1 flex flex-col lg:flex-row gap-0 min-h-0 overflow-hidden">
         {/* LEFT SIDEBAR: Total Credits + Vertical Category Column */}
         <div className="w-full lg:w-[27%] xl:w-[24%] flex flex-col shrink-0 h-auto lg:h-full overflow-y-auto custom-scrollbar relative z-40 pb-4 md:pb-6 lg:pb-8 pl-4 lg:pl-6 pr-2 lg:pr-3 gap-1">
-          {!loading && (
+          {!isInitialLoading && (
             <div className="w-full p-4 bg-(--bg-surface)/60 border border-(--border-dim)/40 rounded-3xl flex flex-col items-center justify-center text-center">
               <span className="text-[10px] font-bold text-(--text-muted) uppercase tracking-wider leading-none">
                 Total Credits
@@ -387,7 +388,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = ({ network }) => {
               </div>
             </div>
           )}
-          {loading ? (
+          {isInitialLoading ? (
             <div className="animate-pulse flex flex-col gap-2 w-full">
               {[...Array(5)].map((_, i) => (
                 <div

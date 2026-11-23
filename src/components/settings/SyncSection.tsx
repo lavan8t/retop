@@ -1,5 +1,6 @@
 ﻿import React from 'react';
 import { SettingTopicCard } from './SettingTopicCard';
+import { M3eCheckbox } from '../attendance/m3eTags';
 
 interface SyncSectionProps {
   icalOptions: {
@@ -25,7 +26,10 @@ interface SyncSectionProps {
 
 const checkboxClass =
   'min-h-12 flex items-center gap-3 px-3 rounded-xl bg-(--bg-main) cursor-pointer hover:bg-(--bg-highlight) transition-colors';
-const inputClass = 'w-4 h-4 accent-(--accent-base) rounded cursor-pointer';
+const checkboxStyle = {
+  '--m3e-checkbox-container-size': '32px',
+  '--m3e-checkbox-icon-size': '16px',
+} as React.CSSProperties;
 const optionLabelClass = 'text-xs font-semibold text-(--text-main)';
 
 export const SyncSection: React.FC<SyncSectionProps> = ({
@@ -50,16 +54,15 @@ export const SyncSection: React.FC<SyncSectionProps> = ({
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <label className={checkboxClass}>
-                <input
-                  type="checkbox"
+                <M3eCheckbox
                   checked={icalOptions.includeTimetable}
-                  onChange={(e) =>
+                  onChange={(e: any) =>
                     setIcalOptions((prev) => ({
                       ...prev,
                       includeTimetable: e.target.checked,
                     }))
                   }
-                  className={inputClass}
+                  style={checkboxStyle}
                 />
                 <span className={optionLabelClass}>
                   Timetable (Classes &amp; Slots)
@@ -67,46 +70,43 @@ export const SyncSection: React.FC<SyncSectionProps> = ({
               </label>
 
               <label className={checkboxClass}>
-                <input
-                  type="checkbox"
+                <M3eCheckbox
                   checked={icalOptions.includeCalendar}
-                  onChange={(e) =>
+                  onChange={(e: any) =>
                     setIcalOptions((prev) => ({
                       ...prev,
                       includeCalendar: e.target.checked,
                     }))
                   }
-                  className={inputClass}
+                  style={checkboxStyle}
                 />
                 <span className={optionLabelClass}>Academic Calendar</span>
               </label>
 
               <label className={checkboxClass}>
-                <input
-                  type="checkbox"
+                <M3eCheckbox
                   checked={icalOptions.includeExams}
-                  onChange={(e) =>
+                  onChange={(e: any) =>
                     setIcalOptions((prev) => ({
                       ...prev,
                       includeExams: e.target.checked,
                     }))
                   }
-                  className={inputClass}
+                  style={checkboxStyle}
                 />
                 <span className={optionLabelClass}>Exam Schedules</span>
               </label>
 
               <label className={checkboxClass}>
-                <input
-                  type="checkbox"
+                <M3eCheckbox
                   checked={icalOptions.includeEvents}
-                  onChange={(e) =>
+                  onChange={(e: any) =>
                     setIcalOptions((prev) => ({
                       ...prev,
                       includeEvents: e.target.checked,
                     }))
                   }
-                  className={inputClass}
+                  style={checkboxStyle}
                 />
                 <span className={optionLabelClass}>University Events</span>
               </label>

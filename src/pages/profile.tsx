@@ -4,9 +4,28 @@ import { useDataStore } from '../store/dataStore';
 import { getCachedData, setCachedData } from '../utils/cache';
 import { parseStudentProfile, resolveProctorPhoto } from '../parsers/profile';
 import { StudentProfile } from '../types/vtop';
-import { DigitalIDCard } from '../components/profile/DigitalIDCard';
 import { CopyableText } from '../components/profile/CopyableText';
-import { Person } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
+import {
+  AccountBalance,
+  Bloodtype,
+  CalendarMonth,
+  Call,
+  DirectionsBus,
+  DiversityThree,
+  Flag,
+  Groups,
+  Home,
+  KingBed,
+  LocationOn,
+  Mail,
+  MeetingRoom,
+  MenuBook,
+  Payments,
+  Person,
+  Restaurant,
+  School,
+  TranslateIndic,
+} from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 import {
   formatBedType,
   formatHostelBlock,
@@ -33,6 +52,7 @@ const groupedShape = (index: number, total: number): string => {
   return 'rounded-[4px]';
 };
 
+/** Section heading with the Android list's 14px lead-in spacer. */
 const Section = ({
   title,
   children,
@@ -40,73 +60,72 @@ const Section = ({
   title: string;
   children: React.ReactNode;
 }) => (
-  <section>
-    <h2 className="mt-4 pl-1.5 text-xs font-bold text-(--accent-base)">
+  <>
+    <h2 className="pb-1.5 pl-1.5 text-sm font-bold tracking-[0.2px] text-(--accent-base)">
       {title}
     </h2>
-    <div className="mt-1 flex flex-col gap-0.5">{children}</div>
-  </section>
+    <div className="flex flex-col gap-0.5">{children}</div>
+  </>
 );
 
-/**
- * Loading placeholder that mirrors the real layout: the ID card plus the
- * grouped-list sections, in the same two columns the page uses.
- */
 const SkeletonSection = ({ title, rows }: { title: string; rows: number }) => (
-  <section>
-    <div className="mt-4 h-3 w-28 rounded bg-(--accent-base)/30" />
-    <div className="mt-1 flex flex-col gap-0.5">
-      {Array.from({ length: rows }).map((_, index) => (
-        <div
-          key={index}
-          className={`h-18 bg-(--bg-surface) ${groupedShape(index, rows)}`}
-        />
-      ))}
-    </div>
-  </section>
+  <Section title={title}>
+    {Array.from({ length: rows }).map((_, index) => (
+      <div
+        key={index}
+        className={`h-17 bg-(--bg-surface) ${groupedShape(index, rows)}`}
+      />
+    ))}
+  </Section>
 );
 
 interface RowItem {
   label: string;
   value: string;
   subtitle?: string;
-  badge?: string;
   copy?: string;
+  icon?: React.ReactNode;
 }
 
 const ListRow = ({
   label,
   value,
   subtitle,
-  badge,
   copy,
+  icon,
   shape,
-}: RowItem & { shape: string }) => (
-  <div className={`bg-(--bg-surface) px-4 py-3 ${shape}`}>
-    <div className="flex items-start justify-between gap-3">
-      <div className="min-w-0 flex-1 whitespace-pre-line break-words text-[15px] font-bold leading-snug text-(--text-main)">
-        {copy ? <CopyableText text={copy}>{value}</CopyableText> : value}
+  large,
+}: RowItem & { shape: string; large?: boolean }) => (
+  <div className={`flex items-center bg-(--bg-surface) px-4 py-3 ${shape}`}>
+    {icon && (
+      <span className="mr-3.5 shrink-0 text-(--accent-base)">{icon}</span>
+    )}
+    <div className="min-w-0 flex-1">
+      <div className="text-[13px] font-semibold leading-4 text-(--text-muted) opacity-85">
+        {label}
       </div>
-      {isValid(badge) && (
-        <span className="shrink-0 rounded-full bg-(--bg-highlight) px-2 py-0.5 text-[11px] font-bold text-(--accent-base)">
-          {badge}
-        </span>
+      <div className="mt-0.5 flex items-start justify-between gap-2">
+        <div
+          className={`min-w-0 whitespace-pre-line break-words font-bold text-(--text-main) ${large ? 'text-lg leading-6' : 'text-base leading-[22px]'}`}
+        >
+          {copy ? <CopyableText text={copy}>{value}</CopyableText> : value}
+        </div>
+      </div>
+      {isValid(subtitle) && (
+        <div className="mt-0.5 whitespace-pre-line break-words text-[13px] leading-[17px] text-(--text-muted)">
+          {subtitle}
+        </div>
       )}
     </div>
-    {isValid(subtitle) && (
-      <div className="mt-0.5 whitespace-pre-line break-words text-xs leading-snug opacity-70">
-        {subtitle}
-      </div>
-    )}
-    <div className="mt-1 text-[11px] font-medium opacity-50">{label}</div>
   </div>
 );
 
-const ListRows = ({ items }: { items: RowItem[] }) =>
+const ListRows = ({ items, large }: { items: RowItem[]; large?: boolean }) =>
   items.map((item, index) => (
     <ListRow
       key={item.label}
       {...item}
+      large={large}
       shape={groupedShape(index, items.length)}
     />
   ));
@@ -118,29 +137,31 @@ const ProctorCard = ({
   data: StudentProfile['proctor'];
   shape: string;
 }) => (
-  <div className={`flex min-h-27 overflow-hidden bg-(--bg-surface) ${shape}`}>
-    <div className="relative w-27 shrink-0 self-stretch bg-(--bg-highlight)">
-      {isValid(data.photoUrl) ? (
-        <img
-          src={data.photoUrl}
-          alt={data.name}
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-      ) : (
-        <Person className="absolute inset-0 m-auto h-10 w-10 opacity-40" />
-      )}
-    </div>
-    <div className="min-w-0 flex-1 px-3.5 py-3">
-      <div className="break-words text-base font-bold leading-snug">
+  <div
+    className={`flex min-h-27 items-center gap-3.5 bg-(--bg-surface) px-3.5 py-3 ${shape}`}
+  >
+    {isValid(data.photoUrl) ? (
+      <img
+        src={data.photoUrl}
+        alt={data.name || 'Proctor photo'}
+        className="h-14 w-14 shrink-0 rounded-full bg-(--bg-surface) px-0.5 object-cover object-top"
+      />
+    ) : (
+      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-(--bg-highlight)">
+        <Person className="h-7 w-7 text-(--accent-base)" />
+      </div>
+    )}
+    <div className="min-w-0 flex-1">
+      <div className="break-words text-base font-bold leading-[22px] text-(--text-main)">
         {isValid(data.name) ? data.name : 'Proctor'}
       </div>
       {isValid(data.designation) && (
-        <div className="mt-0.5 break-words text-xs font-medium leading-snug opacity-70">
+        <div className="mt-0.5 break-words text-xs font-medium leading-4 text-(--text-muted)">
           {data.designation}
         </div>
       )}
       {(isValid(data.school) || isValid(data.dept)) && (
-        <div className="mt-0.5 whitespace-pre-line break-words text-[11px] leading-snug opacity-60">
+        <div className="mt-[3px] whitespace-pre-line break-words text-[13px] leading-4 text-(--text-muted) opacity-85">
           {[data.school, data.dept].filter(isValid).join('\n')}
         </div>
       )}
@@ -152,27 +173,34 @@ const AddressRow = ({
   title,
   lines,
   phone,
+  icon,
   shape,
 }: {
   title: string;
   lines: string[];
   phone?: string;
+  icon: React.ReactNode;
   shape: string;
 }) => (
-  <div className={`bg-(--bg-surface) px-4 py-3 ${shape}`}>
-    <div className="space-y-0.5 text-[15px] font-bold leading-snug">
-      {lines.map((line, index) => (
-        <div key={index} className="break-words">
-          {line}
-        </div>
-      ))}
-    </div>
-    {isValid(phone) && (
-      <div className="mt-1 text-xs opacity-70">
-        <CopyableText text={phone}>Phone: {phone}</CopyableText>
+  <div className={`flex items-center bg-(--bg-surface) px-4 py-3 ${shape}`}>
+    <span className="mr-3.5 shrink-0 text-(--accent-base)">{icon}</span>
+    <div className="min-w-0 flex-1">
+      <div className="text-[13px] font-semibold leading-4 text-(--text-muted) opacity-85">
+        {title}
       </div>
-    )}
-    <div className="mt-1 text-[11px] font-medium opacity-50">{title}</div>
+      <div className="mt-0.5 text-sm font-bold leading-5 text-(--text-main)">
+        {lines.map((line, index) => (
+          <div key={index} className="break-words">
+            {line}
+          </div>
+        ))}
+      </div>
+      {isValid(phone) && (
+        <div className="mt-[3px] text-[13px] leading-[17px] text-(--text-muted)">
+          <CopyableText text={phone}>Phone: {phone}</CopyableText>
+        </div>
+      )}
+    </div>
   </div>
 );
 
@@ -437,25 +465,23 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
 
   if (loading) {
     return (
-      <div className="h-full w-full overflow-y-auto bg-(--bg-main) p-4 custom-scrollbar">
-        <div className="mx-auto grid w-full max-w-6xl grid-cols-1 animate-pulse items-start gap-x-6 pb-24 lg:grid-cols-2">
-          <div className="flex flex-col">
-            <div className="flex justify-center">
-              <div className="aspect-64/100 w-full max-w-74 rounded-2xl bg-(--bg-surface)" />
+      <div className="h-full w-full overflow-y-auto bg-(--bg-main) px-5 pb-26 pt-2 custom-scrollbar">
+        <div className="mx-auto flex w-full max-w-3xl xl:max-w-5xl animate-pulse flex-col gap-2">
+          <div className="flex items-center gap-4 pb-3 pt-2">
+            <div className="h-27 w-27 shrink-0 rounded-2xl bg-(--bg-surface)" />
+            <div className="flex flex-1 flex-col gap-2">
+              <div className="h-5 w-2/3 rounded bg-(--bg-highlight)" />
+              <div className="h-4 w-1/3 rounded bg-(--bg-highlight)" />
+              <div className="h-4 w-1/2 rounded bg-(--bg-highlight)" />
             </div>
-
-            <SkeletonSection title="Proctor Details" rows={3} />
-            <SkeletonSection title="Academic Program" rows={4} />
-            <SkeletonSection title="Residence" rows={4} />
           </div>
-
-          <div className="flex flex-col">
-            <SkeletonSection title="Contact Information" rows={2} />
-            <SkeletonSection title="Personal Details" rows={6} />
-            <SkeletonSection title="Addresses" rows={2} />
-            <SkeletonSection title="Education History" rows={1} />
-            <SkeletonSection title="Family Details" rows={3} />
-          </div>
+          <SkeletonSection title="Academic Information" rows={3} />
+          <SkeletonSection title="Personal Details" rows={6} />
+          <SkeletonSection title="Campus Residence" rows={3} />
+          <SkeletonSection title="Proctor Details" rows={3} />
+          <SkeletonSection title="Family Details" rows={3} />
+          <SkeletonSection title="Addresses" rows={2} />
+          <SkeletonSection title="Education History" rows={1} />
         </div>
       </div>
     );
@@ -469,6 +495,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
       label: 'Proctor Mobile',
       value: data.proctor.mobile,
       copy: data.proctor.mobile,
+      icon: <Call className="h-6 w-6" />,
     });
   }
   if (isValid(data.proctor.email)) {
@@ -476,10 +503,15 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
       label: 'Proctor Email',
       value: data.proctor.email.toLowerCase(),
       copy: data.proctor.email,
+      icon: <Mail className="h-6 w-6" />,
     });
   }
   if (isValid(data.proctor.cabin)) {
-    proctorContacts.push({ label: 'Proctor Cabin', value: data.proctor.cabin });
+    proctorContacts.push({
+      label: 'Proctor Cabin',
+      value: data.proctor.cabin,
+      icon: <MeetingRoom className="h-6 w-6" />,
+    });
   }
 
   const academicItems: RowItem[] = [];
@@ -488,25 +520,24 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
     : data.basic.program;
   if (isValid(program)) {
     academicItems.push({
-      label: 'Program & Degree',
+      label: 'Degree',
       value: program,
-      subtitle: isValid(data.basic.school) ? data.basic.school : undefined,
-    });
-  }
-  if (isValid(data.basic.regNo)) {
-    academicItems.push({
-      label: 'Registration Number',
-      value: data.basic.regNo,
-    });
-  }
-  if (isValid(data.personal.appNo)) {
-    academicItems.push({
-      label: 'Application Number',
-      value: data.personal.appNo,
+      icon: <School className="h-6 w-6" />,
     });
   }
   if (isValid(data.education.branch)) {
-    academicItems.push({ label: 'Branch', value: data.education.branch });
+    academicItems.push({
+      label: 'Branch / Program',
+      value: data.education.branch,
+      icon: <MenuBook className="h-6 w-6" />,
+    });
+  }
+  if (isValid(data.basic.school)) {
+    academicItems.push({
+      label: 'School',
+      value: data.basic.school,
+      icon: <AccountBalance className="h-6 w-6" />,
+    });
   }
 
   const residenceItems: RowItem[] = [];
@@ -519,20 +550,28 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
       residenceItems.push({
         label: 'Hostel Block',
         value: block.displayName,
-        badge: block.badge,
       });
     }
     if (isValid(room)) {
-      residenceItems.push({ label: 'Room Number', value: room });
+      residenceItems.push({
+        label: 'Room Number',
+        value: room,
+        icon: <MeetingRoom className="h-6 w-6" />,
+      });
     }
     if (isValid(bed)) {
-      residenceItems.push({ label: 'Bed Type', value: bed });
+      residenceItems.push({
+        label: 'Bed Type',
+        value: bed,
+        icon: <KingBed className="h-6 w-6" />,
+      });
     }
     if (isValid(mess.messType)) {
       residenceItems.push({
         label: 'Mess Facility',
         value: mess.messType,
         subtitle: mess.caterer,
+        icon: <Restaurant className="h-6 w-6" />,
       });
     }
   } else {
@@ -540,60 +579,57 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
       label: 'Residence',
       value: 'Day Scholar',
       subtitle: 'Off-Campus Student',
+      icon: <DirectionsBus className="h-6 w-6" />,
     });
   }
 
-  const contactItems: RowItem[] = [];
+  // Android shows the student's phone/email in the hero, so it has no
+  // separate contact rows here.
   const institutionalEmail = isValid(data.basic.email)
     ? data.basic.email
     : data.personal.email;
-  if (isValid(institutionalEmail)) {
-    contactItems.push({
-      label: 'Institutional Email',
-      value: institutionalEmail.toLowerCase(),
-      copy: institutionalEmail,
-    });
-  }
-  if (isValid(data.personal.mobile)) {
-    contactItems.push({
-      label: 'Student Mobile',
-      value: data.personal.mobile,
-      copy: data.personal.mobile,
-    });
-  }
 
   const personalItems: RowItem[] = [];
   if (isValid(data.personal.dob)) {
     personalItems.push({
       label: 'Date of Birth',
       value: data.personal.dob.replace(/-/g, ' '),
+      icon: <CalendarMonth className="h-6 w-6" />,
     });
   }
   if (isValid(data.personal.gender)) {
-    personalItems.push({ label: 'Gender', value: data.personal.gender });
+    personalItems.push({
+      label: 'Gender',
+      value: data.personal.gender,
+      icon: <Person className="h-6 w-6" />,
+    });
   }
   if (isValid(data.personal.bloodGroup)) {
     personalItems.push({
       label: 'Blood Group',
-      value: data.personal.bloodGroup,
+      value: data.personal.bloodGroup.toUpperCase(),
+      icon: <Bloodtype className="h-6 w-6" />,
     });
   }
   if (isValid(data.personal.nativeLanguage)) {
     personalItems.push({
       label: 'Native Language',
       value: data.personal.nativeLanguage,
+      icon: <TranslateIndic className="h-6 w-6" />,
     });
   }
   if (isValid(data.personal.nativeState)) {
     personalItems.push({
       label: 'Native State',
       value: data.personal.nativeState,
+      icon: <LocationOn className="h-6 w-6" />,
     });
   }
   if (isValid(data.personal.nationality)) {
     personalItems.push({
       label: 'Nationality',
       value: data.personal.nationality,
+      icon: <Flag className="h-6 w-6" />,
     });
   }
   const religionCommunity = [data.personal.religion, data.personal.community]
@@ -603,6 +639,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
     personalItems.push({
       label: 'Religion / Community',
       value: religionCommunity,
+      icon: <DiversityThree className="h-6 w-6" />,
     });
   }
 
@@ -643,9 +680,12 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
       .filter(isValid)
       .join(' · ');
     educationItems.push({
-      label: 'Previous Education',
+      label: isValid(data.education.qualification)
+        ? data.education.qualification
+        : 'Previous Education',
       value: data.education.school,
       subtitle: [boardMedium, yearReg].filter(isValid).join('\n') || undefined,
+      icon: <School className="h-6 w-6" />,
     });
   }
 
@@ -669,12 +709,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
       label: 'Father',
       value: data.family.father.name,
       subtitle: parentSubtitle(data.family.father),
+      icon: <Person className="h-6 w-6" />,
     });
     if (isValid(data.family.father.mobile)) {
       familyItems.push({
         label: 'Father Mobile',
         value: data.family.father.mobile,
         copy: data.family.father.mobile,
+        icon: <Call className="h-6 w-6" />,
       });
     }
     if (isValid(data.family.father.email)) {
@@ -682,6 +724,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
         label: 'Father Email',
         value: data.family.father.email.toLowerCase(),
         copy: data.family.father.email,
+        icon: <Mail className="h-6 w-6" />,
       });
     }
   }
@@ -690,12 +733,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
       label: 'Mother',
       value: data.family.mother.name,
       subtitle: parentSubtitle(data.family.mother),
+      icon: <Person className="h-6 w-6" />,
     });
     if (isValid(data.family.mother.mobile)) {
       familyItems.push({
         label: 'Mother Mobile',
         value: data.family.mother.mobile,
         copy: data.family.mother.mobile,
+        icon: <Call className="h-6 w-6" />,
       });
     }
     if (isValid(data.family.mother.email)) {
@@ -703,6 +748,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
         label: 'Mother Email',
         value: data.family.mother.email.toLowerCase(),
         copy: data.family.mother.email,
+        icon: <Mail className="h-6 w-6" />,
       });
     }
   }
@@ -710,12 +756,17 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
     isValid(data.family.guardian) &&
     data.family.guardian.toUpperCase() !== 'PARENT'
   ) {
-    familyItems.push({ label: 'Local Guardian', value: data.family.guardian });
+    familyItems.push({
+      label: 'Local Guardian',
+      value: data.family.guardian,
+      icon: <Person className="h-6 w-6" />,
+    });
   }
   if (isValid(data.family.brothers) || isValid(data.family.sisters)) {
     familyItems.push({
       label: 'Siblings',
       value: `Brothers: ${data.family.brothers || '0'}\nSisters: ${data.family.sisters || '0'}`,
+      icon: <Groups className="h-6 w-6" />,
     });
   }
   const familyIncome = [
@@ -723,91 +774,164 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
     data.family.mother.income,
   ].find(isValid);
   if (familyIncome) {
-    familyItems.push({ label: 'Annual Income', value: familyIncome });
+    familyItems.push({
+      label: 'Annual Income',
+      value: familyIncome,
+      icon: <Payments className="h-6 w-6" />,
+    });
   }
   if (isValid(data.family.friendMobile)) {
     familyItems.push({
       label: 'Emergency / Friend Mobile',
       value: data.family.friendMobile,
       copy: data.family.friendMobile,
+      icon: <Call className="h-6 w-6" />,
     });
   }
 
+  const heroInitials =
+    (data.basic.name || '')
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part.charAt(0).toUpperCase())
+      .join('') || '?';
+
   return (
-    <div className="h-full w-full overflow-y-auto bg-(--bg-main) p-4 custom-scrollbar">
-      {/* Two columns on wide screens. The source order is left column then
-          right column, so the stacked order on mobile is unchanged. */}
-      <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-x-6 pb-24 lg:grid-cols-2">
-        <div className="flex flex-col">
-          <div className="flex justify-center">
-            <DigitalIDCard data={data} />
+    <div className="h-full w-full overflow-y-auto bg-(--bg-main) px-5 pb-26 pt-2 custom-scrollbar">
+      <div className="mx-auto flex w-full max-w-3xl xl:max-w-5xl flex-col gap-2">
+        {/* Hero: circular avatar + identity, then contacts in two columns */}
+        <div className="flex flex-col gap-3 pb-3 pt-2">
+          <div className="flex items-center gap-4">
+            <div className="flex h-27 w-27 shrink-0 items-center justify-center overflow-hidden rounded-full bg-(--bg-surface)">
+              {isValid(data.basic.photoUrl) ? (
+                <img
+                  src={data.basic.photoUrl}
+                  alt={data.basic.name || 'Student photo'}
+                  className="h-full w-full bg-white px-1 object-contain"
+                />
+              ) : (
+                <span className="text-[22px] font-bold text-(--text-muted)">
+                  {heroInitials}
+                </span>
+              )}
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col gap-[2px]">
+              <div className="line-clamp-2 text-[22px] font-bold leading-tight text-(--text-main)">
+                {isValid(data.basic.name) ? data.basic.name : 'Student'}
+              </div>
+              {isValid(data.basic.regNo) && (
+                <div className="text-[15px] font-bold text-(--accent-base)">
+                  <CopyableText text={data.basic.regNo}>
+                    {data.basic.regNo}
+                  </CopyableText>
+                </div>
+              )}
+              {isValid(data.personal.appNo) && (
+                <div className="text-sm font-semibold text-(--text-main)">
+                  <CopyableText text={data.personal.appNo}>
+                    Application Number: {data.personal.appNo}
+                  </CopyableText>
+                </div>
+              )}
+            </div>
           </div>
-
-          {(isValid(data.proctor.name) ||
-            isValid(data.proctor.mobile) ||
-            isValid(data.proctor.email)) && (
-            <Section title="Proctor Details">
-              <ProctorCard
-                data={data.proctor}
-                shape={groupedShape(0, 1 + proctorContacts.length)}
-              />
-              {proctorContacts.map((item, index) => (
-                <ListRow
-                  key={item.label}
-                  {...item}
-                  shape={groupedShape(index + 1, 1 + proctorContacts.length)}
-                />
-              ))}
-            </Section>
-          )}
-
-          {academicItems.length > 0 && (
-            <Section title="Academic Program">
-              <ListRows items={academicItems} />
-            </Section>
-          )}
-
-          <Section title="Residence">
-            <ListRows items={residenceItems} />
-          </Section>
+          <div className="grid grid-cols-1 gap-0.5 sm:grid-cols-2">
+            {isValid(data.personal.mobile) && (
+              <div className="flex items-center gap-2 px-0 py-1.5">
+                <Call className="h-5 w-5 shrink-0 text-(--accent-base)" />
+                <div className="min-w-0 text-sm font-medium text-(--text-main)">
+                  <CopyableText text={data.personal.mobile}>
+                    {data.personal.mobile}
+                  </CopyableText>
+                </div>
+              </div>
+            )}
+            {isValid(institutionalEmail) && (
+              <div className="flex items-center gap-2 px-0 py-1.5">
+                <Mail className="h-5 w-5 shrink-0 text-(--accent-base)" />
+                <div className="min-w-0 truncate text-[13px] text-(--text-muted)">
+                  <CopyableText text={institutionalEmail}>
+                    {institutionalEmail.toLowerCase()}
+                  </CopyableText>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-
-        <div className="flex flex-col">
-          {contactItems.length > 0 && (
-            <Section title="Contact Information">
-              <ListRows items={contactItems} />
+        <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
+          <div className="min-w-0">
+            {academicItems.length > 0 && (
+              <Section title="Academic Information">
+                <ListRows items={academicItems} />
+              </Section>
+            )}
+          </div>
+          <div className="min-w-0">
+            {personalItems.length > 0 && (
+              <Section title="Personal Details">
+                <ListRows items={personalItems} />
+              </Section>
+            )}
+          </div>
+          <div className="min-w-0">
+            <Section title="Campus Residence">
+              <ListRows items={residenceItems} large />
             </Section>
-          )}
-
-          {personalItems.length > 0 && (
-            <Section title="Personal Details">
-              <ListRows items={personalItems} />
-            </Section>
-          )}
-
-          {addressItems.length > 0 && (
-            <Section title="Addresses">
-              {addressItems.map((item, index) => (
-                <AddressRow
-                  key={item.title}
-                  {...item}
-                  shape={groupedShape(index, addressItems.length)}
+          </div>
+          <div className="min-w-0">
+            {(isValid(data.proctor.name) ||
+              isValid(data.proctor.mobile) ||
+              isValid(data.proctor.email)) && (
+              <Section title="Proctor Details">
+                <ProctorCard
+                  data={data.proctor}
+                  shape={groupedShape(0, 1 + proctorContacts.length)}
                 />
-              ))}
-            </Section>
-          )}
-
-          {educationItems.length > 0 && (
-            <Section title="Education History">
-              <ListRows items={educationItems} />
-            </Section>
-          )}
-
-          {familyItems.length > 0 && (
-            <Section title="Family Details">
-              <ListRows items={familyItems} />
-            </Section>
-          )}
+                {proctorContacts.map((item, index) => (
+                  <ListRow
+                    key={item.label}
+                    {...item}
+                    shape={groupedShape(index + 1, 1 + proctorContacts.length)}
+                  />
+                ))}
+              </Section>
+            )}
+          </div>
+          <div className="min-w-0">
+            {familyItems.length > 0 && (
+              <Section title="Family Details">
+                <ListRows items={familyItems} />
+              </Section>
+            )}
+          </div>
+          <div className="min-w-0">
+            {addressItems.length > 0 && (
+              <Section title="Addresses">
+                {addressItems.map((item, index) => (
+                  <AddressRow
+                    key={item.title}
+                    {...item}
+                    icon={
+                      item.title.toLowerCase().includes('permanent') ? (
+                        <Home className="h-6 w-6" />
+                      ) : (
+                        <LocationOn className="h-6 w-6" />
+                      )
+                    }
+                    shape={groupedShape(index, addressItems.length)}
+                  />
+                ))}
+              </Section>
+            )}
+          </div>
+          <div className="min-w-0">
+            {educationItems.length > 0 && (
+              <Section title="Education History">
+                <ListRows items={educationItems} />
+              </Section>
+            )}
+          </div>
         </div>
       </div>
     </div>

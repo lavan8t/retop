@@ -32,7 +32,7 @@ export const PARSER_SCHEMA_VERSIONS: Record<ParserModuleId, number> = {
   examSchedule: 1,
   profile: 1,
   curriculum: 1,
-  coursePage: 1,
+  coursePage: 2,
   calendar: 1,
   dashboard: 1,
   menu: 1,

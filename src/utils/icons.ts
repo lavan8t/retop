@@ -19,6 +19,8 @@ import {
   Settings as SettingsIcon,
   AppRegistration,
   GridView,
+  FrontHand,
+  Face,
 } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 
 export const getCategoryIcon = (title: string, url: string = '') => {
@@ -42,6 +44,8 @@ export const getCategoryIcon = (title: string, url: string = '') => {
   if (t.includes('profile') || u.includes('studentprofileallview'))
     return Person;
   if (t.includes('setting') || u.includes('setting')) return SettingsIcon;
+  if (t.includes('attendance')) return FrontHand;
+  if (t.includes('biometric')) return Face;
 
   // Categories
   if (t.includes('academic')) return MenuBook;

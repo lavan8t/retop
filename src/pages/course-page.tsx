@@ -23,6 +23,7 @@ import {
   CourseMaterial,
 } from '../types/vtop';
 import { useCoursePageData } from '../hooks/useCoursePage';
+import { useCourseCurriculum } from '../hooks/useCourseCurriculum';
 import { isSameSemester } from '../utils/semesterIdentity';
 import { parseStudentMarks } from '../parsers/marks';
 import { parseGrades } from '../parsers/grades';
@@ -32,6 +33,7 @@ import {
   CAMPUS_SLOT_TIMINGS,
 } from '../utils/timetable-slots';
 import { SelectableRow } from '../components/ui/SelectableRow';
+import { M3eCheckbox } from '../components/attendance/m3eTags';
 
 interface UpcomingClassDetail {
   date: Date;
@@ -96,6 +98,11 @@ export const CoursePage = ({
     materialSort,
   );
 
+  const { courses: curriculumCourses } = useCourseCurriculum(
+    network,
+    currentOption?.code || '',
+  );
+
   const runDownloads = async (
     selections: { material: CourseMaterial; faculty: string }[],
   ) => {
@@ -157,7 +164,7 @@ export const CoursePage = ({
                             id="course-selector-listbox"
                             role="listbox"
                             aria-label="Courses"
-                            className="max-h-[50vh] overflow-y-auto overscroll-contain custom-scrollbar p-1.5 space-y-1"
+                            className="max-h-[50vh] overflow-y-auto overscroll-contain custom-scrollbar p-1.5 flex flex-col gap-0.5"
                           >
                             {cpOptions
                               .filter((o) =>
@@ -353,7 +360,7 @@ export const CoursePage = ({
                           Total Slots Left
                         </span>
                       </div>
-                      <div className="flex flex-col gap-2 max-h-48 overflow-y-auto custom-scrollbar pr-2">
+                      <div className="flex flex-col gap-0.5 max-h-48 overflow-y-auto custom-scrollbar pr-2">
                         {upcomingClasses.slice(0, 15).map((uc, i) => (
                           <div
                             key={i}
@@ -391,6 +398,43 @@ export const CoursePage = ({
                 </div>
               )}
 
+              {/* Curriculum entry for this course, with its syllabus PDF */}
+              {curriculumCourses.length > 0 && (
+                <div className="flex flex-col mb-16">
+                  <h3 className="font-black font-expanded text-(--text-dim) mb-6 uppercase tracking-widest text-sm text-left">
+                    Curriculum
+                  </h3>
+                  <div className="flex flex-col gap-2">
+                    {curriculumCourses.map((course, i) => (
+                      <div
+                        key={`${course.code}-${i}`}
+                        className="flex items-center gap-3 bg-(--bg-surface) p-4 rounded-2xl border-none"
+                      >
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <span className="font-black text-xs uppercase text-(--accent-base)">
+                            {course.code}
+                          </span>
+                          <span className="text-sm font-bold text-(--text-main) wrap-break-word">
+                            {course.title}
+                          </span>
+                          <span className="text-[10px] font-bold uppercase text-(--text-dim)">
+                            {course.type} · {course.credits} credits
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => network.downloadSyllabus(course.code)}
+                          aria-label={`Download syllabus for ${course.code}`}
+                          className="shrink-0 p-3 rounded-full text-(--accent-base) bg-(--bg-highlight) hover:bg-(--accent-base) hover:text-(--text-inverse) transition-colors cursor-pointer border-0"
+                        >
+                          <Download className="w-5 h-5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Outcomes */}
               {data?.outcomes && data.outcomes.length > 0 && (
                 <div className="flex flex-col mb-16">
@@ -416,17 +460,15 @@ export const CoursePage = ({
               {data?.syllabus && data.syllabus.length > 0 && (
                 <div className="flex flex-col mb-16">
                   <h3 className="font-black font-expanded text-(--text-dim) mb-6 uppercase tracking-widest text-sm text-left">
-                    Syllabus
+                    Modules / Syllabus
                   </h3>
                   <div className="flex flex-col gap-8">
                     {data.syllabus.map((mod, i) => {
                       const rawTopics = mod.topics || '';
-                      const lines = rawTopics
-                        .split(/(?=\d+\s*-)/)
-                        .filter(Boolean)
-                        .map((l) => l.replace(/^\d+\s*-\s*/, '').trim());
-                      const renderTopics =
-                        lines.length > 0 ? lines : [rawTopics];
+                      const renderTopics = rawTopics
+                        .split(/\n+|(?=\d+\s*[-–])/)
+                        .map((l) => l.replace(/^\d+\s*[-–]\s*/, '').trim())
+                        .filter(Boolean);
 
                       return (
                         <div key={i} className="flex flex-col gap-5">
@@ -437,8 +479,13 @@ export const CoursePage = ({
                             <h4 className="font-bold text-base md:text-lg text-(--text-main) uppercase">
                               {mod.title}
                             </h4>
+                            {mod.blooms && (
+                              <span className="text-[10px] font-bold uppercase text-(--text-dim) border border-(--border-dim)/40 rounded-full px-2 py-1">
+                                {mod.blooms}
+                              </span>
+                            )}
                           </div>
-                          <ul className="flex flex-col gap-2 pl-2">
+                          <ul className="flex flex-col gap-0.5 pl-2">
                             {renderTopics.map((topic, j) => (
                               <li
                                 key={j}
@@ -539,10 +586,9 @@ export const CoursePage = ({
                   Download selected ({selectedIds.size})
                 </button>
                 <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input
-                    type="checkbox"
+                  <M3eCheckbox
                     checked={moduleWise}
-                    onChange={(e) => setModuleWise(e.target.checked)}
+                    onChange={(e: any) => setModuleWise(e.target.checked)}
                   />
                   Module-wise
                 </label>
@@ -551,7 +597,7 @@ export const CoursePage = ({
                 )}
               </div>
 
-              {loading ? (
+              {loading && !data ? (
                 <div className="flex-1 flex flex-col items-center justify-center py-24 group">
                   <Layers className="w-16 h-16 text-(--accent-base) animate-bounce mb-4" />
                   <span className="text-lg text-(--text-dim) font-bold font-expanded uppercase transition-all duration-fast group-hover:font-squish animate-pulse">
@@ -614,10 +660,9 @@ export const CoursePage = ({
                               }}
                               className="group flex items-center gap-4 py-3 px-3.5 rounded-2xl cursor-pointer bg-transparent hover:bg-(--bg-surface)/70 transition-colors border border-transparent hover:border-(--border-dim)/30"
                             >
-                              <input
-                                type="checkbox"
+                              <M3eCheckbox
                                 checked={selectedIds.has(mat.id)}
-                                onClick={(e) => e.stopPropagation()}
+                                onClick={(e: any) => e.stopPropagation()}
                                 onChange={() =>
                                   setSelectedIds((prev) => {
                                     const next = new Set(prev);

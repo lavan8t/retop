@@ -876,8 +876,11 @@ export const DashboardApp = () => {
     }
 
     const handleKeys = (e: KeyboardEvent) => {
-      // If legacy UI is active (Retop is hidden), let legacy injector handle it
-      if (document.body.classList.contains('show-legacy-ui')) {
+      // In legacy VTOP only the Space hotkey opens the shared search panel.
+      const isLegacyVisible =
+        document.body.classList.contains('show-legacy-ui') ||
+        document.documentElement.classList.contains('show-legacy-ui');
+      if (isLegacyVisible && e.code !== 'Space' && e.key !== ' ') {
         return;
       }
 
@@ -923,6 +926,13 @@ export const DashboardApp = () => {
         isOmniboxOpenRef.current = true;
         setOmniboxInitial('');
         setIsOmniboxOpen(true);
+        setTimeout(() => {
+          const sr = document.getElementById('retop-host')?.shadowRoot;
+          const input = sr?.querySelector(
+            'm3e-form-field input',
+          ) as HTMLInputElement | null;
+          input?.focus();
+        }, 120);
       }
     };
     window.addEventListener('keydown', handleKeys, true);
@@ -986,6 +996,7 @@ export const DashboardApp = () => {
   const handleLinkClick = async (
     link: QuickLink,
     forceLegacy: boolean = false,
+    skipConfirm: boolean = false,
   ) => {
     setIsOmniboxOpen(false);
     setShowProfileMenu(false);
@@ -996,7 +1007,16 @@ export const DashboardApp = () => {
       return;
     }
 
+    // Exam schedule is a retop page on every campus; never send it to legacy.
+    if (/exam.?schedule/i.test(link.title) || /examschedule/i.test(link.url)) {
+      if (!isModernUI) setIsModernUI(true);
+      navigateToView('examSchedule');
+      return;
+    }
+
     const dest = getDestinationView(link);
+    // Picking a retop page from search while in legacy VTOP brings retop back.
+    if (!isModernUI && dest !== 'content') setIsModernUI(true);
 
     const isOffline =
       typeof window !== 'undefined' &&
@@ -1016,7 +1036,7 @@ export const DashboardApp = () => {
       if (isStandalone) {
         return;
       }
-      const canProceed = await confirmNavigation();
+      const canProceed = skipConfirm || (await confirmNavigation());
       if (!canProceed) return;
 
       setContentTitle(link.title);
@@ -1102,8 +1122,11 @@ export const DashboardApp = () => {
           currentView={currentView}
           onNavigate={navigateToView}
           onSearch={() => {
-            setOmniboxInitial('');
-            setIsOmniboxOpen(true);
+            if (isOmniboxOpen) setIsOmniboxOpen(false);
+            else {
+              setOmniboxInitial('');
+              setIsOmniboxOpen(true);
+            }
           }}
           onVtop={() => {
             if (!isStandalone && !(window as any).__RETOP_OFFLINE__) {
@@ -1159,47 +1182,6 @@ export const DashboardApp = () => {
           )}
         </div>
 
-        {/* Search FAB opens the existing omnibox as a centered dialog. */}
-        {isOmniboxOpen && (
-          <div
-            className="fixed inset-0 z-[999990] flex items-start justify-center overflow-hidden bg-(--bg-main)/80 p-3 pt-[8vh] backdrop-blur-sm"
-            onMouseDown={(e) => {
-              if (e.target === e.currentTarget) setIsOmniboxOpen(false);
-            }}
-          >
-            <div
-              className="relative w-full max-w-xl bg-(--bg-surface) border-2 border-(--border-main) rounded-3xl p-3 shadow-2xl"
-              onMouseDown={(e) => e.stopPropagation()}
-            >
-              <button
-                type="button"
-                aria-label="Close search"
-                onClick={() => setIsOmniboxOpen(false)}
-                className="absolute -top-3 -right-3 min-w-12 min-h-12 flex items-center justify-center rounded-full bg-(--bg-surface) border-2 border-(--border-main) text-(--text-muted) hover:text-(--text-main) outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) cursor-pointer z-[999999]"
-              >
-                <span
-                  aria-hidden="true"
-                  className="text-lg font-bold leading-none"
-                >
-                  ×
-                </span>
-              </button>
-              <TopBarSearch
-                currentView={currentView}
-                isOmniboxOpen={isOmniboxOpen}
-                setIsOmniboxOpen={setIsOmniboxOpen}
-                menuCategories={menu}
-                pinnedLinks={pinnedLinks}
-                onNavigate={handleLinkClick}
-                onTogglePin={handleTogglePin}
-                initialQuery={omniboxInitial}
-                pageTitle={getPageTitle(currentView, contentTitle)}
-                onBack={handleBack}
-              />
-            </div>
-          </div>
-        )}
-
         {showProfileMenu && (
           <ProfileMenu
             userName={user.name}
@@ -1219,6 +1201,33 @@ export const DashboardApp = () => {
         <AlertDialogManager />
         <GlobalDADropZone network={networkRef.current!} />
       </div>
+
+      {/* Search panel stays inside retop's shadow DOM so its CSS applies. */}
+      {isOmniboxOpen && (
+        <div
+          className="fixed inset-0 z-[999989]"
+          onMouseDown={() => setIsOmniboxOpen(false)}
+        />
+      )}
+      <aside
+        aria-hidden={!isOmniboxOpen}
+        className={`retop-search-panel fixed inset-y-0 left-0 z-[999990] flex w-full flex-col overflow-hidden bg-(--md-sys-color-surface-container) ${
+          isModernUI ? 'md:left-[220px]' : ''
+        } md:w-[320px] ${isOmniboxOpen ? 'retop-search-panel-open' : ''}`}
+      >
+        <TopBarSearch
+          currentView={currentView}
+          isOmniboxOpen={isOmniboxOpen}
+          setIsOmniboxOpen={setIsOmniboxOpen}
+          menuCategories={menu}
+          pinnedLinks={pinnedLinks}
+          onNavigate={handleLinkClick}
+          onTogglePin={handleTogglePin}
+          initialQuery={omniboxInitial}
+          pageTitle={getPageTitle(currentView, contentTitle)}
+          onBack={handleBack}
+        />
+      </aside>
 
       {!isModernUI && (
         <LegacyReturnButton

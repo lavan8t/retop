@@ -237,7 +237,7 @@ export function Dropdown<T extends string | number = string>({
               left: `${menuPos.left}px`,
               minWidth: `${menuPos.minWidth}px`,
             }}
-            className="z-[999999] max-h-64 overflow-y-auto custom-scrollbar p-1.5 rounded-2xl bg-(--bg-surface) border-2 border-(--border-main) popup-shadow shadow-2xl flex flex-col gap-1 text-(--text-main) animate-popup-open focus:outline-none"
+            className="z-[999999] max-h-64 overflow-y-auto custom-scrollbar p-1.5 rounded-2xl bg-(--bg-surface) border-2 border-(--border-main) popup-shadow shadow-2xl flex flex-col gap-0.5 text-(--text-main) animate-popup-open focus:outline-none"
           >
             {normalizedOptions.length === 0 ? (
               <div className="px-3 py-2 text-xs text-(--text-muted) text-center leading-none">

@@ -72,6 +72,10 @@
     transition-duration: 0s !important;
     scroll-behavior: auto !important;
   }
+
+  #retop-root m3e-icon.nav-rail-icon {
+    transition: none !important;
+  }
 }
 
 @keyframes retopTooltipPop {
@@ -767,11 +771,63 @@ a:active,
   animation: pin-shake 0.4s ease-in-out both;
 }
 
+/* Search column expand / collapse from the nav rail edge. */
+.retop-search-panel {
+  transform-origin: left center;
+  transform: translateX(-8px) scaleX(0) !important;
+  transition: transform 180ms cubic-bezier(0.4, 0, 1, 1) !important;
+  pointer-events: none;
+}
+
+.retop-search-panel-open {
+  transform: translateX(0) scaleX(1) !important;
+  transition: transform 400ms cubic-bezier(0.34, 1.25, 0.64, 1) !important;
+  pointer-events: auto;
+}
+
+/* M3E collapses the rail with the `--compact` custom state on the host; the
+   `mode` attribute stays "expanded" after the toggle is used. Hide the
+   light-DOM label only in that state — M3E's shadow-DOM label wrapper then has
+   no slotted content, and zeroing its inherited gap collapses it fully.
+   (Icon fill is driven by M3E's own `filled` prop in AppNavRail.tsx.) */
+#retop-root m3e-nav-rail:is(:state(--compact), :--compact) .nav-rail-label {
+  display: none;
+}
+
+/* M3E centres compact nav items by cancelling the base's inline padding with
+   `--_vertical-nav-item-margin-inline`, while light-DOM children keep that
+   padding and `align-items: flex-start`. Zero the padding so every child sits
+   on the rail centre line; also cancel the 112px vertical-item min-width that
+   otherwise beats the 96px compact item width. */
+#retop-root m3e-nav-rail:is(:state(--compact), :--compact) {
+  --m3e-nav-item-spacing: 0px;
+  --m3e-nav-rail-inline-padding: 0px;
+  --m3e-nav-bar-vertical-item-width: var(--m3e-nav-rail-compact-width, 96px);
+}
+
+/* Centre the light-DOM rows and the FAB in the full-width compact rail. */
+#retop-root m3e-nav-rail:is(:state(--compact), :--compact) > .nav-rail-top-row,
+#retop-root
+  m3e-nav-rail:is(:state(--compact), :--compact)
+  > .nav-rail-brand-row {
+  padding-inline: 0;
+  justify-content: center;
+}
+
+#retop-root m3e-nav-rail:is(:state(--compact), :--compact) > m3e-fab {
+  margin-inline: auto;
+}
+
+#retop-root
+  m3e-nav-rail:is(:state(--compact), :--compact)
+  .nav-rail-brand-glyph {
+  justify-content: center;
+}
+
 /* --- 3. FONTS --- */
-/* Base weight is regular; weight utilities and element-specific
-   font-variation-settings carry emphasis without a global wght axis override. */
+/* Fixed 500 body weight; card text uses font-medium to match. */
 #retop-root {
-  font-weight: var(--app-font-wght, 400);
+  font-weight: 500;
 }
 
 #retop-root

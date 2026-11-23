@@ -137,7 +137,7 @@ export const AttendancePage = ({ network }: { network: VTOPNetwork }) => {
     }
   };
 
-  if (attLoading) {
+  if (attLoading && detailedAttendance.length === 0) {
     return <AttendanceLoading />;
   }
 

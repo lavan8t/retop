@@ -1,3 +1,4 @@
+import { Schedule } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   Add,
@@ -917,7 +918,7 @@ export const LateHourPage: React.FC<LateHourPageProps> = ({ network }) => {
               ))
             ) : (
               <EmptyState
-                icon={HourglassEmpty}
+                icon={Schedule}
                 msg="No active requests"
                 subMsg="You do not have any pending or active late hour requests."
               />

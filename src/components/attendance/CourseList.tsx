@@ -17,12 +17,21 @@ const TONE_TEXT: Record<AttendanceTone, string> = {
   neutral: 'text-(--text-muted)',
 };
 
-/** Semantic surface roles for the connected, segmented course column. */
+/** Spotlight-style connected rows: 2px gaps, p-3, rounded, no per-row card. */
 const listSurfaceStyle = {
-  '--m3e-segmented-list-item-container-color':
-    'var(--md-sys-color-surface-variant, var(--bg-surface))',
-  '--m3e-list-item-selected-container-color':
-    'var(--md-sys-color-surface-container-highest, var(--bg-highlight))',
+  '--m3e-segmented-list-segment-gap': '2px',
+  '--m3e-segmented-list-container-shape': '1rem',
+  '--m3e-segmented-list-item-container-color': 'var(--bg-highlight)',
+  '--m3e-segmented-list-item-container-shape': '0.25rem',
+  '--m3e-list-item-padding-block': '0.75rem',
+  '--m3e-list-item-padding-inline': '0.75rem',
+  '--m3e-list-item-font-weight': '500',
+  '--m3e-list-item-supporting-text-font-weight': '500',
+  '--m3e-list-item-trailing-text-font-weight': '500',
+  '--m3e-list-item-label-text-color': 'var(--text-main)',
+  '--m3e-list-item-supporting-text-color': 'var(--text-muted)',
+  '--m3e-list-item-trailing-color': 'var(--text-muted)',
+  '--m3e-list-item-selected-container-color': 'var(--bg-highlight)',
   '--m3e-list-item-selected-label-text-color': 'var(--text-main)',
   '--m3e-list-item-selected-supporting-text-color': 'var(--text-muted)',
   '--m3e-list-item-selected-trailing-color': 'var(--text-main)',
@@ -67,7 +76,7 @@ export const CourseList = ({
       style={listSurfaceStyle}
       onChange={handleChange}
       onKeyDown={handleKeyDown}
-      className="bg-(--bg-surface)"
+      className="rounded-2xl overflow-hidden pt-1 pr-1"
     >
       {courses.map((course) => {
         const key = courseKey(course);
@@ -86,10 +95,11 @@ export const CourseList = ({
             onClick={() => onSelect(key)}
             aria-label={`${course.courseTitle}, ${course.courseCode}, ${displayPercentage(course.percentage, course.total)} attendance, ${TONE_LABEL[tone]}`}
             aria-current={selected ? 'true' : undefined}
+            className="group first:rounded-t-2xl last:rounded-b-2xl"
           >
             <span
               slot="supporting-text"
-              className="flex items-center gap-1.5 text-xs"
+              className="flex items-center gap-1.5 text-xs text-(--text-muted)"
             >
               <span className="font-medium">{course.courseCode}</span>
               {course.debarStatus !== '-' && (
@@ -98,12 +108,12 @@ export const CourseList = ({
                 </span>
               )}
             </span>
-            <span className="font-semibold text-sm leading-snug">
+            <span className="text-xs font-medium text-(--text-main) group-hover:text-(--accent-base) transition-colors wrap-break-words">
               {course.courseTitle}
             </span>
             <div slot="trailing" className="shrink-0 text-right pl-2">
               <span
-                className={`block font-bold text-lg leading-none tabular-nums ${TONE_TEXT[tone]}`}
+                className={`block font-medium text-sm leading-none tabular-nums group-hover:text-(--accent-base) transition-colors ${TONE_TEXT[tone]}`}
               >
                 {displayPercentage(course.percentage, course.total)}
               </span>

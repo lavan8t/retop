@@ -6,6 +6,7 @@ import {
   parseExamSemesters,
   parseExamScheduleData,
 } from '../../parsers/exam-schedule';
+import { readRememberedSem, rememberSem } from '../../utils/semesterMemory';
 
 export interface ExamScheduleSlice {
   examSemesters: { id: string; label: string }[];
@@ -26,13 +27,16 @@ export const createExamScheduleSlice: StateCreator<
   ExamScheduleSlice
 > = (set, get) => ({
   examSemesters: [],
-  examSelectedSem: '',
+  examSelectedSem: readRememberedSem('exam'),
   examGroups: [],
   examReportingNote: '',
   examLoading: false,
   examError: null,
 
-  setExamSelectedSem: (semId: string) => set({ examSelectedSem: semId }),
+  setExamSelectedSem: (semId: string) => {
+    rememberSem('exam', semId);
+    set({ examSelectedSem: semId });
+  },
 
   fetchExamSemesters: async (network: VTOPNetwork) => {
     set({ examLoading: true, examError: null });
@@ -56,7 +60,7 @@ export const createExamScheduleSlice: StateCreator<
   },
 
   fetchExamSchedule: async (network: VTOPNetwork, semId: string) => {
-    set({ examLoading: true, examError: null, examGroups: [] });
+    set({ examLoading: true, examError: null });
     try {
       const html = await network.getExamScheduleData(semId);
       const { groups, reportingNote } =

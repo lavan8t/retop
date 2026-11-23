@@ -786,19 +786,22 @@ export class VTOPNetwork {
     });
   }
 
-  downloadSyllabus(courseCode: string) {
+  /** Submit a same-origin POST form, the way VTOP's own download buttons do. */
+  private postDownloadForm(
+    action: string,
+    fields: Record<string, string>,
+  ): void {
     const form = document.createElement('form');
     form.method = 'POST';
-    form.action = '/vtop/academics/common/courseSyllabusDownload1';
+    form.action = action;
     form.target = '_blank';
     form.style.display = 'none';
 
     const inputs = {
       _csrf: this.csrf,
       authorizedID: this.authorizedID,
-      courseCode: courseCode,
+      ...fields,
     };
-
     for (const [key, value] of Object.entries(inputs)) {
       const input = document.createElement('input');
       input.type = 'hidden';
@@ -810,6 +813,12 @@ export class VTOPNetwork {
     document.body.appendChild(form);
     form.submit();
     setTimeout(() => form.remove(), 1000);
+  }
+
+  downloadSyllabus(courseCode: string) {
+    // VTOP's curriculum page posts courseCode to courseSyllabusDownload1;
+    // the GET path variant 404s.
+    this.postDownloadForm('/vtop/courseSyllabusDownload1', { courseCode });
   }
 
   async getDASemesters(forceRefresh = false): Promise<string> {
@@ -1136,30 +1145,9 @@ export class VTOPNetwork {
   }
 
   downloadCourseMaterial(fileId: string) {
-    const form = document.createElement('form');
-    form.method = 'POST';
-
-    form.action = '/vtop/downloadCourseMaterialFacultyPdf';
-    form.target = '_blank';
-    form.style.display = 'none';
-
-    const inputs = {
-      _csrf: this.csrf,
-      authorizedID: this.authorizedID,
-      fileId: fileId,
-    };
-
-    for (const [key, value] of Object.entries(inputs)) {
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = key;
-      input.value = value;
-      form.appendChild(input);
-    }
-
-    document.body.appendChild(form);
-    form.submit();
-    setTimeout(() => form.remove(), 1000);
+    this.postDownloadForm('/vtop/downloadCourseMaterialFacultyPdf', {
+      fileId,
+    });
   }
 
   private injectScript(code: string) {
@@ -1705,7 +1693,9 @@ export class VTOPNetwork {
     semSubId: string,
   ): Promise<string> {
     if (currentCampus() !== 'vitap') return '';
-    return this.fetchVtopApi('processViewStudentCourseDetail', {
+    // StudentCoursePage's onchange posts to this endpoint; the older
+    // processViewStudentCourseDetail name 404s on AP and yields empty details.
+    return this.fetchVtopApi('getCourseDetailsForCoursePage', {
       classId,
       slotId,
       faculty,

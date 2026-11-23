@@ -307,7 +307,7 @@ export const SyncManager = () => {
                     <div className="text-[10px] font-bold uppercase text-(--text-muted) py-1.5">
                       Individual Cached Endpoints
                     </div>
-                    <div className="flex flex-col gap-1.5 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
+                    <div className="flex flex-col gap-0.5 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
                       {group.items.map((item) => (
                         <div
                           key={item.key}

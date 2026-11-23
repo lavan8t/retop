@@ -5,9 +5,8 @@ import {
   CalendarMonth,
   Refresh,
   MoreVert,
-  Person,
 } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
-import { QuickLink, type Semester } from '../../types/vtop';
+import { QuickLink } from '../../types/vtop';
 import { MaterialSwitch } from '../MaterialSwitch';
 import { SemesterDropdown, ClassGroupDropdown } from '../ui/Dropdown';
 import { getPageTitle } from './appShell';
@@ -28,28 +27,6 @@ interface TopBarProps {
   showProfileMenu?: boolean;
   onSync?: () => void;
 }
-
-/** Course-page semester picker built on M3E; options come from the AP shell list. */
-const CoursePageSemesterSelect: React.FC<{
-  semesters: Semester[];
-  selectedSem: string;
-  onChange: (id: string) => void;
-}> = ({ semesters, selectedSem, onChange }) => (
-  <m3e-select
-    aria-label="Semester"
-    value={selectedSem}
-    onChange={(e: any) => {
-      const id = e.target?.value;
-      if (id) onChange(id);
-    }}
-  >
-    {semesters.map((s) => (
-      <m3e-option key={s.id} value={s.id}>
-        {s.label}
-      </m3e-option>
-    ))}
-  </m3e-select>
-);
 
 /**
  * Slim context bar: a page title plus the per-view controls the pages need.
@@ -129,7 +106,17 @@ export const TopBar: React.FC<TopBarProps> = ({
     examSelectedSem,
     setExamSelectedSem,
     fetchExamSchedule,
+    user,
   } = useDataStore();
+
+  const profileImg = user?.profileImgBase64;
+  const profileInitials =
+    (user?.name || user?.regNo || '')
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part.charAt(0).toUpperCase())
+      .join('') || '?';
 
   const handleCoursePageSemChange = (sem: string) => {
     setCpSelectedSem(sem);
@@ -200,7 +187,17 @@ export const TopBar: React.FC<TopBarProps> = ({
             onClick={onProfileClick}
             className="min-h-11 min-w-11 flex items-center justify-center rounded-xl text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-highlight) focus-visible:ring-2 focus-visible:ring-(--accent-base) outline-none cursor-pointer"
           >
-            <Person className="w-5 h-5" aria-hidden="true" />
+            {profileImg ? (
+              <img
+                src={profileImg}
+                alt=""
+                className="w-8 h-8 rounded-full bg-white px-0.5 object-contain"
+              />
+            ) : (
+              <span className="w-8 h-8 rounded-full bg-(--bg-highlight) flex items-center justify-center text-xs font-medium text-(--accent-base)">
+                {profileInitials}
+              </span>
+            )}
           </button>
         </div>
 
@@ -321,27 +318,6 @@ export const TopBar: React.FC<TopBarProps> = ({
               key="marks-controls"
               className="flex items-center gap-2 mr-1 md:mr-2"
             >
-              <button
-                onClick={() => setIsMarksModernView(!isMarksModernView)}
-                title={
-                  isMarksModernView
-                    ? 'Switch to Legacy View'
-                    : 'Switch to Modern View'
-                }
-                aria-label={
-                  isMarksModernView
-                    ? 'Switch to Legacy View'
-                    : 'Switch to Modern View'
-                }
-                className="hidden sm:flex items-center justify-center bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) w-8 h-8 rounded-xl transition-colors cursor-pointer"
-              >
-                {isMarksModernView ? (
-                  <List className="w-4 h-4" />
-                ) : (
-                  <GridView className="w-4 h-4" />
-                )}
-              </button>
-
               <SemesterDropdown
                 semesters={marksSemesters}
                 selectedId={marksSelectedSem}
@@ -388,9 +364,9 @@ export const TopBar: React.FC<TopBarProps> = ({
               key="coursePage-controls"
               className="flex items-center gap-2 mr-1 md:mr-2"
             >
-              <CoursePageSemesterSelect
+              <SemesterDropdown
                 semesters={cpSemesters}
-                selectedSem={cpSelectedSem}
+                selectedId={cpSelectedSem}
                 onChange={handleCoursePageSemChange}
               />
             </div>
@@ -717,9 +693,9 @@ export const TopBar: React.FC<TopBarProps> = ({
                     )}
 
                     {currentView === 'coursePage' && (
-                      <CoursePageSemesterSelect
+                      <SemesterDropdown
                         semesters={cpSemesters}
-                        selectedSem={cpSelectedSem}
+                        selectedId={cpSelectedSem}
                         onChange={(sem: string) => {
                           handleCoursePageSemChange(sem);
                           setIsMobileControlsOpen(false);

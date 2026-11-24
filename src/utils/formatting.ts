@@ -50,12 +50,13 @@ export function formatSemesterShorthand(label: string): string {
   const yearStr = yearMatch ? `${yearMatch[1]}-${yearMatch[2]}` : '';
 
   let termStr = '';
-  if (/winter|win|ws/i.test(clean)) termStr = 'WIN';
-  else if (/fall|fs/i.test(clean)) termStr = 'FALL';
-  else if (/summer|sum|ss/i.test(clean)) termStr = 'SUM';
-  else if (/tri\s*semester|tri\s*sem/i.test(clean)) termStr = 'TRI';
+  if (/winter|win|ws/i.test(clean)) termStr = 'Winter';
+  else if (/fall|fs/i.test(clean)) termStr = 'Fall';
+  else if (/summer|sum|ss/i.test(clean)) termStr = 'Summer';
+  else if (/tri\s*semester|tri\s*sem/i.test(clean)) termStr = 'Tri';
   else {
-    termStr = clean.split(/\s+/)[0]?.substring(0, 4).toUpperCase() || '';
+    const word = clean.split(/\s+/)[0] || '';
+    termStr = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
   }
 
   let tag = '';

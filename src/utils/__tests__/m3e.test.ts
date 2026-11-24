@@ -76,7 +76,6 @@ describe('M3E registers in the main world', () => {
       'nav-rail',
       'nav-bar',
       'fab',
-      'segmented-button',
       'form-field',
       'select',
       'option',

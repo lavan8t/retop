@@ -65,8 +65,6 @@ declare global {
       'm3e-tabs': M3eAttrs;
       'm3e-tab': M3eAttrs;
       'm3e-tab-panel': M3eAttrs;
-      'm3e-segmented-button': M3eAttrs;
-      'm3e-button-segment': M3eAttrs;
       'm3e-form-field': M3eAttrs;
       'm3e-select': M3eAttrs;
       'm3e-option': M3eAttrs;

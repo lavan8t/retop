@@ -10,11 +10,88 @@ import { M3eIcon } from '../attendance/m3eTags';
 import { MaterialSwitch } from '../MaterialSwitch';
 import { SemesterDropdown, ClassGroupDropdown } from '../ui/Dropdown';
 import { getPageTitle } from './appShell';
-import { SegmentedControl } from '../ui/SegmentedControl';
+import { M3eButton, M3eButtonGroup } from '../attendance/m3eTags';
 import { useDataStore } from '../../store/dataStore';
 import { useAppStore } from '../../store/appStore';
 import { isTypingEvent } from '../../utils/keyboard';
 import { formatSyncAge } from '../../utils/formatting';
+
+type TimetableView = 'grid' | 'list' | 'week';
+type CalendarView = 'grid' | 'list';
+
+const TIMETABLE_VIEWS = [
+  { value: 'grid', label: 'Grid View', Icon: GridView },
+  { value: 'list', label: 'List View', Icon: List },
+  { value: 'week', label: 'Week View', Icon: CalendarMonth },
+] as const;
+
+const CALENDAR_VIEWS = [
+  { value: 'grid', label: 'Grid View', Icon: GridView },
+  { value: 'list', label: 'List View', Icon: List },
+] as const;
+
+/** M3E toggles `selected` itself on click; keep the controlled value authoritative. */
+const reassertSelection = (e: React.MouseEvent<HTMLElement>) => {
+  const clicked = e.currentTarget;
+  clicked
+    .closest('m3e-button-group')
+    ?.querySelectorAll<HTMLElement>('m3e-button')
+    .forEach((button) => {
+      const selected = button === clicked;
+      // Attribute first: on an upgraded element the property reflects/removes it.
+      button.setAttribute('selected', String(selected));
+      (button as HTMLElement & { selected?: boolean }).selected = selected;
+    });
+};
+
+/** Connected M3E group: toggle buttons own `selected`, so re-assert the store value. */
+const TimetableViewButtons: React.FC<{
+  value: TimetableView;
+  onChange: (view: TimetableView) => void;
+}> = ({ value, onChange }) => (
+  <M3eButtonGroup variant="connected" size="medium" aria-label="Timetable view">
+    {TIMETABLE_VIEWS.map(({ value: mode, label, Icon }) => (
+      <M3eButton
+        key={mode}
+        toggle
+        value={mode}
+        selected={value === mode}
+        aria-label={label}
+        onClick={(e: React.MouseEvent<HTMLElement>) => {
+          e.stopPropagation();
+          reassertSelection(e);
+          onChange(mode);
+        }}
+      >
+        <Icon slot="icon" aria-hidden="true" />
+      </M3eButton>
+    ))}
+  </M3eButtonGroup>
+);
+
+const CalendarViewButtons: React.FC<{
+  value: CalendarView;
+  onChange: (view: CalendarView) => void;
+}> = ({ value, onChange }) => (
+  <M3eButtonGroup variant="connected" size="medium" aria-label="Calendar view">
+    {CALENDAR_VIEWS.map(({ value: mode, label, Icon }) => (
+      <M3eButton
+        key={mode}
+        toggle
+        value={mode}
+        selected={value === mode}
+        aria-label={label}
+        onClick={(e: React.MouseEvent<HTMLElement>) => {
+          e.stopPropagation();
+          reassertSelection(e);
+          onChange(mode);
+        }}
+      >
+        <Icon slot="icon" aria-hidden="true" />
+      </M3eButton>
+    ))}
+  </M3eButtonGroup>
+);
 
 interface TopBarProps {
   currentView: string;
@@ -229,47 +306,10 @@ export const TopBar: React.FC<TopBarProps> = ({
                 onChange={(id: string) => onTimetableSemChange?.(id)}
               />
 
-              <div className="hidden sm:flex bg-transparent rounded-full border-2 border-(--border-main) shadow-(--brutal-shadow-sm) items-center">
-                <SegmentedControl
-                  options={[
-                    {
-                      label: (
-                        <div
-                          className="flex items-center justify-center"
-                          title="Grid View"
-                        >
-                          <GridView className="w-3.5 h-3.5" />
-                        </div>
-                      ),
-                      value: 'grid',
-                    },
-                    {
-                      label: (
-                        <div
-                          className="flex items-center justify-center"
-                          title="List View"
-                        >
-                          <List className="w-3.5 h-3.5" />
-                        </div>
-                      ),
-                      value: 'list',
-                    },
-                    {
-                      label: (
-                        <div
-                          className="flex items-center justify-center"
-                          title="Week View"
-                        >
-                          <CalendarMonth className="w-3.5 h-3.5" />
-                        </div>
-                      ),
-                      value: 'week',
-                    },
-                  ]}
-                  value={ttViewMode}
-                  onChange={(val) => setTtViewMode(val as any)}
-                />
-              </div>
+              <TimetableViewButtons
+                value={ttViewMode}
+                onChange={setTtViewMode}
+              />
             </div>
           )}
 
@@ -295,36 +335,10 @@ export const TopBar: React.FC<TopBarProps> = ({
                 />
               )}
 
-              <div className="flex bg-transparent rounded-full border-2 border-(--border-main) shadow-(--brutal-shadow-sm) items-center">
-                <SegmentedControl
-                  options={[
-                    {
-                      label: (
-                        <div
-                          className="flex items-center justify-center"
-                          title="Grid View"
-                        >
-                          <GridView className="w-3.5 h-3.5" />
-                        </div>
-                      ),
-                      value: 'grid',
-                    },
-                    {
-                      label: (
-                        <div
-                          className="flex items-center justify-center"
-                          title="List View"
-                        >
-                          <List className="w-3.5 h-3.5" />
-                        </div>
-                      ),
-                      value: 'list',
-                    },
-                  ]}
-                  value={calViewMode}
-                  onChange={(val) => setCalViewMode(val as any)}
-                />
-              </div>
+              <CalendarViewButtons
+                value={calViewMode}
+                onChange={setCalViewMode}
+              />
             </div>
           )}
 
@@ -485,47 +499,10 @@ export const TopBar: React.FC<TopBarProps> = ({
 
                     {currentView === 'timetable' && (
                       <div className="flex flex-col gap-3">
-                        <div className="flex bg-transparent rounded-full border-2 border-(--border-main) shadow-(--brutal-shadow-sm) items-center">
-                          <SegmentedControl
-                            options={[
-                              {
-                                label: (
-                                  <div
-                                    className="flex items-center justify-center"
-                                    title="Grid View"
-                                  >
-                                    <GridView className="w-3.5 h-3.5" />
-                                  </div>
-                                ),
-                                value: 'grid',
-                              },
-                              {
-                                label: (
-                                  <div
-                                    className="flex items-center justify-center"
-                                    title="List View"
-                                  >
-                                    <List className="w-3.5 h-3.5" />
-                                  </div>
-                                ),
-                                value: 'list',
-                              },
-                              {
-                                label: (
-                                  <div
-                                    className="flex items-center justify-center"
-                                    title="Week View"
-                                  >
-                                    <CalendarMonth className="w-3.5 h-3.5" />
-                                  </div>
-                                ),
-                                value: 'week',
-                              },
-                            ]}
-                            value={ttViewMode}
-                            onChange={(val) => setTtViewMode(val as any)}
-                          />
-                        </div>
+                        <TimetableViewButtons
+                          value={ttViewMode}
+                          onChange={setTtViewMode}
+                        />
                         <SemesterDropdown
                           semesters={ttSemesters}
                           selectedId={ttSelectedSem}
@@ -539,36 +516,10 @@ export const TopBar: React.FC<TopBarProps> = ({
 
                     {currentView === 'calendar' && (
                       <div className="flex flex-col gap-3">
-                        <div className="flex bg-transparent rounded-full border-2 border-(--border-main) shadow-(--brutal-shadow-sm) items-center">
-                          <SegmentedControl
-                            options={[
-                              {
-                                label: (
-                                  <div
-                                    className="flex items-center justify-center"
-                                    title="Grid View"
-                                  >
-                                    <GridView className="w-3.5 h-3.5" />
-                                  </div>
-                                ),
-                                value: 'grid',
-                              },
-                              {
-                                label: (
-                                  <div
-                                    className="flex items-center justify-center"
-                                    title="List View"
-                                  >
-                                    <List className="w-3.5 h-3.5" />
-                                  </div>
-                                ),
-                                value: 'list',
-                              },
-                            ]}
-                            value={calViewMode}
-                            onChange={(val) => setCalViewMode(val as any)}
-                          />
-                        </div>
+                        <CalendarViewButtons
+                          value={calViewMode}
+                          onChange={setCalViewMode}
+                        />
                         <SemesterDropdown
                           semesters={calSemesters}
                           selectedId={calSelectedSem}

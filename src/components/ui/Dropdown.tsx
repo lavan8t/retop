@@ -64,15 +64,16 @@ export function Dropdown<T extends string | number = string>({
       className={className}
       style={
         {
-          '--m3e-form-field-container-shape': '9999px',
+          // Outlined is the default variant; its shape token is the one that applies here.
           '--m3e-outlined-form-field-container-shape': '9999px',
           '--m3e-form-field-container-color':
             'var(--md-sys-color-surface-container)',
           '--m3e-form-field-outline-color': 'var(--md-sys-color-outline)',
           '--m3e-form-field-color': 'var(--md-sys-color-on-surface)',
-          '--m3e-form-field-font-size': '12px',
-          '--m3e-form-field-line-height': '20px',
+          '--m3e-form-field-font-size': '14px',
+          '--m3e-form-field-line-height': '24px',
           '--m3e-form-field-width': '100%',
+          marginTop: '4px',
         } as React.CSSProperties
       }
     >

@@ -1,5 +1,5 @@
 import React from 'react';
-import { SegmentedControl } from '../ui/SegmentedControl';
+import { M3eButton, M3eButtonGroup } from '../attendance/m3eTags';
 
 export type EventFilterType = 'all' | 'classes' | 'assignments' | 'events';
 
@@ -19,12 +19,22 @@ export const FilterChips: React.FC<FilterChipsProps> = ({
   eventFilter,
   setEventFilter,
 }) => (
-  <div className="flex items-center justify-center gap-0.5 shrink-0">
-    <SegmentedControl
-      ariaLabel="Event filter"
-      options={OPTIONS.map((o) => ({ ...o }))}
-      value={eventFilter}
-      onChange={(value) => setEventFilter(value as EventFilterType)}
-    />
+  <div className="flex items-center justify-center shrink-0">
+    <M3eButtonGroup variant="connected" size="small" aria-label="Event filter">
+      {OPTIONS.map(({ label, value }) => (
+        <M3eButton
+          key={value}
+          toggle
+          value={value}
+          selected={eventFilter === value}
+          onClick={(e: React.MouseEvent) => {
+            e.stopPropagation();
+            setEventFilter(value);
+          }}
+        >
+          {label}
+        </M3eButton>
+      ))}
+    </M3eButtonGroup>
   </div>
 );

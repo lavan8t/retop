@@ -10,7 +10,6 @@ import {
   GridView,
   List,
 } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
-import { SegmentedControl } from '../components/ui/SegmentedControl';
 import { VTOPNetwork } from '../utils/network';
 
 import {

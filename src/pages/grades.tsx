@@ -5,7 +5,10 @@ import { Dropdown } from '../components/ui/Dropdown';
 import { OfflineNotSynced } from '../components/ui/OfflineNotSynced';
 import { GradeBreakdown } from '../components/grades/GradeBreakdown';
 import { CourseDetailBody } from '../components/grades/CourseDetailBody';
-import { GradeCourseRow } from '../components/grades/GradeCourseRow';
+import {
+  GradeCourseRow,
+  GRADE_LIST_STYLE,
+} from '../components/grades/GradeCourseRow';
 import { GradeHero } from '../components/grades/GradeHero';
 import {
   GradeTrendChart,
@@ -20,6 +23,12 @@ import { useGradesData } from '../hooks/useGradesData';
 import { formatSemesterShorthand } from '../utils/formatting';
 import type { GradeCourse } from '../types/vtop';
 import { ensureM3eComponents } from '../utils/m3e';
+import {
+  M3eButton,
+  M3eButtonGroup,
+  M3eList,
+  M3eListItem,
+} from '../components/attendance/m3eTags';
 
 interface GradesPageProps {
   network: VTOPNetwork;
@@ -32,9 +41,6 @@ interface GradesPageProps {
 // The shared m3e.d.ts is deliberately loose and omits a few real element
 // props (name/checked/dismissible/style). Local aliases keep those tags typed
 // as the untyped custom elements they are without editing the shared file.
-const M3eIcon: any = 'm3e-icon';
-const M3eSegmentedButton: any = 'm3e-segmented-button';
-const M3eButtonSegment: any = 'm3e-button-segment';
 const M3eDialog: any = 'm3e-dialog';
 
 const GRADE_OPTIONS = ['S', 'A', 'B', 'C', 'D', 'E', 'F', 'N'].map((g) => ({
@@ -121,10 +127,7 @@ export const GradesPage: React.FC<GradesPageProps> = ({
     } catch {}
   };
 
-  const refreshGrades = () =>
-    window.dispatchEvent(new CustomEvent('retop-refresh-grades'));
-
-  /** Dropdown selection resets the hero to the overall CGPA. */
+  /** Dropdown selection resets the hero to the overall Cgpa. */
   const handleSelectSem = (id: string) => {
     setSelectedPoint(null);
     setSelectedSem(id);
@@ -182,13 +185,13 @@ export const GradesPage: React.FC<GradesPageProps> = ({
         ? '0.00'
         : historyData?.cgpa?.cgpa || '0.00';
   const heroLabel = selectedPoint
-    ? `${selectedPoint.semShort} · CGPA`
+    ? `${selectedPoint.semShort} · Cgpa`
     : hasPredictions
-      ? 'Predicted CGPA'
-      : 'CGPA';
+      ? 'Predicted cgpa'
+      : 'Cgpa';
   const heroSubLabel = selectedPoint
     ? selectedPoint.gpa !== null
-      ? `Semester GPA ${selectedPoint.gpa.toFixed(2)}`
+      ? `Semester gpa ${selectedPoint.gpa.toFixed(2)}`
       : undefined
     : hasPredictions
       ? 'Based on your predicted grades'
@@ -236,12 +239,12 @@ export const GradesPage: React.FC<GradesPageProps> = ({
       isLatestSem && !isPredictedOf(course) && (grade === '' || grade === '-');
     if (!isEditable) return null;
     return (
-      <div className="flex items-center justify-between gap-3 rounded-2xl bg-(--bg-highlight) p-3">
+      <div className="flex items-center justify-between gap-3 rounded-2xl bg-(--md-sys-color-surface-container-high) p-3">
         <span className="flex flex-col">
-          <span className="text-[10px] font-bold uppercase tracking-wide text-(--text-muted)">
+          <span className="text-[11px] text-(--md-sys-color-on-surface-variant)">
             Predicted grade
           </span>
-          <span className="text-[11px] text-(--text-muted)">
+          <span className="text-[11px] text-(--md-sys-color-on-surface-variant)">
             Updates the summary instantly
           </span>
         </span>
@@ -259,15 +262,15 @@ export const GradesPage: React.FC<GradesPageProps> = ({
   const renderInlineDetail = (course: GradeCourse) => {
     const key = courseKey(course);
     return (
-      <div className="rounded-b-2xl bg-(--bg-surface) px-4 pb-4 pt-3 border-t border-(--border-dim)/50">
+      <div className="rounded-b-2xl bg-(--md-sys-color-surface-container-low) px-4 pb-4 pt-3 border-t border-(--md-sys-color-outline-variant)">
         {fetchingDetails && !course.assessments ? (
           <div
             className="flex flex-col gap-3 animate-pulse"
             role="status"
             aria-label="Loading course details"
           >
-            <div className="h-16 rounded-2xl bg-(--bg-highlight)" />
-            <div className="h-24 rounded-2xl bg-(--bg-highlight)" />
+            <div className="h-16 rounded-2xl bg-(--md-sys-color-surface-container-high)" />
+            <div className="h-24 rounded-2xl bg-(--md-sys-color-surface-container-high)" />
           </div>
         ) : (
           <div className="flex flex-col gap-4">
@@ -313,11 +316,11 @@ export const GradesPage: React.FC<GradesPageProps> = ({
     !historyData?.courses.length;
 
   return (
-    <div className="h-full flex flex-col bg-transparent text-(--text-main) overflow-hidden text-left">
+    <div className="h-full flex flex-col bg-transparent text-(--md-sys-color-on-surface) overflow-hidden text-left">
       <div className="flex-1 overflow-y-auto custom-scrollbar px-4 md:px-8 lg:px-10 xl:px-12 pb-32 text-left">
         <div className="mx-auto w-full max-w-6xl">
-          {/* Semester selector + refresh */}
-          <div className="mb-4 flex items-center justify-between gap-3">
+          {/* Compact semester picker; reload lives in the app shell. */}
+          <div className="mb-3 w-40 shrink-0 sm:w-48">
             <Dropdown
               options={semesters.map((s) => ({
                 id: s.id,
@@ -327,16 +330,6 @@ export const GradesPage: React.FC<GradesPageProps> = ({
               onChange={handleSelectSem}
               placeholder="Select Semester"
             />
-            <div className="flex items-center gap-1">
-              <m3e-icon-button
-                id={`grades-refresh`}
-                aria-label="Refresh grades"
-                onClick={refreshGrades}
-              >
-                <M3eIcon name="refresh" variant="rounded" />
-              </m3e-icon-button>
-              <m3e-tooltip for={`grades-refresh`}>Refresh grades</m3e-tooltip>
-            </div>
           </div>
 
           {isLoading ? (
@@ -347,46 +340,43 @@ export const GradesPage: React.FC<GradesPageProps> = ({
               aria-label="Loading grades"
             >
               <div className="flex flex-col gap-3 animate-pulse">
-                <div className="h-12 rounded-2xl bg-(--bg-highlight)" />
-                <div className="h-64 rounded-3xl bg-(--bg-highlight)" />
-                <div className="h-20 rounded-2xl bg-(--bg-highlight)" />
-                <div className="h-20 rounded-2xl bg-(--bg-highlight)" />
+                <div className="h-12 rounded-2xl bg-(--md-sys-color-surface-container-high)" />
+                <div className="h-64 rounded-3xl bg-(--md-sys-color-surface-container-high)" />
+                <div className="h-20 rounded-2xl bg-(--md-sys-color-surface-container-high)" />
+                <div className="h-20 rounded-2xl bg-(--md-sys-color-surface-container-high)" />
               </div>
               <div className="flex flex-col gap-4 animate-pulse">
-                <div className="h-24 rounded-3xl bg-(--bg-highlight)" />
-                <div className="h-40 rounded-3xl bg-(--bg-highlight)" />
+                <div className="h-24 rounded-3xl bg-(--md-sys-color-surface-container-high)" />
+                <div className="h-40 rounded-3xl bg-(--md-sys-color-surface-container-high)" />
               </div>
             </div>
           ) : isError || isEmpty ? (
-            <div className="flex flex-col items-center justify-center gap-3 rounded-3xl bg-(--bg-surface) px-6 py-16 text-center">
+            <div className="flex flex-col items-center justify-center gap-3 rounded-3xl bg-(--md-sys-color-surface-container-low) px-6 py-16 text-center">
               <ErrorIcon
-                className="h-16 w-16 text-(--accent-base)"
+                className="h-16 w-16 text-(--md-sys-color-primary)"
                 aria-hidden="true"
               />
-              <h2 className="text-2xl font-bold font-expanded text-(--text-main)">
+              <h2 className="text-2xl font-bold font-expanded text-(--md-sys-color-on-surface)">
                 {isError ? 'Unable to load grades' : 'No Grades Data Found'}
               </h2>
-              <p className="max-w-sm text-sm text-(--text-muted)">
+              <p className="max-w-sm text-sm text-(--md-sys-color-on-surface-variant)">
                 {isError
-                  ? 'Something went wrong while fetching your grades. Try again.'
+                  ? 'Something went wrong while fetching your grades. Use the reload button in the app bar to try again.'
                   : 'Grades for the selected semester are not available yet.'}
               </p>
-              <m3e-button variant="filled" onClick={refreshGrades}>
-                Retry
-              </m3e-button>
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-6 items-start">
               {/* Supporting pane — hero, trend and breakdown stay visible while predicting */}
               <aside className="order-first lg:order-none lg:sticky lg:top-24 flex flex-col gap-4 self-start">
-                <div className="rounded-3xl bg-(--bg-surface)">
+                <div className="rounded-3xl bg-(--md-sys-color-surface-container-low)">
                   <GradeHero
                     value={heroCgpa}
                     label={heroLabel}
                     subLabel={heroSubLabel}
                   />
                 </div>
-                <div className="rounded-3xl bg-(--bg-surface) px-4 py-3">
+                <div className="rounded-3xl bg-(--md-sys-color-surface-container-low) px-4 py-3">
                   <GradeTrendChart
                     network={network}
                     semesters={semesters}
@@ -406,34 +396,31 @@ export const GradesPage: React.FC<GradesPageProps> = ({
 
               {/* Main pane */}
               <main className="min-w-0 flex flex-col gap-4">
-                <M3eSegmentedButton
+                <M3eButtonGroup
+                  variant="connected"
+                  size="medium"
                   aria-label="Grade view"
-                  onChange={(e: any) =>
-                    setView((e.target as any).value as 'history' | 'curriculum')
-                  }
-                  style={
-                    {
-                      '--m3e-segmented-button-start-shape': '20px',
-                      '--m3e-segmented-button-end-shape': '20px',
-                    } as React.CSSProperties
-                  }
                 >
-                  <M3eButtonSegment
+                  <M3eButton
+                    toggle
                     value="history"
-                    checked={view === 'history'}
+                    selected={view === 'history'}
+                    onClick={() => setView('history')}
                   >
                     History
-                  </M3eButtonSegment>
-                  <M3eButtonSegment
+                  </M3eButton>
+                  <M3eButton
+                    toggle
                     value="curriculum"
-                    checked={view === 'curriculum'}
+                    selected={view === 'curriculum'}
+                    onClick={() => setView('curriculum')}
                   >
                     Curriculum
-                  </M3eButtonSegment>
-                </M3eSegmentedButton>
+                  </M3eButton>
+                </M3eButtonGroup>
 
                 {view === 'history' ? (
-                  <div className="flex flex-col gap-5">
+                  <div className="flex flex-col gap-2">
                     {gradesData && gradesData.courses.length > 0 && (
                       <SemesterSection
                         number={currentSemNumber}
@@ -455,7 +442,7 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                         hasPredictions={hasPredictions}
                         onResetPredictions={handleResetPredictions}
                       >
-                        <div className="flex flex-col gap-px overflow-hidden">
+                        <div className="flex flex-col gap-px">
                           {gradesData.courses.map((course, idx) => {
                             const key = courseKey(course);
                             const isExpanded =
@@ -466,8 +453,6 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                                 course={course}
                                 currentGrade={currentGradeOf(course)}
                                 isPredicted={isPredictedOf(course)}
-                                isFirst={idx === 0}
-                                isLast={idx === gradesData.courses.length - 1}
                                 expanded={isExpanded}
                                 onToggle={() => handleToggleDetails(course)}
                                 buttonId={`grades-course-${idx}`}
@@ -501,40 +486,44 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                           headerId={`grades-sem-header-${headerIndex}`}
                           panelId={`grades-sem-panel-${headerIndex}`}
                         >
-                          <div className="flex flex-col gap-px overflow-hidden rounded-2xl">
+                          <M3eList style={GRADE_LIST_STYLE}>
                             {sem.courses.map((course, cIdx) => (
-                              <div
-                                key={cIdx}
-                                className={`flex min-h-12 items-center gap-3 bg-(--bg-surface) px-4 py-2.5 text-left ${
-                                  cIdx === 0 ? 'rounded-t-2xl' : ''
-                                } ${cIdx === sem.courses.length - 1 ? 'rounded-b-2xl' : ''}`}
-                              >
+                              <M3eListItem key={cIdx}>
                                 <span className="min-w-0 flex-1">
-                                  <span className="flex flex-wrap items-center gap-1.5">
-                                    <span className="text-[10px] font-bold uppercase text-(--text-muted)">
+                                  <span className="mb-0.5 flex flex-wrap items-center gap-1.5">
+                                    <span className="text-[10px] text-(--md-sys-color-on-surface-variant)">
                                       {course.code}
                                     </span>
-                                    <span className="rounded-full bg-(--bg-highlight) px-2 py-0.5 text-[10px] font-bold uppercase text-(--text-muted)">
+                                    <span className="rounded-full bg-(--md-sys-color-surface-container-highest) px-1.5 py-0.5 text-[10px] text-(--md-sys-color-on-surface-variant)">
                                       {course.type}
                                     </span>
                                   </span>
-                                  <span className="line-clamp-2 text-sm font-bold leading-tight text-(--text-main)">
+                                  <span className="line-clamp-1 text-sm font-medium leading-tight text-(--md-sys-color-on-surface)">
                                     {course.title}
                                   </span>
                                 </span>
-                                <span className="shrink-0 text-xs font-bold tabular-nums text-(--text-muted)">
-                                  {parseFloat(course.credits || '0').toString()}{' '}
-                                  CR
-                                </span>
                                 <span
-                                  className="shrink-0 text-2xl font-black font-expanded tabular-nums leading-none"
-                                  style={{ color: gradeColorVar(course.grade) }}
+                                  slot="trailing"
+                                  className="flex shrink-0 items-center gap-2"
                                 >
-                                  {course.grade}
+                                  <span className="text-xs tabular-nums text-(--md-sys-color-on-surface-variant)">
+                                    {parseFloat(
+                                      course.credits || '0',
+                                    ).toString()}{' '}
+                                    Cr
+                                  </span>
+                                  <span
+                                    className="text-xl font-bold tabular-nums leading-none"
+                                    style={{
+                                      color: gradeColorVar(course.grade),
+                                    }}
+                                  >
+                                    {course.grade}
+                                  </span>
                                 </span>
-                              </div>
+                              </M3eListItem>
                             ))}
-                          </div>
+                          </M3eList>
                         </SemesterSection>
                       );
                     })}
@@ -543,13 +532,13 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                   <div className="flex flex-col gap-5">
                     {historyData?.curriculum &&
                       historyData.curriculum.length > 0 && (
-                        <section className="rounded-3xl bg-(--bg-surface) overflow-hidden">
-                          <h2 className="px-4 py-3 text-sm font-bold text-(--text-main)">
+                        <section className="rounded-3xl bg-(--md-sys-color-surface-container-low) overflow-hidden">
+                          <h2 className="px-4 py-3 text-sm font-bold text-(--md-sys-color-on-surface)">
                             Curriculum Details
                           </h2>
                           <div className="overflow-x-auto custom-scrollbar">
                             <table className="w-full text-xs">
-                              <thead className="bg-(--bg-highlight) text-[10px] font-bold uppercase text-(--text-muted)">
+                              <thead className="bg-(--md-sys-color-surface-container) text-xs text-(--md-sys-color-on-surface-variant)">
                                 <tr>
                                   <th className="p-3 pl-4 text-left">
                                     Distribution
@@ -563,20 +552,20 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                                 {historyData.curriculum.map((item, idx) => (
                                   <tr
                                     key={idx}
-                                    className="border-t border-(--border-dim)/50"
+                                    className="border-t border-(--md-sys-color-outline-variant)"
                                   >
-                                    <td className="p-3 pl-4 font-bold text-(--text-main)">
+                                    <td className="p-3 pl-4 font-bold text-(--md-sys-color-on-surface)">
                                       {item.title}
                                     </td>
                                     <td className="p-3 pr-4 text-right font-bold tabular-nums">
-                                      <span className="text-(--accent-base)">
+                                      <span className="text-(--md-sys-color-primary)">
                                         {item.earned}
                                       </span>
-                                      <span className="text-(--text-muted)">
+                                      <span className="text-(--md-sys-color-on-surface-variant)">
                                         {' '}
                                         /{' '}
                                       </span>
-                                      <span className="text-(--text-muted)">
+                                      <span className="text-(--md-sys-color-on-surface-variant)">
                                         {item.required}
                                       </span>
                                     </td>
@@ -588,13 +577,13 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                         </section>
                       )}
                     {historyData?.baskets && historyData.baskets.length > 0 && (
-                      <section className="rounded-3xl bg-(--bg-surface) overflow-hidden">
-                        <h2 className="px-4 py-3 text-sm font-bold text-(--text-main)">
+                      <section className="rounded-3xl bg-(--md-sys-color-surface-container-low) overflow-hidden">
+                        <h2 className="px-4 py-3 text-sm font-bold text-(--md-sys-color-on-surface)">
                           Basket Details
                         </h2>
                         <div className="overflow-x-auto custom-scrollbar">
                           <table className="w-full text-xs">
-                            <thead className="bg-(--bg-highlight) text-[10px] font-bold uppercase text-(--text-muted)">
+                            <thead className="bg-(--md-sys-color-surface-container) text-xs text-(--md-sys-color-on-surface-variant)">
                               <tr>
                                 <th className="p-3 pl-4 text-left">Basket</th>
                                 <th className="p-3 pr-4 text-right">
@@ -606,20 +595,20 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                               {historyData.baskets.map((item, idx) => (
                                 <tr
                                   key={idx}
-                                  className="border-t border-(--border-dim)/50"
+                                  className="border-t border-(--md-sys-color-outline-variant)"
                                 >
-                                  <td className="p-3 pl-4 font-bold text-(--text-main)">
+                                  <td className="p-3 pl-4 font-bold text-(--md-sys-color-on-surface)">
                                     {item.title}
                                   </td>
                                   <td className="p-3 pr-4 text-right font-bold tabular-nums">
-                                    <span className="text-(--accent-base)">
+                                    <span className="text-(--md-sys-color-primary)">
                                       {item.earned}
                                     </span>
-                                    <span className="text-(--text-muted)">
+                                    <span className="text-(--md-sys-color-on-surface-variant)">
                                       {' '}
                                       /{' '}
                                     </span>
-                                    <span className="text-(--text-muted)">
+                                    <span className="text-(--md-sys-color-on-surface-variant)">
                                       {item.required}
                                     </span>
                                   </td>
@@ -647,24 +636,25 @@ export const GradesPage: React.FC<GradesPageProps> = ({
           onClosed={() => handleToggleDetails(expandedCourse)}
           style={
             {
-              '--m3e-dialog-container-color': 'var(--bg-surface)',
+              '--m3e-dialog-container-color':
+                'var(--md-sys-color-surface-container-low)',
               '--m3e-dialog-shape': '28px',
             } as React.CSSProperties
           }
         >
           <span slot="header" className="flex flex-col gap-1">
-            <span className="text-base font-bold text-(--text-main)">
+            <span className="text-base font-bold text-(--md-sys-color-on-surface)">
               {expandedCourse.title}
             </span>
-            <span className="flex flex-wrap items-center gap-1.5 text-[10px] font-bold uppercase text-(--text-muted)">
+            <span className="flex flex-wrap items-center gap-1.5 text-[10px] text-(--md-sys-color-on-surface-variant)">
               <span>{expandedCourse.code}</span>
               <span>{expandedCourse.type}</span>
-              {expandedCourse.notIncludedInGpa && <span>NGCR</span>}
+              {expandedCourse.notIncludedInGpa && <span>Ngcr</span>}
               <span>
                 {parseFloat(
                   expandedCourse.c || expandedCourse.credits || '0',
                 ).toString()}{' '}
-                CR
+                Cr
               </span>
             </span>
           </span>
@@ -675,8 +665,8 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                 role="status"
                 aria-label="Loading course details"
               >
-                <div className="h-16 rounded-2xl bg-(--bg-highlight)" />
-                <div className="h-24 rounded-2xl bg-(--bg-highlight)" />
+                <div className="h-16 rounded-2xl bg-(--md-sys-color-surface-container-high)" />
+                <div className="h-24 rounded-2xl bg-(--md-sys-color-surface-container-high)" />
               </div>
             ) : (
               <CourseDetailBody

@@ -201,7 +201,7 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
           });
         }
 
-        // If official CGPA exists and we have points, calibrate the latest completed point
+        // If official Cgpa exists and we have points, calibrate the latest completed point
         if (officialCgpa && points.length > 0) {
           const numOfficial = parseFloat(officialCgpa);
           if (!isNaN(numOfficial) && numOfficial > 0) {
@@ -380,8 +380,8 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
         aria-busy="true"
         aria-label="Loading grade trend"
       >
-        <div className="h-8 bg-(--bg-highlight) rounded-2xl w-32 mb-3 animate-pulse" />
-        <div className="h-28 bg-(--bg-highlight) rounded-2xl w-full animate-pulse" />
+        <div className="h-8 bg-(--md-sys-color-surface-container-high) rounded-2xl w-32 mb-3 animate-pulse" />
+        <div className="h-28 bg-(--md-sys-color-surface-container-high) rounded-2xl w-full animate-pulse" />
       </div>
     );
   }
@@ -432,22 +432,22 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
 
   return (
     <div className="w-full bg-transparent p-0 text-left flex flex-col gap-2 select-none">
-      <div className="flex items-center justify-between gap-3 text-[10px] font-bold text-(--text-muted)">
-        <span className="uppercase tracking-wide">Grade Trend</span>
+      <div className="flex items-center justify-between gap-3 text-[11px] text-(--md-sys-color-on-surface-variant)">
+        <span>Grade trend</span>
         <span className="inline-flex items-center gap-3">
           <span className="inline-flex items-center gap-1">
             <span
               aria-hidden="true"
-              className="w-4 h-0.5 bg-(--accent-base) inline-block"
+              className="w-4 h-0.5 bg-(--md-sys-color-primary) inline-block"
             />
-            CGPA
+            Cgpa
           </span>
           <span className="inline-flex items-center gap-1">
             <span
               aria-hidden="true"
-              className="w-4 border-t-2 border-dashed border-(--color-success) inline-block"
+              className="w-4 border-t-2 border-dashed border-(--md-sys-color-success) inline-block"
             />
-            GPA
+            Gpa
           </span>
         </span>
       </div>
@@ -458,18 +458,18 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
           className="w-full h-auto overflow-visible select-none"
           style={{ minHeight: '120px', maxHeight: '160px' }}
           role="group"
-          aria-label="CGPA and GPA by semester. Use arrow keys to select a semester."
+          aria-label="Cgpa and gpa by semester. Use arrow keys to select a semester."
         >
           <defs>
             <linearGradient id="cgpaGradient" x1="0" y1="0" x2="0" y2="1">
               <stop
                 offset="0%"
-                stopColor="var(--accent-base)"
+                stopColor="var(--md-sys-color-primary)"
                 stopOpacity="0.2"
               />
               <stop
                 offset="100%"
-                stopColor="var(--accent-base)"
+                stopColor="var(--md-sys-color-primary)"
                 stopOpacity="0"
               />
             </linearGradient>
@@ -484,14 +484,14 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
                   y1={y}
                   x2={chartData.width - chartData.padRight}
                   y2={y}
-                  stroke="var(--border-dim)"
+                  stroke="var(--md-sys-color-outline-variant)"
                   strokeWidth="1"
                 />
                 <text
                   x={chartData.padLeft - 6}
                   y={y + 3}
                   textAnchor="end"
-                  className="fill-(--text-muted) text-[9px] font-bold opacity-60"
+                  className="fill-(--md-sys-color-on-surface-variant) text-[9px] opacity-60"
                 >
                   {gridVal}
                 </text>
@@ -501,21 +501,21 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
 
           <path d={chartData.cgpaAreaPath} fill="url(#cgpaGradient)" />
 
-          {/* GPA — dashed, success semantic role */}
+          {/* Gpa — dashed, success semantic role */}
           <path
             d={chartData.gpaPath}
             fill="none"
-            stroke="var(--color-success)"
+            stroke="var(--md-sys-color-success)"
             strokeWidth="2"
             strokeDasharray="4 4"
             strokeLinecap="square"
           />
 
-          {/* CGPA — solid, primary semantic role */}
+          {/* Cgpa — solid, primary semantic role */}
           <path
             d={chartData.cgpaPath}
             fill="none"
-            stroke="var(--accent-base)"
+            stroke="var(--md-sys-color-primary)"
             strokeWidth="2.5"
             strokeLinecap="square"
           />
@@ -526,8 +526,8 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
               cx={pt.x}
               cy={pt.y}
               r={hoveredIdx === i ? 4.5 : 3}
-              fill="var(--color-success)"
-              stroke="var(--bg-main)"
+              fill="var(--md-sys-color-success)"
+              stroke="var(--md-sys-color-background)"
               strokeWidth="1.5"
             />
           ))}
@@ -552,7 +552,7 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
                 }}
                 tabIndex={0}
                 role="button"
-                aria-label={`${pt.point.semLabel}: CGPA ${pt.point.cgpa?.toFixed(2) ?? 'not available'}${pt.point.gpa !== null ? `, GPA ${pt.point.gpa.toFixed(2)}` : ''}${isSelected ? ', selected' : ''}`}
+                aria-label={`${pt.point.semLabel}: Cgpa ${pt.point.cgpa?.toFixed(2) ?? 'not available'}${pt.point.gpa !== null ? `, gpa ${pt.point.gpa.toFixed(2)}` : ''}${isSelected ? ', selected' : ''}`}
                 className="cursor-pointer outline-none focus-visible:opacity-80"
                 onFocus={() => setHoveredIdx(i)}
                 onBlur={() => setHoveredIdx(null)}
@@ -575,7 +575,7 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
                     y1={chartData.padTop}
                     x2={pt.x}
                     y2={chartData.height - chartData.padBottom}
-                    stroke="var(--text-muted)"
+                    stroke="var(--md-sys-color-on-surface-variant)"
                     strokeDasharray="2 2"
                     strokeWidth="1"
                     opacity="0.3"
@@ -588,8 +588,8 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
                     cx={pt.x}
                     cy={pt.y}
                     r={isHovered || isSelected ? 6.5 : 4.5}
-                    fill="var(--bg-main)"
-                    stroke="var(--accent-base)"
+                    fill="var(--md-sys-color-background)"
+                    stroke="var(--md-sys-color-primary)"
                     strokeWidth="2"
                     strokeDasharray="2 2"
                   />
@@ -598,8 +598,8 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
                     cx={pt.x}
                     cy={pt.y}
                     r={isHovered || isSelected ? 6 : 4}
-                    fill="var(--accent-base)"
-                    stroke="var(--bg-main)"
+                    fill="var(--md-sys-color-primary)"
+                    stroke="var(--md-sys-color-background)"
                     strokeWidth="2"
                   />
                 )}
@@ -612,15 +612,15 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
                           x={pt.x}
                           y={topY - 24}
                           textAnchor="middle"
-                          className="fill-(--accent-base) text-[11px] font-bold"
+                          className="fill-(--md-sys-color-primary) text-[11px] font-medium"
                         >
-                          Calculate CGPA
+                          Calculate cgpa
                         </text>
                         <text
                           x={pt.x}
                           y={topY - 12}
                           textAnchor="middle"
-                          className="fill-(--text-muted) text-[8.5px] font-bold"
+                          className="fill-(--md-sys-color-on-surface-variant) text-[8.5px]"
                         >
                           Pick grades below
                         </text>
@@ -631,7 +631,7 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
                           x={pt.x}
                           y={pt.point.gpa !== null ? topY - 34 : topY - 22}
                           textAnchor="middle"
-                          className="fill-(--accent-base) text-[14px] font-bold"
+                          className="fill-(--md-sys-color-primary) text-[14px] font-bold"
                         >
                           {pt.point.cgpa?.toFixed(2)}
                           {pt.point.isPredicted ? '*' : ''}
@@ -641,9 +641,9 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
                             x={pt.x}
                             y={topY - 22}
                             textAnchor="middle"
-                            className="fill-(--color-success) text-[10px] font-bold"
+                            className="fill-(--md-sys-color-success) text-[10px] font-medium"
                           >
-                            {pt.point.gpa.toFixed(2)} GPA
+                            {pt.point.gpa.toFixed(2)} gpa
                           </text>
                         )}
                       </g>
@@ -655,12 +655,12 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
                   x={pt.x}
                   y={chartData.height - 8}
                   textAnchor="middle"
-                  className={`text-[9.5px] font-bold ${
+                  className={`text-[9.5px] ${
                     isSelected
-                      ? 'fill-(--accent-base)'
+                      ? 'fill-(--md-sys-color-primary) font-bold'
                       : isHovered
-                        ? 'fill-(--text-main)'
-                        : 'fill-(--text-muted) opacity-70'
+                        ? 'fill-(--md-sys-color-on-surface)'
+                        : 'fill-(--md-sys-color-on-surface-variant) opacity-70'
                   }`}
                 >
                   {pt.point.semShort}
@@ -672,8 +672,8 @@ export const GradeTrendChart: React.FC<GradeTrendChartProps> = ({
       </div>
 
       {currentSemGpa && (
-        <p className="text-[11px] text-(--text-muted) text-left">
-          Current semester GPA {currentSemGpa}
+        <p className="text-[11px] text-(--md-sys-color-on-surface-variant) text-left">
+          Current semester gpa {currentSemGpa}
           {isPredictedGpa ? ' (predicted)' : ''}
         </p>
       )}

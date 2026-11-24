@@ -36,10 +36,10 @@ const GradeSpectrum: React.FC<SpectrumProps> = ({ grade, mean }) => {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-(--text-muted)">
-          Grade Distribution
+        <span className="text-[11px] text-(--md-sys-color-on-surface-variant)">
+          Grade distribution
         </span>
-        <span className="text-[10px] font-bold text-(--text-muted)">
+        <span className="text-[11px] text-(--md-sys-color-on-surface-variant)">
           Mean {mean && mean !== '-' ? mean : '—'}
         </span>
       </div>
@@ -54,7 +54,7 @@ const GradeSpectrum: React.FC<SpectrumProps> = ({ grade, mean }) => {
             <span
               key={band}
               aria-hidden="true"
-              className="flex-1 border-r border-(--bg-surface)"
+              className="flex-1 border-r border-(--md-sys-color-surface-container-low)"
               style={{ backgroundColor: gradeContainerVar(band) }}
             />
           ))}
@@ -62,7 +62,7 @@ const GradeSpectrum: React.FC<SpectrumProps> = ({ grade, mean }) => {
 
         {youPos !== null && (
           <span
-            className="absolute -top-5 -translate-x-1/2 text-[10px] font-black whitespace-nowrap tabular-nums"
+            className="absolute -top-5 -translate-x-1/2 text-[10px] font-bold whitespace-nowrap tabular-nums"
             style={{ left: `${youPos * 100}%`, color: gradeColorVar(grade) }}
           >
             You
@@ -70,7 +70,7 @@ const GradeSpectrum: React.FC<SpectrumProps> = ({ grade, mean }) => {
         )}
         {meanPos !== null && (
           <span
-            className="absolute -top-5 -translate-x-1/2 text-[10px] font-bold text-(--text-main) whitespace-nowrap tabular-nums"
+            className="absolute -top-5 -translate-x-1/2 text-[10px] font-medium text-(--md-sys-color-on-surface) whitespace-nowrap tabular-nums"
             style={{ left: `${meanPos * 100}%` }}
           >
             Mean
@@ -78,7 +78,7 @@ const GradeSpectrum: React.FC<SpectrumProps> = ({ grade, mean }) => {
         )}
       </div>
 
-      <div className="flex justify-between text-[9px] font-bold text-(--text-muted)">
+      <div className="flex justify-between text-[10px] text-(--md-sys-color-on-surface-variant)">
         {BANDS.map((band) => (
           <span key={band}>{band}</span>
         ))}
@@ -89,10 +89,10 @@ const GradeSpectrum: React.FC<SpectrumProps> = ({ grade, mean }) => {
 
 const Stat = ({ label, value }: { label: string; value?: string }) => (
   <div className="flex flex-col items-center gap-0.5">
-    <span className="text-[9px] font-bold uppercase tracking-wide text-(--text-muted) text-center">
+    <span className="text-[11px] text-(--md-sys-color-on-surface-variant) text-center">
       {label}
     </span>
-    <span className="text-sm font-black tabular-nums text-(--text-main)">
+    <span className="text-sm font-bold tabular-nums text-(--md-sys-color-on-surface)">
       {value && value !== '-' ? value : '—'}
     </span>
   </div>
@@ -125,7 +125,7 @@ export const CourseDetailBody: React.FC<CourseDetailBodyProps> = ({
     { label: 'Class Strength', value: course.classStrength },
     { label: 'Grade Strength', value: course.gradingStrength },
     { label: 'Mean', value: course.mean },
-    { label: 'SD', value: course.sd },
+    { label: 'Sd', value: course.sd },
   ];
 
   return (
@@ -138,12 +138,12 @@ export const CourseDetailBody: React.FC<CourseDetailBodyProps> = ({
         }}
       >
         <div className="flex flex-col">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-(--text-muted)">
-            Your Grade
+          <span className="text-[11px] text-(--md-sys-color-on-surface-variant)">
+            Your grade
             {isPredicted ? ' · Predicted' : ''}
           </span>
           <span
-            className="text-5xl font-black font-expanded tabular-nums leading-none"
+            className="text-5xl font-bold font-expanded tabular-nums leading-none"
             style={{ color: gradeColorVar(currentGrade) }}
           >
             {currentGrade}
@@ -153,9 +153,9 @@ export const CourseDetailBody: React.FC<CourseDetailBodyProps> = ({
           {(['l', 'p', 'j', 'c'] as const).map((key) => (
             <span
               key={key}
-              className="rounded-lg bg-(--bg-highlight) px-2 py-1 text-[10px] font-bold text-(--text-muted) tabular-nums"
+              className="rounded-lg bg-(--md-sys-color-surface-container-highest) px-2 py-1 text-[10px] text-(--md-sys-color-on-surface-variant) tabular-nums"
             >
-              {key.toUpperCase()} {course[key] || '0'}
+              {key} {course[key] || '0'}
             </span>
           ))}
         </div>
@@ -170,20 +170,20 @@ export const CourseDetailBody: React.FC<CourseDetailBodyProps> = ({
       </div>
 
       {course.gradesRange && (
-        <div className="rounded-2xl bg-(--bg-surface) p-3">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-(--text-muted)">
-            Grade Cut-offs
+        <div className="rounded-2xl bg-(--md-sys-color-surface-container-low) p-3">
+          <span className="text-[11px] text-(--md-sys-color-on-surface-variant)">
+            Grade cut-offs
           </span>
           <div className="mt-2 grid grid-cols-4 gap-2 text-center">
             {Object.entries(course.gradesRange).map(([letter, range]) => (
               <div key={letter} className="flex flex-col gap-0.5">
                 <span
-                  className="text-xs font-black"
+                  className="text-xs font-bold"
                   style={{ color: gradeColorVar(letter) }}
                 >
                   {letter}
                 </span>
-                <span className="text-[10px] font-bold text-(--text-muted) tabular-nums">
+                <span className="text-[10px] text-(--md-sys-color-on-surface-variant) tabular-nums">
                   {range.replace('#', '')}
                 </span>
               </div>
@@ -193,28 +193,30 @@ export const CourseDetailBody: React.FC<CourseDetailBodyProps> = ({
       )}
 
       {course.assessments && course.assessments.length > 0 && (
-        <div className="rounded-2xl bg-(--bg-surface) overflow-hidden">
+        <div className="rounded-2xl bg-(--md-sys-color-surface-container-low) overflow-hidden">
           {course.assessments.map((asm, idx) => {
             const isTotal = asm.title.toLowerCase().includes('total');
             const isAbsent = !isTotal && asm.status !== 'Present';
             return (
               <div
                 key={idx}
-                className={`flex items-center justify-between gap-3 px-3 py-2.5 text-xs border-b border-(--border-dim)/50 last:border-b-0 ${
+                className={`flex items-center justify-between gap-3 px-3 py-2.5 text-xs border-b border-(--md-sys-color-outline-variant) last:border-b-0 ${
                   isTotal
-                    ? 'bg-(--bg-primary-container) text-(--text-on-primary-container) font-black'
-                    : 'text-(--text-main)'
+                    ? 'bg-(--md-sys-color-primary-container) text-(--md-sys-color-on-primary-container) font-bold'
+                    : 'text-(--md-sys-color-on-surface)'
                 }`}
               >
                 <span className="min-w-0 truncate font-bold">{asm.title}</span>
                 {isAbsent ? (
-                  <span className="shrink-0 rounded-full bg-(--att-danger-container) px-2 py-0.5 text-[10px] font-bold text-(--att-danger)">
+                  <span className="shrink-0 rounded-full bg-(--md-sys-color-error-container) px-2 py-0.5 text-[10px] text-(--md-sys-color-error)">
                     Absent
                   </span>
                 ) : (
                   <span className="shrink-0 font-bold tabular-nums">
                     {asm.scoredMark}
-                    <span className="text-(--text-muted)">/{asm.maxMark}</span>
+                    <span className="text-(--md-sys-color-on-surface-variant)">
+                      /{asm.maxMark}
+                    </span>
                   </span>
                 )}
               </div>

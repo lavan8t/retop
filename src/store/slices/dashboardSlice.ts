@@ -6,8 +6,12 @@ import {
   parseDigitalAssignments,
 } from '../../parsers/dashboard';
 import { parseEvents } from '../../parsers/events';
-import { parseSemesters } from '../../parsers/timetable';
-import { parseCalendarSemesters } from '../../parsers/calendar';
+import { parseSemesters, parseTimetable } from '../../parsers/timetable';
+import {
+  parseCalendarDays,
+  parseCalendarGroupsAndMonths,
+  parseCalendarSemesters,
+} from '../../parsers/calendar';
 import { parseMarksSemesters } from '../../parsers/marks';
 import { parseGradesSemesters } from '../../parsers/grades';
 import { parseDASemesters } from '../../parsers/digital-assignments';
@@ -26,9 +30,27 @@ import {
 } from '../../utils/attendanceSemester';
 import { waitForIntercepted } from '../../utils/dashboardInterceptor';
 import { isNativeAndroidBridgeAvailable } from '../../utils/vtopBridge';
-import { CourseSummary, Assignment, Event } from '../../types/vtop';
+import {
+  CalendarEvent,
+  CalendarMonthPreview,
+  CourseSummary,
+  Assignment,
+  Event,
+  TimetableCourse,
+} from '../../types/vtop';
 import { UpcomingClass } from '../../utils/timetable-slots';
+import {
+  isUpcomingSemester,
+  nextChronologicalSemesterId,
+  resolveCurrentSemesterId,
+} from '../../utils/semesterContinuity';
 import { DataState } from '../dataStore';
+
+export type ContinuityMonth = {
+  month: CalendarMonthPreview;
+  days: CalendarEvent[];
+  startOffset: number;
+};
 
 export interface DashboardSlice {
   status: string;
@@ -45,6 +67,9 @@ export interface DashboardSlice {
   assignments: Assignment[];
   events: Event[];
   upcoming: UpcomingClass[];
+  /** Next chronological semester, loaded without changing the current selection. */
+  nextTtCourses: TimetableCourse[];
+  nextCalGridData: ContinuityMonth[];
   lastSyncTime: number;
   /** Last successful reload per view, for the shell reload tooltip. */
   pageSyncTimes: Record<string, number>;
@@ -88,6 +113,158 @@ async function hydrateVitapHomeAttendance(
   );
 }
 
+/** Cache-first calendar grid for any semester; never touches the selected semester. */
+async function getSemesterCalendar(
+  network: VTOPNetwork | undefined,
+  authId: string,
+  semId: string,
+  offline: boolean,
+): Promise<ContinuityMonth[]> {
+  if (!semId) return [];
+  const owner = authId || currentCacheAccount();
+  const groupsKey = scopedCacheKey(`cal_groups_${semId}`, owner);
+  let groups: { id: string; label: string }[] = [];
+  let months: CalendarMonthPreview[] = [];
+  const cached = await getCachedData<any>(groupsKey);
+  if (cached?.groups?.length && cached?.months?.length) {
+    groups = cached.groups;
+    months = cached.months;
+  } else if (!offline && network?.csrf) {
+    try {
+      const body = new URLSearchParams();
+      body.append('_csrf', network.csrf);
+      body.append('paramReturnId', 'getDateForSemesterPreview');
+      body.append('semSubId', semId);
+      body.append('authorizedID', network.authorizedID);
+      body.append('x', new Date().toUTCString());
+      const res = await fetch('/vtop/getDateForSemesterPreview', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body,
+      });
+      const parsed = parseCalendarGroupsAndMonths(await res.text());
+      groups = parsed.groups;
+      months = parsed.months;
+      if (groups.length && months.length) {
+        await setCachedData(groupsKey, { groups, months });
+      }
+    } catch {}
+  }
+  const groupId = groups.length > 1 ? groups[1].id : groups[0]?.id;
+  if (!groupId || months.length === 0) return [];
+
+  const grid: ContinuityMonth[] = [];
+  for (const month of months) {
+    const cacheKey = `cal_${semId}_${groupId}_${month.dateString}`;
+    let html: any = null;
+    if (offline || !network) {
+      html = await getCachedData<any>(scopedCacheKey(cacheKey, owner));
+    } else {
+      html = await network
+        .fetchWithCache(cacheKey, () =>
+          network.fetchFragment('processViewCalendar', {
+            calDate: month.dateString,
+            semSubId: semId,
+            classGroupId: groupId,
+          }),
+        )
+        .catch(() => null);
+    }
+    if (html)
+      grid.push({
+        month,
+        days: parseCalendarDays(html, month.label),
+        startOffset: 0,
+      });
+  }
+  return grid;
+}
+
+/** Cache-first timetable for a semester, without changing ttSelectedSem. */
+async function getSemesterTimetable(
+  network: VTOPNetwork | undefined,
+  authId: string,
+  semId: string,
+  offline: boolean,
+): Promise<TimetableCourse[]> {
+  if (!semId) return [];
+  let html: any = null;
+  if (offline || !network) {
+    html = await getCachedData<any>(
+      scopedCacheKey(`tt_${semId}`, authId || currentCacheAccount()),
+    );
+  } else {
+    html = await network
+      .fetchWithCache(
+        `tt_${semId}`,
+        () =>
+          network.fetchVtopApi('processViewTimeTable', {
+            semesterSubId: semId,
+          }),
+        false,
+        Infinity,
+      )
+      .catch(() => null);
+  }
+  if (!html) return [];
+  const parsed = typeof html === 'string' ? parseTimetable(html) : html;
+  return (Array.isArray(parsed) ? parsed : []).filter(
+    (course: TimetableCourse) => !/drop|withdraw/i.test(course.status || ''),
+  );
+}
+
+/**
+ * Derives the active semester and one-hop continuity data without ever writing
+ * ttSelectedSem / calSelectedSem for the next term.
+ */
+async function deriveSemesterContinuity(
+  ttPool: { id: string; isLatest?: boolean; selected?: boolean }[],
+  calPool: { id: string; isLatest?: boolean; selected?: boolean }[],
+  savedTtSem: string | null,
+  savedCalSem: string | null,
+  network: VTOPNetwork,
+  authId: string,
+  offline: boolean,
+) {
+  const vitap = currentCampus() === 'vitap';
+  const newestId = ttPool[0]?.id || calPool[0]?.id || '';
+  const newestGrid =
+    vitap && newestId
+      ? await getSemesterCalendar(network, authId, newestId, offline)
+      : [];
+  const upcomingIds = isUpcomingSemester(newestGrid.flatMap((m) => m.days))
+    ? [newestId]
+    : [];
+  const ttDefault =
+    resolveCurrentSemesterId(ttPool, {
+      savedId: savedTtSem,
+      upcomingIds,
+      useUpcomingGate: vitap,
+    }) || '';
+  const calDefault =
+    resolveCurrentSemesterId(calPool, {
+      savedId: savedCalSem,
+      upcomingIds,
+      useUpcomingGate: vitap,
+    }) || '';
+  const nextId =
+    nextChronologicalSemesterId(ttPool, ttDefault) ||
+    (upcomingIds.length ? newestId : null);
+  const nextCalGridData =
+    nextId && nextId === newestId
+      ? newestGrid
+      : nextId
+        ? await getSemesterCalendar(network, authId, nextId, offline)
+        : [];
+  const nextTtCourses = nextId
+    ? await getSemesterTimetable(network, authId, nextId, offline)
+    : [];
+  return { ttDefault, calDefault, nextId, nextTtCourses, nextCalGridData };
+}
+
 export const createDashboardSlice: StateCreator<
   DataState,
   [],
@@ -108,6 +285,8 @@ export const createDashboardSlice: StateCreator<
   assignments: [],
   events: [],
   upcoming: [],
+  nextTtCourses: [],
+  nextCalGridData: [],
   lastSyncTime: 0,
   pageSyncTimes: {},
   markPageSynced: (view, at = Date.now()) =>
@@ -229,19 +408,20 @@ export const createDashboardSlice: StateCreator<
               scopedPreferenceKey('retop-cal-selected-sem'),
             );
             const calPool = filterNonIndustry(calSems);
-            const calDefault =
-              savedCalSem && calSems.some((s: any) => s.id === savedCalSem)
-                ? savedCalSem
-                : calPool.find((s) => s.selected)?.id || calPool[0]?.id || '';
-
             const savedTtSem = localStorage.getItem(
               scopedPreferenceKey('retop-tt-selected-sem'),
             );
             const ttPool = filterNonIndustry(sems);
-            const ttDefault =
-              savedTtSem && sems.some((s: any) => s.id === savedTtSem)
-                ? savedTtSem
-                : ttPool.find((s) => s.isLatest)?.id || ttPool[0]?.id || '';
+            const continuity = await deriveSemesterContinuity(
+              ttPool,
+              calPool,
+              savedTtSem,
+              savedCalSem,
+              network,
+              authId,
+              isOffline,
+            );
+            const { ttDefault, calDefault } = continuity;
 
             const savedAttSem = readLastAttendanceSemester(authId);
             const attDefault =
@@ -256,6 +436,8 @@ export const createDashboardSlice: StateCreator<
               calSemesters: calSems,
               calSelectedSem: calDefault,
               attSelectedSem: attDefault,
+              nextTtCourses: continuity.nextTtCourses,
+              nextCalGridData: continuity.nextCalGridData,
             });
 
             if (ttDefault) {
@@ -400,19 +582,20 @@ export const createDashboardSlice: StateCreator<
               scopedPreferenceKey('retop-cal-selected-sem'),
             );
             const calPool = filterNonIndustry(calSems);
-            const calDefault =
-              savedCalSem && calSems.some((s: any) => s.id === savedCalSem)
-                ? savedCalSem
-                : calPool.find((s) => s.selected)?.id || calPool[0]?.id || '';
-
             const savedTtSem = localStorage.getItem(
               scopedPreferenceKey('retop-tt-selected-sem'),
             );
             const ttPool = filterNonIndustry(sems);
-            const ttDefault =
-              savedTtSem && sems.some((s: any) => s.id === savedTtSem)
-                ? savedTtSem
-                : ttPool.find((s) => s.isLatest)?.id || ttPool[0]?.id || '';
+            const continuity = await deriveSemesterContinuity(
+              ttPool,
+              calPool,
+              savedTtSem,
+              savedCalSem,
+              network,
+              authId,
+              isOffline,
+            );
+            const { ttDefault, calDefault } = continuity;
 
             const savedAttSem = readLastAttendanceSemester(authId);
             const attDefault =
@@ -427,6 +610,8 @@ export const createDashboardSlice: StateCreator<
               calSemesters: calSems,
               calSelectedSem: calDefault,
               attSelectedSem: attDefault,
+              nextTtCourses: continuity.nextTtCourses,
+              nextCalGridData: continuity.nextCalGridData,
             });
 
             const subPromises = [];

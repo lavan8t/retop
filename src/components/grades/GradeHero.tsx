@@ -14,14 +14,14 @@ export const GradeHero: React.FC<GradeHeroProps> = ({
   subLabel,
 }) => (
   <div className="flex flex-col items-center text-center py-5 gap-1.5">
-    <span className="text-6xl sm:text-7xl font-black font-expanded text-(--accent-base) leading-none tabular-nums tracking-tight">
+    <span className="text-6xl sm:text-7xl font-bold font-expanded text-(--md-sys-color-primary) leading-none tabular-nums tracking-tight">
       {value}
     </span>
-    <span className="text-[11px] font-bold uppercase tracking-widest text-(--text-muted)">
+    <span className="text-[11px] text-(--md-sys-color-on-surface-variant)">
       {label}
     </span>
     {subLabel && (
-      <span className="text-[11px] font-medium text-(--text-dim)">
+      <span className="text-[11px] text-(--md-sys-color-on-surface-variant) opacity-75">
         {subLabel}
       </span>
     )}

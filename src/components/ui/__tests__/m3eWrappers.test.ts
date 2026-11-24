@@ -1,6 +1,13 @@
-import { describe, expect, it } from 'bun:test';
+import { describe, expect, it, mock } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import React, { act } from 'react';
+import { createRoot, type Root } from 'react-dom/client';
+import { DefaultsSection } from '../../settings/DefaultsSection';
+import { FilterChips } from '../../home/FilterChips';
+import { DEFAULT_SETTINGS } from '../../../utils/settings-store';
+
+(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 
 const root = resolve(import.meta.dir, '../../../..');
 const read = (rel: string) => readFileSync(resolve(root, rel), 'utf-8');
@@ -31,29 +38,94 @@ describe('M3E shared control wrappers', () => {
     );
   });
 
-  it('SegmentedControl uses m3e-segmented-button and keeps its onChange contract', () => {
-    const source = read('src/components/ui/SegmentedControl.tsx');
-    expect(source).toContain('<M3eSegmentedButton');
-    expect(source).toContain('<M3eButtonSegment');
-    expect(source).toContain('value={option.value}');
-    expect(source).toContain('checked={value === option.value}');
-    expect(source).toContain('onChange(e.target.value as T, e)');
-    expect(source).toContain('e.stopPropagation()');
-    expect(source).not.toContain('role="radiogroup"');
-    expect(source).not.toContain('selectByArrow');
-    expect(source).not.toContain('ArrowRight');
-
-    expect(source).toContain('flex items-center gap-0.5 shrink-0 ${className}');
-    expect(source).toContain("minWidth: '3rem'");
-    for (const token of [
-      '--m3e-segmented-button-start-shape',
-      '--m3e-segmented-button-end-shape',
+  it('settings, home and TopBar render connected groups instead of SegmentedControl', () => {
+    for (const file of [
+      'src/components/settings/DefaultsSection.tsx',
+      'src/components/home/FilterChips.tsx',
+      'src/components/layout/TopBar.tsx',
     ]) {
-      expect(source).toContain(token);
+      const source = read(file);
+      expect(source).not.toContain('SegmentedControl');
+      expect(source).toContain('<M3eButtonGroup');
+      expect(source).toContain('variant="connected"');
+      expect(source).toContain('<M3eButton');
+      expect(source).toContain('toggle');
+      expect(source).toContain('selected=');
+      expect(source).toContain('onClick=');
+      expect(source).not.toContain('m3e-segmented-button');
     }
-    expect(source).not.toContain(
-      '--m3e-segmented-button-selected-container-color',
+    expect(read('src/pages/calendar.tsx')).not.toContain('SegmentedControl');
+  });
+
+  it('TopBar calendar view buttons re-assert selection in both control locations', () => {
+    const source = read('src/components/layout/TopBar.tsx');
+    expect(source).toContain('aria-label="Calendar view"');
+    expect(source).toContain('value={calViewMode}');
+    expect(source).toContain('onChange={setCalViewMode}');
+    expect(source.match(/<CalendarViewButtons/g)?.length).toBe(2);
+    expect(source.match(/reassertSelection\(e\)/g)?.length).toBe(2);
+  });
+
+  it('connected buttons forward taps to the original callbacks', async () => {
+    const click = async (el: Element) => {
+      await act(async () => {
+        el.dispatchEvent(
+          new MouseEvent('click', { bubbles: true, composed: true }),
+        );
+      });
+    };
+    const button = (group: Element, value: string) =>
+      Array.from(group.querySelectorAll('m3e-button')).find(
+        (b) => b.getAttribute('value') === value,
+      )!;
+    const render = async (element: React.ReactElement) => {
+      const host = document.createElement('div');
+      document.body.appendChild(host);
+      const root = createRoot(host);
+      await act(async () => root.render(element));
+      return { host, root };
+    };
+    const cleanup = async ({
+      host,
+      root,
+    }: {
+      host: HTMLElement;
+      root: Root;
+    }) => {
+      await act(async () => root.unmount());
+      host.remove();
+    };
+
+    const updateSetting = mock((_key: string, _value: unknown) => {});
+    const settings = await render(
+      React.createElement(DefaultsSection, {
+        settings: { ...DEFAULT_SETTINGS, timeFormat: '12h' },
+        updateSetting: updateSetting as any,
+      }),
     );
+    try {
+      const timeGroup = settings.host.querySelectorAll('m3e-button-group')[1];
+      await click(button(timeGroup, '12h-ampm'));
+      expect(updateSetting).toHaveBeenCalledWith('timeFormat', '12h-ampm');
+    } finally {
+      await cleanup(settings);
+    }
+
+    const setEventFilter = mock((_filter: string) => {});
+    const filters = await render(
+      React.createElement(FilterChips, {
+        eventFilter: 'all',
+        setEventFilter: setEventFilter as any,
+      }),
+    );
+    try {
+      await click(
+        button(filters.host.querySelector('m3e-button-group')!, 'classes'),
+      );
+      expect(setEventFilter).toHaveBeenCalledWith('classes');
+    } finally {
+      await cleanup(filters);
+    }
   });
 
   it('Dropdown uses m3e-form-field/m3e-select and emits the original option ids', () => {
@@ -75,7 +147,10 @@ describe('M3E shared control wrappers', () => {
     }
 
     expect(source).toContain('className={className}');
-    expect(source).toContain("'--m3e-form-field-container-shape': '9999px'");
+    expect(source).toContain(
+      "'--m3e-outlined-form-field-container-shape': '9999px'",
+    );
+    expect(source).not.toContain("'--m3e-form-field-container-shape'");
     expect(source).toContain('export const SemesterDropdown');
     expect(source).toContain('export const ClassGroupDropdown');
     expect(source).toContain('export function SettingsDropdown');
@@ -128,8 +203,7 @@ describe('M3E shared control wrappers', () => {
       'm3e-dialog',
       'm3e-dialog-action',
       'm3e-button',
-      'm3e-segmented-button',
-      'm3e-button-segment',
+      'm3e-button-group',
       'm3e-snackbar',
     ]) {
       expect(tags).toContain(`'${tag}'`);
@@ -139,7 +213,7 @@ describe('M3E shared control wrappers', () => {
     for (const mod of [
       'switch',
       'button',
-      'segmented-button',
+      'button-group',
       'form-field',
       'select',
       'option',
@@ -158,6 +232,17 @@ describe('M3E shared control wrappers', () => {
       'm3e-dialog-action',
     ]) {
       expect(read('src/types/m3e.d.ts')).toContain(`'${tag}': M3eAttrs;`);
+    }
+
+    for (const removed of ['M3eSegmentedButton', 'M3eButtonSegment']) {
+      expect(tags).not.toContain(removed);
+    }
+    for (const source of [inject, read('src/m3e-direct.ts')]) {
+      expect(source).not.toContain("import '@m3e/web/segmented-button'");
+    }
+    const types = read('src/types/m3e.d.ts');
+    for (const tag of ['m3e-segmented-button', 'm3e-button-segment']) {
+      expect(types).not.toContain(`'${tag}': M3eAttrs;`);
     }
   });
 });

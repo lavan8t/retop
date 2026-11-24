@@ -13,20 +13,20 @@ export const GradeBreakdown: React.FC<GradeBreakdownProps> = ({ cgpa }) => {
   const panelId = useId();
 
   return (
-    <div className="rounded-3xl bg-(--bg-surface) overflow-hidden">
+    <div className="rounded-3xl bg-(--md-sys-color-surface-container-low) overflow-hidden">
       <button
         type="button"
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((v) => !v)}
-        className="group flex min-h-12 w-full items-center justify-between px-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) hover:bg-(--bg-highlight) transition-colors"
+        className="group flex min-h-12 w-full items-center justify-between px-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-(--md-sys-color-primary) hover:bg-(--md-sys-color-surface-container-high) transition-colors"
       >
-        <span className="text-sm font-bold text-(--text-main)">
+        <span className="text-sm font-medium text-(--md-sys-color-on-surface)">
           Grade Breakdown
         </span>
         <span
           aria-hidden="true"
-          className={`inline-flex w-6 h-6 items-center justify-center text-(--text-muted) group-hover:text-(--accent-base) transition-transform duration-150 ${
+          className={`inline-flex w-6 h-6 items-center justify-center text-(--md-sys-color-on-surface-variant) group-hover:text-(--md-sys-color-primary) transition-transform duration-150 ${
             open ? 'rotate-180' : ''
           }`}
         >
@@ -48,13 +48,13 @@ export const GradeBreakdown: React.FC<GradeBreakdownProps> = ({ cgpa }) => {
                 style={{ backgroundColor: gradeContainerVar(letter) }}
               >
                 <span
-                  className="text-base font-black font-expanded leading-none"
+                  className="text-base font-bold font-expanded leading-none"
                   style={{ color: gradeColorVar(letter) }}
                 >
                   {letter}
                 </span>
                 <span
-                  className={`text-xs font-bold tabular-nums ${isZero ? 'text-(--text-dim)' : 'text-(--text-main)'}`}
+                  className={`text-xs font-medium tabular-nums ${isZero ? 'text-(--md-sys-color-on-surface-variant)' : 'text-(--md-sys-color-on-surface)'}`}
                 >
                   {count && count !== '0' ? count : '0'}
                 </span>

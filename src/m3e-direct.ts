@@ -21,7 +21,6 @@ import '@m3e/web/nav-rail';
 import '@m3e/web/nav-bar';
 import '@m3e/web/fab';
 import '@m3e/web/tabs';
-import '@m3e/web/segmented-button';
 import '@m3e/web/form-field';
 import '@m3e/web/select';
 import '@m3e/web/option';

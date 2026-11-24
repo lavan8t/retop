@@ -1,4 +1,13 @@
 import { TimetableCourse } from '../types/vtop';
+import { parseVtopDate } from './formatting';
+import { isSameDayExam, ExamGroup } from '../parsers/exam-schedule';
+import {
+  ContinuityEvent,
+  extractDayOrder,
+  findLastInstructionalDay,
+  isInstructionalDay,
+  usesNextSemesterForDate,
+} from './semesterContinuity';
 
 // --- CONFIG ---
 // We map standard VTOP slots to [DayIndex (0=Mon...6=LightMode), ColumnIndex (0-13)]
@@ -396,13 +405,79 @@ export const getUpcomingClasses = (
     .slice(0, 5);
 };
 
+export interface ClassesForDateOptions {
+  /** Next chronological semester's timetable, never written to the current selection. */
+  nextCourses?: TimetableCourse[];
+  nextCalendarEvents?: ContinuityEvent[];
+  currentCalendarEvents?: ContinuityEvent[];
+  examGroups?: ExamGroup[];
+}
+
+const startOfDay = (d: Date): Date =>
+  new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+const isAfterDay = (a: Date, b: Date): boolean =>
+  startOfDay(a).getTime() > startOfDay(b).getTime();
+
+/** A day blocks the old term's classes once its FAT exams begin. */
+function isFatBoundary(date: Date, groups: ExamGroup[]): boolean {
+  const fatDates: Date[] = [];
+  let examToday = false;
+  for (const group of groups) {
+    for (const entry of group.entries) {
+      if (isSameDayExam(entry.examDate, date)) examToday = true;
+      if (!/fat/i.test(group.examType)) continue;
+      const d = parseVtopDate(entry.examDate);
+      if (d) fatDates.push(d);
+    }
+  }
+  if (examToday) return true;
+  if (fatDates.length === 0) return false;
+  const earliest = fatDates.reduce((a, b) => (a < b ? a : b));
+  return !isAfterDay(earliest, date);
+}
+
 export const getClassesForDate = (
   date: Date,
   ttCourses: TimetableCourse[],
   calEvent: any = null,
+  options: ClassesForDateOptions = {},
 ): UpcomingClass[] => {
+  const nextCourses = options.nextCourses || [];
+  const nextEvents = options.nextCalendarEvents || [];
+  const usesNext = usesNextSemesterForDate(
+    date,
+    nextEvents,
+    nextCourses.length > 0,
+  );
+  const courses = usesNext ? nextCourses : ttCourses;
+
+  const combined = `${calEvent?.info || ''} ${calEvent?.subInfo || ''}`;
+  const override = extractDayOrder(combined);
+  const hasCalendarEvents =
+    !!calEvent || (options.currentCalendarEvents || []).length > 0;
+  if (
+    !isInstructionalDay(calEvent, {
+      date,
+      hasCalendarEvents,
+      dayOrderOverride: override,
+    })
+  ) {
+    return [];
+  }
+
+  // The previous term stops teaching after its last instructional day or when
+  // FAT begins. A next-term calendar entry or a day-order override lifts both.
+  if (!usesNext && !override) {
+    const lastInst = findLastInstructionalDay(
+      options.currentCalendarEvents || [],
+    );
+    if (lastInst && isAfterDay(date, lastInst)) return [];
+    if (isFatBoundary(date, options.examGroups || [])) return [];
+  }
+
   const jsDay = date.getDay();
-  let dName =
+  const naturalName =
     jsDay === 0
       ? 'Sunday'
       : [
@@ -414,34 +489,7 @@ export const getClassesForDate = (
           'Saturday',
           'Sunday',
         ][jsDay - 1];
-
-  let hasOverride = false;
-  if (calEvent) {
-    const lowerInfo = (calEvent.info || '').toLowerCase();
-    const subInfo = (calEvent.subInfo || '').toLowerCase();
-    const combined = lowerInfo + ' ' + subInfo;
-
-    if (combined.includes('monday day order')) {
-      dName = 'Monday';
-      hasOverride = true;
-    } else if (combined.includes('tuesday day order')) {
-      dName = 'Tuesday';
-      hasOverride = true;
-    } else if (combined.includes('wednesday day order')) {
-      dName = 'Wednesday';
-      hasOverride = true;
-    } else if (combined.includes('thursday day order')) {
-      dName = 'Thursday';
-      hasOverride = true;
-    } else if (combined.includes('friday day order')) {
-      dName = 'Friday';
-      hasOverride = true;
-    }
-  }
-
-  if (calEvent && !calEvent.isInstructional && !hasOverride) {
-    return [];
-  }
+  const dName = override || naturalName;
 
   if (!CAMPUS_SLOTS[dName as keyof typeof CAMPUS_SLOTS]) return [];
   const dayConfig = CAMPUS_SLOTS[dName as keyof typeof CAMPUS_SLOTS];
@@ -452,7 +500,7 @@ export const getClassesForDate = (
     endCol: number;
     type: 'Theory' | 'Lab';
   }[] = [];
-  ttCourses.forEach((course) => {
+  courses.forEach((course) => {
     const slots = course.slot.split('+').map((s: string) => s.trim());
     slots.forEach((slot: string) => {
       let col = dayConfig.Theory.indexOf(slot);

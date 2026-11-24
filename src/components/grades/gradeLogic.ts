@@ -25,28 +25,28 @@ export function gradePoints(grade?: string | null): number | null {
 }
 
 /**
- * Grade → semantic colour role. Kept as var() strings so every theme
+ * Grade → M3E semantic colour role. Kept as var() strings so every theme
  * (light/dark/AMOLED/user accent) resolves it; never a literal colour.
  */
 export function gradeColorVar(grade?: string | null): string {
   switch (normalizeGrade(grade)) {
     case 'S':
     case 'P':
-      return 'var(--att-safe)';
+      return 'var(--md-sys-color-success)';
     case 'A':
-      return 'var(--color-info)';
+      return 'var(--md-sys-color-info)';
     case 'B':
-      return 'var(--color-purple)';
+      return 'var(--md-sys-color-tertiary)';
     case 'C':
-      return 'var(--accent-base)';
+      return 'var(--md-sys-color-primary)';
     case 'D':
     case 'E':
-      return 'var(--att-warn)';
+      return 'var(--md-sys-color-warning)';
     case 'F':
     case 'N':
-      return 'var(--att-danger)';
+      return 'var(--md-sys-color-error)';
     default:
-      return 'var(--text-muted)';
+      return 'var(--md-sys-color-on-surface-variant)';
   }
 }
 
@@ -55,15 +55,15 @@ export function gradeContainerVar(grade?: string | null): string {
   switch (normalizeGrade(grade)) {
     case 'S':
     case 'P':
-      return 'var(--att-safe-container)';
+      return 'var(--md-sys-color-success-container)';
     case 'D':
     case 'E':
-      return 'var(--att-warn-container)';
+      return 'var(--md-sys-color-warning-container)';
     case 'F':
     case 'N':
-      return 'var(--att-danger-container)';
+      return 'var(--md-sys-color-error-container)';
     default:
-      return 'var(--bg-highlight)';
+      return 'var(--md-sys-color-surface-container-high)';
   }
 }
 
@@ -90,7 +90,7 @@ export interface HistorySemesterGroup {
 
 /**
  * Group grade-history courses by exam month (one semester each) and derive a
- * term GPA plus a running CGPA from the same grade points used by prediction.
+ * term gpa plus a running Cgpa from the same grade points used by prediction.
  */
 export function groupHistoryIntoSemesters(
   courses: GradeHistoryCourse[],

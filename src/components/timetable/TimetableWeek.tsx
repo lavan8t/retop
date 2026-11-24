@@ -7,6 +7,7 @@ import {
   Schedule,
 } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 import { Pill } from '../ui/Pill';
+import { M3eButton, M3eButtonGroup } from '../attendance/m3eTags';
 import {
   getCourseAcronym,
   formatTimeStr,
@@ -14,6 +15,19 @@ import {
 } from '../../utils/formatting';
 
 import { useDataStore } from '../../store/dataStore';
+
+/** M3E toggles `selected` itself on click; keep the controlled value authoritative. */
+const reassertSelection = (e: React.MouseEvent<HTMLElement>) => {
+  const clicked = e.currentTarget;
+  clicked
+    .closest('m3e-button-group')
+    ?.querySelectorAll<HTMLElement>('m3e-button')
+    .forEach((button) => {
+      const selected = button === clicked;
+      button.setAttribute('selected', String(selected));
+      (button as HTMLElement & { selected?: boolean }).selected = selected;
+    });
+};
 
 export const TimetableWeek = React.memo(
   ({
@@ -134,23 +148,30 @@ export const TimetableWeek = React.memo(
         {/* --- MOBILE VIEW (Fully Rounded Pills) --- */}
         <div className="md:hidden flex flex-col h-full w-full">
           {/* Day Tabs */}
-          <div className="flex items-center justify-between p-3 bg-(--bg-surface) shrink-0 gap-2 overflow-x-auto custom-scrollbar">
-            {activeDays.map((day, i) => {
-              const isActive = selectedDay === i;
-              return (
-                <button
+          <div className="p-3 bg-(--bg-surface) shrink-0 overflow-x-auto custom-scrollbar">
+            <M3eButtonGroup
+              variant="connected"
+              size="medium"
+              aria-label="Week day"
+              className="w-full"
+            >
+              {activeDays.map((day, i) => (
+                <M3eButton
                   key={`tab-${i}`}
-                  onClick={() => setSelectedDay(i)}
-                  className={`flex-1 py-2.5 rounded-full text-xs font-black font-expanded uppercase transition-all border-0 cursor-pointer ${
-                    isActive
-                      ? 'bg-(--accent-base) text-(--text-inverse) shadow-xs'
-                      : 'bg-(--bg-main) text-(--text-muted) hover:text-(--text-main)'
-                  }`}
+                  toggle
+                  value={String(i)}
+                  selected={selectedDay === i}
+                  aria-label={day}
+                  onClick={(e: React.MouseEvent<HTMLElement>) => {
+                    reassertSelection(e);
+                    setSelectedDay(i);
+                  }}
+                  className="flex-1 min-w-0"
                 >
-                  <span>{day.substring(0, 3)}</span>
-                </button>
-              );
-            })}
+                  {day.substring(0, 3)}
+                </M3eButton>
+              ))}
+            </M3eButtonGroup>
           </div>
 
           {/* Classes List */}

@@ -1,8 +1,21 @@
 import React from 'react';
 import { AppSettings } from '../../utils/settings-store';
 import { SettingTopicList } from './SettingTopicList';
-import { SegmentedControl } from '../ui/SegmentedControl';
+import { M3eButton, M3eButtonGroup } from '../attendance/m3eTags';
 import { MaterialSwitch } from '../MaterialSwitch';
+
+const TIMETABLE_MODES = [
+  { label: 'Weekly View', value: 'weekly' },
+  { label: 'Slot Grid', value: 'slot' },
+  { label: 'Consolidated', value: 'consolidated' },
+  { label: 'Full Month', value: 'fullMonth' },
+] as const;
+
+const TIME_FORMATS = [
+  { label: '12h', value: '12h' },
+  { label: 'AM/PM', value: '12h-ampm' },
+  { label: '24h', value: '24h' },
+] as const;
 
 interface DefaultsSectionProps {
   settings: AppSettings;
@@ -21,18 +34,29 @@ export const DefaultsSection: React.FC<DefaultsSectionProps> = ({
       <SettingTopicList title="Timetable View Mode">
         <m3e-list-item className="min-h-0">
           <div className="rounded-2xl bg-(--bg-main) p-1 w-full max-w-xl">
-            <SegmentedControl
-              ariaLabel="Timetable view mode"
-              options={[
-                { label: 'Weekly View', value: 'weekly' },
-                { label: 'Slot Grid', value: 'slot' },
-                { label: 'Consolidated', value: 'consolidated' },
-                { label: 'Full Month', value: 'fullMonth' },
-              ]}
-              value={settings.timetableMode || 'weekly'}
-              onChange={(val) => updateSetting('timetableMode', val as any)}
-              className="w-full flex-1 *:flex-1"
-            />
+            <M3eButtonGroup
+              variant="connected"
+              size="medium"
+              aria-label="Timetable view mode"
+              className="w-full"
+              style={{ display: 'flex' } as React.CSSProperties}
+            >
+              {TIMETABLE_MODES.map(({ label, value }) => (
+                <M3eButton
+                  key={value}
+                  toggle
+                  value={value}
+                  selected={(settings.timetableMode || 'weekly') === value}
+                  onClick={(e: React.MouseEvent) => {
+                    e.stopPropagation();
+                    updateSetting('timetableMode', value as any);
+                  }}
+                  className="flex-1"
+                >
+                  {label}
+                </M3eButton>
+              ))}
+            </M3eButtonGroup>
           </div>
         </m3e-list-item>
       </SettingTopicList>
@@ -78,17 +102,26 @@ export const DefaultsSection: React.FC<DefaultsSectionProps> = ({
               </span>
             </div>
             <div className="rounded-2xl bg-(--bg-main) p-1">
-              <SegmentedControl
-                ariaLabel="Time format"
-                options={[
-                  { value: '12h', label: '12h' },
-                  { value: '12h-ampm', label: 'AM/PM' },
-                  { value: '24h', label: '24h' },
-                ]}
-                value={(settings.timeFormat ?? '12h') as string}
-                onChange={(val) => updateSetting('timeFormat', val as any)}
-                buttonClassName="px-3 py-2.5"
-              />
+              <M3eButtonGroup
+                variant="connected"
+                size="medium"
+                aria-label="Time format"
+              >
+                {TIME_FORMATS.map(({ label, value }) => (
+                  <M3eButton
+                    key={value}
+                    toggle
+                    value={value}
+                    selected={(settings.timeFormat ?? '12h') === value}
+                    onClick={(e: React.MouseEvent) => {
+                      e.stopPropagation();
+                      updateSetting('timeFormat', value as any);
+                    }}
+                  >
+                    {label}
+                  </M3eButton>
+                ))}
+              </M3eButtonGroup>
             </div>
           </div>
         </m3e-list-item>

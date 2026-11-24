@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AppSettings } from '../utils/settings-store';
 import { clearCache } from '../utils/cache';
 import {
@@ -9,8 +9,8 @@ import {
   ArrowBack,
 } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 
-import { downloadICalFile, generateICalFile } from '../utils/ical-export';
-import { googleCalendarName } from '../utils/google-calendar';
+import { downloadICalFile } from '../utils/ical-export';
+import { buildCalendarDrafts } from '../utils/google-calendar';
 import { useDataStore } from '../store/dataStore';
 
 import { AppearanceSection } from '../components/settings/AppearanceSection';
@@ -93,6 +93,19 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
 
   const [googleStatus, setGoogleStatus] = useState('');
   const [googleBusy, setGoogleBusy] = useState(false);
+  const [googleConnected, setGoogleConnected] = useState(false);
+  const [googleAccount, setGoogleAccount] = useState('');
+
+  useEffect(() => {
+    if (typeof chrome === 'undefined' || !chrome.runtime?.sendMessage) return;
+    chrome.runtime
+      .sendMessage({ action: 'GOOGLE_CALENDAR_STATUS' })
+      .then((res: any) => {
+        setGoogleConnected(Boolean(res?.connected));
+        setGoogleAccount(String(res?.account || ''));
+      })
+      .catch(() => {});
+  }, []);
 
   const currentRegNo = (() => {
     const { user } = useDataStore.getState();
@@ -129,34 +142,54 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
     }
 
     setGoogleBusy(true);
-    setGoogleStatus('Connecting to Google…');
+    setGoogleStatus('Syncing your schedule…');
     try {
-      const { ttCourses, calGridData, examGroups, events } =
-        useDataStore.getState();
-      const ics = generateICalFile({
+      const { ttCourses, calGridData, examGroups } = useDataStore.getState();
+      const drafts = buildCalendarDrafts({
         courses: ttCourses,
         calGridData,
         examGroups,
-        events,
-        includeTimetable: icalOptions.includeTimetable,
-        includeCalendar: icalOptions.includeCalendar,
-        includeEvents: icalOptions.includeEvents,
-        includeExams: icalOptions.includeExams,
       });
-
-      setGoogleStatus('Syncing your schedule…');
       const res: any = await chrome.runtime.sendMessage({
         action: 'GOOGLE_CALENDAR_SYNC',
-        ics,
-        regNo: currentRegNo,
+        drafts,
       });
 
       if (res?.success) {
         setGoogleStatus(
-          `Synced ${res.total} events to "${res.calendarName}" — ${res.created} new, ${res.updated} updated, ${res.removed} removed.`,
+          res.changed
+            ? `Synced ${res.total} events to your primary Google Calendar — ${res.created} new, ${res.updated} updated, ${res.removed} removed.`
+            : `Your schedule is already up to date (${res.total} events).`,
         );
       } else {
         setGoogleStatus(res?.error || 'Google Calendar sync failed.');
+      }
+    } catch (e: any) {
+      setGoogleStatus(e?.message || String(e));
+    } finally {
+      setGoogleBusy(false);
+    }
+  };
+
+  const handleGoogleConnect = async () => {
+    if (typeof chrome === 'undefined' || !chrome.runtime?.sendMessage) {
+      setGoogleStatus('Google sign-in needs the browser extension.');
+      return;
+    }
+    setGoogleBusy(true);
+    setGoogleStatus('Connecting to Google…');
+    try {
+      const res: any = await chrome.runtime.sendMessage({
+        action: 'GOOGLE_CALENDAR_CONNECT',
+      });
+      if (res?.success) {
+        setGoogleConnected(true);
+        setGoogleAccount(String(res.account || ''));
+        setGoogleStatus(
+          'Connected. Classes and exams sync to Google Calendar.',
+        );
+      } else {
+        setGoogleStatus(res?.error || 'Google sign-in failed.');
       }
     } catch (e: any) {
       setGoogleStatus(e?.message || String(e));
@@ -207,9 +240,11 @@ export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {
               icalOptions={icalOptions}
               setIcalOptions={setIcalOptions}
               handleExportICal={handleExportICal}
-              googleCalendarName={googleCalendarName(currentRegNo)}
+              googleConnected={googleConnected}
+              googleAccount={googleAccount}
               googleStatus={googleStatus}
               googleBusy={googleBusy}
+              handleGoogleConnect={handleGoogleConnect}
               handleGoogleSync={handleGoogleSync}
             />
             <DataStorageSection

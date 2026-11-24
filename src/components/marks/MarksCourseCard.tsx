@@ -1,12 +1,13 @@
 import type { CSSProperties } from 'react';
-import { KeyboardArrowDown } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 import {
+  M3eBadge,
   M3eCard,
   M3eChip,
   M3eListOption,
   M3eSelectionList,
 } from '../attendance/m3eTags';
 import type { AssessmentMark, CourseMarks } from '../../types/vtop';
+import { calculateCourseMarksSummary } from '../../utils/marksSummary';
 
 const tagChipStyle = {
   '--m3e-chip-container-height': '20px',
@@ -29,6 +30,12 @@ const absentChipStyle = {
   '--m3e-elevated-chip-hover-elevation': '0',
 } as CSSProperties;
 
+const badgeStyle = {
+  '--m3e-badge-container-color': 'var(--md-sys-color-primary-container)',
+  '--m3e-badge-color': 'var(--md-sys-color-on-primary-container)',
+  '--m3e-badge-large-font-weight': '800',
+} as CSSProperties;
+
 /** Connected segmented rows: 2px gaps, small inner corners like Android. */
 const assessmentListStyle = {
   '--m3e-segmented-list-segment-gap': '2px',
@@ -44,12 +51,13 @@ const assessmentListStyle = {
   '--m3e-list-item-trailing-text-font-weight': '500',
 } as CSSProperties;
 
-const groupShape = (index: number, total: number): string => {
-  if (total === 1) return '18px';
-  if (index === 0) return '18px 18px 4px 4px';
-  if (index === total - 1) return '4px 4px 18px 18px';
-  return '4px';
-};
+const cardStyle = {
+  '--m3e-card-padding': '0px',
+  '--m3e-card-shape': '18px',
+  '--m3e-filled-card-container-color': 'var(--bg-surface)',
+  '--m3e-filled-card-text-color': 'var(--text-main)',
+  '--m3e-filled-card-hover-state-layer-color': 'transparent',
+} as CSSProperties;
 
 const AssessmentRow = ({
   assessment,
@@ -58,7 +66,7 @@ const AssessmentRow = ({
   assessment: AssessmentMark;
   isModernView: boolean;
 }) => {
-  const isAbsent = assessment.status !== 'Present';
+  const isAbsent = /absent/i.test(assessment.status || '');
   const score = assessment.scoredMark || '-';
   const max = assessment.maxMark || '-';
   const detail = isModernView
@@ -97,79 +105,76 @@ const AssessmentRow = ({
 export const MarksCourseCard = ({
   course,
   isModernView,
-  expanded,
-  onToggle,
-  index,
-  total,
 }: {
   course: CourseMarks;
   isModernView: boolean;
-  expanded: boolean;
-  onToggle: () => void;
-  index: number;
-  total: number;
 }) => {
-  const cardStyle = {
-    '--m3e-card-padding': '0px',
-    '--m3e-card-shape': groupShape(index, total),
-    '--m3e-filled-card-container-color': 'var(--bg-surface)',
-    '--m3e-filled-card-text-color': 'var(--text-main)',
-    '--m3e-filled-card-hover-state-layer-color': 'transparent',
-  } as CSSProperties;
+  const summary = calculateCourseMarksSummary(course.assessments);
+  const badgeText =
+    summary.weightMax > 0
+      ? `${summary.weightScoredText} / ${summary.weightMaxText}`
+      : `${summary.rawScoredText} / ${summary.rawMaxText}`;
 
   return (
-    <M3eCard variant="filled" style={cardStyle} className="w-full text-left">
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={expanded}
-        className="w-full flex flex-col gap-1.5 px-4 py-3 text-left cursor-pointer"
+    <M3eCard
+      variant="filled"
+      style={cardStyle}
+      className="h-full w-full text-left"
+    >
+      <div
+        slot="header"
+        className="flex items-start justify-between gap-3 px-4 pt-3"
       >
-        <span className="text-sm font-medium text-(--text-main) wrap-break-words">
-          {course.title}
-        </span>
-        <span className="flex items-center gap-1.5 w-full">
-          <M3eChip variant="elevated" style={tagChipStyle}>
-            {course.code}
-          </M3eChip>
-          {course.type && (
+        <div className="min-w-0">
+          <div className="text-sm font-semibold text-(--text-main) wrap-break-words">
+            {course.title}
+          </div>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             <M3eChip variant="elevated" style={tagChipStyle}>
-              {course.type}
+              {course.code}
             </M3eChip>
-          )}
-          <span className="flex-1" />
-          <KeyboardArrowDown
-            aria-hidden="true"
-            className={`w-4 h-4 shrink-0 text-(--text-muted) transition-transform ${expanded ? 'rotate-180' : ''}`}
-          />
-        </span>
-      </button>
-
-      {expanded && (
-        <div className="px-3 pb-3">
-          {course.assessments.length === 0 ? (
-            <p className="text-xs text-(--text-muted) py-3 px-1">
-              No assessments recorded yet.
-            </p>
-          ) : (
-            <M3eSelectionList
-              hide-selection-indicator
-              variant="segmented"
-              style={assessmentListStyle}
-              aria-label={`${course.title} assessments`}
-              className="rounded-xl overflow-hidden"
-            >
-              {course.assessments.map((assessment, i) => (
-                <AssessmentRow
-                  key={i}
-                  assessment={assessment}
-                  isModernView={isModernView}
-                />
-              ))}
-            </M3eSelectionList>
-          )}
+            {course.type && (
+              <M3eChip variant="elevated" style={tagChipStyle}>
+                {course.type}
+              </M3eChip>
+            )}
+          </div>
         </div>
-      )}
+        {summary.hasMarks && (
+          <M3eBadge
+            size="large"
+            style={badgeStyle}
+            aria-label={`Marks ${badgeText}`}
+            className="shrink-0"
+          >
+            {badgeText}
+          </M3eBadge>
+        )}
+      </div>
+
+      <div slot="content" className="px-3 pb-3 pt-2.5">
+        {course.assessments.length === 0 ? (
+          <p className="text-xs text-(--text-muted) py-3 px-1">
+            No assessments recorded yet.
+          </p>
+        ) : (
+          <M3eSelectionList
+            hide-selection-indicator
+            variant="segmented"
+            style={assessmentListStyle}
+            aria-label={`${course.title} assessments`}
+            className="rounded-xl overflow-hidden"
+          >
+            {course.assessments.map((assessment, i) => (
+              <AssessmentRow
+                key={i}
+                assessment={assessment}
+                isModernView={isModernView}
+              />
+            ))}
+          </M3eSelectionList>
+        )}
+      </div>
     </M3eCard>
   );
 };

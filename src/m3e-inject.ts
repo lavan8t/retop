@@ -17,6 +17,7 @@ import '@m3e/web/icon-button';
 import '@m3e/web/icon';
 import '@m3e/web/list';
 import '@m3e/web/card';
+import '@m3e/web/badge';
 import '@m3e/web/chips';
 import '@m3e/web/switch';
 import '@m3e/web/checkbox';

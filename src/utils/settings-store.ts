@@ -269,7 +269,13 @@ export const applyTheme = (settings: AppSettings) => {
   const splash = document.getElementById('retop-open-loader');
   if (splash) {
     splash.style.setProperty('--accent-base', primaryHex);
-    splash.style.background = appliedTheme === 'light' ? '#ffffff' : '#09090b';
+    // The early cloak declares `background: ... !important`, so an inline
+    // assignment without priority is ignored and the logo always gets dark.
+    splash.style.setProperty(
+      'background',
+      appliedTheme === 'light' ? '#ffffff' : '#09090b',
+      'important',
+    );
   }
 
   // Dark text tone for accent-filled surfaces (login button). Tone 20 of the

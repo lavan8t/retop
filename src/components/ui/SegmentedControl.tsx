@@ -1,4 +1,5 @@
 import React from 'react';
+import { M3eButtonSegment, M3eSegmentedButton } from '../attendance/m3eTags';
 
 export interface SegmentedControlOption<T extends string> {
   label: React.ReactNode;
@@ -8,10 +9,10 @@ export interface SegmentedControlOption<T extends string> {
 interface SegmentedControlProps<T extends string> {
   options: SegmentedControlOption<T>[];
   value: T;
-  onChange: (value: T, e: React.MouseEvent) => void;
+  onChange: (value: T, e: Event) => void;
   className?: string;
   buttonClassName?: string;
-  /** Accessible name for the radiogroup. */
+  /** Accessible name for the segmented button (the component supplies the group semantics). */
   ariaLabel?: string;
 }
 
@@ -23,58 +24,44 @@ export const SegmentedControl = <T extends string>({
   buttonClassName = 'px-2.5 sm:px-3 py-3',
   ariaLabel = 'View',
 }: SegmentedControlProps<T>) => {
-  const selectByArrow = (e: React.KeyboardEvent, idx: number) => {
-    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
-    e.preventDefault();
-    e.stopPropagation();
-    const delta = e.key === 'ArrowRight' ? 1 : -1;
-    const next = (idx + delta + options.length) % options.length;
-    const group = (e.currentTarget as HTMLElement).parentElement;
-    (group?.querySelectorAll('[role="radio"]')[next] as HTMLElement)?.focus();
-    onChange(options[next].value, e as any);
-  };
-
   return (
-    <div
-      role="radiogroup"
-      aria-label={ariaLabel}
-      className={`flex items-center gap-0.5 shrink-0 ${className}`}
-    >
-      {options.map((option, idx) => {
-        const isSelected = value === option.value;
-        const isFirst = idx === 0;
-        const isLast = idx === options.length - 1;
-
-        let roundedClass = 'rounded-md';
-        if (isSelected) {
-          roundedClass = 'rounded-[20px]';
-        } else if (isFirst) {
-          roundedClass = 'rounded-l-[20px] rounded-r-md';
-        } else if (isLast) {
-          roundedClass = 'rounded-l-md rounded-r-[20px]';
+    <div className={`flex items-center gap-0.5 shrink-0 ${className}`}>
+      <M3eSegmentedButton
+        aria-label={ariaLabel}
+        onChange={(e: any) => {
+          e.stopPropagation();
+          onChange(e.target.value as T, e);
+        }}
+        style={
+          {
+            '--m3e-segmented-button-height': '48px',
+            '--m3e-segmented-button-font-size': '12px',
+            '--m3e-segmented-button-font-weight': '700',
+            '--m3e-segmented-button-start-shape': '20px',
+            '--m3e-segmented-button-end-shape': '20px',
+            '--m3e-segmented-button-selected-container-color':
+              'var(--text-main)',
+            '--m3e-segmented-button-selected-label-text-color':
+              'var(--bg-main)',
+            '--m3e-segmented-button-unselected-label-text-color':
+              'var(--text-muted)',
+            '--m3e-segmented-button-unselected-container-hover-color':
+              'var(--bg-highlight)',
+          } as React.CSSProperties
         }
-
-        return (
-          <button
+      >
+        {options.map((option) => (
+          <M3eButtonSegment
             key={option.value}
-            type="button"
-            role="radio"
-            aria-checked={isSelected}
-            onKeyDown={(e) => selectByArrow(e, idx)}
-            onClick={(e) => {
-              e.stopPropagation();
-              onChange(option.value, e);
-            }}
-            className={`${buttonClassName} min-h-12 min-w-12 flex items-center justify-center text-xs outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) transition-all duration-fast shadow-none ${roundedClass} ${
-              isSelected
-                ? 'bg-(--text-main) text-(--bg-main) font-black'
-                : 'bg-(--bg-highlight) text-(--text-muted) hover:text-(--text-main) font-bold'
-            }`}
+            value={option.value}
+            checked={value === option.value}
+            className={buttonClassName}
+            style={{ minWidth: '3rem' }}
           >
             {option.label}
-          </button>
-        );
-      })}
+          </M3eButtonSegment>
+        ))}
+      </M3eSegmentedButton>
     </div>
   );
 };

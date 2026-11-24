@@ -21,25 +21,31 @@ function safeAppend(element: HTMLElement) {
   }
 }
 
+const findRootInShadowTrees = (
+  tree: Document | ShadowRoot,
+): HTMLElement | null => {
+  const direct =
+    tree.querySelector('#retop-root') || tree.querySelector('#offline-root');
+  if (direct) return direct as HTMLElement;
+  for (const el of Array.from(tree.querySelectorAll('*'))) {
+    if (!(el as HTMLElement).shadowRoot) continue;
+    const found = findRootInShadowTrees((el as HTMLElement).shadowRoot!);
+    if (found) return found;
+  }
+  return null;
+};
+
 export function getAppRoot(): HTMLElement | null {
   if (typeof document === 'undefined') return null;
+  const fromTrees = findRootInShadowTrees(document);
+  if (fromTrees) return fromTrees;
   if (
     (window as any).__RETOP_OFFLINE__ ||
     (window as any).__RETOP_STANDALONE__
   ) {
-    return (
-      document.getElementById('retop-root') ||
-      document.getElementById('offline-root') ||
-      document.getElementById('root')
-    );
+    return document.getElementById('root') as HTMLElement | null;
   }
-  const el =
-    document.getElementById('retop-root') ||
-    document.getElementById('offline-root');
-  if (el) return el;
-  return shadowRoot
-    ? (shadowRoot.querySelector('#retop-root') as HTMLElement)
-    : null;
+  return null;
 }
 
 export function injectGlobalFonts() {

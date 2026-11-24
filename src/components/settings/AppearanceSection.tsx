@@ -7,14 +7,15 @@ import {
 import { SettingTopicCard } from './SettingTopicCard';
 import { SettingsDropdown } from '../ui/Dropdown';
 import { MaterialSwitch } from '../MaterialSwitch';
-import { SegmentedControl } from '../ui/SegmentedControl';
 import { useIsDark } from '../../hooks/useTheme';
-import {
-  WbSunny,
-  DarkMode,
-  Computer,
-  LocationOn,
-} from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
+import { M3eButton, M3eButtonGroup, M3eIcon } from '../attendance/m3eTags';
+import { LocationOn } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
+
+const THEME_MODES = [
+  { value: 'light', label: 'Light', icon: 'light_mode' },
+  { value: 'dark', label: 'Dark', icon: 'dark_mode' },
+  { value: 'auto', label: 'System', icon: 'computer' },
+] as const;
 
 interface AppearanceSectionProps {
   settings: AppSettings;
@@ -51,51 +52,40 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
         title="Theme & Color Scheme"
         description="Choose light, dark, or automatic system theme"
       >
-        <div className="rounded-2xl bg-(--bg-main) p-1 w-full max-w-md">
-          <SegmentedControl
-            ariaLabel="Color scheme"
-            options={[
-              {
-                value: 'light',
-                label: (
-                  <span className="inline-flex items-center gap-2">
-                    <WbSunny className="w-5 h-5 shrink-0" />
-                    <span>Light</span>
-                  </span>
-                ),
-              },
-              {
-                value: 'dark',
-                label: (
-                  <span className="inline-flex items-center gap-2">
-                    <DarkMode className="w-5 h-5 shrink-0" />
-                    <span>Dark</span>
-                  </span>
-                ),
-              },
-              {
-                value: 'auto',
-                label: (
-                  <span className="inline-flex items-center gap-2">
-                    <Computer className="w-5 h-5 shrink-0" />
-                    <span>System</span>
-                  </span>
-                ),
-              },
-            ]}
-            value={
-              (settings.themeMode === 'amoled'
-                ? 'dark'
-                : settings.themeMode) as any
-            }
-            onChange={(val, e) => {
-              e.stopPropagation();
-              handleThemeChange(e, val as any);
-            }}
-            className="w-full"
-            buttonClassName="flex-1 gap-2"
-          />
-        </div>
+        <M3eButtonGroup
+          variant="connected"
+          aria-label="Color scheme"
+          className="w-full max-w-md"
+          style={
+            {
+              display: 'flex',
+              '--m3e-button-height': '48px',
+              '--m3e-button-label-text-size': '12px',
+              '--m3e-button-label-text-weight': '700',
+            } as React.CSSProperties
+          }
+        >
+          {THEME_MODES.map((mode) => (
+            <M3eButton
+              key={mode.value}
+              toggle
+              value={mode.value}
+              selected={
+                (settings.themeMode === 'amoled'
+                  ? 'dark'
+                  : settings.themeMode) === mode.value
+              }
+              onClick={(e: React.MouseEvent) => {
+                e.stopPropagation();
+                handleThemeChange(e.nativeEvent, mode.value);
+              }}
+              className="flex-1"
+            >
+              <M3eIcon slot="icon" name={mode.icon} />
+              {mode.label}
+            </M3eButton>
+          ))}
+        </M3eButtonGroup>
 
         <div className="flex flex-col divide-y divide-(--border-dim)">
           <div className="flex items-center justify-between gap-4 py-4">

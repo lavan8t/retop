@@ -1,9 +1,15 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
+import {
+  GCAL_ACCOUNT_KEY,
+  GCAL_ENABLED_KEY,
+  GCAL_HASH_KEY,
+  GCAL_ID_MAP_KEY,
+  type CalendarDraft,
+} from '../google-calendar';
 
 /**
- * End-to-end check of the Calendar sync: the real background worker drives
- * the real Calendar API client against a local mock of the Google Calendar
- * API, so URLs, methods, headers and payloads are all exercised over HTTP.
+ * End-to-end check of the Calendar sync: the real background worker drives the
+ * real REST client against a local mock of the Google APIs.
  */
 
 interface Recorded {
@@ -16,13 +22,9 @@ interface Recorded {
 let server: ReturnType<typeof Bun.serve>;
 let port = 0;
 let calls: Recorded[] = [];
-let existingCalendar = false;
-let ownedIds: string[] = [];
+let email = 'student@gmail.com';
 
-/**
- * The test runner registers a DOM, which replaces the global Response with a
- * browser one that the server refuses. Take the native class from Bun.fetch.
- */
+// The test runner registers a DOM, whose Response is not accepted by Bun.serve.
 const NativeResponse = (await Bun.fetch('data:application/json,%7B%7D'))
   .constructor as any;
 
@@ -31,42 +33,32 @@ beforeAll(() => {
     port: 0,
     async fetch(req) {
       const url = new URL(req.url);
-      const method = req.method;
-      const auth = req.headers.get('authorization');
       const raw = await req.text();
       const body = raw ? JSON.parse(raw) : undefined;
-      calls.push({ method, path: url.pathname + url.search, auth, body });
-
+      calls.push({
+        method: req.method,
+        path: url.pathname + url.search,
+        auth: req.headers.get('authorization'),
+        body,
+      });
       const json = (data: any) =>
         new NativeResponse(JSON.stringify(data), {
           headers: { 'Content-Type': 'application/json' },
         });
 
+      if (url.pathname === '/oauth2/v3/userinfo') return json({ email });
       if (
-        method === 'GET' &&
-        url.pathname === '/calendar/v3/users/me/calendarList'
+        url.pathname === '/calendar/v3/calendars/primary/events' &&
+        req.method === 'POST'
       ) {
-        return json({
-          items: existingCalendar
-            ? [{ id: 'cal-existing', summary: 'retop - 22BCE1234' }]
-            : [{ id: 'cal-other', summary: 'Personal' }],
-        });
+        return json({ id: `g-${calls.length}` });
       }
-      if (
-        method === 'POST' &&
-        url.pathname === '/calendar/v3/users/me/calendarList'
-      ) {
-        return json({ id: 'cal-created', summary: body.summary });
+      if (url.pathname.startsWith('/calendar/v3/calendars/primary/events/')) {
+        return req.method === 'DELETE'
+          ? new NativeResponse(null, { status: 204 })
+          : json({ id: url.pathname.split('/').pop() });
       }
-      if (
-        method === 'GET' &&
-        url.pathname.endsWith('/events') &&
-        url.pathname.includes('/calendars/')
-      ) {
-        return json({ items: ownedIds.map((id) => ({ id })) });
-      }
-      if (method === 'DELETE') return new NativeResponse(null, { status: 204 });
-      return json({ id: 'evt' });
+      return json({});
     },
   });
   port = server.port!;
@@ -76,21 +68,20 @@ afterAll(() => {
   server?.stop(true);
 });
 
-/** Minimal chrome stub so the real worker module can boot. */
-const makeChromeStub = (initialManifest: any) => {
+const makeChromeStub = () => {
   const listeners: ((
     msg: any,
     sender: any,
     respond: (r: any) => void,
   ) => void)[] = [];
+  const store: Record<string, any> = {};
+  const tokenCalls: any[] = [];
   const stub: any = {
-    manifest: initialManifest,
+    manifest: { oauth2: { client_id: '123.apps.googleusercontent.com' } },
     runtime: {
       id: 'retop-test',
       onInstalled: { addListener: () => {} },
-      onMessage: {
-        addListener: (fn: any) => listeners.push(fn),
-      },
+      onMessage: { addListener: (fn: any) => listeners.push(fn) },
       getManifest: () => stub.manifest,
       getURL: (p: string) => `chrome-extension://retop-test/${p}`,
       lastError: undefined,
@@ -98,24 +89,37 @@ const makeChromeStub = (initialManifest: any) => {
     action: { onClicked: { addListener: () => {} } },
     downloads: { onDeterminingFilename: { addListener: () => {} } },
     identity: {
-      getAuthToken: async (details: any) => ({
-        token: details?.interactive ? 'token-interactive' : 'token-cached',
-        grantedScopes: ['https://www.googleapis.com/auth/calendar'],
-      }),
+      getAuthToken: async (details: any) => {
+        tokenCalls.push(details);
+        return {
+          token: details.interactive ? 'token-interactive' : 'token-cached',
+          grantedScopes: ['https://www.googleapis.com/auth/calendar.events'],
+        };
+      },
     },
-    windows: {
-      getAll: async () => [],
-      update: async () => {},
-    },
+    windows: { getAll: async () => [], update: async () => {} },
     storage: {
       local: {
-        get: (_k: any, cb: any) => cb?.({}),
-        set: (_k: any, cb: any) => cb?.(),
-        remove: (_k: any, cb: any) => cb?.(),
+        get: (keys: any, cb: any) => {
+          const wanted = Array.isArray(keys) ? keys : Object.keys(store);
+          cb?.(
+            Object.fromEntries(
+              wanted.filter((k) => k in store).map((k) => [k, store[k]]),
+            ),
+          );
+        },
+        set: (data: any, cb: any) => {
+          Object.assign(store, data);
+          cb?.();
+        },
+        remove: (key: any, cb: any) => {
+          delete store[key];
+          cb?.();
+        },
       },
     },
   };
-  return { stub, listeners };
+  return { stub, listeners, store, tokenCalls };
 };
 
 const sendMessage = (listeners: any[], message: any): Promise<any> =>
@@ -123,31 +127,38 @@ const sendMessage = (listeners: any[], message: any): Promise<any> =>
     listeners[0](message, { origin: 'https://vtop.vit.ac.in' }, resolve);
   });
 
+const draft = (id: string, title = `Class ${id}`): CalendarDraft => ({
+  vtopEventId: `tt|${id}|Monday|A1|CSE101`,
+  title,
+  start: '2026-11-23T08:00:00',
+  end: '2026-11-23T08:50:00',
+  description:
+    'Slot: A1\nType: Theory\nFaculty: Dr Rao\nCode: CSE101\nLTPJC: 3 0 0 0 3',
+  location: 'AB1-101',
+  recurrence: ['FREQ=WEEKLY;BYDAY=MO'],
+});
+
 describe('background worker Google Calendar sync', () => {
   let listeners: any[];
   let chromeStub: any;
+  let store: Record<string, any>;
+  let tokenCalls: any[];
   let originalFetch: typeof globalThis.fetch;
 
   beforeAll(async () => {
     originalFetch = globalThis.fetch;
-    const { stub, listeners: l } = makeChromeStub({
-      oauth2: { client_id: '123.apps.googleusercontent.com' },
-    });
-    (globalThis as any).chrome = stub;
-    chromeStub = stub;
-    listeners = l;
+    const s = makeChromeStub();
+    (globalThis as any).chrome = s.stub;
+    chromeStub = s.stub;
+    listeners = s.listeners;
+    store = s.store;
+    tokenCalls = s.tokenCalls;
 
-    // Point the Calendar API at the local mock, keeping the real code path.
-    // Bun.fetch is used because the test runner registers a DOM (and with it a
-    // strict XHR-based fetch) that refuses plain http.
     globalThis.fetch = (async (input: any, init: any) => {
       const url = String(input);
       if (url.startsWith('https://www.googleapis.com/')) {
         return Bun.fetch(
-          `http://127.0.0.1:${port}${url.replace(
-            'https://www.googleapis.com',
-            '',
-          )}`,
+          `http://127.0.0.1:${port}${url.replace('https://www.googleapis.com', '')}`,
           init,
         );
       }
@@ -162,148 +173,131 @@ describe('background worker Google Calendar sync', () => {
     delete (globalThis as any).chrome;
   });
 
-  it('creates the calendar, writes the events and reports the result', async () => {
+  it('requires an explicit interactive account connection', async () => {
     calls = [];
-    existingCalendar = false;
-    ownedIds = [];
-
-    const res = await sendMessage(listeners, {
+    tokenCalls.length = 0;
+    const blocked = await sendMessage(listeners, {
       action: 'GOOGLE_CALENDAR_SYNC',
-      regNo: '22BCE1234',
-      ics: [
-        'BEGIN:VCALENDAR',
-        'BEGIN:VEVENT',
-        'UID:BCSE101-20260105T090000-Monday@retop',
-        'DTSTART;TZID=Asia/Kolkata:20260105T090000',
-        'DTEND;TZID=Asia/Kolkata:20260105T095000',
-        'RRULE:FREQ=WEEKLY;UNTIL=20260601T235959Z',
-        'EXDATE;TZID=Asia/Kolkata:20260202T090000',
-        'SUMMARY:Theory of Computation',
-        'LOCATION:AB1-305',
-        'BEGIN:VALARM',
-        'TRIGGER:-PT10M',
-        'END:VALARM',
-        'END:VEVENT',
-        'END:VCALENDAR',
-      ].join('\r\n'),
+      drafts: [draft('a')],
+    });
+    expect(blocked.success).toBe(false);
+    expect(blocked.error).toBe('Connect Google Account to begin.');
+    expect(calls).toHaveLength(0);
+
+    email = 'student@gmail.com';
+    const connected = await sendMessage(listeners, {
+      action: 'GOOGLE_CALENDAR_CONNECT',
+    });
+    expect(connected.success).toBe(true);
+    expect(connected.account).toBe('student@gmail.com');
+    expect(store[GCAL_ACCOUNT_KEY]).toBe('student@gmail.com');
+    expect(store[GCAL_ENABLED_KEY]).toBe(true);
+    expect(tokenCalls.at(-1)).toMatchObject({
+      interactive: true,
+      scopes: ['https://www.googleapis.com/auth/calendar.events'],
     });
 
-    expect(res.success).toBe(true);
-    expect(res.calendarName).toBe('retop - 22BCE1234');
-    expect(res.total).toBe(1);
-    expect(res.created).toBe(1);
-
-    // The calendar was created with the reg-no name.
-    const create = calls.find(
-      (c) =>
-        c.method === 'POST' && c.path === '/calendar/v3/users/me/calendarList',
-    );
-    expect(create?.body.summary).toBe('retop - 22BCE1234');
-    expect(create?.body.timeZone).toBe('Asia/Kolkata');
-
-    // Every API call carried the OAuth token.
-    for (const call of calls) {
-      expect(call.auth).toBe('Bearer token-cached');
-    }
-
-    // The event was inserted with the recurrence rules intact.
-    const insert = calls.find(
-      (c) => c.method === 'POST' && c.path.endsWith('/events'),
-    );
-    expect(insert?.body.summary).toBe('Theory of Computation');
-    expect(insert?.body.location).toBe('AB1-305');
-    expect(insert?.body.start).toEqual({
-      dateTime: '2026-01-05T09:00:00',
-      timeZone: 'Asia/Kolkata',
+    const status = await sendMessage(listeners, {
+      action: 'GOOGLE_CALENDAR_STATUS',
     });
-    expect(insert?.body.recurrence).toEqual([
-      'RRULE:FREQ=WEEKLY;UNTIL=20260601T235959Z',
-      'EXDATE;TZID=Asia/Kolkata:20260202T090000',
-    ]);
-    expect(insert?.body.reminders.overrides[0].minutes).toBe(10);
-    expect(insert?.body.extendedProperties.private.retopSync).toBe('1');
+    expect(status).toMatchObject({
+      success: true,
+      connected: true,
+      account: 'student@gmail.com',
+    });
   });
 
-  it('reuses an existing calendar, patches known events and drops stale ones', async () => {
-    calls = [];
-    existingCalendar = true;
-
-    // Discover the id the first sync would have used.
-    ownedIds = [];
-    const first = await sendMessage(listeners, {
-      action: 'GOOGLE_CALENDAR_SYNC',
-      regNo: '22BCE1234',
-      ics: [
-        'BEGIN:VCALENDAR',
-        'BEGIN:VEVENT',
-        'UID:exam-BCSE101-20260301T090000@retop',
-        'DTSTART;TZID=Asia/Kolkata:20260301T090000',
-        'DTEND;TZID=Asia/Kolkata:20260301T110000',
-        'SUMMARY:[EXAM] Theory of Computation (BCSE101)',
-        'END:VEVENT',
-        'END:VCALENDAR',
-      ].join('\r\n'),
+  it('rejects VIT student accounts like the app', async () => {
+    email = 'student@vitstudent.ac.in';
+    const res = await sendMessage(listeners, {
+      action: 'GOOGLE_CALENDAR_CONNECT',
     });
-    const insertedId = calls.find(
-      (c) => c.method === 'POST' && c.path.endsWith('/events'),
-    )?.body.id;
+    expect(res.success).toBe(false);
+    expect(res.error).toContain('personal Google account');
 
-    // Now pretend that event plus a stale one already exist.
-    ownedIds = [insertedId, 'stale-event-id'];
+    email = 'student@gmail.com';
+    await sendMessage(listeners, { action: 'GOOGLE_CALENDAR_CONNECT' });
+  });
+
+  it('pushes drafts to the primary calendar with the app payload', async () => {
     calls = [];
-
     const res = await sendMessage(listeners, {
       action: 'GOOGLE_CALENDAR_SYNC',
-      regNo: '22BCE1234',
-      ics: [
-        'BEGIN:VCALENDAR',
-        'BEGIN:VEVENT',
-        'UID:exam-BCSE101-20260301T090000@retop',
-        'DTSTART;TZID=Asia/Kolkata:20260301T090000',
-        'DTEND;TZID=Asia/Kolkata:20260301T110000',
-        'SUMMARY:[EXAM] Theory of Computation (BCSE101)',
-        'END:VEVENT',
-        'END:VCALENDAR',
-      ].join('\r\n'),
+      drafts: [draft('a'), draft('b')],
     });
 
     expect(res.success).toBe(true);
-    expect(res.calendarId).toBe('cal-existing');
-    expect(res.updated).toBe(1);
+    expect(res.changed).toBe(true);
+    expect(res.created).toBe(2);
+    expect(res.total).toBe(2);
+
+    for (const call of calls) expect(call.auth).toBe('Bearer token-cached');
+    const insert = calls.find(
+      (c) =>
+        c.method === 'POST' &&
+        c.path === '/calendar/v3/calendars/primary/events',
+    );
+    expect(insert?.body).toEqual({
+      summary: 'Class a',
+      description: draft('a').description,
+      location: 'AB1-101',
+      start: { dateTime: '2026-11-23T08:00:00', timeZone: 'Asia/Kolkata' },
+      end: { dateTime: '2026-11-23T08:50:00', timeZone: 'Asia/Kolkata' },
+      recurrence: ['FREQ=WEEKLY;BYDAY=MO'],
+    });
+    expect(insert?.body.reminders).toBeUndefined();
+    expect(insert?.body.extendedProperties).toBeUndefined();
+    expect(Object.keys(store[GCAL_ID_MAP_KEY])).toHaveLength(2);
+    expect(store[GCAL_HASH_KEY]).toMatch(/^[a-f0-9]{64}$/);
+  });
+
+  it('skips a repeated sync with an unchanged source hash', async () => {
+    calls = [];
+    const res = await sendMessage(listeners, {
+      action: 'GOOGLE_CALENDAR_SYNC',
+      drafts: [draft('a'), draft('b')],
+    });
+    expect(res.success).toBe(true);
+    expect(res.changed).toBe(false);
     expect(res.created).toBe(0);
+    expect(res.updated).toBe(0);
+    expect(res.removed).toBe(0);
+    expect(calls).toHaveLength(0);
+  });
+
+  it('patches changed events and deletes stale ones without duplicating', async () => {
+    calls = [];
+    const knownId = Object.values(store[GCAL_ID_MAP_KEY])[0] as string;
+    const res = await sendMessage(listeners, {
+      action: 'GOOGLE_CALENDAR_SYNC',
+      drafts: [draft('a', 'Renamed class')],
+    });
+
+    expect(res.success).toBe(true);
+    expect(res.updated).toBe(1);
     expect(res.removed).toBe(1);
+    expect(Object.keys(store[GCAL_ID_MAP_KEY])).toHaveLength(1);
 
-    // No calendar was created this time.
-    expect(
-      calls.some(
-        (c) =>
-          c.method === 'POST' &&
-          c.path === '/calendar/v3/users/me/calendarList',
-      ),
-    ).toBe(false);
-
-    // The known event was patched, not inserted.
     const patch = calls.find((c) => c.method === 'PATCH');
-    expect(patch?.path).toContain(insertedId);
+    expect(patch?.path).toContain(knownId);
+    expect(patch?.body.summary).toBe('Renamed class');
     expect(patch?.body.id).toBeUndefined();
-
-    // The stale event was deleted.
-    const del = calls.find((c) => c.method === 'DELETE');
-    expect(del?.path).toContain('stale-event-id');
+    expect(calls.some((c) => c.method === 'POST')).toBe(false);
+    expect(calls.some((c) => c.method === 'DELETE')).toBe(true);
   });
 
   it('reports a clear error when the build has no OAuth client configured', async () => {
     chromeStub.manifest = {
       oauth2: { client_id: 'REPLACE-ME.apps.googleusercontent.com' },
     };
-
     const res = await sendMessage(listeners, {
       action: 'GOOGLE_CALENDAR_SYNC',
-      regNo: '22BCE1234',
-      ics: 'BEGIN:VCALENDAR\nEND:VCALENDAR',
+      drafts: [draft('a')],
     });
-
     expect(res.success).toBe(false);
     expect(res.error).toContain('GOOGLE_CALENDAR.md');
+    chromeStub.manifest = {
+      oauth2: { client_id: '123.apps.googleusercontent.com' },
+    };
   });
 });

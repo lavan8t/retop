@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback, useRef, useId } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { getAppRoot } from '../../utils/bridge';
+import { M3eButton, M3eDialog, M3eDialogAction } from '../attendance/m3eTags';
 
 export interface AlertDialogOptions {
   title?: string;
@@ -55,21 +56,21 @@ export function showAlertDialog(
  */
 export const AlertDialogManager: React.FC = () => {
   const [dialog, setDialog] = useState<InternalDialogState>(null);
-  const [isClosing, setIsClosing] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
-  const titleId = useId();
-  const messageId = useId();
 
   useEffect(() => {
+    const rememberFocus = () => {
+      returnFocusRef.current = document.activeElement as HTMLElement;
+    };
+
     globalSetDialog = (st) => {
-      setIsClosing(false);
+      rememberFocus();
       setDialog(st);
     };
 
     const handleEvent = (e: any) => {
       if (e.detail) {
-        setIsClosing(false);
+        rememberFocus();
         setDialog({
           title: e.detail.title || 'Alert',
           message: e.detail.message,
@@ -89,67 +90,16 @@ export const AlertDialogManager: React.FC = () => {
     };
   }, []);
 
-  const handleClose = useCallback(
-    (confirmed: boolean) => {
-      if (!dialog || isClosing) return;
-      setIsClosing(true);
-      setTimeout(() => {
-        dialog.resolve(confirmed);
-        returnFocusRef.current?.focus();
-        setDialog(null);
-        setIsClosing(false);
-      }, 150);
+  const handleClosed = useCallback(
+    (e: any) => {
+      if (!dialog) return;
+      const confirmed = (e.target as any)?.returnValue === 'confirm';
+      dialog.resolve(confirmed);
+      returnFocusRef.current?.focus();
+      setDialog(null);
     },
-    [dialog, isClosing],
+    [dialog],
   );
-
-  useEffect(() => {
-    if (!dialog) return;
-    returnFocusRef.current = document.activeElement as HTMLElement;
-
-    const focusable = () =>
-      Array.from(
-        cardRef.current?.querySelectorAll<HTMLElement>(
-          'button:not([disabled])',
-        ) || [],
-      );
-
-    // Move focus into the dialog once it is mounted.
-    const raf = requestAnimationFrame(() => {
-      const items = focusable();
-      (
-        items.find((el) => el.dataset.confirm !== undefined) || items[0]
-      )?.focus();
-    });
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        handleClose(false);
-      } else if (e.key === 'Enter') {
-        e.preventDefault();
-        handleClose(true);
-      } else if (e.key === 'Tab') {
-        const items = focusable();
-        if (items.length === 0) return;
-        const first = items[0];
-        const last = items[items.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [dialog, handleClose]);
 
   if (!dialog || typeof document === 'undefined') return null;
 
@@ -161,77 +111,60 @@ export const AlertDialogManager: React.FC = () => {
   const isDestructive = dialog.variant === 'error';
 
   return createPortal(
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={titleId}
-      aria-describedby={messageId}
-      className="fixed inset-0 z-100000 flex items-center justify-center p-4 select-none"
+    <M3eDialog
+      open
+      alert={!dialog.cancelText}
+      dismissible={!dialog.cancelText}
+      onClosed={handleClosed}
+      style={
+        {
+          zIndex: 100000,
+          '--m3e-dialog-container-color':
+            'var(--md-sys-color-surface-container-high)',
+          '--m3e-dialog-shape': '28px',
+          '--m3e-dialog-max-width': '384px',
+          '--m3e-dialog-header-color': 'var(--md-sys-color-on-surface)',
+          '--m3e-dialog-content-color': 'var(--md-sys-color-on-surface-variant)',
+        } as React.CSSProperties
+      }
     >
-      {/* Dark overlay without blur */}
-      <div
-        aria-hidden="true"
-        className="fixed inset-0 bg-black/60"
-        style={{
-          animation: isClosing
-            ? 'retop-dialog-fade-out 150ms cubic-bezier(0.32, 0.72, 0, 1) forwards'
-            : 'retop-dialog-fade-in 150ms cubic-bezier(0.32, 0.72, 0, 1) forwards',
-        }}
-        onClick={() => handleClose(false)}
-      />
-
-      {/* Material 3 Dialog Card */}
-      <div
-        ref={cardRef}
-        className="relative bg-(--bg-surface) border-2 border-(--border-dim) rounded-[28px] p-6 shadow-2xl w-full max-w-95 z-10 flex flex-col text-left"
-        style={{
-          animation: isClosing
-            ? 'retop-dialog-zoom-out 150ms cubic-bezier(0.32, 0.72, 0, 1) forwards'
-            : 'retop-dialog-zoom-in 150ms cubic-bezier(0.32, 0.72, 0, 1) forwards',
-        }}
-        onClick={(e) => e.stopPropagation()}
+      <span
+        slot="header"
+        className="text-left text-lg font-black font-expanded text-(--text-main) tracking-tight"
       >
-        <h3
-          id={titleId}
-          className="text-left text-lg font-black font-expanded text-(--text-main) tracking-tight mb-2 leading-snug"
-        >
-          {dialog.title || 'Alert'}
-        </h3>
-
-        <p
-          id={messageId}
-          className="text-left text-sm font-medium text-(--text-muted) leading-relaxed mb-6 whitespace-pre-wrap"
-        >
-          {dialog.message}
-        </p>
-
-        <div className="flex items-center justify-end gap-2 mt-auto">
-          {dialog.cancelText && (
-            <button
-              type="button"
-              aria-label={dialog.cancelText}
-              onClick={() => handleClose(false)}
-              className="min-h-12 rounded-full px-5 py-2.5 text-xs font-bold text-(--text-muted) outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) hover:text-(--text-main) hover:bg-(--bg-highlight) transition-colors bg-transparent border-0 cursor-pointer"
-            >
+        {dialog.title || 'Alert'}
+      </span>
+      <span className="text-left text-sm font-medium text-(--text-muted) leading-relaxed whitespace-pre-wrap">
+        {dialog.message}
+      </span>
+      <div slot="actions" className="flex items-center justify-end gap-2">
+        {dialog.cancelText && (
+          <M3eButton variant="text">
+            <M3eDialogAction returnValue="cancel">
               {dialog.cancelText}
-            </button>
-          )}
-          <button
-            type="button"
-            data-confirm
-            aria-label={dialog.confirmText || 'OK'}
-            onClick={() => handleClose(true)}
-            className={`min-h-12 rounded-full px-6 py-2.5 text-xs font-bold outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-(--bg-surface) transition-all shadow-none border-0 cursor-pointer ${
-              isDestructive
-                ? 'bg-(--md-sys-color-error) text-(--md-sys-color-on-error) focus-visible:ring-(--md-sys-color-error) hover:opacity-90'
-                : 'bg-(--accent-base) text-(--text-inverse) focus-visible:ring-(--accent-base) hover:opacity-90'
-            }`}
-          >
+            </M3eDialogAction>
+          </M3eButton>
+        )}
+        <M3eButton
+          variant="filled"
+          style={
+            {
+              '--m3e-button-container-height': '48px',
+              '--m3e-button-container-color': isDestructive
+                ? 'var(--md-sys-color-error)'
+                : 'var(--md-sys-color-primary)',
+              '--m3e-button-label-text-color': isDestructive
+                ? 'var(--md-sys-color-on-error)'
+                : 'var(--md-sys-color-on-primary)',
+            } as React.CSSProperties
+          }
+        >
+          <M3eDialogAction returnValue="confirm">
             {dialog.confirmText || 'OK'}
-          </button>
-        </div>
+          </M3eDialogAction>
+        </M3eButton>
       </div>
-    </div>,
+    </M3eDialog>,
     // Stay inside the shadow root: retop's Tailwind and token styles only apply
     // under #retop-host.
     portalRoot,

@@ -23,6 +23,7 @@ import { getExtUrl } from '../utils/url';
 import { installErrorNet } from '../utils/teardown';
 import { setStorageData } from '../utils/storageAdapter';
 import { getVtopBaseUrl } from '../utils/vtopClient';
+import { ensureM3eComponents } from '../utils/m3e';
 import { campusLabel, currentCampus } from '../utils/campus';
 import type { CachedUser } from '../utils/syncOrchestrator';
 import type { VtopClient } from '../utils/vtopClient';
@@ -424,6 +425,8 @@ export async function mountLoginTakeover(): Promise<void> {
       ? originalTitle
       : 'VTOP - ' + originalTitle;
   } catch {}
+
+  void ensureM3eComponents();
 
   createRoot(rootEl).render(
     <LoginErrorBoundary>

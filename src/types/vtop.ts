@@ -71,6 +71,8 @@ export interface TimetableCourse {
   title: string;
   type: string;
   credits: string;
+  /** Raw L T P J C values from the registered-course table's credits cell. */
+  ltpjc?: string;
   category: string;
   slot: string;
   venue: string;

@@ -13,7 +13,7 @@
   "oauth2": {
     "client_id": "REPLACE-ME.apps.googleusercontent.com",
     "scopes": [
-      "https://www.googleapis.com/auth/calendar"
+      "https://www.googleapis.com/auth/calendar.events"
     ]
   },
   "content_security_policy": {

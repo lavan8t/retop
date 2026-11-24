@@ -7,8 +7,12 @@ import {
   selectPwaSyncData,
 } from './utils/pwaSyncAllowlist';
 import {
+  GCAL_ACCOUNT_KEY,
+  GCAL_ENABLED_KEY,
+  GCAL_HASH_KEY,
+  GCAL_ID_MAP_KEY,
   GOOGLE_CALENDAR_SCOPE,
-  syncICalToGoogleCalendar,
+  syncDraftsToGoogleCalendar,
 } from './utils/google-calendar';
 
 chrome.runtime.onInstalled.addListener((details) => {
@@ -84,12 +88,10 @@ const isBridgeSender = (sender: chrome.runtime.MessageSender): boolean => {
 };
 
 /**
- * Google access token for the Calendar API.
- *
- * Chrome caches the token, so the common path is a silent (non-interactive)
- * request. Only the first sync after install/revoke shows the consent screen.
+ * Google access token for the Calendar API. The consent screen is only shown
+ * by the explicit "Connect Google Account" action; syncing stays silent.
  */
-const getGoogleAccessToken = async (): Promise<string> => {
+const getGoogleAccessToken = async (interactive: boolean): Promise<string> => {
   const identity = chrome.identity;
   if (!identity?.getAuthToken) {
     throw new Error('Google sign-in is not available in this browser.');
@@ -102,14 +104,13 @@ const getGoogleAccessToken = async (): Promise<string> => {
     );
   }
 
-  try {
+  if (!interactive) {
     const cached = await identity.getAuthToken({
       scopes: [GOOGLE_CALENDAR_SCOPE],
       interactive: false,
     });
-    if (cached?.token) return cached.token;
-  } catch {
-    // No cached grant — fall through to the consent screen.
+    if (!cached?.token) throw new Error('Connect Google Account to begin.');
+    return cached.token;
   }
 
   // Focus a window first, otherwise Chrome can open the consent tab behind it.
@@ -131,6 +132,20 @@ const getGoogleAccessToken = async (): Promise<string> => {
     throw new Error('Google did not return an access token.');
   return granted.token;
 };
+
+const gcalStorageGet = (keys: string[]): Promise<Record<string, any>> =>
+  new Promise((resolve) => {
+    chrome.storage.local.get(keys, (items) => resolve(items || {}));
+  });
+
+const gcalStorageSet = (data: Record<string, any>): Promise<void> =>
+  new Promise((resolve, reject) => {
+    chrome.storage.local.set(data, () => {
+      if (chrome.runtime.lastError)
+        reject(new Error(chrome.runtime.lastError.message));
+      else resolve();
+    });
+  });
 
 type MessageHandler = (
   message: any,
@@ -260,6 +275,72 @@ const fetchBarcodeHandler: MessageHandler = (
   return true;
 };
 
+const googleCalendarStatusHandler: MessageHandler = (
+  _message,
+  _sender,
+  sendResponse,
+) => {
+  (async () => {
+    try {
+      const stored = await gcalStorageGet([GCAL_ACCOUNT_KEY, GCAL_ENABLED_KEY]);
+      const account = String(stored[GCAL_ACCOUNT_KEY] || '');
+      sendResponse({ success: true, connected: !!account, account });
+    } catch (err: any) {
+      sendResponse({ success: false, error: err?.message || String(err) });
+    }
+  })();
+  return true;
+};
+
+// Mirrors retop-app's Google Sign-In launcher: an explicit user action asks for
+// the calendar.events scope, and only a personal Google account is accepted.
+const googleCalendarConnectHandler: MessageHandler = (
+  _message,
+  _sender,
+  sendResponse,
+) => {
+  (async () => {
+    try {
+      const token = await getGoogleAccessToken(true);
+      let email = '';
+      try {
+        const res = await fetch(
+          'https://www.googleapis.com/oauth2/v3/userinfo',
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+        if (res.ok) email = String(((await res.json()) as any)?.email || '');
+      } catch {
+        // The token is still usable; the account label is cosmetic.
+      }
+      const domain = email.split('@')[1]?.toLowerCase() || '';
+      if (
+        domain === 'vit.ac.in' ||
+        domain === 'vitstudent.ac.in' ||
+        domain === 'vitap.ac.in' ||
+        domain === 'vitbhopal.ac.in' ||
+        domain.endsWith('.vit.ac.in') ||
+        domain.endsWith('.vitstudent.ac.in') ||
+        domain.endsWith('.vitap.ac.in') ||
+        domain.endsWith('.vitbhopal.ac.in')
+      ) {
+        throw new Error(
+          `VIT student email (${email}) is not allowed. Please select a personal Google account (@gmail.com).`,
+        );
+      }
+      await gcalStorageSet({
+        [GCAL_ACCOUNT_KEY]: email,
+        [GCAL_ENABLED_KEY]: true,
+      });
+      sendResponse({ success: true, connected: true, account: email });
+    } catch (err: any) {
+      sendResponse({ success: false, error: err?.message || String(err) });
+    }
+  })();
+  return true;
+};
+
 const googleCalendarSyncHandler: MessageHandler = (
   message,
   _sender,
@@ -267,15 +348,30 @@ const googleCalendarSyncHandler: MessageHandler = (
 ) => {
   (async () => {
     try {
-      const token = await getGoogleAccessToken();
-      const result = await syncICalToGoogleCalendar({
+      const token = await getGoogleAccessToken(false);
+      const stored = await gcalStorageGet([
+        GCAL_ID_MAP_KEY,
+        GCAL_HASH_KEY,
+        GCAL_ACCOUNT_KEY,
+        GCAL_ENABLED_KEY,
+      ]);
+      if (!stored[GCAL_ACCOUNT_KEY] || stored[GCAL_ENABLED_KEY] !== true)
+        throw new Error('Connect Google Account to begin.');
+      const drafts = Array.isArray(message.drafts) ? message.drafts : [];
+      if (!drafts.length) throw new Error('Connect Google Account to begin.');
+      const result = await syncDraftsToGoogleCalendar({
         token,
-        ics: String(message.ics || ''),
-        regNo: String(message.regNo || ''),
+        drafts,
+        idMap: stored[GCAL_ID_MAP_KEY] || {},
+        storedHash: String(stored[GCAL_HASH_KEY] || ''),
+      });
+      await gcalStorageSet({
+        [GCAL_ID_MAP_KEY]: result.idMap,
+        [GCAL_HASH_KEY]: result.sourceHash,
       });
       sendResponse({ success: true, ...result });
     } catch (err: any) {
-      sendResponse({ success: false, error: err?.message || String(err) });
+      sendResponse({ success: false, error: String(err?.message || err) });
     }
   })();
   return true;
@@ -416,6 +512,8 @@ register(['CLEAR_DISABLED'], clearDisabledHandler);
 register(['OPEN_DISABLE'], openDisableHandler);
 register(['OPEN_OFFLINE'], openOfflineHandler);
 register(['FETCH_BARCODE'], fetchBarcodeHandler);
+register(['GOOGLE_CALENDAR_STATUS'], googleCalendarStatusHandler);
+register(['GOOGLE_CALENDAR_CONNECT'], googleCalendarConnectHandler);
 register(['GOOGLE_CALENDAR_SYNC'], googleCalendarSyncHandler);
 register(['PORTAL_SCRAPED_DATA'], portalScrapedDataHandler);
 register(['GET_ALL_SYNC_DATA'], getAllSyncDataHandler);

@@ -132,7 +132,7 @@ const getEffectiveDayName = (
   return DAYS[jsDay - 1];
 };
 
-interface SlotOccurrence {
+export interface SlotOccurrence {
   dayName: string; // "Monday", "Tuesday", etc.
   colIdx: number; // Column index in the CAMPUS_SLOT_TIMINGS
   isLab: boolean; // Whether this is a lab slot
@@ -142,7 +142,7 @@ interface SlotOccurrence {
  * For a course, find all slot occurrences (which day + column + lab/theory).
  * A course with slot "A1+TA1" means it appears in multiple day/column combos.
  */
-const getCourseSlotOccurrences = (
+export const getCourseSlotOccurrences = (
   course: TimetableCourse,
 ): SlotOccurrence[] => {
   const occurrences: SlotOccurrence[] = [];

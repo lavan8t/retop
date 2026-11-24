@@ -1,4 +1,5 @@
 import React from 'react';
+import { M3eSwitch } from './attendance/m3eTags';
 
 export const MaterialSwitch = ({
   selected = false,
@@ -13,44 +14,32 @@ export const MaterialSwitch = ({
   label?: string;
 }) => {
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={selected}
-      aria-label={label || 'Switch'}
+    <M3eSwitch
+      checked={selected}
       disabled={disabled}
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (!disabled && onChange) onChange(!selected);
-      }}
+      aria-label={label || 'Switch'}
+      onChange={(e: any) => onChange?.(e.target.checked)}
+      onClick={(e: React.MouseEvent) => e.stopPropagation()}
       className={`inline-flex min-w-12 min-h-12 items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) focus-visible:ring-offset-2 focus-visible:ring-offset-(--bg-surface) select-none ${
         disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
       }`}
-    >
-      <span
-        style={{
-          borderWidth: '2px',
-          borderStyle: 'solid',
-          borderColor: selected ? 'var(--accent-base)' : 'var(--border-dim)',
-          backgroundColor: selected
-            ? 'var(--accent-base)'
-            : 'var(--bg-surface)',
-        }}
-        className="relative inline-flex items-center w-[46px] h-[26px] shrink-0 rounded-full transition-colors duration-150 ease-out"
-      >
-        <span
-          style={{
-            transform: selected ? 'translateX(21px)' : 'translateX(3px)',
-            backgroundColor: selected
-              ? 'var(--text-inverse, #ffffff)'
-              : 'var(--text-muted, #94a3b8)',
-          }}
-          className={`pointer-events-none inline-block ${
-            selected ? 'w-[18px] h-[18px]' : 'w-[14px] h-[14px]'
-          } rounded-full transition-all duration-150 ease-out shadow-xs`}
-        />
-      </span>
-    </button>
+      style={
+        {
+          '--m3e-switch-track-width': '46px',
+          '--m3e-switch-track-height': '26px',
+          '--m3e-switch-track-outline-width': '2px',
+          '--m3e-switch-track-outline-color': 'var(--border-dim)',
+          '--m3e-switch-selected-track-color': 'var(--accent-base)',
+          '--m3e-switch-selected-handle-color': 'var(--text-inverse, #ffffff)',
+          '--m3e-switch-selected-handle-width': '18px',
+          '--m3e-switch-selected-handle-height': '18px',
+          '--m3e-switch-unselected-track-color': 'var(--bg-surface)',
+          '--m3e-switch-unselected-handle-color': 'var(--text-muted, #94a3b8)',
+          '--m3e-switch-unselected-handle-width': '14px',
+          '--m3e-switch-unselected-handle-height': '14px',
+          '--m3e-switch-state-layer-size': '48px',
+        } as React.CSSProperties
+      }
+    />
   );
 };

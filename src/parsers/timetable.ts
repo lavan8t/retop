@@ -96,7 +96,7 @@ export function parseTimetable(html: string): Versioned<TimetableCourse[]> {
       }
     }
 
-    // Col 3: Credits
+    // Col 3: L T P J C — the last number is the credit value.
     const rawCredits = getText(3);
     const credits = rawCredits.split(' ').pop() || '0';
 
@@ -140,6 +140,7 @@ export function parseTimetable(html: string): Versioned<TimetableCourse[]> {
       title,
       type,
       credits,
+      ltpjc: rawCredits,
       category,
       slot,
       venue,

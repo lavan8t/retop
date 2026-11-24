@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { VTOPNetwork } from '../utils/network';
 import { parseMarksSemesters, parseStudentMarks } from '../parsers/marks';
 import { CourseMarks } from '../types/vtop';
+import { groupMarksByCourse } from '../utils/marksSummary';
 import { QueryStats } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 import { EmptyState } from '../components/EmptyState';
 import { MarksCourseCard } from '../components/marks/MarksCourseCard';
@@ -33,7 +34,6 @@ export const MarksPage: React.FC<MarksPageProps> = ({
   const [marksData, setMarksData] = useState<CourseMarks[]>([]);
   const [fetchingMarks, setFetchingMarks] = useState(false);
   const [offlineMiss, setOfflineMiss] = useState(false);
-  const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -156,35 +156,16 @@ export const MarksPage: React.FC<MarksPageProps> = ({
     void ensureM3eComponents();
   }, []);
 
-  const filteredMarks = useMemo(() => {
-    let result = marksData;
-    if (searchQuery) {
-      result = marksData.filter(
-        (c) =>
-          c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          c.code.toLowerCase().includes(searchQuery.toLowerCase()),
-      );
-    }
-
-    return [...result].sort((a, b) => {
-      const getBase = (code: string) => {
-        const lastChar = code.slice(-1);
-        if (lastChar === 'L' || lastChar === 'P') return code.slice(0, -1);
-        return code;
-      };
-      const baseA = getBase(a.code);
-      const baseB = getBase(b.code);
-
-      if (baseA < baseB) return -1;
-      if (baseA > baseB) return 1;
-
-      const lastA = a.code.slice(-1);
-      const lastB = b.code.slice(-1);
-      if (lastA === 'L' && lastB === 'P') return -1;
-      if (lastA === 'P' && lastB === 'L') return 1;
-
-      return 0;
-    });
+  const groupedMarks = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    const filtered = query
+      ? marksData.filter(
+          (course) =>
+            course.title.toLowerCase().includes(query) ||
+            course.code.toLowerCase().includes(query),
+        )
+      : marksData;
+    return groupMarksByCourse(filtered);
   }, [marksData, searchQuery]);
 
   if (offlineMiss) {
@@ -196,48 +177,71 @@ export const MarksPage: React.FC<MarksPageProps> = ({
   }
 
   const isLoading = (loading || fetchingMarks) && marksData.length === 0;
-  const courseKey = (course: CourseMarks, idx: number) =>
-    `${course.code}-${course.type}-${idx}`;
 
   return (
     <div className="h-full flex flex-col bg-transparent text-(--text-main) overflow-hidden">
       <div className="flex-1 overflow-y-auto custom-scrollbar px-5 pt-3 pb-32 md:pb-12">
-        <div className="mx-auto w-full max-w-3xl pt-2">
+        <div className="mx-auto w-full max-w-7xl pt-2">
           {isLoading ? (
             <div
-              className="flex flex-col gap-0.5 animate-pulse"
+              className="grid gap-3 animate-pulse"
+              style={{
+                gridTemplateColumns:
+                  'repeat(auto-fit, minmax(min(100%, 34rem), 1fr))',
+              }}
               role="status"
               aria-busy="true"
               aria-label="Loading marks"
             >
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-20 rounded-lg bg-(--bg-highlight)" />
+                <div key={i} className="h-28 rounded-2xl bg-(--bg-highlight)" />
               ))}
             </div>
-          ) : filteredMarks.length === 0 ? (
+          ) : groupedMarks.length === 0 ? (
             <EmptyState
               msg="No marks found"
               subMsg="Marks for the selected semester are not available yet."
               icon={QueryStats}
             />
           ) : (
-            <div className="flex flex-col gap-0.5">
-              {filteredMarks.map((course, idx) => {
-                const key = courseKey(course, idx);
-                return (
-                  <MarksCourseCard
-                    key={key}
-                    course={course}
-                    isModernView={isModernView}
-                    expanded={expandedKey === key}
-                    onToggle={() =>
-                      setExpandedKey((prev) => (prev === key ? null : key))
-                    }
-                    index={idx}
-                    total={filteredMarks.length}
-                  />
-                );
-              })}
+            <div
+              className="grid items-start gap-3"
+              style={{
+                gridTemplateColumns:
+                  'repeat(auto-fit, minmax(min(100%, 34rem), 1fr))',
+              }}
+            >
+              {groupedMarks.map((group) => (
+                <section
+                  key={group.code}
+                  aria-labelledby={`marks-group-${group.code}`}
+                  className="min-w-0 rounded-2xl bg-(--bg-highlight)/45 p-2"
+                >
+                  <div className="mb-1.5 flex items-baseline gap-2 px-1">
+                    <span
+                      id={`marks-group-${group.code}`}
+                      className="text-xs font-semibold tracking-wide text-(--text-main)"
+                    >
+                      {group.code}
+                    </span>
+                    <span className="text-[10px] font-medium text-(--text-muted)">
+                      {group.courses
+                        .map((course) => course.type || course.code.slice(-1))
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 gap-0.5 sm:grid-cols-2">
+                    {group.courses.map((course) => (
+                      <MarksCourseCard
+                        key={`${course.code}-${course.type}`}
+                        course={course}
+                        isModernView={isModernView}
+                      />
+                    ))}
+                  </div>
+                </section>
+              ))}
             </div>
           )}
         </div>

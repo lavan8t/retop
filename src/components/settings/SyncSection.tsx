@@ -18,9 +18,11 @@ interface SyncSectionProps {
     }>
   >;
   handleExportICal: () => void;
-  googleCalendarName: string;
+  googleConnected: boolean;
+  googleAccount: string;
   googleStatus: string;
   googleBusy: boolean;
+  handleGoogleConnect: () => void;
   handleGoogleSync: () => void;
 }
 
@@ -36,9 +38,11 @@ export const SyncSection: React.FC<SyncSectionProps> = ({
   icalOptions,
   setIcalOptions,
   handleExportICal,
-  googleCalendarName,
+  googleConnected,
+  googleAccount,
   googleStatus,
   googleBusy,
+  handleGoogleConnect,
   handleGoogleSync,
 }) => {
   return (
@@ -125,16 +129,18 @@ export const SyncSection: React.FC<SyncSectionProps> = ({
       </SettingTopicCard>
 
       <SettingTopicCard
-        title="Google Calendar"
-        description="Push your schedule into a dedicated Google Calendar that keeps itself up to date on every device. Uses the same data selection as the iCal export above."
+        title="Google Calendar Sync"
+        description="Sync your VTOP classes and exams to your Google Calendar with a personal Google Account."
       >
         <div className="flex flex-col gap-4 w-full">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-semibold uppercase font-expanded text-(--text-muted) tracking-wider">
-              Calendar
+              Google Account
             </span>
             <span className="font-mono text-xs text-(--text-main) bg-(--bg-highlight) px-2.5 py-1 rounded-lg">
-              {googleCalendarName}
+              {googleConnected
+                ? googleAccount || 'Connected'
+                : 'Connect Google Account to begin'}
             </span>
           </div>
 
@@ -146,11 +152,15 @@ export const SyncSection: React.FC<SyncSectionProps> = ({
 
           <div className="flex justify-end pt-3 border-t border-(--border-dim)">
             <button
-              onClick={handleGoogleSync}
+              onClick={googleConnected ? handleGoogleSync : handleGoogleConnect}
               disabled={googleBusy}
               className="min-h-12 px-6 rounded-full text-sm font-semibold bg-(--accent-base) text-(--text-inverse) outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) transition-colors border-0 cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {googleBusy ? 'Syncing…' : 'Sync to Google Calendar'}
+              {googleBusy
+                ? 'Working…'
+                : googleConnected
+                  ? 'Sync to Google Calendar'
+                  : 'Connect Google Account'}
             </button>
           </div>
         </div>

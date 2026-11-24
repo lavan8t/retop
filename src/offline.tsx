@@ -26,6 +26,7 @@ import {
 } from './utils/pinSecurity';
 import { importBackupFromText } from './utils/backupImport';
 import { REG_NO_PATTERN } from './utils/loginValidation';
+import './m3e-direct';
 import { AsciiPanel } from './components/asciiArt';
 import { applyTheme, DEFAULT_SETTINGS } from './utils/settings-store';
 import { VitLogo } from './components/VitLogo';

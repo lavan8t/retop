@@ -484,10 +484,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         <AssignmentRow
                           key={idx}
                           assignment={assignment}
-                          onClick={(e, selected) => {
-                            e.stopPropagation();
-                            openAssignmentInDA(selected, onNavigate);
-                          }}
+                          onClick={(assignment) =>
+                            openAssignmentInDA(assignment, onNavigate)
+                          }
                           className="rounded-sm first:rounded-t-2xl last:rounded-b-2xl"
                         />
                       ))}

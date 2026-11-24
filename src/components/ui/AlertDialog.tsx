@@ -124,7 +124,8 @@ export const AlertDialogManager: React.FC = () => {
           '--m3e-dialog-shape': '28px',
           '--m3e-dialog-max-width': '384px',
           '--m3e-dialog-header-color': 'var(--md-sys-color-on-surface)',
-          '--m3e-dialog-content-color': 'var(--md-sys-color-on-surface-variant)',
+          '--m3e-dialog-content-color':
+            'var(--md-sys-color-on-surface-variant)',
         } as React.CSSProperties
       }
     >

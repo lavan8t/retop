@@ -359,12 +359,10 @@ export const LazyCalendarDay = React.memo(
                         ) : evt.type === 'assignment' ? (
                           <AssignmentRow
                             assignment={evt.data as Assignment}
-                            onClick={(e, selected) => {
-                              e.stopPropagation();
-                              if (onNavigate) {
-                                openAssignmentInDA(selected, onNavigate);
-                              }
-                            }}
+                            onClick={(assignment) =>
+                              onNavigate &&
+                              openAssignmentInDA(assignment, onNavigate)
+                            }
                             progress={evt.progress}
                             className={radiusClass}
                           />

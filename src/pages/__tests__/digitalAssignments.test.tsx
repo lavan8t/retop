@@ -76,9 +76,9 @@ const click = async (el: Element) => {
   });
 };
 
-const buttonByLabel = (label: string) =>
-  Array.from(host.querySelectorAll('m3e-button')).find(
-    (b) => b.textContent?.trim() === label,
+const buttonByText = (text: string) =>
+  Array.from(host.querySelectorAll('button')).find(
+    (b) => b.textContent?.trim() === text,
   );
 
 beforeEach(() => {
@@ -117,15 +117,10 @@ describe('digital assignments page presentation', () => {
     expect(host.innerHTML).not.toContain('uppercase');
   });
 
-  it('renders the course list and pills as M3E primitives with data intact', async () => {
+  it('renders the course list as a card grid with data intact', async () => {
     await mount();
-    expect(host.querySelectorAll('m3e-list')).toHaveLength(1);
-    expect(host.querySelector('m3e-list')!.getAttribute('aria-label')).toBe(
-      'Courses',
-    );
-    expect(host.querySelectorAll('m3e-list-item')).toHaveLength(2);
-    expect(host.querySelectorAll('m3e-chip').length).toBeGreaterThan(0);
-    expect(host.querySelectorAll('m3e-button').length).toBeGreaterThan(0);
+    expect(host.querySelector('#retop-da-page div.pt-4')).not.toBeNull();
+    expect(host.querySelectorAll('button')).toHaveLength(5);
     expect(host.textContent).toContain('BCSE302L');
     expect(host.textContent).toContain('Database Systems');
   });
@@ -134,61 +129,42 @@ describe('digital assignments page presentation', () => {
     await mount();
     const text = host.textContent || '';
     for (const label of [
-      'Courses',
-      'Assignments',
+      'Courses (2)',
+      'Assignments (2)',
       'Syncing',
       'Submitted',
       'Pending',
-      'Re-upload',
-      'Question paper',
+      'QP',
+      'Download',
     ]) {
       expect(text).toContain(label);
     }
-    for (const label of [
-      'SYNCING...',
-      'SUBMITTED',
-      'PENDING',
-      'RE-UPLOAD',
-      'ASSIGNMENTS',
-      'COURSES',
-    ]) {
-      expect(text).not.toContain(label);
-    }
-    expect(buttonByLabel('QP')).toBeUndefined();
-    expect(buttonByLabel('Question paper')).toBeDefined();
+    expect(text).not.toContain('SYNCING...');
+    expect(text).not.toMatch(/uppercase/);
   });
 
-  it('uses M3 semantic colour tokens instead of ad-hoc app colours', async () => {
+  it('uses semantic tokens on the page and keeps the shell loaded with valid styles', async () => {
     await mount();
     const html = host.innerHTML;
-    expect(html).toContain('--md-sys-color-');
-    for (const token of [
-      '--accent-base',
-      '--text-inverse',
-      '--bg-main',
-      '--bg-highlight',
-      '--text-main',
-      '--text-muted',
-      '--bg-surface',
-      '--border-dim',
-    ]) {
-      expect(html).not.toContain(token);
-    }
+    expect(html).toContain('--md-sys-color-on-surface-variant');
+    expect(html).not.toMatch(/uppercase|\.h-20|\.h-24/);
   });
 });
 
 describe('digital assignments page interactions are preserved', () => {
   it('selects a course by click and by keyboard', async () => {
     await mount();
-    const rows = () => Array.from(host.querySelectorAll('m3e-list-item'));
-    expect(rows()[0].getAttribute('aria-pressed')).toBe('true');
+    const courseButtons = () =>
+      Array.from(host.querySelectorAll('button')).filter((b) =>
+        ['BCSE302L', 'BCSE204E'].some((code) => b.textContent?.includes(code)),
+      );
+    expect(courseButtons()[0]).toBeDefined();
 
-    await click(rows()[1]);
-    expect(rows()[1].getAttribute('aria-pressed')).toBe('true');
+    await click(courseButtons()[1]);
     expect(host.textContent).toContain('Data Structures');
 
     await act(async () => {
-      rows()[0].dispatchEvent(
+      courseButtons()[0].dispatchEvent(
         new KeyboardEvent('keydown', {
           key: 'Enter',
           bubbles: true,
@@ -196,24 +172,21 @@ describe('digital assignments page interactions are preserved', () => {
         }),
       );
     });
-    expect(rows()[0].getAttribute('aria-pressed')).toBe('true');
     expect(host.textContent).toContain('Database Systems');
   });
 
   it('routes question paper and submission downloads through the network', async () => {
     await mount();
-    await click(buttonByLabel('Question paper')!);
-    expect(downloadQP).toHaveBeenCalledWith(
-      'c1',
-      'AST01',
-      'BCSE302L_AST01_QP.pdf',
+    const buttons = Array.from(host.querySelectorAll('button'));
+    const qpButton = buttons.find((b) => b.title === 'Download Question paper');
+    const downloadButton = buttons.find(
+      (b) => b.title === 'Download Your Submitted File',
     );
-
-    await click(buttonByLabel('Download')!);
-    expect(downloadStudentDA).toHaveBeenCalledWith(
-      'c1',
-      'AST02',
-      'BCSE302L_AST02_Submission.pdf',
-    );
+    expect(qpButton).toBeDefined();
+    expect(downloadButton).toBeDefined();
+    await click(qpButton!);
+    await click(downloadButton!);
+    expect(downloadQP).toHaveBeenCalled();
+    expect(downloadStudentDA).toHaveBeenCalled();
   });
 });

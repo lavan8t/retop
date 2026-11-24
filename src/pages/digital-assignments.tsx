@@ -238,13 +238,18 @@ export default function DigitalAssignments({
       const courses = useDataStore.getState().daCourses;
       await Promise.all(
         courses.map((course) =>
-          useDataStore.getState().fetchDAAssignments(network, course.classId, true),
+          useDataStore
+            .getState()
+            .fetchDAAssignments(network, course.classId, true),
         ),
       );
     };
     window.addEventListener('retop-refresh-digital-assignments', handleRefresh);
     return () =>
-      window.removeEventListener('retop-refresh-digital-assignments', handleRefresh);
+      window.removeEventListener(
+        'retop-refresh-digital-assignments',
+        handleRefresh,
+      );
   }, [network]);
 
   // Keep the selected course inside the current list. This also handles a
@@ -338,7 +343,7 @@ export default function DigitalAssignments({
   // Courses shown in the left sidebar (filter removed).
   const filteredCourses = daCourses || [];
 
-  // Handle Question Paper Download
+  // Handle Question paper Download
   const handleDownloadQP = async (e: React.MouseEvent, assgn: DAAssignment) => {
     e.stopPropagation();
     if (!activeCourse || !assgn.code) return;
@@ -569,9 +574,6 @@ export default function DigitalAssignments({
       id="retop-da-page"
       className="h-full w-full bg-(--bg-main) text-(--text-main) overflow-y-auto custom-scrollbar relative z-0"
     >
-      {/* Clearance for floating TopBar */}
-      <div className="w-full h-20 md:h-24 shrink-0" />
-
       {daError && (
         <div className="mx-4 sm:mx-6 md:mx-8 mb-4 flex items-center justify-between gap-3 rounded-2xl border border-(--att-danger)/40 bg-(--att-danger-container) px-4 py-3 text-xs font-bold text-(--att-danger)">
           <span className="min-w-0 truncate">{daError}</span>
@@ -594,19 +596,19 @@ export default function DigitalAssignments({
       )}
 
       {/* Main Container: Leftward aligned */}
-      <div className="px-4 sm:px-6 md:px-8 pb-16 w-full max-w-7xl mx-auto flex flex-col md:flex-row gap-6 items-start">
+      <div className="px-4 sm:px-6 md:px-8 pt-4 pb-16 w-full max-w-7xl mx-auto flex flex-col md:flex-row gap-6 items-start">
         {/* ================= LEFT COLUMN: COMPACT COURSE LIST ================= */}
         <div className="w-full md:w-80 lg:w-96 shrink-0 flex flex-col gap-3">
           {/* Header & Course Count */}
           <div className="flex items-center justify-between px-1">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-mono font-black uppercase tracking-wider text-(--text-muted)">
+              <span className="text-xs font-semibold text-(--md-sys-color-on-surface-variant)">
                 Courses ({daCourses.length})
               </span>
             </div>
             {daLoading && (
-              <span className="text-[10px] font-mono font-bold text-(--accent-base) animate-pulse">
-                SYNCING...
+              <span className="text-[10px] font-semibold text-(--md-sys-color-primary) animate-pulse">
+                Syncing
               </span>
             )}
           </div>
@@ -648,7 +650,7 @@ export default function DigitalAssignments({
                           {course.code}
                         </span>
                         <span
-                          className="px-2 py-0.5 rounded-full font-mono font-black text-[10px] uppercase"
+                          className="px-2 py-0.5 rounded-full font-mono text-[10px] font-medium"
                           style={getMaterialChipStyle('blue', isDark)}
                         >
                           {course.type}
@@ -656,7 +658,7 @@ export default function DigitalAssignments({
                       </div>
                       {pendingCount > 0 && (
                         <span
-                          className="px-2 py-0.5 rounded-full font-mono text-[10px] font-black uppercase shrink-0"
+                          className="px-2 py-0.5 rounded-full font-mono text-[10px] font-medium shrink-0"
                           style={getMaterialChipStyle('amber', isDark)}
                         >
                           {pendingCount} Pending
@@ -698,7 +700,7 @@ export default function DigitalAssignments({
                     {activeCourse.code}
                   </span>
                   <span
-                    className="px-2.5 py-0.5 rounded-full text-xs font-mono font-black uppercase"
+                    className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
                     style={getMaterialChipStyle('blue', isDark)}
                   >
                     {activeCourse.type}
@@ -744,7 +746,7 @@ export default function DigitalAssignments({
                   {/* Attached File Card */}
                   <div className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-(--bg-main) border border-(--border-dim)/40">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="px-2.5 py-1 rounded-lg bg-(--accent-base) text-(--text-inverse) font-mono font-black text-xs uppercase">
+                      <div className="px-2.5 py-1 rounded-lg bg-(--accent-base) text-(--text-inverse) font-mono text-xs font-semibold">
                         {getFileExtension(selectedFile.name)}
                       </div>
                       <div className="flex flex-col min-w-0">
@@ -853,7 +855,7 @@ export default function DigitalAssignments({
                       <button
                         onClick={handleExecuteUpload}
                         disabled={isUploading}
-                        className="px-6 py-2 rounded-full text-xs font-black uppercase bg-(--accent-base) text-(--text-inverse) hover:opacity-90 transition-opacity cursor-pointer border-0 flex items-center gap-2"
+                        className="px-6 py-2 rounded-full text-xs font-semibold bg-(--accent-base) text-(--text-inverse) hover:opacity-90 transition-opacity cursor-pointer border-0 flex items-center gap-2"
                       >
                         <Upload className="w-4 h-4" />
                         {isUploading ? 'Uploading...' : 'Submit File'}
@@ -865,7 +867,7 @@ export default function DigitalAssignments({
 
               {/* Assignments List */}
               <div className="flex flex-col gap-3">
-                <span className="text-xs font-mono font-black uppercase tracking-wider text-(--text-muted) px-1">
+                <span className="text-xs font-semibold tracking-wider text-(--text-muted) px-1">
                   Assignments ({currentAssignments.length})
                 </span>
 
@@ -903,7 +905,7 @@ export default function DigitalAssignments({
                               {assgn.title}
                             </h3>
                             <span
-                              className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-black uppercase shrink-0"
+                              className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold shrink-0"
                               style={getMaterialChipStyle(
                                 isSubmitted
                                   ? 'emerald'
@@ -960,12 +962,12 @@ export default function DigitalAssignments({
 
                           {/* Action Pill Buttons */}
                           <div className="flex items-center gap-2 flex-wrap">
-                            {/* Question Paper Download */}
+                            {/* Question paper Download */}
                             {assgn.hasQP && assgn.code && (
                               <button
                                 onClick={(e) => handleDownloadQP(e, assgn)}
                                 disabled={downloadingQP === assgn.code}
-                                title="Download Question Paper"
+                                title="Download Question paper"
                                 className="px-3.5 py-1.5 rounded-full flex items-center gap-1.5 bg-(--bg-main) hover:bg-(--bg-highlight) text-xs font-bold text-(--text-main) transition-colors cursor-pointer border border-(--border-dim)/50"
                               >
                                 <Description className="w-3.5 h-3.5 text-(--accent-base)" />
@@ -998,13 +1000,13 @@ export default function DigitalAssignments({
                             {assgn.canUpload ? (
                               <button
                                 onClick={() => handleOpenUploadForAssgn(assgn)}
-                                className="px-4 py-1.5 rounded-full flex items-center gap-1.5 bg-(--accent-base) text-(--text-inverse) hover:opacity-90 transition-opacity text-xs font-mono font-bold uppercase cursor-pointer border-0 shadow-xs"
+                                className="px-4 py-1.5 rounded-full flex items-center gap-1.5 bg-(--accent-base) text-(--text-inverse) hover:opacity-90 transition-opacity text-xs font-semibold cursor-pointer border-0 shadow-xs"
                               >
                                 <Upload className="w-3.5 h-3.5" />
                                 {isSubmitted ? 'Re-upload' : 'Upload'}
                               </button>
                             ) : !isSubmitted ? (
-                              <span className="px-3.5 py-1.5 rounded-full text-xs font-mono font-bold uppercase text-(--text-muted) bg-(--bg-main) border border-(--border-dim)/40">
+                              <span className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-(--text-muted) bg-(--bg-main) border border-(--border-dim)/40">
                                 {isOverdue ? 'Closed' : 'Not open'}
                               </span>
                             ) : null}

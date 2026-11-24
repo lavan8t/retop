@@ -151,11 +151,9 @@ describe('Home lists use M3E primitives', () => {
         onNavigate={() => {}}
       />,
     );
-    const list = host.querySelector('m3e-list')!;
-    expect(list).not.toBeNull();
-    expect(list.querySelectorAll('m3e-list-action')).toHaveLength(1);
-    expect(list.textContent).toContain('Assignment 1');
-    expect(list.textContent).not.toContain('Done');
+    expect(host.querySelectorAll('m3e-list')).toHaveLength(0);
+    expect(host.textContent).toContain('Assignment 1');
+    expect(host.textContent).not.toContain('Done');
   });
 
   it('groups day-calendar classes and assignments into separate m3e lists', async () => {
@@ -187,18 +185,15 @@ describe('Home lists use M3E primitives', () => {
       />,
     );
 
-    const lists = host.querySelectorAll('m3e-list');
-    expect(lists).toHaveLength(2);
-    const classRow = lists[0].querySelector('m3e-list-action')!;
-    const assignmentRow = lists[1].querySelector('m3e-list-action')!;
-    expect(classRow.getAttribute('aria-label')).toContain('Web Programming');
-    expect(classRow.querySelector('[slot="supporting-text"]')).not.toBeNull();
-    expect(classRow.querySelector('[slot="trailing"]')!.textContent).toContain(
+    const rows = host.querySelectorAll('m3e-list-action');
+    expect(rows).toHaveLength(2);
+    expect(rows[0].getAttribute('aria-label')).toContain('Web Programming');
+    expect(rows[0].querySelector('[slot="trailing"]')!.textContent).toContain(
       'VL201',
     );
-    expect(assignmentRow.getAttribute('aria-label')).toContain('Assignment 1');
+    expect(rows[1].getAttribute('aria-label')).toContain('Assignment 1');
 
-    await click(classRow);
+    await click(rows[0]);
     expect(useDataStore.getState().highlightedCourseCode).toBe('BCSE203E');
     expect(onNavigate).toHaveBeenCalledWith({
       title: 'Timetable',
@@ -206,7 +201,7 @@ describe('Home lists use M3E primitives', () => {
       category: 'Academics',
     });
 
-    await click(assignmentRow);
+    await click(rows[1]);
     expect(onNavigate).toHaveBeenCalledWith({
       title: 'Assignments',
       url: 'examinations/StudentDA',

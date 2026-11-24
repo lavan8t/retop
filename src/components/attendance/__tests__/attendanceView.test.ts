@@ -7,6 +7,7 @@ import {
   groupRecordsByMonth,
   historyStatusLabel,
   HISTORY_STATUS_TEXT_CLASS,
+  HISTORY_STATUS_FILL_CLASS,
   isLabCourse,
   leaveImpact,
   overallAttendancePercentage,
@@ -80,6 +81,12 @@ describe('semantic palette roles', () => {
     );
     expect(HISTORY_STATUS_TEXT_CLASS.other).toBe(
       'text-(--md-sys-color-tertiary)',
+    );
+    expect(HISTORY_STATUS_FILL_CLASS.present).toBe(
+      'bg-(--md-sys-color-success) text-(--md-sys-color-on-success)',
+    );
+    expect(HISTORY_STATUS_FILL_CLASS.absent).toBe(
+      'bg-(--md-sys-color-error) text-(--md-sys-color-on-error)',
     );
   });
 

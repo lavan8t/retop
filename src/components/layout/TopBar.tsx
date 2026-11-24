@@ -3,10 +3,10 @@ import {
   GridView,
   List,
   CalendarMonth,
-  Refresh,
   MoreVert,
 } from '@nine-thirty-five/material-symbols-react/rounded/700/filled';
 import { QuickLink } from '../../types/vtop';
+import { M3eIcon } from '../attendance/m3eTags';
 import { MaterialSwitch } from '../MaterialSwitch';
 import { SemesterDropdown, ClassGroupDropdown } from '../ui/Dropdown';
 import { getPageTitle } from './appShell';
@@ -14,6 +14,7 @@ import { SegmentedControl } from '../ui/SegmentedControl';
 import { useDataStore } from '../../store/dataStore';
 import { useAppStore } from '../../store/appStore';
 import { isTypingEvent } from '../../utils/keyboard';
+import { formatSyncAge } from '../../utils/formatting';
 
 interface TopBarProps {
   currentView: string;
@@ -49,6 +50,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   React.useEffect(() => {
     setIsMobileControlsOpen(false);
   }, [currentView]);
+
   const {
     ttViewMode,
     setTtViewMode,
@@ -98,9 +100,7 @@ export const TopBar: React.FC<TopBarProps> = ({
     daSelectedSem,
     setDaSelectedSem,
     fetchDACourses,
-    fetchDASemesters,
-    daLoading,
-    daCourses,
+    pageSyncTimes,
     isSyncing,
     examSemesters,
     examSelectedSem,
@@ -108,6 +108,14 @@ export const TopBar: React.FC<TopBarProps> = ({
     fetchExamSchedule,
     user,
   } = useDataStore();
+
+  const [syncLabel, setSyncLabel] = React.useState(() =>
+    formatSyncAge(pageSyncTimes[currentView]),
+  );
+
+  React.useEffect(() => {
+    setSyncLabel(formatSyncAge(pageSyncTimes[currentView]));
+  }, [currentView, pageSyncTimes]);
 
   const profileImg = user?.profileImgBase64;
   const profileInitials =
@@ -170,16 +178,23 @@ export const TopBar: React.FC<TopBarProps> = ({
       <div className="flex items-center gap-2 md:gap-4 shrink-0">
         {/* Global controls pinned top-right */}
         <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            aria-label={isSyncing ? 'Syncing' : 'Sync now'}
+          <m3e-icon-button
+            id="topbar-reload"
+            aria-label="Reload current page"
             aria-busy={isSyncing}
             disabled={isSyncing}
             onClick={onSync}
-            className="min-h-11 min-w-11 flex items-center justify-center rounded-xl text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-highlight) focus-visible:ring-2 focus-visible:ring-(--accent-base) outline-none cursor-pointer disabled:opacity-60"
+            onMouseEnter={() =>
+              setSyncLabel(
+                formatSyncAge(
+                  useDataStore.getState().pageSyncTimes[currentView],
+                ),
+              )
+            }
           >
-            <Refresh className="w-5 h-5" aria-hidden="true" />
-          </button>
+            <M3eIcon name="refresh" variant="rounded" />
+          </m3e-icon-button>
+          <m3e-tooltip for="topbar-reload">{syncLabel}</m3e-tooltip>
           <button
             type="button"
             aria-label="Toggle profile menu"
@@ -387,28 +402,6 @@ export const TopBar: React.FC<TopBarProps> = ({
                   }
                 }}
               />
-              <button
-                type="button"
-                aria-label="Refresh digital assignments"
-                aria-busy={daLoading}
-                onClick={() => {
-                  if (daSelectedSem) {
-                    if (network) {
-                      fetchDACourses(network, daSelectedSem, true);
-                    }
-                  } else {
-                    if (network) {
-                      fetchDASemesters(network, true);
-                    }
-                  }
-                }}
-                disabled={daLoading}
-                className="min-w-12 min-h-12 flex items-center justify-center bg-(--md-sys-color-surface-variant) border-2 border-(--md-sys-color-outline) hover:border-(--md-sys-color-on-surface) rounded-xl shadow-none outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) transition-all disabled:opacity-50 text-(--md-sys-color-on-surface-variant)"
-              >
-                <Refresh
-                  className={`w-4 h-4 md:w-5 md:h-5 ${daLoading && !daCourses?.length ? 'animate-spin' : ''}`}
-                />
-              </button>
             </div>
           )}
 
@@ -649,35 +642,15 @@ export const TopBar: React.FC<TopBarProps> = ({
                     )}
 
                     {currentView === 'digitalAssignments' && (
-                      <div className="flex flex-col gap-3">
-                        <SemesterDropdown
-                          semesters={daSemesters}
-                          selectedId={daSelectedSem}
-                          onChange={(id: string) => {
-                            setDaSelectedSem(id);
-                            if (network) fetchDACourses(network, id);
-                            setIsMobileControlsOpen(false);
-                          }}
-                        />
-                        <button
-                          type="button"
-                          aria-label="Refresh digital assignments"
-                          aria-busy={daLoading}
-                          onClick={() => {
-                            if (daSelectedSem && network)
-                              fetchDACourses(network, daSelectedSem, true);
-                            else if (network) fetchDASemesters(network, true);
-                            setIsMobileControlsOpen(false);
-                          }}
-                          disabled={daLoading}
-                          className="min-h-12 flex items-center justify-center gap-2 py-2.5 px-4 bg-(--bg-highlight) rounded-xl text-xs font-bold text-(--text-main) border border-(--border-dim) outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) cursor-pointer"
-                        >
-                          <Refresh
-                            className={`w-4 h-4 ${daLoading ? 'animate-spin' : ''}`}
-                          />
-                          <span>Refresh</span>
-                        </button>
-                      </div>
+                      <SemesterDropdown
+                        semesters={daSemesters}
+                        selectedId={daSelectedSem}
+                        onChange={(id: string) => {
+                          setDaSelectedSem(id);
+                          if (network) fetchDACourses(network, id);
+                          setIsMobileControlsOpen(false);
+                        }}
+                      />
                     )}
 
                     {currentView === 'examSchedule' && (

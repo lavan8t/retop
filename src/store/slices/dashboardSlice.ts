@@ -46,6 +46,9 @@ export interface DashboardSlice {
   events: Event[];
   upcoming: UpcomingClass[];
   lastSyncTime: number;
+  /** Last successful reload per view, for the shell reload tooltip. */
+  pageSyncTimes: Record<string, number>;
+  markPageSynced: (view: string, at?: number) => void;
   isSyncing: boolean;
   fetchDashboardData: (
     network: VTOPNetwork,
@@ -106,6 +109,11 @@ export const createDashboardSlice: StateCreator<
   events: [],
   upcoming: [],
   lastSyncTime: 0,
+  pageSyncTimes: {},
+  markPageSynced: (view, at = Date.now()) =>
+    set((state) => ({
+      pageSyncTimes: { ...state.pageSyncTimes, [view]: at },
+    })),
   isSyncing: false,
 
   fetchDashboardData: async (network, csrf, authId) => {

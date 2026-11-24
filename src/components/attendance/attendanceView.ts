@@ -145,6 +145,13 @@ export const HISTORY_STATUS_TEXT_CLASS: Record<RecordStatus, string> = {
   other: 'text-(--md-sys-color-tertiary)',
 };
 
+/** Filled date tiles use the same semantic colour as the status label. */
+export const HISTORY_STATUS_FILL_CLASS: Record<RecordStatus, string> = {
+  present: 'bg-(--md-sys-color-success) text-(--md-sys-color-on-success)',
+  absent: 'bg-(--md-sys-color-error) text-(--md-sys-color-on-error)',
+  other: 'bg-(--md-sys-color-tertiary) text-(--md-sys-color-on-tertiary)',
+};
+
 /** Forecast tones mapped to the same M3 palette roles. */
 export const TONE_TEXT_CLASS: Record<AttendanceTone, string> = {
   na: 'text-(--md-sys-color-on-surface-variant)',

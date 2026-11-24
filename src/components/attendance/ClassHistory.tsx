@@ -12,8 +12,10 @@ import type { AttendanceRecord } from '../../types/vtop';
 import {
   groupRecordsByMonth,
   historyStatusLabel,
+  parseRecordDate,
   recordStatus,
   HISTORY_STATUS_TEXT_CLASS,
+  HISTORY_STATUS_FILL_CLASS,
   type HistoryEntry,
 } from './attendanceView';
 import { M3eIconAction } from './M3eIconAction';
@@ -53,30 +55,41 @@ const TILE_STYLES: Record<TileCategory, CSSProperties> = {
 export const tileStyleFor = (status: string): CSSProperties =>
   TILE_STYLES[tileCategoryFor(status)];
 
-const slotInfo = (record: AttendanceRecord): string =>
-  record.dayTime
-    .replace(/\s*(?:-|to)\s*(?:(?!-|to).)*$/i, '')
-    .replace(/\//g, ' · ');
+const FULL_DAYS = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+];
 
-/** Android attendance date tile: day + short month, no duplicate status. */
+/** Android class-history row: full weekday, comma, then the full time. */
+const slotInfo = (record: AttendanceRecord): string => {
+  const parsed = parseRecordDate(record.date);
+  const weekday = parsed
+    ? FULL_DAYS[parsed.getDay()]
+    : record.dayTime.match(/[A-Za-z]+/)?.[0] || '';
+  const parts = record.dayTime.split(/\s*(?:\/|•|-|–|to)\s*/i);
+  const time = (
+    parts.length > 1 ? parts[parts.length - 1] : record.dayTime
+  ).trim();
+  return [weekday, time].filter(Boolean).join(', ');
+};
+
+/** Filled rounded-square tile: date only, tinted like its status label. */
 const DateTile = ({ entry, slot }: { entry: HistoryEntry; slot?: string }) => {
   const day = entry.date
     ? entry.date.toLocaleDateString('en-GB', { day: '2-digit' })
     : '--';
-  const month = entry.date
-    ? entry.date.toLocaleDateString('en-GB', { month: 'short' })
-    : '—';
+  const status = recordStatus(entry.record.status);
   return (
     <div
       slot={slot}
-      className="w-11 h-11 shrink-0 rounded-xl flex flex-col items-center justify-center"
+      className={`w-11 h-11 shrink-0 rounded-xl flex items-center justify-center text-sm font-black tabular-nums ${HISTORY_STATUS_FILL_CLASS[status]}`}
     >
-      <span className="text-sm font-black leading-none tabular-nums text-(--md-sys-color-on-surface)">
-        {day}
-      </span>
-      <span className="text-[10px] font-bold text-(--md-sys-color-on-surface-variant)">
-        {month}
-      </span>
+      {day}
     </div>
   );
 };

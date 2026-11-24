@@ -229,7 +229,25 @@ export default function DigitalAssignments({
     }
   }, [status, daSemesters.length, fetchDASemesters, network]);
 
-  // 2. Keep the selected course inside the current list. This also handles a
+  // The single shell reload dispatches this event; assignments owns the refresh.
+  useEffect(() => {
+    const handleRefresh = async () => {
+      const state = useDataStore.getState();
+      const sem = state.daSelectedSem || state.ttSelectedSem;
+      if (sem) await state.fetchDACourses(network, sem, true);
+      const courses = useDataStore.getState().daCourses;
+      await Promise.all(
+        courses.map((course) =>
+          useDataStore.getState().fetchDAAssignments(network, course.classId, true),
+        ),
+      );
+    };
+    window.addEventListener('retop-refresh-digital-assignments', handleRefresh);
+    return () =>
+      window.removeEventListener('retop-refresh-digital-assignments', handleRefresh);
+  }, [network]);
+
+  // Keep the selected course inside the current list. This also handles a
   // semester switch, where fetchDACourses replaces the list but the previous
   // class id is still in state.
   useEffect(() => {

@@ -192,6 +192,31 @@ export const NAV_DESTINATIONS: readonly NavDestination[] = [
   { view: 'profile', label: 'Profile', icon: 'person' },
 ] as const;
 
+/** Page-local refresh listeners the shell reload is allowed to notify. */
+export const PAGE_REFRESH_EVENTS: Partial<Record<ViewType, string>> = {
+  marks: 'retop-refresh-marks',
+  grades: 'retop-refresh-grades',
+  digitalAssignments: 'retop-refresh-digital-assignments',
+  curriculum: 'retop-refresh-curriculum',
+  examSchedule: 'retop-refresh-exams',
+  calendar: 'retop-refresh-calendar',
+  attendance: 'retop-refresh-attendance',
+  profile: 'retop-refresh-profile',
+  coursePage: 'retop-refresh-coursepage',
+  lateHour: 'retop-refresh-late-hour',
+};
+
+/** Reload only the open page; no account-wide sync is triggered here. */
+export const dispatchPageRefresh = (
+  view: ViewType | string,
+  detail?: Record<string, unknown>,
+): string | null => {
+  const event = PAGE_REFRESH_EVENTS[view as ViewType];
+  if (!event) return null;
+  window.dispatchEvent(new CustomEvent(event, { detail }));
+  return event;
+};
+
 export const hasRetopPage = (link: QuickLink | string): boolean => {
   if (typeof link === 'string') {
     return getDestinationView({ url: link }) !== 'content';

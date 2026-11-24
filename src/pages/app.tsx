@@ -30,7 +30,11 @@ import {
   ViewType,
   SpotlightCategoryGroup,
 } from '../types/vtop';
-import { getDestinationView, getSavedView } from '../utils/routes';
+import {
+  dispatchPageRefresh,
+  getDestinationView,
+  getSavedView,
+} from '../utils/routes';
 import { currentCampus } from '../utils/campus';
 
 import { TopBar } from '../components/layout/TopBar';
@@ -323,9 +327,7 @@ export const DashboardApp = () => {
             appState.marksSemesters.length > 0 &&
             sem !== appState.marksSemesters[0].id;
           await net.getStudentMarks(sem, true, isPast);
-          window.dispatchEvent(
-            new CustomEvent('retop-refresh-marks', { detail: { sem } }),
-          );
+          dispatchPageRefresh('marks', { sem });
         } else {
           await net.getMarksView(true);
         }
@@ -336,9 +338,7 @@ export const DashboardApp = () => {
             appState.gradesSemesters.length > 0 &&
             sem !== appState.gradesSemesters[0].id;
           await net.getStudentGrades(sem, true, isPast);
-          window.dispatchEvent(
-            new CustomEvent('retop-refresh-grades', { detail: { sem } }),
-          );
+          dispatchPageRefresh('grades', { sem });
         } else {
           await net.getGradesView(true);
         }
@@ -354,20 +354,17 @@ export const DashboardApp = () => {
           );
         }
       } else if (view === 'digitalAssignments') {
-        const sem = dataState.daSelectedSem || dataState.ttSelectedSem;
-        if (sem) {
-          await net.getDACourses(sem, true);
-          window.dispatchEvent(
-            new CustomEvent('retop-refresh-da', { detail: { sem } }),
-          );
-        }
+        // Assignments owns its own refresh: this only notifies the open page.
+        dispatchPageRefresh('digitalAssignments', {
+          sem: dataState.daSelectedSem || dataState.ttSelectedSem,
+        });
       } else if (view === 'curriculum') {
         await net.fetchWithCache(
           'curriculum_dashboard',
           () => net.fetchFragment('academics/common/Curriculum'),
           true,
         );
-        window.dispatchEvent(new CustomEvent('retop-refresh-curriculum'));
+        dispatchPageRefresh('curriculum');
       } else if (view === 'examSchedule') {
         const sem = dataState.examSelectedSem;
         if (sem) {
@@ -375,7 +372,7 @@ export const DashboardApp = () => {
         } else {
           await net.getExamScheduleView();
         }
-        window.dispatchEvent(new CustomEvent('retop-refresh-exams'));
+        dispatchPageRefresh('examSchedule');
       } else if (view === 'calendar') {
         const sem = dataState.calSelectedSem || dataState.ttSelectedSem;
         const group = dataState.calSelectedGroup;
@@ -390,28 +387,28 @@ export const DashboardApp = () => {
         } else if (sem) {
           await dataState.fetchCalendarMonthsAndGroups(net, sem);
         }
-        window.dispatchEvent(new CustomEvent('retop-refresh-calendar'));
+        dispatchPageRefresh('calendar');
       } else if (view === 'attendance') {
         const sem = dataState.attSelectedSem || dataState.ttSelectedSem;
         if (sem) {
           await dataState.fetchDetailedAttendance(net, sem, true);
         }
-        window.dispatchEvent(new CustomEvent('retop-refresh-attendance'));
+        dispatchPageRefresh('attendance');
       } else if (view === 'profile') {
         await net.fetchWithCache(
           'student_profile_data',
           () => net.fetchFragment('studentsRecord/StudentProfileAllView'),
           true,
         );
-        window.dispatchEvent(new CustomEvent('retop-refresh-profile'));
+        dispatchPageRefresh('profile');
       } else if (view === 'coursePage') {
-        window.dispatchEvent(new CustomEvent('retop-refresh-coursepage'));
+        dispatchPageRefresh('coursePage');
       } else if (view === 'lateHour') {
         await Promise.all([
           net.getLateHourStatus(true),
           net.getLateHourHistory(true),
         ]).catch(console.warn);
-        window.dispatchEvent(new CustomEvent('retop-refresh-late-hour'));
+        dispatchPageRefresh('lateHour');
       } else {
         if (csrfRef.current && authIdRef.current) {
           await dataState.syncDashboard(
@@ -421,6 +418,7 @@ export const DashboardApp = () => {
           );
         }
       }
+      dataState.markPageSynced(view);
       useDataStore.setState({ lastSyncTime: Date.now(), status: 'Online' });
     } catch (e) {
       console.error('View sync error:', e);

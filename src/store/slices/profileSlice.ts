@@ -42,12 +42,11 @@ export const createProfileSlice: StateCreator<
           `${currentAuthId}_user_basic_profile`,
         ).then((cached) => {
           if (cached && cached.regNo === currentAuthId) {
+            const { profileImgBase64: _cachedPhoto, ...profile } = cached;
             set((state) => ({
               user: {
                 ...state.user,
-                ...cached,
-                profileImgBase64:
-                  cached.profileImgBase64 || state.user.profileImgBase64,
+                ...profile,
               },
             }));
           }
@@ -78,11 +77,7 @@ export const createProfileSlice: StateCreator<
             }
           } catch {}
         }
-        if (!profileImgBase64 && get().user.regNo === regNo) {
-          profileImgBase64 = get().user.profileImgBase64;
-        }
-
-        // 2. Check existing stored base64 image strictly for THIS user
+        // 2. Check the encrypted scoped photo strictly for THIS user
         if (!profileImgBase64 || !profileImgBase64.startsWith('data:image')) {
           try {
             const storedImg = await getUserProfileImage(regNo);
@@ -100,7 +95,8 @@ export const createProfileSlice: StateCreator<
         };
 
         set({ user: newUser });
-        setCachedData(`${regNo}_user_basic_profile`, newUser);
+        const { profileImgBase64: _photo, ...profileForCache } = newUser;
+        setCachedData(`${regNo}_user_basic_profile`, profileForCache);
 
         if (profileImgBase64 && profileImgBase64.startsWith('data:image')) {
           saveUserProfileImage(regNo, profileImgBase64).catch(() => {});
@@ -109,13 +105,15 @@ export const createProfileSlice: StateCreator<
         try {
           const rawStore = await getStorageData(['retop_cached_users']);
           const raw = rawStore['retop_cached_users'];
-          let users: any[] = Array.isArray(raw) ? raw : [];
+          let users: any[] = Array.isArray(raw)
+            ? raw.map((u: any) => ({ ...u, profileImgBase64: '' }))
+            : [];
           const idx = users.findIndex((u: any) => u.regNo === regNo);
           const userEntry = {
             regNo,
             username: regNo,
             name: profile.basic.name,
-            profileImgBase64: profileImgBase64 || '',
+            profileImgBase64: '',
             campus,
             lastActive: Date.now(),
           };
@@ -123,7 +121,6 @@ export const createProfileSlice: StateCreator<
           else users.push(userEntry);
 
           await setStorageData({
-            [`${regNo}_profileImage`]: profileImgBase64 || '',
             retop_lastAuthId: regNo,
             retop_lastName: profile.basic.name,
             retop_last_campus: campus,

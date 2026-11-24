@@ -3,19 +3,31 @@ import { RecaptchaRequiredError } from '../vtopClient';
 import {
   MAX_REGULAR_CAPTCHA_RETRIES,
   RECAPTCHA_RETRY_DELAY_MS,
+  REGULAR_CAPTCHA_EXHAUSTED_MESSAGE,
   loadRegularCaptcha,
   regularCaptchaRetryMessage,
 } from '../regularCaptchaRetry';
 
 describe('regular captcha retry policy', () => {
-  it('formats the parity feedback string without the raw token', () => {
+  it('formats the reload feedback string without the raw token', () => {
     expect(regularCaptchaRetryMessage(1)).toBe(
-      'VTOP is using reCAPTCHA. Trying a regular CAPTCHA (1/2)…',
+      'VTOP is still serving reCAPTCHA. Reloading in retop for the legacy CAPTCHA (1/5)…',
     );
-    expect(regularCaptchaRetryMessage(2)).toBe(
-      'VTOP is using reCAPTCHA. Trying a regular CAPTCHA (2/2)…',
+    expect(regularCaptchaRetryMessage(MAX_REGULAR_CAPTCHA_RETRIES)).toBe(
+      'VTOP is still serving reCAPTCHA. Reloading in retop for the legacy CAPTCHA (5/5)…',
     );
     expect(regularCaptchaRetryMessage(1)).not.toContain('RECAPTCHA_REQUIRED');
+  });
+
+  it('never sends the user to the old login page', () => {
+    for (const message of [
+      regularCaptchaRetryMessage(1),
+      REGULAR_CAPTCHA_EXHAUSTED_MESSAGE,
+    ]) {
+      expect(message).not.toMatch(
+        /sign in at|old login|native vtop|vtop\.vit\.ac\.in/i,
+      );
+    }
   });
 
   it('returns the first success without retrying or sleeping', async () => {
@@ -61,7 +73,7 @@ describe('regular captcha retry policy', () => {
     expect(onExhausted).not.toHaveBeenCalled();
   });
 
-  it('hands off exactly once after 2 retries (3 total attempts)', async () => {
+  it('stops after 5 bounded retries (6 total attempts) with no handoff callback', async () => {
     const attempt = mock(() => Promise.reject(new RecaptchaRequiredError()));
     const sleep = mock(() => Promise.resolve());
     const onRetry = mock(() => {});
@@ -74,12 +86,14 @@ describe('regular captcha retry policy', () => {
     });
 
     expect(value).toBeNull();
+    expect(MAX_REGULAR_CAPTCHA_RETRIES).toBe(5);
     expect(attempt).toHaveBeenCalledTimes(MAX_REGULAR_CAPTCHA_RETRIES + 1);
-    expect(attempt).toHaveBeenCalledTimes(3);
-    expect(onRetry).toHaveBeenCalledTimes(2);
+    expect(attempt).toHaveBeenCalledTimes(6);
+    expect(onRetry).toHaveBeenCalledTimes(5);
     expect(onRetry).toHaveBeenNthCalledWith(1, 1);
-    expect(onRetry).toHaveBeenNthCalledWith(2, 2);
-    expect(sleep).toHaveBeenCalledTimes(2);
+    expect(onRetry).toHaveBeenNthCalledWith(5, 5);
+    expect(sleep).toHaveBeenCalledTimes(5);
+    // Exhaustion stays on retop: the only callback is the local UI message.
     expect(onExhausted).toHaveBeenCalledTimes(1);
   });
 

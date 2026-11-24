@@ -11,7 +11,7 @@ import {
 } from '../utils/bridge';
 import { VTOPNetwork } from '../utils/network';
 import { readSessionFactsFromDocument } from '../utils/sessionFacts';
-import { getCachedData, setCachedData } from '../utils/cache';
+import { getCachedData, scopedCacheKey, setCachedData } from '../utils/cache';
 import {
   getStorageData,
   setStorageData,
@@ -611,19 +611,11 @@ export const DashboardApp = () => {
       getUserProfileImage(authId)
         .then(async (decryptedImg) => {
           const res = await getStorageData([
-            `${authId}_profileImage`,
             `${authId}_user_basic_profile`,
             'retop_cached_users',
           ]);
           const cachedProfile = res[`${authId}_user_basic_profile`];
-          const cachedImg =
-            decryptedImg ||
-            res[`${authId}_profileImage`] ||
-            (typeof localStorage !== 'undefined'
-              ? localStorage.getItem(`${authId}_profileImage`) ||
-                localStorage.getItem('retop_profileImage')
-              : '') ||
-            '';
+          const cachedImg = decryptedImg || '';
           const cachedUsers = (res.retop_cached_users || []) as any[];
           const foundUser = cachedUsers.find(
             (u) => (u.regNo || '').toUpperCase() === authId.toUpperCase(),
@@ -637,7 +629,7 @@ export const DashboardApp = () => {
               foundUser?.name ||
               localStorage.getItem('retop_lastName') ||
               'Student',
-            profileImgBase64: cachedImg || foundUser?.profileImgBase64 || '',
+            profileImgBase64: cachedImg,
             campus,
           };
           setUser(loadedUser);
@@ -653,12 +645,8 @@ export const DashboardApp = () => {
           ? userProfile.regNo
           : authId;
 
-      getStorageData([
-        'retop_cached_users',
-        `${currentReg}_profileImage`,
-        `${currentReg}_user_basic_profile`,
-      ])
-        .then((res: Record<string, any>) => {
+      getStorageData(['retop_cached_users', `${currentReg}_user_basic_profile`])
+        .then(async (res: Record<string, any>) => {
           const rawUsers: any[] = res.retop_cached_users || [];
           const cleanReg = (r?: string) =>
             (r || '').replace(/\s*\(offline\)/gi, '').trim();
@@ -681,12 +669,9 @@ export const DashboardApp = () => {
           }
 
           const existingUser = cleanUsersMap.get(currentReg.toUpperCase());
-          const cachedUserImg =
-            res[`${currentReg}_profileImage`] ||
-            existingUser?.profileImgBase64 ||
-            '';
+          const storedImg = await getUserProfileImage(currentReg);
           let profileImg = fixBase64Image(
-            userProfile.profileImgBase64 || cachedUserImg,
+            userProfile.profileImgBase64 || storedImg || '',
           );
 
           const updatedUser = {
@@ -703,16 +688,20 @@ export const DashboardApp = () => {
           };
           cleanUsersMap.set(currentReg.toUpperCase(), updatedUser);
           const users = Array.from(cleanUsersMap.values());
+          // Keep raw photos in runtime state only; storage keeps the encrypted copy.
+          const usersForStorage = users.map((u) => ({
+            ...u,
+            profileImgBase64: '',
+          }));
 
           setUser(updatedUser);
 
           setStorageData({
             retop_lastAuthId: currentReg,
             retop_lastName: updatedUser.name,
-            [`${currentReg}_profileImage`]: updatedUser.profileImgBase64,
             retop_active_user: currentReg,
             retop_last_campus: campus,
-            retop_cached_users: users,
+            retop_cached_users: usersForStorage,
           });
 
           // Ensure raw image URLs are converted to self-contained Base64 and stored encrypted for offline mode
@@ -737,10 +726,10 @@ export const DashboardApp = () => {
                 .sendMessage({
                   action: 'PORTAL_SCRAPED_DATA',
                   payload: {
-                    user: updatedUser,
+                    user: { ...updatedUser, profileImgBase64: '' },
                     lastAuthId: currentReg,
                     campus,
-                    cachedUsers: users,
+                    cachedUsers: usersForStorage,
                     timestamp: Date.now(),
                   },
                 })
@@ -763,30 +752,18 @@ export const DashboardApp = () => {
     let feedbackPoller: ReturnType<typeof setInterval> | undefined;
 
     if ((window as any).__RETOP_OFFLINE__ || isStandalone) {
-      getCachedData<MenuCategory[]>(`${authId}_vtop_menu`).then(
+      getCachedData<MenuCategory[]>(scopedCacheKey('vtop_menu', authId)).then(
         (cachedMenu) => {
-          if (cachedMenu && cachedMenu.length > 0) {
-            setMenu(cachedMenu);
-          } else {
-            getCachedData<MenuCategory[]>('vtop_menu').then((m) => {
-              if (m && m.length > 0) setMenu(m);
-            });
-          }
+          if (cachedMenu && cachedMenu.length > 0) setMenu(cachedMenu);
         },
       );
-      getCachedData<SpotlightCategoryGroup[]>(`${authId}_vtop_spotlight`).then(
-        (cachedSpotlight) => {
-          if (cachedSpotlight && cachedSpotlight.length > 0) {
-            setSpotlightCategories(cachedSpotlight);
-          } else {
-            getCachedData<SpotlightCategoryGroup[]>('vtop_spotlight').then(
-              (s) => {
-                if (s && s.length > 0) setSpotlightCategories(s);
-              },
-            );
-          }
-        },
-      );
+      getCachedData<SpotlightCategoryGroup[]>(
+        scopedCacheKey('vtop_spotlight', authId),
+      ).then((cachedSpotlight) => {
+        if (cachedSpotlight && cachedSpotlight.length > 0) {
+          setSpotlightCategories(cachedSpotlight);
+        }
+      });
     } else {
       let attempts = 0;
       menuPoller = setInterval(() => {
@@ -804,15 +781,13 @@ export const DashboardApp = () => {
         }
         if (newSpotlight.length > 0) {
           setSpotlightCategories(newSpotlight);
-          setCachedData(`${authId}_vtop_spotlight`, newSpotlight);
-          setCachedData('vtop_spotlight', newSpotlight);
+          setCachedData(scopedCacheKey('vtop_spotlight', authId), newSpotlight);
         }
 
         const count = newMenu.reduce((acc, cat) => acc + cat.links.length, 0);
         if (count > 0) {
           setMenu(newMenu);
-          setCachedData(`${authId}_vtop_menu`, newMenu);
-          setCachedData('vtop_menu', newMenu);
+          setCachedData(scopedCacheKey('vtop_menu', authId), newMenu);
         }
 
         setMenu((prev) => {
@@ -821,7 +796,7 @@ export const DashboardApp = () => {
             0,
           );
           if (count > prevCount) {
-            setCachedData(`${authId}_vtop_menu`, newMenu);
+            setCachedData(scopedCacheKey('vtop_menu', authId), newMenu);
             return newMenu;
           }
           return prev;

@@ -1,5 +1,6 @@
 import { getExtUrl } from './utils/url';
 import { set as idbSet } from 'idb-keyval';
+import { selectPwaSyncData } from './utils/pwaSyncAllowlist';
 
 if (typeof window !== 'undefined') {
   const version =
@@ -22,13 +23,13 @@ if (typeof window !== 'undefined') {
   );
   window.postMessage({ type: 'RETOP_EXT_PRESENT', version }, '*');
 
-  // Proactively fetch all cached extension storage to hydrate the web app
+  // The one transfer path: pull allowlisted, photo-stripped data on load.
   if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
     try {
       chrome.runtime.sendMessage({ action: 'GET_ALL_SYNC_DATA' }, (res) => {
-        if (res && res.data && typeof res.data === 'object') {
+        if (res?.success && res.data && typeof res.data === 'object') {
           Promise.all(
-            Object.entries(res.data).map(async ([k, v]) => {
+            Object.entries(selectPwaSyncData(res.data)).map(async ([k, v]) => {
               try {
                 await idbSet(k, v);
                 if (typeof v === 'string') localStorage.setItem(k, v);
@@ -39,22 +40,6 @@ if (typeof window !== 'undefined') {
         }
       });
     } catch {}
-  }
-
-  // Listen for messages from background service worker (scraped data relay)
-  if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
-    chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-      if (message.type === 'RETOP_PWA_SYNC_PAYLOAD' && message.payload) {
-        idbSet('portal-app-storage', {
-          state: { data: message.payload, lastSynced: Date.now() },
-          version: 0,
-        })
-          .then(() => sendResponse({ success: true }))
-          .catch((err) => sendResponse({ success: false, error: String(err) }));
-
-        return true;
-      }
-    });
   }
 
   // ── Offline surface ──────────────────────────────────────────────────────

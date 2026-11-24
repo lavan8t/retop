@@ -54,8 +54,28 @@ export function resolveForecastBaseline(
   const summary = (dashboard || []).find(
     (c) => matchesCode(c.code) || matchesTitle(c.name),
   );
-  const percentage = summary ? parseFloat(summary.attendance) : NaN;
-  if (Number.isFinite(percentage) && percentage > 0) {
+  const attendanceText = summary?.attendance?.trim() || '';
+  const percentage = parseFloat(attendanceText);
+  // Detailed-to-summary rows carry real counts even when their rounded display
+  // is a bare '0'; only a zero total means "no classes conducted yet".
+  if (typeof summary?.total === 'number' && summary.total > 0) {
+    return {
+      attended:
+        typeof summary.attended === 'number'
+          ? summary.attended
+          : Math.round(percentage) || 0,
+      total: summary.total,
+      source: 'dashboard',
+    };
+  }
+  const explicitZero = /^0(?:\.0+)?\s*%$/.test(attendanceText);
+  const noConductedClasses =
+    typeof summary?.total === 'number' && summary.total <= 0;
+  if (
+    !noConductedClasses &&
+    Number.isFinite(percentage) &&
+    (percentage > 0 || explicitZero)
+  ) {
     return {
       attended: Math.round(percentage),
       total: 100,

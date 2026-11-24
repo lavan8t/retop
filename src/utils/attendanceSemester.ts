@@ -16,6 +16,18 @@ export function currentAuthId(): string {
   ).trim();
 }
 
+/** Fallback owner for offline/no-login data; long enough to stay a cache prefix. */
+export const ANONYMOUS_ACCOUNT = 'anon_account';
+
+/** The one account scope used by caches and calendar keys when offline. */
+export function currentCacheAccount(): string {
+  return currentAuthId() || ANONYMOUS_ACCOUNT;
+}
+
+/** Scopes a legacy localStorage preference to the current account. */
+export const scopedPreferenceKey = (legacyKey: string): string =>
+  `${legacyKey}-${currentCacheAccount()}`;
+
 export function readLastAttendanceSemester(authId: string): string | null {
   if (typeof localStorage === 'undefined') return null;
   return localStorage.getItem(attendanceSemesterKey(authId)) || null;

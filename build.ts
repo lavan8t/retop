@@ -263,17 +263,11 @@ if (existsSync(publicAssetsDir)) {
   console.log("  - assets/");
 }
 
-// Copy PWA assets (manifest.webmanifest, sw.js)
+// Copy PWA manifest (sw.js is generated later from its template)
 const pwaManifest = resolve(ROOT, "public/manifest.webmanifest");
 if (existsSync(pwaManifest)) {
   copyFileSync(pwaManifest, resolve(DIST, "manifest.webmanifest"));
   console.log("  - manifest.webmanifest");
-}
-
-const pwaSw = resolve(ROOT, "public/sw.js");
-if (existsSync(pwaSw)) {
-  copyFileSync(pwaSw, resolve(DIST, "sw.js"));
-  console.log("  - sw.js");
 }
 
 // Copy icons
@@ -312,8 +306,51 @@ if (archiveType === "xpi" && existsSync(resolve(ROOT, "manifest.firefox.json")))
 }
 writeDistManifest(resolve(ROOT, "manifest.firefox.json"), "manifest.firefox.json");
 
+// ── Step 6: Generate the service worker from the real dist shell ───
+console.log("Generating service worker...");
 
+const swTemplatePath = resolve(ROOT, "public/sw.js");
+const distManifestPath = resolve(DIST, "manifest.webmanifest");
+if (!existsSync(swTemplatePath) || !existsSync(distManifestPath)) {
+  console.error("Service worker generation failed: template or manifest.webmanifest is missing");
+  process.exit(1);
+}
 
+const distManifest = JSON.parse(readFileSync(distManifestPath, "utf-8")) as {
+  icons?: { src: string }[];
+};
+const precacheAssets = [
+  "./",
+  "./offline.html",
+  "./offline.js",
+  ...readdirSync(DIST)
+    .filter((file) => /^chunk-.*\.js$/.test(file))
+    .sort()
+    .map((file) => `./${file}`),
+  "./style.css",
+  "./login.css",
+  "./manifest.webmanifest",
+  ...(distManifest.icons ?? []).map((icon) => icon.src),
+];
+
+const missingAssets = precacheAssets.filter(
+  (asset) => !existsSync(resolve(DIST, asset.replace(/^\.?\//, ""))),
+);
+if (missingAssets.length > 0) {
+  console.error(`Service worker generation failed; missing assets: ${missingAssets.join(", ")}`);
+  process.exit(1);
+}
+
+let swSource = readFileSync(swTemplatePath, "utf-8");
+if (!swSource.includes("__SW_CACHE_NAME__") || !swSource.includes("__SW_PRECACHE_ASSETS__")) {
+  console.error("Service worker generation failed: public/sw.js is missing its placeholders");
+  process.exit(1);
+}
+swSource = swSource
+  .replace("__SW_CACHE_NAME__", JSON.stringify(`retop-pwa-${buildNumber}`))
+  .replace("__SW_PRECACHE_ASSETS__", JSON.stringify(precacheAssets, null, 2));
+writeFileSync(resolve(DIST, "sw.js"), swSource);
+console.log(`  - sw.js (${precacheAssets.length} precached assets)`);
 
 // ── Done: Report sizes ──────────────────────────────────────────────
 

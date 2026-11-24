@@ -1,6 +1,11 @@
 import { getExtUrl } from './utils/url';
-import { set as idbSet } from 'idb-keyval';
+import { entries as idbEntries, set as idbSet } from 'idb-keyval';
 import { type PlannedDownload } from './utils/courseDownloads';
+import {
+  isPwaSyncKey,
+  isTrustedPwaSyncSource,
+  selectPwaSyncData,
+} from './utils/pwaSyncAllowlist';
 import {
   GOOGLE_CALENDAR_SCOPE,
   syncICalToGoogleCalendar,
@@ -69,10 +74,13 @@ const runPlannedDownloads = async (plans: PlannedDownload[]) => {
   return { downloaded, skipped };
 };
 
-// Handle Google Drive sync and Portal-to-PWA data relay
+// Handle Google Drive sync and the pull-only Portal-to-PWA data relay.
 const isBridgeSender = (sender: chrome.runtime.MessageSender): boolean => {
-  const source = sender.origin || sender.url || '';
-  return source.startsWith('https://getretop.web.app');
+  const source =
+    sender.origin && sender.origin !== 'null' ? sender.origin : sender.url;
+  const ownExtensionUrl =
+    typeof chrome !== 'undefined' ? chrome.runtime?.getURL?.('') : undefined;
+  return isTrustedPwaSyncSource(source, ownExtensionUrl);
 };
 
 /**
@@ -280,26 +288,9 @@ const portalScrapedDataHandler: MessageHandler = (
 ) => {
   const payload = message.payload || message.data;
   if (payload) {
-    // 1. Persist to IndexedDB
+    // Persist only; the PWA hydrates by pulling, so there is no push relay.
     idbSet('retop_last_sync_payload', payload).catch(() => {});
     idbSet('retop_last_sync_time', Date.now()).catch(() => {});
-
-    // 2. Relay incoming payload updates to any active tab running the PWA
-    const pwaUrlPatterns = ['https://getretop.web.app/*'];
-    chrome.tabs.query({ url: pwaUrlPatterns }, (tabs) => {
-      if (tabs && tabs.length > 0) {
-        for (const tab of tabs) {
-          if (tab.id !== undefined) {
-            chrome.tabs
-              .sendMessage(tab.id, {
-                type: 'RETOP_PWA_SYNC_PAYLOAD',
-                payload,
-              })
-              .catch(() => {});
-          }
-        }
-      }
-    });
   }
   sendResponse({ success: true });
   return true;
@@ -316,12 +307,18 @@ const getAllSyncDataHandler: MessageHandler = (
   }
   if (typeof chrome !== 'undefined' && chrome.storage?.local) {
     chrome.storage.local.get(null, (items) => {
-      // Only retop-owned keys cross into the page; never dump everything.
-      const data: Record<string, any> = {};
-      for (const [key, value] of Object.entries(items || {})) {
-        if (key.startsWith('retop_')) data[key] = value;
-      }
-      sendResponse({ success: true, data });
+      void (async () => {
+        // Settings also live in IDB-only storage; fill those gaps first.
+        const all: Record<string, any> = { ...(items || {}) };
+        try {
+          for (const [key, value] of await idbEntries()) {
+            const name = String(key);
+            if (isPwaSyncKey(name) && all[name] === undefined)
+              all[name] = value;
+          }
+        } catch {}
+        sendResponse({ success: true, data: selectPwaSyncData(all) });
+      })();
     });
   } else {
     sendResponse({ success: false, data: {} });

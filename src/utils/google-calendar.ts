@@ -48,6 +48,9 @@ export interface GoogleCalendarSyncResult {
   created: number;
   updated: number;
   removed: number;
+  /** Set when the sync skipped a blank/empty ICS without touching the calendar. */
+  skipped?: true;
+  reason?: 'empty-ics';
 }
 
 // ── iCal → Google event mapping ───────────────────────────────────────────
@@ -341,8 +344,21 @@ export const syncICalToGoogleCalendar = async (options: {
   regNo: string;
 }): Promise<GoogleCalendarSyncResult> => {
   const summary = googleCalendarName(options.regNo);
-  const calendarId = await findOrCreateCalendar(options.token, summary);
   const events = parseICalToGoogleEvents(options.ics);
+  // Zero VEVENTs (blank export or no options selected) always skips: never delete the last good sync.
+  if (!events.length) {
+    return {
+      calendarId: '',
+      calendarName: summary,
+      total: 0,
+      created: 0,
+      updated: 0,
+      removed: 0,
+      skipped: true,
+      reason: 'empty-ics',
+    };
+  }
+  const calendarId = await findOrCreateCalendar(options.token, summary);
   const owned = await listOwnedEventIds(options.token, calendarId);
   const ownedSet = new Set(owned);
 

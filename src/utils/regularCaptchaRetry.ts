@@ -1,16 +1,18 @@
 /**
  * Regular-captcha retry policy shared by the login card's load and submit paths.
- * A reCAPTCHA-class signal gets a bounded number of fresh full-handshake retries
- * before the caller hands the page back to VTOP.
+ * A reCAPTCHA-class signal means VTOP has not served its legacy CAPTCHA yet, so
+ * retop reloads in place. No callback here ever hands the page to native VTOP.
  */
 
 import { RecaptchaRequiredError } from './vtopClient';
 
-export const MAX_REGULAR_CAPTCHA_RETRIES = 2;
+export const MAX_REGULAR_CAPTCHA_RETRIES = 5;
 export const RECAPTCHA_RETRY_DELAY_MS = 500;
+export const REGULAR_CAPTCHA_EXHAUSTED_MESSAGE =
+  'VTOP is still serving reCAPTCHA. Retry from retop in a moment.';
 
 export function regularCaptchaRetryMessage(retry: number): string {
-  return `VTOP is using reCAPTCHA. Trying a regular CAPTCHA (${retry}/${MAX_REGULAR_CAPTCHA_RETRIES})…`;
+  return `VTOP is still serving reCAPTCHA. Reloading in retop for the legacy CAPTCHA (${retry}/${MAX_REGULAR_CAPTCHA_RETRIES})…`;
 }
 
 export interface RegularCaptchaRetryOptions {

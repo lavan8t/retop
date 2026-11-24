@@ -1,7 +1,7 @@
 import {
-  getCachedData,
   setCachedData,
   getCachedDataWithTimestamp,
+  scopedCacheKey,
 } from './cache';
 import { useAppStore } from '../store/appStore';
 import { showAlertDialog } from '../components/ui/AlertDialog';
@@ -55,6 +55,8 @@ import {
   readSessionFactsFromDocument,
   type SessionFactsSource,
 } from './sessionFacts';
+import { currentAuthId } from './attendanceSemester';
+import { stripProfilePhotosForCache } from './profileCache';
 
 export const getParserForKey = (
   key: string,
@@ -529,10 +531,13 @@ export class VTOPNetwork {
     validate?: (data: string) => boolean,
     customParser?: (html: string) => T,
   ): Promise<any> {
-    const stableId =
-      localStorage.getItem('retop_lastAuthId') || this.authorizedID;
-    const userScopedKey = `${stableId}_${key}`;
+    const stableId = currentAuthId() || this.authorizedID || '';
+    const userScopedKey = scopedCacheKey(key, stableId);
     const parser = customParser || getParserForKey(key);
+    const isProfileKey =
+      key === 'student_profile_data' || key === 'student_profile';
+    const forCache = (value: any): any =>
+      isProfileKey ? stripProfilePhotosForCache(value) : value;
 
     const doFetchAndCache = async () => {
       try {
@@ -557,17 +562,17 @@ export class VTOPNetwork {
           if (parser && typeof data === 'string') {
             try {
               const parsed = parser(data);
-              setCachedData(userScopedKey, parsed);
+              setCachedData(userScopedKey, forCache(parsed));
               return parsed;
             } catch (err) {
               console.warn(
                 `[retop] Parsing before cache failed for ${key}:`,
                 err,
               );
-              setCachedData(userScopedKey, data);
+              if (!isProfileKey) setCachedData(userScopedKey, data);
             }
           } else {
-            setCachedData(userScopedKey, data);
+            setCachedData(userScopedKey, forCache(data));
           }
         }
         return data;
@@ -619,7 +624,7 @@ export class VTOPNetwork {
       if (typeof resolvedData === 'string' && parser) {
         try {
           resolvedData = parser(resolvedData);
-          setCachedData(userScopedKey, resolvedData);
+          setCachedData(userScopedKey, forCache(resolvedData));
         } catch {}
       }
 
@@ -661,22 +666,7 @@ export class VTOPNetwork {
           !location.protocol.includes('moz-extension')));
 
     if (isOffline) {
-      // One final attempt: check un-prefixed key in cache
-      const unPrefixed = await getCachedDataWithTimestamp<any>(key);
-      if (
-        unPrefixed &&
-        unPrefixed.data !== undefined &&
-        unPrefixed.data !== null
-      ) {
-        let res = unPrefixed.data;
-        if (typeof res === 'string' && parser) {
-          try {
-            res = parser(res);
-            setCachedData(userScopedKey, res);
-          } catch {}
-        }
-        return res;
-      }
+      // cache.ts already migrated any legacy generic copy into this scope.
       console.warn(`[VTOP Network] Offline cache miss for: ${userScopedKey}`);
       throw new Error('OFFLINE_CACHE_MISS');
     }

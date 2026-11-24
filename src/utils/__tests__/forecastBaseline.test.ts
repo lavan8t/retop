@@ -60,6 +60,51 @@ describe('resolveForecastBaseline', () => {
     ).toEqual({ attended: 75, total: 100, source: 'dashboard' });
   });
 
+  test('treats an explicit 0.00% dashboard percentage as a real baseline', () => {
+    const baseline = resolveForecastBaseline(
+      'CSE101',
+      [detailed('CSE101', 0, 0)],
+      [dashboard('CSE101', '0.00%')],
+    );
+    expect(baseline).toEqual({ attended: 0, total: 100, source: 'dashboard' });
+
+    const forecast = calculateAttendanceForecast(
+      'CSE101',
+      baseline.attended,
+      baseline.total,
+      [],
+      [],
+      [],
+    );
+    expect(forecast.status).toBe('CRITICAL');
+    expect(forecast.requiredToPass).toBe(300);
+  });
+
+  test('uses real counts behind a bare 0% summary', () => {
+    const summary = { ...dashboard('CSE101', '0'), attended: 0, total: 20 };
+    expect(resolveForecastBaseline('CSE101', [], [summary])).toEqual({
+      attended: 0,
+      total: 20,
+      source: 'dashboard',
+    });
+  });
+
+  test('does not promote a zero-total or parser-fallback 0 to a baseline', () => {
+    const zeroTotal = { ...dashboard('CSE101', '0'), attended: 0, total: 0 };
+    expect(resolveForecastBaseline('CSE101', [], [zeroTotal])).toEqual({
+      attended: 0,
+      total: 0,
+      source: 'none',
+    });
+    expect(
+      resolveForecastBaseline('CSE101', [], [dashboard('CSE101', '0')]),
+    ).toEqual({
+      attended: 0,
+      total: 0,
+      source: 'none',
+    });
+  });
+
   test('with no data at all, the baseline has no total', () => {
     expect(resolveForecastBaseline('CSE101', [], [])).toEqual({
       attended: 0,

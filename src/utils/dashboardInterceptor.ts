@@ -1,4 +1,5 @@
-import { setCachedData } from './cache';
+import { scopedCacheKey, setCachedData } from './cache';
+import { currentCacheAccount } from './attendanceSemester';
 import { readSessionFactsFromDocument } from './sessionFacts';
 import {
   parseAcademicStats,
@@ -52,19 +53,11 @@ function notifyIntercepted(key: string, html: string) {
 export function interceptDashboardResponse(url: string, htmlText: string) {
   if (!htmlText || typeof htmlText !== 'string' || htmlText.length < 20) return;
 
-  const authId =
-    (typeof document !== 'undefined'
-      ? readSessionFactsFromDocument().regNo
-      : '') ||
-    localStorage.getItem('retop_lastAuthId') ||
-    localStorage.getItem('retop_active_user') ||
-    '';
-
+  const liveRegNo =
+    typeof document !== 'undefined' ? readSessionFactsFromDocument().regNo : '';
+  const owner = liveRegNo || currentCacheAccount();
   const saveCache = (keyBase: string, data: any) => {
-    if (authId) {
-      setCachedData(`${authId}_${keyBase}`, data);
-    }
-    setCachedData(keyBase, data);
+    setCachedData(scopedCacheKey(keyBase, owner), data);
   };
 
   if (url.includes('get/dashboard/current/cgpa/credits')) {

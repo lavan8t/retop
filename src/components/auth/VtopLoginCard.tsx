@@ -32,6 +32,7 @@ import {
 import {
   loadRegularCaptcha,
   regularCaptchaRetryMessage,
+  REGULAR_CAPTCHA_EXHAUSTED_MESSAGE,
 } from '../../utils/regularCaptchaRetry';
 import { M3eCheckbox } from '../attendance/m3eTags';
 
@@ -49,11 +50,6 @@ export interface VtopLoginCardProps {
    * dashboard entry fetches the same data through VTOPNetwork anyway.
    */
   syncAfterLogin?: boolean;
-  /**
-   * VTOP switched sign-in to Google reCAPTCHA. Live takeover hands the page back
-   * to VTOP; other surfaces just show an explanation.
-   */
-  onRecaptchaRequired?: () => void;
 }
 
 export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
@@ -63,17 +59,15 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
   title = 'retop',
   subtitle = 'vtop login',
   syncAfterLogin = true,
-  onRecaptchaRequired,
 }) => {
   const [campus, setCampus] = useState<VtopCampus>(initialCampus);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [captchaInput, setCaptchaInput] = useState('');
+  // Kept in step with captchaInput at every write site: an effect-based sync
+  // can overwrite a freshly solved answer on a later render.
   const captchaInputRef = useRef('');
-  useEffect(() => {
-    captchaInputRef.current = captchaInput;
-  }, [captchaInput]);
   const [captchaData, setCaptchaData] = useState<CaptchaData | null>(null);
   const [loadingCaptcha, setLoadingCaptcha] = useState(false);
 
@@ -98,6 +92,49 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
   // Request sequencing to guarantee only the latest captcha response updates state
   const activeSeqRef = useRef<number>(0);
   const hasMountedRef = useRef<boolean>(false);
+  const solvingJobRef = useRef<{ cancelled: boolean } | null>(null);
+
+  // A refreshed image needs a fresh answer: install it in state, drop the old
+  // answer from both state and ref, then let the auto-solve effect refill the
+  // ref. The caller must use the returned answer for the next POST.
+  const awaitSolvedCaptcha = async (next: CaptchaData): Promise<string> => {
+    setCaptchaData(next);
+    setCaptchaInput('');
+    captchaInputRef.current = '';
+    for (let i = 0; i < 30; i++) {
+      const solved = normalizeCaptcha(captchaInputRef.current);
+      if (solved.length >= 6) return solved;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    return '';
+  };
+
+  // The effect below runs after commit, before a fresh image may have loaded,
+  // so also solve on load. Whichever runs first fills the ref exactly once.
+  const solveCaptchaImage = () => {
+    const img = captchaImgRef.current;
+    if (!captchaData?.captchaImage || !img) return;
+    if (!img.complete || img.naturalWidth === 0) return;
+    if (solvingJobRef.current) solvingJobRef.current.cancelled = true;
+    const job = { cancelled: false };
+    solvingJobRef.current = job;
+    setIsSolvingCaptcha(true);
+
+    import('../../utils/captchaSolver')
+      .then(({ autoSolveCaptcha }) => autoSolveCaptcha(img))
+      .then((solved) => {
+        if (job.cancelled || !solved) return;
+        captchaInputRef.current = solved;
+        setCaptchaInput(solved);
+      })
+      .catch((e) => {
+        if (!job.cancelled)
+          console.warn('[VtopLoginCard] CAPTCHA auto-solve failed:', e);
+      })
+      .finally(() => {
+        if (!job.cancelled) setIsSolvingCaptcha(false);
+      });
+  };
 
   type DisplayField = 'username' | 'password' | 'captcha';
 
@@ -197,20 +234,14 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
           onRetry: (retry) =>
             showError(regularCaptchaRetryMessage(retry), ['captcha']),
           onExhausted: () => {
-            if (onRecaptchaRequired) {
-              onRecaptchaRequired();
-              return;
-            }
-            showError(
-              'VTOP is asking for its own reCAPTCHA. Sign in at vtop.vit.ac.in.',
-              ['general'],
-            );
+            showError(REGULAR_CAPTCHA_EXHAUSTED_MESSAGE, ['general']);
           },
         },
       );
       if (!data || seq !== activeSeqRef.current) return;
       setCaptchaData(data);
       setCaptchaInput('');
+      captchaInputRef.current = '';
     } catch (err: any) {
       if (seq !== activeSeqRef.current) return;
       console.error('[VtopLoginCard] Failed to fetch captcha:', err);
@@ -225,9 +256,12 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
     }
   };
 
-  // Refresh captcha for the existing session (does not reset session tokens)
-  const handleRefreshCaptcha = async (): Promise<CaptchaData | null> => {
-    if (loadingCaptcha || isSubmitting) return null;
+  // Refresh captcha for the existing session (does not reset session tokens).
+  // Internal retries pass force so the submitting form can refresh too.
+  const handleRefreshCaptcha = async (
+    force = false,
+  ): Promise<{ data: CaptchaData; answer: string } | null> => {
+    if (!force && (loadingCaptcha || isSubmitting)) return null;
 
     if (captchaData?.jsessionid) {
       const seq = ++activeSeqRef.current;
@@ -247,9 +281,8 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
           jsessionid: refreshed.jsessionid,
           serverId: refreshed.serverId,
         };
-        setCaptchaData(newData);
-        setCaptchaInput('');
-        return newData;
+        const answer = await awaitSolvedCaptcha(newData);
+        return { data: newData, answer };
       } catch (e) {
         // Fallback to full initial handshake if session expired
         fetchInitialCaptcha(campus);
@@ -291,29 +324,9 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
   // every new image — VTOP rotates the CAPTCHA after each attempt — so a failed
   // login still lands with a freshly solved field.
   useEffect(() => {
-    const img = captchaImgRef.current;
-    if (!captchaData?.captchaImage || !img) return;
-    if (!img.complete || img.naturalWidth === 0) return;
-
-    let cancelled = false;
-    setIsSolvingCaptcha(true);
-
-    import('../../utils/captchaSolver')
-      .then(({ autoSolveCaptcha }) => autoSolveCaptcha(img))
-      .then((solved) => {
-        if (cancelled || !solved) return;
-        setCaptchaInput(solved);
-      })
-      .catch((e) => {
-        if (!cancelled)
-          console.warn('[VtopLoginCard] CAPTCHA auto-solve failed:', e);
-      })
-      .finally(() => {
-        if (!cancelled) setIsSolvingCaptcha(false);
-      });
-
+    solveCaptchaImage();
     return () => {
-      cancelled = true;
+      if (solvingJobRef.current) solvingJobRef.current.cancelled = true;
     };
   }, [captchaData?.captchaImage]);
 
@@ -348,35 +361,31 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
     let captchaRetries = 0;
     // validateLogin rejects a blank captcha, which covers a missing session.
     let activeCaptcha: CaptchaData = captchaData!;
-    let recaptchaRound = 0;
+    let needsFreshCaptcha = false;
 
-    const attemptLogin = async (): Promise<void> => {
+    const attemptLogin = async (answer: string): Promise<void> => {
       try {
         const result = await loadRegularCaptcha(
           async () => {
-            if (recaptchaRound > 0) {
-              // Each retry is a fresh full handshake: a new session can come
-              // back with a regular captcha instead of reCAPTCHA.
+            let postAnswer = answer;
+            if (needsFreshCaptcha) {
+              // A reCAPTCHA signal means the current image is unusable: take a
+              // fresh full handshake and wait for its regular CAPTCHA instead.
               activeCaptcha = await VtopClient.getCaptcha(campus);
-              // Wait for auto-solve to populate the new image (up to 3s).
-              for (let i = 0; i < 30; i++) {
-                if (captchaInputRef.current.trim().length >= 6) break;
-                await new Promise((r) => setTimeout(r, 100));
-              }
+              postAnswer = await awaitSolvedCaptcha(activeCaptcha);
+              needsFreshCaptcha = false;
             }
-            recaptchaRound += 1;
             const attempt = await VtopClient.login({
               campus,
               username: trimmedUser,
               password: trimmedPass,
-              captcha:
-                normalizeCaptcha(captchaInputRef.current) ||
-                normalizeCaptcha(captchaInput),
+              captcha: postAnswer,
               csrf: activeCaptcha.csrf,
               jsessionid: activeCaptcha.jsessionid,
               serverId: activeCaptcha.serverId,
             });
             if (attempt.message === RECAPTCHA_REQUIRED) {
+              needsFreshCaptcha = true;
               throw new RecaptchaRequiredError();
             }
             return attempt;
@@ -385,14 +394,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
             onRetry: (retry) =>
               showError(regularCaptchaRetryMessage(retry), ['captcha']),
             onExhausted: () => {
-              if (onRecaptchaRequired) {
-                onRecaptchaRequired();
-                return;
-              }
-              showError(
-                'VTOP is asking for its own reCAPTCHA. Sign in at vtop.vit.ac.in.',
-                ['general'],
-              );
+              showError(REGULAR_CAPTCHA_EXHAUSTED_MESSAGE, ['general']);
               setIsSubmitting(false);
             },
           },
@@ -417,15 +419,12 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
               `Invalid CAPTCHA. Retrying (${captchaRetries}/${MAX_CAPTCHA_RETRIES})...`,
               ['captcha'],
             );
-            const refreshed = await handleRefreshCaptcha();
+            const refreshed = await handleRefreshCaptcha(true);
             if (refreshed) {
-              activeCaptcha = refreshed;
-              // Wait for auto-solve to populate the new captcha (up to 3s).
-              for (let i = 0; i < 30; i++) {
-                if (captchaInputRef.current.trim().length >= 6) break;
-                await new Promise((r) => setTimeout(r, 100));
-              }
-              return attemptLogin();
+              activeCaptcha = refreshed.data;
+              // handleRefreshCaptcha cleared the old answer and waited for the
+              // solver, so POST the newly produced one, not the initial input.
+              return attemptLogin(refreshed.answer);
             }
           }
 
@@ -450,7 +449,10 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
       }
     };
 
-    await attemptLogin();
+    await attemptLogin(
+      normalizeCaptcha(captchaInputRef.current) ||
+        normalizeCaptcha(captchaInput),
+    );
   };
 
   const handleOtpSubmit = async (e: React.FormEvent) => {
@@ -653,6 +655,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
                   ref={captchaImgRef}
                   src={captchaData.captchaImage}
                   alt="Captcha"
+                  onLoad={solveCaptchaImage}
                 />
               ) : (
                 <div
@@ -667,7 +670,7 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
                 id="captchaRefresh"
                 className="retop-reload-btn"
                 disabled={loadingCaptcha || isSubmitting || isSolvingCaptcha}
-                onClick={handleRefreshCaptcha}
+                onClick={() => handleRefreshCaptcha()}
                 title="Refresh Captcha"
               >
                 <Refresh
@@ -690,7 +693,9 @@ export const VtopLoginCard: React.FC<VtopLoginCardProps> = ({
                 autoCorrect="off"
                 value={captchaInput}
                 onChange={(e) => {
-                  setCaptchaInput(normalizeCaptcha(e.target.value));
+                  const next = normalizeCaptcha(e.target.value);
+                  captchaInputRef.current = next;
+                  setCaptchaInput(next);
                   clearFieldError('captcha');
                 }}
               />

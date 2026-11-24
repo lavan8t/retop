@@ -3,6 +3,7 @@ import { VTOPNetwork } from '../utils/network';
 import { useDataStore } from '../store/dataStore';
 import { getCachedData, setCachedData } from '../utils/cache';
 import { parseStudentProfile, resolveProctorPhoto } from '../parsers/profile';
+import { getUserProfileImage } from '../utils/pinSecurity';
 import { StudentProfile } from '../types/vtop';
 import { CopyableText } from '../components/profile/CopyableText';
 import {
@@ -209,6 +210,27 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
   const [data, setData] = useState<StudentProfile | null>(null);
 
   useEffect(() => {
+    const persistProfile = (authId: string, profile: StudentProfile) => {
+      const userPrefix = authId && authId !== '...' ? `${authId}_` : '';
+      setCachedData(`${userPrefix}student_profile_parsed`, {
+        ...profile,
+        basic: { ...profile.basic, photoUrl: '' },
+        proctor: { ...profile.proctor, photoUrl: '' },
+      });
+    };
+    const hydrateStudentPhoto = async (
+      authId: string,
+      profile: StudentProfile,
+    ): Promise<string> => {
+      try {
+        return (
+          (await getUserProfileImage(authId || profile.basic.regNo || '')) || ''
+        );
+      } catch {
+        return '';
+      }
+    };
+
     const loadProfile = async () => {
       if (useDataStore.getState().status === 'Demo Mode Active') {
         setData({
@@ -352,13 +374,16 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
       const authId =
         network.authorizedID || useDataStore.getState().user?.regNo;
       const userPrefix = authId && authId !== '...' ? `${authId}_` : '';
+      const profileCacheKey = `${userPrefix}student_profile_parsed`;
 
       // 1. Fast restore from cached profile
-      const cachedParsed = await getCachedData<StudentProfile>(
-        `${userPrefix}student_profile_parsed`,
-      );
+      const cachedParsed = await getCachedData<StudentProfile>(profileCacheKey);
       if (cachedParsed?.basic?.name) {
-        setData(cachedParsed);
+        const photo = await hydrateStudentPhoto(authId, cachedParsed);
+        setData({
+          ...cachedParsed,
+          basic: { ...cachedParsed.basic, photoUrl: photo },
+        });
         setLoading(false);
       }
 
@@ -383,21 +408,20 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
           if (!parsedData.basic.regNo && (authId || storeUser?.regNo)) {
             parsedData.basic.regNo = authId || storeUser?.regNo || '';
           }
-          if (!parsedData.basic.photoUrl && storeUser?.profileImgBase64) {
-            parsedData.basic.photoUrl = storeUser.profileImgBase64;
-          }
+          parsedData.basic.photoUrl = await hydrateStudentPhoto(
+            authId,
+            parsedData,
+          );
 
           setData(parsedData);
-          setCachedData(`${userPrefix}student_profile_parsed`, parsedData);
+          persistProfile(authId, parsedData);
 
-          // The parser drops VTOP's student-photo fallback, so the real faculty
-          // image has to be downloaded separately. Paint first, then swap it in.
           resolveProctorPhoto(parsedData)
             .then((withPhoto) => {
               if (withPhoto.proctor?.photoUrl === parsedData.proctor?.photoUrl)
                 return;
               setData(withPhoto);
-              setCachedData(`${userPrefix}student_profile_parsed`, withPhoto);
+              persistProfile(authId, withPhoto);
             })
             .catch(() => {});
         }
@@ -436,19 +460,20 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ network }) => {
           if (!parsedData.basic.regNo && (authId || storeUser?.regNo)) {
             parsedData.basic.regNo = authId || storeUser?.regNo || '';
           }
-          if (!parsedData.basic.photoUrl && storeUser?.profileImgBase64) {
-            parsedData.basic.photoUrl = storeUser.profileImgBase64;
-          }
+          parsedData.basic.photoUrl = await hydrateStudentPhoto(
+            authId,
+            parsedData,
+          );
 
           setData(parsedData);
-          setCachedData(`${userPrefix}student_profile_parsed`, parsedData);
+          persistProfile(authId, parsedData);
 
           resolveProctorPhoto(parsedData)
             .then((withPhoto) => {
               if (withPhoto.proctor?.photoUrl === parsedData.proctor?.photoUrl)
                 return;
               setData(withPhoto);
-              setCachedData(`${userPrefix}student_profile_parsed`, withPhoto);
+              persistProfile(authId, withPhoto);
             })
             .catch(() => {});
         }

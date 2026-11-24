@@ -98,7 +98,7 @@ describe('Storage and Cache Compatibility Suite', () => {
       expect(cached?.timestamp).toBeGreaterThan(0);
     });
 
-    it('falls back to generic key when user-scoped key is requested without active user', async () => {
+    it('drops a generic copy when there is no active account to own it', async () => {
       const genericSpotlight = [
         { category: 'Circulars', items: [{ title: 'Exam Notice' }] },
       ];
@@ -112,8 +112,8 @@ describe('Storage and Cache Compatibility Suite', () => {
 
       const cached =
         await getCachedData<typeof genericSpotlight>('vtop_spotlight');
-      expect(cached).toBeDefined();
-      expect(cached?.[0].category).toBe('Circulars');
+      expect(cached).toBeNull();
+      expect(localStorage.getItem('retop_cache_vtop_spotlight')).toBeNull();
     });
 
     it('respects TTL and expires very old cached data (over 30 days)', async () => {

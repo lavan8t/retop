@@ -915,14 +915,17 @@ export class VtopClient {
    * Completes the emailed-code step. VTOP returns JSON with a redirectUrl;
    * following it lands on the authenticated dashboard used to build the client.
    */
-  public static async submitLoginOtp(params: {
-    campus: string;
-    username: string;
-    otp: string;
-    csrf: string;
-    jsessionid: string;
-    serverId: string | null;
-  }): Promise<LoginResult> {
+  public static async submitLoginOtp(
+    params: {
+      campus: string;
+      username: string;
+      otp: string;
+      csrf: string;
+      jsessionid: string;
+      serverId: string | null;
+    },
+    transport: VtopCaptchaTransport = defaultCaptchaTransport,
+  ): Promise<LoginResult> {
     const campus = (params.campus || 'vellore') as any;
     const baseUrl = getVtopBaseUrl(campus);
     const boundary = `----retop-otp-${Date.now()}`;
@@ -942,14 +945,19 @@ export class VtopClient {
     const cookie = params.serverId
       ? `JSESSIONID=${params.jsessionid}; SERVERID=${params.serverId}`
       : `JSESSIONID=${params.jsessionid}`;
-    const response = await executeVtopRequest({
+    // Ambient sessions own their cookies; an empty JSESSIONID would also
+    // overwrite the native bridge's cookie jar. Omit the whole header in both
+    // cases, including SERVERID, and use the same decision for the redirect.
+    const cookieHeaders: Record<string, string> =
+      transport.isAmbient() || !params.jsessionid ? {} : { Cookie: cookie };
+    const response = await transport.execute({
       url: `${baseUrl}/vtop/validateSecurityOtp`,
       method: 'POST',
       headers: {
         'Content-Type': `multipart/form-data; boundary=${boundary}`,
         Origin: baseUrl,
         Referer: `${baseUrl}/vtop/login/error`,
-        Cookie: cookie,
+        ...cookieHeaders,
         'X-Requested-With': 'XMLHttpRequest',
       },
       body,
@@ -974,10 +982,10 @@ export class VtopClient {
     const landingUrl = payload.redirectUrl.startsWith('http')
       ? payload.redirectUrl
       : `${baseUrl}${payload.redirectUrl}`;
-    const dash = await executeVtopRequest({
+    const dash = await transport.execute({
       url: landingUrl,
       method: 'GET',
-      headers: { Cookie: cookie },
+      headers: cookieHeaders,
     });
     const html = dash.body;
     const regNo =

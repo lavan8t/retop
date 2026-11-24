@@ -23,6 +23,38 @@ describe('session facts', () => {
     expect(extractCsrfFromHtml('<div>no token</div>')).toBeNull();
   });
 
+  it('extracts the last valid csrf token within each HTML source', () => {
+    expect(
+      extractCsrfFromHtml(`
+        <input name="_csrf" value="stale-input-1">
+        <input name="_csrf" value="fresh-input-2">
+        <input name="_csrf" value="x">
+      `),
+    ).toBe('fresh-input-2');
+    expect(
+      extractCsrfFromHtml(`
+        <meta name="_csrf" content="stale-meta-1">
+        <meta name="_csrf" content="fresh-meta-2">
+      `),
+    ).toBe('fresh-meta-2');
+    expect(
+      extractCsrfFromHtml(`
+        var csrfValue = 'stale-script-1';
+        _csrf = 'fresh-script-2';
+      `),
+    ).toBe('fresh-script-2');
+  });
+
+  it('keeps source priority when an earlier shape has no valid token', () => {
+    expect(
+      extractCsrfFromHtml(`
+        <input name="_csrf" value="x">
+        <meta name="_csrf" content="fresh-meta-2">
+        var csrfValue = 'later-script-3';
+      `),
+    ).toBe('fresh-meta-2');
+  });
+
   it('extracts only the registration number, never the username', () => {
     expect(
       extractRegNoFromHtml('<input id="authorizedIDX" value="21BCE1234">'),

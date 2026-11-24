@@ -45,6 +45,6 @@ This document outlines the core architectural boundaries, extension lifecycles, 
 5. **Three-Tier Storage Model:**
    Storage flows through `chrome.storage.local` → `IndexedDB` → `localStorage`. Scoped keys use registration numbers to ensure complete data isolation between different user accounts.
 6. **Zero External Backend:**
-   retop runs entirely client-side in the browser. It never transmits passwords, credentials, or student academic data to any third-party server.
+   retop runs entirely client-side in the browser. It never transmits passwords, credentials, or student academic data to any third-party server. The only extension → PWA transfer is the pull on load: `webBridge.ts` requests `GET_ALL_SYNC_DATA` and `background.ts` returns allowlisted, photo-stripped identity, settings and cache records to an exact HTTPS or extension-owned origin. There is no push relay and no PIN or photo-key transfer; the PWA shows initials instead of photos for extension-supplied accounts.
 7. **Three Campuses, One Host-Derived Value:**
    `vtop.vit.ac.in` = Vellore, `vtopcc.vit.ac.in` = Chennai, `vtop.vitap.ac.in` = VIT-AP. `utils/campus.ts` derives the campus from the hostname (no campus selector on live pages); `getVtopBaseUrl` resolves the matching origin, `campusLabel` the UI label, and the ASCII panel picks `TT/SMV/MGR`, `CC` or `AP` respectively. Offline and standalone surfaces fall back to the stored campus.

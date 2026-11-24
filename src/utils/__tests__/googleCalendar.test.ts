@@ -215,6 +215,68 @@ describe('syncing to Google Calendar', () => {
     }
   });
 
+  it('skips an empty ICS without creating a calendar or deleting events', async () => {
+    const api = mockCalendarApi({
+      existingCalendar: true,
+      ownedEventIds: ['stale-event'],
+    });
+    try {
+      const result = await syncICalToGoogleCalendar({
+        token: 'tok',
+        ics: '',
+        regNo: '22BCE1234',
+      });
+
+      expect(result.skipped).toBe(true);
+      expect(result.reason).toBe('empty-ics');
+      expect(result.total).toBe(0);
+      expect(result.created).toBe(0);
+      expect(result.updated).toBe(0);
+      expect(result.removed).toBe(0);
+      expect(api.calls).toHaveLength(0);
+      expect(api.calls.some((c) => c.method === 'DELETE')).toBe(false);
+      expect(
+        api.calls.some(
+          (c) =>
+            c.method === 'POST' && c.url.endsWith('/users/me/calendarList'),
+        ),
+      ).toBe(false);
+    } finally {
+      api.restore();
+    }
+  });
+
+  it('skips a valid calendar with no VEVENTs without deleting events', async () => {
+    const api = mockCalendarApi({
+      existingCalendar: true,
+      ownedEventIds: ['stale-event'],
+    });
+    try {
+      const result = await syncICalToGoogleCalendar({
+        token: 'tok',
+        ics: ['BEGIN:VCALENDAR', 'VERSION:2.0', 'END:VCALENDAR'].join('\r\n'),
+        regNo: '22BCE1234',
+      });
+
+      expect(result.skipped).toBe(true);
+      expect(result.reason).toBe('empty-ics');
+      expect(result.total).toBe(0);
+      expect(result.created).toBe(0);
+      expect(result.updated).toBe(0);
+      expect(result.removed).toBe(0);
+      expect(api.calls).toHaveLength(0);
+      expect(api.calls.some((c) => c.method === 'DELETE')).toBe(false);
+      expect(
+        api.calls.some(
+          (c) =>
+            c.method === 'POST' && c.url.endsWith('/users/me/calendarList'),
+        ),
+      ).toBe(false);
+    } finally {
+      api.restore();
+    }
+  });
+
   it('reuses the existing calendar and updates events in place', async () => {
     const known = parseICalToGoogleEvents(ICS);
     const api = mockCalendarApi({

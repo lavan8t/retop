@@ -11,7 +11,7 @@ export interface LoginValidationError {
   message: string;
 }
 
-const REG_NO_PATTERN = /^\d{2}[A-Za-z]{2,5}\d{4,5}$/;
+export const REG_NO_PATTERN = /^\d{2}[A-Za-z]{2,5}\d{4,5}$/;
 const ALPHANUMERIC_PATTERN = /^[A-Za-z0-9]+$/;
 
 export function normalizeUsername(value: string | null | undefined): string {

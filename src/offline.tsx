@@ -21,7 +21,11 @@ import {
   saveUserPin,
   verifyUserPin,
   getUserProfileImage,
+  migrateLegacyPhotoData,
+  saveUserProfileImage,
 } from './utils/pinSecurity';
+import { importBackupFromText } from './utils/backupImport';
+import { REG_NO_PATTERN } from './utils/loginValidation';
 import { AsciiPanel } from './components/asciiArt';
 import { applyTheme, DEFAULT_SETTINGS } from './utils/settings-store';
 import { VitLogo } from './components/VitLogo';
@@ -31,7 +35,7 @@ import { fixBase64Image } from './parsers/profile';
 import { createSessionFacts } from './utils/sessionFacts';
 import { campusLabel, currentCampus } from './utils/campus';
 import { getVtopBaseUrl, VtopCampus } from './utils/vtopClient';
-import { set as idbSet, get as idbGet } from 'idb-keyval';
+import { get as idbGet } from 'idb-keyval';
 import {
   AlertDialogManager,
   showAlertDialog,
@@ -445,12 +449,12 @@ const OfflineApp = () => {
   }, [step, activeUser]);
 
   const loadCachedProfiles = async () => {
+    await migrateLegacyPhotoData();
     const res = await getStorageData([
       'retop_cached_users',
       'retop_lastAuthId',
       'retop-saved-username',
       'retop_lastName',
-      'retop_profileImage',
       'retop_active_user',
       'retop-settings',
     ]);
@@ -485,7 +489,6 @@ const OfflineApp = () => {
     const lastAuthId = res.retop_lastAuthId as string;
     const savedUsername = (res['retop-saved-username'] as string) || lastAuthId;
     const lastName = res.retop_lastName as string;
-    const profileImg = res.retop_profileImage as string;
 
     if (users.length === 0 && lastAuthId) {
       users = [
@@ -493,7 +496,7 @@ const OfflineApp = () => {
           regNo: lastAuthId,
           username: savedUsername,
           name: lastName || 'Student',
-          profileImgBase64: profileImg || '',
+          profileImgBase64: '',
           lastActive: Date.now(),
         },
       ];
@@ -519,7 +522,7 @@ const OfflineApp = () => {
             regNo: u.regNo,
             username: u.regNo,
             name: u.name || 'Student',
-            profileImgBase64: u.profileImgBase64 || '',
+            profileImgBase64: '',
             lastActive: Date.now(),
             campus: u.campus || 'vellore',
           });
@@ -529,19 +532,19 @@ const OfflineApp = () => {
             username:
               allData['retop-saved-username'] || allData['retop_lastAuthId'],
             name: allData['retop_lastName'] || 'Student',
-            profileImgBase64: allData['retop_profileImage'] || '',
+            profileImgBase64: '',
             lastActive: Date.now(),
           });
         } else {
-          // Scan for any cached user keys like "21BCE0001_dashboard_stats"
+          // Scan for real registration-number owners, not arbitrary prefixes.
+          const scopedKey = new RegExp(
+            `^(${REG_NO_PATTERN.source.slice(1, -1)})_`,
+            'i',
+          );
           for (const k of Object.keys(allData)) {
             const cleanKey = k.replace(/^retop_cache_/, '');
-            const match = cleanKey.match(/^([A-Za-z0-9]{8,12})_/);
-            if (
-              match &&
-              match[1] &&
-              !match[1].toLowerCase().startsWith('retop')
-            ) {
+            const match = cleanKey.match(scopedKey);
+            if (match && match[1]) {
               const reg = match[1];
               if (
                 !users.some((u) => u.regNo.toLowerCase() === reg.toLowerCase())
@@ -570,13 +573,10 @@ const OfflineApp = () => {
       const existing = cleanUsersMap.get(key);
       const username = cleanUserString(rawUser.username) || regNo;
       const name = cleanUserString(rawUser.name) || existing?.name || 'Student';
-      let rawImg = rawUser.profileImgBase64 || existing?.profileImgBase64 || '';
-      if (!rawImg || !rawImg.startsWith('data:image')) {
-        try {
-          const stored = await getUserProfileImage(regNo);
-          if (stored) rawImg = stored;
-        } catch {}
-      }
+      let rawImg = '';
+      try {
+        rawImg = await getUserProfileImage(regNo);
+      } catch {}
       const profileImgBase64 = fixBase64Image(rawImg);
       const lastActive = Math.max(
         rawUser.lastActive || 0,
@@ -593,7 +593,9 @@ const OfflineApp = () => {
     }
     users = Array.from(cleanUsersMap.values());
     if (users.length > 0) {
-      idbSet('retop_cached_users', users).catch(() => {});
+      // keep photos only in the encrypted per-account record
+      const persisted = users.map((u) => ({ ...u, profileImgBase64: '' }));
+      setStorageData({ retop_cached_users: persisted }).catch(() => {});
     }
 
     setUsersIndex(users);
@@ -682,7 +684,6 @@ const OfflineApp = () => {
     await setStorageData({
       retop_lastAuthId: activeUser.regNo,
       retop_lastName: activeUser.name,
-      retop_profileImage: activeUser.profileImgBase64 || '',
       retop_active_user: activeUser.regNo,
     });
 
@@ -704,16 +705,12 @@ const OfflineApp = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const text = await file.text();
-      const json = JSON.parse(text);
-      if (json && typeof json === 'object') {
-        await setStorageData(json);
-        window.location.reload();
-      }
+      await importBackupFromText(await file.text());
+      window.location.reload();
     } catch (err) {
       showAlertDialog({
         title: 'Import Error',
-        message: 'Invalid backup file format.',
+        message: err instanceof Error ? err.message : 'Invalid backup file.',
       });
     }
   };
@@ -723,21 +720,17 @@ const OfflineApp = () => {
 
     try {
       const safeImg = fixBase64Image(user.profileImgBase64);
+      if (safeImg) saveUserProfileImage(user.regNo, safeImg).catch(() => {});
       localStorage.setItem('retop_lastAuthId', user.regNo);
       localStorage.setItem('retop_active_user', user.regNo);
       if (user.name) localStorage.setItem('retop_lastName', user.name);
-      if (safeImg) {
-        localStorage.setItem(`${user.regNo}_profileImage`, safeImg);
-      }
       setStorageData({
         retop_lastAuthId: user.regNo,
         retop_active_user: user.regNo,
         retop_lastName: user.name || 'Student',
-        [`${user.regNo}_profileImage`]: safeImg || '',
         [`${user.regNo}_user_basic_profile`]: {
           name: user.name || 'Student',
           regNo: user.regNo,
-          profileImgBase64: safeImg || '',
           campus: user.campus || 'vellore',
         },
       });

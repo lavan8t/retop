@@ -10,6 +10,12 @@ import {
   PARSER_SCHEMA_VERSIONS,
 } from '../parsers/version';
 import { readSessionFactsFromDocument } from './sessionFacts';
+import { REG_NO_PATTERN } from './loginValidation';
+import {
+  ANONYMOUS_ACCOUNT,
+  currentAuthId,
+  currentCacheAccount,
+} from './attendanceSemester';
 
 /** Registration number for key scoping; explicit account wins over DOM. */
 const scopedRegNo = (accountRegNo?: string): string =>
@@ -27,40 +33,76 @@ const CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days default TTL
 export { isSchemaStale, PARSER_SCHEMA_VERSIONS };
 export type { ParserModuleId };
 
+/** The owner segment can itself contain an underscore (offline fallback). */
+const ownerOf = (key: string): string => {
+  if (key.startsWith(`${ANONYMOUS_ACCOUNT}_`)) return ANONYMOUS_ACCOUNT;
+  const separator = key.indexOf('_');
+  return separator > 0 ? key.slice(0, separator) : '';
+};
+
+export const isAccountScope = (scope: string): boolean =>
+  REG_NO_PATTERN.test(scope) || scope === ANONYMOUS_ACCOUNT;
+
+/** A cache key is user-scoped only when its owner segment is a real account. */
+export const isUserScopedCacheKey = (key: string): boolean =>
+  isAccountScope(ownerOf(key));
+
+/** One place that turns a logical key into an account-owned cache key. */
+export const scopedCacheKey = (
+  key: string,
+  accountId: string = currentCacheAccount(),
+): string => {
+  const logical = key.startsWith(CACHE_PREFIX)
+    ? key.slice(CACHE_PREFIX.length)
+    : key;
+  if (isUserScopedCacheKey(logical)) return logical;
+  const scope = isAccountScope(accountId) ? accountId : currentCacheAccount();
+  return `${scope}_${logical}`;
+};
+
+const cacheKeysFor = (key: string): string[] => [`${CACHE_PREFIX}${key}`, key];
+
+const firstStored = (
+  storage: Record<string, any>,
+  keys: string[],
+): any | undefined => {
+  for (const key of keys) {
+    if (storage[key] !== undefined && storage[key] !== null) {
+      return storage[key];
+    }
+  }
+  return undefined;
+};
+
+/**
+ * Unowned legacy copies cannot be attributed to a student, so a read deletes
+ * them instead of adopting them into whichever account happens to be active.
+ */
+const removeLegacyGeneric = async (scopedKey: string): Promise<void> => {
+  const owner = ownerOf(scopedKey);
+  if (!owner) return;
+  const baseKey = scopedKey.slice(owner.length + 1);
+  if (!baseKey) return;
+  const legacyKeys = cacheKeysFor(baseKey);
+  const legacy = await getStorageData(legacyKeys);
+  if (legacyKeys.some((key) => legacy[key] !== undefined)) {
+    await removeStorageKeys(legacyKeys);
+  }
+};
+
 export const getCachedDataWithTimestamp = async <T>(
   key: string,
 ): Promise<{ data: T; timestamp: number } | null> => {
   try {
-    // Keys scoped to a user look like "<regNo|username>_<dataKey>" (6–15 char alphanum prefix)
-    const isUserScoped = /^[A-Za-z0-9]{6,15}_/.test(key);
-    const keysToTry: string[] = [`${CACHE_PREFIX}${key}`, key];
-
-    if (!isUserScoped) {
-      // If key is generic, check if active user has a scoped version
-      try {
-        const activeUser =
-          localStorage.getItem('retop_active_user') ||
-          localStorage.getItem('retop_lastAuthId');
-        if (activeUser) {
-          keysToTry.unshift(
-            `${CACHE_PREFIX}${activeUser}_${key}`,
-            `${activeUser}_${key}`,
-          );
-        }
-      } catch {}
-    }
+    const scope = currentCacheAccount();
+    const effectiveKey = scopedCacheKey(key, scope);
+    const keysToTry = cacheKeysFor(effectiveKey);
 
     const storageRes = await getStorageData(keysToTry);
-    let stored: any = undefined;
+    const stored = firstStored(storageRes, keysToTry);
+    await removeLegacyGeneric(effectiveKey);
 
-    for (const k of keysToTry) {
-      if (storageRes[k] !== undefined && storageRes[k] !== null) {
-        stored = storageRes[k];
-        break;
-      }
-    }
-
-    if (stored !== undefined && stored !== null) {
+    if (stored !== undefined) {
       if (
         typeof stored === 'object' &&
         stored.timestamp &&
@@ -86,7 +128,8 @@ export const getCachedData = async <T>(key: string): Promise<T | null> => {
 
 export const setCachedData = async (key: string, data: any): Promise<void> => {
   const timestamp = Date.now();
-  const cacheKey = `${CACHE_PREFIX}${key}`;
+  // Generic writes are gone: every record has one account owner.
+  const cacheKey = `${CACHE_PREFIX}${scopedCacheKey(key)}`;
 
   try {
     await setStorageData({
@@ -118,12 +161,12 @@ export const getAllCachedKeys = async (
         const rawKey = k.substring(CACHE_PREFIX.length);
         const lowerRaw = rawKey.toLowerCase();
 
-        // If an account is active, only show keys belonging to this account or generic keys
-        if (targetReg) {
-          const isUserKey = lowerRaw.startsWith(`${targetReg}_`);
-          const isGeneric = !lowerRaw.match(/^[a-z0-9]{8,12}_/);
-          if (!isUserKey && !isGeneric) continue;
-        }
+        // A generic key is one whose owner segment is not a registration number.
+        const isGeneric = !isUserScopedCacheKey(rawKey);
+        const isUserKey = targetReg
+          ? lowerRaw.startsWith(`${targetReg}_`)
+          : false;
+        if (targetReg && !isUserKey && !isGeneric) continue;
 
         result.push({ key: rawKey, timestamp: (v as any).timestamp });
       }
@@ -144,38 +187,68 @@ export const removeCacheKey = async (key: string): Promise<void> => {
 export const clearAccountCache = async (
   accountRegNo?: string,
 ): Promise<void> => {
-  const regNo = scopedRegNo(accountRegNo);
+  const regNo = (
+    accountRegNo ||
+    currentAuthId() ||
+    ANONYMOUS_ACCOUNT
+  ).toLowerCase();
+  const scopedLocalPrefixes = [
+    `retop-cal-groups-${regNo}-`,
+    `retop-cal-selected-group-${regNo}`,
+    `retop-cal-selected-sem-${regNo}`,
+    `retop-tt-selected-sem-${regNo}`,
+  ];
+  const legacyPreferences = new Set([
+    'retop-cal-selected-group',
+    'retop-cal-selected-sem',
+    'retop-tt-selected-sem',
+  ]);
+
+  const matches = (k: string): boolean => {
+    const lower = String(k).toLowerCase();
+    if (legacyPreferences.has(lower)) return true;
+    if (scopedLocalPrefixes.some((prefix) => lower.startsWith(prefix))) {
+      return true;
+    }
+
+    const cacheRaw = lower.startsWith(CACHE_PREFIX)
+      ? String(k).substring(CACHE_PREFIX.length)
+      : null;
+
+    // Generic copies must die with the account's scoped copies or the next
+    // offline read would expose unowned data.
+    if (cacheRaw !== null) {
+      if (!isUserScopedCacheKey(cacheRaw)) return true;
+      return cacheRaw.toLowerCase().startsWith(`${regNo}_`);
+    }
+    return lower.startsWith(`${regNo}_`) || lower === `${regNo}_profileimage`;
+  };
+
+  const genericLogicalKey = (k: string): string | null => {
+    if (!k.startsWith(CACHE_PREFIX)) return null;
+    const logical = k.substring(CACHE_PREFIX.length);
+    return isUserScopedCacheKey(logical) ? null : logical;
+  };
+  const keysToRemove = new Set<string>();
+  const collect = (k: string) => {
+    if (matches(k)) keysToRemove.add(k);
+    const generic = genericLogicalKey(k);
+    if (generic) keysToRemove.add(generic);
+  };
 
   const allData = await getAllStorageData();
-  const keysToRemove: string[] = [];
-
-  for (const k of Object.keys(allData)) {
-    const keyStr = String(k).toLowerCase();
-    const matches = regNo
-      ? keyStr.startsWith(`${CACHE_PREFIX.toLowerCase()}${regNo}_`) ||
-        keyStr.startsWith(`${regNo}_`) ||
-        keyStr === `${regNo}_profileimage`
-      : keyStr.startsWith(CACHE_PREFIX.toLowerCase());
-    if (matches) keysToRemove.push(k);
-  }
+  for (const k of Object.keys(allData)) collect(k);
 
   // localStorage is not covered by getAllStorageData, so check it separately.
   if (typeof localStorage !== 'undefined') {
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
-      if (!k) continue;
-      const keyStr = String(k).toLowerCase();
-      const matches = regNo
-        ? keyStr.startsWith(`${CACHE_PREFIX.toLowerCase()}${regNo}_`) ||
-          keyStr.startsWith(`${regNo}_`) ||
-          keyStr === `${regNo}_profileimage`
-        : keyStr.startsWith(CACHE_PREFIX.toLowerCase());
-      if (matches && !keysToRemove.includes(k)) keysToRemove.push(k);
+      if (k) collect(k);
     }
   }
 
   try {
-    await removeStorageKeys(keysToRemove);
+    await removeStorageKeys(Array.from(keysToRemove));
   } catch (e) {
     console.warn('[Storage Engine] Account cache clear failed', e);
   }

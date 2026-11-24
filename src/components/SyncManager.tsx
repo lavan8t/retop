@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { getAllCachedKeys, removeCacheKey } from '../utils/cache';
+import {
+  getAllCachedKeys,
+  isUserScopedCacheKey,
+  removeCacheKey,
+} from '../utils/cache';
 import { useDataStore } from '../store/dataStore';
 import {
   Delete,
@@ -85,7 +89,9 @@ export const SyncManager = () => {
   const categorizeKey = (
     key: string,
   ): { pageId: string; pageTitle: string; label: string; semester: string } => {
-    const stripped = key.substring(key.indexOf('_') + 1);
+    const stripped = isUserScopedCacheKey(key)
+      ? key.substring(key.indexOf('_') + 1)
+      : key;
 
     if (stripped === 'dashboard_stats')
       return {

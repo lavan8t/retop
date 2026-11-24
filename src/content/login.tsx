@@ -40,17 +40,6 @@ const FORGOT_KEY = 'retop-forgot-intent';
 // vtop.vit.ac.in = Vellore. No switching.
 
 /**
- * VTOP's reCAPTCHA cannot be solved for the user, so hand the whole login page
- * back to VTOP instead of leaving a form that can never submit.
- */
-const useNativeLogin = () => {
-  try {
-    sessionStorage.setItem(BYPASS_KEY, '1');
-  } catch {}
-  window.location.assign('/vtop/login');
-};
-
-/**
  * Forgot password/username are POST-only handlers on VTOP's own login page, not
  * routes. Mark the intent, let the native page load, and content.ts clicks the
  * matching link there.
@@ -357,7 +346,6 @@ const LoginTakeover: React.FC = () => {
             subtitle=""
             syncAfterLogin={false}
             onLoginSuccess={handleLoginSuccess}
-            onRecaptchaRequired={useNativeLogin}
           />
         </div>
         <div className="retop-forgot-links flex gap-3 justify-start mt-4">

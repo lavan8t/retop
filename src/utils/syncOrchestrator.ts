@@ -15,9 +15,10 @@ import { parseCourseDetails } from '../parsers/dashboard';
 import { detailedToCourseSummary } from './attendanceHome';
 import { parseStudentMarks } from '../parsers/marks';
 import { parseGrades, parseGradeHistory } from '../parsers/grades';
-import { setCachedData } from './cache';
+import { scopedCacheKey, setCachedData } from './cache';
 import { getStorageData, setStorageData } from './storageAdapter';
 import { saveUserProfileImage } from './pinSecurity';
+import { stripProfilePhotosForCache } from './profileCache';
 import { set as idbSet } from 'idb-keyval';
 
 export interface SyncProgress {
@@ -70,8 +71,11 @@ export async function syncStudentData(
           '';
         profilePhoto = fixBase64Image(rawImg);
 
-        await setCachedData(`${regNo}_student_profile_data`, parsedProfile);
-        await setCachedData('student_profile_data', parsedProfile);
+        // Only the encrypted retop_img_* record keeps any profile photo.
+        await setCachedData(
+          scopedCacheKey('student_profile_data', regNo),
+          stripProfilePhotosForCache(parsedProfile),
+        );
         if (profilePhoto) {
           await saveUserProfileImage(regNo, profilePhoto).catch(() => {});
         }
@@ -90,8 +94,10 @@ export async function syncStudentData(
       const semHtml = await client.getSemesters();
       if (semHtml && semHtml.length > 50) {
         const semesters = parseSemesters(semHtml);
-        await setCachedData(`${regNo}_tt_semester_list`, semesters);
-        await setCachedData('tt_semester_list', semesters);
+        await setCachedData(
+          scopedCacheKey('tt_semester_list', regNo),
+          semesters,
+        );
 
         const activeSem = semesters.find((s) => s.isLatest) || semesters[0];
         if (activeSem) {
@@ -117,9 +123,14 @@ export async function syncStudentData(
             const courses = parseTimetable(ttHtml);
             // An empty parse must not wipe a previously good cached timetable.
             if (courses.length > 0) {
-              await setCachedData(`${regNo}_tt_${activeSemId}`, courses);
-              await setCachedData(`tt_${activeSemId}`, courses);
-              await setCachedData(`${regNo}_timetable_courses`, courses);
+              await setCachedData(
+                scopedCacheKey(`tt_${activeSemId}`, regNo),
+                courses,
+              );
+              await setCachedData(
+                scopedCacheKey('timetable_courses', regNo),
+                courses,
+              );
             }
           } catch (err) {
             console.warn('[syncOrchestrator] Timetable sync error:', err);
@@ -133,21 +144,16 @@ export async function syncStudentData(
             const attData = parseStudentAttendance(attHtml);
             if (attData.length > 0) {
               await setCachedData(
-                `${regNo}_attendance_detailed_${activeSemId}`,
-                attData,
-              );
-              await setCachedData(
-                `attendance_detailed_${activeSemId}`,
+                scopedCacheKey(`attendance_detailed_${activeSemId}`, regNo),
                 attData,
               );
               // AP has no dashboard widget; reuse the attendance page for Home.
               if (client.campus === 'vitap') {
                 const homeAttendance = attData.map(detailedToCourseSummary);
                 await setCachedData(
-                  `${regNo}_dashboard_attendance`,
+                  scopedCacheKey('dashboard_attendance', regNo),
                   homeAttendance,
                 );
-                await setCachedData('dashboard_attendance', homeAttendance);
               }
             }
           } catch (err) {
@@ -170,8 +176,10 @@ export async function syncStudentData(
             const dashAtt = parseCourseDetails(dashHtml);
             // Keep a good cached list if the endpoint returns nothing usable.
             if (dashAtt.length > 0) {
-              await setCachedData(`${regNo}_dashboard_attendance`, dashAtt);
-              await setCachedData('dashboard_attendance', dashAtt);
+              await setCachedData(
+                scopedCacheKey('dashboard_attendance', regNo),
+                dashAtt,
+              );
             }
           } catch (err) {
             console.warn(
@@ -188,10 +196,9 @@ export async function syncStudentData(
             const marksData = parseStudentMarks(marksHtml);
             if (marksData.length > 0) {
               await setCachedData(
-                `${regNo}_marks_data_${activeSemId}`,
+                scopedCacheKey(`marks_data_${activeSemId}`, regNo),
                 marksData,
               );
-              await setCachedData(`marks_data_${activeSemId}`, marksData);
             }
           } catch (err) {
             console.warn('[syncOrchestrator] Marks sync error:', err);
@@ -205,10 +212,9 @@ export async function syncStudentData(
             const gradesData = parseGrades(gradesHtml);
             if (gradesData.courses.length > 0) {
               await setCachedData(
-                `${regNo}_grades_data_${activeSemId}`,
+                scopedCacheKey(`grades_data_${activeSemId}`, regNo),
                 gradesData,
               );
-              await setCachedData(`grades_data_${activeSemId}`, gradesData);
             }
           } catch (err) {
             console.warn('[syncOrchestrator] Grades sync error:', err);
@@ -221,8 +227,10 @@ export async function syncStudentData(
             const historyHtml = await client.getGradeHistory();
             if (historyHtml && historyHtml.length > 100) {
               const history = parseGradeHistory(historyHtml);
-              await setCachedData(`${regNo}_grade_history`, history);
-              await setCachedData(`grade_history`, history);
+              await setCachedData(
+                scopedCacheKey('grade_history', regNo),
+                history,
+              );
               // Extract CGPA and cache under dashboard_stats key
               if (history.cgpa) {
                 const dashStats = {
@@ -232,8 +240,10 @@ export async function syncStudentData(
                   nonGraded: '...',
                   placement: '...',
                 };
-                await setCachedData(`${regNo}_dashboard_stats`, dashStats);
-                await setCachedData(`dashboard_stats`, dashStats);
+                await setCachedData(
+                  scopedCacheKey('dashboard_stats', regNo),
+                  dashStats,
+                );
               }
             }
           } catch (err) {
@@ -257,9 +267,13 @@ export async function syncStudentData(
       lastActive: Date.now(),
       campus: client.campus,
     };
+    // Only the encrypted retop_img_* record keeps the photo at rest.
+    const { profileImgBase64: _runtimePhoto, ...storedUser } = newUser;
 
     const storageRes = await getStorageData(['retop_cached_users']);
-    const existingUsers: CachedUser[] = storageRes.retop_cached_users || [];
+    const existingUsers: CachedUser[] = (
+      storageRes.retop_cached_users || []
+    ).map(({ profileImgBase64: _stalePhoto, ...u }: CachedUser) => u);
     const userIndex = existingUsers.findIndex(
       (u) => u.regNo.toUpperCase() === regNo,
     );
@@ -267,12 +281,10 @@ export async function syncStudentData(
     if (userIndex >= 0) {
       existingUsers[userIndex] = {
         ...existingUsers[userIndex],
-        ...newUser,
-        profileImgBase64:
-          profilePhoto || existingUsers[userIndex].profileImgBase64 || '',
+        ...storedUser,
       };
     } else {
-      existingUsers.push(newUser);
+      existingUsers.push(storedUser);
     }
 
     await idbSet('retop_cached_users', existingUsers).catch(() => {});
@@ -281,9 +293,6 @@ export async function syncStudentData(
       localStorage.setItem('retop_lastAuthId', regNo);
       localStorage.setItem('retop_active_user', regNo);
       localStorage.setItem('retop_lastName', studentName);
-      if (profilePhoto) {
-        localStorage.setItem(`${regNo}_profileImage`, profilePhoto);
-      }
     } catch {}
 
     await setStorageData({
@@ -291,11 +300,9 @@ export async function syncStudentData(
       retop_lastAuthId: regNo,
       retop_active_user: regNo,
       retop_lastName: studentName,
-      [`${regNo}_profileImage`]: profilePhoto || '',
       [`${regNo}_user_basic_profile`]: {
         name: studentName,
         regNo,
-        profileImgBase64: profilePhoto || '',
         campus: client.campus,
       },
     });

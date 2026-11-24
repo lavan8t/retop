@@ -26,9 +26,10 @@ describe('login takeover fallback policy', () => {
     expect(src).toContain('revealNative(true)');
   });
 
-  it('keeps the explicit reCAPTCHA handoff and the ASCII-art login surface', async () => {
+  it('keeps the ASCII-art login surface without a reCAPTCHA handoff', async () => {
     const src = await login();
-    expect(src).toContain('onRecaptchaRequired={useNativeLogin}');
+    expect(src).not.toContain('onRecaptchaRequired');
+    expect(src).not.toContain('useNativeLogin');
     expect(src).toContain('<AsciiPanel');
     expect(src).toContain('<VtopLoginCard');
     // The old boundary that reloaded into legacy VTOP is now its own module.

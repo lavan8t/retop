@@ -18,7 +18,7 @@ import { showAlertDialog } from './ui/AlertDialog';
 import { isTypingEvent } from '../utils/keyboard';
 import { currentCampus } from '../utils/campus';
 
-import { entries as idbEntries, set as idbSet } from 'idb-keyval';
+import { createBackupJson, importBackupFromText } from '../utils/backupImport';
 
 interface ProfileMenuProps {
   userName: string;
@@ -42,22 +42,42 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   const handleExportBackup = async () => {
-    const data: Record<string, any> = {};
     try {
-      const idbData = await idbEntries();
-      for (const [k, v] of idbData) {
-        data[String(k)] = v;
+      const json = await createBackupJson();
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `retop_backup_${userRegNo || 'data'}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      showAlertDialog({
+        title: 'Export Error',
+        message:
+          err instanceof Error ? err.message : 'Could not export a backup.',
+      });
+    }
+  };
+
+  const handleImportBackup = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = async (e: any) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        await importBackupFromText(await file.text());
+        window.location.reload();
+      } catch (err) {
+        showAlertDialog({
+          title: 'Import Error',
+          message: err instanceof Error ? err.message : 'Invalid backup file.',
+        });
       }
-    } catch {}
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: 'application/json',
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `retop_backup_${userRegNo || 'data'}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    };
+    input.click();
   };
 
   const mainItems = [
@@ -169,10 +189,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
             handleExportBackup();
           } else if (isOffline && bottomIdx === 2) {
             // Import
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.json';
-            input.click();
+            handleImportBackup();
           } else {
             // Logout
             setShowLogoutDialog(true);
@@ -191,6 +208,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
     onNavigate,
     onLegacyToggle,
     isOffline,
+    handleImportBackup,
   ]);
 
   const menuRef = useRef<HTMLDivElement>(null);
@@ -364,31 +382,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
             </button>
             <button
               onMouseEnter={() => setFocusedIndex(mainItems.length + 2)}
-              onClick={() => {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = '.json';
-                input.onchange = async (e: any) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  try {
-                    const text = await file.text();
-                    const json = JSON.parse(text);
-                    if (json && typeof json === 'object') {
-                      await Promise.all(
-                        Object.entries(json).map(([k, v]) => idbSet(k, v)),
-                      );
-                      window.location.reload();
-                    }
-                  } catch {
-                    showAlertDialog({
-                      title: 'Import Error',
-                      message: 'Invalid backup file.',
-                    });
-                  }
-                };
-                input.click();
-              }}
+              onClick={handleImportBackup}
               title="Import Backup"
               aria-label="Import Backup"
               className={`w-full flex items-center justify-center p-2.5 rounded-[18px] transition-colors active:scale-95 group cursor-pointer outline-none ${

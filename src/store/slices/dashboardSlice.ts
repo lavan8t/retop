@@ -12,10 +12,18 @@ import { parseMarksSemesters } from '../../parsers/marks';
 import { parseGradesSemesters } from '../../parsers/grades';
 import { parseDASemesters } from '../../parsers/digital-assignments';
 import { parseStudentProfile } from '../../parsers/profile';
-import { getCachedData, setCachedData } from '../../utils/cache';
+import {
+  getCachedData,
+  scopedCacheKey,
+  setCachedData,
+} from '../../utils/cache';
 import { currentCampus } from '../../utils/campus';
 import { detailedToCourseSummary } from '../../utils/attendanceHome';
-import { readLastAttendanceSemester } from '../../utils/attendanceSemester';
+import {
+  currentCacheAccount,
+  readLastAttendanceSemester,
+  scopedPreferenceKey,
+} from '../../utils/attendanceSemester';
 import { waitForIntercepted } from '../../utils/dashboardInterceptor';
 import { isNativeAndroidBridgeAvailable } from '../../utils/vtopBridge';
 import { CourseSummary, Assignment, Event } from '../../types/vtop';
@@ -72,7 +80,7 @@ async function hydrateVitapHomeAttendance(
   const attendance = detailed.map(detailedToCourseSummary);
   set({ attendance });
   await setCachedData(
-    authId ? `${authId}_dashboard_attendance` : 'dashboard_attendance',
+    scopedCacheKey('dashboard_attendance', authId || currentCacheAccount()),
     attendance,
   );
 }
@@ -119,20 +127,10 @@ export const createDashboardSlice: StateCreator<
       try {
         const [cachedStats, cachedAtt, cachedDA, cachedEvents] =
           await Promise.all([
-            getCachedData<any>(
-              authId ? `${authId}_dashboard_stats` : 'dashboard_stats',
-            ),
-            getCachedData<any>(
-              authId
-                ? `${authId}_dashboard_attendance`
-                : 'dashboard_attendance',
-            ),
-            getCachedData<any>(
-              authId ? `${authId}_dashboard_da` : 'dashboard_da',
-            ),
-            getCachedData<any>(
-              authId ? `${authId}_dashboard_events` : 'dashboard_events',
-            ),
+            getCachedData<any>(scopedCacheKey('dashboard_stats', authId)),
+            getCachedData<any>(scopedCacheKey('dashboard_attendance', authId)),
+            getCachedData<any>(scopedCacheKey('dashboard_da', authId)),
+            getCachedData<any>(scopedCacheKey('dashboard_events', authId)),
           ]);
 
         const instantUpdates: any = {};
@@ -187,12 +185,8 @@ export const createDashboardSlice: StateCreator<
         // In offline mode, read timetable & calendar from cache immediately without waiting for XHR interception
         try {
           const [semHTML, calHTML] = await Promise.all([
-            getCachedData<any>(
-              authId ? `${authId}_tt_semester_list` : 'tt_semester_list',
-            ),
-            getCachedData<any>(
-              authId ? `${authId}_cal_semester_list` : 'cal_semester_list',
-            ),
+            getCachedData<any>(scopedCacheKey('tt_semester_list', authId)),
+            getCachedData<any>(scopedCacheKey('cal_semester_list', authId)),
           ]);
 
           if (semHTML || calHTML) {
@@ -223,14 +217,18 @@ export const createDashboardSlice: StateCreator<
               return nonInd.length > 0 ? nonInd : list;
             };
 
-            const savedCalSem = localStorage.getItem('retop-cal-selected-sem');
+            const savedCalSem = localStorage.getItem(
+              scopedPreferenceKey('retop-cal-selected-sem'),
+            );
             const calPool = filterNonIndustry(calSems);
             const calDefault =
               savedCalSem && calSems.some((s: any) => s.id === savedCalSem)
                 ? savedCalSem
                 : calPool.find((s) => s.selected)?.id || calPool[0]?.id || '';
 
-            const savedTtSem = localStorage.getItem('retop-tt-selected-sem');
+            const savedTtSem = localStorage.getItem(
+              scopedPreferenceKey('retop-tt-selected-sem'),
+            );
             const ttPool = filterNonIndustry(sems);
             const ttDefault =
               savedTtSem && sems.some((s: any) => s.id === savedTtSem)
@@ -278,6 +276,7 @@ export const createDashboardSlice: StateCreator<
         parser: (html: string) => any,
         storeKey: string,
       ) => {
+        const scopedKey = scopedCacheKey(cacheKey, authId);
         // In bridge/standalone mode: syncStudentData already populated these cache keys.
         // Skipping waitForIntercepted (never fires) and skipping live-fetch of
         // VTOP-home-only widget endpoints (return 302/empty outside home page context).
@@ -290,7 +289,7 @@ export const createDashboardSlice: StateCreator<
           try {
             const parsed = parser(intercepted);
             set({ [storeKey]: parsed } as any);
-            await setCachedData(cacheKey, parsed);
+            await setCachedData(scopedKey, parsed);
           } catch (e) {
             console.warn(`[retop] Parse failed for ${signalKey}:`, e);
           }
@@ -389,14 +388,18 @@ export const createDashboardSlice: StateCreator<
               return nonInd.length > 0 ? nonInd : list;
             };
 
-            const savedCalSem = localStorage.getItem('retop-cal-selected-sem');
+            const savedCalSem = localStorage.getItem(
+              scopedPreferenceKey('retop-cal-selected-sem'),
+            );
             const calPool = filterNonIndustry(calSems);
             const calDefault =
               savedCalSem && calSems.some((s: any) => s.id === savedCalSem)
                 ? savedCalSem
                 : calPool.find((s) => s.selected)?.id || calPool[0]?.id || '';
 
-            const savedTtSem = localStorage.getItem('retop-tt-selected-sem');
+            const savedTtSem = localStorage.getItem(
+              scopedPreferenceKey('retop-tt-selected-sem'),
+            );
             const ttPool = filterNonIndustry(sems);
             const ttDefault =
               savedTtSem && sems.some((s: any) => s.id === savedTtSem)

@@ -43,14 +43,17 @@ export function detectSessionMode(): SessionMode {
 export function extractCsrfFromHtml(html: string): string | null {
   if (!html || typeof html !== 'string') return null;
   const patterns = [
-    /<input[^>]*name=["']_csrf["'][^>]*value=["']([^"']+)["']/i,
-    /<input[^>]*value=["']([^"']+)["'][^>]*name=["']_csrf["']/i,
-    /<meta[^>]*name=["']_csrf["'][^>]*content=["']([^"']+)["']/i,
-    /(?:var\s+)?(?:csrfValue|_csrf)\s*[:=]\s*["']([^"']+)["']/i,
+    /<input[^>]*name=["']_csrf["'][^>]*value=["']([^"']+)["']/gi,
+    /<input[^>]*value=["']([^"']+)["'][^>]*name=["']_csrf["']/gi,
+    /<meta[^>]*name=["']_csrf["'][^>]*content=["']([^"']+)["']/gi,
+    /(?:var\s+)?(?:csrfValue|_csrf)\s*[:=]\s*["']([^"']+)["']/gi,
   ];
   for (const pattern of patterns) {
-    const match = html.match(pattern);
-    if (match && isCsrf(match[1])) return match[1];
+    let last: string | null = null;
+    for (const match of html.matchAll(pattern)) {
+      if (isCsrf(match[1])) last = match[1];
+    }
+    if (last) return last;
   }
   return null;
 }

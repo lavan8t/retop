@@ -150,7 +150,7 @@ export const AlertDialogManager: React.FC = () => {
           style={
             {
               '--m3e-button-container-height': '48px',
-              '--m3e-button-container-color': isDestructive
+              '--m3e-filled-button-container-color': isDestructive
                 ? 'var(--md-sys-color-error)'
                 : 'var(--md-sys-color-primary)',
               '--m3e-button-label-text-color': isDestructive

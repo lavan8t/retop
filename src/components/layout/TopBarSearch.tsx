@@ -19,7 +19,6 @@ import {
 import { QuickLink, MenuCategory } from '../../types/vtop';
 import { M3eIconButton } from '../attendance/m3eTags';
 import { useDataStore } from '../../store/dataStore';
-import { useAppStore } from '../../store/appStore';
 import { getCategoryIcon } from '../../utils/icons';
 import { toTitleCase } from '../../utils/formatting';
 import {
@@ -74,6 +73,14 @@ const renderCategoryTitle = (catTitle: string) => {
   }
   return titleStr;
 };
+
+/**
+ * Shift always hands the link to native VTOP; without it, app.tsx keeps the
+ * current UI (or reopens retop when VTOP is visible). Never invert on isModernUI:
+ * a link with no retop page must always go to legacy.
+ */
+const forceLegacyFor = (shiftKey: boolean, link: QuickLink): boolean =>
+  shiftKey || !hasRetopPage(link);
 
 export const RETOP_NATIVE_LINKS: QuickLink[] = [
   {
@@ -246,7 +253,6 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
   isSyncing = false,
   lastSyncTime = 0,
 }) => {
-  const { isModernUI, setIsModernUI } = useAppStore();
   const isOffline =
     typeof window !== 'undefined' &&
     (!!(window as any).__RETOP_OFFLINE__ ||
@@ -550,7 +556,6 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
     onNavigate,
     setIsOmniboxOpen,
     activeMenu,
-    isModernUI,
   ]);
 
   // Auto-scroll active item into view
@@ -721,8 +726,11 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                       <div
                         key={idx}
                         {...selectableRowProps({
-                          onActivate: () => {
-                            onNavigate(link, false);
+                          onActivate: (e) => {
+                            onNavigate(
+                              link,
+                              forceLegacyFor(e?.shiftKey ?? false, link),
+                            );
                             setIsOmniboxOpen(false);
                             setQuery('');
                           },
@@ -732,10 +740,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                         })}
                         role="button"
                         onClick={(e) => {
-                          const forceLegacy = e.shiftKey
-                            ? isModernUI
-                            : !isModernUI;
-                          onNavigate(link, forceLegacy);
+                          onNavigate(link, forceLegacyFor(e.shiftKey, link));
                           setIsOmniboxOpen(false);
                           setQuery('');
                         }}
@@ -788,10 +793,10 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                               >
                                 <button
                                   onClick={(e) => {
-                                    const forceLegacy = e.shiftKey
-                                      ? isModernUI
-                                      : !isModernUI;
-                                    onNavigate(link, forceLegacy);
+                                    onNavigate(
+                                      link,
+                                      forceLegacyFor(e.shiftKey, link),
+                                    );
                                     setIsOmniboxOpen(false);
                                     setQuery('');
                                   }}
@@ -867,8 +872,11 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                       <div
                         key={i}
                         {...selectableRowProps({
-                          onActivate: () => {
-                            onNavigate(link, false);
+                          onActivate: (e) => {
+                            onNavigate(
+                              link,
+                              forceLegacyFor(e?.shiftKey ?? false, link),
+                            );
                             setIsOmniboxOpen(false);
                             setQuery('');
                           },
@@ -878,10 +886,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                         })}
                         role="button"
                         onClick={(e) => {
-                          const forceLegacy = e.shiftKey
-                            ? isModernUI
-                            : !isModernUI;
-                          onNavigate(link, forceLegacy);
+                          onNavigate(link, forceLegacyFor(e.shiftKey, link));
                           setIsOmniboxOpen(false);
                           setQuery('');
                         }}
@@ -971,7 +976,7 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                           type="button"
                           onMouseDown={(e) => {
                             e.preventDefault();
-                            onNavigate(link, false);
+                            onNavigate(link, forceLegacyFor(e.shiftKey, link));
                             setIsOmniboxOpen(false);
                             setQuery('');
                           }}
@@ -1078,18 +1083,13 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({
                 <span className="font-mono font-medium text-(--accent-base)">
                   Shift + Enter
                 </span>{' '}
-                for{' '}
-                {isModernUI ? (
-                  <span className="font-vtop font-medium">VTOP</span>
-                ) : (
-                  'retop'
-                )}{' '}
+                for <span className="font-vtop font-medium">VTOP</span>
                 &nbsp;•&nbsp;{' '}
                 <span className="font-mono font-medium text-(--text-muted)">
                   Enter
                 </span>{' '}
                 for{' '}
-                {isModernUI ? (
+                {hasRetopPage(searchResults[selectedIndex] ?? {}) ? (
                   'retop'
                 ) : (
                   <span className="font-vtop font-medium">VTOP</span>

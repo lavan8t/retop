@@ -413,11 +413,8 @@ export const GradesPage: React.FC<GradesPageProps> = ({
                   }
                   style={
                     {
-                      '--m3e-segmented-button-height': '48px',
-                      '--m3e-segmented-button-selected-container-color':
-                        'var(--bg-primary-container)',
-                      '--m3e-segmented-button-selected-label-text-color':
-                        'var(--text-on-primary-container)',
+                      '--m3e-segmented-button-start-shape': '20px',
+                      '--m3e-segmented-button-end-shape': '20px',
                     } as React.CSSProperties
                   }
                 >

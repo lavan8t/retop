@@ -16,7 +16,7 @@ export const M3eIconAction = ({
   label: string;
   onClick: () => void;
   disabled?: boolean;
-  variant?: string;
+  variant?: 'standard' | 'filled' | 'tonal' | 'outlined';
 }) => {
   const id = `att-action-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   return (

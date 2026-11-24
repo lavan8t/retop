@@ -28,13 +28,16 @@ export const MaterialSwitch = ({
           '--m3e-switch-track-width': '46px',
           '--m3e-switch-track-height': '26px',
           '--m3e-switch-track-outline-width': '2px',
-          '--m3e-switch-track-outline-color': 'var(--border-dim)',
-          '--m3e-switch-selected-track-color': 'var(--accent-base)',
-          '--m3e-switch-selected-handle-color': 'var(--text-inverse, #ffffff)',
+          '--m3e-switch-track-outline-color': 'var(--md-sys-color-outline)',
+          '--m3e-switch-selected-track-color': 'var(--md-sys-color-primary)',
+          '--m3e-switch-selected-handle-color':
+            'var(--md-sys-color-on-primary)',
+          '--m3e-switch-unselected-track-color':
+            'var(--md-sys-color-surface-container-highest)',
+          '--m3e-switch-unselected-handle-color':
+            'var(--md-sys-color-on-surface-variant)',
           '--m3e-switch-selected-handle-width': '18px',
           '--m3e-switch-selected-handle-height': '18px',
-          '--m3e-switch-unselected-track-color': 'var(--bg-surface)',
-          '--m3e-switch-unselected-handle-color': 'var(--text-muted, #94a3b8)',
           '--m3e-switch-unselected-handle-width': '14px',
           '--m3e-switch-unselected-handle-height': '14px',
           '--m3e-switch-state-layer-size': '48px',

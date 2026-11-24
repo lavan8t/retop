@@ -10,7 +10,9 @@
    --accent-base, so the tokens stay single-sourced.
 
    Shape corners are left at M3E's M3 defaults — the app has no radius token
-   to map them onto. This file only aligns the type scale to the app's sizes. */
+   to map them onto. Component palettes stay at M3E defaults (selected and
+   unselected buttons keep their M3 text roles). This file only aligns the
+   type scale to the app's sizes. */
 
 :host,
 #retop-root {

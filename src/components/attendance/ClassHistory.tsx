@@ -1,4 +1,4 @@
-import { M3eButton, M3eButtonGroup } from './m3eTags';
+import { M3eButton, M3eButtonGroup, M3eList, M3eListItem } from './m3eTags';
 import { useState, type CSSProperties } from 'react';
 import {
   ArrowDownward,
@@ -13,17 +13,11 @@ import {
   groupRecordsByMonth,
   historyStatusLabel,
   recordStatus,
+  HISTORY_STATUS_TEXT_CLASS,
   type HistoryEntry,
-  type RecordStatus,
 } from './attendanceView';
 import { M3eIconAction } from './M3eIconAction';
 import { HOME_ITEM, PAGE_CROSSFADE } from '../../utils/motion';
-
-const STATUS_TEXT: Record<RecordStatus, string> = {
-  present: 'text-(--att-safe)',
-  absent: 'text-(--att-danger)',
-  other: 'text-(--att-warn)',
-};
 
 export type TileCategory = 'present' | 'absent' | 'other' | 'upcoming';
 
@@ -64,13 +58,8 @@ const slotInfo = (record: AttendanceRecord): string =>
     .replace(/\s*(?:-|to)\s*(?:(?!-|to).)*$/i, '')
     .replace(/\//g, ' · ');
 
-const DateTile = ({
-  entry,
-  status,
-}: {
-  entry: HistoryEntry;
-  status: RecordStatus;
-}) => {
+/** Android attendance date tile: day + short month, no duplicate status. */
+const DateTile = ({ entry, slot }: { entry: HistoryEntry; slot?: string }) => {
   const day = entry.date
     ? entry.date.toLocaleDateString('en-GB', { day: '2-digit' })
     : '--';
@@ -78,15 +67,15 @@ const DateTile = ({
     ? entry.date.toLocaleDateString('en-GB', { month: 'short' })
     : '—';
   return (
-    <div className="w-11 h-11 shrink-0 rounded-xl flex flex-col items-center justify-center">
-      <span className="text-sm font-black leading-none tabular-nums">
+    <div
+      slot={slot}
+      className="w-11 h-11 shrink-0 rounded-xl flex flex-col items-center justify-center"
+    >
+      <span className="text-sm font-black leading-none tabular-nums text-(--md-sys-color-on-surface)">
         {day}
       </span>
-      <span className="text-[10px] uppercase font-bold text-(--text-muted)">
+      <span className="text-[10px] font-bold text-(--md-sys-color-on-surface-variant)">
         {month}
-      </span>
-      <span className={`text-[10px] font-bold ${STATUS_TEXT[status]}`}>
-        {historyStatusLabel(entry.record.status)}
       </span>
     </div>
   );
@@ -136,7 +125,7 @@ export const ClassHistory = ({
   return (
     <section className="flex flex-col gap-3" aria-label="Class history">
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-(--text-muted)">
+        <h3 className="text-xs font-bold text-(--md-sys-color-on-surface-variant)">
           Class history
         </h3>
         <div className="flex items-center gap-1">
@@ -155,8 +144,9 @@ export const ClassHistory = ({
             }
             onClick={() => onSortChange(sortOrder === 'desc' ? 'asc' : 'desc')}
           />
-          <M3eButtonGroup aria-label="Class history layout">
+          <M3eButtonGroup variant="connected" aria-label="Class history layout">
             <M3eButton
+              variant="tonal"
               toggle
               value="list"
               selected={view === 'list'}
@@ -166,6 +156,7 @@ export const ClassHistory = ({
               <List slot="icon" aria-hidden="true" />
             </M3eButton>
             <M3eButton
+              variant="tonal"
               toggle
               value="tiles"
               selected={view === 'tiles'}
@@ -183,12 +174,12 @@ export const ClassHistory = ({
           {[0, 1, 2].map((i) => (
             <div
               key={i}
-              className="h-12 rounded-xl bg-(--bg-highlight) animate-pulse"
+              className="h-12 rounded-xl bg-(--md-sys-color-surface-container) animate-pulse"
             />
           ))}
         </div>
       ) : months.length === 0 ? (
-        <p className="text-sm text-(--text-muted) rounded-2xl bg-(--bg-surface) px-4 py-6 text-center">
+        <p className="text-sm text-(--md-sys-color-on-surface-variant) rounded-2xl bg-(--md-sys-color-surface-container) px-4 py-6 text-center">
           {noClasses
             ? 'No classes conducted yet'
             : 'No history records found for this class.'}
@@ -206,7 +197,7 @@ export const ClassHistory = ({
                 type="button"
                 aria-expanded={!isCollapsed}
                 onClick={() => toggleMonth(month.key)}
-                className="self-start flex items-center gap-2 rounded-full px-2 py-1 text-xs font-bold text-(--text-muted) outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) cursor-pointer hover:text-(--text-main)"
+                className="self-start flex items-center gap-2 rounded-full px-2 py-1 text-xs font-bold text-(--md-sys-color-on-surface-variant) outline-none focus-visible:ring-2 focus-visible:ring-(--md-sys-color-primary) cursor-pointer hover:text-(--md-sys-color-on-surface)"
               >
                 {isCollapsed ? (
                   <ChevronRight aria-hidden="true" />
@@ -217,48 +208,40 @@ export const ClassHistory = ({
               </button>
               {!isCollapsed &&
                 (view === 'list' ? (
-                  <ul
+                  <M3eList
                     key={sortOrder}
-                    className={`flex flex-col gap-0.5 ${PAGE_CROSSFADE}`}
+                    variant="segmented"
+                    className={PAGE_CROSSFADE}
                   >
-                    {month.entries.map((entry, index) => {
-                      const status = recordStatus(entry.record.status);
-                      return (
-                        <li
-                          key={`${entry.record.date}-${index}`}
-                          className="flex items-center gap-3 px-3 py-2"
+                    {month.entries.map((entry, index) => (
+                      <M3eListItem key={`${entry.record.date}-${index}`}>
+                        <DateTile slot="leading" entry={entry} />
+                        <span className="min-w-0 truncate text-(--md-sys-color-on-surface)">
+                          {slotInfo(entry.record)}
+                        </span>
+                        <span
+                          slot="trailing"
+                          className={`shrink-0 font-bold ${
+                            HISTORY_STATUS_TEXT_CLASS[
+                              recordStatus(entry.record.status)
+                            ]
+                          }`}
                         >
-                          <DateTile entry={entry} status={status} />
-                          <div className="min-w-0 flex-1">
-                            <p className="text-xs font-medium text-(--text-muted) truncate">
-                              {slotInfo(entry.record)}
-                            </p>
-                          </div>
-                          <span
-                            className={`text-xs font-bold shrink-0 ${STATUS_TEXT[status]}`}
-                          >
-                            {historyStatusLabel(entry.record.status)}
-                          </span>
-                        </li>
-                      );
-                    })}
-                  </ul>
+                          {historyStatusLabel(entry.record.status)}
+                        </span>
+                      </M3eListItem>
+                    ))}
+                  </M3eList>
                 ) : (
                   <ul
                     key={sortOrder}
                     className={`grid grid-cols-7 gap-1 w-fit max-w-full ${PAGE_CROSSFADE}`}
                   >
-                    {month.entries.map((entry, index) => {
-                      const label = historyStatusLabel(entry.record.status);
-                      return (
-                        <li
-                          key={`${entry.record.date}-${index}`}
-                          title={undefined}
-                        >
-                          <TileCell entry={entry} />
-                        </li>
-                      );
-                    })}
+                    {month.entries.map((entry, index) => (
+                      <li key={`${entry.record.date}-${index}`}>
+                        <TileCell entry={entry} />
+                      </li>
+                    ))}
                   </ul>
                 ))}
             </div>

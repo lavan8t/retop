@@ -46,9 +46,9 @@
   --shadow-main: transparent;
 
   /* Semantic roles alias injected Material 3 tokens — no standalone palette */
-  --color-success: var(--att-safe, var(--md-sys-color-success));
-  --color-warning: var(--att-warn, var(--md-sys-color-warning));
-  --color-error: var(--att-danger, var(--md-sys-color-error));
+  --color-success: var(--md-sys-color-success, var(--md-sys-color-primary));
+  --color-warning: var(--md-sys-color-warning, var(--md-sys-color-secondary));
+  --color-error: var(--md-sys-color-error);
   --color-info: var(--md-sys-color-info, var(--md-sys-color-primary));
   --color-purple: var(--md-sys-color-tertiary, var(--md-sys-color-primary));
   --color-cyan: var(--color-info);

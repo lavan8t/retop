@@ -15,9 +15,10 @@ describe('M3E shared control wrappers', () => {
     expect(source).toContain('onChange?.(e.target.checked)');
     expect(source).not.toContain('role="switch"');
 
-    // Hit area, focus ring and selected/unselected palette stay in place.
+    // Hit area stays; colors use Material 3 roles, not app-specific variables.
     expect(source).toContain('min-w-12 min-h-12');
     expect(source).toContain('focus-visible:ring-(--accent-base)');
+    expect(source).toContain("'--m3e-switch-track-width'");
     for (const token of [
       '--m3e-switch-selected-track-color',
       '--m3e-switch-unselected-track-color',
@@ -25,6 +26,9 @@ describe('M3E shared control wrappers', () => {
     ]) {
       expect(source).toContain(token);
     }
+    expect(source).not.toContain(
+      "'--m3e-switch-selected-track-color': 'var(--accent-base)'",
+    );
   });
 
   it('SegmentedControl uses m3e-segmented-button and keeps its onChange contract', () => {
@@ -42,12 +46,14 @@ describe('M3E shared control wrappers', () => {
     expect(source).toContain('flex items-center gap-0.5 shrink-0 ${className}');
     expect(source).toContain("minWidth: '3rem'");
     for (const token of [
-      '--m3e-segmented-button-height',
-      '--m3e-segmented-button-selected-container-color',
-      '--m3e-segmented-button-unselected-label-text-color',
+      '--m3e-segmented-button-start-shape',
+      '--m3e-segmented-button-end-shape',
     ]) {
       expect(source).toContain(token);
     }
+    expect(source).not.toContain(
+      '--m3e-segmented-button-selected-container-color',
+    );
   });
 
   it('Dropdown uses m3e-form-field/m3e-select and emits the original option ids', () => {
@@ -94,7 +100,7 @@ describe('M3E shared control wrappers', () => {
     ]) {
       expect(source).not.toContain(removed);
     }
-    expect(source).toContain('--m3e-dialog-scrim-color');
+    expect(source).not.toContain('--m3e-dialog-scrim-color');
     expect(source).toContain('zIndex: 100000');
   });
 

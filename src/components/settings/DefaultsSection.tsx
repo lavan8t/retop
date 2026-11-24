@@ -1,8 +1,7 @@
 import React from 'react';
 import { AppSettings } from '../../utils/settings-store';
-import { SettingTopicCard } from './SettingTopicCard';
+import { SettingTopicList } from './SettingTopicList';
 import { SegmentedControl } from '../ui/SegmentedControl';
-import { SemesterDropdown } from '../ui/Dropdown';
 import { MaterialSwitch } from '../MaterialSwitch';
 
 interface DefaultsSectionProps {
@@ -19,80 +18,57 @@ export const DefaultsSection: React.FC<DefaultsSectionProps> = ({
 }) => {
   return (
     <>
-      <SettingTopicCard
-        title="Timetable View Mode"
-        description="Select preferred default timetable layout format"
-      >
-        <div className="rounded-2xl bg-(--bg-main) p-1 w-full max-w-xl">
-          <SegmentedControl
-            ariaLabel="Timetable view mode"
-            options={[
-              { label: 'Weekly View', value: 'weekly' },
-              { label: 'Slot Grid', value: 'slot' },
-              { label: 'Consolidated', value: 'consolidated' },
-              { label: 'Full Month', value: 'fullMonth' },
-            ]}
-            value={settings.timetableMode || 'weekly'}
-            onChange={(val) => updateSetting('timetableMode', val as any)}
-            className="w-full flex-1 *:flex-1"
-          />
-        </div>
-      </SettingTopicCard>
-
-      <SettingTopicCard
-        title="Date Format Pattern"
-        description="Choose default date display pattern across retop"
-      >
-        <SemesterDropdown
-          semesters={[
-            { id: 'DD Mon YYYY', label: 'DD Mon YYYY' },
-            { id: 'DD/MM/YYYY', label: 'DD/MM/YYYY' },
-            { id: 'MM/DD/YYYY', label: 'MM/DD/YYYY' },
-            { id: 'YYYY-MM-DD', label: 'YYYY-MM-DD' },
-            { id: 'DD.MM.YYYY', label: 'DD.MM.YYYY' },
-            { id: 'DD-MM-YYYY', label: 'DD-MM-YYYY' },
-          ]}
-          selectedId={settings.dateFormat || 'DD Mon YYYY'}
-          onChange={(id: string) => updateSetting('dateFormat', id as any)}
-        />
-      </SettingTopicCard>
-
-      <SettingTopicCard
-        title="Default Launch View"
-        description="Always load retop modernized view on login"
-      >
-        <div className="flex items-center justify-between gap-4 w-full">
-          <div className="flex flex-col gap-1">
-            <span className="text-sm font-semibold text-(--text-main)">
-              Load retop on Login
-            </span>
-            <span className="text-xs text-(--text-muted)">
-              Automatically show retop dashboard instead of legacy{' '}
-              <span className="font-vtop">VTOP</span> UI
-            </span>
+      <SettingTopicList title="Timetable View Mode">
+        <m3e-list-item className="min-h-0">
+          <div className="rounded-2xl bg-(--bg-main) p-1 w-full max-w-xl">
+            <SegmentedControl
+              ariaLabel="Timetable view mode"
+              options={[
+                { label: 'Weekly View', value: 'weekly' },
+                { label: 'Slot Grid', value: 'slot' },
+                { label: 'Consolidated', value: 'consolidated' },
+                { label: 'Full Month', value: 'fullMonth' },
+              ]}
+              value={settings.timetableMode || 'weekly'}
+              onChange={(val) => updateSetting('timetableMode', val as any)}
+              className="w-full flex-1 *:flex-1"
+            />
           </div>
-          <MaterialSwitch
-            selected={settings.defaultView === 'modern'}
-            onChange={() => {
-              const newVal =
-                settings.defaultView === 'modern' ? 'legacy' : 'modern';
-              updateSetting('defaultView', newVal);
-              if (newVal === 'legacy') {
-                sessionStorage.setItem('vtop-legacy-mode', 'true');
-              } else {
-                sessionStorage.setItem('vtop-legacy-mode', 'false');
-              }
-            }}
-          />
-        </div>
-      </SettingTopicCard>
+        </m3e-list-item>
+      </SettingTopicList>
 
-      <SettingTopicCard
-        title="Display & Privacy Preferences"
-        description="Time format display and private data masking"
-      >
-        <div className="flex flex-col divide-y divide-(--border-dim)">
-          <div className="flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0">
+      <SettingTopicList title="Default Launch View">
+        <m3e-list-item>
+          <div className="flex items-center justify-between gap-4 w-full">
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-semibold text-(--text-main)">
+                Load retop on Login
+              </span>
+              <span className="text-xs text-(--text-muted)">
+                Automatically show retop dashboard instead of legacy{' '}
+                <span className="font-vtop">VTOP</span> UI
+              </span>
+            </div>
+            <MaterialSwitch
+              selected={settings.defaultView === 'modern'}
+              onChange={() => {
+                const newVal =
+                  settings.defaultView === 'modern' ? 'legacy' : 'modern';
+                updateSetting('defaultView', newVal);
+                if (newVal === 'legacy') {
+                  sessionStorage.setItem('vtop-legacy-mode', 'true');
+                } else {
+                  sessionStorage.setItem('vtop-legacy-mode', 'false');
+                }
+              }}
+            />
+          </div>
+        </m3e-list-item>
+      </SettingTopicList>
+
+      <SettingTopicList title="Display & Privacy Preferences">
+        <m3e-list-item>
+          <div className="flex items-center justify-between gap-4">
             <div className="flex flex-col gap-1">
               <span className="text-sm font-semibold text-(--text-main)">
                 Time Format
@@ -115,8 +91,10 @@ export const DefaultsSection: React.FC<DefaultsSectionProps> = ({
               />
             </div>
           </div>
+        </m3e-list-item>
 
-          <div className="flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0">
+        <m3e-list-item>
+          <div className="flex items-center justify-between gap-4">
             <div className="flex flex-col gap-1">
               <span className="text-sm font-semibold text-(--text-main)">
                 Blur CGPA &amp; Credits
@@ -130,8 +108,8 @@ export const DefaultsSection: React.FC<DefaultsSectionProps> = ({
               onChange={() => updateSetting('blurCgpa', !settings.blurCgpa)}
             />
           </div>
-        </div>
-      </SettingTopicCard>
+        </m3e-list-item>
+      </SettingTopicList>
     </>
   );
 };

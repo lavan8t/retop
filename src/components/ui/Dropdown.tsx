@@ -65,9 +65,10 @@ export function Dropdown<T extends string | number = string>({
       style={
         {
           '--m3e-form-field-container-shape': '9999px',
-          '--m3e-form-field-container-color': 'var(--bg-surface)',
-          '--m3e-form-field-outline-color': 'var(--border-dim)',
-          '--m3e-form-field-color': 'var(--text-main)',
+          '--m3e-form-field-container-color':
+            'var(--md-sys-color-surface-container)',
+          '--m3e-form-field-outline-color': 'var(--md-sys-color-outline)',
+          '--m3e-form-field-color': 'var(--md-sys-color-on-surface)',
           '--m3e-form-field-width': '100%',
         } as React.CSSProperties
       }

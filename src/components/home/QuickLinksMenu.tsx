@@ -13,6 +13,7 @@ import { useDataStore } from '../../store/dataStore';
 import { SpotlightSection } from './SpotlightSection';
 import { isTypingEvent } from '../../utils/keyboard';
 import { matchRegisteredAttendance } from '../../utils/courseCodeMatching';
+import { HOME_LIST_STYLE } from './m3eListStyles';
 
 interface QuickLinksMenuProps {
   className?: string;
@@ -262,15 +263,19 @@ export const QuickLinksMenu: React.FC<QuickLinksMenuProps> = ({
               Attendance
             </button>
           </div>
-          <div className="flex flex-col gap-0.5 rounded-2xl overflow-hidden pt-1 pr-1">
-            {sortedAttendance.length === 0 ? (
-              <EmptyState msg="No Registered Courses" size="sm" />
-            ) : (
-              sortedAttendance.map((c, i) => (
+          {sortedAttendance.length === 0 ? (
+            <EmptyState msg="No Registered Courses" size="sm" />
+          ) : (
+            <m3e-list
+              variant="segmented"
+              style={HOME_LIST_STYLE}
+              className="rounded-2xl overflow-hidden pt-1 pr-1"
+            >
+              {sortedAttendance.map((c, i) => (
                 <AttendanceRow key={i} course={c} />
-              ))
-            )}
-          </div>
+              ))}
+            </m3e-list>
+          )}
         </div>
 
         {spotlightCategories && spotlightCategories.length > 0 && (

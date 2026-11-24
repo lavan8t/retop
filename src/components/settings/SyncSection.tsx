@@ -1,22 +1,17 @@
 ﻿import React from 'react';
-import { SettingTopicCard } from './SettingTopicCard';
-import { M3eCheckbox } from '../attendance/m3eTags';
+import { SettingTopicList } from './SettingTopicList';
+import { M3eButton, M3eButtonGroup, M3eCheckbox } from '../attendance/m3eTags';
+
+interface IcalOptions {
+  includeTimetable: boolean;
+  includeCalendar: boolean;
+  includeEvents: boolean;
+  includeExams: boolean;
+}
 
 interface SyncSectionProps {
-  icalOptions: {
-    includeTimetable: boolean;
-    includeCalendar: boolean;
-    includeEvents: boolean;
-    includeExams: boolean;
-  };
-  setIcalOptions: React.Dispatch<
-    React.SetStateAction<{
-      includeTimetable: boolean;
-      includeCalendar: boolean;
-      includeEvents: boolean;
-      includeExams: boolean;
-    }>
-  >;
+  icalOptions: IcalOptions;
+  setIcalOptions: React.Dispatch<React.SetStateAction<IcalOptions>>;
   handleExportICal: () => void;
   googleConnected: boolean;
   googleAccount: string;
@@ -27,12 +22,13 @@ interface SyncSectionProps {
 }
 
 const checkboxClass =
-  'min-h-12 flex items-center gap-3 px-3 rounded-xl bg-(--bg-main) cursor-pointer hover:bg-(--bg-highlight) transition-colors';
+  'min-h-12 flex items-center gap-3 px-3 rounded-xl bg-(--md-sys-color-surface-container-low) cursor-pointer';
 const checkboxStyle = {
   '--m3e-checkbox-container-size': '32px',
   '--m3e-checkbox-icon-size': '16px',
 } as React.CSSProperties;
-const optionLabelClass = 'text-xs font-semibold text-(--text-main)';
+const optionLabelClass =
+  'text-xs font-semibold text-(--md-sys-color-on-surface)';
 
 export const SyncSection: React.FC<SyncSectionProps> = ({
   icalOptions,
@@ -45,126 +41,86 @@ export const SyncSection: React.FC<SyncSectionProps> = ({
   handleGoogleConnect,
   handleGoogleSync,
 }) => {
+  const toggleOption = (key: keyof IcalOptions) => (e: any) =>
+    setIcalOptions((prev) => ({ ...prev, [key]: e.target.checked }));
+
   return (
-    <>
-      <SettingTopicCard
-        title="Export iCal (.ics) File"
-        description="Export your schedule, exams, and calendar events as a standard .ics file for Apple Calendar, Outlook, or Google Calendar"
-      >
-        <div className="flex flex-col gap-4 w-full">
-          <div className="flex flex-col gap-2">
-            <span className="text-xs font-semibold uppercase font-expanded text-(--text-muted) tracking-wider">
-              Choose Data to Include
+    <SettingTopicList title="Calendar export & sync">
+      <m3e-list-item className="min-h-0">
+        <div className="grid grid-cols-1 gap-2 w-full sm:grid-cols-2">
+          <label className={checkboxClass}>
+            <M3eCheckbox
+              checked={icalOptions.includeTimetable}
+              onChange={toggleOption('includeTimetable')}
+              style={checkboxStyle}
+            />
+            <span className={optionLabelClass}>
+              Timetable (Classes &amp; Slots)
             </span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <label className={checkboxClass}>
-                <M3eCheckbox
-                  checked={icalOptions.includeTimetable}
-                  onChange={(e: any) =>
-                    setIcalOptions((prev) => ({
-                      ...prev,
-                      includeTimetable: e.target.checked,
-                    }))
-                  }
-                  style={checkboxStyle}
-                />
-                <span className={optionLabelClass}>
-                  Timetable (Classes &amp; Slots)
-                </span>
-              </label>
-
-              <label className={checkboxClass}>
-                <M3eCheckbox
-                  checked={icalOptions.includeCalendar}
-                  onChange={(e: any) =>
-                    setIcalOptions((prev) => ({
-                      ...prev,
-                      includeCalendar: e.target.checked,
-                    }))
-                  }
-                  style={checkboxStyle}
-                />
-                <span className={optionLabelClass}>Academic Calendar</span>
-              </label>
-
-              <label className={checkboxClass}>
-                <M3eCheckbox
-                  checked={icalOptions.includeExams}
-                  onChange={(e: any) =>
-                    setIcalOptions((prev) => ({
-                      ...prev,
-                      includeExams: e.target.checked,
-                    }))
-                  }
-                  style={checkboxStyle}
-                />
-                <span className={optionLabelClass}>Exam Schedules</span>
-              </label>
-
-              <label className={checkboxClass}>
-                <M3eCheckbox
-                  checked={icalOptions.includeEvents}
-                  onChange={(e: any) =>
-                    setIcalOptions((prev) => ({
-                      ...prev,
-                      includeEvents: e.target.checked,
-                    }))
-                  }
-                  style={checkboxStyle}
-                />
-                <span className={optionLabelClass}>University Events</span>
-              </label>
-            </div>
-          </div>
-
-          <div className="flex justify-end pt-3 border-t border-(--border-dim)">
-            <button
-              onClick={handleExportICal}
-              className="min-h-12 px-6 rounded-full text-sm font-semibold bg-(--accent-base) text-(--text-inverse) outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) transition-colors border-0 cursor-pointer hover:opacity-90"
-            >
-              Export iCal (.ics) File
-            </button>
-          </div>
+          </label>
+          <label className={checkboxClass}>
+            <M3eCheckbox
+              checked={icalOptions.includeCalendar}
+              onChange={toggleOption('includeCalendar')}
+              style={checkboxStyle}
+            />
+            <span className={optionLabelClass}>Academic Calendar</span>
+          </label>
+          <label className={checkboxClass}>
+            <M3eCheckbox
+              checked={icalOptions.includeExams}
+              onChange={toggleOption('includeExams')}
+              style={checkboxStyle}
+            />
+            <span className={optionLabelClass}>Exam Schedules</span>
+          </label>
+          <label className={checkboxClass}>
+            <M3eCheckbox
+              checked={icalOptions.includeEvents}
+              onChange={toggleOption('includeEvents')}
+              style={checkboxStyle}
+            />
+            <span className={optionLabelClass}>University Events</span>
+          </label>
         </div>
-      </SettingTopicCard>
+      </m3e-list-item>
 
-      <SettingTopicCard
-        title="Google Calendar Sync"
-        description="Sync your VTOP classes and exams to your Google Calendar with a personal Google Account."
-      >
-        <div className="flex flex-col gap-4 w-full">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase font-expanded text-(--text-muted) tracking-wider">
-              Google Account
-            </span>
-            <span className="font-mono text-xs text-(--text-main) bg-(--bg-highlight) px-2.5 py-1 rounded-lg">
-              {googleConnected
-                ? googleAccount || 'Connected'
-                : 'Connect Google Account to begin'}
-            </span>
-          </div>
-
+      <m3e-list-item className="min-h-0">
+        <div className="flex flex-col gap-1 w-full">
+          <span className="text-xs font-semibold text-(--md-sys-color-on-surface)">
+            {googleConnected
+              ? googleAccount || 'Google account connected'
+              : 'Google account not connected'}
+          </span>
           {googleStatus && (
-            <p className="text-xs leading-relaxed text-(--text-muted)">
+            <span className="text-xs text-(--md-sys-color-on-surface-variant)">
               {googleStatus}
-            </p>
+            </span>
           )}
-
-          <div className="flex justify-end pt-3 border-t border-(--border-dim)">
-            <button
-              onClick={googleConnected ? handleGoogleSync : handleGoogleConnect}
-              disabled={googleBusy}
-              className="min-h-12 px-6 rounded-full text-sm font-semibold bg-(--accent-base) text-(--text-inverse) outline-none focus-visible:ring-2 focus-visible:ring-(--accent-base) transition-colors border-0 cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {googleBusy
-                ? 'Working…'
-                : googleConnected
-                  ? 'Sync to Google Calendar'
-                  : 'Connect Google Account'}
-            </button>
-          </div>
         </div>
-      </SettingTopicCard>
-    </>
+      </m3e-list-item>
+
+      <m3e-list-item className="min-h-0">
+        <M3eButtonGroup
+          variant="standard"
+          className="flex flex-wrap justify-end gap-2 w-full"
+        >
+          <M3eButton
+            variant="filled"
+            disabled={googleBusy}
+            onClick={googleConnected ? handleGoogleSync : handleGoogleConnect}
+          >
+            {googleBusy
+              ? 'Working…'
+              : googleConnected
+                ? 'Sync to Google Calendar'
+                : 'Connect Google Account'}
+          </M3eButton>
+          <M3eButton variant="tonal" onClick={handleExportICal}>
+            Download .ics
+          </M3eButton>
+        </M3eButtonGroup>
+      </m3e-list-item>
+    </SettingTopicList>
   );
 };

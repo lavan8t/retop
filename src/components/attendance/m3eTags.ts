@@ -12,8 +12,12 @@ export const M3eIconButton: any = 'm3e-icon-button';
 export const M3eCheckbox: any = 'm3e-checkbox';
 export const M3eTooltip: any = 'm3e-tooltip';
 export const M3eSelectionList: any = 'm3e-selection-list';
+export const M3eList: any = 'm3e-list';
+export const M3eListItem: any = 'm3e-list-item';
 export const M3eListOption: any = 'm3e-list-option';
 export const M3eChip: any = 'm3e-chip';
+export const M3eFilterChip: any = 'm3e-filter-chip';
+export const M3eFilterChipSet: any = 'm3e-filter-chip-set';
 export const M3eCircularProgressIndicator: any =
   'm3e-circular-progress-indicator';
 export const M3eLinearProgressIndicator: any = 'm3e-linear-progress-indicator';

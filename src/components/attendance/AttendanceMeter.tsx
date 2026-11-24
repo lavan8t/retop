@@ -23,14 +23,14 @@ export const AttendanceMeter: React.FC<AttendanceMeterProps> = ({
     examName,
   } = forecast;
 
-  let accentColor = 'text-(--att-safe)';
+  let accentColor = 'text-(--md-sys-color-success)';
   let copy = `Safe! Can skip ${safeSkips} class${safeSkips !== 1 ? 'es' : ''}.`;
 
   if (status === 'WARNING') {
-    accentColor = 'text-(--att-warn)';
+    accentColor = 'text-(--md-sys-color-warning)';
     copy = `Caution! Only ${safeSkips} safe skip${safeSkips !== 1 ? 's' : ''} left.`;
   } else if (status === 'CRITICAL') {
-    accentColor = 'text-(--att-danger)';
+    accentColor = 'text-(--md-sys-color-error)';
     copy =
       safeSkips === 0
         ? `Must attend ${classesNeededBeforeExam || requiredToPass} class${
@@ -56,8 +56,8 @@ export const AttendanceMeter: React.FC<AttendanceMeterProps> = ({
       </button>
 
       {isOpen && (
-        <div className="mt-3 p-4 bg-(--bg-surface)/60 rounded-2xl w-full max-w-sm border-0 flex flex-col gap-3">
-          <p className="text-[11px] text-center text-(--text-muted) font-mono font-bold uppercase tracking-wider">
+        <div className="mt-3 p-4 bg-(--md-sys-color-surface-container)/60 rounded-2xl w-full max-w-sm border-0 flex flex-col gap-3">
+          <p className="text-[11px] text-center text-(--md-sys-color-on-surface-variant) font-mono font-bold uppercase tracking-wider">
             {futureScheduledClasses > 0
               ? `${futureScheduledClasses} classes remaining before ${
                   examName || 'Exams'
@@ -65,30 +65,30 @@ export const AttendanceMeter: React.FC<AttendanceMeterProps> = ({
               : `Semester Schedule`}
           </p>
 
-          <div className="grid grid-cols-3 gap-2 pt-1 border-t border-(--border-dim)/20">
+          <div className="grid grid-cols-3 gap-2 pt-1 border-t border-(--md-sys-color-outline-variant)/20">
             <div className="flex flex-col items-center">
-              <span className="text-[9px] uppercase font-mono font-bold text-(--text-muted) tracking-wider mb-0.5">
+              <span className="text-[9px] uppercase font-mono font-bold text-(--md-sys-color-on-surface-variant) tracking-wider mb-0.5">
                 Classes Left
               </span>
-              <span className="text-xl font-mono font-black text-(--text-main)">
+              <span className="text-xl font-mono font-black text-(--md-sys-color-on-surface)">
                 {futureScheduledClasses}
               </span>
             </div>
 
-            <div className="flex flex-col items-center border-x border-(--border-dim)/30">
-              <span className="text-[9px] uppercase font-mono font-bold text-(--text-muted) tracking-wider mb-0.5">
+            <div className="flex flex-col items-center border-x border-(--md-sys-color-outline-variant)/30">
+              <span className="text-[9px] uppercase font-mono font-bold text-(--md-sys-color-on-surface-variant) tracking-wider mb-0.5">
                 Safe Skips
               </span>
-              <span className="text-xl font-mono font-black text-(--att-safe)">
+              <span className="text-xl font-mono font-black text-(--md-sys-color-success)">
                 {safeSkips}
               </span>
             </div>
 
             <div className="flex flex-col items-center">
-              <span className="text-[9px] uppercase font-mono font-bold text-(--text-muted) tracking-wider mb-0.5">
+              <span className="text-[9px] uppercase font-mono font-bold text-(--md-sys-color-on-surface-variant) tracking-wider mb-0.5">
                 Needed @ 75%
               </span>
-              <span className="text-xl font-mono font-black text-(--att-warn)">
+              <span className="text-xl font-mono font-black text-(--md-sys-color-warning)">
                 {classesNeededBeforeExam}
               </span>
             </div>

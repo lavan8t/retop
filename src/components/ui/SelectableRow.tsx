@@ -42,13 +42,20 @@ export function selectableRowSemantics({
 export const SELECTABLE_ROW_CLASS =
   'relative min-h-12 w-full text-left outline-none cursor-pointer focus-visible:ring-2 focus-visible:ring-(--accent-base) focus-visible:ring-offset-2 focus-visible:ring-offset-(--bg-surface) disabled:cursor-not-allowed disabled:opacity-50';
 
+/** Callers may need the originating event (e.g. Shift+Enter navigation). */
+export type SelectableRowActivation = (
+  event?: React.KeyboardEvent | React.MouseEvent,
+) => void;
+
 /** Activation keys for rows that cannot be a native button (nested controls). */
-export function selectableRowKeyActivation(onActivate: () => void) {
+export function selectableRowKeyActivation(
+  onActivate: SelectableRowActivation,
+) {
   return (e: React.KeyboardEvent): void => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       e.stopPropagation();
-      onActivate();
+      onActivate(e);
     }
   };
 }
@@ -61,7 +68,7 @@ export function selectableRowProps({
   label,
   className = '',
 }: {
-  onActivate: () => void;
+  onActivate: SelectableRowActivation;
   selected?: boolean;
   role?: SelectableRowRole;
   label?: string;
@@ -96,7 +103,7 @@ export const SelectionCheck = ({
 
 export interface SelectableRowProps {
   children: React.ReactNode;
-  onActivate: () => void;
+  onActivate: (event?: React.MouseEvent<HTMLButtonElement>) => void;
   selected?: boolean;
   label?: string;
   role?: SelectableRowRole;

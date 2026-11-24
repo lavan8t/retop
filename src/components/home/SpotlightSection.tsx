@@ -8,6 +8,7 @@ import { SpotlightCategoryGroup, SpotlightLinkItem } from '../../types/vtop';
 import { Card } from '../ui/Card';
 import { currentCampus } from '../../utils/campus';
 import { getVtopBaseUrl } from '../../utils/vtopClient';
+import { HOME_LIST_STYLE } from './m3eListStyles';
 
 interface SpotlightSectionProps {
   spotlightCategories: SpotlightCategoryGroup[];
@@ -70,28 +71,33 @@ export const SpotlightSection: React.FC<SpotlightSectionProps> = ({
         </div>
 
         {/* Items List */}
-        <div className="p-3 flex flex-col gap-0.5 max-h-75 overflow-y-auto custom-scrollbar">
+        <m3e-list
+          variant="segmented"
+          style={HOME_LIST_STYLE}
+          className="p-3 max-h-75 overflow-y-auto custom-scrollbar"
+        >
           {items.map((item, idx) => (
-            <div
+            <m3e-list-action
               key={idx}
               onClick={() => handleLinkClick(item)}
-              className="flex items-center justify-between p-2.5 rounded-xl bg-(--bg-surface) hover:bg-(--border-dim) transition-colors cursor-pointer active:scale-[0.99]"
+              className="active:scale-[0.99]"
             >
-              <div className="flex flex-col flex-1 min-w-0 pr-2">
-                <span className="text-xs font-medium text-(--text-main) line-clamp-2 leading-snug">
-                  {item.title}
-                </span>
-              </div>
-              <div className="shrink-0 text-(--text-muted) pl-1">
+              <span className="text-xs font-medium text-(--text-main) line-clamp-2 leading-snug">
+                {item.title}
+              </span>
+              <span
+                slot="trailing"
+                className="shrink-0 text-(--text-muted) pl-1"
+              >
                 {item.isDownload ? (
                   <Download className="w-4 h-4 text-(--accent-base)" />
                 ) : (
                   <OpenInNew className="w-4 h-4 text-(--accent-base)" />
                 )}
-              </div>
-            </div>
+              </span>
+            </m3e-list-action>
           ))}
-        </div>
+        </m3e-list>
       </Card>
     );
   }
@@ -110,29 +116,34 @@ export const SpotlightSection: React.FC<SpotlightSectionProps> = ({
         <Campaign className="w-8 h-8 text-(--text-main) mix-blend-overlay opacity-80 shrink-0" />
       </div>
       {/* Items List */}
-      <div className="flex flex-col gap-0.5 rounded-2xl overflow-hidden pt-1 pr-1">
+      <m3e-list
+        variant="segmented"
+        style={HOME_LIST_STYLE}
+        className="rounded-2xl overflow-hidden pt-1 pr-1"
+      >
         {items.map((item: SpotlightLinkItem, idx: number) => (
-          <div
+          <m3e-list-action
             key={idx}
             onClick={() => handleLinkClick(item)}
-            className="group flex items-center justify-between p-3 bg-(--bg-highlight) hover:bg-(--border-dim) border-0 transition-all cursor-pointer rounded-sm first:rounded-t-2xl last:rounded-b-2xl"
+            className="group"
           >
-            <div className="flex flex-col flex-1 min-w-0 pr-2">
-              <span className="text-xs font-medium text-(--text-main) group-hover:text-(--accent-base) transition-colors wrap-break-words">
-                {item.title}
-              </span>
-            </div>
+            <span className="text-xs font-medium text-(--text-main) group-hover:text-(--accent-base) transition-colors wrap-break-words">
+              {item.title}
+            </span>
 
-            <div className="shrink-0 text-(--text-muted) group-hover:text-(--accent-base) transition-colors">
+            <span
+              slot="trailing"
+              className="shrink-0 text-(--text-muted) group-hover:text-(--accent-base) transition-colors"
+            >
               {item.isDownload ? (
                 <Download className="w-4 h-4" />
               ) : (
                 <OpenInNew className="w-4 h-4" />
               )}
-            </div>
-          </div>
+            </span>
+          </m3e-list-action>
         ))}
-      </div>
+      </m3e-list>
     </div>
   );
 };

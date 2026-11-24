@@ -58,23 +58,12 @@ const CATEGORIES = [
 type CategoryId = (typeof CATEGORIES)[number]['id'];
 
 const COLORS = [
-  { id: 'grey', hex: '#71717a', label: 'Monochrome' },
-  { id: 'red', hex: '#ef4444', label: 'Red' },
-  { id: 'orange', hex: '#f97316', label: 'Orange' },
-  { id: 'amber', hex: '#f59e0b', label: 'Amber' },
-  { id: 'yellow', hex: '#eab308', label: 'Yellow' },
-  { id: 'lime', hex: '#84cc16', label: 'Lime' },
-  { id: 'green', hex: '#22c55e', label: 'Green' },
-  { id: 'emerald', hex: '#10b981', label: 'Emerald' },
-  { id: 'teal', hex: '#14b8a6', label: 'Teal' },
-  { id: 'cyan', hex: '#06b6d4', label: 'Cyan' },
-  { id: 'sky', hex: '#0ea5e9', label: 'Sky' },
-  { id: 'blue', hex: '#3b82f6', label: 'Blue' },
-  { id: 'indigo', hex: '#6366f1', label: 'Indigo' },
-  { id: 'purple', hex: '#a855f7', label: 'Purple' },
-  { id: 'violet', hex: '#8b5cf6', label: 'Violet' },
-  { id: 'pink', hex: '#ec4899', label: 'Pink' },
-  { id: 'rose', hex: '#f43f5e', label: 'Rose' },
+  { id: 'blue', hex: '#1B5299', label: 'Blue' },
+  { id: 'red', hex: '#C01221', label: 'Red' },
+  { id: 'green', hex: '#0F5223', label: 'Green' },
+  { id: 'purple', hex: '#7D00B8', label: 'Purple' },
+  { id: 'yellow', hex: '#F5B300', label: 'Yellow' },
+  { id: 'grey', hex: '#808080', label: 'Monochrome' },
 ];
 
 export function SettingsPage({ settings, updateSetting }: SettingsPageProps) {

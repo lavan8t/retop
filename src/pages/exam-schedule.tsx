@@ -4,7 +4,6 @@ import { createPortal } from 'react-dom';
 import { getAppRoot } from '../utils/bridge';
 import { VTOPNetwork } from '../utils/network';
 import { useDataStore } from '../store/dataStore';
-import { useSettingsStore } from '../utils/settings-store';
 import { formatDateStr } from '../utils/formatting';
 import { EmptyState } from '../components/EmptyState';
 import { OfflineNotSynced } from '../components/ui/OfflineNotSynced';
@@ -208,17 +207,11 @@ const SeatMapPopoverCard = ({
   );
 };
 
-const ExamCardM3 = ({
-  entry,
-  dateFormatPattern,
-}: {
-  entry: ExamEntry;
-  dateFormatPattern: string;
-}) => {
+const ExamCardM3 = ({ entry }: { entry: ExamEntry }) => {
   const [showSeatMap, setShowSeatMap] = useState(false);
   const triggerRef = useRef<HTMLDivElement>(null);
   const timeline = parseTimeline(entry.examTime, entry.reportingTime);
-  const formattedDate = formatDateStr(entry.examDate, dateFormatPattern)
+  const formattedDate = formatDateStr(entry.examDate)
     .replace(/\s*\d{4}$/, '')
     .trim();
   const seatPos = parseSeatPosition(entry.seatLocation, entry.seatNo);
@@ -409,9 +402,6 @@ export const ExamSchedulePage: React.FC<ExamSchedulePageProps> = ({
     status,
     fetchExamSemesters,
   } = useDataStore();
-
-  const { settings } = useSettingsStore();
-  const dateFormatPattern = settings.dateFormat || 'DD Mon YYYY';
 
   const [selectedExamType, setSelectedExamType] = useState<string>(() =>
     getLatestUpcomingExamType(useDataStore.getState().examGroups),
@@ -646,7 +636,6 @@ export const ExamSchedulePage: React.FC<ExamSchedulePageProps> = ({
                       <ExamCardM3
                         key={`${group.examType}-${idx}-${entry.courseCode}`}
                         entry={entry}
-                        dateFormatPattern={dateFormatPattern}
                       />,
                     );
                     return items;

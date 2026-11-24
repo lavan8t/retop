@@ -138,6 +138,22 @@ export function formatRecordDate(date: Date | null, fallback: string): string {
 
 export type RecordStatus = 'present' | 'absent' | 'other';
 
+/** Status text uses Material 3 semantic roles, never app-local colour aliases. */
+export const HISTORY_STATUS_TEXT_CLASS: Record<RecordStatus, string> = {
+  present: 'text-(--md-sys-color-success)',
+  absent: 'text-(--md-sys-color-error)',
+  other: 'text-(--md-sys-color-tertiary)',
+};
+
+/** Forecast tones mapped to the same M3 palette roles. */
+export const TONE_TEXT_CLASS: Record<AttendanceTone, string> = {
+  na: 'text-(--md-sys-color-on-surface-variant)',
+  critical: 'text-(--md-sys-color-error)',
+  warning: 'text-(--md-sys-color-warning)',
+  safe: 'text-(--md-sys-color-success)',
+  neutral: 'text-(--md-sys-color-on-surface-variant)',
+};
+
 export function recordStatus(status: string): RecordStatus {
   const lower = (status || '').toLowerCase();
   if (lower.includes('present')) return 'present';

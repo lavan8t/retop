@@ -48,10 +48,10 @@ export const CourseDetail = ({
           </M3eChip>
         )}
       </div>
-      <h2 className="text-2xl font-black font-expanded leading-tight text-(--text-main) wrap-break-word">
+      <h2 className="text-2xl font-black font-expanded leading-tight text-(--md-sys-color-on-surface) wrap-break-word">
         {course.courseTitle}
       </h2>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-(--text-muted)">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-(--md-sys-color-on-surface-variant)">
         <span className="inline-flex items-center gap-1.5">
           <Person aria-hidden="true" />
           {course.faculty}

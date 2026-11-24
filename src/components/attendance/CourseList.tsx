@@ -21,20 +21,12 @@ const TONE_TEXT: Record<AttendanceTone, string> = {
 const listSurfaceStyle = {
   '--m3e-segmented-list-segment-gap': '2px',
   '--m3e-segmented-list-container-shape': '1rem',
-  '--m3e-segmented-list-item-container-color': 'var(--bg-highlight)',
   '--m3e-segmented-list-item-container-shape': '0.25rem',
   '--m3e-list-item-padding-block': '0.75rem',
   '--m3e-list-item-padding-inline': '0.75rem',
   '--m3e-list-item-font-weight': '500',
   '--m3e-list-item-supporting-text-font-weight': '500',
   '--m3e-list-item-trailing-text-font-weight': '500',
-  '--m3e-list-item-label-text-color': 'var(--text-main)',
-  '--m3e-list-item-supporting-text-color': 'var(--text-muted)',
-  '--m3e-list-item-trailing-color': 'var(--text-muted)',
-  '--m3e-list-item-selected-container-color': 'var(--bg-highlight)',
-  '--m3e-list-item-selected-label-text-color': 'var(--text-main)',
-  '--m3e-list-item-selected-supporting-text-color': 'var(--text-muted)',
-  '--m3e-list-item-selected-trailing-color': 'var(--text-main)',
 } as React.CSSProperties;
 
 export const courseKey = (course: DetailedAttendanceCourse): string =>

@@ -34,19 +34,8 @@ export const SegmentedControl = <T extends string>({
         }}
         style={
           {
-            '--m3e-segmented-button-height': '48px',
-            '--m3e-segmented-button-font-size': '12px',
-            '--m3e-segmented-button-font-weight': '700',
             '--m3e-segmented-button-start-shape': '20px',
             '--m3e-segmented-button-end-shape': '20px',
-            '--m3e-segmented-button-selected-container-color':
-              'var(--text-main)',
-            '--m3e-segmented-button-selected-label-text-color':
-              'var(--bg-main)',
-            '--m3e-segmented-button-unselected-label-text-color':
-              'var(--text-muted)',
-            '--m3e-segmented-button-unselected-container-hover-color':
-              'var(--bg-highlight)',
           } as React.CSSProperties
         }
       >

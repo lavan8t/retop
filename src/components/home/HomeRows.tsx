@@ -34,13 +34,14 @@ export const AttendanceRow = React.memo(
           : 'text-(--attendance-blue)';
 
     return (
-      <div className="group flex items-center justify-between p-3 bg-(--bg-highlight) hover:bg-(--border-dim) border-0 transition-all cursor-pointer rounded-sm first:rounded-t-2xl last:rounded-b-2xl">
-        <div className="flex flex-col flex-1 min-w-0 pr-2">
-          <span className="text-xs font-medium text-(--text-main) truncate leading-snug">
-            {course.name}
-          </span>
-        </div>
-        <div className="shrink-0 flex items-center gap-3 text-(--text-muted)">
+      <m3e-list-item className="group cursor-pointer">
+        <span className="text-xs font-medium text-(--text-main) truncate leading-snug">
+          {course.name}
+        </span>
+        <div
+          slot="trailing"
+          className="shrink-0 flex items-center gap-3 text-(--text-muted)"
+        >
           {course.type && (
             <span className="w-5 text-center text-[10px] font-medium">
               {course.type}
@@ -50,7 +51,7 @@ export const AttendanceRow = React.memo(
             {isNaN(val) ? '--' : `${displayVal}%`}
           </span>
         </div>
-      </div>
+      </m3e-list-item>
     );
   },
 );
@@ -94,14 +95,27 @@ export const ScheduleRow = React.memo(
     const venue =
       item.course?.venue || (item as any).venue || (item as any).location || '';
     return (
-      <SelectableRow
-        label={`${item.course.title}, ${formattedTime}`}
-        onActivate={() => onClick?.(item)}
-        className={`@container flex items-center justify-between p-3 shadow-none select-none overflow-hidden relative border-0 shrink-0 ${isNow ? 'bg-(--accent-base) text-(--text-inverse)' : ''} ${className || 'rounded-xl'}`}
-        style={{
-          backgroundColor: isNow ? undefined : cardBg,
-          color: isNow ? undefined : cardFg,
-        }}
+      <m3e-list-action
+        aria-label={`${item.course.title}, ${formattedTime}`}
+        onClick={() => onClick?.(item)}
+        className={`@container relative select-none overflow-hidden ${isNow ? 'bg-(--accent-base) text-(--text-inverse)' : ''} ${className}`}
+        style={
+          {
+            color: isNow ? undefined : cardFg,
+            '--m3e-list-item-container-color': isNow
+              ? 'var(--accent-base)'
+              : cardBg,
+            '--m3e-list-item-label-text-color': isNow
+              ? 'var(--text-inverse)'
+              : 'currentColor',
+            '--m3e-list-item-supporting-text-color': isNow
+              ? 'var(--text-inverse)'
+              : 'currentColor',
+            '--m3e-list-item-trailing-color': isNow
+              ? 'var(--text-inverse)'
+              : 'currentColor',
+          } as React.CSSProperties
+        }
       >
         {/* Depleting fill overlay level-wise based on time elapsed */}
         {progress > 0 && progress < 1 && (
@@ -111,37 +125,36 @@ export const ScheduleRow = React.memo(
           />
         )}
 
-        <div className="relative z-10 flex flex-col gap-[2px] w-full min-w-0">
-          {/* Line 1: title (left) + venue (right) */}
-          <div className="flex items-center justify-between gap-2 min-w-0">
-            <span className="text-sm md:text-base font-medium leading-tight truncate min-w-0">
-              {item.course.title}
-            </span>
-            <div className="flex items-center gap-1.5 shrink-0">
-              {isCriticalAtt && (
-                <span
-                  className="text-[0.5625rem] font-mono font-medium uppercase px-1.5 py-0.5 rounded-full shrink-0 leading-none border"
-                  style={getMaterialChipStyle('red', isDark)}
-                >
-                  ⚠️ {Math.round(attVal)}%
-                </span>
-              )}
-              {venue && (
-                <span className="text-xs md:text-sm font-medium leading-tight whitespace-nowrap">
-                  {venue}
-                </span>
-              )}
-            </div>
-          </div>
+        <span className="relative z-10 text-sm md:text-base font-medium leading-tight truncate min-w-0">
+          {item.course.title}
+        </span>
 
-          {/* Line 2: time range, duller hierarchy */}
-          <div
-            className={`text-[11px] md:text-xs font-medium leading-tight ${isNow ? 'opacity-80' : 'text-(--text-muted)'}`}
-          >
-            {formattedTime}
-          </div>
-        </div>
-      </SelectableRow>
+        <span
+          slot="trailing"
+          className="relative z-10 flex items-start gap-1.5 shrink-0"
+        >
+          {isCriticalAtt && (
+            <span
+              className="text-[0.5625rem] font-mono font-medium uppercase px-1.5 py-0.5 rounded-full shrink-0 leading-none border"
+              style={getMaterialChipStyle('red', isDark)}
+            >
+              ⚠️ {Math.round(attVal)}%
+            </span>
+          )}
+          {venue && (
+            <span className="text-xs md:text-sm font-medium leading-tight whitespace-nowrap">
+              {venue}
+            </span>
+          )}
+        </span>
+
+        <span
+          slot="supporting-text"
+          className={`relative z-10 text-[11px] md:text-xs font-medium leading-tight ${isNow ? 'opacity-80' : 'text-(--text-muted)'}`}
+        >
+          {formattedTime}
+        </span>
+      </m3e-list-action>
     );
   },
 );
@@ -200,12 +213,20 @@ export const AssignmentRow = React.memo(
     }
 
     return (
-      <SelectableRow
-        label={`${assignment.title}, ${isHovered ? exact : days}`}
-        onActivate={() => onClick?.(assignment)}
+      <m3e-list-action
+        aria-label={`${assignment.title}, ${isHovered ? exact : days}`}
+        onClick={() => onClick?.(assignment)}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className={`p-3 bg-(--bg-surface) hover:bg-(--bg-highlight) select-none overflow-hidden group transition-colors relative border border-(--border-dim)/40 shrink-0 ${className || 'rounded-xl'}`}
+        className={`relative select-none overflow-hidden border border-(--border-dim)/40 group transition-colors ${className}`}
+        style={
+          {
+            '--m3e-list-item-container-color': 'var(--bg-surface)',
+            '--m3e-list-item-label-text-color': 'var(--text-main)',
+            '--m3e-list-item-supporting-text-color': 'var(--text-muted)',
+            '--m3e-list-item-trailing-color': 'var(--text-main)',
+          } as React.CSSProperties
+        }
       >
         {progress > 0 && progress < 1 && (
           <div
@@ -213,29 +234,31 @@ export const AssignmentRow = React.memo(
             style={{ width: `${Math.round(progress * 100)}%` }}
           />
         )}
-        <div className="flex flex-col relative z-10 gap-[2px] w-full min-w-0">
-          {/* Line 1: title (left) + course (right) */}
-          <div className="flex items-center justify-between gap-2 min-w-0">
-            <span className="text-sm md:text-base font-medium text-(--text-main) leading-tight truncate min-w-0">
-              {assignment.title}
-            </span>
-            {assignment.course && (
-              <span className="text-xs md:text-sm font-medium text-(--text-main) leading-tight truncate shrink-0 max-w-[40%]">
-                {assignment.course}
-              </span>
-            )}
-          </div>
 
-          {/* Line 2: due timing, duller hierarchy */}
-          <div className="text-[11px] md:text-xs font-medium text-(--text-muted) leading-tight">
-            <span
-              className={`font-medium font-mono px-2 py-0.5 rounded-full border leading-none transition-all ${badgeStyle}`}
-            >
-              {isHovered ? exact : days}
-            </span>
-          </div>
-        </div>
-      </SelectableRow>
+        <span className="relative z-10 text-sm md:text-base font-medium text-(--text-main) leading-tight truncate min-w-0">
+          {assignment.title}
+        </span>
+
+        {assignment.course && (
+          <span
+            slot="trailing"
+            className="relative z-10 text-xs md:text-sm font-medium text-(--text-main) leading-tight truncate shrink-0 max-w-[40%]"
+          >
+            {assignment.course}
+          </span>
+        )}
+
+        <span
+          slot="supporting-text"
+          className="relative z-10 text-[11px] md:text-xs font-medium text-(--text-muted) leading-tight"
+        >
+          <span
+            className={`font-medium font-mono px-2 py-0.5 rounded-full border leading-none transition-all ${badgeStyle}`}
+          >
+            {isHovered ? exact : days}
+          </span>
+        </span>
+      </m3e-list-action>
     );
   },
 );

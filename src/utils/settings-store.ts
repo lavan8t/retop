@@ -19,15 +19,6 @@ import {
   SchemeMonochrome,
 } from '@material/material-color-utilities';
 
-export type DateFormatPattern =
-  | 'DD Mon YYYY'
-  | 'DD Mon YY'
-  | 'DD/MM/YYYY'
-  | 'MM/DD/YYYY'
-  | 'YYYY-MM-DD'
-  | 'DD.MM.YYYY'
-  | 'DD-MM-YYYY';
-
 export type ColorSchemeStyle =
   | 'vibrant'
   | 'tonal'
@@ -66,7 +57,6 @@ export interface AppSettings {
   calendarClassColor: string;
   calendarEventColor: string;
   timetableMode: 'weekly' | 'slot' | 'consolidated' | 'fullMonth';
-  dateFormat: DateFormatPattern;
   fontScale: number;
 }
 
@@ -84,7 +74,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   calendarClassColor: 'blue',
   calendarEventColor: 'purple',
   timetableMode: 'weekly',
-  dateFormat: 'DD Mon YYYY',
   fontScale: 100,
 
   pinnedLinks: [
@@ -98,26 +87,14 @@ export const DEFAULT_SETTINGS: AppSettings = {
   ],
 };
 
+/** Accent presets from retop-app (Settings > Appearance). */
 export const MATERIAL_ACCENTS: Record<string, string> = {
-  grey: '#71717a',
-  red: '#ef4444',
-  orange: '#f97316',
-  yellow: '#eab308',
-  green: '#22c55e',
-  blue: '#3b82f6',
-  purple: '#a855f7',
-  pink: '#ec4899',
-  cyan: '#06b6d4',
-  indigo: '#6366f1',
-  teal: '#14b8a6',
-  amber: '#f59e0b',
-  emerald: '#10b981',
-  sky: '#0ea5e9',
-  violet: '#8b5cf6',
-  fuchsia: '#d946ef',
-  rose: '#f43f5e',
-  lime: '#84cc16',
-  deepOrange: '#ff5722',
+  blue: '#1B5299',
+  red: '#C01221',
+  green: '#0F5223',
+  purple: '#7D00B8',
+  yellow: '#F5B300',
+  grey: '#808080',
 };
 
 function createMaterialScheme(

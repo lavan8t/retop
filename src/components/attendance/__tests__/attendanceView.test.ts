@@ -6,6 +6,7 @@ import {
   formatRecordDate,
   groupRecordsByMonth,
   historyStatusLabel,
+  HISTORY_STATUS_TEXT_CLASS,
   isLabCourse,
   leaveImpact,
   overallAttendancePercentage,
@@ -13,6 +14,7 @@ import {
   parseRecordDate,
   projectAttendance,
   recordStatus,
+  TONE_TEXT_CLASS,
 } from '../attendanceView';
 import type { DetailedAttendanceCourse } from '../../../types/vtop';
 
@@ -65,6 +67,33 @@ describe('attendance tone', () => {
     expect(attendanceTone(60, false, 0)).toBe('na');
     expect(attendanceTone(60, true, 0)).toBe('na');
     expect(attendanceTone(0, false, 16)).toBe('critical');
+  });
+});
+
+describe('semantic palette roles', () => {
+  test('history statuses map to M3 roles: success, error, distinct other', () => {
+    expect(HISTORY_STATUS_TEXT_CLASS.present).toBe(
+      'text-(--md-sys-color-success)',
+    );
+    expect(HISTORY_STATUS_TEXT_CLASS.absent).toBe(
+      'text-(--md-sys-color-error)',
+    );
+    expect(HISTORY_STATUS_TEXT_CLASS.other).toBe(
+      'text-(--md-sys-color-tertiary)',
+    );
+  });
+
+  test('tone text uses M3 roles and no app-local colour variables', () => {
+    expect(TONE_TEXT_CLASS.critical).toBe('text-(--md-sys-color-error)');
+    expect(TONE_TEXT_CLASS.warning).toBe('text-(--md-sys-color-warning)');
+    expect(TONE_TEXT_CLASS.safe).toBe('text-(--md-sys-color-success)');
+    for (const value of [
+      ...Object.values(HISTORY_STATUS_TEXT_CLASS),
+      ...Object.values(TONE_TEXT_CLASS),
+    ]) {
+      expect(value).toMatch(/^text-\(--md-sys-color-[a-z-]+\)$/);
+      expect(value).not.toContain('--att-');
+    }
   });
 });
 

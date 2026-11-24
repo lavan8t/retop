@@ -14,9 +14,6 @@ const tagChipStyle = {
   '--m3e-chip-container-shape': '6px',
   '--m3e-chip-label-text-font-size': '10px',
   '--m3e-chip-label-text-font-weight': '500',
-  '--m3e-elevated-chip-container-color': 'var(--bg-highlight)',
-  '--m3e-elevated-chip-elevation': '0',
-  '--m3e-elevated-chip-hover-elevation': '0',
 } as CSSProperties;
 
 const absentChipStyle = {
@@ -25,9 +22,7 @@ const absentChipStyle = {
   '--m3e-chip-label-text-font-size': '10px',
   '--m3e-chip-label-text-font-weight': '500',
   '--m3e-elevated-chip-container-color': 'var(--md-sys-color-error)',
-  '--m3e-chip-label-text-color': 'var(--md-sys-color-on-error)',
-  '--m3e-elevated-chip-elevation': '0',
-  '--m3e-elevated-chip-hover-elevation': '0',
+  '--m3e-elevated-chip-label-text-color': 'var(--md-sys-color-on-error)',
 } as CSSProperties;
 
 const badgeStyle = {
@@ -40,13 +35,11 @@ const badgeStyle = {
 const assessmentListStyle = {
   '--m3e-segmented-list-segment-gap': '2px',
   '--m3e-segmented-list-container-shape': '14px',
-  '--m3e-segmented-list-item-container-color': 'var(--bg-highlight)',
   '--m3e-segmented-list-item-container-shape': '4px',
   '--m3e-list-item-padding-block': '0.625rem',
   '--m3e-list-item-padding-inline': '0.875rem',
   '--m3e-list-item-font-weight': '500',
   '--m3e-list-item-font-size': '0.8125rem',
-  '--m3e-list-item-label-text-color': 'var(--text-main)',
   '--m3e-list-item-supporting-text-font-weight': '500',
   '--m3e-list-item-trailing-text-font-weight': '500',
 } as CSSProperties;
@@ -54,9 +47,6 @@ const assessmentListStyle = {
 const cardStyle = {
   '--m3e-card-padding': '0px',
   '--m3e-card-shape': '18px',
-  '--m3e-filled-card-container-color': 'var(--bg-surface)',
-  '--m3e-filled-card-text-color': 'var(--text-main)',
-  '--m3e-filled-card-hover-state-layer-color': 'transparent',
 } as CSSProperties;
 
 const AssessmentRow = ({

@@ -1,5 +1,5 @@
 import React from 'react';
-import { SettingTopicCard } from './SettingTopicCard';
+import { SettingTopicList } from './SettingTopicList';
 import { SyncManager } from '../SyncManager';
 
 interface DataStorageSectionProps {
@@ -12,16 +12,8 @@ export const DataStorageSection: React.FC<DataStorageSectionProps> = ({
   clearStatus,
 }) => {
   return (
-    <SettingTopicCard
-      title="Cache & Storage Management"
-      description={
-        <>
-          Clear cached <span className="font-vtop">VTOP</span> portal data or
-          manage specific cached endpoints
-        </>
-      }
-    >
-      <div className="flex flex-col gap-4 w-full">
+    <SettingTopicList title="Cache & Storage Management">
+      <m3e-list-item>
         <div className="flex items-center justify-between gap-4">
           <div className="flex flex-col gap-1">
             <span className="text-sm font-semibold text-(--text-main)">
@@ -39,20 +31,24 @@ export const DataStorageSection: React.FC<DataStorageSectionProps> = ({
             Clear Cache
           </button>
         </div>
+      </m3e-list-item>
 
-        {clearStatus && (
+      {clearStatus && (
+        <m3e-list-item>
           <span className="text-xs font-semibold text-(--text-muted)">
             {clearStatus}
           </span>
-        )}
+        </m3e-list-item>
+      )}
 
-        <div className="border-t border-(--border-dim) pt-4">
+      <m3e-list-item className="min-h-0">
+        <div className="w-full">
           <span className="text-xs font-semibold uppercase font-expanded text-(--text-muted) mb-2 block">
             Cached Endpoint Explorer
           </span>
           <SyncManager />
         </div>
-      </div>
-    </SettingTopicCard>
+      </m3e-list-item>
+    </SettingTopicList>
   );
 };

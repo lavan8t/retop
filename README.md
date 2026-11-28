@@ -1,16 +1,16 @@
-# retop
-
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./public/assets/white-retop.svg">
-  <img src="./public/assets/black-retop.svg" align="right" alt="retop logo" width="140">
+  <img src="./public/assets/black-retop.svg" alt="retop logo" width="140">
 </picture>
+
 
 [![CI](https://github.com/lavan8t/retop/actions/workflows/ci.yml/badge.svg)](https://github.com/lavan8t/retop/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Bun](https://img.shields.io/badge/Bun-%23000000.svg?logo=bun&logoColor=white)](https://bun.sh)
 [![Manifest V3](https://img.shields.io/badge/Chrome_Extension-Manifest_V3-4285F4.svg?logo=google-chrome&logoColor=white)](manifest.json)
 
-**retop** is a high-performance browser extension for Chromium and Firefox that transforms VIT University's legacy VTOP portal into a responsive, brutalist Material 3-inspired interface. It runs on top of live student sessions by mounting an isolated Shadow DOM (`#retop-host`), intercepting server-rendered HTML pages, parsing them into typed structures, and delivering instant transitions with offline cache-first hydration.
+
+A beautiful browser extension for Chromium and Firefox that transforms VIT University's VTOP portal into a responsive, Material 3-inspired interface. It runs on top of live student sessions by mounting an isolated Shadow DOM (`#retop-host`), intercepting server-rendered HTML pages, parsing them into typed structures, and delivering instant transitions with offline cache-first hydration.
 
 ---
 
